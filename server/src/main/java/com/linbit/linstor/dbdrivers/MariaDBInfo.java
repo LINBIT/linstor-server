@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.annotation.Nullable;
+
 public class MariaDBInfo implements DatabaseDriverInfo
 {
     private String compatType = "mariadb";
@@ -16,7 +18,7 @@ public class MariaDBInfo implements DatabaseDriverInfo
     }
 
     @Override
-    public String jdbcInMemoryUrl()
+    public @Nullable String jdbcInMemoryUrl()
     {
         return null;
     }

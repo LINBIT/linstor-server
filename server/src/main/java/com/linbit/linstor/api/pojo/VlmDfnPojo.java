@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.utils.Pair;
@@ -14,16 +15,16 @@ import java.util.UUID;
  */
 public class VlmDfnPojo implements VolumeDefinitionApi
 {
-    private final UUID uuid;
-    private final Integer volumeNr;
+    private final @Nullable UUID uuid;
+    private final @Nullable Integer volumeNr;
     private final long size;
     private final long flags;
     private final Map<String, String> props;
     private final List<Pair<String, VlmDfnLayerDataApi>> layerData;
 
     public VlmDfnPojo(
-        final UUID uuidRef,
-        final Integer volumeNrRef,
+        final @Nullable UUID uuidRef,
+        final @Nullable Integer volumeNrRef,
         final long sizeRef,
         final long flagsRef,
         Map<String, String> propsRef,
@@ -39,13 +40,13 @@ public class VlmDfnPojo implements VolumeDefinitionApi
     }
 
     @Override
-    public UUID getUuid()
+    public @Nullable UUID getUuid()
     {
         return uuid;
     }
 
     @Override
-    public Integer getVolumeNr()
+    public @Nullable Integer getVolumeNr()
     {
         return volumeNr;
     }

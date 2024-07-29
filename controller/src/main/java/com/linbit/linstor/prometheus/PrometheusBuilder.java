@@ -1,6 +1,7 @@
 package com.linbit.linstor.prometheus;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
@@ -24,7 +25,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import java.io.IOException;
@@ -84,7 +84,7 @@ public class PrometheusBuilder
             return value;
         }
 
-        public static VolumeStates getByName(final String name)
+        public static VolumeStates getByName(final @Nullable String name)
         {
             VolumeStates vlmStates = DUNKNOWN;
             for (VolumeStates state : VolumeStates.values())
@@ -171,8 +171,7 @@ public class PrometheusBuilder
         return map;
     }
 
-    @Nullable
-    private SatelliteResourceState getResourceState(
+    private @Nullable SatelliteResourceState getResourceState(
         final Map<NodeName, SatelliteState> satelliteStates,
         final ResourceApi rscApi
     )

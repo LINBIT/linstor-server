@@ -1,5 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.EffectivePropertiesPojo;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
@@ -7,8 +8,6 @@ import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.proto.common.RscOuterClass;
-
-import javax.annotation.Nullable;
 
 import java.util.Date;
 import java.util.List;
@@ -37,7 +36,7 @@ public class RscApiData implements ResourceApi
     }
 
     @Override
-    public UUID getUuid()
+    public @Nullable UUID getUuid()
     {
         return rsc.hasUuid() ? UUID.fromString(rsc.getUuid()) : null;
     }
@@ -49,7 +48,7 @@ public class RscApiData implements ResourceApi
     }
 
     @Override
-    public UUID getNodeUuid()
+    public @Nullable UUID getNodeUuid()
     {
         return rsc.hasNodeUuid() ? UUID.fromString(rsc.getNodeUuid()) : null;
     }
@@ -61,7 +60,7 @@ public class RscApiData implements ResourceApi
     }
 
     @Override
-    public UUID getRscDfnUuid()
+    public @Nullable UUID getRscDfnUuid()
     {
         return rsc.hasRscDfnUuid() ? UUID.fromString(rsc.getRscDfnUuid()) : null;
     }
@@ -98,7 +97,7 @@ public class RscApiData implements ResourceApi
     }
 
     @Override
-    public EffectivePropertiesPojo getEffectivePropsPojo()
+    public @Nullable EffectivePropertiesPojo getEffectivePropsPojo()
     {
         // proto does not need effectiveProps
         return null;

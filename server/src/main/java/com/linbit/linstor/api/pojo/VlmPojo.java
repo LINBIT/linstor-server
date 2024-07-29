@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -18,33 +19,33 @@ import java.util.UUID;
  */
 public class VlmPojo implements VolumeApi
 {
-    private final UUID vlmDfnUuid;
-    private final UUID vlmUuid;
-    private final String devicePath;
+    private final @Nullable UUID vlmDfnUuid;
+    private final @Nullable UUID vlmUuid;
+    private final @Nullable String devicePath;
     private final int vlmNr;
     private final long vlmFlags;
     private final Map<String, String> vlmProps;
     private final Optional<Long> allocated;
-    private Optional<Long> usableSize;
-    private final List<Pair<String, VlmLayerDataApi>> layerData;
+    private final Optional<Long> usableSize;
+    private final @Nullable List<Pair<String, VlmLayerDataApi>> layerData;
 
-    private final String compatStorPoolName;
-    private final DeviceProviderKind compatDevProviderKind;
-    private final ApiCallRc reports;
+    private final @Nullable String compatStorPoolName;
+    private final @Nullable DeviceProviderKind compatDevProviderKind;
+    private final @Nullable ApiCallRc reports;
 
     public VlmPojo(
-        final UUID vlmDfnUuidRef,
-        final UUID vlmUuidRef,
-        final String devicePathRef,
+        final @Nullable UUID vlmDfnUuidRef,
+        final @Nullable UUID vlmUuidRef,
+        final @Nullable String devicePathRef,
         final int vlmNrRef,
         final long vlmFlagsRef,
         final Map<String, String> vlmPropsRef,
         final Optional<Long> allocatedRef,
         final Optional<Long> usableSizeRef,
-        final List<Pair<String, VlmLayerDataApi>> layerDataRef,
-        final String compatStorPoolNameRef,
-        final DeviceProviderKind compatDevProviderKindRef,
-        final ApiCallRc reportsRef
+        final @Nullable List<Pair<String, VlmLayerDataApi>> layerDataRef,
+        final @Nullable String compatStorPoolNameRef,
+        final @Nullable DeviceProviderKind compatDevProviderKindRef,
+        final @Nullable ApiCallRc reportsRef
     )
     {
         vlmDfnUuid = vlmDfnUuidRef;

@@ -2,7 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.Map;
 import java.util.UUID;

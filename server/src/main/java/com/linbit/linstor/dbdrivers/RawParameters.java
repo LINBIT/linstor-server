@@ -1,12 +1,12 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nonnull;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.utils.Base64;
 import com.linbit.utils.ExceptionThrowingFunction;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.sql.JDBCType;
@@ -28,11 +28,11 @@ public class RawParameters
 {
     private static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
-    private final DatabaseTable table;
+    private final @Nullable DatabaseTable table;
     private final Map<String, Object> rawDataMap;
     private final DatabaseType dbType;
 
-    public RawParameters(DatabaseTable tableRef, Map<String, Object> rawDataMapRef, DatabaseType dbTypeRef)
+    public RawParameters(@Nullable DatabaseTable tableRef, Map<String, Object> rawDataMapRef, DatabaseType dbTypeRef)
     {
         table = tableRef;
         rawDataMap = rawDataMapRef;
@@ -46,7 +46,7 @@ public class RawParameters
      *
      * For non-ETCD engines, this method is a simple delegate for {@link #get(Column)}.
      */
-    public <T> T getParsed(Column col)
+    public <T> @Nullable T getParsed(Column col)
     {
         T ret;
         switch (dbType)
@@ -68,9 +68,14 @@ public class RawParameters
      * This method does the same as {@link #build(Column, Class)}, but instead of depending on {@link #get(Column)}
      * this method calls {@link #getParsed(Column)}.
      */
-    public <T, R, EXC extends Exception> R buildParsed(
+    /*
+     * yes, these annotations look weird, but they are correct:
+     * T can be null whithin this method, but before it is passed to func a null-check is performed, so that func can
+     * expect a @Nonnull T
+     */
+    public <@Nullable T, @Nullable R, EXC extends Exception> @Nullable R buildParsed(
         Column col,
-        ExceptionThrowingFunction<T, R, EXC> func
+        ExceptionThrowingFunction<@Nonnull T, R, EXC> func
     )
         throws EXC
     {
@@ -84,7 +89,7 @@ public class RawParameters
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T getValueFromEtcd(Column col) throws ImplementationError
+    private <T> @Nullable T getValueFromEtcd(Column col) throws ImplementationError
     {
         T ret;
         String etcdVal = (String) rawDataMap.get(col.getName());
@@ -140,14 +145,14 @@ public class RawParameters
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T get(Column col)
+    public <T> @Nullable T get(Column col)
     {
         return (T) rawDataMap.get(col.getName());
     }
 
-    public <T, R, EXC extends Exception> R build(
+    public <T, @Nullable R, EXC extends Exception> @Nullable R build(
         Column col,
-        ExceptionThrowingFunction<T, R, EXC> func
+        ExceptionThrowingFunction<@Nonnull T, R, EXC> func
     )
         throws EXC
     {
@@ -160,7 +165,7 @@ public class RawParameters
         return ret;
     }
 
-    public <R extends Enum<R>> R build(Column col, Class<R> eType)
+    public <@Nullable R extends Enum<R>> @Nullable R build(Column col, Class<R> eType)
         throws IllegalArgumentException
     {
         String data = get(col);
@@ -283,21 +288,21 @@ public class RawParameters
 
     public Short etcdGetShort(Column column)
     {
-        return this.<String, Short, RuntimeException>build(column, Short::parseShort);
+        return this.<String, @Nullable Short, RuntimeException>build(column, Short::parseShort);
     }
 
     public Integer etcdGetInt(Column column)
     {
-        return this.<String, Integer, RuntimeException>build(column, Integer::parseInt);
+        return this.<String, @Nullable Integer, RuntimeException>build(column, Integer::parseInt);
     }
 
     public Long etcdGetLong(Column column)
     {
-        return this.<String, Long, RuntimeException>build(column, Long::parseLong);
+        return this.<String, @Nullable Long, RuntimeException>build(column, Long::parseLong);
     }
 
     public Boolean etcdGetBoolean(Column column)
     {
-        return this.<String, Boolean, RuntimeException>build(column, Boolean::parseBoolean);
+        return this.<String, @Nullable Boolean, RuntimeException>build(column, Boolean::parseBoolean);
     }
 }

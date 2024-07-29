@@ -2,6 +2,7 @@ package com.linbit.linstor.debug;
 
 import com.linbit.ErrorCheck;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.util.Map;
@@ -20,8 +21,8 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
     final String      cmdInfo;
     final String      cmdDescr;
 
-    final Map<String, String> paramDescr;
-    final String      undeclDescr;
+    final @Nullable Map<String, String> paramDescr;
+    final @Nullable String undeclDescr;
 
     final boolean acceptsUndeclared = false;
 
@@ -29,14 +30,14 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
 
     final Map<String, String> dspNameMap;
 
-    DebugConsole        debugCon;
+    @Nullable DebugConsole debugCon;
 
     public BaseDebugCmd(
         String[] cmdNamesRef,
         String cmdInfoRef,
         String cmdDescrRef,
-        Map<String, String> paramDescrRef,
-        String undeclDescrRef
+        @Nullable Map<String, String> paramDescrRef,
+        @Nullable String undeclDescrRef
     )
     {
         ErrorCheck.ctorNotNull(this.getClass(), String[].class, cmdNamesRef);
@@ -68,7 +69,7 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
     }
 
     @Override
-    public String getDisplayName(String upperCaseCmdName)
+    public @Nullable String getDisplayName(String upperCaseCmdName)
     {
         return dspNameMap.get(upperCaseCmdName);
     }
@@ -86,7 +87,7 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
     }
 
     @Override
-    public Map<String, String> getParametersDescription()
+    public @Nullable Map<String, String> getParametersDescription()
     {
         Map<String, String> paramCopy = null;
         if (paramDescr != null)
@@ -102,7 +103,7 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
     }
 
     @Override
-    public String getUndeclaredParametersDescription()
+    public @Nullable String getUndeclaredParametersDescription()
     {
         return undeclDescr;
     }
@@ -143,10 +144,10 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
 
     public void printError(
         PrintStream debugErr,
-        String errorText,
-        String causeText,
-        String correctionText,
-        String errorDetailsText
+        @Nullable String errorText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String errorDetailsText
     )
     {
         debugPrintHelper.printError(debugErr, errorText, causeText, correctionText, errorDetailsText);

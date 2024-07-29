@@ -1,26 +1,28 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
+
 @Deprecated(forRemoval = true)
 public class ExosEnclosureEventPojo
 {
-    private final String severity;
-    private final String exosEventId;
-    private final String controller;
-    private final String timeStampStr;
-    private final Long timeStampNumeric;
-    private final String message;
-    private final String additionalInformation;
-    private final String recommendedAction;
+    private final @Nullable String severity;
+    private final @Nullable String exosEventId;
+    private final @Nullable String controller;
+    private final @Nullable String timeStampStr;
+    private final @Nullable Long timeStampNumeric;
+    private final @Nullable String message;
+    private final @Nullable String additionalInformation;
+    private final @Nullable String recommendedAction;
 
     public ExosEnclosureEventPojo(
-        String severityRef,
-        String eventIdRef,
-        String controllerRef,
-        String timeStampRef,
-        Long timeStampNumericRef,
-        String messageRef,
-        String additionalInformationRef,
-        String recommendedActionRef
+        @Nullable String severityRef,
+        @Nullable String eventIdRef,
+        @Nullable String controllerRef,
+        @Nullable String timeStampRef,
+        @Nullable Long timeStampNumericRef,
+        @Nullable String messageRef,
+        @Nullable String additionalInformationRef,
+        @Nullable String recommendedActionRef
     )
     {
         severity = severityRef;
@@ -33,42 +35,42 @@ public class ExosEnclosureEventPojo
         recommendedAction = recommendedActionRef;
     }
 
-    public String getSeverity()
+    public @Nullable String getSeverity()
     {
         return severity;
     }
 
-    public String getExosEventId()
+    public @Nullable String getExosEventId()
     {
         return exosEventId;
     }
 
-    public String getController()
+    public @Nullable String getController()
     {
         return controller;
     }
 
-    public String getTimeStampStr()
+    public @Nullable String getTimeStampStr()
     {
         return timeStampStr;
     }
 
-    public Long getTimeStampNumeric()
+    public @Nullable Long getTimeStampNumeric()
     {
         return timeStampNumeric;
     }
 
-    public String getMessage()
+    public @Nullable String getMessage()
     {
         return message;
     }
 
-    public String getAdditionalInformation()
+    public @Nullable String getAdditionalInformation()
     {
         return additionalInformation;
     }
 
-    public String getRecommendedAction()
+    public @Nullable String getRecommendedAction()
     {
         return recommendedAction;
     }

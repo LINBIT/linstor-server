@@ -6,6 +6,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.extproc.ExtCmdUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
@@ -14,8 +15,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.utils.ExceptionThrowingConsumer;
 import com.linbit.utils.StringUtils;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -42,7 +41,7 @@ public class DmSetupUtils
         ExtCmdFactory extCmdFactory,
         AbsRscLayerObject<Resource> rscData,
         boolean suspendRef,
-        ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preExecConsumerRef
+        @Nullable ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preExecConsumerRef
     )
         throws StorageException, ExtCmdFailedException
     {
@@ -57,7 +56,7 @@ public class DmSetupUtils
         ExtCmdFactory extCmdFactory,
         VlmProviderObject<Resource> vlmData,
         boolean suspendRef,
-        ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preExecConsumerRef
+        @Nullable ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preExecConsumerRef
     )
         throws StorageException, ExtCmdFailedException
     {

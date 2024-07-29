@@ -1,8 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
-
-import javax.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.Map;
@@ -43,7 +42,7 @@ public class BackupShippingRequest
     public final boolean forceRestore;
     public final boolean resetData;
     public final @Nullable String dstBaseSnapName;
-    public final String dstActualNodeName;
+    public final @Nullable String dstActualNodeName;
     public final boolean forceRscGrp;
 
     @JsonCreator

@@ -370,7 +370,7 @@ public class StltReadOnlyInfo
         /**
          * Possibly null if the origin instance has not been initialized yet
          */
-        public String getIdentifier()
+        public @Nullable String getIdentifier()
         {
             return identifier;
         }

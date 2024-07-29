@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -179,7 +180,7 @@ public class VolumeConnection extends AbsCoreObj<VolumeConnection>
         );
     }
 
-    public static VolumeConnection get(
+    public static @Nullable VolumeConnection get(
         AccessContext accCtx,
         Volume sourceVolume,
         Volume targetVolume

@@ -1,6 +1,7 @@
 package com.linbit.linstor.security;
 
 import com.linbit.linstor.ControllerETCDDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecDfltRoles;
@@ -34,7 +35,8 @@ public class DbEtcdPersistence extends BaseDbAccessor<ControllerETCDDatabase>
     }
 
     @Override
-    public SignInEntryPojo getSignInEntry(ControllerETCDDatabase etcdDb, IdentityName idName) throws DatabaseException
+    public @Nullable SignInEntryPojo getSignInEntry(ControllerETCDDatabase etcdDb, IdentityName idName)
+        throws DatabaseException
     {
         SignInEntryPojo signInEntry = null;
 
@@ -84,7 +86,7 @@ public class DbEtcdPersistence extends BaseDbAccessor<ControllerETCDDatabase>
     }
 
     @Override
-    public IdentityRoleEntryPojo getIdRoleMapEntry(
+    public @Nullable IdentityRoleEntryPojo getIdRoleMapEntry(
         ControllerETCDDatabase etcdDb,
         IdentityName idName,
         RoleName rlName
@@ -113,7 +115,7 @@ public class DbEtcdPersistence extends BaseDbAccessor<ControllerETCDDatabase>
     }
 
     @Override
-    public IdentityRoleEntryPojo getDefaultRole(ControllerETCDDatabase etcdDb, IdentityName idName)
+    public @Nullable IdentityRoleEntryPojo getDefaultRole(ControllerETCDDatabase etcdDb, IdentityName idName)
         throws DatabaseException
     {
         IdentityRoleEntryPojo identityRoleEntry = null;

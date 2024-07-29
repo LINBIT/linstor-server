@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
@@ -8,7 +9,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -24,7 +24,7 @@ public class NodeProtectionRepository implements NodeRepository
 {
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.UnameMap uNameMap;
-    private ObjectProtection nodesMapObjProt;
+    private @Nullable ObjectProtection nodesMapObjProt;
 
     @Inject
     public NodeProtectionRepository(CoreModule.NodesMap nodesMapRef, CoreModule.UnameMap uNameMapRef)
@@ -58,7 +58,7 @@ public class NodeProtectionRepository implements NodeRepository
     }
 
     @Override
-    public Node get(
+    public @Nullable Node get(
         AccessContext accCtx,
         NodeName nodeName
     )

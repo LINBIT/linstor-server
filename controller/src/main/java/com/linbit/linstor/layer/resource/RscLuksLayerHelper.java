@@ -8,6 +8,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.DecryptionHelper;
@@ -46,7 +47,6 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.Base64;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -116,7 +116,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected RscDfnLayerObject createRscDfnData(
+    protected @Nullable RscDfnLayerObject createRscDfnData(
         ResourceDefinition rscDfnRef,
         String rscNameSuffixRef,
         LayerPayload payloadRef
@@ -133,7 +133,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected VlmDfnLayerObject createVlmDfnData(
+    protected @Nullable VlmDfnLayerObject createVlmDfnData(
         VolumeDefinition vlmDfnRef,
         String rscNameSuffixRef,
         LayerPayload payloadRef
@@ -378,7 +378,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected <RSC extends AbsResource<RSC>> RscDfnLayerObject restoreRscDfnData(
+    protected <RSC extends AbsResource<RSC>> @Nullable RscDfnLayerObject restoreRscDfnData(
         ResourceDefinition rscDfnRef,
         AbsRscLayerObject<RSC> fromSnapDataRef
     )
@@ -404,7 +404,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected <RSC extends AbsResource<RSC>> VlmDfnLayerObject restoreVlmDfnData(
+    protected <RSC extends AbsResource<RSC>> @Nullable VlmDfnLayerObject restoreVlmDfnData(
         VolumeDefinition vlmDfnRef,
         VlmProviderObject<RSC> fromSnapVlmDataRef
     )

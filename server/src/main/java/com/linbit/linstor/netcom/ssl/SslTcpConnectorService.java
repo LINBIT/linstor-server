@@ -1,5 +1,23 @@
 package com.linbit.linstor.netcom.ssl;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
+import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import com.linbit.linstor.netcom.ConnectionObserver;
+import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.MessageProcessor;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.TcpConnectorService;
+import com.linbit.linstor.security.AccessContext;
+
+import javax.annotation.Nonnull;
+import javax.net.ssl.SSLContext;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -11,25 +29,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-
-import javax.net.ssl.SSLContext;
-
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.ServiceName;
-import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
-import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
-import com.linbit.linstor.netcom.ConnectionObserver;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.MessageProcessor;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.netcom.TcpConnectorService;
-import com.linbit.linstor.security.AccessContext;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import javax.annotation.Nonnull;
 
 
 public class SslTcpConnectorService extends TcpConnectorService
@@ -367,7 +368,7 @@ public class SslTcpConnectorService extends TcpConnectorService
      *
      * @return SslTcpConnectorPeer object scheduled for continuing the SSL handshake
      */
-    private SslTcpConnectorPeer nextTaskCompletionEntry()
+    private @Nullable SslTcpConnectorPeer nextTaskCompletionEntry()
     {
         SslTcpConnectorPeer connPeer;
         synchronized (taskCompletionMap)

@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects.utils;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -37,7 +38,6 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.MathUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

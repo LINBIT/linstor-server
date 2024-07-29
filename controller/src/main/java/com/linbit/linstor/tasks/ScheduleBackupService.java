@@ -7,6 +7,7 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -39,7 +40,6 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -221,9 +221,9 @@ public class ScheduleBackupService implements SystemService
     }
 
     public Set<ScheduledShippingConfig> getAllFilteredActiveShippings(
-        String rscName,
-        String remoteName,
-        String scheduleName
+        @Nullable String rscName,
+        @Nullable String remoteName,
+        @Nullable String scheduleName
     )
     {
         synchronized (syncObj)
@@ -333,9 +333,9 @@ public class ScheduleBackupService implements SystemService
      * @throws AccessDeniedException
      */
     public void addNewTask(
-        ResourceDefinition rscDfn,
-        Schedule schedule,
-        AbsRemote remote,
+        @Nullable ResourceDefinition rscDfn,
+        @Nullable Schedule schedule,
+        @Nullable AbsRemote remote,
         boolean lastInc,
         AccessContext accCtx
     )
@@ -361,9 +361,9 @@ public class ScheduleBackupService implements SystemService
      * @throws AccessDeniedException
      */
     public void addTaskAgain(
-        ResourceDefinition rscDfn,
-        Schedule schedule,
-        AbsRemote remote,
+        @Nullable ResourceDefinition rscDfn,
+        @Nullable Schedule schedule,
+        @Nullable AbsRemote remote,
         long lastStartTime,
         boolean lastBackupSucceeded,
         boolean forceSkip,
@@ -514,7 +514,7 @@ public class ScheduleBackupService implements SystemService
         // maybe add else if running ...
     }
 
-    public ScheduledShippingConfig getConfig(ResourceDefinition rscDfn, AbsRemote remote, Schedule schedule)
+    public @Nullable ScheduledShippingConfig getConfig(ResourceDefinition rscDfn, AbsRemote remote, Schedule schedule)
     {
         ScheduledShippingConfig ret = null;
         Set<ScheduledShippingConfig> confs = rscDfnLookupMap.get(rscDfn);
@@ -831,7 +831,7 @@ public class ScheduleBackupService implements SystemService
      * @throws DatabaseException
      * @throws InvalidKeyException
      */
-    private void removeAllRelatedProps(String remoteName, String scheduleName, AccessContext accCtx)
+    private void removeAllRelatedProps(@Nullable String remoteName, @Nullable String scheduleName, AccessContext accCtx)
         throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
         Set<ResourceGroup> rscGrps = new HashSet<>();
@@ -847,7 +847,7 @@ public class ScheduleBackupService implements SystemService
         removePropsFromContainer(systemConfRepository.getCtrlConfForChange(accCtx), remoteName, scheduleName);
     }
 
-    private void removePropsFromContainer(Props props, String remoteName, String scheduleName)
+    private void removePropsFromContainer(Props props, @Nullable String remoteName, @Nullable String scheduleName)
         throws InvalidKeyException, DatabaseException, AccessDeniedException
     {
         @Nullable Props namespaceProps = props.getNamespace(InternalApiConsts.NAMESPC_SCHEDULE);
@@ -932,13 +932,13 @@ public class ScheduleBackupService implements SystemService
         public final AbsRemote remote;
         public final ResourceDefinition rscDfn;
         public final boolean lastInc;
-        public final Map<String, String> storpoolRenameMap;
+        public final @Nullable Map<String, String> storpoolRenameMap;
         public final @Nullable String dstRscGrp;
         public final boolean forceRscGrp;
 
         public Pair<Long, Boolean> timeoutAndType;
-        public Long timeoutAndTypeCalculatedFrom;
-        private BackupShippingTask task;
+        public @Nullable Long timeoutAndTypeCalculatedFrom;
+        private @Nullable BackupShippingTask task;
         public int retryCt;
 
         ScheduledShippingConfig(
@@ -947,8 +947,8 @@ public class ScheduleBackupService implements SystemService
             ResourceDefinition rscDfnRef,
             boolean lastIncRef,
             Pair<Long, Boolean> timeoutAndTypeRef,
-            Long timeoutAndTypeCalculatedFromRef,
-            Map<String, String> storpoolRenameMapRef,
+            @Nullable Long timeoutAndTypeCalculatedFromRef,
+            @Nullable Map<String, String> storpoolRenameMapRef,
             @Nullable String dstRscGrpRef,
             boolean forceRscGrpRef
         )

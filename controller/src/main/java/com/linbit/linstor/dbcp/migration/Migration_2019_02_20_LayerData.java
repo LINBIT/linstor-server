@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
@@ -352,7 +353,7 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
         String nodeName,
         String rscName,
         String layerKind,
-        Integer parentRscLayerId
+        @Nullable Integer parentRscLayerId
     )
         throws SQLException
     {
@@ -374,7 +375,7 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
         return layerId;
     }
 
-    private Object querySingleResult(Connection connection, String query, Object... params)
+    private @Nullable Object querySingleResult(Connection connection, String query, Object... params)
         throws SQLException
     {
         Object ret = null;
@@ -430,10 +431,10 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
 
     private static class Pair<A, B>
     {
-        A objA;
-        B objB;
+        @Nullable A objA;
+        @Nullable B objB;
 
-        Pair(A objARef, B objBRef)
+        Pair(@Nullable A objARef, @Nullable B objBRef)
         {
             objA = objARef;
             objB = objBRef;

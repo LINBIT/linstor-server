@@ -5,6 +5,7 @@ import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
@@ -52,7 +53,7 @@ public class SpdkRemoteCommands implements SpdkCommands<JsonNode>
     private final StltConfigAccessor stltConfigAccessor;
 
     private final RestHttpClient restClient;
-    private ReadOnlyProps localNodeProps;
+    private @Nullable ReadOnlyProps localNodeProps;
 
     @Inject
     public SpdkRemoteCommands(
@@ -305,7 +306,7 @@ public class SpdkRemoteCommands implements SpdkCommands<JsonNode>
         return request("nvmf_subsystem_remove_ns", getPrioProps(null), params).getData();
     }
 
-    private RestResponse<JsonNode> request(String method, PriorityProps prioProps, Map<String, Object> params)
+    private RestResponse<JsonNode> request(String method, PriorityProps prioProps, @Nullable Map<String, Object> params)
         throws StorageException
     {
         return request(errorReporter, restClient, method, prioProps, params);
@@ -327,7 +328,7 @@ public class SpdkRemoteCommands implements SpdkCommands<JsonNode>
         RestClient restClient,
         String method,
         PriorityProps prioProps,
-        Map<String, Object> params
+        @Nullable Map<String, Object> params
     )
         throws StorageException
     {
@@ -418,12 +419,12 @@ public class SpdkRemoteCommands implements SpdkCommands<JsonNode>
             .build();
     }
 
-    private static String get(PriorityProps prioPropsRef, String key)
+    private static @Nullable String get(PriorityProps prioPropsRef, String key)
     {
         return prioPropsRef.getProp(key, StorageConstants.NAMESPACE_STOR_DRIVER);
     }
 
-    private PriorityProps getPrioProps(StorPool storPoolRef) throws AccessDeniedException
+    private PriorityProps getPrioProps(@Nullable StorPool storPoolRef) throws AccessDeniedException
     {
         PriorityProps prioProps = new PriorityProps();
         if (storPoolRef != null)

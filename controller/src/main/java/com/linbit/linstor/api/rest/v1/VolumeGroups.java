@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
@@ -78,7 +79,7 @@ public class VolumeGroups
     public Response listVolumeGroup(
         @Context Request request,
         @PathParam("rscName") String rscName,
-        @PathParam("vlmNr") Integer vlmNr,
+        @PathParam("vlmNr") @Nullable Integer vlmNr,
         @DefaultValue("0") @QueryParam("limit") int limitRef,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
@@ -87,7 +88,7 @@ public class VolumeGroups
         {
 
             List<VolumeGroupApi> vlmGrpList =  ctrlApiCallHandler.listVolumeGroups(rscName, vlmNr);
-            int limit = vlmGrpList.size();
+                int limit = vlmGrpList.size();
             if (limitRef != 0)
             {
                 limit = limitRef;

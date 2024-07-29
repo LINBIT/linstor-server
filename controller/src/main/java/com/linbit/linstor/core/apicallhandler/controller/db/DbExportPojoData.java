@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller.db;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 
@@ -52,7 +53,7 @@ public class DbExportPojoData extends DbExportPojoMeta
         public final List<LinstorSpec<?, ?>> data;
 
         @JsonIgnore
-        public final Class<? extends LinstorCrd<?>> crdClass;
+        public final @Nullable Class<? extends LinstorCrd<?>> crdClass;
 
         // no JsonCreator annotation, since we need a custom deserializer to also inject the correct crdClass
         // which cannot be properly deserialized by Jackson
@@ -60,7 +61,7 @@ public class DbExportPojoData extends DbExportPojoMeta
             String nameRef,
             List<Column> columnDescriptionRef,
             List<LinstorSpec<?, ?>> dataRef,
-            Class<? extends LinstorCrd<?>> crdClassRef
+            @Nullable Class<? extends LinstorCrd<?>> crdClassRef
         )
         {
             name = nameRef;

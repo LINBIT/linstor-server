@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -52,7 +53,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -65,6 +65,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -357,7 +358,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         return flux;
     }
 
-    private Flux<ApiCallRc> abortDeactivateOldRsc(Resource oldActiveRsc, Resource newActiveRsc)
+    private Flux<ApiCallRc> abortDeactivateOldRsc(Resource oldActiveRsc, @Nullable Resource newActiveRsc)
     {
         return scopeRunner.fluxInTransactionalScope(
             "Abort deactivate old rsc",
@@ -385,7 +386,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         return flux;
     }
 
-    private Resource getActiveRsc(Resource myRsc)
+    private @Nullable Resource getActiveRsc(Resource myRsc)
     {
         Resource activeRsc = null;
         ResourceDefinition rscDfn = myRsc.getResourceDefinition();
@@ -412,7 +413,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         return activeRsc;
     }
 
-    private Resource getActiveRsc(ResourceWithPayloadApi rscToCreate, Node node, ResourceDefinition rscDfn)
+    private @Nullable Resource getActiveRsc(ResourceWithPayloadApi rscToCreate, Node node, ResourceDefinition rscDfn)
     {
         Resource activeRsc = null;
         try
@@ -495,7 +496,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         return ret;
     }
 
-    private String get(List<Map<String, String>> prioMapsRef, String key)
+    private @Nullable String get(List<Map<String, String>> prioMapsRef, String key)
     {
         String value = null;
         for (Map<String, String> map : prioMapsRef)
@@ -798,7 +799,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         return foundPeer;
     }
 
-    private ResourceWithPayloadApi getSharedResourceCreationPojo(ResourceDefinition rscDfnRef, Node nodeRef)
+    private @Nullable ResourceWithPayloadApi getSharedResourceCreationPojo(ResourceDefinition rscDfnRef, Node nodeRef)
     {
         ResourceWithPayloadApi ret = null;
         try
@@ -878,8 +879,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                                 vlm.getVolumeNumber().value,
                                 0,
                                 vlmsProps,
-                                null,
-                                null,
+                                Optional.empty(),
+                                Optional.empty(),
                                 null,
                                 null,
                                 null,
@@ -944,7 +945,7 @@ public class CtrlRscMakeAvailableApiCallHandler
     private AutoSelectFilterPojo createAutoSelectConfig(
         String nodeName,
         List<DeviceLayerKind> layerStack,
-        Resource.Flags disklessFlag
+        @Nullable Resource.Flags disklessFlag
     )
     {
         return new AutoSelectFilterBuilder()

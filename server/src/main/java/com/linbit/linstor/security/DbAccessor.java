@@ -1,6 +1,7 @@
 package com.linbit.linstor.security;
 
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
@@ -12,6 +13,7 @@ import com.linbit.linstor.security.pojo.SignInEntryPojo;
  */
 public interface DbAccessor<DB_TYPE extends ControllerDatabase>
 {
+    @Nullable
     SignInEntryPojo getSignInEntry(DB_TYPE ctrlDb, IdentityName idName)
         throws DatabaseException;
 
@@ -23,6 +25,7 @@ public interface DbAccessor<DB_TYPE extends ControllerDatabase>
     )
         throws DatabaseException;
 
+    @Nullable
     IdentityRoleEntryPojo getIdRoleMapEntry(DB_TYPE ctrlDb, IdentityName idName, RoleName rlName)
         throws DatabaseException;
 

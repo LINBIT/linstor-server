@@ -3,10 +3,9 @@ package com.linbit.linstor.dbcp.migration;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.DatabaseInfo.DbProduct;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.utils.StringUtils;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -113,14 +112,13 @@ public class MigrationUtils
         String column,
         String typeRef,
         boolean nullable,
-        String defaultValRef,
+        @Nullable String defaultValRef,
         @Nullable String afterColumn
     )
     {
         StringBuilder sql = new StringBuilder();
 
         String type = replaceTypesByDialect(database, typeRef);
-        database.name();
 
         String defaultVal = null;
         if (defaultValRef != null)

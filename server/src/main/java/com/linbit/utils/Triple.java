@@ -1,18 +1,20 @@
 package com.linbit.utils;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import com.google.common.base.Objects;
 
 public class Triple<A, B, C> implements Comparable<Triple<A, B, C>>
 {
-    public A objA;
-    public B objB;
-    public C objC;
+    public @Nullable A objA;
+    public @Nullable B objB;
+    public @Nullable C objC;
 
     public Triple()
     {
     }
 
-    public Triple(A aRef, B bRef, C cRef)
+    public Triple(@Nullable A aRef, @Nullable B bRef, @Nullable C cRef)
     {
         objA = aRef;
         objB = bRef;

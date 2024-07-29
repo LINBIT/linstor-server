@@ -2,15 +2,15 @@ package com.linbit.linstor.logging;
 
 import com.linbit.linstor.ErrorContextSupplier;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.utils.TimeUtils;
 
-import javax.annotation.Nullable;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -53,6 +53,9 @@ public abstract class BaseErrorReporter
 
     public static final Pattern LIGHT_CHECKPOINT_PATTERN =
         Pattern.compile("is identified by light checkpoint \\[([^]]*)");
+
+    // needs to be non-static because SimpleDateFormat is not threadsafe
+    private final SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
 
     @SuppressWarnings("checkstyle:magicnumber")
     BaseErrorReporter(String moduleName, boolean printStackTracesRef, String nodeNameRef)
@@ -299,7 +302,7 @@ public abstract class BaseErrorReporter
         return detailsAvailable;
     }
 
-    void reportExceptionDetails(ErrorReportRenderer output, Throwable errorInfo, String contextInfo)
+    void reportExceptionDetails(ErrorReportRenderer output, Throwable errorInfo, @Nullable String contextInfo)
     {
         String category;
         if (errorInfo instanceof LinStorException)

@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
@@ -150,7 +151,7 @@ public class ResourceDefinitionDbDriver
     }
 
     @Override
-    protected Pair<ResourceDefinition, ResourceDefinition.InitMaps> load(
+    protected @Nullable Pair<ResourceDefinition, ResourceDefinition.InitMaps> load(
         RawParameters raw,
         Map<ResourceGroupName, ResourceGroup> rscGrpMap
     )

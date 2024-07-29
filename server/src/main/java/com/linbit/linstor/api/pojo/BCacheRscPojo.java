@@ -1,13 +1,12 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import javax.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -110,18 +109,18 @@ public class BCacheRscPojo implements RscLayerDataApi
     {
         private final int vlmNr;
         @JsonIgnore
-        private final String devicePath;
+        private final @Nullable String devicePath;
         @JsonIgnore
-        private final String dataDevice;
+        private final @Nullable String dataDevice;
         @JsonIgnore
-        private final String cacheDevice;
-        private final String cacheStorPoolName;
+        private final @Nullable String cacheDevice;
+        private final @Nullable String cacheStorPoolName;
         @JsonIgnore
         private final long allocatedSize;
         @JsonIgnore
         private final long usableSize;
         @JsonIgnore
-        private final String diskState;
+        private final @Nullable String diskState;
         @JsonIgnore
         private final long discGran;
         @JsonIgnore
@@ -131,13 +130,13 @@ public class BCacheRscPojo implements RscLayerDataApi
 
         public BCacheVlmPojo(
             int vlmNrRef,
-            String devicePathRef,
-            String dataDeviceRef,
-            String cacheDeviceRef,
-            String cacheStorPoolNameRef,
+            @Nullable String devicePathRef,
+            @Nullable String dataDeviceRef,
+            @Nullable String cacheDeviceRef,
+            @Nullable String cacheStorPoolNameRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef,
+            @Nullable String diskStateRef,
             long discGranRef,
             @Nullable UUID deviceUuidRef,
             boolean existsRef
@@ -194,22 +193,22 @@ public class BCacheRscPojo implements RscLayerDataApi
         }
 
         @Override
-        public String getDevicePath()
+        public @Nullable String getDevicePath()
         {
             return devicePath;
         }
 
-        public String getDataDevice()
+        public @Nullable String getDataDevice()
         {
             return dataDevice;
         }
 
-        public String getCacheDevice()
+        public @Nullable String getCacheDevice()
         {
             return cacheDevice;
         }
 
-        public String getCacheStorPoolName()
+        public @Nullable String getCacheStorPoolName()
         {
             return cacheStorPoolName;
         }

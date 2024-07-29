@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbdrivers.k8s;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.StatusDetails;
@@ -71,5 +73,6 @@ public interface K8sResourceClient<T>
      * @param name The name of the item to get.
      * @return The item of the given name or null, if non could be found.
      */
+    @Nullable
     T get(String name);
 }

@@ -1,14 +1,13 @@
 package com.linbit.linstor.layer.storage.file.utils;
 
+import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.ExceptionThrowingFunction;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -29,17 +28,22 @@ public class FileProviderUtils
 
     public static class FileInfo
     {
-        public final @Nonnull Path directory;
-        public final @Nonnull String identifier;
+        public final Path directory;
+        public final String identifier;
         public final @Nullable Path loPath; // null for snapshots
         public final long size;
 
-        public FileInfo(@Nullable Path loPathRef, @Nonnull Path backingPathRef)
+        public FileInfo(@Nullable Path loPathRef, Path backingPathRef)
         {
             loPath = loPathRef;
 
             directory = backingPathRef.getParent();
-            identifier = backingPathRef.getFileName().toString();
+            Path fileName = backingPathRef.getFileName();
+            if (fileName == null)
+            {
+                throw new ImplementationError("FileInfo.identifier cannot be null");
+            }
+            identifier = fileName.toString();
 
             size = SizeConv.convert(
                 backingPathRef.toFile().length(),
@@ -50,15 +54,20 @@ public class FileProviderUtils
 
         public FileInfo(
             @Nullable Path loPathRef,
-            @Nonnull Path backingPathRef,
-            @Nonnull ExceptionThrowingFunction<String, Long, StorageException> allocatedSizeGetterRef
+            Path backingPathRef,
+            ExceptionThrowingFunction<String, Long, StorageException> allocatedSizeGetterRef
         )
             throws StorageException
         {
             loPath = loPathRef;
 
             directory = backingPathRef.getParent();
-            identifier = backingPathRef.getFileName().toString();
+            Path fileName = backingPathRef.getFileName();
+            if (fileName == null)
+            {
+                throw new ImplementationError("FileInfo.identifier cannot be null");
+            }
+            identifier = fileName.toString();
 
             size = allocatedSizeGetterRef.accept(loPathRef.toString());
         }

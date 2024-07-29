@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
 
 @K8sCrdMigration(
@@ -15,7 +16,7 @@ public class Migration_02_v1_15_0_fixRollbackSpec extends BaseK8sCrdMigration
     }
 
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         // load data from database that needs to change
 

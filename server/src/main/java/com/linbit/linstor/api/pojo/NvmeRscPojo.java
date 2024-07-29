@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.layer.LayerIgnoreReason;
@@ -105,15 +106,15 @@ public class NvmeRscPojo implements RscLayerDataApi
     {
         private final int vlmNr;
         @JsonIgnore
-        private final String devicePath;
+        private final @Nullable String devicePath;
         @JsonIgnore
-        private final String backingDisk;
+        private final @Nullable String backingDisk;
         @JsonIgnore
         private final long allocatedSize;
         @JsonIgnore
         private final long usableSize;
         @JsonIgnore
-        private final String diskState;
+        private final @Nullable String diskState;
         @JsonIgnore
         private final long discGran;
         @JsonIgnore
@@ -121,11 +122,11 @@ public class NvmeRscPojo implements RscLayerDataApi
 
         public NvmeVlmPojo(
             int vlmNrRef,
-            String devicePathRef,
-            String backingDiskRef,
+            @Nullable String devicePathRef,
+            @Nullable String backingDiskRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef,
+            @Nullable String diskStateRef,
             long discGranRef,
             boolean existsRef
         )

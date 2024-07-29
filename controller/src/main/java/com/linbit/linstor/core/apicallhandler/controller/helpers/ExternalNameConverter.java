@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceName;
 
@@ -113,7 +114,7 @@ public class ExternalNameConverter
         return rscName;
     }
 
-    private static ResourceName translateGenInput(final byte[] genInput)
+    private static @Nullable ResourceName translateGenInput(final byte[] genInput)
     {
         ResourceName rscName = null;
         int inputLength = Math.min(genInput.length, ResourceName.MAX_LENGTH);

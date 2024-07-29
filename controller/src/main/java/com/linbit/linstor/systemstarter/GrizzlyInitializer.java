@@ -3,6 +3,7 @@ package com.linbit.linstor.systemstarter;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.rest.v1.config.GrizzlyHttpService;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -20,7 +21,7 @@ public class GrizzlyInitializer implements StartupInitializer
     private final ErrorReporter errorReporter;
     private final CtrlConfig ctrlCfg;
     private final Map<ServiceName, SystemService> systemServicesMap;
-    private GrizzlyHttpService grizzlyHttpService;
+    private @Nullable GrizzlyHttpService grizzlyHttpService;
 
     public GrizzlyInitializer(
         Injector injectorRef,

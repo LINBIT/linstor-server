@@ -1,12 +1,13 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.types.MinorNumber;
 
 public class VolumeState
 {
-    protected VolumeNumber vlmNr;
-    protected MinorNumber minorNr;
+    protected @Nullable VolumeNumber vlmNr;
+    protected @Nullable MinorNumber minorNr;
 
     /**
      * Indicates whether the volume is currently active (in use by DRBD)
@@ -56,7 +57,7 @@ public class VolumeState
     /**
      * Drbd disk state
      */
-    protected String diskState = null;
+    protected @Nullable String diskState = null;
 
     public VolumeState()
     {

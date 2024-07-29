@@ -1,21 +1,23 @@
 package com.linbit.linstor.core.cfg;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.Set;
 
 public class StltTomlConfig
 {
     public static class NETCOM
     {
-        private String type;
-        private String bind_address;
-        private Integer port;
+        private @Nullable String type;
+        private @Nullable String bind_address;
+        private @Nullable Integer port;
 
-        private String server_certificate;
-        private String key_password;
-        private String keystore_password;
-        private String truststore_password;
-        private String trusted_certificates;
-        private String ssl_protocol;
+        private @Nullable String server_certificate;
+        private @Nullable String key_password;
+        private @Nullable String keystore_password;
+        private @Nullable String truststore_password;
+        private @Nullable String trusted_certificates;
+        private @Nullable String ssl_protocol;
 
         public void applyTo(StltConfig cfg)
         {
@@ -35,8 +37,8 @@ public class StltTomlConfig
 
     public static class Logging
     {
-        private String level;
-        private String linstor_level;
+        private @Nullable String level;
+        private @Nullable String linstor_level;
 
         public void applyTo(StltConfig cfg)
         {
@@ -47,7 +49,7 @@ public class StltTomlConfig
 
     static class Files
     {
-        private Set<String> allowExtFiles;
+        private @Nullable Set<String> allowExtFiles;
 
         public void applyTo(StltConfig cfg)
         {

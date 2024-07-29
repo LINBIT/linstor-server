@@ -1,6 +1,7 @@
 package com.linbit.linstor.security;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.SecConfigDatabaseDriver;
@@ -20,7 +21,6 @@ import javax.inject.Singleton;
 
 @Singleton
 public class DbK8sCrdPersistence extends BaseDbAccessor<ControllerK8sCrdDatabase>
-    implements DbAccessor<ControllerK8sCrdDatabase>
 {
     private final ControllerK8sCrdTransactionMgrGenerator txMgrGen;
 
@@ -62,7 +62,7 @@ public class DbK8sCrdPersistence extends BaseDbAccessor<ControllerK8sCrdDatabase
     }
 
     @Override
-    public IdentityRoleEntryPojo getIdRoleMapEntry(
+    public @Nullable IdentityRoleEntryPojo getIdRoleMapEntry(
         ControllerK8sCrdDatabase k8sCrdDb,
         IdentityName idName,
         RoleName rlName
@@ -84,7 +84,7 @@ public class DbK8sCrdPersistence extends BaseDbAccessor<ControllerK8sCrdDatabase
     }
 
     @Override
-    public IdentityRoleEntryPojo getDefaultRole(ControllerK8sCrdDatabase k8sCrdDb, IdentityName idName)
+    public @Nullable IdentityRoleEntryPojo getDefaultRole(ControllerK8sCrdDatabase k8sCrdDb, IdentityName idName)
         throws DatabaseException
     {
         IdentityRoleEntryPojo identityRoleEntry = null;
@@ -97,7 +97,7 @@ public class DbK8sCrdPersistence extends BaseDbAccessor<ControllerK8sCrdDatabase
         return identityRoleEntry;
     }
 
-    private SecIdentitiesSpec loadIdentity(
+    private @Nullable SecIdentitiesSpec loadIdentity(
         ControllerK8sCrdTransactionMgr tx,
         IdentityName idNameRef,
         boolean failIfNull
@@ -112,7 +112,7 @@ public class DbK8sCrdPersistence extends BaseDbAccessor<ControllerK8sCrdDatabase
         );
     }
 
-    private SecDfltRolesSpec loadDefaultRole(
+    private @Nullable SecDfltRolesSpec loadDefaultRole(
         ControllerK8sCrdTransactionMgr tx,
         IdentityName idNameRef,
         boolean failIfNull
@@ -127,7 +127,7 @@ public class DbK8sCrdPersistence extends BaseDbAccessor<ControllerK8sCrdDatabase
         );
     }
 
-    private SecRolesSpec loadRole(
+    private @Nullable SecRolesSpec loadRole(
         ControllerK8sCrdTransactionMgr tx,
         String roleNameRef,
         boolean failIfNull
@@ -142,7 +142,7 @@ public class DbK8sCrdPersistence extends BaseDbAccessor<ControllerK8sCrdDatabase
         );
     }
 
-    private SecIdRoleMapSpec loadIdRole(
+    private @Nullable SecIdRoleMapSpec loadIdRole(
         ControllerK8sCrdTransactionMgr tx,
         IdentityName idName,
         RoleName roleName,

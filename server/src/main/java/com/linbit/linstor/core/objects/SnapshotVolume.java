@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -44,7 +45,7 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     private final Props vlmProps;
 
     // deliberately not a TransactionObject to behave the same as SatelliteResourceStates
-    private volatile String state;
+    private volatile @Nullable String state;
 
     private final Key snapVlmKey;
 
@@ -111,7 +112,7 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
         return snapshotVolumeDefinition;
     }
 
-    public String getState(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable String getState(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);

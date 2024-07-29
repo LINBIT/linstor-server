@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -20,7 +21,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -122,7 +122,7 @@ public class CtrlSnapLayerDataFactory
     private AbsRscLayerObject<Snapshot> copyRec(
         Snapshot snapRef,
         AbsRscLayerObject<Resource> rscDataRef,
-        AbsRscLayerObject<Snapshot> parentRef
+        @Nullable AbsRscLayerObject<Snapshot> parentRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
@@ -191,7 +191,7 @@ public class CtrlSnapLayerDataFactory
     private AbsRscLayerObject<Snapshot> restoreRec(
         RscLayerDataApi fromRscLayerDataApiRef,
         Snapshot toSnapshotRef,
-        AbsRscLayerObject<Snapshot> parentRef,
+        @Nullable AbsRscLayerObject<Snapshot> parentRef,
         Map<String, String> renameStorPoolMapRef,
         @Nullable ApiCallRc apiCallRc
     )

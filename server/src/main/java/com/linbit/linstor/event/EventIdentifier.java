@@ -1,5 +1,6 @@
 package com.linbit.linstor.event;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -9,11 +10,11 @@ import java.util.Objects;
 
 public class EventIdentifier
 {
-    private final String eventName;
+    private final @Nullable String eventName;
 
     private final ObjectIdentifier objectIdentifier;
 
-    public static EventIdentifier global(String eventName)
+    public static EventIdentifier global(@Nullable String eventName)
     {
         return new EventIdentifier(eventName, ObjectIdentifier.global());
     }
@@ -61,13 +62,17 @@ public class EventIdentifier
     }
 
     public static EventIdentifier snapshot(
-        String eventName, NodeName nodeName, ResourceName resourceName, SnapshotName snapshotName)
+        @Nullable String eventName,
+        NodeName nodeName,
+        ResourceName resourceName,
+        SnapshotName snapshotName
+    )
     {
         return new EventIdentifier(eventName, ObjectIdentifier.snapshot(nodeName, resourceName, snapshotName));
     }
 
     public EventIdentifier(
-        String eventNameRef,
+        @Nullable String eventNameRef,
         ObjectIdentifier objectIdentifierRef
     )
     {
@@ -75,32 +80,32 @@ public class EventIdentifier
         objectIdentifier = objectIdentifierRef;
     }
 
-    public String getEventName()
+    public @Nullable String getEventName()
     {
         return eventName;
     }
 
-    public NodeName getNodeName()
+    public @Nullable NodeName getNodeName()
     {
         return objectIdentifier.getNodeName();
     }
 
-    public ResourceName getResourceName()
+    public @Nullable ResourceName getResourceName()
     {
         return objectIdentifier.getResourceName();
     }
 
-    public VolumeNumber getVolumeNumber()
+    public @Nullable VolumeNumber getVolumeNumber()
     {
         return objectIdentifier.getVolumeNumber();
     }
 
-    public SnapshotName getSnapshotName()
+    public @Nullable SnapshotName getSnapshotName()
     {
         return objectIdentifier.getSnapshotName();
     }
 
-    public NodeName getPeerNodeName()
+    public @Nullable NodeName getPeerNodeName()
     {
         return objectIdentifier.getPeerNodeName();
     }

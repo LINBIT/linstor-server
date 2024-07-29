@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ public interface ControllerDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
      * @return
      * @throws DatabaseException
      */
-    Map<DATA, INIT_MAPS> loadAll(LOAD_ALL parentRef) throws DatabaseException;
+    Map<DATA, INIT_MAPS> loadAll(@Nullable LOAD_ALL parentRef) throws DatabaseException;
 
     /**
      * Returns an {@link ArrayList} of the keys returned by {@link #loadAll}
@@ -28,7 +29,7 @@ public interface ControllerDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
      * @return
      * @throws DatabaseException
      */
-    default ArrayList<DATA> loadAllAsList(LOAD_ALL loadAllData) throws DatabaseException
+    default ArrayList<DATA> loadAllAsList(@Nullable LOAD_ALL loadAllData) throws DatabaseException
     {
         return new ArrayList<>(loadAll(loadAllData).keySet());
     }

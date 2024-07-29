@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -108,7 +109,7 @@ public class ResourceConnectionDbDriver
     }
 
     @Override
-    protected Pair<ResourceConnection, Void> load(
+    protected @Nullable Pair<ResourceConnection, Void> load(
         RawParameters raw,
         Map<Pair<NodeName, ResourceName>, ? extends Resource> rscMap
     )

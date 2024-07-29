@@ -58,7 +58,7 @@ public class EbsUtils
         return rscOrSnapRef.getNode().getNodeType(accCtx).equals(Node.Type.EBS_TARGET);
     }
 
-    public static String getEbsVlmId(AccessContext accCtx, EbsData<?> vlmDataRef) throws AccessDeniedException
+    public static @Nullable String getEbsVlmId(AccessContext accCtx, EbsData<?> vlmDataRef) throws AccessDeniedException
     {
         ReadOnlyProps props;
         AbsVolume<?> absVlm = vlmDataRef.getVolume();
@@ -83,7 +83,7 @@ public class EbsUtils
         return EBS_VLM_ID_BASE_KEY + rscSuffixRef;
     }
 
-    public static String getEbsSnapId(AccessContext accCtx, EbsData<Snapshot> snapVlmDataRef)
+    public static @Nullable String getEbsSnapId(AccessContext accCtx, EbsData<Snapshot> snapVlmDataRef)
         throws AccessDeniedException
     {
         return ((SnapshotVolume) snapVlmDataRef.getVolume())
@@ -91,12 +91,12 @@ public class EbsUtils
             .getProp(getEbsSnapIdKey(snapVlmDataRef));
     }
 
-    public static String getEbsSnapId(ReadOnlyProps snapVlmPropsRef, String rscLayerSuffix)
+    public static @Nullable String getEbsSnapId(ReadOnlyProps snapVlmPropsRef, String rscLayerSuffix)
     {
         return snapVlmPropsRef.getProp(getEbsSnapIdKey(rscLayerSuffix));
     }
 
-    public static String getEbsSnapId(Map<String, String> snapVlmPropsPojoRef, String rscLayerSuffix)
+    public static @Nullable String getEbsSnapId(Map<String, String> snapVlmPropsPojoRef, String rscLayerSuffix)
     {
         return snapVlmPropsPojoRef.get(getEbsSnapIdKey(rscLayerSuffix));
     }

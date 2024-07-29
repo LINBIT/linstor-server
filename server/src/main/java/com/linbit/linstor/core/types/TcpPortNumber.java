@@ -2,6 +2,7 @@ package com.linbit.linstor.core.types;
 
 import com.linbit.Checks;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 
 /**
  * Transmission Control Protocol port number
@@ -107,7 +108,7 @@ public class TcpPortNumber implements Comparable<TcpPortNumber>
         Checks.genericRangeCheck(portNr, PORT_NR_MIN, PORT_NR_MAX, PORT_NR_EXC_FORMAT);
     }
 
-    public static Integer getValueNullable(TcpPortNumber tcpPortNumber)
+    public static @Nullable Integer getValueNullable(TcpPortNumber tcpPortNumber)
     {
         return tcpPortNumber == null ? null : tcpPortNumber.value;
     }

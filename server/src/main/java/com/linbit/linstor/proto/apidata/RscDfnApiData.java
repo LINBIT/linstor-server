@@ -1,5 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
@@ -35,7 +36,7 @@ public class RscDfnApiData implements ResourceDefinitionApi
     }
 
     @Override
-    public UUID getUuid()
+    public @Nullable UUID getUuid()
     {
         UUID uuid = null;
         if (rscDfn.hasRscDfnUuid())

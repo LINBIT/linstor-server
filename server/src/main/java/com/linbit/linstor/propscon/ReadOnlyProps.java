@@ -18,15 +18,20 @@ public interface ReadOnlyProps extends Iterable<Map.Entry<String, String>>
 
     LinStorObject getType();
 
+    @Nullable
     String getProp(String key)
         throws InvalidKeyException;
 
-    String getPropWithDefault(String key, String defaultValue) throws InvalidKeyException;
+    @Nullable
+    String getPropWithDefault(String key, @Nullable String defaultValue) throws InvalidKeyException;
 
-    String getProp(String key, String namespace)
+    @Nullable
+    String getProp(String key, @Nullable String namespace)
         throws InvalidKeyException;
 
-    String getPropWithDefault(String key, String namespace, String defaultValue) throws InvalidKeyException;
+    @Nullable
+    String getPropWithDefault(String key, @Nullable String namespace, @Nullable String defaultValue)
+        throws InvalidKeyException;
 
     int size();
 
@@ -51,7 +56,8 @@ public interface ReadOnlyProps extends Iterable<Map.Entry<String, String>>
 
     Iterator<String> valuesIterator();
 
-    @Nullable ReadOnlyProps getNamespace(String namespace);
+    @Nullable
+    ReadOnlyProps getNamespace(@Nullable String namespace);
 
     default ReadOnlyProps getNamespaceOrEmpty(String namespace)
     {

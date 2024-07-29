@@ -12,6 +12,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.NodeIdAlloc;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -66,7 +67,6 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -305,7 +305,7 @@ public class RscDrbdLayerHelper extends
         String rscNameSuffixRef,
         List<DeviceLayerKind> layerListRef,
         DrbdRscDfnData<Resource> drbdRscDfnData,
-        NodeId oldNodeIdRef
+        @Nullable NodeId oldNodeIdRef
     )
         throws AccessDeniedException, InvalidNameException, DatabaseException, ImplementationError,
         ExhaustedPoolException, ValueOutOfRangeException
@@ -542,7 +542,7 @@ public class RscDrbdLayerHelper extends
         return drbdVlmData;
     }
 
-    private StorPool getExternalMetaDiskStorPool(Volume vlm)
+    private @Nullable StorPool getExternalMetaDiskStorPool(Volume vlm)
         throws InvalidKeyException, AccessDeniedException
     {
         String extMetaStorPoolNameStr = getExtMetaDataStorPoolName(vlm);
@@ -779,21 +779,20 @@ public class RscDrbdLayerHelper extends
         return changed;
     }
 
-    public StorPool getMetaStorPool(Volume vlmRef, AccessContext accCtx)
+    public @Nullable StorPool getMetaStorPool(Volume vlmRef, AccessContext accCtx)
         throws AccessDeniedException, InvalidNameException
     {
         return getMetaStorPool(vlmRef.getAbsResource(), vlmRef.getVolumeDefinition(), accCtx);
     }
 
-    public StorPool getMetaStorPool(Resource rsc, VolumeDefinition vlmDfn, AccessContext accCtx)
+    public @Nullable StorPool getMetaStorPool(Resource rsc, VolumeDefinition vlmDfn, AccessContext accCtx)
         throws AccessDeniedException, InvalidNameException
     {
-        return getMetaStorPool(rsc, vlmDfn, getPrioProps(rsc, vlmDfn, accCtx), accCtx);
+        return getMetaStorPool(rsc, getPrioProps(rsc, vlmDfn, accCtx), accCtx);
     }
 
-    private StorPool getMetaStorPool(
+    private @Nullable StorPool getMetaStorPool(
         Resource rsc,
-        VolumeDefinition vlmDfn,
         PriorityProps prioProps,
         AccessContext accCtx
     )
@@ -971,7 +970,7 @@ public class RscDrbdLayerHelper extends
         );
     }
 
-    private NodeId getNodeId(Integer nodeIdIntRef, DrbdRscDfnData<Resource> drbdRscDfnData)
+    private NodeId getNodeId(@Nullable Integer nodeIdIntRef, DrbdRscDfnData<Resource> drbdRscDfnData)
         throws ExhaustedPoolException, ValueOutOfRangeException
     {
         NodeId nodeId;

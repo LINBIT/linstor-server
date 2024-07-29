@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -13,8 +14,8 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
-import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.EventBroker;
+import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.UnknownEventException;
 import com.linbit.linstor.event.Watch;
@@ -27,6 +28,7 @@ import com.linbit.linstor.security.AccessType;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.UUID;
 
 @Singleton
@@ -59,11 +61,11 @@ public class CtrlWatchApiCallHandler
 
     public ApiCallRc createWatch(
         int peerWatchId,
-        String eventName,
-        String nodeNameStr,
-        String resourceNameStr,
-        Integer volumeNumberInt,
-        String snapshotNameStr
+        @Nullable String eventName,
+        @Nullable String nodeNameStr,
+        @Nullable String resourceNameStr,
+        @Nullable Integer volumeNumberInt,
+        @Nullable String snapshotNameStr
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();

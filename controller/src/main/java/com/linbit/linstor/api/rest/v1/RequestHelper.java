@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.annotation.ErrorReporterContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
@@ -392,7 +393,7 @@ public class RequestHelper
         ObjectMapper objectMapper,
         long retCode,
         String objectType,
-        String searchObject,
+        @Nullable String searchObject,
         List<?> resultList
     )
         throws JsonProcessingException

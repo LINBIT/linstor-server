@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -675,7 +676,7 @@ public class Json
         return jsonMap;
     }
 
-    private static String getSharedName(ResourceApi rscApiRef)
+    private static @Nullable String getSharedName(ResourceApi rscApiRef)
     {
         LinkedList<RscLayerDataApi> toExplore = new LinkedList<>();
         toExplore.add(rscApiRef.getLayerData());
@@ -963,14 +964,14 @@ public class Json
         }
 
         @Override
-        public List<DeviceLayerKind> getLayerStackList()
+        public @Nullable List<DeviceLayerKind> getLayerStackList()
         {
             return autoSelectFilter.layer_stack != null ?
                 LinstorParsingUtils.asDeviceLayerKind(autoSelectFilter.layer_stack) : null;
         }
 
         @Override
-        public List<DeviceProviderKind> getProviderList()
+        public @Nullable List<DeviceProviderKind> getProviderList()
         {
             return autoSelectFilter.provider_list != null ?
                 LinstorParsingUtils.asProviderKind(autoSelectFilter.provider_list) : null;
@@ -983,13 +984,13 @@ public class Json
         }
 
         @Override
-        public List<String> skipAlreadyPlacedOnNodeNamesCheck()
+        public @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheck()
         {
             return null;
         }
 
         @Override
-        public Boolean skipAlreadyPlacedOnAllNodeCheck()
+        public @Nullable Boolean skipAlreadyPlacedOnAllNodeCheck()
         {
             return null;
         }
@@ -1001,7 +1002,7 @@ public class Json
         }
 
         @Override
-        public Map<ExtTools, ExtToolsInfo.Version> getRequiredExtTools()
+        public @Nullable Map<ExtTools, ExtToolsInfo.Version> getRequiredExtTools()
         {
             return null;
         }
@@ -1459,7 +1460,7 @@ public class Json
         }
         else
         {
-            json.queue = null;
+            json.queue = Collections.emptyList();
         }
         return json;
     }
@@ -1479,7 +1480,7 @@ public class Json
         }
         else
         {
-            json.queue = null;
+            json.queue = Collections.emptyList();
         }
         return json;
     }

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
 import com.linbit.linstor.ErrorContextSupplier;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -22,7 +23,7 @@ public class ApiRcException extends ApiException implements ErrorContextSupplier
         this(rcEntryRef, null);
     }
 
-    public ApiRcException(ApiCallRc.RcEntry rcEntryRef, Throwable throwableRef)
+    public ApiRcException(ApiCallRc.RcEntry rcEntryRef, @Nullable Throwable throwableRef)
     {
         this(ApiCallRcImpl.singletonApiCallRc(rcEntryRef), throwableRef, false);
     }
@@ -32,7 +33,7 @@ public class ApiRcException extends ApiException implements ErrorContextSupplier
         this(apiCallRcRef, null, false);
     }
 
-    public ApiRcException(ApiCallRc apiCallRcRef, Throwable throwable, boolean hasContextRef)
+    public ApiRcException(ApiCallRc apiCallRcRef, @Nullable Throwable throwable, boolean hasContextRef)
     {
         super(
             apiCallRcRef.stream()
@@ -55,7 +56,7 @@ public class ApiRcException extends ApiException implements ErrorContextSupplier
     }
 
     @Override
-    public String getErrorContext()
+    public @Nullable String getErrorContext()
     {
         StringBuilder sb = new StringBuilder("ApiRcException entries: ");
         int entryNr = 1;

@@ -8,6 +8,7 @@ import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.StringUtils;
 
@@ -43,8 +44,8 @@ public class Commands
     public static OutputData genericExecutor(
         ExtCmd extCmd,
         String[] command,
-        String failMsgExitCode,
-        String failMsgExc
+        @Nullable String failMsgExitCode,
+        @Nullable String failMsgExc
     )
         throws StorageException
     {
@@ -54,8 +55,8 @@ public class Commands
     public static OutputData genericExecutor(
         ExtCmd extCmd,
         String[] command,
-        String failMsgExitCode,
-        String failMsgExc,
+        @Nullable String failMsgExitCode,
+        @Nullable String failMsgExc,
         RetryHandler retryHandler
     )
         throws StorageException
@@ -66,8 +67,8 @@ public class Commands
     public static OutputData genericExecutor(
         ExtCmd extCmd,
         String[] command,
-        String failMsgExitCode,
-        String failMsgExc,
+        @Nullable String failMsgExitCode,
+        @Nullable String failMsgExc,
         RetryHandler retryHandler,
         List<Integer> allowExitCodes
     )

@@ -1,6 +1,7 @@
 package com.linbit;
 
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.MathUtils;
@@ -25,7 +26,7 @@ public class WorkerPoolInitializer
 
     public static WorkerPool createDevMgrWorkerThreadPool(
         ErrorReporter errorLog,
-        ControllerDatabase controllerDatabase,
+        @Nullable ControllerDatabase controllerDatabase,
         String namePrefix
     )
     {

@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -16,7 +17,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -185,7 +185,7 @@ public class FreeCapacityAutoPoolSelectorUtils
      *
      * @return
      */
-    private static Long getFreeSpacePrivileged(
+    private static @Nullable Long getFreeSpacePrivileged(
         @Nonnull AccessContext sysCtxRef,
         @Nullable Map<StorPool.Key, Long> thinFreeCapacitiesRef,
         @Nonnull StorPool storPoolRef
@@ -210,7 +210,7 @@ public class FreeCapacityAutoPoolSelectorUtils
         return ret;
     }
 
-    private static Long getCapacityPrivilged(@Nonnull AccessContext sysCtxRef, @Nonnull StorPool storPoolRef)
+    private static @Nullable Long getCapacityPrivilged(@Nonnull AccessContext sysCtxRef, @Nonnull StorPool storPoolRef)
     {
         try
         {

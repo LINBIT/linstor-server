@@ -80,12 +80,12 @@ public interface VlmLayerDataApi
     @JsonIgnore
     boolean exists();
 
-    default Long getSnapshotAllocatedSize()
+    default @Nullable Long getSnapshotAllocatedSize()
     {
         return null;
     }
 
-    default Long getSnapshotUsableSize()
+    default @Nullable Long getSnapshotUsableSize()
     {
         return null;
     }
@@ -93,7 +93,7 @@ public interface VlmLayerDataApi
     @JsonIgnore
     String getDiskState();
 
-    default StorPoolApi getStorPoolApi()
+    default @Nullable StorPoolApi getStorPoolApi()
     {
         return null; // layers should not have storage pools (only storage layer / diskless vlm)
     }

@@ -3,6 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.objects.utils.MixedStorPoolHelper;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -19,7 +20,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -58,7 +58,7 @@ public class VolumeControllerFactory
         AccessContext accCtx,
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Volume.Flags[] flags,
+        @Nullable Volume.Flags[] flags,
         LayerPayload payload,
         @Nullable AbsRscLayerObject<RSC> absLayerData,
         Map<String, String> storpoolRenameMap,

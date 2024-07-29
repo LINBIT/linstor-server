@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -15,7 +16,6 @@ import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -135,9 +135,9 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     }
 
     @Override
-    public void resourceCreated(DrbdResource resource)
+    public void resourceCreated(@Nullable DrbdResource resource)
     {
-        if (resource.isKnownByLinstor())
+        if (resource != null && resource.isKnownByLinstor())
         {
             triggerResourceStateEvent(resource);
         }
@@ -172,7 +172,9 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
 
     @Override
     public void volumeCreated(
-        DrbdResource resource, DrbdConnection connection, DrbdVolume volume
+        DrbdResource resource,
+        @Nullable DrbdConnection connection,
+        DrbdVolume volume
     )
     {
         if (resource.isKnownByLinstor())
@@ -256,9 +258,9 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     }
 
     @Override
-    public void roleChanged(DrbdResource resource, DrbdResource.Role previous, DrbdResource.Role current)
+    public void roleChanged(@Nullable DrbdResource resource, DrbdResource.Role previous, DrbdResource.Role current)
     {
-        if (resource.isKnownByLinstor())
+        if (resource != null && resource.isKnownByLinstor())
         {
             triggerResourceStateEvent(resource);
         }

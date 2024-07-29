@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider.diskless;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -16,7 +17,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 public class DisklessData<RSC extends AbsResource<RSC>>
@@ -46,7 +46,7 @@ public class DisklessData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getDevicePath()
+    public @Nullable String getDevicePath()
     {
         return null;
     }

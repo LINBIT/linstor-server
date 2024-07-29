@@ -13,6 +13,7 @@ import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -45,7 +46,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     private boolean started = false;
 
     private final BlockingDeque<Event> eventDeque;
-    private Thread thread;
+    private @Nullable Thread thread;
     private boolean running;
 
     private final DrbdEventsMonitor eventsMonitor;
@@ -347,7 +348,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     }
 
     @Override
-    public DrbdResource getDrbdResource(String name) throws NoInitialStateException
+    public @Nullable DrbdResource getDrbdResource(String name) throws NoInitialStateException
     {
         if (!isDrbdStateAvailable())
         {

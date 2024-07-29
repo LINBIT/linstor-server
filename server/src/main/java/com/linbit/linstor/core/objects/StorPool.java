@@ -3,6 +3,8 @@ package com.linbit.linstor.core.objects;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nonnull;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -38,7 +40,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
@@ -60,7 +61,7 @@ public class StorPool extends AbsCoreObj<StorPool>
     }
 
     private final StorPoolDefinition storPoolDef;
-    private final DeviceProviderKind deviceProviderKind;
+    private final @Nonnull DeviceProviderKind deviceProviderKind;
 
     private final Props props;
     private final ReadOnlyProps roProps;
@@ -89,7 +90,7 @@ public class StorPool extends AbsCoreObj<StorPool>
         UUID id,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
-        DeviceProviderKind providerKindRef,
+        @Nonnull DeviceProviderKind providerKindRef,
         FreeSpaceTracker freeSpaceTrackerRef,
         boolean externalLockingRef,
         StorPoolDatabaseDriver dbDriverRef,
@@ -173,7 +174,7 @@ public class StorPool extends AbsCoreObj<StorPool>
     }
 
     @Override
-    public DeviceProviderKind getDeviceProviderKind()
+    public @Nonnull DeviceProviderKind getDeviceProviderKind()
     {
         checkDeleted();
         return deviceProviderKind;
@@ -526,8 +527,8 @@ public class StorPool extends AbsCoreObj<StorPool>
         @Nullable Long totalSpaceRef,
         @Nullable Long freeSpaceRef,
         AccessContext accCtx,
-        Long fullSyncId,
-        Long updateId,
+        @Nullable Long fullSyncId,
+        @Nullable Long updateId,
         @Nullable Double maxFreeCapacityOversubscriptionRatioRef,
         @Nullable Double maxTotalCapacityOversubscriptionRatioRef
     )

@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -39,7 +40,6 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -213,7 +213,7 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
     protected DrbdRscData<Snapshot> restoreSnapDataImpl(
         Snapshot snapRef,
         RscLayerDataApi rscLayerDataApiRef,
-        AbsRscLayerObject<Snapshot> parentRef,
+        @Nullable AbsRscLayerObject<Snapshot> parentRef,
         Map<String, String> renameStorPoolMapRef
     )
         throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException

@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
@@ -107,7 +108,7 @@ public class ResourceGroups
 
     private Response listResourceGroupsOneOrMany(
         Request request,
-        String singleRscGrp,
+        @Nullable String singleRscGrp,
         List<String> rscGrpNames,
         List<String> propFilters,
         int limit,

@@ -48,7 +48,7 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.UuidUtils;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;

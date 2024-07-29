@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -165,14 +166,17 @@ public class CtrlSatelliteUpdateCaller
      */
     public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
         ResourceDefinition rscDfn,
-        Publisher<ApiCallRc> nextStepRef
+        @Nullable Publisher<ApiCallRc> nextStepRef
     )
     {
         return Flux.deferContextual(cv -> updateSatellitesWithContext(rscDfn, nextStepRef, cv));
     }
 
     private Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellitesWithContext(
-        ResourceDefinition rscDfn, Publisher<ApiCallRc> nextStepRef, ContextView cv)
+        ResourceDefinition rscDfn,
+        @Nullable Publisher<ApiCallRc> nextStepRef,
+        ContextView cv
+    )
     {
         NotConnectedHandler dfltNotConnectedHandler;
         // TODO move this into context class
@@ -196,7 +200,7 @@ public class CtrlSatelliteUpdateCaller
     public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
         ResourceDefinition rscDfn,
         NotConnectedHandler notConnectedHandler,
-        Publisher<ApiCallRc> nextStep
+        @Nullable Publisher<ApiCallRc> nextStep
     )
     {
         List<Tuple2<NodeName, Flux<ApiCallRc>>> responses = new ArrayList<>();
@@ -300,7 +304,7 @@ public class CtrlSatelliteUpdateCaller
     private Flux<ApiCallRc> updateResource(
         Resource currentRsc,
         NotConnectedHandler notConnectedHandler,
-        Publisher<ApiCallRc> nextStepRef
+        @Nullable Publisher<ApiCallRc> nextStepRef
     )
         throws AccessDeniedException
     {

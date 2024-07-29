@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiRcUtils;
@@ -10,7 +11,6 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -96,7 +96,7 @@ public class BackgroundRunner
         {
             if (canRun(runCfgRef, busyNodes, true))
             {
-                runCfgRef.flux = runCfgRef.fluxSupplier.get();
+                consumeFluxSupplier(runCfgRef);
                 ret = prepareFlux(runCfgRef);
             }
             else
@@ -139,7 +139,7 @@ public class BackgroundRunner
                     Flux<T> innerRet;
                     if (Boolean.TRUE.equals(keepGoing))
                     {
-                        runCfgRef.flux = runCfgRef.fluxSupplier.get().log();
+                        consumeFluxSupplier(runCfgRef);
                         innerRet = prepareFlux(runCfgRef);
                     }
                     else
@@ -155,6 +155,18 @@ public class BackgroundRunner
             }
         }
         return ret;
+    }
+
+    private <T> void consumeFluxSupplier(RunConfig<T> runCfgRef) throws ImplementationError
+    {
+        if (runCfgRef.fluxSupplier != null)
+        {
+            runCfgRef.flux = runCfgRef.fluxSupplier.get();
+        }
+        else
+        {
+            throw new ImplementationError("runCfg was initialized with the wrong constructor");
+        }
     }
 
     /**
@@ -183,15 +195,24 @@ public class BackgroundRunner
     private <T> Flux<T> prepareFlux(RunConfig<T> runCfgRef)
     {
 
-        return runCfgRef.flux
-            .doOnSubscribe(ignored ->
-                errorReporter.logDebug("Background operation " + runCfgRef.description + " start"))
-            .doOnTerminate(() ->
-            {
-                errorReporter.logDebug("Background operation " + runCfgRef.description + " end");
-                finished(runCfgRef);
-            })
-            .contextWrite(Context.of(runCfgRef.subscriberContext));
+        final Flux<T> localFlux = runCfgRef.flux;
+        if (localFlux != null)
+        {
+            return localFlux
+                .doOnSubscribe(
+                    ignored -> errorReporter.logDebug("Background operation " + runCfgRef.description + " start")
+                )
+                .doOnTerminate(() ->
+                {
+                    errorReporter.logDebug("Background operation " + runCfgRef.description + " end");
+                    finished(runCfgRef);
+                })
+                .contextWrite(Context.of(runCfgRef.subscriberContext));
+        }
+        else
+        {
+            throw new ImplementationError("runCfg was initialized with the wrong constructor");
+        }
     }
 
     /**
@@ -443,8 +464,16 @@ public class BackgroundRunner
 
         private void runDeferredFlux()
         {
-            delayFluxSink.next(true);
-            delayFluxSink.complete();
+            final FluxSink<Boolean> localDelayFluxSink = delayFluxSink;
+            if (localDelayFluxSink != null)
+            {
+                localDelayFluxSink.next(true);
+                localDelayFluxSink.complete();
+            }
+            else
+            {
+                throw new ImplementationError("This method was called before delayFluxSink was set");
+            }
         }
 
         public RunConfig<T> putSubscriberContext(Object key, Object value)

@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
@@ -108,7 +109,7 @@ public class CtrlStorPoolResolveHelper
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        StorPool storPool = null;
+        StorPool storPool;
         try
         {
             ReadOnlyProps rscProps = ctrlPropsHelper.getProps(accCtx, rsc);
@@ -167,6 +168,7 @@ public class CtrlStorPoolResolveHelper
                     possibleStorPools = Collections.singletonList(LinstorParsingUtils.asStorPoolName(storPoolNameStr));
                 }
 
+                storPool = null; // in case possibleStorPools is empty
                 for (StorPoolName storPoolName : possibleStorPools)
                 {
                     storPool = rsc.getNode().getStorPool(apiCtx, storPoolName);
@@ -293,7 +295,7 @@ public class CtrlStorPoolResolveHelper
         return storpools;
     }
 
-    private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
+    private void checkBackingDiskWithDiskless(final Resource rsc, final @Nullable StorPool storPool)
     {
         if (enableChecks && storPool != null && storPool.getDeviceProviderKind().hasBackingDevice())
         {

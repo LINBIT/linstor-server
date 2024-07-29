@@ -16,6 +16,7 @@ import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.SosReportType;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -288,7 +289,7 @@ public class CtrlSosReportApiCallHandler
         return fluxReturn;
     }
 
-    private Peer getPeer(Node node)
+    private @Nullable Peer getPeer(Node node)
     {
         Peer peer;
         try

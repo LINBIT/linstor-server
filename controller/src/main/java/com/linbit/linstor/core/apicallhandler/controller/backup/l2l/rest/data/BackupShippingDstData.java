@@ -1,17 +1,16 @@
 package com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
-
-import javax.annotation.Nullable;
 
 import java.util.Map;
 
 public class BackupShippingDstData
 {
-    private StltRemote stltRemote;
-    private SnapshotName snapName;
+    private @Nullable StltRemote stltRemote;
+    private @Nullable SnapshotName snapName;
     private final String srcL2LRemoteName; // linstorRemoteName, not StltRemoteName
     private final String srcStltRemoteName;
     private final String srcL2LRemoteUrl;
@@ -21,10 +20,10 @@ public class BackupShippingDstData
     private final String srcBackupName;
     private final String srcClusterId;
     private final String srcRscName;
-    private String incrBaseSnapDfnUuid;
-    private String dstNodeName;
-    private String dstNetIfName;
-    private String dstStorPool;
+    private @Nullable String incrBaseSnapDfnUuid;
+    private @Nullable String dstNodeName;
+    private @Nullable String dstNetIfName;
+    private @Nullable String dstStorPool;
     private Map<String, String> storPoolRenameMap;
     private final @Nullable String dstRscGrp;
     private final Map<String, Integer> snapShipPorts;
@@ -32,9 +31,9 @@ public class BackupShippingDstData
     private boolean downloadOnly;
     private boolean forceRestore;
     private final boolean resetData;
-    private final String dstBaseSnapName;
-    private final String dstActualNodeName;
     private final boolean forceRscGrp;
+    private final @Nullable String dstBaseSnapName;
+    private final @Nullable String dstActualNodeName;
 
     public BackupShippingDstData(
         int[] srcVersionRef,
@@ -46,9 +45,9 @@ public class BackupShippingDstData
         String srcBackupNameRef,
         String srcClusterIdRef,
         String srcRscNameRef,
-        String dstNodeNameRef, // the node the user wants the receive to happen on
-        String dstNetIfNameRef,
-        String dstStorPoolRef,
+        @Nullable String dstNodeNameRef, // the node the user wants the receive to happen on
+        @Nullable String dstNetIfNameRef,
+        @Nullable String dstStorPoolRef,
         Map<String, String> storPoolRenameMapRef,
         @Nullable String dstRscGrpRef,
         Map<String, Integer> snapShipPortsRef,
@@ -56,8 +55,8 @@ public class BackupShippingDstData
         boolean downloadOnlyRef,
         boolean forceRestoreRef,
         boolean resetDataRef,
-        String dstBaseSnapNameRef,
-        String dstActualNodeNameRef, // the node that needs to do the receive
+        @Nullable String dstBaseSnapNameRef,
+        @Nullable String dstActualNodeNameRef, // the node that needs to do the receive
         boolean forceRscGrpRef
     )
     {
@@ -85,12 +84,12 @@ public class BackupShippingDstData
         forceRscGrp = forceRscGrpRef;
     }
 
-    public StltRemote getStltRemote()
+    public @Nullable StltRemote getStltRemote()
     {
         return stltRemote;
     }
 
-    public SnapshotName getSnapName()
+    public @Nullable SnapshotName getSnapName()
     {
         return snapName;
     }
@@ -140,22 +139,22 @@ public class BackupShippingDstData
         return srcRscName;
     }
 
-    public String getIncrBaseSnapDfnUuid()
+    public @Nullable String getIncrBaseSnapDfnUuid()
     {
         return incrBaseSnapDfnUuid;
     }
 
-    public String getDstNodeName()
+    public @Nullable String getDstNodeName()
     {
         return dstNodeName;
     }
 
-    public String getDstNetIfName()
+    public @Nullable String getDstNetIfName()
     {
         return dstNetIfName;
     }
 
-    public String getDstStorPool()
+    public @Nullable String getDstStorPool()
     {
         return dstStorPool;
     }
@@ -195,12 +194,12 @@ public class BackupShippingDstData
         return resetData;
     }
 
-    public String getDstBaseSnapName()
+    public @Nullable String getDstBaseSnapName()
     {
         return dstBaseSnapName;
     }
 
-    public String getDstActualNodeName()
+    public @Nullable String getDstActualNodeName()
     {
         return dstActualNodeName;
     }

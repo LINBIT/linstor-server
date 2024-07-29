@@ -7,6 +7,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.objects.Resource;
@@ -29,7 +30,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -214,8 +214,8 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 
     private void updateInfo(
         EbsData<?> vlmDataRef,
-        LsBlkEntry lsblkEntryRef,
-        com.amazonaws.services.ec2.model.Volume amaVlmRef
+        @Nullable LsBlkEntry lsblkEntryRef,
+        @Nullable com.amazonaws.services.ec2.model.Volume amaVlmRef
     )
         throws DatabaseException, StorageException
     {
@@ -583,7 +583,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     }
 
     @Override
-    public String getDevicePath(String storageNameRef, String lvIdRef)
+    public @Nullable String getDevicePath(String storageNameRef, String lvIdRef)
     {
         Pair<String, String> pair = lookupTable.get(storageNameRef + "/" + lvIdRef);
         return pair == null ? null : pair.objB;

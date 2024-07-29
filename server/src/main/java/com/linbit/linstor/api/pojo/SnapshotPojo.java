@@ -1,12 +1,11 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apis.SnapshotApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.objects.AbsResource;
-
-import javax.annotation.Nullable;
 
 import java.util.Date;
 import java.util.List;
@@ -21,13 +20,12 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     private final long flags;
     private final boolean suspendResource;
     private final boolean takeSnapshot;
-    private final Long fullSyncId;
-    private final Long updateId;
+    private final @Nullable Long fullSyncId;
+    private final @Nullable Long updateId;
     private final List<SnapshotVolumeApi> snapshotVlms;
     private final RscLayerDataApi layerData;
     private final String nodeName;
-    @Nullable
-    private final Date createTimestamp;
+    private final @Nullable Date createTimestamp;
     private final Map<String, String> snapPropsMap;
     private final Map<String, String> rscPropsMap;
 
@@ -37,8 +35,8 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         long flagsRef,
         boolean suspendResourceRef,
         boolean takeSnapshotRef,
-        Long fullSyncIdRef,
-        Long updateIdRef,
+        @Nullable Long fullSyncIdRef,
+        @Nullable Long updateIdRef,
         List<SnapshotVolumeApi> snapshotVlmsRef,
         RscLayerDataApi layerDataRef,
         String nodeNameRef,
@@ -107,13 +105,13 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     }
 
     @Override
-    public Long getFullSyncId()
+    public @Nullable Long getFullSyncId()
     {
         return fullSyncId;
     }
 
     @Override
-    public Long getUpdateId()
+    public @Nullable Long getUpdateId()
     {
         return updateId;
     }

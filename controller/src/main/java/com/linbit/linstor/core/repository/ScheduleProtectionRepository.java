@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ScheduleMap;
 import com.linbit.linstor.core.identifier.ScheduleName;
@@ -16,7 +17,7 @@ import javax.inject.Singleton;
 public class ScheduleProtectionRepository implements ScheduleRepository
 {
     private final CoreModule.ScheduleMap scheduleMap;
-    private ObjectProtection scheduleMapObjProt;
+    private @Nullable ObjectProtection scheduleMapObjProt;
 
     @Inject
     public ScheduleProtectionRepository(CoreModule.ScheduleMap scheduleMapRef)
@@ -48,7 +49,7 @@ public class ScheduleProtectionRepository implements ScheduleRepository
     }
 
     @Override
-    public Schedule get(AccessContext accCtx, ScheduleName scheduleNameRef) throws AccessDeniedException
+    public @Nullable Schedule get(AccessContext accCtx, ScheduleName scheduleNameRef) throws AccessDeniedException
     {
         checkProtSet();
         requireAccess(accCtx, AccessType.VIEW);

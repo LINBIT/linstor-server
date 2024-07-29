@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
@@ -90,7 +91,7 @@ public class ErrorReports
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
         @QueryParam("node") String nodeName,
-        @PathParam("reportId") String reportId,
+        @PathParam("reportId") @Nullable String reportId,
         @QueryParam("since") Long since,
         @QueryParam("to") Long to,
         @DefaultValue("true") @QueryParam("withContent") boolean withContent,

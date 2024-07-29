@@ -1,23 +1,24 @@
 package com.linbit.linstor.security.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.utils.Base64;
 
 public class SignInEntryPojo
 {
-    private final String identityName;
-    private final String roleName;
-    private final String domainName;
-    private final Long rolePrivileges;
-    private final String saltBase64;
-    private final String hashBase64;
+    private final @Nullable String identityName;
+    private final @Nullable String roleName;
+    private final @Nullable String domainName;
+    private final @Nullable Long rolePrivileges;
+    private final @Nullable String saltBase64;
+    private final @Nullable String hashBase64;
 
     public SignInEntryPojo(
-        final String identityNameRef,
-        final String roleNameRef,
-        final String domainNameRef,
-        final Long rolePrivilegesRef,
-        final String saltBase64Ref,
-        final String hashBase64Ref
+        final @Nullable String identityNameRef,
+        final @Nullable String roleNameRef,
+        final @Nullable String domainNameRef,
+        final @Nullable Long rolePrivilegesRef,
+        final @Nullable String saltBase64Ref,
+        final @Nullable String hashBase64Ref
     )
     {
         identityName = identityNameRef;
@@ -28,22 +29,22 @@ public class SignInEntryPojo
         hashBase64 = hashBase64Ref;
     }
 
-    public String getIdentityName()
+    public @Nullable String getIdentityName()
     {
         return identityName;
     }
 
-    public String getRoleName()
+    public @Nullable String getRoleName()
     {
         return roleName;
     }
 
-    public String getDomainName()
+    public @Nullable String getDomainName()
     {
         return domainName;
     }
 
-    public long getRolePrivileges()
+    public @Nullable Long getRolePrivileges()
     {
         return rolePrivileges;
     }
@@ -53,12 +54,12 @@ public class SignInEntryPojo
         return saltBase64 != null ? Base64.decode(saltBase64.trim()) : null;
     }
 
-    public String getSaltBase64()
+    public @Nullable String getSaltBase64()
     {
         return saltBase64;
     }
 
-    public String getHashBase64()
+    public @Nullable String getHashBase64()
     {
         return hashBase64;
     }

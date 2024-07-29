@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.exos.rest;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.StorPool;
@@ -33,8 +34,6 @@ import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.utils.PropsUtils;
 import com.linbit.utils.Pair;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -107,7 +106,7 @@ public class ExosRestClient
     private final Map<String, Long> lastLoginTimestamp = new HashMap<>();
     private final Map<String, String> currentSessionKey = new HashMap<>();
 
-    private ReadOnlyProps localNodeProps;
+    private @Nullable ReadOnlyProps localNodeProps;
 
     private final String baseEnclosureKey;
     private final String[] baseNamespace;
@@ -519,7 +518,7 @@ public class ExosRestClient
         return sb.toString();
     }
 
-    private String getBaseUrl(PriorityProps prioPropsRef, String ctrlName)
+    private @Nullable String getBaseUrl(PriorityProps prioPropsRef, String ctrlName)
     {
         String ret = null;
         String baseKey = baseEnclosureKey + ctrlName + "/";

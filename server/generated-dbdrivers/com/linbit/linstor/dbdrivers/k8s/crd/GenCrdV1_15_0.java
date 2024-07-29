@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -41,6 +42,7 @@ public class GenCrdV1_15_0
     }
 
     @SuppressWarnings("unchecked")
+    @Nullable
     public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<? extends LinstorCrd<SPEC>> databaseTableToCustomResourceClass(
         DatabaseTable table
     )
@@ -140,6 +142,7 @@ public class GenCrdV1_15_0
     }
 
     @SuppressWarnings("unchecked")
+    @Nullable
     public static <SPEC extends LinstorSpec> LinstorCrd<SPEC> specToCrd(SPEC spec)
     {
         switch(spec.getDatabaseTable().getName())
@@ -765,7 +768,7 @@ public class GenCrdV1_15_0
         }
     }
 
-    public static String databaseTableToYamlLocation(DatabaseTable dbTable)
+    public static @Nullable String databaseTableToYamlLocation(DatabaseTable dbTable)
     {
         switch(dbTable.getName())
         {
@@ -861,7 +864,7 @@ public class GenCrdV1_15_0
         }
     }
 
-    public static String databaseTableToYamlName(DatabaseTable dbTable)
+    public static @Nullable String databaseTableToYamlName(DatabaseTable dbTable)
     {
         switch(dbTable.getName())
         {
@@ -4754,18 +4757,18 @@ public class GenCrdV1_15_0
         String uuid,
         String resourceGroupName,
         String resourceGroupDspName,
-        String description,
-        String layerStack,
+        @Nullable String description,
+        @Nullable String layerStack,
         int replicaCount,
         String nodeNameList,
-        String poolName,
-        String poolNameDiskless,
-        String doNotPlaceWithRscRegex,
-        String doNotPlaceWithRscList,
-        String replicasOnSame,
-        String replicasOnDifferent,
-        String allowedProviderList,
-        Boolean disklessOnRemaining
+        @Nullable String poolName,
+        @Nullable String poolNameDiskless,
+        @Nullable String doNotPlaceWithRscRegex,
+        @Nullable String doNotPlaceWithRscList,
+        @Nullable String replicasOnSame,
+        @Nullable String replicasOnDifferent,
+        @Nullable String allowedProviderList,
+        @Nullable Boolean disklessOnRemaining
     )
     {
         return new ResourceGroups(
@@ -4801,36 +4804,36 @@ public class GenCrdV1_15_0
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("resource_group_name") public final String resourceGroupName; // PK
         @JsonProperty("resource_group_dsp_name") public final String resourceGroupDspName;
-        @JsonProperty("description") public final String description;
-        @JsonProperty("layer_stack") public final String layerStack;
+        @JsonProperty("description") public final @Nullable String description;
+        @JsonProperty("layer_stack") public final @Nullable String layerStack;
         @JsonProperty("replica_count") public final int replicaCount;
         @JsonProperty("node_name_list") public final String nodeNameList;
-        @JsonProperty("pool_name") public final String poolName;
-        @JsonProperty("pool_name_diskless") public final String poolNameDiskless;
-        @JsonProperty("do_not_place_with_rsc_regex") public final String doNotPlaceWithRscRegex;
-        @JsonProperty("do_not_place_with_rsc_list") public final String doNotPlaceWithRscList;
-        @JsonProperty("replicas_on_same") public final String replicasOnSame;
-        @JsonProperty("replicas_on_different") public final String replicasOnDifferent;
-        @JsonProperty("allowed_provider_list") public final String allowedProviderList;
-        @JsonProperty("diskless_on_remaining") public final Boolean disklessOnRemaining;
+        @JsonProperty("pool_name") public final @Nullable String poolName;
+        @JsonProperty("pool_name_diskless") public final @Nullable String poolNameDiskless;
+        @JsonProperty("do_not_place_with_rsc_regex") public final @Nullable String doNotPlaceWithRscRegex;
+        @JsonProperty("do_not_place_with_rsc_list") public final @Nullable String doNotPlaceWithRscList;
+        @JsonProperty("replicas_on_same") public final @Nullable String replicasOnSame;
+        @JsonProperty("replicas_on_different") public final @Nullable String replicasOnDifferent;
+        @JsonProperty("allowed_provider_list") public final @Nullable String allowedProviderList;
+        @JsonProperty("diskless_on_remaining") public final @Nullable Boolean disklessOnRemaining;
 
         @JsonCreator
         public ResourceGroupsSpec(
             @JsonProperty("uuid") String uuidRef,
             @JsonProperty("resource_group_name") String resourceGroupNameRef,
             @JsonProperty("resource_group_dsp_name") String resourceGroupDspNameRef,
-            @JsonProperty("description") String descriptionRef,
-            @JsonProperty("layer_stack") String layerStackRef,
+            @JsonProperty("description") @Nullable String descriptionRef,
+            @JsonProperty("layer_stack") @Nullable String layerStackRef,
             @JsonProperty("replica_count") int replicaCountRef,
             @JsonProperty("node_name_list") String nodeNameListRef,
-            @JsonProperty("pool_name") String poolNameRef,
-            @JsonProperty("pool_name_diskless") String poolNameDisklessRef,
-            @JsonProperty("do_not_place_with_rsc_regex") String doNotPlaceWithRscRegexRef,
-            @JsonProperty("do_not_place_with_rsc_list") String doNotPlaceWithRscListRef,
-            @JsonProperty("replicas_on_same") String replicasOnSameRef,
-            @JsonProperty("replicas_on_different") String replicasOnDifferentRef,
-            @JsonProperty("allowed_provider_list") String allowedProviderListRef,
-            @JsonProperty("diskless_on_remaining") Boolean disklessOnRemainingRef
+            @JsonProperty("pool_name") @Nullable String poolNameRef,
+            @JsonProperty("pool_name_diskless") @Nullable String poolNameDisklessRef,
+            @JsonProperty("do_not_place_with_rsc_regex") @Nullable String doNotPlaceWithRscRegexRef,
+            @JsonProperty("do_not_place_with_rsc_list") @Nullable String doNotPlaceWithRscListRef,
+            @JsonProperty("replicas_on_same") @Nullable String replicasOnSameRef,
+            @JsonProperty("replicas_on_different") @Nullable String replicasOnDifferentRef,
+            @JsonProperty("allowed_provider_list") @Nullable String allowedProviderListRef,
+            @JsonProperty("diskless_on_remaining") @Nullable Boolean disklessOnRemainingRef
         )
         {
             uuid = uuidRef;
@@ -5885,8 +5888,8 @@ public class GenCrdV1_15_0
     public static SecIdentities createSecIdentities(
         String identityName,
         String identityDspName,
-        String passSalt,
-        String passHash,
+        @Nullable String passSalt,
+        @Nullable String passHash,
         boolean idEnabled,
         boolean idLocked
     )
@@ -5914,8 +5917,8 @@ public class GenCrdV1_15_0
 
         @JsonProperty("identity_name") public final String identityName; // PK
         @JsonProperty("identity_dsp_name") public final String identityDspName;
-        @JsonProperty("pass_salt") public final String passSalt;
-        @JsonProperty("pass_hash") public final String passHash;
+        @JsonProperty("pass_salt") public final @Nullable String passSalt;
+        @JsonProperty("pass_hash") public final @Nullable String passHash;
         @JsonProperty("id_enabled") public final boolean idEnabled;
         @JsonProperty("id_locked") public final boolean idLocked;
 
@@ -5923,8 +5926,8 @@ public class GenCrdV1_15_0
         public SecIdentitiesSpec(
             @JsonProperty("identity_name") String identityNameRef,
             @JsonProperty("identity_dsp_name") String identityDspNameRef,
-            @JsonProperty("pass_salt") String passSaltRef,
-            @JsonProperty("pass_hash") String passHashRef,
+            @JsonProperty("pass_salt") @Nullable String passSaltRef,
+            @JsonProperty("pass_hash") @Nullable String passHashRef,
             @JsonProperty("id_enabled") boolean idEnabledRef,
             @JsonProperty("id_locked") boolean idLockedRef
         )
@@ -10203,7 +10206,7 @@ public class GenCrdV1_15_0
             private final int sqlType;
             private final boolean isPk;
             private final boolean isNullable;
-            private DatabaseTable table;
+            private @Nullable DatabaseTable table;
 
             public ColumnImpl(
                 final String nameRef,
@@ -10243,7 +10246,7 @@ public class GenCrdV1_15_0
             }
 
             @Override
-            public DatabaseTable getTable()
+            public @Nullable DatabaseTable getTable()
             {
                 return table;
             }

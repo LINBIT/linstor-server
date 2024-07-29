@@ -1,11 +1,10 @@
 package com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
-
-import javax.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -20,18 +19,18 @@ public class BackupShippingSrcData
     private final LinstorRemote linstorRemote;
     private final Map<String, String> storPoolRename;
 
-    private Snapshot srcSnapshot;
+    private @Nullable Snapshot srcSnapshot;
     private String srcNodeName;
-    private BackupMetaDataPojo metaDataPojo;
+    private @Nullable BackupMetaDataPojo metaDataPojo;
     private String dstNodeName;
     private String dstNetIfName;
     private String dstStorPool;
     private @Nullable String dstRscGrp;
     private String scheduleName;
 
-    private StltRemote stltRemote;
-    private String dstBaseSnapName;
-    private String dstActualNodeName;
+    private @Nullable StltRemote stltRemote;
+    private @Nullable String dstBaseSnapName;
+    private @Nullable String dstActualNodeName;
     private boolean resetData;
     private boolean useZstd;
     private boolean downloadOnly;
@@ -113,7 +112,7 @@ public class BackupShippingSrcData
         return storPoolRename;
     }
 
-    public Snapshot getSrcSnapshot()
+    public @Nullable Snapshot getSrcSnapshot()
     {
         return srcSnapshot;
     }
@@ -123,7 +122,7 @@ public class BackupShippingSrcData
         return srcNodeName;
     }
 
-    public BackupMetaDataPojo getMetaDataPojo()
+    public @Nullable BackupMetaDataPojo getMetaDataPojo()
     {
         return metaDataPojo;
     }
@@ -153,17 +152,17 @@ public class BackupShippingSrcData
         return scheduleName;
     }
 
-    public StltRemote getStltRemote()
+    public @Nullable StltRemote getStltRemote()
     {
         return stltRemote;
     }
 
-    public String getDstBaseSnapName()
+    public @Nullable String getDstBaseSnapName()
     {
         return dstBaseSnapName;
     }
 
-    public String getDstActualNodeName()
+    public @Nullable String getDstActualNodeName()
     {
         return dstActualNodeName;
     }
@@ -233,17 +232,17 @@ public class BackupShippingSrcData
         scheduleName = scheduleNameRef;
     }
 
-    public void setStltRemote(StltRemote stltRemoteRef)
+    public void setStltRemote(@Nullable StltRemote stltRemoteRef)
     {
         stltRemote = stltRemoteRef;
     }
 
-    public void setDstBaseSnapName(String dstBaseSnapNameRef)
+    public void setDstBaseSnapName(@Nullable String dstBaseSnapNameRef)
     {
         dstBaseSnapName = dstBaseSnapNameRef;
     }
 
-    public void setDstActualNodeName(String dstActualNodeNameRef)
+    public void setDstActualNodeName(@Nullable String dstActualNodeNameRef)
     {
         dstActualNodeName = dstActualNodeNameRef;
     }

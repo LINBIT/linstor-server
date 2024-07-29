@@ -3,6 +3,7 @@ package com.linbit.linstor.backupshipping;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
@@ -17,7 +18,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -48,17 +48,17 @@ public class BackupShippingMgr
         services.put(RemoteType.SATELLITE, backupShippingL2LRef);
     }
 
-    public AbsBackupShippingService getService(RemoteType remoteType)
+    public @Nullable AbsBackupShippingService getService(RemoteType remoteType)
     {
         return services.get(remoteType);
     }
 
-    public AbsBackupShippingService getService(AbsRemote remote)
+    public @Nullable AbsBackupShippingService getService(AbsRemote remote)
     {
         return getService(remote.getType());
     }
 
-    public AbsBackupShippingService getService(VlmProviderObject<Snapshot> snapVlmRef)
+    public @Nullable AbsBackupShippingService getService(VlmProviderObject<Snapshot> snapVlmRef)
     {
         return getService(((SnapshotVolume) snapVlmRef.getVolume()).getSnapshot());
     }

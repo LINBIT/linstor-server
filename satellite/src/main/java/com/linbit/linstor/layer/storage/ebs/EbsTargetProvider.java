@@ -7,6 +7,7 @@ import com.linbit.SizeConv.SizeUnit;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -42,7 +43,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -152,7 +152,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         }
     }
 
-    private void updateInfo(EbsData<?> vlmDataRef, com.amazonaws.services.ec2.model.Volume amazonVlmRef)
+    private void updateInfo(EbsData<?> vlmDataRef, @Nullable com.amazonaws.services.ec2.model.Volume amazonVlmRef)
         throws DatabaseException, AccessDeniedException
     {
         if (vlmDataRef.getVolume() instanceof Volume)
@@ -482,7 +482,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         return ret;
     }
 
-    private EbsData<Snapshot> findSourceEbsData(
+    private @Nullable EbsData<Snapshot> findSourceEbsData(
         NodeName localNodeNameRef,
         String srcRscName,
         String rscNameSuffix,
@@ -715,7 +715,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     }
 
     @Override
-    public String getDevicePath(String storageNameRef, String lvIdRef)
+    public @Nullable String getDevicePath(String storageNameRef, String lvIdRef)
     {
         return null;
     }

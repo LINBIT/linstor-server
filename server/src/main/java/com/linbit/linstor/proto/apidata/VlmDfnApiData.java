@@ -1,5 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
@@ -24,7 +25,7 @@ public class VlmDfnApiData implements VolumeDefinitionApi
     }
 
     @Override
-    public Integer getVolumeNr()
+    public @Nullable Integer getVolumeNr()
     {
         Integer ret = null;
         if (vlmDfn.hasVlmNr())

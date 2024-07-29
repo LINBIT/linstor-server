@@ -5,6 +5,7 @@ import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.SpaceInfo;
@@ -33,7 +34,6 @@ import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -197,7 +197,7 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
                     catch (LinStorException exc)
                     {
                         String errMsg = "Failed to decrypt access / secret key.";
-                        if (masterKey == null || masterKey.length == 0)
+                        if (masterKey.length == 0)
                         {
                             errMsg += " MasterKey is missing.";
                         }
@@ -390,7 +390,7 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
         }
     }
 
-    protected String getEbsVlmId(EbsData<?> vlmDataRef)
+    protected @Nullable String getEbsVlmId(EbsData<?> vlmDataRef)
     {
         try
         {
@@ -419,7 +419,7 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
         }
     }
 
-    protected String getEbsSnapId(EbsData<Snapshot> snapVlmDataRef)
+    protected @Nullable String getEbsSnapId(EbsData<Snapshot> snapVlmDataRef)
     {
         try
         {

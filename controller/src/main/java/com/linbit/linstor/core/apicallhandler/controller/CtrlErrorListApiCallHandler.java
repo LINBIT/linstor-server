@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -25,7 +26,6 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -55,7 +55,7 @@ public class CtrlErrorListApiCallHandler
     private final CtrlStltSerializer stltComSerializer;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
-    private final String nodeNameForErrorReports;
+    private final @Nonnull String nodeNameForErrorReports;
 
     @Inject
     public CtrlErrorListApiCallHandler(
@@ -259,7 +259,7 @@ public class CtrlErrorListApiCallHandler
         return fluxReturn;
     }
 
-    private Peer getPeer(Node node)
+    private @Nullable Peer getPeer(Node node)
     {
         Peer peer;
         try

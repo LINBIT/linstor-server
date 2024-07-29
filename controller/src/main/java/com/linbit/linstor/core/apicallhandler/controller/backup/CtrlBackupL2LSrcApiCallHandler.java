@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.backup;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -63,7 +64,6 @@ import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -179,7 +179,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String dstRscGrpNameRef,
         boolean downloadOnly,
         boolean forceRestore,
-        String scheduleNameRef,
+        @Nullable String scheduleNameRef,
         boolean allowIncremental,
         boolean runInBackgroundRef,
         boolean forceRscGrp
@@ -222,7 +222,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String dstRscGrpRef,
         boolean downloadOnly,
         boolean forceRestore,
-        String scheduleNameRef,
+        @Nullable String scheduleNameRef,
         boolean allowIncremental,
         boolean runInBackgroundRef,
         boolean forceRscGrp
@@ -485,7 +485,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         String snapshotNameRef,
         Map<String, Integer> snapShipPortsRef,
         RemoteName linstorRemoteNameRef,
-        Node nodeRef,
+        @Nullable Node nodeRef,
         String otherRscNameRef
     )
     {
@@ -747,7 +747,11 @@ public class CtrlBackupL2LSrcApiCallHandler
      *
      * @return
      */
-    public Flux<ApiCallRc> startQueueIfReady(StltRemote stltRemote, boolean srcSuccessRef, boolean allowNullReturn)
+    public @Nullable Flux<ApiCallRc> startQueueIfReady(
+        StltRemote stltRemote,
+        boolean srcSuccessRef,
+        boolean allowNullReturn
+    )
     {
         Flux<ApiCallRc> ret;
         CleanupData data = backupInfoMgr.l2lShippingFinished(stltRemote, srcSuccessRef);

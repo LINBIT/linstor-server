@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ErrorReporterContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
@@ -224,7 +225,12 @@ public class ScopeRunner
         return ret;
     }
 
-    private void rollbackIfNeeded(String apiCallName, AccessContext accCtx, Peer peer, TransactionMgr transMgr)
+    private void rollbackIfNeeded(
+        String apiCallName,
+        AccessContext accCtx,
+        @Nullable Peer peer,
+        @Nullable TransactionMgr transMgr
+    )
     {
         if (transMgr != null)
         {

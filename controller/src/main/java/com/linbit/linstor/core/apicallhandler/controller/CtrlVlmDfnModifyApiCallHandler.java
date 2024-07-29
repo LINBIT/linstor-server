@@ -7,6 +7,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -62,7 +63,6 @@ import com.linbit.utils.TimeUtils;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.makeVlmDfnContext;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -171,7 +171,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     }
 
     public Flux<ApiCallRc> modifyVlmDfn(
-        UUID vlmDfnUuid,
+        @Nullable UUID vlmDfnUuid,
         String rscName,
         int vlmNr,
         Long size,
@@ -204,7 +204,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     }
 
     private Flux<ApiCallRc> modifyVlmDfnInTransaction(
-        UUID vlmDfnUuid,
+        @Nullable UUID vlmDfnUuid,
         String rscNameStr,
         int vlmNrInt,
         Long size,

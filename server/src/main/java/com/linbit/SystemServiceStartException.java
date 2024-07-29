@@ -1,6 +1,7 @@
 package com.linbit;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 
 /**
  * Thrown to indicate that a service failed to start
@@ -19,7 +20,7 @@ public class SystemServiceStartException extends LinStorException
         criticalError = criticalErrorRef;
     }
 
-    public SystemServiceStartException(String message, Throwable cause, boolean criticalErrorRef)
+    public SystemServiceStartException(String message, @Nullable Throwable cause, boolean criticalErrorRef)
     {
         super(message, cause);
         criticalError = criticalErrorRef;
@@ -27,10 +28,10 @@ public class SystemServiceStartException extends LinStorException
 
     public SystemServiceStartException(
         String message,
-        String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText,
+        @Nullable String descriptionText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String detailsText,
         boolean criticalErrorRef
     )
     {
@@ -41,10 +42,10 @@ public class SystemServiceStartException extends LinStorException
     public SystemServiceStartException(
         String message,
         String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText,
-        Throwable cause,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String detailsText,
+        @Nullable Throwable cause,
         boolean criticalErrorRef
     )
     {

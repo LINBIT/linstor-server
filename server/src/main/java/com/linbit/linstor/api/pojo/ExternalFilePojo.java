@@ -1,25 +1,27 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.UUID;
 
 public class ExternalFilePojo implements Comparable<ExternalFilePojo>
 {
-    private final UUID uuid;
+    private final @Nullable UUID uuid;
     private final String fileName;
     private final long flags;
-    private final byte[] content;
-    private final byte[] contentChecksum;
-    private final Long fullSyncId;
-    private final Long updateId;
+    private final @Nullable byte[] content;
+    private final @Nullable byte[] contentChecksum;
+    private final @Nullable Long fullSyncId;
+    private final @Nullable Long updateId;
 
     public ExternalFilePojo(
-        UUID uuidRef,
+        @Nullable UUID uuidRef,
         String fileNameRef,
         long flagsRef,
-        byte[] contentRef,
-        byte[] contentChecksumRef,
-        Long fullsyncidRef,
-        Long updateIdRef
+        @Nullable byte[] contentRef,
+        @Nullable byte[] contentChecksumRef,
+        @Nullable Long fullsyncidRef,
+        @Nullable Long updateIdRef
     )
     {
         uuid = uuidRef;
@@ -31,7 +33,7 @@ public class ExternalFilePojo implements Comparable<ExternalFilePojo>
         updateId = updateIdRef;
     }
 
-    public UUID getUuid()
+    public @Nullable UUID getUuid()
     {
         return uuid;
     }
@@ -46,7 +48,7 @@ public class ExternalFilePojo implements Comparable<ExternalFilePojo>
         return flags;
     }
 
-    public byte[] getContent()
+    public @Nullable byte[] getContent()
     {
         return content;
     }
@@ -56,12 +58,12 @@ public class ExternalFilePojo implements Comparable<ExternalFilePojo>
         return contentChecksum;
     }
 
-    public Long getFullSyncId()
+    public @Nullable Long getFullSyncId()
     {
         return fullSyncId;
     }
 
-    public Long getUpdateId()
+    public @Nullable Long getUpdateId()
     {
         return updateId;
     }

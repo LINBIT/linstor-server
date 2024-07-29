@@ -1,13 +1,12 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import javax.annotation.Nullable;
 
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +26,7 @@ public class StorPoolApiData implements StorPoolApi
     }
 
     @Override
-    public UUID getStorPoolUuid()
+    public @Nullable UUID getStorPoolUuid()
     {
         UUID uuid = null;
         if (storPool.hasStorPoolUuid())
@@ -50,7 +49,7 @@ public class StorPoolApiData implements StorPoolApi
     }
 
     @Override
-    public UUID getNodeUuid()
+    public @Nullable UUID getNodeUuid()
     {
         UUID uuid = null;
         if (storPool.hasNodeUuid())
@@ -61,7 +60,7 @@ public class StorPoolApiData implements StorPoolApi
     }
 
     @Override
-    public UUID getStorPoolDfnUuid()
+    public @Nullable UUID getStorPoolDfnUuid()
     {
         UUID uuid = null;
         if (storPool.hasStorPoolDfnUuid())
@@ -72,7 +71,7 @@ public class StorPoolApiData implements StorPoolApi
     }
 
     @Override
-    public DeviceProviderKind getDeviceProviderKind()
+    public @Nullable DeviceProviderKind getDeviceProviderKind()
     {
         DeviceProviderKind kind = null;
         if (storPool.hasProviderKind())

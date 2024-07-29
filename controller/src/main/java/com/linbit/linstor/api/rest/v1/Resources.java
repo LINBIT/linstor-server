@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -106,7 +107,7 @@ public class Resources
     public Response listResources(
         @Context Request request,
         @PathParam("rscName") String rscName,
-        @PathParam("nodeName") String nodeName,
+        @PathParam("nodeName") @Nullable String nodeName,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
@@ -358,7 +359,7 @@ public class Resources
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("rscName") String rscName,
-        @PathParam("disklessPool") String disklessPool
+        @PathParam("disklessPool") @Nullable String disklessPool
     )
     {
         Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
@@ -398,8 +399,8 @@ public class Resources
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("rscName") String rscName,
-        @PathParam("storagePool") String storagePool,
-        String jsonData
+        @PathParam("storagePool") @Nullable String storagePool,
+        @Nullable String jsonData
     )
     {
         try
@@ -454,8 +455,8 @@ public class Resources
         @PathParam("nodeName") String nodeName,
         @PathParam("fromNode") String fromNode,
         @PathParam("rscName") String rscName,
-        @PathParam("storagePool") String storagePool,
-        String jsonData
+        @PathParam("storagePool") @Nullable String storagePool,
+        @Nullable String jsonData
     )
     {
         try

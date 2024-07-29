@@ -8,6 +8,7 @@ import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -44,11 +45,11 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     private final byte[] masterKey;
 
     private boolean running = false;
-    private Process cmdProcess;
+    private @Nullable Process cmdProcess;
     private boolean afterTerminationSent = false;
     private boolean doneFirst = true;
     private boolean restore;
-    private String uploadId = null;
+    private @Nullable String uploadId = null;
     private final AccessContext accCtx;
 
     private final BiConsumer<Boolean, Integer> afterTermination;
@@ -102,7 +103,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     }
 
     @Override
-    public String start()
+    public @Nullable String start()
     {
         running = true;
         cmdThread.start();

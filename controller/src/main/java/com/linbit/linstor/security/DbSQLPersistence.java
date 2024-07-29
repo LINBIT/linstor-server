@@ -1,6 +1,7 @@
 package com.linbit.linstor.security;
 
 import com.linbit.linstor.ControllerSQLDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SecConfigDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecDefaultRoleDatabaseDriver;
@@ -77,7 +78,7 @@ public class DbSQLPersistence extends BaseDbAccessor<ControllerSQLDatabase>
     }
 
     @Override
-    public SignInEntryPojo getSignInEntry(ControllerSQLDatabase ctrlDatabase, IdentityName idName)
+    public @Nullable SignInEntryPojo getSignInEntry(ControllerSQLDatabase ctrlDatabase, IdentityName idName)
         throws DatabaseException
     {
         SignInEntryPojo signInEntry = null;
@@ -124,7 +125,7 @@ public class DbSQLPersistence extends BaseDbAccessor<ControllerSQLDatabase>
     }
 
     @Override
-    public IdentityRoleEntryPojo getIdRoleMapEntry(
+    public @Nullable IdentityRoleEntryPojo getIdRoleMapEntry(
         ControllerSQLDatabase ctrlDatabase,
         IdentityName idName,
         RoleName rlName
@@ -164,7 +165,7 @@ public class DbSQLPersistence extends BaseDbAccessor<ControllerSQLDatabase>
     }
 
     @Override
-    public IdentityRoleEntryPojo getDefaultRole(ControllerSQLDatabase ctrlDatabase, IdentityName idName)
+    public @Nullable IdentityRoleEntryPojo getDefaultRole(ControllerSQLDatabase ctrlDatabase, IdentityName idName)
         throws DatabaseException
     {
         IdentityRoleEntryPojo identityRoleEntry = null;

@@ -95,7 +95,7 @@ public class DisklessProvider implements DeviceProvider
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(ReadOnlyProps localNodePropsRef)
+    public @Nullable LocalPropsChangePojo setLocalNodeProps(ReadOnlyProps localNodePropsRef)
     {
         // no-op
         return null;

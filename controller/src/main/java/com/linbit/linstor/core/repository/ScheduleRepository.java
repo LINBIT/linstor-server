@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.objects.Schedule;
@@ -12,6 +13,7 @@ public interface ScheduleRepository extends ProtectedObject
 {
     void requireAccess(AccessContext accCtx, AccessType requested) throws AccessDeniedException;
 
+    @Nullable
     Schedule get(AccessContext accCtx, ScheduleName scheduleName) throws AccessDeniedException;
 
     void put(AccessContext accCtx, Schedule schedule) throws AccessDeniedException;

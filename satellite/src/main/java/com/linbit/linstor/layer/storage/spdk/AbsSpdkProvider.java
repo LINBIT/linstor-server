@@ -145,7 +145,7 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
         return identifier;
     }
 
-    protected void updateInfo(SpdkData<?> vlmData, LvsInfo info)
+    protected void updateInfo(SpdkData<?> vlmData, @Nullable LvsInfo info)
         throws DatabaseException, AccessDeniedException, StorageException
     {
         vlmData.setIdentifier(asIdentifierRaw(vlmData));
@@ -356,7 +356,7 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
         return getVolumeGroup(storPoolRef);
     }
 
-    protected String getVolumeGroup(StorPoolInfo storPool)
+    protected @Nullable String getVolumeGroup(StorPoolInfo storPool)
     {
         String volumeGroup;
         try
@@ -587,7 +587,7 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     }
 
     @Override
-    protected void setDevicePath(SpdkData<Resource> vlmData, String devPath) throws DatabaseException
+    protected void setDevicePath(SpdkData<Resource> vlmData, @Nullable String devPath) throws DatabaseException
     {
         vlmData.setSpdkPath(devPath);
     }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.event;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -9,21 +10,21 @@ import java.util.Objects;
 
 public class ObjectIdentifier
 {
-    private final NodeName nodeName;
-    private final NodeName peerNodeName;
+    private final @Nullable NodeName nodeName;
+    private final @Nullable NodeName peerNodeName;
 
-    private final ResourceName resourceName;
+    private final @Nullable ResourceName resourceName;
 
-    private final VolumeNumber volumeNumber;
+    private final @Nullable VolumeNumber volumeNumber;
 
-    private final SnapshotName snapshotName;
+    private final @Nullable SnapshotName snapshotName;
 
     public static ObjectIdentifier global()
     {
         return new ObjectIdentifier(null, null, null, null, null);
     }
 
-    public static ObjectIdentifier node(NodeName nodeName)
+    public static ObjectIdentifier node(@Nullable NodeName nodeName)
     {
         return new ObjectIdentifier(nodeName, null, null, null, null);
     }
@@ -31,7 +32,7 @@ public class ObjectIdentifier
     /**
      * When used on a satellite, the node name is implicit, so this represents a resource.
      */
-    public static ObjectIdentifier resourceDefinition(ResourceName resourceName)
+    public static ObjectIdentifier resourceDefinition(@Nullable ResourceName resourceName)
     {
         return new ObjectIdentifier(null, resourceName, null, null, null);
     }
@@ -40,18 +41,23 @@ public class ObjectIdentifier
      * When used on a satellite, the node name is implicit, so this represents a volume.
      */
     public static ObjectIdentifier volumeDefinition(
-        ResourceName resourceName, VolumeNumber volumeNumber)
+        @Nullable ResourceName resourceName,
+        @Nullable VolumeNumber volumeNumber
+    )
     {
         return new ObjectIdentifier(null, resourceName, volumeNumber, null, null);
     }
 
-    public static ObjectIdentifier resource(NodeName nodeName, ResourceName resourceName)
+    public static ObjectIdentifier resource(@Nullable NodeName nodeName, @Nullable ResourceName resourceName)
     {
         return new ObjectIdentifier(nodeName, resourceName, null, null, null);
     }
 
     public static ObjectIdentifier volume(
-        NodeName nodeName, ResourceName resourceName, VolumeNumber volumeNumber)
+        @Nullable NodeName nodeName,
+        @Nullable ResourceName resourceName,
+        @Nullable VolumeNumber volumeNumber
+    )
     {
         return new ObjectIdentifier(nodeName, resourceName, volumeNumber, null, null);
     }
@@ -60,30 +66,37 @@ public class ObjectIdentifier
      * When used on a satellite, the node name is implicit, so this represents a snapshot.
      */
     public static ObjectIdentifier snapshotDefinition(
-        ResourceName resourceName, SnapshotName snapshotName)
+        @Nullable ResourceName resourceName,
+        @Nullable SnapshotName snapshotName
+    )
     {
         return new ObjectIdentifier(null, resourceName, null, snapshotName, null);
     }
 
     public static ObjectIdentifier snapshot(
-        NodeName nodeName, ResourceName resourceName, SnapshotName snapshotName)
+        @Nullable NodeName nodeName,
+        @Nullable ResourceName resourceName,
+        @Nullable SnapshotName snapshotName
+    )
     {
         return new ObjectIdentifier(nodeName, resourceName, null, snapshotName, null);
     }
 
     public static ObjectIdentifier connection(
-        NodeName localNode, NodeName remoteNode, ResourceName resourceName
+        @Nullable NodeName localNode,
+        @Nullable NodeName remoteNode,
+        @Nullable ResourceName resourceName
     )
     {
         return new ObjectIdentifier(localNode, resourceName, null, null, remoteNode);
     }
 
     public ObjectIdentifier(
-        NodeName nodeNameRef,
-        ResourceName resourceNameRef,
-        VolumeNumber volumeNumberRef,
-        SnapshotName snapshotNameRef,
-        NodeName remoteNodeRef
+        @Nullable NodeName nodeNameRef,
+        @Nullable ResourceName resourceNameRef,
+        @Nullable VolumeNumber volumeNumberRef,
+        @Nullable SnapshotName snapshotNameRef,
+        @Nullable NodeName remoteNodeRef
     )
     {
         if (volumeNumberRef != null && resourceNameRef == null)
@@ -102,27 +115,27 @@ public class ObjectIdentifier
         peerNodeName = remoteNodeRef;
     }
 
-    public NodeName getNodeName()
+    public @Nullable NodeName getNodeName()
     {
         return nodeName;
     }
 
-    public ResourceName getResourceName()
+    public @Nullable ResourceName getResourceName()
     {
         return resourceName;
     }
 
-    public VolumeNumber getVolumeNumber()
+    public @Nullable VolumeNumber getVolumeNumber()
     {
         return volumeNumber;
     }
 
-    public SnapshotName getSnapshotName()
+    public @Nullable SnapshotName getSnapshotName()
     {
         return snapshotName;
     }
 
-    public NodeName getPeerNodeName()
+    public @Nullable NodeName getPeerNodeName()
     {
         return peerNodeName;
     }

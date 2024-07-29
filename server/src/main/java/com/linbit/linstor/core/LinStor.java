@@ -4,6 +4,8 @@ import com.linbit.Platform;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.InjectorLoader;
 
+import javax.annotation.Nonnull;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -146,7 +148,7 @@ public abstract class LinStor
      *
      * @return Hostname by 'uname -n'.
      */
-    public static String getHostName()
+    public static @Nonnull String getHostName()
     {
         String hostname = "";
 
@@ -196,7 +198,9 @@ public abstract class LinStor
     {
         final boolean haveFipsCrypto = InjectorLoader.dynLoadInjModule(
             FIPS_CRYPTO_MODULE_NAME,
-            injModList, errorLog, null
+            injModList,
+            errorLog,
+            null
         );
         final boolean haveJclCrypto = InjectorLoader.dynLoadInjModule(
             JCL_CRYPTO_MODULE_NAME,

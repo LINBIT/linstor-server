@@ -7,6 +7,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.EntryBuilder;
 import com.linbit.linstor.api.ApiConsts;
@@ -66,7 +67,6 @@ import com.linbit.linstor.utils.SetUtils;
 import com.linbit.utils.Either;
 import com.linbit.utils.StringUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -86,6 +86,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @Singleton
 public class DeviceHandlerImpl implements DeviceHandler
@@ -113,7 +115,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final UdevHandler udevHandler;
     private final StltExternalFileHandler extFileHandler;
 
-    private Props localNodeProps;
+    private @Nullable Props localNodeProps;
     private final BackupShippingMgr backupShippingManager;
     private final SuspendManager suspendMgr;
     private final LayerSizeHelper layerSizeHelper;
@@ -580,7 +582,7 @@ public class DeviceHandlerImpl implements DeviceHandler
      *
      * @throws AccessDeniedException
      */
-    private @Nullable <RSC extends AbsResource<RSC>> AbsRscLayerObject<RSC> getFirstRscDataToExecuteForDataPath(
+    private <RSC extends AbsResource<RSC>> @Nullable AbsRscLayerObject<RSC> getFirstRscDataToExecuteForDataPath(
         AbsRscLayerObject<RSC> rscData
     )
         throws AccessDeniedException
@@ -1216,6 +1218,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
     }
 
+    @SuppressFBWarnings
     private boolean prepare(
         DeviceLayer layer,
         Set<AbsRscLayerObject<Resource>> rscSet,

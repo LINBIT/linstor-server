@@ -1,5 +1,7 @@
 package com.linbit.utils;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,12 +66,12 @@ public class BidirectionalMultiMap<K, V>
         return inverted.containsKey(value);
     }
 
-    public Set<V> getByKey(K key)
+    public @Nullable Set<V> getByKey(K key)
     {
         return getByKeyOrDefault(key, null);
     }
 
-    public Set<K> getByValue(V value)
+    public @Nullable Set<K> getByValue(V value)
     {
         return getByValueOrDefault(value, null);
     }
@@ -84,7 +86,7 @@ public class BidirectionalMultiMap<K, V>
         return getByValueOrDefault(value, Collections.emptySet());
     }
 
-    public Set<V> getByKeyOrDefault(K key, Set<V> dflt)
+    public @Nullable Set<V> getByKeyOrDefault(K key, @Nullable Set<V> dflt)
     {
         Set<V> ret = dflt;
         if (main.containsKey(key))
@@ -94,7 +96,7 @@ public class BidirectionalMultiMap<K, V>
         return ret;
     }
 
-    public Set<K> getByValueOrDefault(V value, Set<K> dflt)
+    public @Nullable Set<K> getByValueOrDefault(V value, @Nullable Set<K> dflt)
     {
         Set<K> ret = dflt;
         if (inverted.containsKey(value))
@@ -110,7 +112,7 @@ public class BidirectionalMultiMap<K, V>
         inverted.computeIfAbsent(value, v -> supplierK.get()).add(key);
     }
 
-    public Set<V> removeKey(K key)
+    public @Nullable Set<V> removeKey(K key)
     {
         Set<V> ret = main.remove(key);
         if (ret != null)
@@ -132,7 +134,7 @@ public class BidirectionalMultiMap<K, V>
         return ret;
     }
 
-    public Set<K> removeValue(V value)
+    public @Nullable Set<K> removeValue(V value)
     {
         Set<K> ret = inverted.remove(value);
         if (ret != null)

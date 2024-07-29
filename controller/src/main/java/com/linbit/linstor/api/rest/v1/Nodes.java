@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -120,7 +121,7 @@ public class Nodes
 
     private Response listNodesOneOrMany(
         Request request,
-        String searchNodeName,
+        @Nullable String searchNodeName,
         List<String> nodeNames,
         List<String> propFilters,
         int limit,
@@ -390,8 +391,8 @@ public class Nodes
     @Path("{nodeName}/net-interfaces/{netif}")
     public Response listNetInterfaces(
         @Context Request request,
-        @PathParam("nodeName") String nodeName,
-        @PathParam("netif") String netInterfaceName,
+        @PathParam("nodeName") @Nullable String nodeName,
+        @PathParam("netif") @Nullable String netInterfaceName,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )

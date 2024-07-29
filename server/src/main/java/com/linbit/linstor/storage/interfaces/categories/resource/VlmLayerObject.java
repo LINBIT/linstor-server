@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.interfaces.categories.resource;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -31,7 +32,7 @@ public interface VlmLayerObject<RSC extends AbsResource<RSC>>
         return DeviceProviderKind.FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER;
     }
 
-    default VlmProviderObject<RSC> getChildBySuffix(String suffixRef)
+    default @Nullable VlmProviderObject<RSC> getChildBySuffix(String suffixRef)
     {
         AbsRscLayerObject<RSC> childBySuffix = getRscLayerObject().getChildBySuffix(suffixRef);
         VlmProviderObject<RSC> ret = null;
@@ -47,7 +48,7 @@ public interface VlmLayerObject<RSC extends AbsResource<RSC>>
      * to the lower layer (eventually to the StorageLayer) or do not pass the processing at all.
      */
     @Override
-    default StorPool getStorPool()
+    default @Nullable StorPool getStorPool()
     {
         return null;
     }

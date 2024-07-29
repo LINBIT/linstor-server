@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -120,7 +121,7 @@ public class CtrlRscApiCallHandler
     }
 
     public Flux<ApiCallRc> modify(
-        UUID rscUuid,
+        @Nullable UUID rscUuid,
         String nodeNameStr,
         String rscNameStr,
         Map<String, String> overrideProps,
@@ -155,7 +156,7 @@ public class CtrlRscApiCallHandler
     }
 
     private Flux<ApiCallRc> modifyInTransaction(
-        UUID rscUuid,
+        @Nullable UUID rscUuid,
         String nodeNameStr,
         String rscNameStr,
         Map<String, String> overrideProps,

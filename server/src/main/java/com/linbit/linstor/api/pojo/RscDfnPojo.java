@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
@@ -19,20 +20,20 @@ public class RscDfnPojo implements ResourceDefinitionApi
     private final UUID uuid;
     private final ResourceGroupApi rscGrpApi;
     private final String name;
-    private final byte[] externalName;
+    private final @Nullable byte[] externalName;
     private final long flags;
     private final Map<String, String> props;
-    private final List<VolumeDefinitionApi> vlmdfns;
+    private final @Nullable List<VolumeDefinitionApi> vlmdfns;
     private final List<Pair<String, RscDfnLayerDataApi>> layerData;
 
     public RscDfnPojo(
         final UUID uuidRef,
         final ResourceGroupApi rscGrpPojoRef,
         final String nameRef,
-        final byte[] externalNameRef,
+        final @Nullable byte[] externalNameRef,
         final long flagsRef,
         final Map<String, String> propsRef,
-        final List<VolumeDefinitionApi> vlmdfnsRef,
+        final @Nullable List<VolumeDefinitionApi> vlmdfnsRef,
         final List<Pair<String, RscDfnLayerDataApi>> layerDataRef
     )
     {
@@ -65,7 +66,7 @@ public class RscDfnPojo implements ResourceDefinitionApi
     }
 
     @Override
-    public byte[] getExternalName()
+    public @Nullable byte[] getExternalName()
     {
         return externalName;
     }
@@ -83,7 +84,7 @@ public class RscDfnPojo implements ResourceDefinitionApi
     }
 
     @Override
-    public List<VolumeDefinitionApi> getVlmDfnList()
+    public @Nullable List<VolumeDefinitionApi> getVlmDfnList()
     {
         return vlmdfns;
     }

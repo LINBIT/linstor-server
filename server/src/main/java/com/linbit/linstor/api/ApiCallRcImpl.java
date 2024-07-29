@@ -2,8 +2,7 @@ package com.linbit.linstor.api;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
-
-import javax.annotation.Nonnull;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -102,7 +101,7 @@ public class ApiCallRcImpl implements ApiCallRc
         return new EntryBuilder(returnCodeRef, messageRef);
     }
 
-    public static EntryBuilder entryBuilder(RcEntry source, Long returnCodeRef, String messageRef)
+    public static EntryBuilder entryBuilder(RcEntry source, @Nullable Long returnCodeRef, @Nullable String messageRef)
     {
         EntryBuilder entryBuilder = new EntryBuilder(
             returnCodeRef != null ? returnCodeRef : source.getReturnCode(),
@@ -172,16 +171,16 @@ public class ApiCallRcImpl implements ApiCallRc
 
     public static class ApiCallRcEntry implements ApiCallRc.RcEntry
     {
-        private long returnCode = 0;
-        private Map<String, String> objRefs = new HashMap<>();
-        private String message;
-        private String cause;
-        private String correction;
-        private String details;
-        private Set<String> errorIds = new TreeSet<>();
-        private boolean skipErrorReport = false;
         @JsonProperty("dateTime")
         private final ZonedDateTime createdAt;
+        private @Nullable Map<String, String> objRefs = new HashMap<>();
+        private @Nullable String message;
+        private @Nullable String cause;
+        private @Nullable String correction;
+        private @Nullable String details;
+        private @Nullable Set<String> errorIds = new TreeSet<>();
+        private long returnCode = 0;
+        private boolean skipErrorReport = false;
         private boolean appendObjectDescriptionToDetails = true;
 
         private static final Map<Long, LinstorObj> POSSIBLE_OBJS = Map.ofEntries(
@@ -292,25 +291,25 @@ public class ApiCallRcImpl implements ApiCallRc
             return this;
         }
 
-        public ApiCallRcEntry setMessage(String messageRef)
+        public ApiCallRcEntry setMessage(@Nullable String messageRef)
         {
             message = messageRef;
             return this;
         }
 
-        public ApiCallRcEntry setCause(String causeRef)
+        public ApiCallRcEntry setCause(@Nullable String causeRef)
         {
             cause = causeRef;
             return this;
         }
 
-        public ApiCallRcEntry setCorrection(String correctionRef)
+        public ApiCallRcEntry setCorrection(@Nullable String correctionRef)
         {
             correction = correctionRef;
             return this;
         }
 
-        public ApiCallRcEntry setDetails(String detailsRef)
+        public ApiCallRcEntry setDetails(@Nullable String detailsRef)
         {
             details = detailsRef;
             return this;
@@ -359,37 +358,37 @@ public class ApiCallRcImpl implements ApiCallRc
         }
 
         @Override
-        public Map<String, String> getObjRefs()
+        public @Nullable Map<String, String> getObjRefs()
         {
             return objRefs;
         }
 
         @Override
-        public String getMessage()
+        public @Nullable String getMessage()
         {
             return message;
         }
 
         @Override
-        public String getCause()
+        public @Nullable String getCause()
         {
             return cause;
         }
 
         @Override
-        public String getCorrection()
+        public @Nullable String getCorrection()
         {
             return correction;
         }
 
         @Override
-        public String getDetails()
+        public @Nullable String getDetails()
         {
             return details;
         }
 
         @Override
-        public Set<String> getErrorIds()
+        public @Nullable Set<String> getErrorIds()
         {
             return errorIds;
         }
@@ -441,11 +440,11 @@ public class ApiCallRcImpl implements ApiCallRc
 
         private final String message;
 
-        private String cause;
+        private @Nullable String cause;
 
-        private String correction;
+        private @Nullable String correction;
 
-        private String details;
+        private @Nullable String details;
         private boolean skipErrorReport = false;
         private boolean appendObjectDescriptionToDetails = true;
 
@@ -459,19 +458,19 @@ public class ApiCallRcImpl implements ApiCallRc
             message = messageRef;
         }
 
-        public EntryBuilder setCause(String causeRef)
+        public EntryBuilder setCause(@Nullable String causeRef)
         {
             cause = causeRef;
             return this;
         }
 
-        public EntryBuilder setCorrection(String correctionRef)
+        public EntryBuilder setCorrection(@Nullable String correctionRef)
         {
             correction = correctionRef;
             return this;
         }
 
-        public EntryBuilder setDetails(String detailsRef)
+        public EntryBuilder setDetails(@Nullable String detailsRef)
         {
             details = detailsRef;
             return this;
@@ -636,7 +635,7 @@ public class ApiCallRcImpl implements ApiCallRc
     }
 
     @Override
-    public <T> T[] toArray(@Nonnull T[] ts)
+    public <T> T[] toArray(T[] ts)
     {
         return entries.toArray(ts);
     }
@@ -655,32 +654,32 @@ public class ApiCallRcImpl implements ApiCallRc
     }
 
     @Override
-    public boolean containsAll(@Nonnull Collection<?> collection)
+    public boolean containsAll(Collection<?> collection)
     {
         return new HashSet<>(entries).containsAll(collection);
     }
 
     @Override
-    public boolean addAll(@Nonnull Collection<? extends RcEntry> collection)
+    public boolean addAll(Collection<? extends RcEntry> collection)
     {
         return entries.addAll(collection);
     }
 
     @Override
-    public boolean addAll(int index, @Nonnull Collection<? extends RcEntry> collection)
+    public boolean addAll(int index, Collection<? extends RcEntry> collection)
     {
         return entries.addAll(index, collection);
     }
 
     @Override
-    public boolean removeAll(@Nonnull Collection<?> collection)
+    public boolean removeAll(Collection<?> collection)
     {
         // return entries.removeAll(collection);
         throw new ImplementationError("ApiCallRc removeAll not allowed");
     }
 
     @Override
-    public boolean retainAll(@Nonnull Collection<?> collection)
+    public boolean retainAll(Collection<?> collection)
     {
         // return entries.retainAll(collection);
         throw new ImplementationError("ApiCallRc retainAll not allowed");

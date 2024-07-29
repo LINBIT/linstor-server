@@ -1,5 +1,6 @@
 package com.linbit.linstor.security.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 public class TypeEnforcementRulePojo implements Comparable<TypeEnforcementRulePojo>
 {
     private final String domainName;
@@ -47,7 +48,7 @@ public class TypeEnforcementRulePojo implements Comparable<TypeEnforcementRulePo
         return cmp;
     }
 
-    private int compareNullable(String str1, String str2)
+    private int compareNullable(@Nullable String str1, @Nullable String str2)
     {
         int cmp;
         if (str1 == null && str2 == null)

@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -33,7 +34,6 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -862,6 +862,7 @@ public class CtrlPropsHelper
         /**
          * The newValue after normalization, or null if property was deleted
          */
-        void changed(String key, String newValue, String oldValue) throws AccessDeniedException, DatabaseException;
+        void changed(String key, @Nullable String newValue, @Nullable String oldValue) throws AccessDeniedException,
+            DatabaseException;
     }
 }

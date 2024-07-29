@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.prop;
 
+import com.linbit.linstor.annotation.Nullable;
+
 public class GenericProperty implements Property
 {
     private final String name;
@@ -75,7 +77,7 @@ public class GenericProperty implements Property
     }
 
     @Override
-    public PropertyType getType()
+    public @Nullable PropertyType getType()
     {
         return null;
     }

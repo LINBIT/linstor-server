@@ -6,6 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
@@ -192,7 +193,7 @@ public class CtrlVlmGrpApiCallHandler
         return responses;
     }
 
-    public List<VolumeGroupApi> listVolumeGroups(String rscGrpNameRef, Integer vlmNrRef)
+    public List<VolumeGroupApi> listVolumeGroups(String rscGrpNameRef, @Nullable Integer vlmNrRef)
     {
         Map<String, String> objRefs = new TreeMap<>();
         objRefs.put(ApiConsts.KEY_VLM_GRP, rscGrpNameRef);
@@ -607,7 +608,7 @@ public class CtrlVlmGrpApiCallHandler
         return getVlmGrpDescriptionInline(rscGrp.getName().displayValue, volNr.value);
     }
 
-    public static String getVlmGrpDescriptionInline(String rscName, Integer vlmNr)
+    public static String getVlmGrpDescriptionInline(String rscName, @Nullable Integer vlmNr)
     {
         return "volume group with number '" + vlmNr + "' of resource group '" + rscName + "'";
     }

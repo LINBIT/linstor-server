@@ -25,7 +25,7 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

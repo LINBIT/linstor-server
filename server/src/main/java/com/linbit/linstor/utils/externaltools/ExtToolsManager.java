@@ -1,12 +1,11 @@
 package com.linbit.linstor.utils.externaltools;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
-
-import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,7 +107,7 @@ public class ExtToolsManager
         return supportedProviders.contains(supportedProviderRef);
     }
 
-    public ExtToolsInfo getExtToolInfo(ExtTools extTool)
+    public @Nullable ExtToolsInfo getExtToolInfo(ExtTools extTool)
     {
         return infoMap.get(extTool);
     }

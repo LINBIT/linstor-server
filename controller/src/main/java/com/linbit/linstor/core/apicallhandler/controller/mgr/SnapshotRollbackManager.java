@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.mgr;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -30,7 +31,6 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.StringUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -93,9 +93,9 @@ public class SnapshotRollbackManager
             SnapRollbackInfo info = new SnapRollbackInfo(diskNodeNamesRef, rscDfnRef);
             ret = Flux.<ApiCallRc>create(sink ->
             {
-                info.fluxSink = sink;
                 synchronized (info)
                 {
+                    info.fluxSink = sink;
                     info.notifyAll();
                 }
             })
@@ -263,7 +263,7 @@ public class SnapshotRollbackManager
 
     public void handle(NodeName nodeNameRef, ResourceName rscNameRef, boolean successRef)
     {
-        SnapRollbackInfo snapRollbackInfo;
+        @Nullable SnapRollbackInfo snapRollbackInfo;
         synchronized (infoMap)
         {
             snapRollbackInfo = infoMap.get(rscNameRef);
@@ -274,9 +274,9 @@ public class SnapshotRollbackManager
 
             if (allFinished)
             {
-                while (snapRollbackInfo.fluxSink == null)
+                synchronized (snapRollbackInfo)
                 {
-                    synchronized (snapRollbackInfo)
+                    while (snapRollbackInfo.fluxSink == null)
                     {
                         try
                         {

@@ -36,7 +36,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;

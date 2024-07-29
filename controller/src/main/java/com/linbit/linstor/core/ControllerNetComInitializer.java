@@ -7,6 +7,7 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.SystemServiceStopException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -35,7 +36,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
 import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -90,7 +90,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
     private final TransactionMgrGenerator transactionMgrGenerator;
     private final CtrlConfig ctrlCfg;
 
-    private TcpConnector netComSvc;
+    private @Nullable TcpConnector netComSvc;
 
     @Inject
     public ControllerNetComInitializer(
@@ -634,7 +634,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
         return value;
     }
 
-    private String loadOrAddKey(ReadOnlyProps props, String key, List<String> missingKeys)
+    private @Nullable String loadOrAddKey(ReadOnlyProps props, String key, List<String> missingKeys)
     {
         String value = null;
         try

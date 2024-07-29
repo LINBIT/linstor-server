@@ -1,53 +1,55 @@
 package com.linbit.linstor.layer.storage.exos.rest.responses;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Deprecated(forRemoval = true)
 public class ExosRestControllers extends ExosRestBaseResponse
 {
     @JsonProperty("controllers")
-    public ExosRestController[] controllers;
+    public @Nullable ExosRestController[] controllers;
 
     public static class ExosRestController
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("durable-id")
-        public String durableId;
+        public @Nullable String durableId;
 
         @JsonProperty("controller-id")
-        public String controllerId;
+        public @Nullable String controllerId;
 
         @JsonProperty("controller-id-numeric")
         public long controllerIdNumeric;
 
         @JsonProperty("serial-number")
-        public String serialNumber;
+        public @Nullable String serialNumber;
 
         @JsonProperty("hardware-version")
-        public String hardwareVersion;
+        public @Nullable String hardwareVersion;
 
         @JsonProperty("cpld-version")
-        public String cpldVersion;
+        public @Nullable String cpldVersion;
 
         @JsonProperty("mac-address")
-        public String macAddress;
+        public @Nullable String macAddress;
 
         @JsonProperty("node-wwn")
-        public String nodeWwn;
+        public @Nullable String nodeWwn;
 
         @JsonProperty("active-version")
         public long activeVersion;
 
         @JsonProperty("ip-address")
-        public String ipAddress;
+        public @Nullable String ipAddress;
 
         @JsonProperty("ip-subnet-mask")
-        public String ipSubnetMask;
+        public @Nullable String ipSubnetMask;
 
         @JsonProperty("ip-gateway")
-        public String ipGateway;
+        public @Nullable String ipGateway;
 
         @JsonProperty("disks")
         public long disks;
@@ -71,100 +73,100 @@ public class ExosRestControllers extends ExosRestBaseResponse
         public long driveChannels;
 
         @JsonProperty("drive-bus-type")
-        public String driveBusType;
+        public @Nullable String driveBusType;
 
         @JsonProperty("drive-bus-type-numeric")
         public long driveBusTypeNumeric;
 
         @JsonProperty("status")
-        public String status;
+        public @Nullable String status;
 
         @JsonProperty("status-numeric")
         public long statusNumeric;
 
         @JsonProperty("failed-over")
-        public String failedOver;
+        public @Nullable String failedOver;
 
         @JsonProperty("failed-over-numeric")
         public long failedOverNumeric;
 
         @JsonProperty("fail-over-reason")
-        public String failOverReason;
+        public @Nullable String failOverReason;
 
         @JsonProperty("fail-over-reason-numeric")
         public long failOverReasonNumeric;
 
         @JsonProperty("sc-fw")
-        public String scFw;
+        public @Nullable String scFw;
 
         @JsonProperty("vendor")
-        public String vendor;
+        public @Nullable String vendor;
 
         @JsonProperty("model")
-        public String model;
+        public @Nullable String model;
 
         @JsonProperty("platform-type")
-        public String platformType;
+        public @Nullable String platformType;
 
         @JsonProperty("platform-type-numeric")
         public long platformTypeNumeric;
 
         @JsonProperty("multicore")
-        public String multicore;
+        public @Nullable String multicore;
 
         @JsonProperty("multicore-numeric")
         public long multicoreNumeric;
 
         @JsonProperty("sc-cpu-type")
-        public String scCpuType;
+        public @Nullable String scCpuType;
 
         @JsonProperty("sc-cpu-speed")
         public long scCpuSpeed;
 
         @JsonProperty("internal-serial-number")
-        public String internalSerialNumber;
+        public @Nullable String internalSerialNumber;
 
         @JsonProperty("cache-lock")
-        public String cacheLock;
+        public @Nullable String cacheLock;
 
         @JsonProperty("cache-lock-numeric")
         public long cacheLockNumeric;
 
         @JsonProperty("write-policy")
-        public String writePolicy;
+        public @Nullable String writePolicy;
 
         @JsonProperty("write-policy-numeric")
         public long writePolicyNumeric;
 
         @JsonProperty("description")
-        public String description;
+        public @Nullable String description;
 
         @JsonProperty("part-number")
-        public String partNumber;
+        public @Nullable String partNumber;
 
         @JsonProperty("revision")
-        public String revision;
+        public @Nullable String revision;
 
         @JsonProperty("dash-level")
-        public String dashLevel;
+        public @Nullable String dashLevel;
 
         @JsonProperty("fru-shortname")
-        public String fruShortname;
+        public @Nullable String fruShortname;
 
         @JsonProperty("mfg-date")
-        public String mfgDate;
+        public @Nullable String mfgDate;
 
         @JsonProperty("mfg-date-numeric")
         public long mfgDateNumeric;
 
         @JsonProperty("mfg-location")
-        public String mfgLocation;
+        public @Nullable String mfgLocation;
 
         @JsonProperty("mfg-vendor-id")
-        public String mfgVendorId;
+        public @Nullable String mfgVendorId;
 
         @JsonProperty("locator-led")
-        public String locatorLed;
+        public @Nullable String locatorLed;
 
         @JsonProperty("locator-led-numeric")
         public long locatorLedNumeric;
@@ -173,124 +175,124 @@ public class ExosRestControllers extends ExosRestBaseResponse
         public long ssdAltPathIoCount;
 
         @JsonProperty("health")
-        public String health;
+        public @Nullable String health;
 
         @JsonProperty("health-numeric")
         public long healthNumeric;
 
         @JsonProperty("health-reason")
-        public String healthReason;
+        public @Nullable String healthReason;
 
         @JsonProperty("health-recommendation")
-        public String healthRecommendation;
+        public @Nullable String healthRecommendation;
 
         @JsonProperty("position")
-        public String position;
+        public @Nullable String position;
 
         @JsonProperty("position-numeric")
         public long positionNumeric;
 
         @JsonProperty("rotation")
-        public String rotation;
+        public @Nullable String rotation;
 
         @JsonProperty("rotation-numeric")
         public long rotationNumeric;
 
         @JsonProperty("phy-isolation")
-        public String phyIsolation;
+        public @Nullable String phyIsolation;
 
         @JsonProperty("phy-isolation-numeric")
         public long phyIsolationNumeric;
 
         @JsonProperty("redundancy-mode")
-        public String redundancyMode;
+        public @Nullable String redundancyMode;
 
         @JsonProperty("redundancy-mode-numeric")
         public long redundancyModeNumeric;
 
         @JsonProperty("redundancy-status")
-        public String redundancyStatus;
+        public @Nullable String redundancyStatus;
 
         @JsonProperty("redundancy-status-numeric")
         public long redundancyStatusNumeric;
 
         @JsonProperty("network-parameters")
-        public ExosRestNetworkParameter[] networkParameters;
+        public @Nullable ExosRestNetworkParameter[] networkParameters;
 
         @JsonProperty("port")
-        public ExosRestPort[] port;
+        public @Nullable ExosRestPort[] port;
 
         @JsonProperty("expander-ports")
-        public ExosRestExpanderPort[] expanderPorts;
+        public @Nullable ExosRestExpanderPort[] expanderPorts;
 
         @JsonProperty("compact-flash")
-        public ExosRestCompactFlash[] compactFlash;
+        public @Nullable ExosRestCompactFlash[] compactFlash;
 
         @JsonProperty("expanders")
-        public ExosRestExpander[] expanders;
+        public @Nullable ExosRestExpander[] expanders;
     }
 
     public static class ExosRestNetworkParameter
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("durable-id")
-        public String durableId;
+        public @Nullable String durableId;
 
         @JsonProperty("active-version")
         public long activeVersion;
 
         @JsonProperty("ip-address")
-        public String ipAddress;
+        public @Nullable String ipAddress;
 
         @JsonProperty("gateway")
-        public String gateway;
+        public @Nullable String gateway;
 
         @JsonProperty("subnet-mask")
-        public String subnetMask;
+        public @Nullable String subnetMask;
 
         @JsonProperty("mac-address")
-        public String macAddress;
+        public @Nullable String macAddress;
 
         @JsonProperty("addressing-mode")
-        public String addressingMode;
+        public @Nullable String addressingMode;
 
         @JsonProperty("addressing-mode-numeric")
         public long addressingModeNumeric;
 
         @JsonProperty("link-speed")
-        public String linkSpeed;
+        public @Nullable String linkSpeed;
 
         @JsonProperty("link-speed-numeric")
         public long linkSpeedNumeric;
 
         @JsonProperty("duplex-mode")
-        public String duplexMode;
+        public @Nullable String duplexMode;
 
         @JsonProperty("duplex-mode-numeric")
         public long duplexModeNumeric;
 
         @JsonProperty("auto-negotiation")
-        public String autoNegotiation;
+        public @Nullable String autoNegotiation;
 
         @JsonProperty("auto-negotiation-numeric")
         public long autoNegotiationNumeric;
 
         @JsonProperty("health")
-        public String health;
+        public @Nullable String health;
 
         @JsonProperty("health-numeric")
         public long healthNumeric;
 
         @JsonProperty("health-reason")
-        public String healthReason;
+        public @Nullable String healthReason;
 
         @JsonProperty("health-recommendation")
-        public String healthRecommendation;
+        public @Nullable String healthRecommendation;
 
         @JsonProperty("ping-broadcast")
-        public String pingBroadcast;
+        public @Nullable String pingBroadcast;
 
         @JsonProperty("ping-broadcast-numeric")
         public long pingBroadcastNumeric;
@@ -299,46 +301,46 @@ public class ExosRestControllers extends ExosRestBaseResponse
     public static class ExosRestPort
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("durable-id")
-        public String durableId;
+        public @Nullable String durableId;
 
         @JsonProperty("controller")
-        public String controller;
+        public @Nullable String controller;
 
         @JsonProperty("controller-numeric")
         public long controllerNumeric;
 
         @JsonProperty("port")
-        public String port;
+        public @Nullable String port;
 
         @JsonProperty("port-type")
-        public String portType;
+        public @Nullable String portType;
 
         @JsonProperty("port-type-numeric")
         public long portTypeNumeric;
 
         @JsonProperty("media")
-        public String media;
+        public @Nullable String media;
 
         @JsonProperty("target-id")
-        public String targetId;
+        public @Nullable String targetId;
 
         @JsonProperty("status")
-        public String status;
+        public @Nullable String status;
 
         @JsonProperty("status-numeric")
         public long statusNumeric;
 
         @JsonProperty("actual-speed")
-        public String actualSpeed;
+        public @Nullable String actualSpeed;
 
         @JsonProperty("actual-speed-numeric")
         public long actualSpeedNumeric;
 
         @JsonProperty("configured-speed")
-        public String configuredSpeed;
+        public @Nullable String configuredSpeed;
 
         @JsonProperty("configured-speed-numeric")
         public long configuredSpeedNumeric;
@@ -347,28 +349,28 @@ public class ExosRestControllers extends ExosRestBaseResponse
         public long fanOut;
 
         @JsonProperty("health")
-        public String health;
+        public @Nullable String health;
 
         @JsonProperty("health-numeric")
         public long healthNumeric;
 
         @JsonProperty("health-reason")
-        public String healthReason;
+        public @Nullable String healthReason;
 
         @JsonProperty("health-recommendation")
-        public String healthRecommendation;
+        public @Nullable String healthRecommendation;
 
         @JsonProperty("sas-port")
-        public ExosRestSasPort[] sasPort;
+        public @Nullable ExosRestSasPort[] sasPort;
     }
 
     public static class ExosRestSasPort
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("configured-topology")
-        public String configuredTopology;
+        public @Nullable String configuredTopology;
 
         @JsonProperty("configured-topology-numeric")
         public long configuredTopologyNumeric;
@@ -389,22 +391,22 @@ public class ExosRestControllers extends ExosRestBaseResponse
     public static class ExosRestExpanderPort
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("durable-id")
-        public String durableId;
+        public @Nullable String durableId;
 
         @JsonProperty("enclosure-id")
         public long enclosureId;
 
         @JsonProperty("controller")
-        public String controller;
+        public @Nullable String controller;
 
         @JsonProperty("controller-numeric")
         public long controllerNumeric;
 
         @JsonProperty("sas-port-type")
-        public String sasPortType;
+        public @Nullable String sasPortType;
 
         @JsonProperty("sas-port-type-numeric")
         public long sasPortTypeNumeric;
@@ -413,76 +415,76 @@ public class ExosRestControllers extends ExosRestBaseResponse
         public long sasPortIndex;
 
         @JsonProperty("name")
-        public String name;
+        public @Nullable String name;
 
         @JsonProperty("status")
-        public String status;
+        public @Nullable String status;
 
         @JsonProperty("status-numeric")
         public long statusNumeric;
 
         @JsonProperty("health")
-        public String health;
+        public @Nullable String health;
 
         @JsonProperty("health-numeric")
         public long healthNumeric;
 
         @JsonProperty("health-reason")
-        public String healthReason;
+        public @Nullable String healthReason;
 
         @JsonProperty("health-recommendation")
-        public String healthRecommendation;
+        public @Nullable String healthRecommendation;
     }
 
     public static class ExosRestCompactFlash
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("durable-id")
-        public String durableId;
+        public @Nullable String durableId;
 
         @JsonProperty("controller-id")
-        public String controllerId;
+        public @Nullable String controllerId;
 
         @JsonProperty("controller-id-numeric")
         public long controllerIdNumeric;
 
         @JsonProperty("name")
-        public String name;
+        public @Nullable String name;
 
         @JsonProperty("status")
-        public String status;
+        public @Nullable String status;
 
         @JsonProperty("status-numeric")
         public long statusNumeric;
 
         @JsonProperty("cache-flush")
-        public String cacheFlush;
+        public @Nullable String cacheFlush;
 
         @JsonProperty("cache-flush-numeric")
         public long cacheFlushNumeric;
 
         @JsonProperty("health")
-        public String health;
+        public @Nullable String health;
 
         @JsonProperty("health-numeric")
         public long healthNumeric;
 
         @JsonProperty("health-reason")
-        public String healthReason;
+        public @Nullable String healthReason;
 
         @JsonProperty("health-recommendation")
-        public String healthRecommendation;
+        public @Nullable String healthRecommendation;
     }
 
     public static class ExosRestExpander
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("durable-id")
-        public String durableId;
+        public @Nullable String durableId;
 
         @JsonProperty("enclosure-id")
         public long enclosureId;
@@ -494,39 +496,39 @@ public class ExosRestControllers extends ExosRestBaseResponse
         public long domId;
 
         @JsonProperty("path-id")
-        public String pathId;
+        public @Nullable String pathId;
 
         @JsonProperty("path-id-numeric")
         public long pathIdNumeric;
 
         @JsonProperty("name")
-        public String name;
+        public @Nullable String name;
 
         @JsonProperty("location")
-        public String location;
+        public @Nullable String location;
 
         @JsonProperty("status")
-        public String status;
+        public @Nullable String status;
 
         @JsonProperty("status-numeric")
         public long statusNumeric;
 
         @JsonProperty("extended-status")
-        public String extendedStatus;
+        public @Nullable String extendedStatus;
 
         @JsonProperty("fw-revision")
-        public String fwRevision;
+        public @Nullable String fwRevision;
 
         @JsonProperty("health")
-        public String health;
+        public @Nullable String health;
 
         @JsonProperty("health-numeric")
         public long healthNumeric;
 
         @JsonProperty("health-reason")
-        public String healthReason;
+        public @Nullable String healthReason;
 
         @JsonProperty("health-recommendation")
-        public String healthRecommendation;
+        public @Nullable String healthRecommendation;
     }
 }

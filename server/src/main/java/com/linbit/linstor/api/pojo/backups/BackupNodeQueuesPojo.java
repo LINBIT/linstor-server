@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo.backups;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ public class BackupNodeQueuesPojo
      * The list of queued snapshots. Will be empty if this is an item of
      * BackupSnapQueuesPojo.queue
      */
-    private final List<BackupSnapQueuesPojo> queue;
+    private final @Nullable List<BackupSnapQueuesPojo> queue;
 
     public BackupNodeQueuesPojo(String nodeNameRef, @Nullable List<BackupSnapQueuesPojo> queueRef)
     {

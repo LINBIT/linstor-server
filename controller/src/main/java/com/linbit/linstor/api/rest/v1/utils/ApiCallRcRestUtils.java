@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1.utils;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -28,7 +29,7 @@ public class ApiCallRcRestUtils
     private static final long MAX_ACC_DENIED = 499;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static String toJSON(ApiCallRc apiCallRc)
+    public static @Nullable String toJSON(ApiCallRc apiCallRc)
     {
         String ret = null;
         try

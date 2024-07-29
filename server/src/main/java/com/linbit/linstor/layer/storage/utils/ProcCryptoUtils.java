@@ -1,10 +1,9 @@
 package com.linbit.linstor.layer.storage.utils;
 
 import com.linbit.Platform;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.ProcCryptoEntry;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;

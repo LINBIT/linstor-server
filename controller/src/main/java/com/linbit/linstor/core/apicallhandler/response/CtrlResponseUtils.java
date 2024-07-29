@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -36,7 +37,7 @@ public class CtrlResponseUtils
         ErrorReporter logger,
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
         ResourceName rscName,
-        String messageFormat
+        @Nullable String messageFormat
     )
     {
         return combineResponses(logger, responses, rscName, Collections.emptySet(), messageFormat, messageFormat);
@@ -49,8 +50,8 @@ public class CtrlResponseUtils
     public static Flux<ApiCallRc> combineResponses(
         ErrorReporter logger,
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
-        String rscName,
-        String messageFormat
+        @Nullable String rscName,
+        @Nullable String messageFormat
     )
     {
         return combineResponses(logger, responses, rscName, Collections.emptySet(), messageFormat, messageFormat);
@@ -65,8 +66,8 @@ public class CtrlResponseUtils
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
         ResourceName rscName,
         Collection<NodeName> nodeNames,
-        String messageFormatThese,
-        String messageFormatOthers
+        @Nullable String messageFormatThese,
+        @Nullable String messageFormatOthers
     )
     {
         return combineResponses(
@@ -80,10 +81,10 @@ public class CtrlResponseUtils
     public static Flux<ApiCallRc> combineResponses(
         ErrorReporter logger,
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
-        String rscName,
+        @Nullable String rscName,
         Collection<NodeName> nodeNames,
-        String messageFormatThese,
-        String messageFormatOthers
+        @Nullable String messageFormatThese,
+        @Nullable String messageFormatOthers
     )
     {
         return responses
@@ -93,7 +94,7 @@ public class CtrlResponseUtils
                     Flux<ApiCallRc> nodeResponses = namedResponse.getT2();
 
                     Flux<ApiCallRc> extraResponses;
-                    String messageFormat = nodeNames.contains(nodeName) ?
+                @Nullable String messageFormat = nodeNames.contains(nodeName) ?
                         messageFormatThese : messageFormatOthers;
                     if (messageFormat != null)
                     {
@@ -118,7 +119,7 @@ public class CtrlResponseUtils
             .transform(sources -> CtrlResponseUtils.mergeExtractingApiRcExceptions(logger, sources));
     }
 
-    private static void logApiCallRc(ErrorReporter logger, ApiCallRc apiCallRc)
+    private static void logApiCallRc(ErrorReporter logger, @Nullable ApiCallRc apiCallRc)
     {
         if (apiCallRc != null)
         {
@@ -126,15 +127,13 @@ public class CtrlResponseUtils
                 String logMsg = String.format("ACR: %s", rc.getMessage());
                 switch (rc.getSeverity())
                 {
-                    case INFO:
-                        logger.logInfo(logMsg);
-                        break;
                     case WARNING:
                         logger.logWarning(logMsg);
                         break;
                     case ERROR:
                         logger.logError(logMsg);
                         break;
+                    case INFO: // fall-through
                     default:
                         logger.logInfo(logMsg);
                         break;

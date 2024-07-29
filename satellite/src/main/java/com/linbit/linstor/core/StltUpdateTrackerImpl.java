@@ -1,5 +1,6 @@
 package com.linbit.linstor.core;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -253,17 +254,17 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
 
     public static class UpdateNotification
     {
-        private final UUID uuid;
+        private final @Nullable UUID uuid;
 
         private final List<FluxSink<ApiCallRc>> responseSinks;
 
-        public UpdateNotification(UUID uuidRef)
+        public UpdateNotification(@Nullable UUID uuidRef)
         {
             uuid = uuidRef;
             responseSinks = new ArrayList<>();
         }
 
-        public UUID getUuid()
+        public @Nullable UUID getUuid()
         {
             return uuid;
         }

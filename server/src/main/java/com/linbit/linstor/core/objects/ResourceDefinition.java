@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -37,7 +38,6 @@ import com.linbit.locks.LockGuard;
 import com.linbit.utils.ExceptionThrowingPredicate;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -72,7 +72,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
     private final ResourceName resourceName;
 
     // User suggested name
-    private final byte[] externalName;
+    private final @Nullable byte[] externalName;
 
     // Volumes of the resource
     private final TransactionMap<ResourceDefinition, VolumeNumber, VolumeDefinition> volumeMap;
@@ -96,7 +96,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
 
     private final TransactionMap<ResourceDefinition, Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
 
-    private final TransactionList<ResourceDefinition, DeviceLayerKind> layerStack;
+    private final TransactionList<ResourceDefinition, @Nullable DeviceLayerKind> layerStack;
 
     private final TransactionSimpleObject<ResourceDefinition, ResourceGroup> rscGrp;
 
@@ -104,9 +104,9 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         UUID objIdRef,
         ObjectProtection objProtRef,
         ResourceName resName,
-        byte[] extName,
+        @Nullable byte[] extName,
         long initialFlags,
-        List<DeviceLayerKind> layerStackRef,
+        @Nullable List<DeviceLayerKind> layerStackRef,
         ResourceDefinitionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -133,7 +133,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         snapshotDfnMap = transObjFactory.createTransactionMap(this, snapshotDfnMapRef, null);
         layerStack = transObjFactory.createTransactionPrimitiveList(
             this,
-            layerStackRef,
+            layerStackRef == null ? new ArrayList<>() : layerStackRef,
             dbDriver.getLayerStackDriver()
         );
         rscGrp = transObjFactory.createTransactionSimpleObject(this, rscGrpRef, dbDriver.getRscGrpDriver());
@@ -172,7 +172,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         return resourceName;
     }
 
-    public byte[] getExternalName()
+    public @Nullable byte[] getExternalName()
     {
         checkDeleted();
         return externalName;
@@ -208,7 +208,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         return volumeMap.size();
     }
 
-    public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
+    public @Nullable VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -348,7 +348,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         return objProt;
     }
 
-    public Resource getResource(AccessContext accCtx, NodeName clNodeName)
+    public @Nullable Resource getResource(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -381,7 +381,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         snapshotDfnMap.put(snapshotDfn.getName(), snapshotDfn);
     }
 
-    public SnapshotDefinition getSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)
+    public @Nullable SnapshotDefinition getSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -480,7 +480,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
      * Returns a single RscDfnLayerObject matching the kind as well as the resourceNameSuffix.
      */
     @SuppressWarnings("unchecked")
-    public <T extends RscDfnLayerObject> T getLayerData(
+    public @Nullable <T extends RscDfnLayerObject> T getLayerData(
         AccessContext accCtx,
         DeviceLayerKind kind,
         String rscNameSuffixRef

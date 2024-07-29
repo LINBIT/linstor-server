@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -12,5 +14,5 @@ public interface ControllerSQLDatabase extends ControllerDatabase
     Connection getConnection() throws SQLException;
 
     // Must be able to handle dbConn == null as a valid input
-    void returnConnection(Connection dbConn);
+    void returnConnection(@Nullable Connection dbConn);
 }

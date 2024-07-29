@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
@@ -65,7 +66,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         return builder(null, apiCallId, false);
     }
 
-    private CtrlStltSerializerBuilder builder(String apiCall, Long apiCallId, boolean isAnswer)
+    private CtrlStltSerializerBuilder builder(@Nullable String apiCall, @Nullable Long apiCallId, boolean isAnswer)
     {
         return new ProtoCtrlStltSerializerBuilder(
             errorReporter, serializerCtx, secObjs, ctrlConf, apiCall, apiCallId, isAnswer);

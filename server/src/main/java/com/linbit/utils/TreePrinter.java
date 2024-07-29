@@ -1,5 +1,7 @@
 package com.linbit.utils;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,7 +70,7 @@ public class TreePrinter
 
     public static class TreePrinterNodeBuilder
     {
-        private final TreePrinterNodeBuilder parent;
+        private final @Nullable TreePrinterNodeBuilder parent;
 
         private final String name;
 
@@ -76,7 +78,7 @@ public class TreePrinter
 
         private List<TreePrinterNode> children;
 
-        public TreePrinterNodeBuilder(final TreePrinterNodeBuilder parentRef, final String nameRef)
+        public TreePrinterNodeBuilder(final @Nullable TreePrinterNodeBuilder parentRef, final String nameRef)
         {
             parent = parentRef;
             name = nameRef;
@@ -84,7 +86,7 @@ public class TreePrinter
             children = new ArrayList<>();
         }
 
-        public TreePrinterNodeBuilder getParent()
+        public @Nullable TreePrinterNodeBuilder getParent()
         {
             return parent;
         }

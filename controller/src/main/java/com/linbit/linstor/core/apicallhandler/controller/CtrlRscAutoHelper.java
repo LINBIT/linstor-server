@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -27,6 +28,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -60,14 +62,14 @@ public class CtrlRscAutoHelper
 
     public static class AutoHelperResult
     {
-        private Flux<ApiCallRc> flux;
+        private @Nullable Flux<ApiCallRc> flux;
         private boolean preventUpdateSatellitesForResourceDelete;
 
         private AutoHelperResult()
         {
         }
 
-        public Flux<ApiCallRc> getFlux()
+        public @Nullable Flux<ApiCallRc> getFlux()
         {
             return flux;
         }
@@ -171,7 +173,7 @@ public class CtrlRscAutoHelper
         return Flux.merge(fluxList);
     }
 
-    public Flux<ApiCallRc> manageInOwnTransaction(AutoHelperContext autoCtx)
+    public Flux<ApiCallRc> manageInOwnTransaction(@Nonnull AutoHelperContext autoCtx)
     {
         return scopeRunner.fluxInTransactionalScope(
             "Create storage pool",
@@ -180,7 +182,7 @@ public class CtrlRscAutoHelper
         );
     }
 
-    public AutoHelperResult manage(AutoHelperContext ctx)
+    public AutoHelperResult manage(@Nonnull AutoHelperContext ctx)
     {
         return manage(ctx, Collections.singleton(AutoHelperType.All));
     }
@@ -243,7 +245,7 @@ public class CtrlRscAutoHelper
         return result;
     }
 
-    public Resource getTiebreakerResource(String nodeNameRef, String nameRef)
+    public @Nullable Resource getTiebreakerResource(String nodeNameRef, String nameRef)
     {
         Resource ret = null;
         Resource rsc = dataLoader.loadRsc(nodeNameRef, nameRef, false);
@@ -293,7 +295,7 @@ public class CtrlRscAutoHelper
         final ResponseContext responseContext;
         final ResourceDefinition rscDfn;
 
-        AutoSelectFilterApi selectFilter;
+        @Nullable AutoSelectFilterApi selectFilter;
 
         TreeSet<Resource> resourcesToCreate = new TreeSet<>();
         TreeSet<NodeName> nodeNamesForDelete = new TreeSet<>();
@@ -316,7 +318,7 @@ public class CtrlRscAutoHelper
             rscDfn = definitionRef;
         }
 
-        public AutoHelperContext withSelectFilter(AutoSelectFilterApi selectFilterRef)
+        public @Nonnull AutoHelperContext withSelectFilter(AutoSelectFilterApi selectFilterRef)
         {
             selectFilter = selectFilterRef;
             return this;

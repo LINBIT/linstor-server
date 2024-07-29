@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -53,7 +54,6 @@ import com.linbit.linstor.tasks.RetryResourcesTask;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuard;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;

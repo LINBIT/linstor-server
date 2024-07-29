@@ -1,5 +1,6 @@
 package com.linbit.linstor.satellitestate;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -30,14 +31,18 @@ public class SatelliteState
         return resourceStates;
     }
 
-    public <T> T getFromResource(ResourceName resourceName, Function<SatelliteResourceState, T> getter)
+    public <T> @Nullable T getFromResource(ResourceName resourceName, Function<SatelliteResourceState, T> getter)
     {
         return resourceStates.containsKey(resourceName) ?
             getter.apply(resourceStates.get(resourceName)) :
             null;
     }
 
-    public <T> void setOnResource(ResourceName resourceName, BiConsumer<SatelliteResourceState, T> setter, T value)
+    public <T> void setOnResource(
+        ResourceName resourceName,
+        BiConsumer<SatelliteResourceState, T> setter,
+        @Nullable T value
+    )
     {
         setter.accept(
             resourceStates.computeIfAbsent(resourceName, ignored -> new SatelliteResourceState()),
@@ -62,7 +67,7 @@ public class SatelliteState
         }
     }
 
-    public <T> T getFromVolume(
+    public <T> @Nullable T getFromVolume(
         ResourceName resourceName,
         VolumeNumber volumeNumber,
         Function<SatelliteVolumeState, T> getter

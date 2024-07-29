@@ -32,7 +32,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     private final Object syncObj = new Object();
     private final ErrorReporter errorReporter;
     private final Thread thread;
-    private final LinkedBlockingDeque<Boolean> waitForConnDeque;
+    private final @Nullable LinkedBlockingDeque<Boolean> waitForConnDeque;
     private final @Nullable Long timeoutInMs;
     private final String[] command;
 
@@ -40,7 +40,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     private final DaemonHandler handler;
 
     private final BiConsumer<Boolean, Integer> afterTermination;
-    private final Integer port;
+    private final @Nullable Integer port;
 
     private boolean started = false;
     private boolean shutdown = false;
@@ -53,7 +53,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
         ThreadGroup threadGroupRef,
         String threadName,
         String[] commandRef,
-        Integer portRef,
+        @Nullable Integer portRef,
         BiConsumer<Boolean, Integer> postActionRef,
         @Nullable Long timeoutInMsRef
     )
@@ -128,7 +128,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     }
 
     @Override
-    public String start()
+    public @Nullable String start()
     {
         synchronized (syncObj)
         {

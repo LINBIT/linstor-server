@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -37,7 +38,7 @@ public class CtrlNodeConnectionHelper
         peerAccCtx = peerAccCtxRef;
     }
 
-    public NodeConnection loadNodeConn(
+    public @Nullable NodeConnection loadNodeConn(
         String nodeName1,
         String nodeName2,
         boolean failIfNull,

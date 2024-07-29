@@ -8,6 +8,7 @@
 package com.linbit.linstor.api;
 
 import com.linbit.linstor.annotation.ErrorReporterContext;
+import com.linbit.linstor.annotation.Nullable;
 
 import javax.inject.Singleton;
 
@@ -110,9 +111,9 @@ public class LinStorScope implements Scope
         };
     }
 
-    private <T> Map<Key<?>, Object> getScopedObjectMap(Key<T> key)
+    private <T> @Nullable Map<Key<?>, Object> getScopedObjectMap(Key<T> key)
     {
-        Map<Key<?>, Object> scopedObjects = values.get();
+        @Nullable Map<Key<?>, Object> scopedObjects = values.get();
         if (scopedObjects == null)
         {
             Annotation annotation = key.getAnnotation();

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
@@ -35,8 +36,8 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
     private final NetInterfaceName niName;
 
     private final TransactionSimpleObject<NetInterface, LsIpAddress> niAddress;
-    private final TransactionSimpleObject<NetInterface, TcpPortNumber> niStltConnPort;
-    private final TransactionSimpleObject<NetInterface, EncryptionType> niStltConnEncrType;
+    private final TransactionSimpleObject<NetInterface, @Nullable TcpPortNumber> niStltConnPort;
+    private final TransactionSimpleObject<NetInterface, @Nullable EncryptionType> niStltConnEncrType;
 
     private final NetInterfaceDatabaseDriver dbDriver;
     private final Key niKey;
@@ -46,8 +47,8 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
         NetInterfaceName netName,
         Node node,
         LsIpAddress addr,
-        TcpPortNumber stltConnPortRef,
-        EncryptionType stltConnEncrTypeRef,
+        @Nullable TcpPortNumber stltConnPortRef,
+        @Nullable EncryptionType stltConnEncrTypeRef,
         NetInterfaceDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef
@@ -137,7 +138,7 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
         return !Objects.equals(oldPort, port) || !Objects.equals(oldEncrType, encrType);
     }
 
-    public TcpPortNumber getStltConnPort(AccessContext accCtx)
+    public @Nullable TcpPortNumber getStltConnPort(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -146,7 +147,7 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
         return niStltConnPort.get();
     }
 
-    public EncryptionType getStltConnEncryptionType(AccessContext accCtx)
+    public @Nullable EncryptionType getStltConnEncryptionType(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();

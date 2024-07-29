@@ -5,6 +5,7 @@ import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -32,7 +33,6 @@ import com.linbit.utils.ExceptionThrowingBiFunction;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -334,7 +334,7 @@ public class SysFsHandler
         return priorityProps;
     }
 
-    private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException
+    private @Nullable String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException
     {
         String majMin = deviceMajorMinorMap.get(vlmDataRef);
         if (vlmDataRef.exists() && !((Volume) vlmDataRef.getVolume()).getFlags().isSet(apiCtx, Volume.Flags.CLONING) &&

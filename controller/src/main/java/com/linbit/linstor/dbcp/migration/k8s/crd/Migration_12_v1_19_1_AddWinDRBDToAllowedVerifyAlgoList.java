@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 
@@ -20,7 +21,7 @@ public class Migration_12_v1_19_1_AddWinDRBDToAllowedVerifyAlgoList extends Base
     }
 
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         txTo.upsert(
             GenCrdV1_19_1.GeneratedDatabaseTables.PROPS_CONTAINERS,

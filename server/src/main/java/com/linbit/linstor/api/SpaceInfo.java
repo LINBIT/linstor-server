@@ -1,5 +1,6 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.storage.StorageException;
 
@@ -14,7 +15,11 @@ public class SpaceInfo
         freeCapacity = freeSpaceRef;
     }
 
-    public static SpaceInfo buildOrThrowOnError(Long totalCapacityRef, Long freeSpaceRef, StorPoolInfo spRef)
+    public static SpaceInfo buildOrThrowOnError(
+        @Nullable Long totalCapacityRef,
+        @Nullable Long freeSpaceRef,
+        StorPoolInfo spRef
+    )
         throws StorageException
     {
         if (totalCapacityRef == null || freeSpaceRef == null)

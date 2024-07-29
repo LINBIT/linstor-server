@@ -1,8 +1,7 @@
 package com.linbit.linstor.layer.drbd.drbdstate;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.types.MinorNumber;
-
-import javax.annotation.Nullable;
 
 /**
  * Observes the state of a DRBD resource
@@ -16,7 +15,7 @@ public interface ResourceObserver
      *
      * @param resource DrbdResource instance tracking the new DRBD resource's state
      */
-    default void resourceCreated(DrbdResource resource)
+    default void resourceCreated(@Nullable DrbdResource resource)
     {
         // Do nothing
     }
@@ -29,7 +28,7 @@ public interface ResourceObserver
      * @param current Role of the resource after the change
      */
     default void roleChanged(
-        DrbdResource resource,
+        @Nullable DrbdResource resource,
         DrbdResource.Role previous, DrbdResource.Role current
     )
     {
@@ -90,7 +89,7 @@ public interface ResourceObserver
      *     local volume, this argument is set to null
      * @param volume DrbdVolume instance tracking the new DRBD volume's state
      */
-    default void volumeCreated(DrbdResource resource, DrbdConnection connection, DrbdVolume volume)
+    default void volumeCreated(DrbdResource resource, @Nullable DrbdConnection connection, DrbdVolume volume)
     {
         // Do nothing
     }
@@ -106,7 +105,8 @@ public interface ResourceObserver
      * @param current Minor number of the volume after the change
      */
     default void minorNrChanged(
-        DrbdResource resource, DrbdVolume volume,
+        @Nullable DrbdResource resource,
+        @Nullable DrbdVolume volume,
         MinorNumber previous, MinorNumber current
     )
     {
@@ -126,7 +126,9 @@ public interface ResourceObserver
      * @param current Disk state of the volume after the change
      */
     default void diskStateChanged(
-        DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
+        DrbdResource resource,
+        @Nullable DrbdConnection connection,
+        DrbdVolume volume,
         DiskState previous, DiskState current
     )
     {
@@ -187,7 +189,7 @@ public interface ResourceObserver
      */
     default void volumeDestroyed(
         DrbdResource resource,
-        DrbdConnection connection,
+        @Nullable DrbdConnection connection,
         DrbdVolume volume
     )
     {

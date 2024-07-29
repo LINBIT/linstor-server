@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.cfg;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,28 +15,28 @@ import com.moandjiezana.toml.Toml;
 
 public class StltConfig extends LinstorConfig
 {
-    private String stltOverrideNodeName;
+    private @Nullable String stltOverrideNodeName;
     private boolean remoteSpdk;
     private boolean ebs;
 
-    private Pattern drbdKeepResPattern;
+    private @Nullable Pattern drbdKeepResPattern;
 
-    private String netBindAddress;
-    private Integer netPort;
+    private @Nullable String netBindAddress;
+    private @Nullable Integer netPort;
 
-    private String netType;
+    private @Nullable String netType;
 
-    private String netSecureServerCertificate;
-    private String netSecureTrustedCertificates;
-    private String netSecureKeyPassword;
-    private String netSecureKeystorePassword;
-    private String netSecureTruststorePassword;
-    private String netSecureSslProtocol;
+    private @Nullable String netSecureServerCertificate;
+    private @Nullable String netSecureTrustedCertificates;
+    private @Nullable String netSecureKeyPassword;
+    private @Nullable String netSecureKeystorePassword;
+    private @Nullable String netSecureTruststorePassword;
+    private @Nullable String netSecureSslProtocol;
 
     /*
      * External files
      */
-    private Set<Path> whitelistedExternalFilePaths;
+    private @Nullable Set<Path> whitelistedExternalFilePaths;
 
     public StltConfig(String[] argsRef)
     {
@@ -113,12 +114,12 @@ public class StltConfig extends LinstorConfig
         ebs = ebsRef;
     }
 
-    public Pattern getDrbdKeepResPattern()
+    public @Nullable Pattern getDrbdKeepResPattern()
     {
         return drbdKeepResPattern;
     }
 
-    public void setDrbdKeepResPattern(String drbdKeepResPatternRef)
+    public void setDrbdKeepResPattern(@Nullable String drbdKeepResPatternRef)
     {
         if (drbdKeepResPatternRef != null)
         {
@@ -126,7 +127,7 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public void setDrbdKeepResPattern(Pattern drbdKeepResPatternRef)
+    public void setDrbdKeepResPattern(@Nullable Pattern drbdKeepResPatternRef)
     {
         if (drbdKeepResPatternRef != null)
         {
@@ -134,12 +135,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getNetBindAddress()
+    public @Nullable String getNetBindAddress()
     {
         return netBindAddress;
     }
 
-    public void setNetBindAddress(String netBindAddressRef)
+    public void setNetBindAddress(@Nullable String netBindAddressRef)
     {
         if (netBindAddressRef != null)
         {
@@ -147,12 +148,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public Integer getNetPort()
+    public @Nullable Integer getNetPort()
     {
         return netPort;
     }
 
-    public void setNetPort(Integer netPortRef)
+    public void setNetPort(@Nullable Integer netPortRef)
     {
         if (netPortRef != null)
         {
@@ -160,12 +161,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getStltOverrideNodeName()
+    public @Nullable String getStltOverrideNodeName()
     {
         return stltOverrideNodeName;
     }
 
-    public void setStltOverrideNodeName(String stltOverrideNodeNameRef)
+    public void setStltOverrideNodeName(@Nullable String stltOverrideNodeNameRef)
     {
         if (stltOverrideNodeNameRef != null)
         {
@@ -173,12 +174,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getStltType()
+    public @Nullable String getStltType()
     {
         return netType;
     }
 
-    public void setStltType(String stltTypeRef)
+    public void setStltType(@Nullable String stltTypeRef)
     {
         if (stltTypeRef != null)
         {
@@ -186,12 +187,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getNetSecureServerCertificate()
+    public @Nullable String getNetSecureServerCertificate()
     {
         return netSecureServerCertificate;
     }
 
-    public void setNetSecureServerCertificate(String netSecureServerCertificateRef)
+    public void setNetSecureServerCertificate(@Nullable String netSecureServerCertificateRef)
     {
         if (netSecureServerCertificateRef != null)
         {
@@ -199,12 +200,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getNetSecureTrustedCertificates()
+    public @Nullable String getNetSecureTrustedCertificates()
     {
         return netSecureTrustedCertificates;
     }
 
-    public void setNetSecureTrustedCertificates(String netSecureTrustedCertificatesRef)
+    public void setNetSecureTrustedCertificates(@Nullable String netSecureTrustedCertificatesRef)
     {
         if (netSecureTrustedCertificatesRef != null)
         {
@@ -212,12 +213,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getNetSecureKeyPassword()
+    public @Nullable String getNetSecureKeyPassword()
     {
         return netSecureKeyPassword;
     }
 
-    public void setNetSecureKeyPassword(String netSecureKeyPasswordRef)
+    public void setNetSecureKeyPassword(@Nullable String netSecureKeyPasswordRef)
     {
         if (netSecureKeyPasswordRef != null)
         {
@@ -225,12 +226,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getNetSecureKeystorePassword()
+    public @Nullable String getNetSecureKeystorePassword()
     {
         return netSecureKeystorePassword;
     }
 
-    public void setNetSecureKeystorePassword(String netSecureKeystorePasswordRef)
+    public void setNetSecureKeystorePassword(@Nullable String netSecureKeystorePasswordRef)
     {
         if (netSecureKeystorePasswordRef != null)
         {
@@ -238,12 +239,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getNetSecureTruststorePassword()
+    public @Nullable String getNetSecureTruststorePassword()
     {
         return netSecureTruststorePassword;
     }
 
-    public void setNetSecureTruststorePassword(String netSecureTruststorePasswordRef)
+    public void setNetSecureTruststorePassword(@Nullable String netSecureTruststorePasswordRef)
     {
         if (netSecureTruststorePasswordRef != null)
         {
@@ -251,12 +252,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getNetSecureSslProtocol()
+    public @Nullable String getNetSecureSslProtocol()
     {
         return netSecureSslProtocol;
     }
 
-    public void setNetSecureSslProtocol(String netSecureSslProtocolRef)
+    public void setNetSecureSslProtocol(@Nullable String netSecureSslProtocolRef)
     {
         if (netSecureSslProtocolRef != null)
         {
@@ -264,12 +265,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public String getNetType()
+    public @Nullable String getNetType()
     {
         return netType;
     }
 
-    public void setNetType(String netTypeRef)
+    public void setNetType(@Nullable String netTypeRef)
     {
         if (netTypeRef != null)
         {
@@ -277,12 +278,12 @@ public class StltConfig extends LinstorConfig
         }
     }
 
-    public Set<Path> getWhitelistedExternalFilePaths()
+    public @Nullable Set<Path> getWhitelistedExternalFilePaths()
     {
         return whitelistedExternalFilePaths;
     }
 
-    public void setExternalFilesWhitelist(Set<String> whitelistedExternalFilePathsRef)
+    public void setExternalFilesWhitelist(@Nullable Set<String> whitelistedExternalFilePathsRef)
     {
         if (whitelistedExternalFilePathsRef != null)
         {

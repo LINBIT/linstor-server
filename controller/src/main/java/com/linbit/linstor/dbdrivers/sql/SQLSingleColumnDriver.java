@@ -67,7 +67,7 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
                     "Updating %s's %s from [%s] to [%s] %s",
                     table.getName(),
                     colToUpdate.getName(),
-                    oldElementRef == null ? "null" : "<Array of bytes>",
+                    "<Array of bytes>",
                     dataValueToString.accept(parentRef) == null ? "null" : "<Array of bytes>",
                     dataToString.toString(parentRef)
                 );
@@ -96,7 +96,7 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
                     "%s's %s updated from [%s] to [%s] %s",
                     table.getName(),
                     colToUpdate.getName(),
-                    oldElementRef == null ? "null" : "<Array of bytes>",
+                    "<Array of bytes>",
                     dataValueToString.accept(parentRef) == null ? "null" : "<Array of bytes>",
                     dataToString.toString(parentRef)
                 );

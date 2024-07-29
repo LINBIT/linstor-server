@@ -222,7 +222,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
 
     @Override
     protected String asLvIdentifier(
-        StorPoolName ignoredSpName,
+        @Nullable StorPoolName ignoredSpName,
         ResourceName resourceName,
         String rscNameSuffix,
         VolumeNumber volumeNumber
@@ -673,7 +673,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return getZPool(storPoolRef);
     }
 
-    protected String getZPool(StorPoolInfo storPool)
+    protected @Nullable String getZPool(StorPoolInfo storPool)
     {
         String zPool;
         try

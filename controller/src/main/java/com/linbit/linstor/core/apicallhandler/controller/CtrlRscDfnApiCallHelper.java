@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.Property;
@@ -189,7 +190,11 @@ public class CtrlRscDfnApiCallHelper
         return setBy == null || setBy.equalsIgnoreCase(ApiConsts.VAL_TRUE);
     }
 
-    private Long chooseDrbdDiscGran(AccessContext accCtxRef, TreeSet<Long> discGransRef, List<Resource> rscsRef)
+    private @Nullable Long chooseDrbdDiscGran(
+        AccessContext accCtxRef,
+        TreeSet<Long> discGransRef,
+        List<Resource> rscsRef
+    )
         throws AccessDeniedException
     {
         long discGranMax = getMaxDiscGran(accCtxRef, rscsRef);

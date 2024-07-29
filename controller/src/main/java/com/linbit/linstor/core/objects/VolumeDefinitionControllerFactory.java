@@ -6,6 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -57,9 +58,9 @@ public class VolumeDefinitionControllerFactory
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         VolumeNumber vlmNr,
-        Integer minor,
+        @Nullable Integer minor,
         Long vlmSize,
-        VolumeDefinition.Flags[] initFlags
+        @Nullable VolumeDefinition.Flags[] initFlags
     )
         throws DatabaseException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException, LinStorException

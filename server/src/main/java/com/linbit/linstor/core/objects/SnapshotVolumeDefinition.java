@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
@@ -273,7 +274,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends VlmDfnLayerObject> T getLayerData(
+    public <T extends VlmDfnLayerObject> @Nullable T getLayerData(
         AccessContext accCtx,
         DeviceLayerKind kind,
         String rscNameSuffix

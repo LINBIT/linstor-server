@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -40,7 +41,7 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
 
     // unmodifiable, once initialized
     private final ResourceName rscName;
-    private final SnapshotName snapName;
+    private final @Nullable SnapshotName snapName;
     private final int alStripes;
     private final long alStripeSize;
     private final String suffixedResourceName;
@@ -51,9 +52,9 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
     // persisted, serialized, ctrl and stlt
     private final TransactionList<DrbdRscDfnData<RSC>, DrbdRscData<RSC>> drbdRscDataList;
     private final TransactionMap<DrbdRscDfnData<?>, VolumeNumber, DrbdVlmDfnData<RSC>> drbdVlmDfnMap;
-    private final TransactionSimpleObject<DrbdRscDfnData<?>, TcpPortNumber> port;
-    private final TransactionSimpleObject<DrbdRscDfnData<?>, TransportType> transportType;
-    private final TransactionSimpleObject<DrbdRscDfnData<?>, String> secret;
+    private final TransactionSimpleObject<DrbdRscDfnData<?>, @Nullable TcpPortNumber> port;
+    private final TransactionSimpleObject<DrbdRscDfnData<?>, @Nullable TransportType> transportType;
+    private final TransactionSimpleObject<DrbdRscDfnData<?>, @Nullable String> secret;
     private final TransactionSimpleObject<DrbdRscDfnData<?>, Short> peerSlots;
 
     // not persisted, serialized, ctrl and stlt
@@ -61,14 +62,14 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
 
     public DrbdRscDfnData(
         ResourceName rscNameRef,
-        SnapshotName snapNameRef,
+        @Nullable SnapshotName snapNameRef,
         String resourceNameSuffixRef,
         short peerSlotsRef,
         int alStripesRef,
         long alStripesSizeRef,
         Integer portRef,
-        TransportType transportTypeRef,
-        String secretRef,
+        @Nullable TransportType transportTypeRef,
+        @Nullable String secretRef,
         List<DrbdRscData<RSC>> drbdRscDataListRef,
         Map<VolumeNumber, DrbdVlmDfnData<RSC>> vlmDfnMap,
         DynamicNumberPool tcpPortPoolRef,
@@ -145,13 +146,13 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public SnapshotName getSnapshotName()
+    public @Nullable SnapshotName getSnapshotName()
     {
         return snapName;
     }
 
     @Override
-    public TcpPortNumber getTcpPort()
+    public @Nullable TcpPortNumber getTcpPort()
     {
         return port.get();
     }
@@ -173,23 +174,23 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public TransportType getTransportType()
+    public @Nullable TransportType getTransportType()
     {
         return transportType.get();
     }
 
-    public void setTransportType(TransportType typeRef) throws DatabaseException
+    public void setTransportType(@Nullable TransportType typeRef) throws DatabaseException
     {
         transportType.set(typeRef);
     }
 
     @Override
-    public String getSecret()
+    public @Nullable String getSecret()
     {
         return secret.get();
     }
 
-    public void setSecret(String secretRef) throws DatabaseException
+    public void setSecret(@Nullable String secretRef) throws DatabaseException
     {
         secret.set(secretRef);
     }

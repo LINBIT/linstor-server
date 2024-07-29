@@ -1,34 +1,34 @@
 package com.linbit.linstor;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 public class LinStorRuntimeException extends RuntimeException implements ErrorContextSupplier
 {
     private static final long serialVersionUID = 1475777378033472411L;
 
-    private final String excDescription;
-    private final String excCause;
-    private final String excCorrection;
-    private final String excDetails;
+    private final @Nullable String excDescription;
+    private final @Nullable String excCause;
+    private final @Nullable String excCorrection;
+    private final @Nullable String excDetails;
 
-    private final Long excNumericCode;
+    private final @Nullable Long excNumericCode;
 
     public LinStorRuntimeException(String message)
     {
         this(message, null, null, null, null, null, null);
     }
 
-    public LinStorRuntimeException(String message, Throwable cause)
+    public LinStorRuntimeException(String message, @Nullable Throwable cause)
     {
         this(message, null, null, null, null, null, cause);
     }
 
     public LinStorRuntimeException(
         String message,
-        String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText
+        @Nullable String descriptionText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String detailsText
     )
     {
         this(message, descriptionText, causeText, correctionText, detailsText, null, null);
@@ -36,11 +36,11 @@ public class LinStorRuntimeException extends RuntimeException implements ErrorCo
 
     public LinStorRuntimeException(
         String message,
-        String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText,
-        Throwable cause
+        @Nullable String descriptionText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String detailsText,
+        @Nullable Throwable cause
     )
     {
         this(message, descriptionText, causeText, correctionText, detailsText, null, cause);
@@ -48,12 +48,12 @@ public class LinStorRuntimeException extends RuntimeException implements ErrorCo
 
     public LinStorRuntimeException(
         String message,
-        String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText,
-        Long numericCode,
-        Throwable cause
+        @Nullable String descriptionText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String detailsText,
+        @Nullable Long numericCode,
+        @Nullable Throwable cause
     )
     {
         super(message, cause);
@@ -94,7 +94,7 @@ public class LinStorRuntimeException extends RuntimeException implements ErrorCo
      *
      * @return Problem description, or null if no such information is available
      */
-    public String getDescriptionText()
+    public @Nullable String getDescriptionText()
     {
         return excDescription;
     }
@@ -104,7 +104,7 @@ public class LinStorRuntimeException extends RuntimeException implements ErrorCo
      *
      * @return Problem cause description, or null if no such information is available
      */
-    public String getCauseText()
+    public @Nullable String getCauseText()
     {
         return excCause;
     }
@@ -115,7 +115,7 @@ public class LinStorRuntimeException extends RuntimeException implements ErrorCo
      *
      * @return Correction instructions, or null if no such information is available
      */
-    public String getCorrectionText()
+    public @Nullable String getCorrectionText()
     {
         return excCorrection;
     }
@@ -125,7 +125,7 @@ public class LinStorRuntimeException extends RuntimeException implements ErrorCo
      *
      * @return Additional information, or null if no such information is available
      */
-    public String getDetailsText()
+    public @Nullable String getDetailsText()
     {
         return excDetails;
     }
@@ -135,7 +135,7 @@ public class LinStorRuntimeException extends RuntimeException implements ErrorCo
      *
      * @return Numeric error code, or null if none has been set
      */
-    public Long getNumericCode()
+    public @Nullable Long getNumericCode()
     {
         return excNumericCode;
     }

@@ -1,11 +1,10 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import javax.annotation.Nullable;
 
 import java.util.Map;
 import java.util.Optional;
@@ -18,27 +17,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
 {
     @JsonIgnore
-    private final UUID storPoolUuid;
+    private final @Nullable UUID storPoolUuid;
     @JsonIgnore
-    private final UUID nodeUuid;
+    private final @Nullable UUID nodeUuid;
     @JsonIgnore
-    private final String nodeName;
+    private final @Nullable String nodeName;
     private final String storPoolName;
     @JsonIgnore
-    private final UUID storPoolDfnUuid;
+    private final @Nullable UUID storPoolDfnUuid;
     private final DeviceProviderKind deviceProviderKind;
     @JsonIgnore
-    private final Map<String, String> storPoolProps;
+    private final @Nullable Map<String, String> storPoolProps;
     @JsonIgnore
-    private final Map<String, String> storPoolDfnProps;
+    private final @Nullable Map<String, String> storPoolDfnProps;
     @JsonIgnore
-    private final Map<String, String> storPoolStaticTraits;
+    private final @Nullable Map<String, String> storPoolStaticTraits;
     @JsonIgnore
-    private final Long fullSyncId;
+    private final @Nullable Long fullSyncId;
     @JsonIgnore
-    private final Long updateId;
+    private final @Nullable Long updateId;
     @JsonIgnore
-    private final String freeSpaceManagerName;
+    private final @Nullable String freeSpaceManagerName;
     @JsonIgnore
     private final Optional<Long> freeSpace;
     @JsonIgnore
@@ -50,39 +49,39 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     @JsonIgnore
     private final @Nullable Double maxTotalCapacityOversubscriptionRatio;
     @JsonIgnore
-    private final ApiCallRc reports;
+    private final @Nullable ApiCallRc reports;
     @JsonIgnore
-    private final Boolean supportsSnapshots;
+    private final @Nullable Boolean supportsSnapshots;
     @JsonIgnore
-    private final Boolean isPmem;
+    private final @Nullable Boolean isPmem;
     @JsonIgnore
-    private final Boolean isVDO;
+    private final @Nullable Boolean isVDO;
     @JsonIgnore
-    private final Boolean externalLocking;
+    private final @Nullable Boolean externalLocking;
 
     public StorPoolPojo(
-        final UUID storPoolUuidRef,
-        final UUID nodeUuidRef,
-        final String nodeNameRef,
+        final @Nullable UUID storPoolUuidRef,
+        final @Nullable UUID nodeUuidRef,
+        final @Nullable String nodeNameRef,
         final String storPoolNameRef,
-        final UUID storPoolDfnUuidRef,
+        final @Nullable UUID storPoolDfnUuidRef,
         final DeviceProviderKind deviceProviderKindRef,
-        final Map<String, String> storPoolPropsRef,
-        final Map<String, String> storPoolDfnPropsRef,
-        final Map<String, String> storPoolStaticTraitsRef,
-        final Long fullSyncIdRef,
-        final Long updateIdRef,
-        final String freeSpaceManagerNameRef,
+        final @Nullable Map<String, String> storPoolPropsRef,
+        final @Nullable Map<String, String> storPoolDfnPropsRef,
+        final @Nullable Map<String, String> storPoolStaticTraitsRef,
+        final @Nullable Long fullSyncIdRef,
+        final @Nullable Long updateIdRef,
+        final @Nullable String freeSpaceManagerNameRef,
         final Optional<Long> freeSpaceRef,
         final Optional<Long> totalSpaceRef,
         final double oversubscriptionRatioRef,
         final @Nullable Double maxFreeCapacityOversubscriptionRatioRef,
         final @Nullable Double maxTotalCapacityOversubscriptionRatioRef,
-        final ApiCallRc reportsRef,
-        final Boolean supportsSnapshotsRef,
-        final Boolean isPmemRef,
-        final Boolean isVDORef,
-        final Boolean isExternalLockingRef
+        final @Nullable ApiCallRc reportsRef,
+        final @Nullable Boolean supportsSnapshotsRef,
+        final @Nullable Boolean isPmemRef,
+        final @Nullable Boolean isVDORef,
+        final @Nullable Boolean isExternalLockingRef
     )
     {
         storPoolUuid = storPoolUuidRef;
@@ -140,19 +139,19 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     }
 
     @Override
-    public UUID getStorPoolUuid()
+    public @Nullable UUID getStorPoolUuid()
     {
         return storPoolUuid;
     }
 
     @Override
-    public UUID getNodeUuid()
+    public @Nullable UUID getNodeUuid()
     {
         return nodeUuid;
     }
 
     @Override
-    public String getNodeName()
+    public @Nullable String getNodeName()
     {
         return nodeName;
     }
@@ -164,7 +163,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     }
 
     @Override
-    public UUID getStorPoolDfnUuid()
+    public @Nullable UUID getStorPoolDfnUuid()
     {
         return storPoolDfnUuid;
     }
@@ -176,7 +175,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     }
 
     @Override
-    public String getFreeSpaceManagerName()
+    public @Nullable String getFreeSpaceManagerName()
     {
         return freeSpaceManagerName;
     }
@@ -212,19 +211,19 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     }
 
     @Override
-    public Map<String, String> getStorPoolProps()
+    public @Nullable Map<String, String> getStorPoolProps()
     {
         return storPoolProps;
     }
 
     @Override
-    public Map<String, String> getStorPoolDfnProps()
+    public @Nullable Map<String, String> getStorPoolDfnProps()
     {
         return storPoolDfnProps;
     }
 
     @Override
-    public Map<String, String> getStorPoolStaticTraits()
+    public @Nullable Map<String, String> getStorPoolStaticTraits()
     {
         return storPoolStaticTraits;
     }
@@ -235,41 +234,42 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         return storPoolName.compareTo(otherStorPoolPojo.storPoolName);
     }
 
-    public long getFullSyncId()
+    public @Nullable Long getFullSyncId()
     {
         return fullSyncId;
     }
 
-    public long getUpdateId()
+    public @Nullable Long getUpdateId()
     {
         return updateId;
     }
 
     @Override
-    public Boolean supportsSnapshots()
+    public @Nullable Boolean supportsSnapshots()
     {
         return supportsSnapshots;
     }
 
     @Override
-    public Boolean isPmem()
+    public @Nullable Boolean isPmem()
     {
         return isPmem;
     }
 
     @Override
-    public Boolean isVDO() {
+    public @Nullable Boolean isVDO()
+    {
         return isVDO;
     }
 
     @Override
-    public Boolean isExternalLocking()
+    public @Nullable Boolean isExternalLocking()
     {
         return externalLocking;
     }
 
     @Override
-    public ApiCallRc getReports()
+    public @Nullable ApiCallRc getReports()
     {
         return reports;
     }

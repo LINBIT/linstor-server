@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
 import java.util.HashMap;
@@ -66,7 +67,7 @@ public class Migration_26_AddEmptySnapNameToLRI extends BaseEtcdMigration
     class Lri
     {
         int id;
-        String snapName;
+        @Nullable String snapName;
         // other entries can be ignored
 
         public Lri(int idRef)

@@ -6,6 +6,7 @@ import com.linbit.NegativeTimeException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -35,7 +36,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
 
     private long schedWakeupTime = 0;
 
-    private ActionScheduler<K, V> sched;
+    private @Nullable ActionScheduler<K, V> sched;
 
     private ServiceName serviceInstanceName;
 

@@ -7,6 +7,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -53,7 +54,6 @@ import com.linbit.utils.ExceptionThrowingPredicate;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -216,7 +216,7 @@ public class CtrlSnapshotShippingApiCallHandler
     public Flux<ApiCallRc> shipSnapshot(
         String rscNameRef,
         String fromNodeNameRef,
-        String fromNicRef,
+        @Nullable String fromNicRef,
         String toNodeNameRef,
         String toNicRef,
         boolean runInBackgroundRef
@@ -251,7 +251,7 @@ public class CtrlSnapshotShippingApiCallHandler
         String rscNameRef,
         String fromNodeNameRef,
         String toNodeNameRef,
-        String toNicRef,
+        @Nullable String toNicRef,
         boolean runInBackgroundRef
     )
     {
@@ -386,7 +386,7 @@ public class CtrlSnapshotShippingApiCallHandler
         ExtToolsManager extToolsManagerRef,
         ExtTools extTool,
         String toolDescr,
-        ExtToolsInfo.Version version
+        @Nullable ExtToolsInfo.Version version
     )
     {
         ExtToolsInfo info = extToolsManagerRef.getExtToolInfo(extTool);
@@ -441,7 +441,7 @@ public class CtrlSnapshotShippingApiCallHandler
         }
     }
 
-    private SnapshotDefinition loadInProgressShipping(
+    private @Nullable SnapshotDefinition loadInProgressShipping(
         ResourceConnection rscConn,
         String rscNameRef,
         String fromNodeNameRef,
@@ -566,7 +566,7 @@ public class CtrlSnapshotShippingApiCallHandler
         return ret;
     }
 
-    private Snapshot getPrevious(Snapshot snapCurrentSourceRef)
+    private @Nullable Snapshot getPrevious(Snapshot snapCurrentSourceRef)
     {
         Snapshot prevSourceSnapshot = null;
         try
@@ -596,7 +596,7 @@ public class CtrlSnapshotShippingApiCallHandler
         @Nullable Snapshot prevSnapSource,
         Snapshot snapSource,
         Snapshot snapTarget,
-        String toNicRef,
+        @Nullable String toNicRef,
         Resource rscTarget
     )
     {

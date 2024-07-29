@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo.DbProduct;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.utils.StringUtils;
 
 import java.sql.Connection;
@@ -136,13 +137,19 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
 
     private static class LriKey
     {
-        String nodeName;
-        String rscName;
-        String snapName;
-        String kind;
-        String rscSuffix;
+        @Nullable String nodeName;
+        @Nullable String rscName;
+        @Nullable String snapName;
+        @Nullable String kind;
+        @Nullable String rscSuffix;
 
-        LriKey(String nodeNameRef, String rscNameRef, String snapNameRef, String kindRef, String rscSuffixRef)
+        LriKey(
+            @Nullable String nodeNameRef,
+            @Nullable String rscNameRef,
+            @Nullable String snapNameRef,
+            @Nullable String kindRef,
+            @Nullable String rscSuffixRef
+        )
         {
             nodeName = nodeNameRef;
             rscName = rscNameRef;

@@ -2,6 +2,7 @@ package com.linbit.linstor.debug;
 
 import com.linbit.linstor.CommonPeerCtx;
 import com.linbit.linstor.ControllerPeerCtx;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -12,6 +13,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.Set;
 
 @Singleton
@@ -47,7 +49,7 @@ public class DebugConsoleCreator
     public DebugConsole createDebugConsole(
         AccessContext accCtx,
         AccessContext debugCtx,
-        Peer client
+        @Nullable Peer client
     )
         throws AccessDeniedException
     {

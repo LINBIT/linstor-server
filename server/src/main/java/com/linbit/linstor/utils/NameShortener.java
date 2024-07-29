@@ -3,6 +3,7 @@ package com.linbit.linstor.utils;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -82,7 +83,7 @@ public class NameShortener
      * Used to replace everything that matches this regex with empty string.
      * If null, the replacement is skipped
      */
-    private final String invalidCharRegex;
+    private final @Nullable String invalidCharRegex;
 
     public NameShortener(
         String propNamespaceRef,
@@ -90,7 +91,7 @@ public class NameShortener
         int maxLenRef,
         AccessContext accCtxRef,
         String delimiterRef,
-        String validCharacters
+        @Nullable String validCharacters
     )
     {
         propNamespace = propNamespaceRef;
@@ -315,7 +316,7 @@ public class NameShortener
      *
      * @return
      */
-    private NumberPool getNumberPool(String baseName, boolean createFlag)
+    private @Nullable NumberPool getNumberPool(String baseName, boolean createFlag)
     {
         NumberPool numberPool = namePools.get(baseName);
         if (numberPool == null && createFlag)

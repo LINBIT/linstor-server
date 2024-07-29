@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -42,7 +43,6 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -54,7 +54,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -193,12 +192,11 @@ public class CtrlRscAutoPlaceApiCallHandler
         }
 
         int additionalPlaceCount;
-        if (
-            mergedSelectFilter.getAdditionalReplicaCount() != null &&
-            mergedSelectFilter.getAdditionalReplicaCount() > 0
-        )
+        @Nullable Integer additionalReplicaCount = mergedSelectFilter.getAdditionalReplicaCount();
+        String disklessType = mergedSelectFilter.getDisklessType();
+        if (additionalReplicaCount != null && additionalReplicaCount > 0)
         {
-            additionalPlaceCount = mergedSelectFilter.getAdditionalReplicaCount();
+            additionalPlaceCount = additionalReplicaCount;
         }
         else
         {
@@ -211,17 +209,15 @@ public class CtrlRscAutoPlaceApiCallHandler
              * case Y < X
              * error.
              */
-            if (mergedSelectFilter.getDisklessType() == null || mergedSelectFilter.getDisklessType().isEmpty())
+            @Nullable Integer replCtInteger = mergedSelectFilter.getReplicaCount();
+            int replCt = replCtInteger == null ? 0 : replCtInteger;
+            if (disklessType == null || disklessType.isEmpty())
             {
-                additionalPlaceCount = Optional.ofNullable(
-                    mergedSelectFilter.getReplicaCount()
-                ).orElse(0) - (alreadyPlacedDiskfulNotDeleting.size());
+                additionalPlaceCount = replCt - (alreadyPlacedDiskfulNotDeleting.size());
             }
             else
             {
-                additionalPlaceCount = Optional.ofNullable(
-                    mergedSelectFilter.getReplicaCount()
-                ).orElse(0) - alreadyPlacedDisklessNotDeleting.size();
+                additionalPlaceCount = replCt - alreadyPlacedDisklessNotDeleting.size();
             }
         }
         if (additionalPlaceCount < 0)
@@ -229,34 +225,16 @@ public class CtrlRscAutoPlaceApiCallHandler
             throw new ApiRcException(makePlaceCountTooLowResponse(rscNameStr, alreadyPlaced));
         }
 
-        List<String> storPoolNameList = null;
-        if (
-            alreadyPlaced.isEmpty() ||
-                (mergedSelectFilter.getStorPoolNameList() != null &&
-                !mergedSelectFilter.getStorPoolNameList().isEmpty())
-        )
-        {
-            storPoolNameList = mergedSelectFilter.getStorPoolNameList();
-        }
-        List<String> storPoolDisklessNameList = null;
-        if (
-            alreadyPlaced.isEmpty() ||
-                (mergedSelectFilter.getStorPoolDisklessNameList() != null &&
-                !mergedSelectFilter.getStorPoolDisklessNameList().isEmpty())
-            )
-        {
-            storPoolDisklessNameList = mergedSelectFilter.getStorPoolDisklessNameList();
-        }
+        @Nullable List<String> storPoolNameList = mergedSelectFilter.getStorPoolNameList();
+        @Nullable List<String> storPoolDisklessNameList = mergedSelectFilter.getStorPoolDisklessNameList();
 
         Flux<ApiCallRc> deploymentResponses;
         Flux<ApiCallRc> autoFlux;
-        if (
-            additionalPlaceCount == 0 &&
-                (mergedSelectFilter.getDisklessOnRemaining() == null || !mergedSelectFilter.getDisklessOnRemaining())
-        )
+        @Nullable Boolean disklessOnRemaining = mergedSelectFilter.getDisklessOnRemaining();
+        if (additionalPlaceCount == 0 && (disklessOnRemaining == null || !disklessOnRemaining))
         {
             List<Resource> listForResponse;
-            if (mergedSelectFilter.getDisklessType() == null || mergedSelectFilter.getDisklessType().isEmpty())
+            if (disklessType == null || disklessType.isEmpty())
             {
                 listForResponse = alreadyPlacedDiskfulNotDeleting;
             }
@@ -278,17 +256,18 @@ public class CtrlRscAutoPlaceApiCallHandler
             List<String> disklessNodeNames = alreadyPlacedDisklessNotDeleting.stream()
                 .map(rsc -> rsc.getNode().getName().displayValue).collect(Collectors.toList());
 
+            @Nullable List<String> doNotPlaceWithRscFromMerged = mergedSelectFilter.getDoNotPlaceWithRscList();
+            List<String> doNotPlaceWithRsc = new ArrayList<>();
+            if (doNotPlaceWithRscFromMerged != null)
+            {
+                doNotPlaceWithRsc.addAll(doNotPlaceWithRscFromMerged);
+            }
+            doNotPlaceWithRsc.add(rscNameStr);
             AutoSelectFilterPojo autoStorConfig = new AutoSelectFilterBuilder(mergedSelectFilter)
                 .setAdditionalPlaceCount(additionalPlaceCount) // no forced place count, only additional place count
                 .setStorPoolNameList(storPoolNameList)
                 .setStorPoolDisklessNameList(storPoolDisklessNameList)
-                .setDoNotPlaceWithRscList(Stream.concat(
-                    mergedSelectFilter.getDoNotPlaceWithRscList().stream(),
-                    // Do not attempt to re-use nodes that already have this resource
-                    Stream.of(rscNameStr)
-                ).collect(
-                    Collectors.toList()
-                ))
+                .setDoNotPlaceWithRscList(doNotPlaceWithRsc)
                 .setSkipAlreadyPlacedOnNodeNamesCheck(disklessNodeNames)
                 .build();
 
@@ -306,7 +285,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     context,
                     responses,
                     rscNameStr,
-                    mergedSelectFilter.getDisklessOnRemaining(),
+                    disklessOnRemaining,
                     candidate,
                     null,
                     mergedSelectFilter.getLayerStackList()
@@ -401,7 +380,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         String rscNameStr,
         Boolean disklessOnRemainingNodes,
         Set<StorPool> selectedStorPoolSet,
-        Map<StorPool.Key, Long> thinFreeCapacities,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
         List<DeviceLayerKind> layerStackList
     )
     {

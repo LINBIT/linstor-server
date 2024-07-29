@@ -6,6 +6,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -82,7 +83,6 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHa
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -203,10 +203,10 @@ public class CtrlRscCrtApiHelper
         long flags,
         Map<String, String> rscPropsMap,
         List<? extends VolumeApi> vlmApiList,
-        Integer nodeIdInt,
-        Map<StorPool.Key, Long> thinFreeCapacities,
+        @Nullable Integer nodeIdInt,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
         List<String> layerStackStrListRef,
-        Resource.DiskfulBy diskfulByRef
+        @Nullable Resource.DiskfulBy diskfulByRef
     )
     {
         long adjustedFlags = flags;

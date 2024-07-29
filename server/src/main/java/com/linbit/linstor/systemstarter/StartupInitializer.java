@@ -3,6 +3,7 @@ package com.linbit.linstor.systemstarter;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -22,7 +23,7 @@ public interface StartupInitializer
     {
     }
 
-    default SystemService getSystemService()
+    default @Nullable SystemService getSystemService()
     {
         return null;
     }

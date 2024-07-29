@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -60,7 +61,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -185,6 +185,7 @@ public class CtrlBackupL2LDstApiCallHandler
         }
         else
         {
+            rc = new ApiCallRcImpl();
             try
             {
                 // good case, continue
@@ -260,13 +261,17 @@ public class CtrlBackupL2LDstApiCallHandler
         return flux;
     }
 
-    private ApiCallRcImpl isClusterAllowedContact(int[] srcVersionRef, String srcClusterIdRef)
+    private @Nullable ApiCallRcImpl isClusterAllowedContact(int[] srcVersionRef, String srcClusterIdRef)
     {
         LinstorRemote srcRemote = loadLinstorRemote(srcClusterIdRef);
         return isClusterAllowedContact(srcVersionRef, srcClusterIdRef, srcRemote);
     }
 
-    private ApiCallRcImpl isClusterAllowedContact(int[] srcVersionRef, String srcClusterIdRef, LinstorRemote srcRemote)
+    private @Nullable ApiCallRcImpl isClusterAllowedContact(
+        int[] srcVersionRef,
+        String srcClusterIdRef,
+        LinstorRemote srcRemote
+    )
     {
         ApiCallRcImpl rc = null;
         if (!LinStor.VERSION_INFO_PROVIDER.equalsVersion(srcVersionRef[0], srcVersionRef[1], srcVersionRef[2]))
@@ -306,8 +311,8 @@ public class CtrlBackupL2LDstApiCallHandler
         String srcStltRemoteName,
         String srcRscName,
         boolean resetData,
-        String dstBaseSnapName,
-        String dstActualNodeName,
+        @Nullable String dstBaseSnapName,
+        @Nullable String dstActualNodeName,
         boolean forceRscGrpRef
     )
     {
@@ -379,7 +384,7 @@ public class CtrlBackupL2LDstApiCallHandler
         return flux;
     }
 
-    private LinstorRemote loadLinstorRemote(String srcClusterIdRef)
+    private @Nullable LinstorRemote loadLinstorRemote(String srcClusterIdRef)
     {
         try
         {

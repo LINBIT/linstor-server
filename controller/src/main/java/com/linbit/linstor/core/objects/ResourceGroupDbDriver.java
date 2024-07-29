@@ -331,9 +331,16 @@ public class ResourceGroupDbDriver
                 case K8S_CRD:
                     replicaCount = raw.get(REPLICA_COUNT);
 
-                    replicasOnSame = raw.getAsStringList(REPLICAS_ON_SAME);
-                    replicasOnDifferentList = raw.getAsStringList(REPLICAS_ON_DIFFERENT);
-                    xReplicasOnDifferentMap = raw.getAsStringIntegerMap(X_REPLICAS_ON_DIFFERENT);
+                    @Nullable List<String> replicasOnSameTmp = raw.getAsStringList(REPLICAS_ON_SAME);
+                    replicasOnSame = replicasOnSameTmp != null ? replicasOnSameTmp : new ArrayList<>();
+                    @Nullable List<String> replicasOnDifferentListTmp = raw.getAsStringList(REPLICAS_ON_DIFFERENT);
+                    replicasOnDifferentList = replicasOnDifferentListTmp != null ? replicasOnDifferentListTmp :
+                        new ArrayList<>();
+                    @Nullable Map<String, Integer> xReplicasOnDifferentMapTmp = raw.getAsStringIntegerMap(
+                        X_REPLICAS_ON_DIFFERENT
+                    );
+                    xReplicasOnDifferentMap = xReplicasOnDifferentMapTmp != null ? xReplicasOnDifferentMapTmp :
+                        new TreeMap<>();
 
                     disklessOnRemaining = raw.get(DISKLESS_ON_REMAINING);
                     peerSlots = raw.get(PEER_SLOTS);

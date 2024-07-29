@@ -2,6 +2,7 @@ package com.linbit.linstor.event;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -238,7 +239,7 @@ public class GenericEvent<T> implements LinstorTriggerableEvent<T>
         return objectIdentifiers;
     }
 
-    private Sinks.Many<T> removeStream(ObjectIdentifier objectIdentifier)
+    private @Nullable Sinks.Many<T> removeStream(ObjectIdentifier objectIdentifier)
     {
         Sinks.Many<T> sink;
 

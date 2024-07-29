@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -120,7 +121,7 @@ public class ResourceCreateCheck
         }
     }
 
-    private ResourceRole getCreatedResourceRole(Resource rsc)
+    private @Nullable ResourceRole getCreatedResourceRole(Resource rsc)
     {
         ResourceRole ret = null;
 

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.StorPoolDfnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
@@ -121,7 +122,7 @@ public class StorPoolDefinition extends AbsCoreObj<StorPoolDefinition> implement
         storPools.remove(storPoolData.getNode().getName());
     }
 
-    public StorPool getStorPool(AccessContext accCtx, NodeName nodeName) throws AccessDeniedException
+    public @Nullable StorPool getStorPool(AccessContext accCtx, NodeName nodeName) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);

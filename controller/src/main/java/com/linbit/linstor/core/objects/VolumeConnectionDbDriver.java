@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -86,7 +87,7 @@ public class VolumeConnectionDbDriver extends
     }
 
     @Override
-    protected Pair<VolumeConnection, Void> load(
+    protected @Nullable Pair<VolumeConnection, Void> load(
         RawParameters raw,
         Map<Triple<NodeName, ResourceName, VolumeNumber>, Volume> vlmsMap
     )

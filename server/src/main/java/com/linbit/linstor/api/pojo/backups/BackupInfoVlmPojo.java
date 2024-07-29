@@ -1,16 +1,15 @@
 package com.linbit.linstor.api.pojo.backups;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-
-import javax.annotation.Nullable;
 
 public class BackupInfoVlmPojo
 {
     private final String backupVlmName;
     private final DeviceLayerKind layerType;
-    private final Long dlSizeKib;
-    private final Long allocSizeKib;
-    private final Long useSizeKib;
+    private final @Nullable Long dlSizeKib;
+    private final @Nullable Long allocSizeKib;
+    private final @Nullable Long useSizeKib;
 
     public BackupInfoVlmPojo(
         String backupVlmNameRef,
@@ -37,17 +36,17 @@ public class BackupInfoVlmPojo
         return layerType;
     }
 
-    public Long getDlSizeKib()
+    public @Nullable Long getDlSizeKib()
     {
         return dlSizeKib;
     }
 
-    public Long getAllocSizeKib()
+    public @Nullable Long getAllocSizeKib()
     {
         return allocSizeKib;
     }
 
-    public Long getUseSizeKib()
+    public @Nullable Long getUseSizeKib()
     {
         return useSizeKib;
     }

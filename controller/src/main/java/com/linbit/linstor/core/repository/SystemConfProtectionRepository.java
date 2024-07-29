@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -25,7 +26,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
 {
     private final Props ctrlConf;
     private final Props stltConf;
-    private ObjectProtection objectProtection;
+    private @Nullable ObjectProtection objectProtection;
 
     @Inject
     public SystemConfProtectionRepository(
@@ -62,7 +63,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
     }
 
     @Override
-    public String setCtrlProp(AccessContext accCtx, String key, String value, String namespace)
+    public @Nullable String setCtrlProp(AccessContext accCtx, String key, String value, String namespace)
         throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
     {
         checkProtSet();
@@ -71,7 +72,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
     }
 
     @Override
-    public String setStltProp(AccessContext accCtx, String key, String value)
+    public @Nullable String setStltProp(AccessContext accCtx, String key, String value)
         throws AccessDeniedException, InvalidValueException, InvalidKeyException, DatabaseException
     {
         checkProtSet();
@@ -80,7 +81,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
     }
 
     @Override
-    public String removeCtrlProp(AccessContext accCtx, String key, String namespace)
+    public @Nullable String removeCtrlProp(AccessContext accCtx, String key, String namespace)
         throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
         checkProtSet();
@@ -89,7 +90,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
     }
 
     @Override
-    public String removeStltProp(AccessContext accCtx, String key, String namespace)
+    public @Nullable String removeStltProp(AccessContext accCtx, String key, String namespace)
         throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
         checkProtSet();

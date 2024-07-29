@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
@@ -22,8 +23,6 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.STORAGE_SPACES
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.STORAGE_SPACES_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
-
-import javax.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -124,13 +123,13 @@ public class StorageRscPojo implements RscLayerDataApi
     {
         private final int vlmNr;
         @JsonIgnore
-        private final String devicePath;
+        private final @Nullable String devicePath;
         private final long allocatedSize;
         private final long usableSize;
-        private final Long snapAllocatedSize;
-        private final Long snapUsableSize;
+        private final @Nullable Long snapAllocatedSize;
+        private final @Nullable Long snapUsableSize;
         @JsonIgnore
-        private final String diskState;
+        private final @Nullable String diskState;
         @JsonIgnore
         private final DeviceProviderKind kind;
         private final StorPoolApi storPoolApi;
@@ -142,12 +141,12 @@ public class StorageRscPojo implements RscLayerDataApi
 
         AbsVlmProviderPojo(
             int vlmNrRef,
-            String devicePathRef,
+            @Nullable String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
-            String diskStateRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
+            @Nullable String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
             DeviceProviderKind kindRef,
@@ -256,9 +255,9 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
-            String diskStateRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
+            @Nullable String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
             boolean existsRef
@@ -315,8 +314,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
@@ -373,8 +372,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef,
             boolean existsRef
@@ -430,8 +429,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef,
             boolean existsRef
@@ -487,8 +486,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
@@ -545,8 +544,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
@@ -577,8 +576,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
@@ -635,8 +634,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
@@ -695,8 +694,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
@@ -755,8 +754,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
@@ -813,8 +812,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
@@ -872,8 +871,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
@@ -905,8 +904,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long snapAllocatedSizeRef,
-            Long snapUsableSizeRef,
+            @Nullable Long snapAllocatedSizeRef,
+            @Nullable Long snapUsableSizeRef,
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,

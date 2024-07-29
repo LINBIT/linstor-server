@@ -1,9 +1,11 @@
 package com.linbit.linstor.netcom;
 
 import com.linbit.ServiceName;
+import com.linbit.linstor.annotation.Nullable;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -20,7 +22,7 @@ public class NetComContainerImpl implements NetComContainer
     }
 
     @Override
-    public TcpConnector getNetComConnector(ServiceName conSvcName)
+    public @Nullable TcpConnector getNetComConnector(ServiceName conSvcName)
     {
         return netComConnectors.get(conSvcName);
     }

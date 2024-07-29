@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.objects.KeyValueStore;
@@ -16,6 +17,7 @@ public interface KeyValueStoreRepository extends ProtectedObject
     void requireAccess(AccessContext accCtx, AccessType requested)
         throws AccessDeniedException;
 
+    @Nullable
     KeyValueStore get(AccessContext accCtx, KeyValueStoreName nameRef)
         throws AccessDeniedException;
 

@@ -4,6 +4,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -61,7 +62,7 @@ public class WritecacheLayer implements DeviceLayer
     private final ExtCmdFactory extCmdFactory;
     private final Provider<DeviceHandler> resourceProcessorProvider;
 
-    private Props localNodeProps;
+    private @Nullable Props localNodeProps;
     private final StltConfigAccessor stltConfAccessor;
 
     static
@@ -425,7 +426,7 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public @Nullable LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
     {
         localNodeProps = localNodePropsRef;
         return null;

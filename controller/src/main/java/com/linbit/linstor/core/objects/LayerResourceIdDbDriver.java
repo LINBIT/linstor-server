@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -40,7 +41,6 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResource
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.RESOURCE_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.SNAPSHOT_NAME;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -112,7 +112,7 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
         final int rli;
-        final Integer parentId;
+        final @Nullable Integer parentId;
         final boolean suspended;
 
         switch (getDbType())
@@ -126,11 +126,11 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
             case ETCD:
                 rli = Integer.parseInt(raw.get(LAYER_RESOURCE_ID));
 
-                String parentIdStr = raw.get(LAYER_RESOURCE_PARENT_ID);
+                @Nullable String parentIdStr = raw.get(LAYER_RESOURCE_PARENT_ID);
                 parentId = parentIdStr == null ? null : Integer.parseInt(parentIdStr);
 
-                String suspendedStr = raw.get(LAYER_RESOURCE_SUSPENDED);
-                suspended = suspendedStr == null ? null : Boolean.parseBoolean(suspendedStr);
+                @Nullable String suspendedStr = raw.get(LAYER_RESOURCE_SUSPENDED);
+                suspended = Boolean.parseBoolean(suspendedStr);
 
                 break;
             default:
@@ -201,7 +201,7 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
     private static class ResourceLayerIdLoadingPojo extends ParentResourceLayerIdLoadingPojo
     {
         private final DeviceLayerKind layerKind;
-        private final ParentResourceLayerIdLoadingPojo parent;
+        private final @Nullable ParentResourceLayerIdLoadingPojo parent;
         private final String rscNameSuffix;
         private final boolean isSuspended;
         private final NodeName nodeName;

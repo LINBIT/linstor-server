@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -117,7 +118,7 @@ public class CtrlStorPoolApiCallHandler
     }
 
     public Flux<ApiCallRc> modify(
-        UUID storPoolUuid,
+        @Nullable UUID storPoolUuid,
         String nodeNameStr,
         String storPoolNameStr,
         Map<String, String> overrideProps,
@@ -149,7 +150,7 @@ public class CtrlStorPoolApiCallHandler
     }
 
     private Flux<ApiCallRc> modifyInTransaction(
-        UUID storPoolUuid,
+        @Nullable UUID storPoolUuid,
         String nodeNameStr,
         String storPoolNameStr,
         Map<String, String> overrideProps,
@@ -523,7 +524,7 @@ public class CtrlStorPoolApiCallHandler
         }
     }
 
-    private StorPool loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
+    private @Nullable StorPool loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
     {
         StorPool result = null;
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, failIfNull);

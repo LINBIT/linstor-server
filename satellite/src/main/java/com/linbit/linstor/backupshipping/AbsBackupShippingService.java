@@ -390,9 +390,9 @@ public abstract class AbsBackupShippingService implements SystemService
         String backupNameRef,
         AbsRemote remote,
         boolean restore,
-        Integer portRef,
+        @Nullable Integer portRef,
         BiConsumer<Boolean, Integer> postAction,
-        AbsStorageVlmData<Snapshot> basedOnSnapVlmData,
+        @Nullable AbsStorageVlmData<Snapshot> basedOnSnapVlmData,
         AbsStorageVlmData<Snapshot> snapVlmData
     )
         throws StorageException, InvalidNameException, AccessDeniedException
@@ -902,7 +902,7 @@ public abstract class AbsBackupShippingService implements SystemService
         String backupNameRef,
         AbsRemote remoteRef,
         boolean restoreRef,
-        Integer portRef,
+        @Nullable Integer portRef,
         BiConsumer<Boolean, Integer> postActionRef
     );
 
@@ -934,12 +934,12 @@ public abstract class AbsBackupShippingService implements SystemService
     {
         private boolean isStarted = false;
         Map<AbsStorageVlmData<Snapshot>, SnapVlmDataInfo> snapVlmDataInfoMap = new HashMap<>();
-        AbsRemote remote = null;
+        @Nullable AbsRemote remote = null;
         Set<Integer> portsUsed = new TreeSet<>();
         Set<Integer> alreadyInUse = new TreeSet<>();
 
-        String s3MetaKey;
-        String basedOnS3MetaKey;
+        @Nullable String s3MetaKey;
+        @Nullable String basedOnS3MetaKey;
 
         int snapVlmDataFinishedShipping = 0;
         private int snapVlmDataFinishedSuccessfully = 0;

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller.db;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.ClassPathLoader;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
@@ -31,7 +32,7 @@ import com.fasterxml.jackson.databind.node.ValueNode;
  */
 public class DbExportPojoDataDeserializationHelper
 {
-    private String currentTable = null;
+    private @Nullable String currentTable = null;
 
     private final Map<String, Class<? extends LinstorSpec<?, ?>>> jsonLinstorSpecMapping;
     private final Map<String, Class<? extends LinstorCrd<?>>> jsonLinstorCrdMapping;

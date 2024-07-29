@@ -2,6 +2,7 @@ package com.linbit.linstor.api.protobuf.serializer;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
@@ -158,7 +159,6 @@ import com.linbit.utils.Pair;
 import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -170,7 +170,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -186,8 +188,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     public ProtoCommonSerializerBuilder(
         final ErrorReporter errReporterRef,
         final AccessContext serializerCtxRef,
-        String msgContent,
-        Long apiCallId,
+        @Nullable String msgContent,
+        @Nullable Long apiCallId,
         boolean isAnswer
     )
     {
@@ -226,7 +228,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return ret;
     }
 
-    private void header(String msgContent, Long apiCallId, boolean isAnswer) throws IOException
+    private void header(@Nullable String msgContent, Long apiCallId, boolean isAnswer) throws IOException
     {
         MsgHeaderOuterClass.MsgHeader.Builder headerBuilder = MsgHeaderOuterClass.MsgHeader.newBuilder();
         if (apiCallId == null)
@@ -657,13 +659,15 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setUpToDate(resourceState.getUpToDate());
             }
-            if (resourceState.getPromotionScore() != null)
+            Integer promotionScore = resourceState.getPromotionScore();
+            if (promotionScore != null)
             {
-                builder.setPromotionScore(resourceState.getPromotionScore());
+                builder.setPromotionScore(promotionScore);
             }
-            if (resourceState.mayPromote() != null)
+            Boolean mayPromote = resourceState.mayPromote();
+            if (mayPromote != null)
             {
-                builder.setMayPromote(resourceState.mayPromote());
+                builder.setMayPromote(mayPromote);
             }
 
             builder.build().writeDelimitedTo(baos);
@@ -769,7 +773,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 errReport.getExceptionMessage().ifPresent(protoErrorReport::setExceptionMessage);
                 errReport.getOriginFile().ifPresent(protoErrorReport::setOriginFile);
                 errReport.getOriginMethod().ifPresent(protoErrorReport::setOriginMethod);
-                errReport.getOriginLine().ifPresent(protoErrorReport::setOriginLine);
+                Optional<Integer> originLine = errReport.getOriginLine();
+                if (originLine.isPresent())
+                {
+                    protoErrorReport.setOriginLine(originLine.get());
+                }
                 errReport.getText().ifPresent(protoErrorReport::setText);
                 msgErrorReport.addErrorReports(protoErrorReport);
             }
@@ -1108,8 +1116,13 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
     public static RscGrp serializeResourceGroup(ResourceGroupApi rscGrpApi)
     {
+        UUID uuid = rscGrpApi.getUuid();
+        if (uuid == null)
+        {
+            throw new ImplementationError("uuid is only allowed to be null in json-data (i.e. client<->ctrl)");
+        }
         RscGrp.Builder builder = RscGrp.newBuilder()
-            .setUuid(rscGrpApi.getUuid().toString())
+            .setUuid(uuid.toString())
             .setName(rscGrpApi.getName())
             .putAllRscDfnProps(rscGrpApi.getProps())
             .addAllVlmGrp(serializeVolumeGroups(rscGrpApi.getVlmGrpList()));
@@ -1504,8 +1517,16 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setDevicePath(vlmApi.getDevicePath());
             }
-            vlmApi.getAllocatedSize().ifPresent(builder::setAllocatedSize);
-            vlmApi.getUsableSize().ifPresent(builder::setUsableSize);
+            Optional<Long> allocatedSize = vlmApi.getAllocatedSize();
+            if (allocatedSize.isPresent())
+            {
+                builder.setAllocatedSize(allocatedSize.get());
+            }
+            Optional<Long> usableSize = vlmApi.getUsableSize();
+            if (usableSize.isPresent())
+            {
+                builder.setUsableSize(usableSize.get());
+            }
 
             protoVlmList.add(builder.build());
         }

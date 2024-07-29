@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.drbd.drbdstate;
 
 import com.linbit.Checks;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.types.MinorNumber;
 
@@ -25,15 +26,15 @@ public class DrbdVolume
     public static final String PROP_KEY_DONE         = "done";
 
     protected final VolumeNumber volId;
-    protected MinorNumber volMinorNr;
+    protected @Nullable MinorNumber volMinorNr;
     protected DiskState volDiskState;
     protected ReplState volReplState;
     protected DrbdResource resRef;
-    protected DrbdConnection connRef;
-    protected Boolean client;
-    protected Float donePercentage;
+    protected @Nullable DrbdConnection connRef;
+    protected @Nullable Boolean client;
+    protected @Nullable Float donePercentage;
 
-    protected DrbdVolume(DrbdResource resource, DrbdConnection peerConn, VolumeNumber volNr)
+    protected DrbdVolume(DrbdResource resource, @Nullable DrbdConnection peerConn, VolumeNumber volNr)
         throws ValueOutOfRangeException
     {
         Checks.rangeCheck(volNr.value, VolumeNumber.VOLUME_NR_MIN, VolumeNumber.VOLUME_NR_MAX);
@@ -79,7 +80,7 @@ public class DrbdVolume
 
     protected static DrbdVolume newFromProps(
         DrbdResource resource,
-        DrbdConnection connection,
+        @Nullable DrbdConnection connection,
         Map<String, String> props
     )
         throws EventsSourceException

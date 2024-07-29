@@ -1,5 +1,6 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
@@ -8,7 +9,7 @@ import java.util.List;
 
 public abstract class BaseTransactionObject extends AbsTransactionObject
 {
-    protected List<TransactionObject> transObjs;
+    protected @Nullable List<TransactionObject> transObjs;
 
     public BaseTransactionObject(Provider<? extends TransactionMgr> transMgrProvider)
     {

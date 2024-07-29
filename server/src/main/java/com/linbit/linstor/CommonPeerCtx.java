@@ -1,8 +1,9 @@
 package com.linbit.linstor;
 
-import java.util.concurrent.atomic.AtomicReference;
-
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.debug.DebugConsole;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Context information for a peer connected to a linstor Controller or Satellite
@@ -11,14 +12,14 @@ import com.linbit.linstor.debug.DebugConsole;
  */
 public class CommonPeerCtx
 {
-    private AtomicReference<DebugConsole> dbgConsole = new AtomicReference<>();
+    private AtomicReference<@Nullable DebugConsole> dbgConsole = new AtomicReference<>();
 
-    public void setDebugConsole(DebugConsole dbgConsoleRef)
+    public void setDebugConsole(@Nullable DebugConsole dbgConsoleRef)
     {
         dbgConsole.set(dbgConsoleRef);
     }
 
-    public DebugConsole getDebugConsole()
+    public @Nullable DebugConsole getDebugConsole()
     {
         return dbgConsole.get();
     }

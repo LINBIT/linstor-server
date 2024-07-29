@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apis;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 
 import java.util.List;
@@ -16,6 +17,8 @@ public interface NodeApi
     Map<String, String> getProps();
     long getFlags();
     List<NetInterfaceApi> getNetInterfaces();
+
+    @Nullable
     NetInterfaceApi getActiveStltConn();
     List<String> getDeviceLayerKindNames();
     List<String> getDeviceProviderKindNames();

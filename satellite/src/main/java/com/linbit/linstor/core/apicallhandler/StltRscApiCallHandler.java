@@ -57,6 +57,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.Pair;
@@ -842,12 +843,17 @@ class StltRscApiCallHandler
                         storPoolDfn.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolDfnProps());
                         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                     }
+                    DeviceProviderKind deviceProviderKind = storPoolApi.getDeviceProviderKind();
+                    if (deviceProviderKind == null)
+                    {
+                        throw new ImplementationError("deviceProviderKind must not be null");
+                    }
                     storPool = storPoolFactory.getInstanceSatellite(
                         apiCtx,
                         storPoolApi.getStorPoolUuid(),
                         rsc.getNode(),
                         storPoolDfn,
-                        storPoolApi.getDeviceProviderKind(),
+                        deviceProviderKind,
                         freeSpaceMgrFactory.getInstance(
                             SharedStorPoolName.restoreName(storPoolApi.getFreeSpaceManagerName())
                         ),

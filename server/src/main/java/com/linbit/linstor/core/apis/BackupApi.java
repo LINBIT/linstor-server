@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apis;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.Map;
 
 public interface BackupApi
@@ -79,6 +81,7 @@ public interface BackupApi
      * null if the current backup is a full backup.
      * otherwise this will reference the base backup, which might be a full or an incremental backup
      */
+    @Nullable
     String getBasedOnId();
 
     BackupS3Api getS3();

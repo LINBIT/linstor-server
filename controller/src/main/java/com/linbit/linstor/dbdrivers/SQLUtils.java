@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -134,7 +135,7 @@ public class SQLUtils
         return ret;
     }
 
-    public static Integer getNullableInteger(ResultSet resultSetRef, String column) throws SQLException
+    public static @Nullable Integer getNullableInteger(ResultSet resultSetRef, String column) throws SQLException
     {
         Integer ret = resultSetRef.getInt(column);
         if (resultSetRef.wasNull())
@@ -144,7 +145,7 @@ public class SQLUtils
         return ret;
     }
 
-    public static Boolean getNullableBoolean(ResultSet resultSetRef, String column) throws SQLException
+    public static @Nullable Boolean getNullableBoolean(ResultSet resultSetRef, String column) throws SQLException
     {
         Boolean ret = resultSetRef.getBoolean(column);
         if (resultSetRef.wasNull())

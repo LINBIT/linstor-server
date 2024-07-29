@@ -1,6 +1,7 @@
 package com.linbit.extproc;
 
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.StringUtils;
 
@@ -16,9 +17,9 @@ public class ExtCmdUtils
     {
         EXC createException(
             String message,
-            String descriptionText,
-            String causeText,
-            String correctionText,
+            @Nullable String descriptionText,
+            @Nullable String causeText,
+            @Nullable String correctionText,
             String detailsText
         );
     }

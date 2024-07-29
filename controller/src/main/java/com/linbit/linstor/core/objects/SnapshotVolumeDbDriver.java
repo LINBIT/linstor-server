@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -80,7 +81,7 @@ public class SnapshotVolumeDbDriver extends
     }
 
     @Override
-    protected Pair<SnapshotVolume, Void> load(
+    protected @Nullable Pair<SnapshotVolume, Void> load(
         RawParameters raw,
         Pair<Map<Triple<NodeName, ResourceName, SnapshotName>, ? extends Snapshot>, Map<Triple<ResourceName, SnapshotName, VolumeNumber>, ? extends SnapshotVolumeDefinition>> loadMaps
     )

@@ -9,6 +9,7 @@ import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.PriorityProps.MultiResult;
 import com.linbit.linstor.PriorityProps.ValueWithDescription;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
@@ -45,8 +46,6 @@ import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
-import javax.annotation.Nullable;
-
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -71,7 +70,7 @@ public class ConfFileBuilder
     private final ErrorReporter errorReporter;
     private final AccessContext accCtx;
     private final DrbdRscData<Resource> localRscData;
-    private final Collection<DrbdRscData<Resource>> remoteResourceData;
+    private final @Nullable Collection<DrbdRscData<Resource>> remoteResourceData;
     private final WhitelistProps whitelistProps;
     private final ReadOnlyProps stltProps;
     private final DrbdVersion drbdVersion;
@@ -83,7 +82,7 @@ public class ConfFileBuilder
         final ErrorReporter errorReporterRef,
         final AccessContext accCtxRef,
         final DrbdRscData<Resource> localRscRef,
-        final Collection<DrbdRscData<Resource>> remoteResourcesRef,
+        final @Nullable Collection<DrbdRscData<Resource>> remoteResourcesRef,
         final WhitelistProps whitelistPropsRef,
         final ReadOnlyProps stltPropsRef,
         final DrbdVersion drbdVersionRef
@@ -602,7 +601,7 @@ public class ConfFileBuilder
         return stringBuilder.toString();
     }
 
-    private void appendConnectionHost(int rscDfnPort, ResourceConnection rscConn, NetInterface netIf)
+    private void appendConnectionHost(int rscDfnPort, @Nullable ResourceConnection rscConn, NetInterface netIf)
         throws AccessDeniedException
     {
         TcpPortNumber rscConnPort = rscConn == null ? null : rscConn.getPort(accCtx);

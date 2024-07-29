@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -20,16 +21,20 @@ public interface SystemConfRepository extends ProtectedObject
     void requireAccess(AccessContext accCtx, AccessType requested)
         throws AccessDeniedException;
 
-    String setCtrlProp(AccessContext accCtx, String key, String value, String namespace)
+    @Nullable
+    String setCtrlProp(AccessContext accCtx, String key, String value, @Nullable String namespace)
         throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException;
 
+    @Nullable
     String setStltProp(AccessContext accCtx, String key, String value)
         throws AccessDeniedException, InvalidValueException, InvalidKeyException, DatabaseException;
 
-    String removeCtrlProp(AccessContext accCtx, String key, String namespace)
+    @Nullable
+    String removeCtrlProp(AccessContext accCtx, String key, @Nullable String namespace)
         throws AccessDeniedException, InvalidKeyException, DatabaseException;
 
-    String removeStltProp(AccessContext accCtx, String key, String namespace)
+    @Nullable
+    String removeStltProp(AccessContext accCtx, String key, @Nullable String namespace)
         throws AccessDeniedException, InvalidKeyException, DatabaseException;
 
     ReadOnlyProps getCtrlConfForView(AccessContext accCtx)

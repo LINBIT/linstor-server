@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.utils;
 
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.Commands;
@@ -20,7 +21,7 @@ public class LsscsiUtils
     private static final Object SYNC_OBJ = new Object();
     private static final String RESCAN_PATH_FORMAT = "/sys/class/scsi_host/host%s/scan";
 
-    private static List<LsscsiRow> cachedLsscsiRows;
+    private static @Nullable List<LsscsiRow> cachedLsscsiRows;
 
     public static class LsscsiRow
     {

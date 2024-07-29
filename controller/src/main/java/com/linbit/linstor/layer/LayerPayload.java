@@ -2,6 +2,7 @@ package com.linbit.linstor.layer;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -36,27 +37,27 @@ public class LayerPayload
 
     public class DrbdRscPayload
     {
-        public Integer nodeId;
-        public Short peerSlots;
-        public Integer alStripes;
-        public Long alStripeSize;
+        public @Nullable Integer nodeId;
+        public @Nullable Short peerSlots;
+        public @Nullable Integer alStripes;
+        public @Nullable Long alStripeSize;
         public boolean needsNewNodeId = false;
-        public Long rscFlags;
+        public @Nullable Long rscFlags;
     }
 
     public class DrbdRscDfnPayload
     {
-        public Integer tcpPort;
-        public TransportType transportType;
-        public String sharedSecret;
-        public Short peerSlotsNewResource;
-        public Integer alStripes;
-        public Long alStripeSize;
+        public @Nullable Integer tcpPort;
+        public @Nullable TransportType transportType;
+        public @Nullable String sharedSecret;
+        public @Nullable Short peerSlotsNewResource;
+        public @Nullable Integer alStripes;
+        public @Nullable Long alStripeSize;
     }
 
     public class DrbdVlmDfnPayload
     {
-        public Integer minorNr;
+        public @Nullable Integer minorNr;
     }
 
     public DrbdRscPayload getDrbdRsc()
@@ -84,7 +85,7 @@ public class LayerPayload
         }
     }
 
-    public StorageVlmPayload getStorageVlmPayload(String rscNameSuffix, int vlmNr)
+    public @Nullable StorageVlmPayload getStorageVlmPayload(String rscNameSuffix, int vlmNr)
     {
         return storagePayload.get(new Pair<>(rscNameSuffix, vlmNr));
     }

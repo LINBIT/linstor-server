@@ -3,6 +3,7 @@ package com.linbit.linstor.logging;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -13,7 +14,6 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.io.File;
@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
@@ -62,8 +63,8 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         Path logDirectory,
         boolean printStackTraces,
         String nodeName,
-        String logLevelRef,
-        String linstorLogLevelRef,
+        @Nullable String logLevelRef,
+        @Nullable String linstorLogLevelRef,
         Provider<AccessContext> peerCtxProviderRef
     )
     {
@@ -152,7 +153,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public Level getCurrentLogLevel()
+    public @Nullable Level getCurrentLogLevel()
     {
         Level level = null; // no logging, aka OFF
         org.slf4j.Logger crtLogger = mainLogger;
@@ -411,7 +412,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         return reportPrinter;
     }
 
-    private void closeReportFile(OutputStream output)
+    private void closeReportFile(@Nullable OutputStream output)
     {
         if (output != null && output != System.err)
         {
@@ -427,7 +428,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public ErrorReportResult listReports(
+    public @Nonnull ErrorReportResult listReports(
         boolean withText,
         @Nullable final Date since,
         @Nullable final Date to,
@@ -450,7 +451,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         return h2ErrorReporter.deleteErrorReports(since, to, exception, version, ids);
     }
 
-    private BasicFileAttributes getAttributes(final Path file)
+    private @Nullable BasicFileAttributes getAttributes(final Path file)
     {
         BasicFileAttributes basicFileAttributes = null;
         try
@@ -464,6 +465,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         return basicFileAttributes;
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     @Override
     public void archiveLogDirectory()
     {

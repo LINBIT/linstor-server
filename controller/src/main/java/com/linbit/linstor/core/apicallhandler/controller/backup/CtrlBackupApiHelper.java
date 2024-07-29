@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.backup;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -39,7 +40,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -294,7 +294,7 @@ public class CtrlBackupApiHelper
     /**
      * Get all s3Keys of the given remote, filtered by rscName
      */
-    Set<String> getAllS3Keys(S3Remote s3Remote, String rscName) throws AccessDeniedException
+    Set<String> getAllS3Keys(S3Remote s3Remote, @Nullable String rscName) throws AccessDeniedException
     {
         List<S3ObjectSummary> objects = backupHandler.listObjects(
             rscName,
@@ -413,6 +413,7 @@ public class CtrlBackupApiHelper
      *
      * @return
      */
+    @Nullable
     SnapshotDefinition loadSnapDfnIfExists(String rscName, String snapName)
     {
         SnapshotDefinition snapDfn = null;
@@ -507,7 +508,8 @@ public class CtrlBackupApiHelper
         return Flux.empty();
     }
 
-    S3MetafileNameInfo getLatestBackup(Set<String> s3keys, String snapName)
+    @Nullable
+    S3MetafileNameInfo getLatestBackup(Set<String> s3keys, @Nullable String snapName)
     {
         S3MetafileNameInfo latest = null;
         for (String key : s3keys)
@@ -537,8 +539,8 @@ public class CtrlBackupApiHelper
     {
         private String s3Key;
         private boolean exists = false;
-        private BackupMetaDataPojo metaFile;
-        private SnapshotDefinition snapDfn = null;
+        private @Nullable BackupMetaDataPojo metaFile;
+        private @Nullable SnapshotDefinition snapDfn = null;
         private HashSet<S3ObjectInfo> referencedBy = new HashSet<>();
         private HashSet<S3ObjectInfo> references = new HashSet<>();
 
@@ -552,7 +554,7 @@ public class CtrlBackupApiHelper
             return metaFile != null;
         }
 
-        public SnapshotDefinition getSnapDfn()
+        public @Nullable SnapshotDefinition getSnapDfn()
         {
             return snapDfn;
         }
@@ -562,7 +564,7 @@ public class CtrlBackupApiHelper
             return exists;
         }
 
-        public BackupMetaDataPojo getMetaFile()
+        public @Nullable BackupMetaDataPojo getMetaFile()
         {
             return metaFile;
         }

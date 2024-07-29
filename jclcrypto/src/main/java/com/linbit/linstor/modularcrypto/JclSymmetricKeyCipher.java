@@ -2,12 +2,7 @@ package com.linbit.linstor.modularcrypto;
 
 import com.linbit.crypto.ByteArrayCipher;
 import com.linbit.linstor.LinStorException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -17,6 +12,15 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Cipher utility for simple encryption and decryption of byte arrays
@@ -40,20 +44,6 @@ public final class JclSymmetricKeyCipher implements ByteArrayCipher
     public static final int KD_ITERATIONS = 5000;
 
     private static final int BITS_PER_BYTE = 8;
-
-    public enum CipherStrength
-    {
-        KEY_LENGTH_128(128),
-        KEY_LENGTH_192(192),
-        KEY_LENGTH_256(256);
-
-        public final int keyLength;
-
-        CipherStrength(int length)
-        {
-            keyLength = length;
-        }
-    }
 
     private static CipherStrength defaultCipherStrength = CipherStrength.KEY_LENGTH_128;
 
@@ -198,6 +188,8 @@ public final class JclSymmetricKeyCipher implements ByteArrayCipher
         return instance;
     }
 
+
+    @SuppressFBWarnings
     private JclSymmetricKeyCipher(final SecretKey key)
         throws LinStorException
     {

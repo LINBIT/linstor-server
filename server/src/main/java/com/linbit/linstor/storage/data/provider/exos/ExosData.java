@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider.exos;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ExosVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -17,7 +18,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.NameShortenerModule;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ import java.util.Set;
 public class ExosData<RSC extends AbsResource<RSC>>
     extends AbsStorageVlmData<RSC> implements LvmProviderObject<RSC>
 {
-    private String shortName;
+    private @Nullable String shortName;
     private Set<String> hctlSet = new HashSet<>();
 
     public ExosData(
@@ -66,7 +66,7 @@ public class ExosData<RSC extends AbsResource<RSC>>
         identifier = shortName;
     }
 
-    public String getShortName()
+    public @Nullable String getShortName()
     {
         return shortName;
     }

@@ -3,6 +3,7 @@ package com.linbit.extproc;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
@@ -31,13 +32,13 @@ public class ExtCmd extends ChildProcessHandler
     private final Map<ExtCmdCondition, String> conditionsWithDescriptions;
     private final Set<ExtCmdEndedListener> extCmdEndedListenerSet;
 
-    private OutputReceiver  outReceiver;
-    private OutputReceiver  errReceiver;
+    private @Nullable OutputReceiver outReceiver;
+    private @Nullable OutputReceiver errReceiver;
     private ErrorReporter   errLog;
     private long            startTime;
 
-    private String[] execCommand;
-    private String execCommandStr;
+    private @Nullable String[] execCommand;
+    private @Nullable String execCommandStr;
 
     private boolean logExecution = true;
     private boolean saveWithoutSharedLocks = false;
@@ -106,7 +107,7 @@ public class ExtCmd extends ChildProcessHandler
         return syncProcess();
     }
 
-    public OutputStream exec(ProcessBuilder.Redirect stdinRedirect, File directory, String... command)
+    public OutputStream exec(ProcessBuilder.Redirect stdinRedirect, @Nullable File directory, String... command)
         throws IOException
     {
         execCommand = command;

@@ -1,6 +1,7 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
@@ -39,7 +40,7 @@ public class CmdDisplayNodes extends BaseDebugCmd
 
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
-    private final Supplier<ObjectProtection> nodesMapProt;
+    private final @Nullable Supplier<ObjectProtection> nodesMapProt;
     private final CoreModule.NodesMap nodesMap;
 
     private final FilteredObjectLister<Node> lister;
@@ -47,7 +48,7 @@ public class CmdDisplayNodes extends BaseDebugCmd
     public CmdDisplayNodes(
         ReadWriteLock reconfigurationLockRef,
         ReadWriteLock nodesMapLockRef,
-        Supplier<ObjectProtection> nodesMapProtRef,
+        @Nullable Supplier<ObjectProtection> nodesMapProtRef,
         CoreModule.NodesMap nodesMapRef
     )
     {
@@ -111,7 +112,7 @@ public class CmdDisplayNodes extends BaseDebugCmd
         }
 
         @Override
-        public Node getByName(final String name)
+        public @Nullable Node getByName(final String name)
             throws InvalidNameException
         {
             return nodesMap.get(new NodeName(name));

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
@@ -29,7 +30,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.utils.ExceptionThrowingSupplier;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -381,7 +381,7 @@ public class PropsChangedListenerBuilder
             );
         }
 
-        private void require(Object requiredSupplier, String supplierDescrRef)
+        private void require(@Nullable Object requiredSupplier, String supplierDescrRef)
         {
             if (requiredSupplier == null)
             {

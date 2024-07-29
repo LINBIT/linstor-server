@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
@@ -16,6 +17,7 @@ public interface RemoteRepository extends ProtectedObject
 {
     void requireAccess(AccessContext accCtx, AccessType requested) throws AccessDeniedException;
 
+    @Nullable
     AbsRemote get(AccessContext accCtx, RemoteName remoteName) throws AccessDeniedException;
 
     void put(AccessContext accCtx, AbsRemote remote) throws AccessDeniedException;
@@ -24,7 +26,7 @@ public interface RemoteRepository extends ProtectedObject
 
     CoreModule.RemoteMap getMapForView(AccessContext accCtx) throws AccessDeniedException;
 
-    default S3Remote getS3(AccessContext accCtx, RemoteName remoteName) throws AccessDeniedException
+    default @Nullable S3Remote getS3(AccessContext accCtx, RemoteName remoteName) throws AccessDeniedException
     {
         AbsRemote remote = get(accCtx, remoteName);
         if (remote != null && !(remote instanceof S3Remote))

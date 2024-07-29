@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -67,7 +68,7 @@ public class BCacheLayer implements DeviceLayer
     private final SysFsHandler sysFsHandler;
     private final FileSystemWatch fsWatch;
 
-    private Props localNodeProps;
+    private @Nullable Props localNodeProps;
 
     @Inject
     public BCacheLayer(
@@ -421,7 +422,7 @@ public class BCacheLayer implements DeviceLayer
         );
     }
 
-    private String waitUntilBackingDeviceIsRegistered(
+    private @Nullable String waitUntilBackingDeviceIsRegistered(
         String backingDev,
         long timeout,
         long waitCount,
@@ -524,7 +525,7 @@ public class BCacheLayer implements DeviceLayer
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public @Nullable LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
         throws StorageException, AccessDeniedException
     {
         localNodeProps = localNodePropsRef;

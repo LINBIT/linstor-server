@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -15,7 +16,6 @@ import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 import com.linbit.linstor.logging.ErrorReporter;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -86,7 +86,7 @@ public class VolumeDefinitions
     public Response listVolumeDefinition(
         @Context Request request,
         @PathParam("rscName") String rscName,
-        @PathParam("vlmNr") Integer vlmNumber
+        @PathParam("vlmNr") @Nullable Integer vlmNumber
         // TODO: use limit and offset (like ResourceDefinitions#listResourceDefinitions)
     )
     {

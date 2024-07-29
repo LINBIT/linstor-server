@@ -2,6 +2,7 @@ package com.linbit.extproc;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.OutputProxy.Event;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
@@ -14,12 +15,12 @@ public class DaemonHandler
     private static final byte DELIMITER = '\n';
 
     private final ProcessBuilder processBuilder;
-    private Process process;
+    private @Nullable Process process;
 
-    private Thread outThread;
-    private Thread errThread;
-    private OutputProxy errProxy;
-    private OutputProxy outProxy;
+    private @Nullable Thread outThread;
+    private @Nullable Thread errThread;
+    private @Nullable OutputProxy errProxy;
+    private @Nullable OutputProxy outProxy;
 
     private final BlockingDeque<Event> deque;
     private boolean stdOut;

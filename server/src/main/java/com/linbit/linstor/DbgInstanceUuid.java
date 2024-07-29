@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.UUID;
 
 /**
@@ -14,5 +16,6 @@ public interface DbgInstanceUuid
      *
      * @return UUID that identifies the instance
      */
+    @Nullable
     UUID debugGetVolatileUuid();
 }

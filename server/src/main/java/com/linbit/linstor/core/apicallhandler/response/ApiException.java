@@ -1,8 +1,10 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
+import com.linbit.linstor.annotation.Nullable;
+
 public class ApiException extends RuntimeException
 {
-    public ApiException(String message, Throwable throwableRef)
+    public ApiException(String message, @Nullable Throwable throwableRef)
     {
         super(message, throwableRef);
     }

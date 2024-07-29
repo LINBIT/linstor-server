@@ -1,5 +1,7 @@
 package com.linbit;
 
+import com.linbit.linstor.annotation.Nullable;
+
 public class StringConv
 {
     public static final String BOOLEAN_TRUE = Boolean.toString(true);
@@ -18,7 +20,7 @@ public class StringConv
      * @return The boolean value represented by text, if text is a valid representation
      *     of a boolean value; otherwise the default value dfltValue
      */
-    public static boolean getDfltBoolean(String text, boolean dfltValue)
+    public static boolean getDfltBoolean(@Nullable String text, boolean dfltValue)
     {
         boolean result = dfltValue;
         if (text != null)
@@ -48,7 +50,7 @@ public class StringConv
      * @return The byte value represented by text, if text is a valid representation of a
      *     byte value, otherwise the default value dfltValue
      */
-    public static byte getDfltByte(String text, byte dfltValue)
+    public static byte getDfltByte(@Nullable String text, byte dfltValue)
     {
         byte value = dfltValue;
         if (text != null)
@@ -76,7 +78,7 @@ public class StringConv
      * @return The short value represented by text, if text is a valid representation of a
      *     short value, otherwise the default value dfltValue
      */
-    public static short getDfltShort(String text, short dfltValue)
+    public static short getDfltShort(@Nullable String text, short dfltValue)
     {
         short value = dfltValue;
         if (text != null)
@@ -104,7 +106,7 @@ public class StringConv
      * @return The int value represented by text, if text is a valid representation of a
      *     int value, otherwise the default value dfltValue
      */
-    public static int getDfltInt(String text, int dfltValue)
+    public static int getDfltInt(@Nullable String text, int dfltValue)
     {
         int value = dfltValue;
         if (text != null)
@@ -132,7 +134,7 @@ public class StringConv
      * @return The long value represented by text, if text is a valid representation of a
      *     long value, otherwise the default value dfltValue
      */
-    public static long getDfltLong(String text, long dfltValue)
+    public static long getDfltLong(@Nullable String text, long dfltValue)
     {
         long value = dfltValue;
         if (text != null)
@@ -160,7 +162,7 @@ public class StringConv
      * @return The float value represented by text, if text is a valid representation of a
      *     float value, otherwise the default value dfltValue
      */
-    public static float getDfltFloat(String text, float dfltValue)
+    public static float getDfltFloat(@Nullable String text, float dfltValue)
     {
         float value = dfltValue;
         if (text != null)
@@ -188,7 +190,7 @@ public class StringConv
      * @return The double value represented by text, if text is a valid representation of a
      *     double value, otherwise the default value dfltValue
      */
-    public static double getDfltDouble(String text, double dfltValue)
+    public static double getDfltDouble(@Nullable String text, double dfltValue)
     {
         double value = dfltValue;
         if (text != null)

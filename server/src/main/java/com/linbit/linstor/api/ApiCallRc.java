@@ -1,5 +1,6 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 
 import java.time.ZonedDateTime;
@@ -102,26 +103,31 @@ public interface ApiCallRc extends List<ApiCallRc.RcEntry>
          *
          * @return Map of object references
          */
+        @Nullable
         Map<String, String> getObjRefs();
 
         /**
          * @return Reply message
          */
+        @Nullable
         String getMessage();
 
         /**
          * @return Cause information
          */
+        @Nullable
         String getCause();
 
         /**
          * @return Correction hint
          */
+        @Nullable
         String getCorrection();
 
         /**
          * @return Details information
          */
+        @Nullable
         String getDetails();
 
         /**

@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider.file;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -16,7 +17,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.nio.file.Path;
@@ -26,7 +26,7 @@ public class FileData<RSC extends AbsResource<RSC>>
     extends AbsStorageVlmData<RSC> implements FileProviderObject<RSC>
 {
     // not persisted, not serialized, stlt only
-    private transient Path storageDir;
+    private transient @Nullable Path storageDir;
 
     public FileData(
         AbsVolume<RSC> vlmRef,
@@ -49,12 +49,12 @@ public class FileData<RSC extends AbsResource<RSC>>
         );
     }
 
-    public Path getStorageDirectory()
+    public @Nullable Path getStorageDirectory()
     {
         return storageDir;
     }
 
-    public void setStorageDirectory(Path storageDirectoryRef)
+    public void setStorageDirectory(@Nullable Path storageDirectoryRef)
     {
         storageDir = storageDirectoryRef;
     }

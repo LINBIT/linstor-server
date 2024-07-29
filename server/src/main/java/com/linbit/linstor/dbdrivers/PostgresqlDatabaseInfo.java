@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.annotation.Nullable;
+
 public class PostgresqlDatabaseInfo implements DatabaseDriverInfo
 {
     @Override
@@ -9,7 +11,7 @@ public class PostgresqlDatabaseInfo implements DatabaseDriverInfo
     }
 
     @Override
-    public String jdbcInMemoryUrl()
+    public @Nullable String jdbcInMemoryUrl()
     {
         return null;
     }

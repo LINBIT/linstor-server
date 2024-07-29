@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -22,7 +23,6 @@ import com.linbit.linstor.transaction.TransactionSet;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -66,7 +66,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         RSC rscRef,
         @Nullable AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
-        String rscNameSuffixRef,
+        @Nullable String rscNameSuffixRef,
         LayerResourceIdDatabaseDriver dbDriverRef,
         Map<VolumeNumber, VLM_TYPE> vlmProviderObjectsRef,
         TransactionObjectFactory transObjFactory,
@@ -113,7 +113,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     }
 
     @Override
-    public void setParent(AbsRscLayerObject<RSC> parentRscLayerObjectRef) throws DatabaseException
+    public void setParent(@Nullable AbsRscLayerObject<RSC> parentRscLayerObjectRef) throws DatabaseException
     {
         parent.set(parentRscLayerObjectRef);
     }

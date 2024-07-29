@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -98,27 +99,27 @@ public class CtrlApiDataLoader
         scheduleRepository = scheduleRepositoryRef;
     }
 
-    public final Node loadNode(String nodeNameStr, boolean failIfNull)
+    public final @Nullable Node loadNode(String nodeNameStr, boolean failIfNull)
     {
         return loadNode(LinstorParsingUtils.asNodeName(nodeNameStr), failIfNull);
     }
 
-    public final Node loadNode(NodeName nodeName, boolean failIfNull)
+    public final @Nullable Node loadNode(NodeName nodeName, boolean failIfNull)
     {
         return loadNode(nodeName, failIfNull, false);
     }
 
-    public final Node loadNode(NodeName nodeName, boolean failIfNull, boolean ignoreSearchDomain)
+    public final @Nullable Node loadNode(NodeName nodeName, boolean failIfNull, boolean ignoreSearchDomain)
     {
-        Node node;
+        @Nullable Node node;
         NodeName fqdnName = nodeName;
         try
         {
             // if node name is a short name, try to append search domain (if there is any)
             if (!ignoreSearchDomain && !nodeName.getDisplayName().contains("."))
             {
-                final ReadOnlyProps ctrlProps = systemConfRepository.getCtrlConfForView(systemCtx); // TODO: use user
-                                                                                                    // properties
+                // TODO: use user properties
+                final ReadOnlyProps ctrlProps = systemConfRepository.getCtrlConfForView(systemCtx);
                 try
                 {
                     final String domain = ctrlProps.getProp(ApiConsts.KEY_SEARCH_DOMAIN);
@@ -161,7 +162,7 @@ public class CtrlApiDataLoader
         return node;
     }
 
-    public final ResourceDefinition loadRscDfn(
+    public final @Nullable ResourceDefinition loadRscDfn(
         String rscNameStr,
         boolean failIfNull
     )
@@ -169,12 +170,12 @@ public class CtrlApiDataLoader
         return loadRscDfn(LinstorParsingUtils.asRscName(rscNameStr), failIfNull);
     }
 
-    public final ResourceDefinition loadRscDfn(
+    public final @Nullable ResourceDefinition loadRscDfn(
         ResourceName rscName,
         boolean failIfNull
     )
     {
-        ResourceDefinition rscDfn;
+        @Nullable ResourceDefinition rscDfn;
         try
         {
             rscDfn = resourceDefinitionRepository.get(
@@ -208,15 +209,15 @@ public class CtrlApiDataLoader
         return rscDfn;
     }
 
-    public VolumeDefinition loadVlmDfn(String rscNameStr, int vlmNrInt, boolean failIfNull)
+    public @Nullable VolumeDefinition loadVlmDfn(String rscNameStr, int vlmNrInt, boolean failIfNull)
     {
         return loadVlmDfn(LinstorParsingUtils.asRscName(rscNameStr), LinstorParsingUtils.asVlmNr(vlmNrInt), failIfNull);
     }
 
-    public VolumeDefinition loadVlmDfn(ResourceName rscName, VolumeNumber vlmNr, boolean failIfNull)
+    public @Nullable VolumeDefinition loadVlmDfn(ResourceName rscName, VolumeNumber vlmNr, boolean failIfNull)
     {
-        ResourceDefinition rscDfn = loadRscDfn(rscName, failIfNull);
-        VolumeDefinition vlmDfn = null;
+        @Nullable ResourceDefinition rscDfn = loadRscDfn(rscName, failIfNull);
+        @Nullable VolumeDefinition vlmDfn = null;
         try
         {
             if (rscDfn != null)
@@ -249,12 +250,12 @@ public class CtrlApiDataLoader
         return vlmDfn;
     }
 
-    public Resource loadRsc(String nodeName, String rscName, boolean failIfNull)
+    public @Nullable Resource loadRsc(String nodeName, String rscName, boolean failIfNull)
     {
         return loadRsc(LinstorParsingUtils.asNodeName(nodeName), LinstorParsingUtils.asRscName(rscName), failIfNull);
     }
 
-    public Resource loadRsc(NodeName nodeName, ResourceName rscName, boolean failIfNull)
+    public @Nullable Resource loadRsc(NodeName nodeName, ResourceName rscName, boolean failIfNull)
     {
         Resource result = null;
         Node node = loadNode(nodeName, failIfNull);
@@ -266,7 +267,7 @@ public class CtrlApiDataLoader
         return result;
     }
 
-    public Resource loadRsc(ResourceDefinition rscDfn, String nodeNameStr, boolean failIfNull)
+    public @Nullable Resource loadRsc(ResourceDefinition rscDfn, String nodeNameStr, boolean failIfNull)
     {
         Resource result = null;
         Node node = loadNode(nodeNameStr, failIfNull);
@@ -277,11 +278,11 @@ public class CtrlApiDataLoader
         return result;
     }
 
-    public Resource loadRsc(ResourceDefinition rscDfn, Node node, boolean failIfNull)
+    public @Nullable Resource loadRsc(ResourceDefinition rscDfn, Node node, boolean failIfNull)
     {
         ResourceName rscName = rscDfn.getName();
         NodeName nodeName = node.getName();
-        Resource rsc;
+        @Nullable Resource rsc;
         try
         {
             rsc = node.getResource(peerAccCtx.get(), rscDfn.getName());
@@ -332,7 +333,7 @@ public class CtrlApiDataLoader
         return rscCon;
     }
 
-    public final SnapshotDefinition loadSnapshotDfn(
+    public final @Nullable SnapshotDefinition loadSnapshotDfn(
         String rscNameStr,
         String snapshotNameStr,
         boolean failIfNull
@@ -345,7 +346,7 @@ public class CtrlApiDataLoader
         );
     }
 
-    public final SnapshotDefinition loadSnapshotDfn(
+    public final @Nullable SnapshotDefinition loadSnapshotDfn(
         ResourceName rscName,
         SnapshotName snapshotName,
         boolean failIfNull
@@ -360,13 +361,13 @@ public class CtrlApiDataLoader
         return result;
     }
 
-    public final SnapshotDefinition loadSnapshotDfn(
+    public final @Nullable SnapshotDefinition loadSnapshotDfn(
         ResourceDefinition rscDfn,
         SnapshotName snapshotName,
         boolean failIfNull
     )
     {
-        SnapshotDefinition snapshotDfn;
+        @Nullable SnapshotDefinition snapshotDfn;
         try
         {
             snapshotDfn = rscDfn.getSnapshotDfn(peerAccCtx.get(), snapshotName);
@@ -394,7 +395,7 @@ public class CtrlApiDataLoader
         return snapshotDfn;
     }
 
-    public Snapshot loadSnapshot(Node node, SnapshotDefinition snapshotDfn)
+    public @Nullable Snapshot loadSnapshot(Node node, SnapshotDefinition snapshotDfn)
     {
         Snapshot snapshot;
         try
@@ -443,17 +444,17 @@ public class CtrlApiDataLoader
         return snapshotVolume;
     }
 
-    public final StorPoolDefinition loadStorPoolDfn(String storPoolNameStr, boolean failIfNull)
+    public final @Nullable StorPoolDefinition loadStorPoolDfn(String storPoolNameStr, boolean failIfNull)
     {
         return loadStorPoolDfn(LinstorParsingUtils.asStorPoolName(storPoolNameStr), failIfNull);
     }
 
-    public final StorPoolDefinition loadStorPoolDfn(
+    public final @Nullable StorPoolDefinition loadStorPoolDfn(
         StorPoolName storPoolName,
         boolean failIfNull
     )
     {
-        StorPoolDefinition storPoolDfn;
+        @Nullable StorPoolDefinition storPoolDfn;
         try
         {
             storPoolDfn = storPoolDefinitionRepository.get(
@@ -487,12 +488,12 @@ public class CtrlApiDataLoader
         return storPoolDfn;
     }
 
-    public StorPool loadStorPool(String storPoolNameStr, String nodeNameStrRef, boolean failIfNullRef)
+    public @Nullable StorPool loadStorPool(String storPoolNameStr, String nodeNameStrRef, boolean failIfNullRef)
     {
         StorPoolDefinition storPoolDfn = loadStorPoolDfn(storPoolNameStr, failIfNullRef);
         Node node = loadNode(nodeNameStrRef, failIfNullRef);
 
-        StorPool ret = null;
+        @Nullable StorPool ret = null;
         if (storPoolDfn != null && node != null)
         {
             ret = loadStorPool(storPoolDfn, node, failIfNullRef);
@@ -500,9 +501,9 @@ public class CtrlApiDataLoader
         return ret;
     }
 
-    public final StorPool loadStorPool(String storPoolNameStr, Node node, boolean failIfNullRef)
+    public final @Nullable StorPool loadStorPool(String storPoolNameStr, Node node, boolean failIfNullRef)
     {
-        StorPool ret = null;
+        @Nullable StorPool ret = null;
 
         StorPoolDefinition storPoolDfn = loadStorPoolDfn(storPoolNameStr, failIfNullRef);
         if (storPoolDfn != null && node != null)
@@ -512,13 +513,13 @@ public class CtrlApiDataLoader
         return ret;
     }
 
-    public final StorPool loadStorPool(
+    public final @Nullable StorPool loadStorPool(
         StorPoolDefinition storPoolDfn,
         Node node,
         boolean failIfNull
     )
     {
-        StorPool storPool;
+        @Nullable StorPool storPool;
         try
         {
             storPool = node.getStorPool(peerAccCtx.get(), storPoolDfn.getName());
@@ -555,14 +556,14 @@ public class CtrlApiDataLoader
         return storPool;
     }
 
-    public final KeyValueStore loadKvs(String kvsNameStr, boolean failIfNull)
+    public final @Nullable KeyValueStore loadKvs(String kvsNameStr, boolean failIfNull)
     {
         return loadKvs(LinstorParsingUtils.asKvsName(kvsNameStr), failIfNull);
     }
 
-    public final KeyValueStore loadKvs(KeyValueStoreName kvsName, boolean failIfNull)
+    public final @Nullable KeyValueStore loadKvs(KeyValueStoreName kvsName, boolean failIfNull)
     {
-        KeyValueStore kvs;
+        @Nullable KeyValueStore kvs;
         try
         {
             kvs = kvsRepository.get(
@@ -597,7 +598,7 @@ public class CtrlApiDataLoader
         return kvs;
     }
 
-    public Volume loadVlm(
+    public @Nullable Volume loadVlm(
         String nodeNameStrRef,
         String rscNameStrRef,
         Integer vlmNrIntRef,
@@ -612,7 +613,7 @@ public class CtrlApiDataLoader
         );
     }
 
-    public final ResourceGroup loadResourceGroup(String rscGrpNameStringRef, boolean failIfNull)
+    public final @Nullable ResourceGroup loadResourceGroup(String rscGrpNameStringRef, boolean failIfNull)
     {
         return loadResourceGroup(
             LinstorParsingUtils.asRscGrpName(rscGrpNameStringRef),
@@ -620,7 +621,7 @@ public class CtrlApiDataLoader
         );
     }
 
-    private Volume loadVlm(
+    private @Nullable Volume loadVlm(
         NodeName nodeNameREf,
         ResourceName rscNameRef,
         VolumeNumber vlmNrRef,
@@ -628,7 +629,7 @@ public class CtrlApiDataLoader
     )
     {
         Resource rsc = loadRsc(nodeNameREf, rscNameRef, failIfNullRef);
-        Volume vlm = rsc.getVolume(vlmNrRef);
+        @Nullable Volume vlm = rsc.getVolume(vlmNrRef);
         if (vlm == null && failIfNullRef)
         {
             throw new ApiRcException(ApiCallRcImpl
@@ -642,9 +643,9 @@ public class CtrlApiDataLoader
         return vlm;
     }
 
-    public final ResourceGroup loadResourceGroup(ResourceGroupName rscGrpNameRef, boolean failIfNull)
+    public final @Nullable ResourceGroup loadResourceGroup(ResourceGroupName rscGrpNameRef, boolean failIfNull)
     {
-        ResourceGroup rscGrp;
+        @Nullable ResourceGroup rscGrp;
         try
         {
             rscGrp = resourceGroupRepository.get(
@@ -678,7 +679,7 @@ public class CtrlApiDataLoader
         return rscGrp;
     }
 
-    public final VolumeGroup loadVlmGrp(String rscGrpNameStringRef, int vlmNrInt, boolean failIfNull)
+    public final @Nullable VolumeGroup loadVlmGrp(String rscGrpNameStringRef, int vlmNrInt, boolean failIfNull)
     {
         return loadVlmGrp(
             LinstorParsingUtils.asRscGrpName(rscGrpNameStringRef),
@@ -687,13 +688,13 @@ public class CtrlApiDataLoader
         );
     }
 
-    public final VolumeGroup loadVlmGrp(
+    public final @Nullable VolumeGroup loadVlmGrp(
         ResourceGroupName rscGrpNameRef,
         VolumeNumber vlmNr,
         boolean failIfNull
     )
     {
-        VolumeGroup vlmGrp = null;
+        @Nullable VolumeGroup vlmGrp = null;
         try
         {
             ResourceGroup rscGrp = loadResourceGroup(rscGrpNameRef, failIfNull);
@@ -701,7 +702,7 @@ public class CtrlApiDataLoader
             {
                 vlmGrp = rscGrp.getVolumeGroup(peerAccCtx.get(), vlmNr);
             }
-            if (failIfNull && vlmGrp == null) //FIXME
+            if (failIfNull && vlmGrp == null)
             {
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(
@@ -728,17 +729,17 @@ public class CtrlApiDataLoader
         return vlmGrp;
     }
 
-    public final ExternalFile loadExtFile(String extFileNameStr, boolean failIfNull)
+    public final @Nullable ExternalFile loadExtFile(String extFileNameStr, boolean failIfNull)
     {
         return loadExtFile(LinstorParsingUtils.asExtFileName(extFileNameStr), failIfNull);
     }
 
-    public final ExternalFile loadExtFile(
+    public final @Nullable ExternalFile loadExtFile(
         ExternalFileName extFileName,
         boolean failIfNull
     )
     {
-        ExternalFile extFile;
+        @Nullable ExternalFile extFile;
         try
         {
             extFile = extFileRepository.get(
@@ -772,17 +773,17 @@ public class CtrlApiDataLoader
         return extFile;
     }
 
-    public final AbsRemote loadRemote(String remoteNameStr, boolean failIfNull)
+    public final @Nullable AbsRemote loadRemote(String remoteNameStr, boolean failIfNull)
     {
         return loadRemote(LinstorParsingUtils.asRemoteName(remoteNameStr), failIfNull);
     }
 
-    public final AbsRemote loadRemote(
+    public final @Nullable AbsRemote loadRemote(
         RemoteName remoteName,
         boolean failIfNull
     )
     {
-        AbsRemote remote;
+        @Nullable AbsRemote remote;
         try
         {
             remote = remoteRepository.get(
@@ -818,17 +819,17 @@ public class CtrlApiDataLoader
         return remote;
     }
 
-    public final Schedule loadSchedule(String scheduleNameStr, boolean failIfNull)
+    public final @Nullable Schedule loadSchedule(String scheduleNameStr, boolean failIfNull)
     {
         return loadSchedule(LinstorParsingUtils.asScheduleName(scheduleNameStr), failIfNull);
     }
 
-    public final Schedule loadSchedule(
+    public final @Nullable Schedule loadSchedule(
         ScheduleName scheduleName,
         boolean failIfNull
     )
     {
-        Schedule schedule;
+        @Nullable Schedule schedule;
         try
         {
             schedule = scheduleRepository.get(

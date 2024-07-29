@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -18,6 +19,7 @@ public interface ResourceGroupRepository
     void requireAccess(AccessContext accCtx, AccessType requested)
         throws AccessDeniedException;
 
+    @Nullable
     ResourceGroup get(AccessContext accCtx, ResourceGroupName nameRef)
         throws AccessDeniedException;
 

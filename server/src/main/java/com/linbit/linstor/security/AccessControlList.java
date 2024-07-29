@@ -1,6 +1,7 @@
 package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
 import com.linbit.linstor.transaction.BaseTransactionObject;
@@ -182,7 +183,7 @@ public final class AccessControlList extends BaseTransactionObject
      * @param subjRole The role to find access control entries for
      * @return Allowed level of access, or null if access is denied
      */
-    public AccessType getEntry(Role subjRole)
+    public @Nullable AccessType getEntry(Role subjRole)
     {
 
         AccessType access = null;
@@ -197,6 +198,7 @@ public final class AccessControlList extends BaseTransactionObject
         return access;
     }
 
+    @Nullable
     AccessControlEntry addEntry(Role entryRole, AccessType grantedAccess) throws DatabaseException
     {
         synchronized (acl)

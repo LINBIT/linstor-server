@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
@@ -19,7 +20,7 @@ import javax.inject.Singleton;
 public class FreeSpaceMgrProtectionRepository implements FreeSpaceMgrRepository
 {
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
-    private ObjectProtection freeSpaceMgrMapObjProt;
+    private @Nullable ObjectProtection freeSpaceMgrMapObjProt;
 
     @Inject
     public FreeSpaceMgrProtectionRepository(ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef)

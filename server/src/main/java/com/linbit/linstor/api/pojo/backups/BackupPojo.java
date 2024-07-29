@@ -1,8 +1,7 @@
 package com.linbit.linstor.api.pojo.backups;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.BackupApi;
-
-import javax.annotation.Nullable;
 
 import java.util.Map;
 
@@ -11,18 +10,18 @@ public class BackupPojo implements BackupApi
     private final String id;
     private final String rscName;
     private final String snapKey;
-    private final String startTime;
-    private final Long startTimestamp;
-    private final String finishedTime;
-    private final Long finishedTimestamp;
-    private final String node;
-    private final Boolean shipping;
-    private final Boolean success;
-    private final Boolean restoreable;
+    private final @Nullable String startTime;
+    private final @Nullable Long startTimestamp;
+    private final @Nullable String finishedTime;
+    private final @Nullable Long finishedTimestamp;
+    private final @Nullable String node;
+    private final @Nullable Boolean shipping;
+    private final @Nullable Boolean success;
+    private final @Nullable Boolean restoreable;
     private final Map<Integer, BackupVolumePojo> vlms;
-    private final String basedOnId;
+    private final @Nullable String basedOnId;
 
-    private final BackupS3Pojo s3;
+    private final @Nullable BackupS3Pojo s3;
 
     public BackupPojo(
         String idRef,
@@ -38,7 +37,7 @@ public class BackupPojo implements BackupApi
         @Nullable Boolean restoreableRef,
         Map<Integer, BackupVolumePojo> vlmsRef,
         @Nullable String basedOnRef,
-        BackupS3Pojo s3Ref
+        @Nullable BackupS3Pojo s3Ref
     )
     {
         id = idRef;
@@ -144,11 +143,16 @@ public class BackupPojo implements BackupApi
     public static class BackupVolumePojo implements BackupVlmApi
     {
         private final long vlmNr;
-        private final String finishTime;
-        private final Long finishTimestamp;
+        private final @Nullable String finishTime;
+        private final @Nullable Long finishTimestamp;
         private final BackupVlmS3Pojo s3;
 
-        public BackupVolumePojo(long vlmNrRef, String finishTimeRef, Long finishTimestampRef, BackupVlmS3Pojo s3Ref)
+        public BackupVolumePojo(
+            long vlmNrRef,
+            @Nullable String finishTimeRef,
+            @Nullable Long finishTimestampRef,
+            BackupVlmS3Pojo s3Ref
+        )
         {
             vlmNr = vlmNrRef;
             finishTime = finishTimeRef;
@@ -163,13 +167,13 @@ public class BackupPojo implements BackupApi
         }
 
         @Override
-        public String getFinishedTime()
+        public @Nullable String getFinishedTime()
         {
             return finishTime;
         }
 
         @Override
-        public Long getFinishedTimestamp()
+        public @Nullable Long getFinishedTimestamp()
         {
             return finishTimestamp;
         }

@@ -2,6 +2,7 @@ package com.linbit.linstor.debug;
 
 import com.linbit.AutoIndent;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -122,10 +123,10 @@ public class DebugPrintHelper
 
     public void printError(
         PrintStream debugErr,
-        String errorText,
-        String causeText,
-        String correctionText,
-        String errorDetailsText
+        @Nullable String errorText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String errorDetailsText
     )
     {
         if (errorText != null)

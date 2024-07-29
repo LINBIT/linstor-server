@@ -1,6 +1,7 @@
 package com.linbit.linstor.transaction;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
@@ -34,7 +35,7 @@ public class K8sCrdTransaction
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToCreate;
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToReplace;
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToDelete;
-    private List<RollbackCrd> rollbacks;
+    private @Nullable List<RollbackCrd> rollbacks;
 
     public K8sCrdTransaction(
         Map<DatabaseTable, Supplier<K8sResourceClient<?>>> crdClientLutRef,
@@ -85,6 +86,7 @@ public class K8sCrdTransaction
     }
 
     @SuppressWarnings("unchecked")
+    @Nullable
     public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> K8sResourceClient<CRD> getClient(
         DatabaseTable dbTable
     )
@@ -251,7 +253,7 @@ public class K8sCrdTransaction
         return ret;
     }
 
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> SPEC getSpec(
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> @Nullable SPEC getSpec(
         DatabaseTable dbTable,
         Predicate<CRD> matcher,
         boolean failIfNullRef,
@@ -364,12 +366,12 @@ public class K8sCrdTransaction
         return updatedList;
     }
 
-    public List<RollbackCrd> getRollbacks()
+    public @Nullable List<RollbackCrd> getRollbacks()
     {
         return rollbacks;
     }
 
-    public void setRollbacks(List<RollbackCrd> rollbacksRef)
+    public void setRollbacks(@Nullable List<RollbackCrd> rollbacksRef)
     {
         rollbacks = rollbacksRef;
     }

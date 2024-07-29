@@ -13,7 +13,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.ByteUtils;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 

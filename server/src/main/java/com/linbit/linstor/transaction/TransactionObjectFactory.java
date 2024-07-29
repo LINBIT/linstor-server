@@ -45,7 +45,7 @@ public class TransactionObjectFactory
 
     public <PARENT, ELEMENT> TransactionSimpleObject<PARENT, ELEMENT> createTransactionSimpleObject(
         @Nullable PARENT parent,
-        ELEMENT element,
+        @Nullable ELEMENT element,
         @Nullable SingleColumnDatabaseDriver<PARENT, ELEMENT> driver
     )
     {

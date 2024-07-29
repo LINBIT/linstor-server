@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.exceptions;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 
 public class IllegalStorageDriverException extends LinStorException
 {
@@ -8,11 +9,11 @@ public class IllegalStorageDriverException extends LinStorException
 
     public IllegalStorageDriverException(
         String message,
-        String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText,
-        Throwable cause
+        @Nullable String descriptionText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String detailsText,
+        @Nullable Throwable cause
     )
     {
         super(message, descriptionText, causeText, correctionText, detailsText, cause);
@@ -20,16 +21,16 @@ public class IllegalStorageDriverException extends LinStorException
 
     public IllegalStorageDriverException(
         String message,
-        String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText
+        @Nullable String descriptionText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String detailsText
     )
     {
         super(message, descriptionText, causeText, correctionText, detailsText);
     }
 
-    public IllegalStorageDriverException(String message, Throwable cause)
+    public IllegalStorageDriverException(String message, @Nullable Throwable cause)
     {
         super(message, cause);
     }

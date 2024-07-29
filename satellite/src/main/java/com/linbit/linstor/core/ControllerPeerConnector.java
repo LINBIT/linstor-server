@@ -1,15 +1,15 @@
 package com.linbit.linstor.core;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
-
-import javax.annotation.Nullable;
 
 import java.util.UUID;
 
 public interface ControllerPeerConnector
 {
+    @Nullable
     Node getLocalNode();
 
     Peer getControllerPeer();
@@ -31,5 +31,6 @@ public interface ControllerPeerConnector
 
     void setControllerPeerToCurrentLocalNode();
 
+    @Nullable
     NodeName getLocalNodeName();
 }

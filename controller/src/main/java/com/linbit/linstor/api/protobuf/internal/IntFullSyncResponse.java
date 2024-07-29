@@ -2,6 +2,7 @@ package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
@@ -79,7 +80,7 @@ public class IntFullSyncResponse implements ApiCallReactive
         return processReactive(satelliteProvider.get(), msgDataIn, null);
     }
 
-    public Flux<byte[]> processReactive(Peer satellitePeerRef, InputStream msgDataIn, ResponseContext context)
+    public Flux<byte[]> processReactive(Peer satellitePeerRef, InputStream msgDataIn, @Nullable ResponseContext context)
         throws IOException
     {
         final ResponseContext ctx;

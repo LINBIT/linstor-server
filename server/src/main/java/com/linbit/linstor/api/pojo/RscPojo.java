@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
@@ -7,8 +8,6 @@ import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.objects.AbsResource;
-
-import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,36 +20,36 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
 {
     private final String rscName;
     private final String nodeName;
-    private final UUID nodeUuid;
-    private final ResourceDefinitionApi rscDefinition;
-    private final UUID localRscUuid;
+    private final @Nullable UUID nodeUuid;
+    private final @Nullable ResourceDefinitionApi rscDefinition;
+    private final @Nullable UUID localRscUuid;
     private final long localRscFlags;
     private final Map<String, String> localRscProps;
     private final List<VolumeApi> localVlms;
-    private final List<OtherRscPojo> otherRscs;
-    private final List<ResourceConnectionApi> rscConnections;
-    private final Long fullSyncId;
-    private final Long updateId;
-    private final RscLayerDataApi rscLayerDataPojo;
-    @Nullable private final Date createTimestamp;
-    private final EffectivePropertiesPojo propsPojo;
+    private final @Nullable List<OtherRscPojo> otherRscs;
+    private final @Nullable List<ResourceConnectionApi> rscConnections;
+    private final @Nullable Long fullSyncId;
+    private final @Nullable Long updateId;
+    private final @Nullable RscLayerDataApi rscLayerDataPojo;
+    private final @Nullable Date createTimestamp;
+    private final @Nullable EffectivePropertiesPojo propsPojo;
 
     public RscPojo(
         final String rscNameRef,
         final String nodeNameRef,
-        final UUID nodeUuidRef,
-        final ResourceDefinitionApi rscDefinitionRef,
-        final UUID localRscUuidRef,
+        final @Nullable UUID nodeUuidRef,
+        final @Nullable ResourceDefinitionApi rscDefinitionRef,
+        final @Nullable UUID localRscUuidRef,
         final long localRscFlagsRef,
         final Map<String, String> localRscPropsRef,
         final List<VolumeApi> localVlmsRef,
-        final List<OtherRscPojo> otherRscListRef,
-        final List<ResourceConnectionApi> rscConnectionsRef,
-        final Long fullSyncIdRef,
-        final Long updateIdRef,
-        final RscLayerDataApi rscLayerDataPojoRef,
-        @Nullable final Date createTimestampRef,
-        EffectivePropertiesPojo propsPojoRef
+        final @Nullable List<OtherRscPojo> otherRscListRef,
+        final @Nullable List<ResourceConnectionApi> rscConnectionsRef,
+        final @Nullable Long fullSyncIdRef,
+        final @Nullable Long updateIdRef,
+        final @Nullable RscLayerDataApi rscLayerDataPojoRef,
+        final @Nullable Date createTimestampRef,
+        @Nullable EffectivePropertiesPojo propsPojoRef
     )
     {
         rscName = rscNameRef;
@@ -113,7 +112,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     }
 
     @Override
-    public UUID getUuid()
+    public @Nullable UUID getUuid()
     {
         return localRscUuid;
     }
@@ -125,38 +124,38 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     }
 
     @Override
-    public UUID getNodeUuid()
+    public @Nullable UUID getNodeUuid()
     {
         return nodeUuid;
     }
 
     @Override
-    public UUID getRscDfnUuid()
+    public @Nullable UUID getRscDfnUuid()
     {
-        return rscDefinition.getUuid();
+        return rscDefinition == null ? null : rscDefinition.getUuid();
     }
 
-    public ResourceDefinitionApi getRscDfnApi()
+    public @Nullable ResourceDefinitionApi getRscDfnApi()
     {
         return rscDefinition;
     }
 
-    public long getRscDfnFlags()
+    public @Nullable Long getRscDfnFlags()
     {
-        return rscDefinition.getFlags();
+        return rscDefinition == null ? null : rscDefinition.getFlags();
     }
 
-    public Map<String, String> getRscDfnProps()
+    public @Nullable Map<String, String> getRscDfnProps()
     {
-        return rscDefinition.getProps();
+        return rscDefinition == null ? null : rscDefinition.getProps();
     }
 
-    public String getResourceGroupName()
+    public @Nullable String getResourceGroupName()
     {
-        return rscDefinition.getResourceName();
+        return rscDefinition == null ? null : rscDefinition.getResourceName();
     }
 
-    public UUID getLocalRscUuid()
+    public @Nullable UUID getLocalRscUuid()
     {
         return localRscUuid;
     }
@@ -177,9 +176,9 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         return localRscProps;
     }
 
-    public List<VolumeDefinitionApi> getVlmDfns()
+    public @Nullable List<VolumeDefinitionApi> getVlmDfns()
     {
-        return rscDefinition.getVlmDfnList();
+        return rscDefinition == null ? null : rscDefinition.getVlmDfnList();
     }
 
     public List<VolumeApi> getLocalVlms()
@@ -205,33 +204,34 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         return localVlms;
     }
 
-    public List<OtherRscPojo> getOtherRscList()
+    public @Nullable List<OtherRscPojo> getOtherRscList()
     {
         return otherRscs;
     }
 
-    public List<ResourceConnectionApi> getRscConnections()
+    public @Nullable List<ResourceConnectionApi> getRscConnections()
     {
         return rscConnections;
     }
 
-    public long getFullSyncId()
+    public @Nullable Long getFullSyncId()
     {
         return fullSyncId;
     }
 
-    public long getUpdateId()
+    public @Nullable Long getUpdateId()
     {
         return updateId;
     }
 
     @Override
-    public RscLayerDataApi getLayerData()
+    public @Nullable RscLayerDataApi getLayerData()
     {
         return rscLayerDataPojo;
     }
 
-    public EffectivePropertiesPojo getEffectivePropsPojo()
+    @Override
+    public @Nullable EffectivePropertiesPojo getEffectivePropsPojo()
     {
         return propsPojo;
     }

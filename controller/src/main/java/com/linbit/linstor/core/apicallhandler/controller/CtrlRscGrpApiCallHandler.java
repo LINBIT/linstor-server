@@ -9,6 +9,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.VolumeNumberAlloc;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -90,7 +91,6 @@ import static com.linbit.locks.LockGuardFactory.LockObj.RSC_GRP_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -483,7 +483,7 @@ public class CtrlRscGrpApiCallHandler
         Map<String, String> overrideProps,
         HashSet<String> deletePropKeysRef,
         HashSet<String> deleteNamespacesRef,
-        AutoSelectFilterApi autoApiRef,
+        @Nullable AutoSelectFilterApi autoApiRef,
         @Nullable Short peerSlotsRef,
         ResponseContext context
     )
@@ -932,7 +932,7 @@ public class CtrlRscGrpApiCallHandler
     public Flux<ApiCallRc> spawn(
         String rscGrpNameRef,
         String rscDfnNameRef,
-        byte[] rscDfnExtNameRef,
+        @Nullable byte[] rscDfnExtNameRef,
         List<Long> vlmSizesRef,
         AutoSelectFilterApi spawnAutoSelectFilterRef,
         boolean partialRef,
@@ -983,7 +983,7 @@ public class CtrlRscGrpApiCallHandler
     private Flux<ApiCallRc> spawnInTransaction(
         String rscGrpNameRef,
         String rscDfnNameRef,
-        byte[] rscDfnExtNameRef,
+        @Nullable byte[] rscDfnExtNameRef,
         List<Long> vlmSizesRef,
         AutoSelectFilterApi spawnAutoSelectFilterRef,
         boolean partialRef,
@@ -1190,7 +1190,7 @@ public class CtrlRscGrpApiCallHandler
     }
 
     private VolumeDefinitionWithCreationPayload createVlmDfnWithCreationPayload(
-        Integer vlmNr,
+        @Nullable Integer vlmNr,
         long vlmSizeRef,
         long vlmGrpFlags,
         @Nullable String encryptedPassphrase
@@ -1443,7 +1443,7 @@ public class CtrlRscGrpApiCallHandler
 
     public Flux<ApiCallRc> adjust(
         String rscGrpNameRef,
-        AutoSelectFilterApi adjustAutoSelectFilterRef
+        @Nullable AutoSelectFilterApi adjustAutoSelectFilterRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -1538,7 +1538,7 @@ public class CtrlRscGrpApiCallHandler
 
     private Flux<ApiCallRc> adjustInTransaction(
         String rscGrpNameRef,
-        AutoSelectFilterApi adjustAutoSelectFilterRef,
+        @Nullable AutoSelectFilterApi adjustAutoSelectFilterRef,
         ResponseContext contextRef
     )
     {

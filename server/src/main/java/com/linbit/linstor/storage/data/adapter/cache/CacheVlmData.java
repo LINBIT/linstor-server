@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.cache;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
@@ -16,7 +17,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -28,8 +28,8 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
     implements CacheVlmObject<RSC>, VlmLayerObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final StorPool metaStorPool;
-    private final StorPool cacheStorPool;
+    private final @Nullable StorPool metaStorPool;
+    private final @Nullable StorPool cacheStorPool;
 
     // not persisted, serialized, ctrl and stlt
     private @Nullable String diskState;
@@ -79,7 +79,7 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public VlmDfnLayerObject getVlmDfnLayerObject()
+    public @Nullable VlmDfnLayerObject getVlmDfnLayerObject()
     {
         return null;
     }
@@ -112,38 +112,38 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getDataDevice()
+    public @Nullable String getDataDevice()
     {
         return dataDevice;
     }
 
-    public void setDataDevice(String dataDeviceRef)
+    public void setDataDevice(@Nullable String dataDeviceRef)
     {
         dataDevice = dataDeviceRef;
     }
 
-    public String getCacheDevice()
+    public @Nullable String getCacheDevice()
     {
         return cacheDevice;
     }
 
-    public void setCacheDevice(String cacheDeviceRef)
+    public void setCacheDevice(@Nullable String cacheDeviceRef)
     {
         cacheDevice = cacheDeviceRef;
     }
 
-    public String getMetaDevice()
+    public @Nullable String getMetaDevice()
     {
         return metaDevice;
     }
 
-    public void setMetaDevice(String metaDeviceRef)
+    public void setMetaDevice(@Nullable String metaDeviceRef)
     {
         metaDevice = metaDeviceRef;
     }
 
     @Override
-    public Size getSizeState()
+    public @Nullable Size getSizeState()
     {
         return sizeState;
     }
@@ -155,7 +155,7 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getIdentifier()
+    public @Nullable String getIdentifier()
     {
         return identifier;
     }
@@ -165,22 +165,22 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
         identifier = identifierRef;
     }
 
-    public String getDiskState()
+    public @Nullable String getDiskState()
     {
         return diskState;
     }
 
-    public void setDiskState(String diskStateRef)
+    public void setDiskState(@Nullable String diskStateRef)
     {
         diskState = diskStateRef;
     }
 
-    public StorPool getCacheStorPool()
+    public @Nullable StorPool getCacheStorPool()
     {
         return cacheStorPool;
     }
 
-    public StorPool getMetaStorPool()
+    public @Nullable StorPool getMetaStorPool()
     {
         return metaStorPool;
     }

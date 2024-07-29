@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -116,7 +117,7 @@ public class StoragePools
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
-        @PathParam("storPoolName") String storPoolName,
+        @PathParam("storPoolName") @Nullable String storPoolName,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset,
         @DefaultValue("false") @QueryParam("cached") boolean fromCache

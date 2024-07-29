@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -163,7 +164,7 @@ public class NodeConnection extends AbsCoreObj<NodeConnection>
         );
     }
 
-    public static NodeConnection get(
+    public static @Nullable NodeConnection get(
         AccessContext accCtx,
         Node node1,
         Node node2
@@ -262,7 +263,12 @@ public class NodeConnection extends AbsCoreObj<NodeConnection>
         return targetNode;
     }
 
-    public NodeConnPojo getApiData(Node localNode, AccessContext accCtx, Long fullSyncId, Long updateId)
+    public NodeConnPojo getApiData(
+        Node localNode,
+        AccessContext accCtx,
+        @Nullable Long fullSyncId,
+        @Nullable Long updateId
+    )
         throws AccessDeniedException
     {
         checkDeleted();

@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 
 public class StorageException extends LinStorException
 {
@@ -9,17 +10,17 @@ public class StorageException extends LinStorException
         super(message);
     }
 
-    public StorageException(String message, Exception nestedException)
+    public StorageException(String message, @Nullable Exception nestedException)
     {
         super(message, nestedException);
     }
 
     public StorageException(
         String message,
-        String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText
+        @Nullable String descriptionText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String detailsText
     )
     {
         super(message, descriptionText, causeText, correctionText, detailsText, null);
@@ -27,11 +28,11 @@ public class StorageException extends LinStorException
 
     public StorageException(
         String message,
-        String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText,
-        Throwable cause
+        @Nullable String descriptionText,
+        @Nullable String causeText,
+        @Nullable String correctionText,
+        @Nullable String detailsText,
+        @Nullable Throwable cause
     )
     {
         super(message, descriptionText, causeText, correctionText, detailsText, cause);

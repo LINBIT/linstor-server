@@ -1,6 +1,5 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.CoreModule;
@@ -23,7 +22,9 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.RoleName;
 import com.linbit.linstor.security.ShutdownProtHolder;
 
+import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;

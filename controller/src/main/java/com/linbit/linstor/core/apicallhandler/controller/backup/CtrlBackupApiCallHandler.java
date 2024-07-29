@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -159,13 +160,13 @@ public class CtrlBackupApiCallHandler
     public Flux<ApiCallRc> deleteBackup(
         String rscName,
         String id,
-        String idPrefix,
-        String timestamp,
-        String nodeName,
+        @Nullable String idPrefix,
+        @Nullable String timestamp,
+        @Nullable String nodeName,
         boolean cascading,
         boolean allLocalCluster,
         boolean all,
-        String s3Key,
+        @Nullable String s3Key,
         String remoteName,
         boolean dryRun,
         boolean keepSnaps
@@ -229,12 +230,12 @@ public class CtrlBackupApiCallHandler
         String id,
         String idPrefix,
         boolean cascading,
-        String rscName,
-        String nodeName,
-        String timestamp,
+        @Nullable String rscName,
+        @Nullable String nodeName,
+        @Nullable String timestamp,
         boolean allLocalCluster,
         boolean all,
-        String s3Key,
+        @Nullable String s3Key,
         String remoteName,
         boolean dryRun,
         boolean keepSnaps
@@ -1289,7 +1290,7 @@ public class CtrlBackupApiCallHandler
         String srcSnapName,
         String backupId,
         Map<String, String> storPoolMapRef,
-        String nodeName,
+        @Nullable String nodeName,
         String remoteName
     )
     {
@@ -1326,7 +1327,7 @@ public class CtrlBackupApiCallHandler
         String srcSnapName,
         String backupId,
         Map<String, String> renameMap,
-        String nodeName,
+        @Nullable String nodeName,
         String remoteName
     ) throws AccessDeniedException, InvalidNameException
     {

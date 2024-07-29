@@ -7,6 +7,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.AccessToDeletedDataException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
@@ -16,8 +17,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.TcpConnectorPeer.ReadState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -49,6 +48,7 @@ import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
@@ -100,7 +100,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     private AtomicBoolean shutdownFlag;
 
     // Selector loop thread
-    private Thread selectorLoopThread;
+    private @Nullable Thread selectorLoopThread;
 
     private ConnectionObserver connObserver;
 
@@ -160,10 +160,10 @@ public class TcpConnectorService implements Runnable, TcpConnector
     }
 
     // Address that the server socket will be listening on
-    private final SocketAddress bindAddress;
+    private @Nullable SocketAddress bindAddress;
 
     // Server socket for accepting incoming connections
-    private ServerSocketChannel serverSocket;
+    private @Nullable ServerSocketChannel serverSocket;
 
     // Default access context for a newly connected peer
     protected AccessContext defaultPeerAccCtx;
@@ -172,7 +172,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     private final AccessContext privilegedAccCtx;
 
     // Selector for all connections
-    Selector serverSelector;
+    @Nullable Selector serverSelector;
 
     private final AtomicInteger connCount = new AtomicInteger(0);
 
@@ -930,7 +930,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
         InetSocketAddress peerHostAddr,
         String peerId,
         SelectionKey connKey,
-        Node node)
+        @Nullable Node node
+    )
     {
         return createTcpConnectorPeer(peerHostAddr, peerId, connKey, false, node);
     }
@@ -940,7 +941,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         String peerId,
         SelectionKey connKey,
         boolean outgoing,
-        Node node
+        @Nullable Node node
     )
     {
         return new TcpConnectorPeer(
@@ -1354,6 +1355,10 @@ public class TcpConnectorService implements Runnable, TcpConnector
         serverSelector  = null;
     }
 
+    /**
+     * This method is synchronized because <code>this</code> should not be changed while we are re-initializing
+     */
+    @SuppressFBWarnings("SWL_SLEEP_WITH_LOCK_HELD")
     private synchronized void reinitialize()
     {
         uninitialize();

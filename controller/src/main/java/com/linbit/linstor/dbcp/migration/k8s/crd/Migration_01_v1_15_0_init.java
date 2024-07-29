@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
 
 @K8sCrdMigration(
@@ -18,7 +19,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         // load data from database that needs to change
         // noop for initial migration
@@ -189,8 +190,8 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     private void createSecIdentities(
         String identityName,
         String identityDspName,
-        String passSalt,
-        String passHash,
+        @Nullable String passSalt,
+        @Nullable String passHash,
         boolean idEnabled,
         boolean idLocked
     )
@@ -339,18 +340,18 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
         String uuid,
         String resourceGroupName,
         String resourceGroupDspName,
-        String description,
-        String layerStack,
+        @Nullable String description,
+        @Nullable String layerStack,
         int replicaCount,
         String nodeNameList,
-        String poolName,
-        String poolNameDiskless,
-        String doNotPlaceWithRscRegex,
-        String doNotPlaceWithRscList,
-        String replicasOnSame,
-        String replicasOnDifferent,
-        String allowedProviderList,
-        Boolean disklessOnRemaining
+        @Nullable String poolName,
+        @Nullable String poolNameDiskless,
+        @Nullable String doNotPlaceWithRscRegex,
+        @Nullable String doNotPlaceWithRscList,
+        @Nullable String replicasOnSame,
+        @Nullable String replicasOnDifferent,
+        @Nullable String allowedProviderList,
+        @Nullable Boolean disklessOnRemaining
     )
     {
         txTo.create(

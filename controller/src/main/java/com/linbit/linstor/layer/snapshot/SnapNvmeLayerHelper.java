@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -28,7 +29,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -59,7 +59,7 @@ class SnapNvmeLayerHelper extends AbsSnapLayerHelper<
     }
 
     @Override
-    protected RscDfnLayerObject createSnapDfnData(SnapshotDefinition rscDfnRef, String rscNameSuffixRef)
+    protected @Nullable RscDfnLayerObject createSnapDfnData(SnapshotDefinition rscDfnRef, String rscNameSuffixRef)
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
@@ -68,7 +68,10 @@ class SnapNvmeLayerHelper extends AbsSnapLayerHelper<
     }
 
     @Override
-    protected VlmDfnLayerObject createSnapVlmDfnData(SnapshotVolumeDefinition snapVlmDfnRef, String rscNameSuffixRef)
+    protected @Nullable VlmDfnLayerObject createSnapVlmDfnData(
+        SnapshotVolumeDefinition snapVlmDfnRef,
+        String rscNameSuffixRef
+    )
         throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
@@ -106,7 +109,7 @@ class SnapNvmeLayerHelper extends AbsSnapLayerHelper<
     }
 
     @Override
-    protected RscDfnLayerObject restoreSnapDfnData(
+    protected @Nullable RscDfnLayerObject restoreSnapDfnData(
         SnapshotDefinition snapshotDefinitionRef,
         RscLayerDataApi rscLayerDataApiRef,
         Map<String, String> renameStorPoolMapRef
@@ -118,7 +121,7 @@ class SnapNvmeLayerHelper extends AbsSnapLayerHelper<
     }
 
     @Override
-    protected VlmDfnLayerObject restoreSnapVlmDfnData(
+    protected @Nullable VlmDfnLayerObject restoreSnapVlmDfnData(
         SnapshotVolumeDefinition snapshotVolumeDefinitionRef,
         VlmLayerDataApi vlmLayerDataApiRef,
         Map<String, String> renameStorPoolMapRef
@@ -133,7 +136,7 @@ class SnapNvmeLayerHelper extends AbsSnapLayerHelper<
     protected NvmeRscData<Snapshot> restoreSnapDataImpl(
         Snapshot snapRef,
         RscLayerDataApi rscLayerDataApiRef,
-        AbsRscLayerObject<Snapshot> parentRef,
+        @Nullable AbsRscLayerObject<Snapshot> parentRef,
         Map<String, String> renameStorPoolMapRef
     ) throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException
     {

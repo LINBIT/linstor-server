@@ -3,7 +3,7 @@ package com.linbit.linstor.logging;
 import com.linbit.linstor.core.objects.Node;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 import java.util.Date;
 import java.util.Optional;
 

@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
@@ -41,11 +42,11 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     protected final TransactionSimpleObject<AbsStorageVlmData<RSC>, Size> sizeState;
 
     // not persisted, not serialized, stlt only
-    protected transient String identifier;
+    protected transient @Nullable String identifier;
     protected transient long expectedSize;
     protected transient boolean active;
-    protected transient Long snapshotAllocatedSize = null;
-    protected transient Long snapshotUsableSize = null;
+    protected transient @Nullable Long snapshotAllocatedSize = null;
+    protected transient @Nullable Long snapshotUsableSize = null;
 
     public AbsStorageVlmData(
         AbsVolume<RSC> vlmRef,
@@ -206,7 +207,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
             "]";
     }
 
-    public Long getSnapshotAllocatedSize()
+    public @Nullable Long getSnapshotAllocatedSize()
     {
         return snapshotAllocatedSize;
     }
@@ -216,7 +217,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         snapshotAllocatedSize = allocatedSizeRef;
     }
 
-    public Long getSnapshotUsableSize()
+    public @Nullable Long getSnapshotUsableSize()
     {
         return snapshotUsableSize;
     }

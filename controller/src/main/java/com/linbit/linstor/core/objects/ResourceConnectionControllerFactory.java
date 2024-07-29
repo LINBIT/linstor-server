@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -48,7 +49,7 @@ public class ResourceConnectionControllerFactory
         AccessContext accCtx,
         Resource sourceResource,
         Resource targetResource,
-        ResourceConnection.Flags[] initFlags
+        @Nullable ResourceConnection.Flags[] initFlags
     )
         throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {

@@ -8,6 +8,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -29,7 +30,6 @@ import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -140,7 +140,7 @@ public class DrbdAdm
     public void resize(
         DrbdVlmData<Resource> drbdVlmData,
         boolean assumeClean,
-        Long shrinkToSize
+        @Nullable Long shrinkToSize
     )
         throws ExtCmdFailedException
     {
@@ -499,7 +499,7 @@ public class DrbdAdm
         MinorNumber minorNr,
         String blockDevPath,
         String currentGi,
-        String history1Gi,
+        @Nullable String history1Gi,
         boolean upToDateData,
         boolean internal
     )
@@ -639,7 +639,7 @@ public class DrbdAdm
 
     private void simpleSetupCommand(
         DrbdRscData<Resource> drbdRscData,
-        VolumeNumber vlmNr,
+        @Nullable VolumeNumber vlmNr,
         String... subCommands
     )
         throws ExtCmdFailedException
@@ -665,7 +665,7 @@ public class DrbdAdm
 
     private void simpleAdmCommand(
         DrbdRscData<Resource> drbdRscData,
-        VolumeNumber volNum,
+        @Nullable VolumeNumber volNum,
         String... subCommands
     )
         throws ExtCmdFailedException

@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.utils.Pair;
 
@@ -196,6 +197,7 @@ public final class DatabaseConstantsGenerator
         renderPackageAndImports(
             pkgName,
             "com.linbit.ImplementationError",
+            "com.linbit.linstor.annotation.Nullable",
             "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
             "", // empty line
             "java.sql.Types"
@@ -315,7 +317,7 @@ public final class DatabaseConstantsGenerator
         return mainBuilder.toString();
     }
 
-    private void renderPackageAndImports(String pkgName, String... imports)
+    private void renderPackageAndImports(String pkgName, @Nullable String... imports)
     {
         appendLine("package %s;", pkgName);
         appendEmptyLine();
@@ -507,7 +509,7 @@ public final class DatabaseConstantsGenerator
         String pkgName,
         String currentVersionRef,
         String clazzName,
-        String genDbTablesJavaCodeRef
+        @Nullable String genDbTablesJavaCodeRef
     )
     {
         mainBuilder.setLength(0);
@@ -517,6 +519,7 @@ public final class DatabaseConstantsGenerator
 
             // "java.io.Serializable",
             "com.linbit.ImplementationError",
+            "com.linbit.linstor.annotation.Nullable",
             "com.linbit.linstor.dbdrivers.DatabaseTable",
             "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
             genDbTablesJavaCodeRef == null ? "com.linbit.linstor.dbdrivers.GeneratedDatabaseTables" : null,
@@ -616,8 +619,8 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine(
-                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<CRD> " +
-                    "databaseTableToCustomResourceClass("
+                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> " +
+                    "@Nullable Class<CRD> databaseTableToCustomResourceClass("
             );
             try (IndentLevel databaseTableToCrdIndent = new IndentLevel("", "", false, false))
             {
@@ -650,7 +653,7 @@ public final class DatabaseConstantsGenerator
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine(
                 "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> " +
-                    "CRD specToCrd(SPEC spec)"
+                    "@Nullable CRD specToCrd(SPEC spec)"
             );
             try (IndentLevel specToCrdMethod = new IndentLevel())
             {
@@ -680,8 +683,8 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine(
-                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<SPEC> " +
-                    "databaseTableToSpecClass("
+                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> " +
+                    "@Nullable Class<SPEC> databaseTableToSpecClass("
             );
             try (IndentLevel databaseTableToCrdIndent = new IndentLevel("", "", false, false))
             {
@@ -715,7 +718,8 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine(
-                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> SPEC rawParamToSpec("
+                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> " +
+                    "@Nullable SPEC rawParamToSpec("
             );
             try (IndentLevel rawParamToSpecIndent = new IndentLevel("", "", false, false))
             {
@@ -749,7 +753,8 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine(
-                "public static <DATA, CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> CRD dataToCrd("
+                "public static <DATA, CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> " +
+                    "@Nullable CRD dataToCrd("
             );
             try (IndentLevel genericCreateMethodParams = new IndentLevel("", "", false, false))
             {
@@ -803,7 +808,7 @@ public final class DatabaseConstantsGenerator
             }
 
             appendEmptyLine();
-            appendLine("public static String databaseTableToYamlLocation(DatabaseTable dbTable)");
+            appendLine("public static @Nullable String databaseTableToYamlLocation(DatabaseTable dbTable)");
             try (IndentLevel methodIndent = new IndentLevel())
             {
                 appendLine("switch (dbTable.getName())");
@@ -827,7 +832,7 @@ public final class DatabaseConstantsGenerator
             }
 
             appendEmptyLine();
-            appendLine("public static String databaseTableToYamlName(DatabaseTable dbTable)");
+            appendLine("public static @Nullable String databaseTableToYamlName(DatabaseTable dbTable)");
             try (IndentLevel methodIndent = new IndentLevel())
             {
                 appendLine("switch (dbTable.getName())");
@@ -944,7 +949,7 @@ public final class DatabaseConstantsGenerator
         appendLine("public static class JsonTypeResolver extends TypeIdResolverBase");
         try (IndentLevel clsIndent = new IndentLevel())
         {
-            appendLine("private JavaType baseType;");
+            appendLine("private @Nullable JavaType baseType;");
 
             appendEmptyLine();
             appendLine("@Override");
@@ -1137,7 +1142,7 @@ public final class DatabaseConstantsGenerator
 
             appendEmptyLine();
             appendLine("@JsonIgnore private final String formattedPrimaryKey;");
-            appendLine("@JsonIgnore private %s parentCrd;", tblNameCamelCase);
+            appendLine("@JsonIgnore private @Nullable %s parentCrd;", tblNameCamelCase);
 
             appendEmptyLine();
             if (!pkFound)
@@ -1350,7 +1355,7 @@ public final class DatabaseConstantsGenerator
         try (IndentLevel clazzIndent = new IndentLevel())
         {
             appendLine("private static final long serialVersionUID = %dL;", random.nextLong());
-            appendLine("String k8sKey = null;");
+            appendLine("@Nullable String k8sKey = null;");
             appendEmptyLine();
 
             appendLine("@JsonCreator");
@@ -1396,7 +1401,7 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@Override");
             appendLine("@JsonIgnore");
-            appendLine("public String getK8sKey()");
+            appendLine("public @Nullable String getK8sKey()");
             try (IndentLevel methodIndent = new IndentLevel())
             {
                 appendLine("return k8sKey;");
@@ -1526,12 +1531,12 @@ public final class DatabaseConstantsGenerator
         return propertiesSpecNode;
     }
 
-    private JsonNode loadOldVersionSection(Table tbl, GeneratorVersion generatorVersionRef)
+    private @Nullable JsonNode loadOldVersionSection(Table tbl, GeneratorVersion generatorVersionRef)
     {
         return loadOldVersionSection(getYamlLocation(tbl, generatorVersionRef.originalVersion));
     }
 
-    private JsonNode loadOldVersionSection(String yamlLocation)
+    private @Nullable JsonNode loadOldVersionSection(String yamlLocation)
     {
         JsonNode versionsObj = null;
         try
@@ -1633,7 +1638,7 @@ public final class DatabaseConstantsGenerator
         return ret;
     }
 
-    private String getYamlFormat(Column clmRef)
+    private @Nullable String getYamlFormat(Column clmRef)
     {
         String ret;
         switch (clmRef.sqlType)
@@ -1657,7 +1662,7 @@ public final class DatabaseConstantsGenerator
         return ret;
     }
 
-    private String getStringFormatType(Column clmRef)
+    private @Nullable String getStringFormatType(Column clmRef)
     {
         String ret;
         switch (clmRef.sqlType)
@@ -1752,7 +1757,7 @@ public final class DatabaseConstantsGenerator
         }
         for (String[] field : fieldsWithPrivateSetter)
         {
-            appendLine("private %s %s;", field[0], field[1]);
+            appendLine("private @Nullable %s %s;", field[0], field[1]);
         }
         appendEmptyLine();
         appendLine("public %s(", COLUMN_HOLDER_NAME);

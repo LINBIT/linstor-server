@@ -1,9 +1,12 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.security.AccessContext;
+
+import javax.inject.Inject;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.PrintStream;
@@ -181,10 +184,10 @@ public class CmdDisplayReportList extends BaseDebugCmd
         private final int sfxLength = suffixMatch.length();
         private final int minLength = pfxLength + sfxLength;
 
-        private final String instanceId;
-        private final Matcher idMatcher;
+        private final @Nullable String instanceId;
+        private final @Nullable Matcher idMatcher;
 
-        ReportFileFilter(String instanceIdRef, String matchPattern)
+        ReportFileFilter(@Nullable String instanceIdRef, String matchPattern)
         {
             instanceId = instanceIdRef;
             if (matchPattern != null)

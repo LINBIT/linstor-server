@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
@@ -187,7 +188,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         return snapDfnKey;
     }
 
-    public SnapshotVolumeDefinition getSnapshotVolumeDefinition(
+    public @Nullable SnapshotVolumeDefinition getSnapshotVolumeDefinition(
         AccessContext accCtx,
         VolumeNumber volumeNumber
     )
@@ -228,7 +229,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         return snapshotVolumeDefinitionMap.values();
     }
 
-    public Snapshot getSnapshot(AccessContext accCtx, NodeName clNodeName)
+    public @Nullable Snapshot getSnapshot(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -394,7 +395,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
      * Returns a single RscDfnLayerObject matching the kind as well as the resourceNameSuffix.
      */
     @SuppressWarnings("unchecked")
-    public <T extends RscDfnLayerObject> T getLayerData(
+    public <T extends RscDfnLayerObject> @Nullable T getLayerData(
         AccessContext accCtx,
         DeviceLayerKind kind,
         String rscNameSuffixRef

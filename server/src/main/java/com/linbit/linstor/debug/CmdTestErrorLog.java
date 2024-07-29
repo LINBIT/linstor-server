@@ -1,6 +1,7 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
@@ -58,19 +59,19 @@ public class CmdTestErrorLog extends BaseDebugCmd
     {
         private static final long serialVersionUID = 362631327796557839L;
 
-        TestException(String message, Throwable cause)
+        TestException(String message, @Nullable Throwable cause)
         {
             super(message, cause);
         }
 
         public TestException(
             String messageRef,
-            String descriptionTextRef,
-            String causeTextRef,
-            String correctionTextRef,
-            String detailsTextRef,
-            Long numericCodeRef,
-            Throwable causeRef
+            @Nullable String descriptionTextRef,
+            @Nullable String causeTextRef,
+            @Nullable String correctionTextRef,
+            @Nullable String detailsTextRef,
+            @Nullable Long numericCodeRef,
+            @Nullable Throwable causeRef
         )
         {
             super(

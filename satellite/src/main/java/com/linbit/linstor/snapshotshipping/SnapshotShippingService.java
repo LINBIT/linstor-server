@@ -9,6 +9,7 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
@@ -246,7 +247,7 @@ public class SnapshotShippingService implements SystemService
         boolean successRef,
         boolean alreadyInUseRef,
         AbsStorageVlmData<Snapshot> snapVlmData,
-        String internalApiName,
+        @Nullable String internalApiName,
         boolean updateCtrlRef
     )
     {

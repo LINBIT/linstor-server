@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -27,7 +29,7 @@ public class LinstorVersionCrd
     public static final String LINSTOR_CRD_NAME = "linstorversion";
     public static final String LINSTOR_CRD_KIND = "LinstorVersion";
 
-    private String k8sKey;
+    private @Nullable String k8sKey;
 
     public LinstorVersionCrd()
     {
@@ -57,7 +59,7 @@ public class LinstorVersionCrd
 
     @Override
     @JsonIgnore
-    public String getK8sKey()
+    public @Nullable String getK8sKey()
     {
         return k8sKey;
     }

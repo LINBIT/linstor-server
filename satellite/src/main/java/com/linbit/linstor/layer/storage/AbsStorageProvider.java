@@ -8,6 +8,7 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
@@ -67,8 +68,6 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -159,7 +158,7 @@ public abstract class AbsStorageProvider<
     protected final WipeHandler wipeHandler;
     protected final StltConfigAccessor stltConfigAccessor;
     protected final CoreModule.ResourceDefinitionMap rscDfnMap;
-    protected ReadOnlyProps localNodeProps;
+    protected @Nullable ReadOnlyProps localNodeProps;
     private final SnapshotShippingService snapShipMgr;
     protected final CloneService cloneService;
     protected final StltExtToolsChecker extToolsChecker;
@@ -514,7 +513,7 @@ public abstract class AbsStorageProvider<
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(ReadOnlyProps localNodePropsRef)
+    public @Nullable LocalPropsChangePojo setLocalNodeProps(ReadOnlyProps localNodePropsRef)
         throws StorageException, AccessDeniedException
     {
         localNodeProps = localNodePropsRef;
@@ -1222,7 +1221,7 @@ public abstract class AbsStorageProvider<
         }
     }
 
-    private LAYER_SNAP_DATA getPreviousSnapvlmData(
+    private @Nullable LAYER_SNAP_DATA getPreviousSnapvlmData(
         LAYER_SNAP_DATA snapVlm,
         ResourceConnection rscCon
     )
@@ -1263,7 +1262,7 @@ public abstract class AbsStorageProvider<
         return prevSnapVlmData;
     }
 
-    protected LAYER_SNAP_DATA getPreviousSnapvlmData(LAYER_SNAP_DATA snapVlm, Snapshot snap)
+    protected @Nullable LAYER_SNAP_DATA getPreviousSnapvlmData(LAYER_SNAP_DATA snapVlm, Snapshot snap)
         throws InvalidKeyException, AccessDeniedException, InvalidNameException
     {
         LAYER_SNAP_DATA prevSnapVlmData = null;
@@ -1661,6 +1660,26 @@ public abstract class AbsStorageProvider<
         return ret;
     }
 
+    private @Nullable String computeRestoreFromSnapshotName(AbsVolume<Resource> absVlm)
+        throws AccessDeniedException
+    {
+        String restoreSnapshotName;
+        try
+        {
+            ReadOnlyProps props = ((Volume) absVlm).getProps(storDriverAccCtx);
+            String restoreFromSnapshotProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
+
+            restoreSnapshotName = restoreFromSnapshotProp != null ?
+                // Parse into 'Name' objects in order to validate the property contents
+                new SnapshotName(restoreFromSnapshotProp).displayValue : null;
+        }
+        catch (InvalidNameException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return restoreSnapshotName;
+    }
+
     private void startBackupRestore(LAYER_SNAP_DATA snapVlmData)
         throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException, DatabaseException
     {
@@ -1699,7 +1718,7 @@ public abstract class AbsStorageProvider<
         waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
     }
 
-    protected final @Nonnull Resource getResource(LAYER_DATA vlmData, String rscName)
+    protected final Resource getResource(LAYER_DATA vlmData, String rscName)
         throws AccessDeniedException, StorageException
     {
         Resource rsc;
@@ -1720,7 +1739,7 @@ public abstract class AbsStorageProvider<
         return rsc;
     }
 
-    protected final @Nonnull LAYER_DATA getVlmDataFromOtherResource(LAYER_DATA vlmData, String otherRscName)
+    protected final LAYER_DATA getVlmDataFromOtherResource(LAYER_DATA vlmData, String otherRscName)
         throws AccessDeniedException, StorageException
     {
         return getVlmDataFromResource(
@@ -1730,7 +1749,7 @@ public abstract class AbsStorageProvider<
         );
     }
 
-    protected final @Nonnull LAYER_DATA getVlmDataFromResource(Resource rsc, String rscNameSuffix, VolumeNumber vlmNr)
+    protected final LAYER_DATA getVlmDataFromResource(Resource rsc, String rscNameSuffix, VolumeNumber vlmNr)
         throws AccessDeniedException
     {
         LAYER_DATA vlmData = null;
@@ -2021,7 +2040,7 @@ public abstract class AbsStorageProvider<
     protected abstract String getStorageName(LAYER_DATA vlmData)
         throws DatabaseException, AccessDeniedException, StorageException;
 
-    protected abstract void setDevicePath(LAYER_DATA vlmData, String devicePath) throws DatabaseException;
+    protected abstract void setDevicePath(LAYER_DATA vlmData, @Nullable String devicePath) throws DatabaseException;
 
     protected abstract void setAllocatedSize(LAYER_DATA vlmData, long size) throws DatabaseException;
 

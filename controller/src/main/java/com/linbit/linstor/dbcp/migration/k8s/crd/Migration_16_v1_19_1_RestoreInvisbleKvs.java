@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.KeyValueStore;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.KeyValueStoreSpec;
@@ -36,7 +37,7 @@ public class Migration_16_v1_19_1_RestoreInvisbleKvs extends BaseK8sCrdMigration
     }
 
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         HashSet<String> kvsFromProps = new HashSet<>();
 

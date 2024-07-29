@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
@@ -79,7 +80,7 @@ public class Snapshots
     public Response listSnapshots(
         @Context Request request,
         @PathParam("rscName") String rscName,
-        @PathParam("snapName") String snapName,
+        @PathParam("snapName") @Nullable String snapName,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )

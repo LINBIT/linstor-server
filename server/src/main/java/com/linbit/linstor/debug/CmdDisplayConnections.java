@@ -1,9 +1,9 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
 import com.linbit.AutoIndent;
 import com.linbit.ServiceName;
 import com.linbit.linstor.ControllerPeerCtx;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
@@ -14,6 +14,8 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.PrivilegeSet;
 import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
+
+import javax.inject.Inject;
 
 import java.io.PrintStream;
 import java.net.InetAddress;
@@ -378,7 +380,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
         }
     }
 
-    private Matcher createMatcher(
+    private @Nullable Matcher createMatcher(
         Map<String, String> parameters,
         String paramName,
         PrintStream debugErr

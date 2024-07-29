@@ -54,7 +54,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiC
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.linstor.utils.layer.LayerVlmUtils.getStorPoolMap;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;

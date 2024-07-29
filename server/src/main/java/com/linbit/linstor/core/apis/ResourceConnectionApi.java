@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apis;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.Map;
 import java.util.UUID;
 
@@ -11,5 +13,7 @@ public interface ResourceConnectionApi
     String getResourceName();
     Map<String, String> getProps();
     long getFlags();
+
+    @Nullable
     Integer getPort();
 }

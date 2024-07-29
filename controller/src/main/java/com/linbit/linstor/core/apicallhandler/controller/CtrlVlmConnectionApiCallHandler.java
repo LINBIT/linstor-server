@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -288,7 +289,7 @@ class CtrlVlmConnectionApiCallHandler
         return vlmConn;
     }
 
-    private VolumeConnection loadVlmConn(
+    private @Nullable VolumeConnection loadVlmConn(
         String nodeName1,
         String nodeName2,
         String rscNameStr,

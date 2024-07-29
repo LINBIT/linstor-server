@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
@@ -15,7 +16,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
-
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -113,7 +113,7 @@ public class TaskScheduleService implements SystemService, Runnable
     private final Lock tasksLock;
     private final Condition tasksCond;
 
-    private Thread workerThread;
+    private @Nullable Thread workerThread;
 
     private final TreeMap<Long, LinkedList<Task>> tasks = new TreeMap<>();
     private final LinkedList<Task> newTasks = new LinkedList<>();

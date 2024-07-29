@@ -2,6 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.Map;
 import java.util.Set;
@@ -87,7 +88,7 @@ public final class Role implements Comparable<Role>
         return create(accCtx, roleName, null);
     }
 
-    public static Role create(AccessContext accCtx, RoleName roleName, PrivilegeSet limitRef)
+    public static Role create(AccessContext accCtx, RoleName roleName, @Nullable PrivilegeSet limitRef)
         throws AccessDeniedException
     {
         accCtx.privEffective.requirePrivileges(Privilege.PRIV_SYS_ALL);
@@ -119,7 +120,7 @@ public final class Role implements Comparable<Role>
         return roleObj;
     }
 
-    public static Role get(RoleName rlName)
+    public static @Nullable Role get(RoleName rlName)
     {
         Lock readLock = GLOBAL_ROLE_MAP_LOCK.readLock();
 

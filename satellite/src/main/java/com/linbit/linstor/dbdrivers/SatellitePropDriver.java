@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver.PropsDbEntry;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
@@ -24,7 +25,7 @@ public class SatellitePropDriver
     }
 
     @Override
-    public Map<String, String> loadCachedInstance(String propsInstanceRef)
+    public Map<String, String> loadCachedInstance(@Nullable String propsInstanceRef)
     {
         return Collections.emptyMap();
     }

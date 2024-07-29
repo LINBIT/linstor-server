@@ -6,6 +6,7 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -40,7 +41,6 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -79,7 +79,7 @@ public class CtrlVlmCrtApiHelper
     public ApiCallRcWith<Volume> createVolumeResolvingStorPool(
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Map<StorPool.Key, Long> thinFreeCapacities,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
         Map<String, String> storpoolRenameMap
     )
     {
@@ -107,7 +107,7 @@ public class CtrlVlmCrtApiHelper
         Resource rsc,
         VolumeDefinition vlmDfn,
         LayerPayload payload,
-        Map<StorPool.Key, Long> thinFreeCapacities,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
         Map<String, String> storpoolRenameMap,
         @Nullable ApiCallRc apiCallRc
     )
@@ -119,7 +119,7 @@ public class CtrlVlmCrtApiHelper
         Resource rscRef,
         VolumeDefinition toVlmDfnRef,
         LayerPayload payload,
-        Map<StorPool.Key, Long> thinFreeCapacities,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
         AbsVolume<RSC> fromAbsVolumeRef,
         Map<String, String> storpoolRenameMap,
         @Nullable ApiCallRc apiCallRc
@@ -140,8 +140,8 @@ public class CtrlVlmCrtApiHelper
         Resource rsc,
         VolumeDefinition vlmDfn,
         LayerPayload payload,
-        Map<StorPool.Key, Long> thinFreeCapacities,
-        AbsVolume<RSC> snapVlmRef,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
+        @Nullable AbsVolume<RSC> snapVlmRef,
         Map<String, String> storpoolRenameMap,
         @Nullable ApiCallRc apiCallRc
     )
@@ -226,7 +226,7 @@ public class CtrlVlmCrtApiHelper
         Resource rsc,
         VolumeDefinition vlmDfn,
         Set<StorPool> storPoolSetRef,
-        Map<StorPool.Key, Long> thinFreeCapacities
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
         /*

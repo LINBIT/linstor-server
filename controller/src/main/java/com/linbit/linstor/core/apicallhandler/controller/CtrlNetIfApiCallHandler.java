@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -36,7 +37,6 @@ import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NET_PORT;
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NODE_TYPE;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -173,10 +173,10 @@ class CtrlNetIfApiCallHandler
     public ApiCallRc modifyNetIf(
         String nodeNameStr,
         String netIfNameStr,
-        String addressStr,
-        Integer stltPort,
-        String stltEncrType,
-        Boolean setActivePrm
+        @Nullable String addressStr,
+        @Nullable Integer stltPort,
+        @Nullable String stltEncrType,
+        @Nullable Boolean setActivePrm
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -451,7 +451,7 @@ class CtrlNetIfApiCallHandler
         return loadNetIf(nodeNameStr, netIfNameStr, true);
     }
 
-    private NetInterface loadNetIf(String nodeNameStr, String netIfNameStr, boolean failIfNull)
+    private @Nullable NetInterface loadNetIf(String nodeNameStr, String netIfNameStr, boolean failIfNull)
     {
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, failIfNull);
         NetInterface netIf = null;

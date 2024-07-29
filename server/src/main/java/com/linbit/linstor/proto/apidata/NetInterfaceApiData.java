@@ -1,7 +1,9 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +22,7 @@ public class NetInterfaceApiData implements NetInterfaceApi
     }
 
     @Override
-    public UUID getUuid()
+    public @Nullable UUID getUuid()
     {
         UUID ifUuid = null;
         if (netInterface.hasUuid())
@@ -49,7 +51,7 @@ public class NetInterfaceApiData implements NetInterfaceApi
     }
 
     @Override
-    public int getSatelliteConnectionPort()
+    public Integer getSatelliteConnectionPort()
     {
         return netInterface.getStltPort();
     }

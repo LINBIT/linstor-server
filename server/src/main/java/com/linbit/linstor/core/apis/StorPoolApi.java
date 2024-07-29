@@ -40,6 +40,7 @@ public interface StorPoolApi
     String getNodeName();
     @JsonIgnore
     UUID getNodeUuid();
+
     DeviceProviderKind getDeviceProviderKind();
     @JsonIgnore
     String getFreeSpaceManagerName();

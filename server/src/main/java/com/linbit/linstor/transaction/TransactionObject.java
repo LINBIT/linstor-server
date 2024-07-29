@@ -1,6 +1,7 @@
 package com.linbit.linstor.transaction;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 public interface TransactionObject
@@ -14,7 +15,7 @@ public interface TransactionObject
      *
      * @param transMgr A wrapper for the database connection to be used for persistence
      */
-    void setConnection(TransactionMgr transMgrRef) throws ImplementationError;
+    void setConnection(@Nullable TransactionMgr transMgrRef) throws ImplementationError;
 
     /**
      * Returns true if the object has an active {@link TransactionMgr}

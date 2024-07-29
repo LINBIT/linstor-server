@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 
 import java.util.Collection;
@@ -7,15 +8,15 @@ import java.util.Map;
 
 public class ResourceState
 {
-    private String rscName;
-    private String nodeName;
+    private @Nullable String rscName;
+    private @Nullable String nodeName;
 
     private boolean isPresent;
     private boolean requiresAdjust;
     private boolean isPrimary;
     private boolean isSuspendedUser;
 
-    private Map<VolumeNumber, VolumeState> volumeMap;
+    private @Nullable Map<VolumeNumber, VolumeState> volumeMap;
 
     public ResourceState()
     {

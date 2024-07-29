@@ -60,6 +60,7 @@ import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgrModule;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -92,7 +93,7 @@ public final class Satellite
     private final ErrorReporter errorReporter;
 
     // System security context
-    private final AccessContext sysCtx;
+    private final @Nonnull AccessContext sysCtx;
 
     private final CoreTimer timerEventSvc;
 
@@ -129,8 +130,7 @@ public final class Satellite
     @Inject
     public Satellite(
         ErrorReporter errorReporterRef,
-        @SystemContext
-        AccessContext sysCtxRef,
+        @Nonnull @SystemContext AccessContext sysCtxRef,
         CoreTimer timerEventSvcRef,
         @Named(CoreModule.RECONFIGURATION_LOCK)
         ReadWriteLock reconfigurationLockRef,

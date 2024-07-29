@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.UUID;
 
 public class SchedulePojo implements Comparable<SchedulePojo>
@@ -8,26 +10,26 @@ public class SchedulePojo implements Comparable<SchedulePojo>
     private final String scheduleName;
     private final long flags;
     private final String fullCron;
-    private final String incCron;
+    private final @Nullable String incCron;
     private final Integer keepLocal;
     private final Integer keepRemote;
     private final String onFailure;
     private final Integer maxRetries;
-    private final Long fullSyncId;
-    private final Long updateId;
+    private final @Nullable Long fullSyncId;
+    private final @Nullable Long updateId;
 
     public SchedulePojo(
         UUID uuidRef,
         String scheduleNameRef,
         long flagsRef,
         String fullCronRef,
-        String incCronRef,
+        @Nullable String incCronRef,
         Integer keepLocalRef,
         Integer keepRemoteRef,
         String onFailureRef,
         Integer maxRetriesRef,
-        Long fullSyncIdRef,
-        Long updateIdRef
+        @Nullable Long fullSyncIdRef,
+        @Nullable Long updateIdRef
     )
     {
         uuid = uuidRef;
@@ -63,7 +65,7 @@ public class SchedulePojo implements Comparable<SchedulePojo>
         return fullCron;
     }
 
-    public String getIncCron()
+    public @Nullable String getIncCron()
     {
         return incCron;
     }
@@ -88,12 +90,12 @@ public class SchedulePojo implements Comparable<SchedulePojo>
         return maxRetries;
     }
 
-    public Long getFullSyncId()
+    public @Nullable Long getFullSyncId()
     {
         return fullSyncId;
     }
 
-    public Long getUpdateId()
+    public @Nullable Long getUpdateId()
     {
         return updateId;
     }

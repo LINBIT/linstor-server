@@ -5,6 +5,7 @@ import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
 public class ExtCmdFactory
@@ -22,7 +23,7 @@ public class ExtCmdFactory
         errlog = errorReporterRef;
     }
 
-    public ExtCmd create()
+    public @Nonnull ExtCmd create()
     {
         return new ExtCmd(timer, errlog);
     }

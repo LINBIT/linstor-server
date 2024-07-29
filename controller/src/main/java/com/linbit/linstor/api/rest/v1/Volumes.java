@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -87,7 +88,7 @@ public class Volumes
         @Suspended AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
         @PathParam("nodeName") String nodeName,
-        @PathParam("vlmNr") Integer vlmNr,
+        @PathParam("vlmNr") @Nullable Integer vlmNr,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )

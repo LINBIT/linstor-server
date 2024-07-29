@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
@@ -16,10 +17,10 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         " %d is already in use";
 
     private final ErrorReporter errorReporter;
-    private final ReadOnlyProps ctrlConf;
-    private final String ctrlConfKeyRange;
-    private final String elementName;
-    private final NumberRangeChecker rangeLimitChecker;
+    private final @Nullable ReadOnlyProps ctrlConf;
+    private final @Nullable String ctrlConfKeyRange;
+    private final @Nullable String elementName;
+    private final @Nullable NumberRangeChecker rangeLimitChecker;
     private final int defaultMin;
     private final int defaultMax;
 
@@ -30,10 +31,10 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
 
     public DynamicNumberPoolImpl(
         ErrorReporter errorReporterRef,
-        ReadOnlyProps ctrlConfRef,
-        String ctrlConfKeyRangeRef,
-        String elementNameRef,
-        NumberRangeChecker rangeLimitCheckerRef,
+        @Nullable ReadOnlyProps ctrlConfRef,
+        @Nullable String ctrlConfKeyRangeRef,
+        @Nullable String elementNameRef,
+        @Nullable NumberRangeChecker rangeLimitCheckerRef,
         int hardMax,
         int defaultMinRef,
         int defaultMaxRef
@@ -143,7 +144,7 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
 
     public interface NumberRangeChecker
     {
-        void check(Integer integer)
+        void check(int integer)
             throws ValueOutOfRangeException;
     }
 }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.bcache;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.BCacheRscPojo;
 import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
@@ -35,7 +36,7 @@ public class BCacheRscData<RSC extends AbsResource<RSC>>
     public BCacheRscData(
         int rscLayerIdRef,
         RSC rscRef,
-        AbsRscLayerObject<RSC> parentRef,
+        @Nullable AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
         String rscNameSuffixRef,
         LayerBCacheRscDatabaseDriver bcacheRscDbDriverRef,
@@ -61,7 +62,7 @@ public class BCacheRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public RscDfnLayerObject getRscDfnLayerObject()
+    public @Nullable RscDfnLayerObject getRscDfnLayerObject()
     {
         return null;
     }

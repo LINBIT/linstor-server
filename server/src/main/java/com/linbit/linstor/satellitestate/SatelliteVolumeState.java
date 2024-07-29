@@ -1,11 +1,10 @@
 package com.linbit.linstor.satellitestate;
 
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.layer.drbd.drbdstate.ReplState;
 import com.linbit.utils.Pair;
-
-import javax.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +12,7 @@ import java.util.Optional;
 
 public class SatelliteVolumeState
 {
-    private String diskState;
+    private @Nullable String diskState;
     /**
      * Stores the replication states for each node connection
      */
@@ -34,7 +33,7 @@ public class SatelliteVolumeState
         donePercentageMap = other.donePercentageMap;
     }
 
-    public String getDiskState()
+    public @Nullable String getDiskState()
     {
         return diskState;
     }

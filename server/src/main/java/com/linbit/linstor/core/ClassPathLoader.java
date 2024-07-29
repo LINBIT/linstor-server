@@ -1,6 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class ClassPathLoader
     public <T> List<Class<? extends T>> loadClasses(
         String basePackage,
         List<String> packageSuffixes,
-        Class<T> requiredClass,
+        @Nullable Class<T> requiredClass,
         Class<? extends Annotation> requiredAnnotation
     )
     {
@@ -67,7 +68,7 @@ public class ClassPathLoader
      */
     public <T> List<Class<? extends T>> loadClasses(
         String pkgName,
-        Class<T> requiredClass
+        @Nullable Class<T> requiredClass
     )
     {
         List<Class<? extends T>> classes = Collections.emptyList();
@@ -107,7 +108,7 @@ public class ClassPathLoader
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Class<? extends T> asClass(Class<T> requiredClass, Class<?> clazz)
+    private static <T> @Nullable Class<? extends T> asClass(Class<T> requiredClass, Class<?> clazz)
     {
         return requiredClass.isAssignableFrom(clazz) ? (Class<? extends T>) clazz : null;
     }

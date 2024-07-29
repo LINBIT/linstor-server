@@ -16,6 +16,7 @@ This file was generated with rest-gen.py, do not modify directly, the chances ar
 def print_header(stream, class_name, package, rest_version):
     print(HDR_INFO)
     print("package " + package + ";\n", file=stream)
+    print("import com.linbit.linstor.annotation.Nullable;\n", file=stream)
     print("import java.util.List;", file=stream)
     print("import java.util.Map;", file=stream)
     print("import java.util.Collections;", file=stream)
@@ -138,16 +139,20 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
                 depr = "@Deprecated(forRemoval = true) "
             if t.startswith("Map"):
                 dval = 'null' if "default" in field and field['default'] is None else 'Collections.emptyMap()'
+                if dval == "null":
+                    t = "@Nullable " + t
                 out += indent * 2 + depr + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=dval)
             elif t.startswith("List"):
                 dval = 'null' if "default" in field and field['default'] is None else 'Collections.emptyList()'
+                if dval == "null":
+                    t = "@Nullable " + t
                 out += indent * 2 + depr + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=dval)
             else:
                 if "default" in field:
                     dval = field['default']
                     if t == "String":
                         if dval is None:
-                            out += indent * 2 + depr + 'public {t} {n} = null;\n'.format(
+                            out += indent * 2 + depr + 'public @Nullable {t} {n} = null;\n'.format(
                                 t=t, n=fieldname
                             )
                         else:
@@ -162,11 +167,11 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
                     elif t == "Integer":
                         out += indent * 2 + depr + "public int {n};\n".format(n=fieldname)
                     elif t == "String":
-                        out += indent * 2 + depr + "public String {n};\n".format(n=fieldname)
+                        out += indent * 2 + depr + "public @Nullable String {n};\n".format(n=fieldname)
                     else:
                         out += indent * 2 + depr + "public {t} {n};\n".format(t=t.lower(), n=fieldname)
                 else:
-                    out += indent * 2 + depr + "public {t} {n};\n".format(t=t, n=fieldname)
+                    out += indent * 2 + depr + "public @Nullable {t} {n};\n".format(t=t, n=fieldname)
     out += indent + "}\n"
     return out
 

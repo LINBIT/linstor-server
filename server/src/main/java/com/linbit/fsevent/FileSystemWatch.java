@@ -1,12 +1,13 @@
 package com.linbit.fsevent;
 
 import com.linbit.ErrorCheck;
-import com.linbit.NegativeTimeException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.NegativeTimeException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
@@ -85,7 +86,7 @@ public class FileSystemWatch implements Runnable, SystemService
 
     // The thread that handles events on watched directories, if it is active,
     // otherwise null
-    private Thread watchThread;
+    private @Nullable Thread watchThread;
 
     // Flag for shutting down the active watchThread
     private final AtomicBoolean stopFlag;
@@ -876,7 +877,7 @@ public class FileSystemWatch implements Runnable, SystemService
     {
         private List<FileEntry> entryList;
         private final AtomicInteger eventCount;
-        private EntryGroupObserver groupObserver;
+        private @Nullable EntryGroupObserver groupObserver;
         private boolean loopWait = true;
 
         private FileEntryGroup()
@@ -993,7 +994,7 @@ public class FileSystemWatch implements Runnable, SystemService
         private final FileSystemWatch fsw;
         private final Entry origEntry;
         private final boolean isFileEntry;
-        private DirectoryEntry lastDirWatchEntry = null;
+        private @Nullable DirectoryEntry lastDirWatchEntry = null;
 
         NonExistingParentEntry(
             FileSystemWatch fswRef,

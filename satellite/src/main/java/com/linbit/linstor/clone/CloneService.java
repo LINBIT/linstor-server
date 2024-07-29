@@ -7,6 +7,7 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
@@ -35,7 +36,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.StringUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -49,6 +49,8 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @Singleton
 public class CloneService implements SystemService
@@ -302,6 +304,7 @@ public class CloneService implements SystemService
                 cloneInfo.getSuffix().equals(suffix));
     }
 
+    @SuppressFBWarnings
     public void startClone(
         VlmProviderObject<Resource> srcVlmData,
         VlmProviderObject<Resource> dstVlmData,
@@ -536,6 +539,7 @@ public class CloneService implements SystemService
         );
     }
 
+    @SuppressFBWarnings
     private void postClone(
         boolean successRef,
         CloneInfo cloneInfo
@@ -569,7 +573,7 @@ public class CloneService implements SystemService
         private final VlmProviderObject<Resource> dstVlmData;
         private final DeviceHandler.CloneStrategy cloneStrategy;
 
-        private CloneDaemon cloneDaemon;
+        private @Nullable CloneDaemon cloneDaemon;
         private CloneStatus status;
 
         public enum CloneStatus
@@ -633,7 +637,7 @@ public class CloneService implements SystemService
             cloneDaemon = cloneDaemonRef;
         }
 
-        public CloneDaemon getCloneDaemon()
+        public @Nullable CloneDaemon getCloneDaemon()
         {
             return cloneDaemon;
         }

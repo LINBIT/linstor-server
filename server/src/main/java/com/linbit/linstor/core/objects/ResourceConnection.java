@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
@@ -54,11 +55,11 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
     // TCP Port
     private final TransactionSimpleObject<ResourceConnection, TcpPortNumber> port;
 
-    private final DynamicNumberPool tcpPortPool;
+    private final @Nullable DynamicNumberPool tcpPortPool;
 
     private final ResourceConnectionDatabaseDriver dbDriver;
 
-    private final TransactionSimpleObject<ResourceConnection, SnapshotName> snapshotNameInProgress;
+    private final TransactionSimpleObject<ResourceConnection, @Nullable SnapshotName> snapshotNameInProgress;
 
     /**
      * Use ResourceConnection.createWithSorting instead
@@ -67,8 +68,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         UUID uuid,
         Resource sourceResourceRef,
         Resource targetResourceRef,
-        TcpPortNumber portRef,
-        DynamicNumberPool tcpPortPoolRef,
+        @Nullable TcpPortNumber portRef,
+        @Nullable DynamicNumberPool tcpPortPoolRef,
         ResourceConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -144,8 +145,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         UUID uuidRef,
         Resource rsc1,
         Resource rsc2,
-        TcpPortNumber portRef,
-        DynamicNumberPool tcpPortPoolRef,
+        @Nullable TcpPortNumber portRef,
+        @Nullable DynamicNumberPool tcpPortPoolRef,
         ResourceConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -212,8 +213,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         UUID uuidRef,
         Resource rsc1,
         Resource rsc2,
-        TcpPortNumber portRef,
-        DynamicNumberPool tcpPortPoolRef,
+        @Nullable TcpPortNumber portRef,
+        @Nullable DynamicNumberPool tcpPortPoolRef,
         ResourceConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -235,7 +236,7 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         );
     }
 
-    public Node getNode(NodeName nodeName)
+    public @Nullable Node getNode(NodeName nodeName)
     {
         checkDeleted();
         Node node = null;
@@ -288,7 +289,7 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         return port.get();
     }
 
-    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber portNr)
+    public TcpPortNumber setPort(AccessContext accCtx, @Nullable TcpPortNumber portNr)
         throws DatabaseException, ValueInUseException, AccessDeniedException
     {
         requireAccess(accCtx, AccessType.USE);
@@ -331,13 +332,14 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         port.set(portNr);
     }
 
-    public void setSnapshotShippingNameInProgress(SnapshotName snapshotNameInProgressRef) throws DatabaseException
+    public void setSnapshotShippingNameInProgress(@Nullable SnapshotName snapshotNameInProgressRef)
+        throws DatabaseException
     {
         checkDeleted();
         snapshotNameInProgress.set(snapshotNameInProgressRef);
     }
 
-    public SnapshotName getSnapshotShippingNameInProgress()
+    public @Nullable SnapshotName getSnapshotShippingNameInProgress()
     {
         checkDeleted();
         return snapshotNameInProgress.get();

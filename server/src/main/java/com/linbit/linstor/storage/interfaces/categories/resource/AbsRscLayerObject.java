@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.interfaces.categories.resource;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -13,8 +14,6 @@ import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.LayerObject;
-
-import javax.annotation.Nullable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -32,7 +31,7 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
     @Nullable
     AbsRscLayerObject<RSC> getParent();
 
-    void setParent(AbsRscLayerObject<RSC> parentRscLayerObject) throws DatabaseException;
+    void setParent(@Nullable AbsRscLayerObject<RSC> parentRscLayerObject) throws DatabaseException;
 
     Set<AbsRscLayerObject<RSC>> getChildren();
 
@@ -123,7 +122,7 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
         return getFirstChild();
     }
 
-    default AbsRscLayerObject<RSC> getFirstChild()
+    default @Nullable AbsRscLayerObject<RSC> getFirstChild()
     {
         Iterator<AbsRscLayerObject<RSC>> iterator = getChildren().iterator();
         AbsRscLayerObject<RSC> ret = null;

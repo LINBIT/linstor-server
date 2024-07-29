@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -135,7 +136,7 @@ class CtrlRscConnectionApiCallHandler
     }
 
     public Flux<ApiCallRc> modify(
-        UUID rscConnUuid,
+        @Nullable UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscNameStr,
@@ -170,7 +171,7 @@ class CtrlRscConnectionApiCallHandler
     }
 
     private Flux<ApiCallRc> modifyInTransaction(
-        UUID rscConnUuid,
+        @Nullable UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscNameStr,

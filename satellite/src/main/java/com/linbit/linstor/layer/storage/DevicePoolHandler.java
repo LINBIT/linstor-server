@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.storage;
 
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -37,7 +38,7 @@ public class DevicePoolHandler
         this.extCmdFactory = extCmdFactoryRef;
     }
 
-    public String createVdoDevice(
+    public @Nullable String createVdoDevice(
         final ApiCallRcImpl apiCallRc,
         final DeviceProviderKind kind,
         final String vgName,

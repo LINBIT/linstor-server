@@ -1,12 +1,13 @@
 package com.linbit.linstor.layer.drbd.drbdstate;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.core.types.MinorNumber;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -146,7 +147,7 @@ public class DrbdStateTracker
         drbdStateChangeObservers = new ArrayList<>();
     }
 
-    public DrbdResource getResource(String name)
+    public @Nullable DrbdResource getResource(String name)
     {
         // Map.get(null) returns null, avoid hiding bugs
         if (name == null)
@@ -182,6 +183,7 @@ public class DrbdStateTracker
         }
     }
 
+    @Nullable
     DrbdResource removeResource(String name)
     {
         // Map.remove(null) is a valid operation, avoid hiding bugs
@@ -294,7 +296,7 @@ public class DrbdStateTracker
         }
 
         @Override
-        public void resourceCreated(DrbdResource resource)
+        public void resourceCreated(@Nullable DrbdResource resource)
         {
             for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_RES_CRT_SLOT))
             {
@@ -324,7 +326,7 @@ public class DrbdStateTracker
         }
 
         @Override
-        public void roleChanged(DrbdResource resource, DrbdResource.Role previous, DrbdResource.Role current)
+        public void roleChanged(@Nullable DrbdResource resource, DrbdResource.Role previous, DrbdResource.Role current)
         {
             for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_ROLE_SLOT))
             {
@@ -354,7 +356,7 @@ public class DrbdStateTracker
         }
 
         @Override
-        public void volumeCreated(DrbdResource resource, DrbdConnection connection, DrbdVolume volume)
+        public void volumeCreated(DrbdResource resource, @Nullable DrbdConnection connection, DrbdVolume volume)
         {
             for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_VOL_CRT_SLOT))
             {
@@ -364,7 +366,8 @@ public class DrbdStateTracker
 
         @Override
         public void minorNrChanged(
-            DrbdResource resource, DrbdVolume volume,
+            @Nullable DrbdResource resource,
+            @Nullable DrbdVolume volume,
             MinorNumber previous, MinorNumber current
         )
         {
@@ -388,7 +391,9 @@ public class DrbdStateTracker
 
         @Override
         public void replicationStateChanged(
-            DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
+            @Nullable DrbdResource resource,
+            @Nullable DrbdConnection connection,
+            @Nullable DrbdVolume volume,
             ReplState previous, ReplState current
         )
         {
@@ -411,7 +416,7 @@ public class DrbdStateTracker
         @Override
         public void volumeDestroyed(
             DrbdResource resource,
-            DrbdConnection connection,
+            @Nullable DrbdConnection connection,
             DrbdVolume volume
         )
         {

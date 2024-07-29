@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.objects.KeyValueStore;
@@ -19,7 +20,7 @@ import javax.inject.Singleton;
 public class KeyValueStoreProtectionRepository implements KeyValueStoreRepository
 {
     private final CoreModule.KeyValueStoreMap kvsMap;
-    private ObjectProtection kvsMapObjProt;
+    private @Nullable ObjectProtection kvsMapObjProt;
 
     @Inject
     public KeyValueStoreProtectionRepository(CoreModule.KeyValueStoreMap kvsMapRef)
@@ -52,7 +53,7 @@ public class KeyValueStoreProtectionRepository implements KeyValueStoreRepositor
     }
 
     @Override
-    public KeyValueStore get(
+    public @Nullable KeyValueStore get(
         AccessContext accCtx,
         KeyValueStoreName kvsName
     )
@@ -60,7 +61,7 @@ public class KeyValueStoreProtectionRepository implements KeyValueStoreRepositor
     {
         checkProtSet();
         kvsMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (KeyValueStore) kvsMap.get(kvsName);
+        return kvsMap.get(kvsName);
     }
 
     @Override

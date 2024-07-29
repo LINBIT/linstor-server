@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -99,7 +100,7 @@ public class CtrlStorPoolCrtApiCallHandler
         String nodeNameStr,
         String storPoolNameStr,
         DeviceProviderKind providerKindRef,
-        String sharedStorPoolNameStr,
+        @Nullable String sharedStorPoolNameStr,
         boolean externalLockingRef,
         Map<String, String> storPoolPropsMap,
         Flux<ApiCallRc> onError
@@ -133,7 +134,7 @@ public class CtrlStorPoolCrtApiCallHandler
         String nodeNameStr,
         String storPoolNameStr,
         DeviceProviderKind deviceProviderKindRef,
-        String sharedStorPoolNameStr,
+        @Nullable String sharedStorPoolNameStr,
         boolean externalLockingRef,
         Map<String, String> storPoolPropsMap,
         ResponseContext context,

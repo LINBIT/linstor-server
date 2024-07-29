@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.KeyValueStorePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.KvsApi;
@@ -18,7 +19,6 @@ import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.util.Arrays;
@@ -67,7 +67,7 @@ public class KeyValueStore extends AbsCoreObj<KeyValueStore> implements Protecte
     }
 
     @Override
-    public int compareTo(@Nonnull KeyValueStore keyValueStore)
+    public int compareTo(KeyValueStore keyValueStore)
     {
         return this.getName().compareTo(keyValueStore.getName());
     }
@@ -135,7 +135,7 @@ public class KeyValueStore extends AbsCoreObj<KeyValueStore> implements Protecte
         }
     }
 
-    public KvsApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    public KvsApi getApiData(AccessContext accCtx, @Nullable Long fullSyncId, @Nullable Long updateId)
         throws AccessDeniedException
     {
         return new KeyValueStorePojo(

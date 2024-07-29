@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
@@ -296,7 +297,7 @@ public class RestHttpClient implements RestClient
     private class RestHttpResponse<T> implements RestResponse<T>
     {
         private final int statusCode;
-        private final T response;
+        private final @Nullable T response;
         private final Map<String, String> headers;
         private final RestHttpRequest<T> request;
 
@@ -304,7 +305,7 @@ public class RestHttpClient implements RestClient
             RestHttpRequest<T> requestRef,
             int statusCodeRef,
             Map<String, String> headersRef,
-            T responseRef
+            @Nullable T responseRef
         )
         {
             request = requestRef;
@@ -314,7 +315,7 @@ public class RestHttpClient implements RestClient
         }
 
         @Override
-        public T getData()
+        public @Nullable T getData()
         {
             return response;
         }

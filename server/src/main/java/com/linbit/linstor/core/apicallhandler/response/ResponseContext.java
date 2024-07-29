@@ -1,20 +1,22 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.Map;
 
 public class ResponseContext
 {
     private final OperationDescription operationDescription;
-    private final String objectDescription;
-    private final String objectDescriptionInline;
+    private final @Nullable String objectDescription;
+    private final @Nullable String objectDescriptionInline;
     private final long opMask;
     private final long objMask;
     private final Map<String, String> objRefs;
 
     public ResponseContext(
         ApiOperation apiOperation,
-        String objectDescriptionRef,
-        String objectDescriptionInlineRef,
+        @Nullable String objectDescriptionRef,
+        @Nullable String objectDescriptionInlineRef,
         long objMaskRef,
         Map<String, String> objRefsRef
     )
@@ -31,8 +33,8 @@ public class ResponseContext
 
     public ResponseContext(
         OperationDescription operationDescriptionRef,
-        String objectDescriptionRef,
-        String objectDescriptionInlineRef,
+        @Nullable String objectDescriptionRef,
+        @Nullable String objectDescriptionInlineRef,
         long opMaskRef,
         long objMaskRef,
         Map<String, String> objRefsRef
@@ -51,12 +53,12 @@ public class ResponseContext
         return operationDescription;
     }
 
-    public String getObjectDescription()
+    public @Nullable String getObjectDescription()
     {
         return objectDescription;
     }
 
-    public String getObjectDescriptionInline()
+    public @Nullable String getObjectDescriptionInline()
     {
         return objectDescriptionInline;
     }

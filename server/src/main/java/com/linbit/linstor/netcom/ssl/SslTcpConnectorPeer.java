@@ -1,16 +1,7 @@
 package com.linbit.linstor.netcom.ssl;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLException;
-
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
@@ -19,12 +10,23 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
 import com.linbit.linstor.security.AccessContext;
+
+import javax.annotation.Nonnull;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.net.ssl.SSLSession;
+
 import org.slf4j.event.Level;
 
 
@@ -86,29 +88,29 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      */
     private boolean                 ioRequest;
 
-    private SSLEngine               sslEngine;
+    private @Nullable SSLEngine     sslEngine;
     private SSLContext              sslCtx;
-    private InetSocketAddress       address;
+    private @Nullable InetSocketAddress address;
 
     /**
      * Buffer for received SSL encrypted data
      */
-    private ByteBuffer              encryptedReadBuffer;
+    private @Nullable ByteBuffer    encryptedReadBuffer;
 
     /**
      * Buffer for SSL encrypted data to send
      */
-    private ByteBuffer              encryptedWriteBuffer;
+    private @Nullable ByteBuffer    encryptedWriteBuffer;
 
     /**
      * Buffer for received data that has been decrypted
      */
-    private ByteBuffer              plainReadBuffer;
+    private @Nullable ByteBuffer    plainReadBuffer;
 
     /**
      * Dummy buffer for handshake operations without application data
      */
-    private ByteBuffer              dummyBuffer;
+    private @Nullable ByteBuffer    dummyBuffer;
 
     /**
      * SSL asynchronous task management - synchronization lock
@@ -564,7 +566,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      * @throws IllegalMessageStateException If the LINSTOR message is in an illegal state for reading its data;
      *         not supposed to happen, indicates an implementation error
      */
-    private SSLEngineResult.Status sslOutbound(final boolean forceWrap)
+    private @Nullable SSLEngineResult.Status sslOutbound(final boolean forceWrap)
         throws SSLException, IllegalMessageStateException
     {
         SSLEngineResult sslStatus = null;
@@ -781,7 +783,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      *         operation performed by SSL processing methods; not supposed to happen, indicates an implementation error
      * @throws IOException If network I/O operations or SSL processing operations fail
      */
-    private SSLEngineResult.Status sslHandshake(
+    private @Nullable SSLEngineResult.Status sslHandshake(
         @Nonnull SSLEngineResult.HandshakeStatus hsStatus,
         final boolean writeReady
     )

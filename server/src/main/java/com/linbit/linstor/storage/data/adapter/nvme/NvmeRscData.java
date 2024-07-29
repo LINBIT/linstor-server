@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.nvme;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
@@ -18,8 +19,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -92,7 +91,7 @@ public class NvmeRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void setParent(@Nonnull AbsRscLayerObject<RSC> parentObj) throws DatabaseException
+    public void setParent(@Nullable AbsRscLayerObject<RSC> parentObj) throws DatabaseException
     {
         parent.set(parentObj);
     }

@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbcp.migration.Migration_2022_11_14_CleanupOrphanedObjects.SnapDfnKey;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.KeyValueStore;
@@ -41,7 +42,7 @@ public class Migration_10_v1_19_1_CleanupOrphanedObjects extends BaseK8sCrdMigra
     }
 
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         cleanupStorPoolDefinitions(k8sDbRef);
         cleanupSnapDfnSecObjects(k8sDbRef);

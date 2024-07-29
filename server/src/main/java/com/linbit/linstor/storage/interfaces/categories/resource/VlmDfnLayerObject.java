@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.interfaces.categories.resource;
 
 import com.linbit.GenericName;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -19,6 +20,7 @@ public interface VlmDfnLayerObject extends LayerObject, Comparable<VlmDfnLayerOb
 
     ResourceName getResourceName();
 
+    @Nullable
     SnapshotName getSnapshotName();
 
     VolumeNumber getVolumeNumber();

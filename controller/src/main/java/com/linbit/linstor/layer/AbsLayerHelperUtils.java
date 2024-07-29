@@ -2,6 +2,7 @@ package com.linbit.linstor.layer;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -15,8 +16,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
-import javax.annotation.Nullable;
-
 import java.util.Map;
 
 public class AbsLayerHelperUtils
@@ -27,7 +26,7 @@ public class AbsLayerHelperUtils
     {
     }
 
-    public static <RSC extends AbsResource<RSC>> StorPool getStorPool(
+    public static <RSC extends AbsResource<RSC>> @Nullable StorPool getStorPool(
         AccessContext apiCtx,
         AbsVolume<RSC> absVlmRef,
         AbsRscData<RSC, ? extends VlmProviderObject<RSC>> rscLayerData,
@@ -80,12 +79,15 @@ public class AbsLayerHelperUtils
         {
             // vlmLayerData exists, which means we aren't allowed to switch storpool
             renamedStorPool = storPoolName;
-            apiCallRc.add(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.WARN_STORPOOL_RENAME_NOT_ALLOWED,
-                    "Renaming the storpool is not possible because the layer-data already exists"
-                )
-            );
+            if (apiCallRc != null)
+            {
+                apiCallRc.add(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.WARN_STORPOOL_RENAME_NOT_ALLOWED,
+                        "Renaming the storpool is not possible because the layer-data already exists"
+                    )
+                );
+            }
         }
 
         Node node = absVlmRef.getAbsResource().getNode();

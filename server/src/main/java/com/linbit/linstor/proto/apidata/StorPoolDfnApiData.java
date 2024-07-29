@@ -1,5 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 
@@ -20,7 +21,7 @@ public class StorPoolDfnApiData implements StorPoolDefinitionApi
     }
 
     @Override
-    public UUID getUuid()
+    public @Nullable UUID getUuid()
     {
         UUID uuid = null;
         if (storPoolDfn.hasUuid())

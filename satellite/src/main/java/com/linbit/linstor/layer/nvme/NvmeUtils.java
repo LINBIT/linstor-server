@@ -10,6 +10,8 @@ import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nonnull;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
@@ -471,8 +473,8 @@ public class NvmeUtils
     void disconnect(
         RSC_DATA rscData,
         String subsystemName,
-        BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
-            ExceptionThrowingBiConsumer<VLM_DATA, Boolean, DatabaseException> setExistsVlmFunc,
+        BiConsumer<RSC_DATA, @Nonnull Boolean> setExistsRscFunc,
+        ExceptionThrowingBiConsumer<VLM_DATA, @Nonnull Boolean, DatabaseException> setExistsVlmFunc,
         Function<VLM_DATA, String> getDevPathVlmFunc
     )
         throws StorageException
@@ -592,8 +594,8 @@ public class NvmeUtils
         boolean isWaiting,
         RSC_DATA rscData,
         String subsystemName,
-        BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
-        ExceptionThrowingBiConsumer<VLM_DATA, Boolean, DatabaseException> setExistsVlmFunc,
+            BiConsumer<RSC_DATA, @Nonnull Boolean> setExistsRscFunc,
+            ExceptionThrowingBiConsumer<VLM_DATA, @Nonnull Boolean, DatabaseException> setExistsVlmFunc,
         ExceptionThrowingBiConsumer<VLM_DATA, String, DatabaseException> setDevPathVlmFunc
     )
         throws StorageException
@@ -624,7 +626,7 @@ public class NvmeUtils
                 final int nvmeRscIdx = Integer.parseInt(
                     (new String(output.stdoutData))
                         .substring(NVME_FABRICS_PATH.length(), NVME_FABRICS_PATH.length() + NVME_IDX_MAX_DIGITS)
-                        .split(File.separator)[0]
+                        .split(File.separatorChar == '\\' ? "\\\\" : File.separator)[0]
                 );
                 final String nvmeFabricsVlmPath = NVME_FABRICS_PATH + nvmeRscIdx + "/nvme" + nvmeRscIdx;
 
@@ -661,7 +663,7 @@ public class NvmeUtils
                         // /sys/devices/virtual/nvme-fabrics/ctl/nvme0/nvme0c1n1/nsid:1
                         // either with cY or without
 
-                        String[] nvmePathParts = grepResult.split(File.separator);
+                        String[] nvmePathParts = grepResult.split(File.separatorChar == '\\' ? "\\\\" : File.separator);
                         // should now only contain "nvme0(c1)?n1"
                         String nvmeNamespacePart = nvmePathParts[nvmePathParts.length - 2];
 
@@ -869,7 +871,7 @@ public class NvmeUtils
      *
      * @return OutputData of the executed command or null if something went wrong
      */
-    private OutputData executeCmdAfterWaiting(boolean isWaiting, String... command)
+    private @Nullable OutputData executeCmdAfterWaiting(boolean isWaiting, String... command)
         throws IOException, ChildProcessTimeoutException, InterruptedException
     {
         int tries = isWaiting ? 0 : NVME_GREP_SLEEP_MAX_WAIT_TIME - 1;
@@ -1055,7 +1057,7 @@ public class NvmeUtils
      *
      * @return String port index
      */
-    private String getPortIdx(LsIpAddress ipAddr)
+    private @Nullable String getPortIdx(LsIpAddress ipAddr)
         throws StorageException, IOException, ChildProcessTimeoutException
     {
         errorReporter.logDebug("NVMe: retrieving port directory index of IP address: " + ipAddr.getAddress());

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.req;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -11,8 +12,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescription;
-
-import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,17 +42,17 @@ public class CreateMultiSnapRequest
     /**
      * The description string which can be used towards a client or logging
      */
-    private String descr;
+    private @Nullable String descr;
     /**
      * Only the resource names in format [rsc1, rsc2]. Also mostly useful towards the client or logging
      */
-    private String joinedRscNames;
+    private @Nullable String joinedRscNames;
 
     /**
      * created snapshot definitions. Be careful, the SnapshotDefinitions in this collections can already have been
      * deleted, so it is advised to always perform snapDfn.isDeleted() checks when iterating through this collection.
      */
-    private Collection<SnapshotDefinition> createdSnapDfns = null;
+    private @Nullable Collection<SnapshotDefinition> createdSnapDfns = null;
 
     public CreateMultiSnapRequest(Collection<SnapReq> snapshotsRef)
     {
@@ -190,7 +189,7 @@ public class CreateMultiSnapRequest
         createdSnapDfns = new ArrayList<>(snapDfnListRef);
     }
 
-    public Collection<SnapshotDefinition> getCreatedSnapDfns()
+    public @Nullable Collection<SnapshotDefinition> getCreatedSnapDfns()
     {
         return createdSnapDfns;
     }
@@ -200,12 +199,12 @@ public class CreateMultiSnapRequest
         return snapshots;
     }
 
-    public String getDescription()
+    public @Nullable String getDescription()
     {
         return descr;
     }
 
-    public String getJoinedRscNames()
+    public @Nullable String getJoinedRscNames()
     {
         return joinedRscNames;
     }

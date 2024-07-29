@@ -1,5 +1,7 @@
 package com.linbit.linstor.layer.storage.exos.rest.responses;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -7,112 +9,112 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ExosRestVolumesCollection extends ExosRestBaseResponse
 {
-    public ExosRestVolume[] volumes;
+    public @Nullable ExosRestVolume[] volumes;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ExosRestVolume
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("durable-id")
-        public String durableId;
+        public @Nullable String durableId;
 
         @JsonProperty("virtual-disk-name")
-        public String virtualDiskName;
+        public @Nullable String virtualDiskName;
 
         @JsonProperty("storage-pool-name")
-        public String storagePoolName;
+        public @Nullable String storagePoolName;
 
         @JsonProperty("volume-name")
-        public String volumeName;
+        public @Nullable String volumeName;
 
         @JsonProperty("size")
-        public String size;
+        public @Nullable String size;
 
         @JsonProperty("size-numeric")
         public long sizeNumeric;
 
         @JsonProperty("total-size")
-        public String totalSize;
+        public @Nullable String totalSize;
 
         @JsonProperty("total-size-numeric")
         public long totalSizeNumeric;
 
         @JsonProperty("allocated-size")
-        public String allocatedSize;
+        public @Nullable String allocatedSize;
 
         @JsonProperty("allocated-size-numeric")
         public long allocatedSizeNumeric;
 
         @JsonProperty("storage-type")
-        public String storageType;
+        public @Nullable String storageType;
 
         @JsonProperty("storage-type-numeric")
         public int storageTypeNumeric;
 
         @JsonProperty("preferred-owner")
-        public String preferredOwner;
+        public @Nullable String preferredOwner;
 
         @JsonProperty("preferred-owner-numeric")
         public long preferredOwnerNumeric;
 
         @JsonProperty("owner")
-        public String owner;
+        public @Nullable String owner;
 
         @JsonProperty("owner-numeric")
         public long ownerNumeric;
 
         @JsonProperty("serial-number")
-        public String serialNumber;
+        public @Nullable String serialNumber;
 
         @JsonProperty("write-policy")
-        public String writePolicy;
+        public @Nullable String writePolicy;
 
         @JsonProperty("write-policy-numeric")
         public int writePolicyNumeric;
 
         @JsonProperty("cache-optimization")
-        public String cacheOptimization;
+        public @Nullable String cacheOptimization;
 
         @JsonProperty("cache-optimization-numeric")
         public int cacheOptimizationNumeric;
 
         @JsonProperty("read-ahead-size")
-        public String readAheadSize;
+        public @Nullable String readAheadSize;
 
         @JsonProperty("read-ahead-size-numeric")
         public int readAheadSizeNumeric;
 
         @JsonProperty("volume-type")
-        public String volumeType;
+        public @Nullable String volumeType;
 
         @JsonProperty("volume-type-numeric")
         public int volumeTypeNumeric;
 
         @JsonProperty("volume-class")
-        public String volumeClass;
+        public @Nullable String volumeClass;
 
         @JsonProperty("volume-class-numeric")
         public int volumeClassNumeric;
 
         @JsonProperty("tier-affinity")
-        public String tierAffinity;
+        public @Nullable String tierAffinity;
 
         @JsonProperty("tier-affinity-numeric")
         public int tierAffinityNumeric;
 
         @JsonProperty("snapshot")
-        public String snapshot;
+        public @Nullable String snapshot;
 
         @JsonProperty("snapshot-retention-priority")
-        public String snapshotRetentionPriority;
+        public @Nullable String snapshotRetentionPriority;
 
         @JsonProperty("snapshot-retention-priority-numeric")
         public int snapshotRetentionPriorityNumeric;
 
         @JsonProperty("volume-qualifier")
-        public String volumeQualifier;
+        public @Nullable String volumeQualifier;
 
         @JsonProperty("volume-qualifier-numeric")
         public int volumeQualifierNumeric;
@@ -124,126 +126,126 @@ public class ExosRestVolumesCollection extends ExosRestBaseResponse
         public long blocks;
 
         @JsonProperty("capabilities")
-        public String capabilities;
+        public @Nullable String capabilities;
 
         @JsonProperty("volume-parent")
-        public String volumeParent;
+        public @Nullable String volumeParent;
 
         @JsonProperty("snap-pool")
-        public String snapPool;
+        public @Nullable String snapPool;
 
         @JsonProperty("replication-set")
-        public String replicationSet;
+        public @Nullable String replicationSet;
 
         @JsonProperty("attributes")
-        public String attributes;
+        public @Nullable String attributes;
 
         @JsonProperty("virtual-disk-serial")
-        public String virtualDiskSerial;
+        public @Nullable String virtualDiskSerial;
 
         @JsonProperty("volume-description")
-        public String volumeDescription;
+        public @Nullable String volumeDescription;
 
         @JsonProperty("wwn")
-        public String wwn;
+        public @Nullable String wwn;
 
         @JsonProperty("progress")
-        public String progress;
+        public @Nullable String progress;
 
         @JsonProperty("progress-numeric")
         public int progressNumeric;
 
         @JsonProperty("container-name")
-        public String containerName;
+        public @Nullable String containerName;
 
         @JsonProperty("container-serial")
-        public String containerSerial;
+        public @Nullable String containerSerial;
 
         @JsonProperty("allowed-storage-tiers")
-        public String allowedSstorageTiers;
+        public @Nullable String allowedSstorageTiers;
 
         @JsonProperty("allowed-storage-tiers-numeric")
         public long allowedStorageTiersNumeric;
 
         @JsonProperty("threshold-percent-of-pool")
-        public String thresholdPercentOfPool;
+        public @Nullable String thresholdPercentOfPool;
 
         @JsonProperty("reserved-size-in-pages")
         public long reservedSizeInPages;
 
         @JsonProperty("allocate-reserved-pages-first")
-        public String allocateReservedPagesFirst;
+        public @Nullable String allocateReservedPagesFirst;
 
         @JsonProperty("allocate-reserved-pages-first-numeric")
         public int allocateReservedPagesFirstNumeric;
 
         @JsonProperty("zero-init-page-on-allocation")
-        public String zeroInitPageOnAllocation;
+        public @Nullable String zeroInitPageOnAllocation;
 
         @JsonProperty("zero-init-page-on-allocation-numeric")
         public int zeroInitPageOnAllocationNumeric;
 
         @JsonProperty("large-virtual-extents")
-        public String largeVirtualExtents;
+        public @Nullable String largeVirtualExtents;
 
         @JsonProperty("large-virtual-extents-numeric")
         public int largeVirtualExtentsNumeric;
 
         @JsonProperty("raidtype")
-        public String raidtype;
+        public @Nullable String raidtype;
 
         @JsonProperty("raidtype-numeric")
         public int raidtypeNumeric;
 
         @JsonProperty("pi-format")
-        public String piFormat;
+        public @Nullable String piFormat;
 
         @JsonProperty("pi-format-numeric")
         public int piFormatNumeric;
 
         @JsonProperty("cs-replication-role")
-        public String csReplicationRole;
+        public @Nullable String csReplicationRole;
 
         @JsonProperty("cs-copy-dest")
-        public String csCopyDest;
+        public @Nullable String csCopyDest;
 
         @JsonProperty("cs-copy-dest-numeric")
         public int csCopyDestNumeric;
 
         @JsonProperty("cs-copy-src")
-        public String csCopySrc;
+        public @Nullable String csCopySrc;
 
         @JsonProperty("cs-copy-src-numeric")
         public int csCopySrcNumeric;
 
         @JsonProperty("cs-primary")
-        public String csPrimary;
+        public @Nullable String csPrimary;
 
         @JsonProperty("cs-primary-numeric")
         public int csPrimaryNumeric;
 
         @JsonProperty("cs-secondary")
-        public String csSecondary;
+        public @Nullable String csSecondary;
 
         @JsonProperty("cs-secondary-numeric")
         public int csSecondaryNumeric;
 
         @JsonProperty("health")
-        public String health;
+        public @Nullable String health;
 
         @JsonProperty("health-numeric")
         public int healthNumeric;
 
         @JsonProperty("health-reason")
-        public String healthReason;
+        public @Nullable String healthReason;
 
         @JsonProperty("health-recommendation")
-        public String healthRecommendation;
+        public @Nullable String healthRecommendation;
 
         @JsonProperty("volume-group")
-        public String volumeGroup;
+        public @Nullable String volumeGroup;
 
         @JsonProperty("group-key")
-        public String groupKey;
+        public @Nullable String groupKey;
     }
 }

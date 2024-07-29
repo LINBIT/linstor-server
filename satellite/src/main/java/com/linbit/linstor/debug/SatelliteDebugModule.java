@@ -1,12 +1,14 @@
 package com.linbit.linstor.debug;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.multibindings.Multibinder;
 import com.linbit.linstor.core.CoreModule;
 
 import javax.inject.Named;
+
 import java.util.concurrent.locks.ReadWriteLock;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.multibindings.Multibinder;
 
 public class SatelliteDebugModule extends AbstractModule
 {

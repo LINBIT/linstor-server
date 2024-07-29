@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -162,7 +163,7 @@ public class EbsRemote extends AbsRemote
         url.set(urlRef);
     }
 
-    public byte[] getEncryptedAccessKey(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable byte[] getEncryptedAccessKey(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -192,7 +193,7 @@ public class EbsRemote extends AbsRemote
         decryptedAccessKey.set(decryptedAccessKeyRef);
     }
 
-    public byte[] getEncryptedSecretKey(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable byte[] getEncryptedSecretKey(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -222,7 +223,7 @@ public class EbsRemote extends AbsRemote
         decryptedSecretKey.set(decryptedSecretKeyRef);
     }
 
-    public EbsRemotePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    public EbsRemotePojo getApiData(AccessContext accCtx, @Nullable Long fullSyncId, @Nullable Long updateId)
         throws AccessDeniedException
     {
         checkDeleted();

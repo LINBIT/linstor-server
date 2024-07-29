@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -21,8 +22,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.utils.Pair;
-
-import javax.annotation.Nullable;
 
 import java.util.Map;
 import java.util.Set;
@@ -89,7 +88,7 @@ public abstract class AbsLayerVlmDataDbDriver<
     public void loadAll(
         Map<Pair<SuffixedResourceName, VolumeNumber>, VLM_DFN_DATA> allVlmDfnDataRef,
         Map<Integer, RscDataLoadOutput<RSC_DATA, VLM_DATA>> rscDataByLayerIdRef,
-        ParentObjects parentObjectsRef
+        @Nullable ParentObjects parentObjectsRef
     )
         throws DatabaseException
     {
@@ -137,7 +136,7 @@ public abstract class AbsLayerVlmDataDbDriver<
         }
 
         @Override
-        public DatabaseTable getTable()
+        public @Nullable DatabaseTable getTable()
         {
             return null;
         }

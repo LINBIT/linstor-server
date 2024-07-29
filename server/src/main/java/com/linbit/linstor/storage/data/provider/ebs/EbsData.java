@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider.ebs;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.EbsVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -17,7 +18,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;

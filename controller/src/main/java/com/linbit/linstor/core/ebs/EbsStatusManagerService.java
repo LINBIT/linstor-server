@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
@@ -39,7 +40,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -98,8 +98,9 @@ public class EbsStatusManagerService implements SystemService
 
     private boolean initialized = false;
     private volatile boolean keepRunning = true;
-    private Thread thread;
+    private @Nullable Thread thread;
 
+    private final Object syncQueueAndThread = new Object();
     private final ArrayBlockingQueue<PollStatus> queue = new ArrayBlockingQueue<>(2);
     private final PollConfig defaultCfg = new PollConfig();
 
@@ -147,7 +148,7 @@ public class EbsStatusManagerService implements SystemService
     @Override
     public void start() throws SystemServiceStartException
     {
-        synchronized (queue)
+        synchronized (syncQueueAndThread)
         {
             if (!initialized)
         {
@@ -166,7 +167,7 @@ public class EbsStatusManagerService implements SystemService
     @Override
     public void shutdown()
     {
-        synchronized (queue)
+        synchronized (syncQueueAndThread)
         {
             keepRunning = false;
             if (thread != null)
@@ -180,7 +181,7 @@ public class EbsStatusManagerService implements SystemService
     public void awaitShutdown(long timeoutRef) throws InterruptedException
     {
         Thread joinThr = null;
-        synchronized (queue)
+        synchronized (syncQueueAndThread)
         {
             joinThr = thread;
         }
@@ -276,7 +277,7 @@ public class EbsStatusManagerService implements SystemService
     private PollStatus offer(final PollConfig pollCfg)
     {
         PollStatus ret;
-        synchronized (queue)
+        synchronized (syncQueueAndThread)
         {
             // "found" looks unnecessary right now, but the plan is that PollConfig might get more complex in the future
             // and then we might want to implement something like "is a same pollConfig already in the queue? if so, we
@@ -298,7 +299,7 @@ public class EbsStatusManagerService implements SystemService
     public boolean pollAndWait(long timeoutInMs) throws InterruptedException
     {
         final PollStatus pollStatus;
-        synchronized (queue)
+        synchronized (syncQueueAndThread)
         {
             pollStatus = offer(new PollConfig());
 
@@ -306,7 +307,10 @@ public class EbsStatusManagerService implements SystemService
             long remainingTimeout = timeoutInMs;
             while (keepRunning && !pollStatus.answerReceived && remainingTimeout > 0)
             {
-                pollStatus.wait(remainingTimeout);
+                synchronized (pollStatus)
+                {
+                    pollStatus.wait(remainingTimeout);
+                }
                 if (!pollStatus.answerReceived)
                 {
                     remainingTimeout = Math.max(0, timeoutInMs - (System.currentTimeMillis() - start));

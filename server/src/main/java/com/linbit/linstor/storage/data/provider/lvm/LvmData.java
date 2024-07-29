@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider.lvm;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -17,7 +18,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -26,8 +26,8 @@ public class LvmData<RSC extends AbsResource<RSC>>
     extends AbsStorageVlmData<RSC> implements LvmProviderObject<RSC>
 {
     // not persisted, not serialized, stlt only
-    private transient String volumeGroup;
-    private transient String attributes;
+    private transient @Nullable String volumeGroup;
+    private transient @Nullable String attributes;
 
     public LvmData(
         AbsVolume<RSC> vlmRef,
@@ -83,7 +83,7 @@ public class LvmData<RSC extends AbsResource<RSC>>
         volumeGroup = null; // force LvmProvider to repeat the lookup using the new storage pool
     }
 
-    public String getVolumeGroup()
+    public @Nullable String getVolumeGroup()
     {
         return volumeGroup;
     }
@@ -93,12 +93,12 @@ public class LvmData<RSC extends AbsResource<RSC>>
         volumeGroup = volumeGroupRef;
     }
 
-    public String getAttributes()
+    public @Nullable String getAttributes()
     {
         return attributes;
     }
 
-    public void setAttributes(String attributesRef)
+    public void setAttributes(@Nullable String attributesRef)
     {
         attributes = attributesRef;
     }

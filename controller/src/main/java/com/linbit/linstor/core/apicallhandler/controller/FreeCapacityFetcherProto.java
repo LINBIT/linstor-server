@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -167,7 +168,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         return storPoolStream;
     }
 
-    private Peer getPeer(Node node)
+    private @Nullable Peer getPeer(Node node)
     {
         Peer peer;
         try

@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers.etcd;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbcp.migration.UsedByMigration;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
@@ -136,7 +137,7 @@ public class EtcdUtils
         return getFirstValue(kvClientRef, primaryKey, null);
     }
 
-    public static String getFirstValue(KvClient kvClientRef, String primaryKeyRef, String dfltValue)
+    public static @Nullable String getFirstValue(KvClient kvClientRef, String primaryKeyRef, @Nullable String dfltValue)
     {
         Map<String, String> row = getTableRow(kvClientRef, primaryKeyRef);
         Iterator<String> iterator = row.values().iterator();
@@ -185,7 +186,7 @@ public class EtcdUtils
      * "/LINSTOR/$table//$column" can still return an empty string as PK.
      * Only ETCD keys like "/LINSTOR/$table/$column" will return null (note "//" vs "/" between the table and column)
      */
-    public static String extractPrimaryKey(String key)
+    public static @Nullable String extractPrimaryKey(String key)
     {
         // key is something like
         // /LINSTOR/$table/$composedPk/$column = $valueOfColumn
@@ -205,7 +206,7 @@ public class EtcdUtils
         return ret;
     }
 
-    public static String[] splitPks(String composedPkRef, boolean emptyStringAsNull)
+    public static String[] splitPks(@Nullable String composedPkRef, boolean emptyStringAsNull)
     {
         List<String> pks = new ArrayList<>();
         if (composedPkRef != null)

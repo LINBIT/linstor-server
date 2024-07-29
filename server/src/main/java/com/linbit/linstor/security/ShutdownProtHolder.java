@@ -1,5 +1,7 @@
 package com.linbit.linstor.security;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -10,7 +12,7 @@ import javax.inject.Singleton;
 @Singleton
 public class ShutdownProtHolder implements ProtectedObject
 {
-    private ObjectProtection shutdownProt;
+    private @Nullable ObjectProtection shutdownProt;
 
     @Inject
     public ShutdownProtHolder()

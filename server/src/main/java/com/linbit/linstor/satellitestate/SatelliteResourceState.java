@@ -1,11 +1,10 @@
 package com.linbit.linstor.satellitestate;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.drbd.drbdstate.DiskState;
-
-import javax.annotation.Nullable;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,7 +14,7 @@ import java.util.function.Function;
 
 public class SatelliteResourceState
 {
-    private Boolean inUse;
+    private @Nullable Boolean inUse;
     private boolean isReady;
 
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
@@ -108,7 +107,7 @@ public class SatelliteResourceState
             .allMatch(svs -> svs.getDiskState().equalsIgnoreCase(DiskState.UP_TO_DATE.toString()));
     }
 
-    public <T> T getFromVolume(VolumeNumber volumeNumber, Function<SatelliteVolumeState, T> getter)
+    public <T> @Nullable T getFromVolume(VolumeNumber volumeNumber, Function<SatelliteVolumeState, T> getter)
     {
         return volumeStates.containsKey(volumeNumber) ?
             getter.apply(volumeStates.get(volumeNumber)) :

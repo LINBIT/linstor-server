@@ -264,14 +264,13 @@ public class PhysicalStorage
             if (createData.with_storage_pool != null)
             {
                 storPoolProps.putAll(createData.with_storage_pool.props);
-                Boolean externalLocking = createData.with_storage_pool.external_locking;
                 responses = responses.concatWith(
                     storPoolCrtApiCallHandler.createStorPool(
                         nodeName,
                         createData.with_storage_pool.name,
                         deviceProviderKind,
                         createData.with_storage_pool.shared_space,
-                        externalLocking == null ? false : externalLocking,
+                        createData.with_storage_pool.external_locking,
                         storPoolProps,
                         physicalStorageApiCallHandler.deleteDevicePool(
                             nodeName,

@@ -1,5 +1,7 @@
 package com.linbit.linstor.netcom;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -11,10 +13,10 @@ public class MessageData implements Message
 {
     // TODO: Use ByteBuffer.allocateDirect(...) instead of ByteBuffer.wrap(...)
     protected final ByteBuffer headerBuffer;
-    protected ByteBuffer dataBuffer;
+    protected @Nullable ByteBuffer dataBuffer;
 
     protected final byte[] headerBytes;
-    protected byte[] dataBytes;
+    protected @Nullable byte[] dataBytes;
 
     private boolean forSend;
 
@@ -70,7 +72,7 @@ public class MessageData implements Message
     }
 
     @Override
-    public ByteBuffer getDataBuffer()
+    public @Nullable ByteBuffer getDataBuffer()
     {
         return dataBuffer;
     }

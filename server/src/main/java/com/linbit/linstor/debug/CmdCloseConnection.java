@@ -1,14 +1,15 @@
 package com.linbit.linstor.debug;
 
-import java.io.PrintStream;
-import java.util.Map;
-import java.util.TreeMap;
-
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
+
+import java.io.PrintStream;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Closes a peer connection
@@ -82,7 +83,7 @@ public class CmdCloseConnection extends BaseDebugCmd
         }
     }
 
-    private Peer getPeer(String peerId)
+    private @Nullable Peer getPeer(String peerId)
     {
         Peer peerObj = null;
         synchronized (peerMap)

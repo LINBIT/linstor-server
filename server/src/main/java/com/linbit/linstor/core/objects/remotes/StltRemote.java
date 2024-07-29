@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Node;
@@ -16,8 +17,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
@@ -43,7 +42,7 @@ public class StltRemote extends AbsRemote
     private final TransactionSimpleObject<StltRemote, Boolean> deleted;
     private final StateFlags<Flags> flags;
     // this remoteName references the complete cluster instead of only the stlt the shipping should go to
-    private final RemoteName linstorRemoteName;
+    private final @Nullable RemoteName linstorRemoteName;
     // a reference to the node the stltRemote is describing
     private final Node node;
     // rsc-name of the snapDfn we are shipping to or receiving from
@@ -56,7 +55,7 @@ public class StltRemote extends AbsRemote
         long initialFlags,
         String ipRef,
         Map<String, Integer> portRef,
-        Boolean useZstdRef,
+        @Nullable Boolean useZstdRef,
         @Nullable RemoteName linstorRemoteNameRef,
         Node nodeRef,
         StateFlagsPersistence<StltRemote> stateFlagsDriverRef,
@@ -72,7 +71,7 @@ public class StltRemote extends AbsRemote
 
         ip = transObjFactory.createTransactionSimpleObject(this, ipRef, null);
         ports = transObjFactory.createTransactionPrimitiveMap(this, portRef, null);
-        useZstd = transObjFactory.createTransactionSimpleObject(this, useZstdRef == null ? false : useZstdRef, null);
+        useZstd = transObjFactory.createTransactionSimpleObject(this, useZstdRef != null && useZstdRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
@@ -102,7 +101,7 @@ public class StltRemote extends AbsRemote
     }
 
     @Override
-    public int compareTo(@Nonnull AbsRemote remote)
+    public int compareTo(AbsRemote remote)
     {
         int cmp = remote.getClass().getSimpleName().compareTo(StltRemote.class.getSimpleName());
         if (cmp == 0)
@@ -151,7 +150,7 @@ public class StltRemote extends AbsRemote
         return remoteName;
     }
 
-    public RemoteName getLinstorRemoteName()
+    public @Nullable RemoteName getLinstorRemoteName()
     {
         checkDeleted();
         return linstorRemoteName;

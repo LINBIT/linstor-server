@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_33_CleanupOrphanedAcls;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
@@ -48,7 +49,7 @@ public class Migration_17_v1_19_1_CleanupOrphanedAcls extends BaseK8sCrdMigratio
     }
 
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         Collection<SecAclMap> crdList = txFrom.<SecAclMap, SecAclMapSpec>getCrd(
             GenCrdV1_19_1.GeneratedDatabaseTables.SEC_ACL_MAP

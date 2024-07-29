@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -68,8 +69,8 @@ public class ResourceConnections
     public Response listResourceConnections(
         @Context Request request,
         @PathParam("rscName") String rscName,
-        @PathParam("nodeA") String nodeA,
-        @PathParam("nodeB") String nodeB
+        @PathParam("nodeA") @Nullable String nodeA,
+        @PathParam("nodeB") @Nullable String nodeB
     )
     {
         return requestHelper.doInScope(ApiConsts.API_LST_RSC_CONN, request, () ->

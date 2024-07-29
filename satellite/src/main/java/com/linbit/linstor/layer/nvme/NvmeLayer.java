@@ -4,6 +4,7 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
@@ -311,7 +312,7 @@ public class NvmeLayer implements DeviceLayer
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodeProps)
+    public @Nullable LocalPropsChangePojo setLocalNodeProps(Props localNodeProps)
     {
         // no-op
         return null;

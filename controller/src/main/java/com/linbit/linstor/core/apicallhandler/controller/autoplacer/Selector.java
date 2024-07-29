@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -27,7 +28,6 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.LayerUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

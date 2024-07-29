@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.LinstorRemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -14,8 +15,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.net.MalformedURLException;
@@ -91,7 +90,7 @@ public class LinstorRemote extends AbsRemote
     }
 
     @Override
-    public int compareTo(@Nonnull AbsRemote remote)
+    public int compareTo(AbsRemote remote)
     {
         int cmp = remote.getClass().getSimpleName().compareTo(LinstorRemote.class.getSimpleName());
         if (cmp == 0)
@@ -155,7 +154,7 @@ public class LinstorRemote extends AbsRemote
         url.set(urlRef);
     }
 
-    public byte[] getEncryptedRemotePassphrase(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable byte[] getEncryptedRemotePassphrase(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -177,7 +176,7 @@ public class LinstorRemote extends AbsRemote
         clusterId.set(clusterIdRef);
     }
 
-    public UUID getClusterId(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable UUID getClusterId(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -198,7 +197,7 @@ public class LinstorRemote extends AbsRemote
     }
 
 
-    public LinstorRemotePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    public LinstorRemotePojo getApiData(AccessContext accCtx, @Nullable Long fullSyncId, @Nullable Long updateId)
         throws AccessDeniedException
     {
         checkDeleted();

@@ -175,7 +175,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
      * Expected to be overridden (extended) by LvmThinProvider
      */
     @SuppressWarnings({ "unchecked" })
-    protected void updateInfo(LvmData<?> vlmDataRef, LvsInfo info)
+    protected void updateInfo(LvmData<?> vlmDataRef, @Nullable LvsInfo info)
         throws DatabaseException, AccessDeniedException, StorageException
     {
         boolean setDevicePath;
@@ -601,7 +601,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
 
     @Override
     protected String asLvIdentifier(
-        StorPoolName ignoredSpName,
+        @Nullable StorPoolName ignoredSpName,
         ResourceName resourceName,
         String rscNameSuffix,
         VolumeNumber volumeNumber
@@ -644,7 +644,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         return getVolumeGroup(storPoolRef);
     }
 
-    protected String getVolumeGroup(StorPoolInfo storPool)
+    protected @Nullable String getVolumeGroup(StorPoolInfo storPool)
     {
         String volumeGroup;
         try

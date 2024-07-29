@@ -4,6 +4,8 @@ package com.linbit.linstor.numberpool;
 //       RangeException depending on where it occurs (constructor, method, ...)
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.linstor.annotation.Nullable;
+
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
@@ -58,11 +60,11 @@ public class BitmapPool implements NumberPool
     private final Lock          poolRdLock;
     private final Lock          poolWrLock;
 
-    private final LevelDataItem[] levelStack;
+    private final @Nullable LevelDataItem[] levelStack;
 
     private int allocatedCount;
 
-    private BitmapBase rootLevel;
+    private @Nullable BitmapBase rootLevel;
 
     /**
      * Initializes a pool of the specified size
@@ -1425,7 +1427,7 @@ public class BitmapPool implements NumberPool
     {
         int     elemIdx     = 0;
         long    elemBitMask = 0L;
-        IntermediateBitmap imBitmap = null;
+        @Nullable IntermediateBitmap imBitmap = null;
     }
 
     private abstract static class BitmapBase

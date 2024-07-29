@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -47,10 +48,10 @@ public class StltRemoteControllerFactory
     public StltRemote create(
         AccessContext accCtxRef,
         RemoteName nameRef,
-        String ipRef,
+        @Nullable String ipRef,
         Map<String, Integer> portsRef,
         RemoteName linstorRemoteNameRef,
-        Node nodeRef,
+        @Nullable Node nodeRef,
         String otherRscNameRef
     )
         throws AccessDeniedException, DatabaseException

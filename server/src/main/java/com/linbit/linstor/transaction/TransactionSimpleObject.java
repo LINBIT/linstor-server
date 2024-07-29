@@ -78,7 +78,7 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
     }
 
     @Override
-    public void postSetConnection(TransactionMgr transMgrRef) throws ImplementationError
+    public void postSetConnection(@Nullable TransactionMgr transMgrRef) throws ImplementationError
     {
         // forward transaction manager to simple object
         if (object instanceof TransactionObject)

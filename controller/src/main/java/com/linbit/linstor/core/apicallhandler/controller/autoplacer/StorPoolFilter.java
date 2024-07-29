@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -30,7 +31,6 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.utils.StringUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -240,24 +240,21 @@ public class StorPoolFilter
             else
             if (disklessTypeRef.equals(Resource.Flags.DRBD_DISKLESS))
             {
-                if (filterLayerList == null || !filterLayerList.contains(DeviceLayerKind.DRBD))
+                /*
+                 * other as in NVME, we can assume here that DRBD is the topmost layer, as nothing is allowed above
+                 * DRBD
+                 */
+                if (filterLayerList == null)
                 {
-                    /*
-                     * other as in NVME, we can assume here that DRBD is the topmost layer, as nothing is allowed above
-                     * DRBD
-                     */
-                    if (filterLayerList == null)
-                    {
-                        filterLayerList = new ArrayList<>(Arrays.asList(DeviceLayerKind.DRBD));
-                    }
-                    else
-                    {
-                        ArrayList<DeviceLayerKind> tmpList = new ArrayList<>();
-                        tmpList.add(DeviceLayerKind.DRBD);
-                        tmpList.addAll(filterLayerList);
+                    filterLayerList = new ArrayList<>(Arrays.asList(DeviceLayerKind.DRBD));
+                }
+                else if (!filterLayerList.contains(DeviceLayerKind.DRBD))
+                {
+                    ArrayList<DeviceLayerKind> tmpList = new ArrayList<>();
+                    tmpList.add(DeviceLayerKind.DRBD);
+                    tmpList.addAll(filterLayerList);
 
-                        filterLayerList = tmpList;
-                    }
+                    filterLayerList = tmpList;
                 }
             }
             else if (disklessTypeRef.equals(Resource.Flags.EBS_INITIATOR))
@@ -664,7 +661,7 @@ public class StorPoolFilter
     }
 
     @SuppressWarnings("rawtypes")
-    private void logIfNotEmpty(String format, Object obj)
+    private void logIfNotEmpty(String format, @Nullable Object obj)
     {
         boolean log = false;
         if (obj != null)

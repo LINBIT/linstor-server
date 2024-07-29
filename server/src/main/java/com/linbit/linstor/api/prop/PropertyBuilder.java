@@ -2,6 +2,7 @@ package com.linbit.linstor.api.prop;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.Property.PropertyType;
 import com.linbit.linstor.propscon.ReadOnlyProps;
@@ -13,19 +14,19 @@ import java.util.stream.Collectors;
 
 public class PropertyBuilder
 {
-    private String name;
-    private String key;
-    private PropertyType type;
-    private String value;
+    private @Nullable String name;
+    private @Nullable String key;
+    private @Nullable PropertyType type;
+    private @Nullable String value;
     private boolean internal;
-    private String info;
-    private String[] values;
+    private @Nullable String info;
+    private @Nullable String[] values;
     private long max;
     private long min;
     private double minFloat;
     private double maxFloat;
-    private String dflt;
-    private String unit;
+    private @Nullable String dflt;
+    private @Nullable String unit;
 
     public PropertyBuilder()
     {

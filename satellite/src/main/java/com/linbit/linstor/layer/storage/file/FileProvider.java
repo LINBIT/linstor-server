@@ -180,7 +180,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     /*
      * Might be overridden (extended) by future *Providers
      */
-    protected void updateInfo(FileData<?> fileData, FileInfo info)
+    protected void updateInfo(FileData<?> fileData, @Nullable FileInfo info)
         throws DatabaseException, StorageException
     {
         fileData.setIdentifier(getIdentifier(fileData));
@@ -510,7 +510,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    public String getDevicePath(String storageName, String lvId)
+    public @Nullable String getDevicePath(String storageName, String lvId)
     {
         return null; // we cannot construct it from the given data. however, the devicePath is already
         // set on the corresponding FileData object

@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -13,8 +14,6 @@ import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.K8sCrdMigrationContext;
 import com.linbit.linstor.transaction.K8sCrdTransaction;
 import com.linbit.timer.Delay;
-
-import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,10 +37,10 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
     protected final @Nullable K8sCrdMigrationContext fromCtx;
     protected final K8sCrdMigrationContext toCtx;
 
-    private KubernetesClient k8sClient;
+    private @Nullable KubernetesClient k8sClient;
 
-    protected K8sCrdTransaction txFrom;
-    protected K8sCrdTransaction txTo;
+    protected @Nullable K8sCrdTransaction txFrom;
+    protected @Nullable K8sCrdTransaction txTo;
 
     protected boolean schemeUpgraded = false;
 

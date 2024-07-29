@@ -12,11 +12,11 @@ import java.util.List;
 public class ErrorReportResult
 {
     private long totalCount;
-    private final ArrayList<ErrorReport> errorReports = new ArrayList<>();
+    private final @Nonnull ArrayList<ErrorReport> errorReports = new ArrayList<>();
     /**
      * The key of this map is a Pair<NodeName,Module>.
      */
-    private HashMap<Pair<String, String>, Long> nodeCounts = new HashMap<>();
+    private final @Nonnull HashMap<Pair<String, String>, Long> nodeCounts = new HashMap<>();
 
     public ErrorReportResult(long totalCountRef, @Nonnull Collection<ErrorReport> errorReportsRef)
     {
@@ -31,7 +31,11 @@ public class ErrorReportResult
      * @param other ErrorReportResult to add.
      * @return This ErrorReportResult instance
      */
-    public @Nonnull ErrorReportResult addErrorReportResult(@Nonnull String nodeName, @Nonnull String module, @Nonnull ErrorReportResult other)
+    public @Nonnull ErrorReportResult addErrorReportResult(
+        @Nonnull String nodeName,
+        @Nonnull String module,
+        @Nonnull ErrorReportResult other
+    )
     {
         totalCount += other.totalCount;
         nodeCounts.put(new Pair<>(nodeName, module), other.totalCount);

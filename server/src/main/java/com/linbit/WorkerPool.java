@@ -1,11 +1,12 @@
 package com.linbit;
 
+import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.logging.ErrorReporter;
+
 import java.util.ArrayDeque;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.logging.ErrorReporter;
 
 public class WorkerPool implements WorkQueue
 {
@@ -21,7 +22,7 @@ public class WorkerPool implements WorkQueue
     private final String threadNamePrefix;
 
     private ErrorReporter errorLog;
-    private ControllerDatabase controllerDatabase;
+    private @Nullable ControllerDatabase controllerDatabase;
 
     private WorkerPool(
         int parallelism,
@@ -29,7 +30,7 @@ public class WorkerPool implements WorkQueue
         boolean fair,
         String namePrefix,
         ErrorReporter errorLogRef,
-        ControllerDatabase controllerDatabaseRef
+        @Nullable ControllerDatabase controllerDatabaseRef
     )
     {
         workQueue = new ArrayDeque<>(queueSize);
@@ -49,7 +50,7 @@ public class WorkerPool implements WorkQueue
         boolean fair,
         String namePrefix,
         ErrorReporter errorLogRef,
-        ControllerDatabase controllerDatabase
+        @Nullable ControllerDatabase controllerDatabase
     )
     {
         WorkerPool pool = new WorkerPool(parallelism, queueSize, fair, namePrefix, errorLogRef, controllerDatabase);
@@ -113,7 +114,7 @@ public class WorkerPool implements WorkQueue
         }
     }
 
-    private Runnable next()
+    private @Nullable Runnable next()
     {
         Runnable task = null;
         synchronized (workQueue)

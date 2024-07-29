@@ -32,7 +32,7 @@ import com.linbit.utils.Base64;
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;

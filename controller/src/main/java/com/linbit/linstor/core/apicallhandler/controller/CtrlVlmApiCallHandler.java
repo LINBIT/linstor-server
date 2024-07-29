@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -77,7 +78,7 @@ public class CtrlVlmApiCallHandler
     }
 
     public Flux<ApiCallRc> modify(
-        UUID vlmUuid,
+        @Nullable UUID vlmUuid,
         String nodeNameStr,
         String rscNameStr,
         Integer vlmNrInt,

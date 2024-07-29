@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.core.BackupInfoManager;
@@ -117,7 +118,7 @@ public class CtrlFullSyncResponseApiCallHandler
      *
      * @return A merged Flux<?> continuing the "resource connected", "cleanup backups" and "cleanup remotes".
      */
-    public Flux<?> fullSyncSuccess(FullSyncSuccessContext fullSyncSuccessCtx, ResponseContext context)
+    public Flux<?> fullSyncSuccess(FullSyncSuccessContext fullSyncSuccessCtx, @Nullable ResponseContext context)
     {
         final ResponseContext responseCtx;
         if (context == null)

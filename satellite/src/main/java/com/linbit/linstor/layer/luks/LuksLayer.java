@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.core.StltSecurityObjects;
@@ -35,7 +36,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.utils.Commands;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -135,7 +135,7 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodeProps)
+    public @Nullable LocalPropsChangePojo setLocalNodeProps(Props localNodeProps)
     {
         // no-op
         return null;

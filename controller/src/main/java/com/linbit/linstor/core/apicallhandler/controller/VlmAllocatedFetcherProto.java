@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -207,7 +208,7 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
         return vlmStream;
     }
 
-    private Peer getPeer(Node node)
+    private @Nullable Peer getPeer(Node node)
     {
         Peer peer;
         try

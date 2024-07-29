@@ -2,6 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -144,7 +145,7 @@ public final class ObjectProtection extends BaseTransactionObject implements Com
      * @param context The security context of the subject requesting access
      * @return Allowed AccessType, or null if access is denied
      */
-    public AccessType queryAccess(AccessContext context)
+    public @Nullable AccessType queryAccess(AccessContext context)
     {
         AccessType result = null;
         {

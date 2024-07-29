@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.interfaces;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -11,38 +12,54 @@ import java.util.Map;
 
 public interface AutoSelectFilterApi
 {
+    @Nullable
     Integer getReplicaCount();
 
+    @Nullable
     Integer getAdditionalReplicaCount();
 
+    @Nullable
     List<String> getNodeNameList();
 
+    @Nullable
     List<String> getStorPoolNameList();
 
+    @Nullable
     List<String> getStorPoolDisklessNameList();
 
+    @Nullable
     List<String> getDoNotPlaceWithRscList();
 
+    @Nullable
     String getDoNotPlaceWithRscRegex();
 
+    @Nullable
     List<String> getReplicasOnSameList();
 
+    @Nullable
     List<String> getReplicasOnDifferentList();
 
+    @Nullable
     Map<String, Integer> getXReplicasOnDifferentMap();
 
+    @Nullable
     List<DeviceLayerKind> getLayerStackList();
 
+    @Nullable
     List<DeviceProviderKind> getProviderList();
 
     Boolean getDisklessOnRemaining();
 
+    @Nullable
     List<String> skipAlreadyPlacedOnNodeNamesCheck();
 
+    @Nullable
     Boolean skipAlreadyPlacedOnAllNodeCheck();
 
+    @Nullable
     String getDisklessType();
 
+    @Nullable
     Map<ExtTools, ExtToolsInfo.Version> getRequiredExtTools();
 
     default String asHelpString()

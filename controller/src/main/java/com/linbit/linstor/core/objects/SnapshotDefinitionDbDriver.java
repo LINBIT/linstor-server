@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -104,7 +105,7 @@ public class SnapshotDefinitionDbDriver
     }
 
     @Override
-    protected Pair<SnapshotDefinition, SnapshotDefinition.InitMaps> load(
+    protected @Nullable Pair<SnapshotDefinition, SnapshotDefinition.InitMaps> load(
         RawParameters raw,
         Map<ResourceName, ResourceDefinition> rscDfnMap
     )

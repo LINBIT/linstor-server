@@ -1,8 +1,7 @@
 package com.linbit.linstor.utils;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -38,9 +37,9 @@ public class FileUtils
 
     public static class DeleteFileVisitor extends SimpleFileVisitor<Path>
     {
-        private final ErrorReporter errorReporter;
+        private final @Nullable ErrorReporter errorReporter;
 
-        public DeleteFileVisitor(ErrorReporter errorReporterRef)
+        public DeleteFileVisitor(@Nullable ErrorReporter errorReporterRef)
         {
             errorReporter = errorReporterRef;
         }

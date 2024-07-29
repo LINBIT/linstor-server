@@ -137,7 +137,7 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     }
 
     @SuppressWarnings({ "unchecked" })
-    protected void updateInfo(StorageSpacesData<?> vlmDataRef, StorageSpacesInfo info)
+    protected void updateInfo(StorageSpacesData<?> vlmDataRef, @Nullable StorageSpacesInfo info)
         throws DatabaseException, AccessDeniedException, StorageException
     {
         if (info == null)
@@ -376,7 +376,7 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     }
 
     @Override
-    public String getDevicePath(String storageName, String lvId)
+    public @Nullable String getDevicePath(String storageName, String lvId)
     {
         String identifier = storageName + File.separator + lvId;
         StorageSpacesInfo info = infoListCache.get(identifier);

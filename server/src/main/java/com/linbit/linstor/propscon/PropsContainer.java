@@ -4,6 +4,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -21,7 +22,6 @@ import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.StringUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -60,8 +60,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
     public static final int PATH_MAX_LENGTH = 256;
 
     private PropsContainer rootContainer;
-    private PropsContainer parentContainer;
-    private String containerKey;
+    private @Nullable PropsContainer parentContainer;
+    private @Nullable String containerKey;
     private int itemCount;
     private Map<String, String> propMap;
     private Map<String, PropsContainer> containerMap;
@@ -69,27 +69,30 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private static final int PATH_NAMESPACE = 0;
     private static final int PATH_KEY = 1;
 
-    private Map<String, String> mapAccessor;
-    private Set<String> keySetAccessor;
-    private Set<Map.Entry<String, String>> entrySetAccessor;
-    private Collection<String> valuesCollectionAccessor;
+    private @Nullable Map<String, String> mapAccessor;
+    private @Nullable Set<String> keySetAccessor;
+    private @Nullable Set<Map.Entry<String, String>> entrySetAccessor;
+    private @Nullable Collection<String> valuesCollectionAccessor;
 
-    protected final PropsDatabaseDriver dbDriver;
-    protected Provider<TransactionMgr> transMgrProvider;
-    private Map<String, String> cachedPropMap;
+    protected final @Nullable PropsDatabaseDriver dbDriver;
+    protected @Nullable Provider<TransactionMgr> transMgrProvider;
+    private @Nullable Map<String, String> cachedPropMap;
 
-    private final String instanceName;
-    private final String description;
-    private final LinStorObject type;
+    /*
+     * Only sub-containers do not have an instance name, since they use their parent's
+     */
+    private final @Nullable String instanceName;
+    private final @Nullable String description;
+    private final @Nullable LinStorObject type;
 
     PropsContainer(
-        String key,
-        PropsContainer parent,
-        String instanceNameRef,
-        String descriptionRef,
-        LinStorObject typeRef,
-        PropsDatabaseDriver dbDriverRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        @Nullable String key,
+        @Nullable PropsContainer parent,
+        @Nullable String instanceNameRef,
+        @Nullable String descriptionRef,
+        @Nullable LinStorObject typeRef,
+        @Nullable PropsDatabaseDriver dbDriverRef,
+        @Nullable Provider<TransactionMgr> transMgrProviderRef
     )
         throws InvalidKeyException
     {
@@ -209,13 +212,13 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     @Override
-    public String getDescription()
+    public @Nullable String getDescription()
     {
         return description;
     }
 
     @Override
-    public LinStorObject getType()
+    public @Nullable LinStorObject getType()
     {
         return type;
     }
@@ -226,7 +229,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * getProp("a", "b/c") has the same effect as getProp("b/c/a", null)
      */
     @Override
-    public String getProp(String key, String namespace) throws InvalidKeyException
+    public @Nullable String getProp(String key, @Nullable String namespace) throws InvalidKeyException
     {
         String[] pathElements = splitPath(namespace, key);
         checkKey(pathElements[PATH_KEY]);
@@ -237,7 +240,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     @Override
-    public String getPropWithDefault(String key, String namespace, String defaultValue) throws InvalidKeyException
+    public @Nullable String getPropWithDefault(String key, @Nullable String namespace, @Nullable String defaultValue)
+        throws InvalidKeyException
     {
         String value = getProp(key, namespace);
         return value == null ? defaultValue : value;
@@ -259,7 +263,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *     during a database operation
      */
     @Override
-    public String setProp(String key, String value, String namespace)
+    public @Nullable String setProp(String key, String value, @Nullable String namespace)
         throws InvalidKeyException, InvalidValueException, DatabaseException
     {
         if (value == null)
@@ -289,7 +293,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @param entryMap Defines props to be set
      * @return True if any property has been modified by this method, false otherwise
      */
-    public boolean setAllProps(Map<? extends String, ? extends String> entryMap, String namespace)
+    public boolean setAllProps(Map<? extends String, ? extends String> entryMap, @Nullable String namespace)
         throws InvalidKeyException, InvalidValueException, DatabaseException
     {
         boolean modified = false;
@@ -316,7 +320,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *     during a database operation
      */
     @Override
-    public String removeProp(String key, String namespace) throws DatabaseException
+    public @Nullable String removeProp(String key, @Nullable String namespace) throws DatabaseException
     {
         String value = null;
         try
@@ -352,7 +356,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs
      *     during a database operation
      */
-    public boolean removeAllProps(Set<String> selection, String namespace) throws DatabaseException
+    public boolean removeAllProps(Set<String> selection, @Nullable String namespace) throws DatabaseException
     {
         boolean changed = false;
         for (String key : selection)
@@ -397,7 +401,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *     during
      *     a database operation
      */
-    public boolean retainAllProps(Set<String> selection, String namespace) throws DatabaseException
+    public boolean retainAllProps(Set<String> selection, @Nullable String namespace) throws DatabaseException
     {
         boolean changed = false;
         Set<String> removeSet = new TreeSet<>();
@@ -497,13 +501,13 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * getProp("a") has the same effect as getProp("a", null)
      */
     @Override
-    public String getProp(String key) throws InvalidKeyException
+    public @Nullable String getProp(String key) throws InvalidKeyException
     {
         return getProp(key, null);
     }
 
     @Override
-    public String getPropWithDefault(String key, String defaultValue) throws InvalidKeyException
+    public @Nullable String getPropWithDefault(String key, @Nullable String defaultValue) throws InvalidKeyException
     {
         return getPropWithDefault(key, null, defaultValue);
     }
@@ -515,7 +519,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * setProp("a", "value") has the same effect as setProp("a", "value", null)
      */
     @Override
-    public String setProp(String key, String value)
+    public @Nullable String setProp(String key, String value)
             throws InvalidKeyException, InvalidValueException, DatabaseException
     {
         return setProp(key, value, null);
@@ -527,7 +531,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * removeProp("a") has the same effect as removeProp("a", null)
      */
     @Override
-    public String removeProp(String key)
+    public @Nullable String removeProp(String key)
             throws InvalidKeyException, DatabaseException
     {
         return removeProp(key, null);
@@ -620,7 +624,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         return sanitizedPath.toString();
     }
 
-    private String[] splitPath(String namespace, String path) throws InvalidKeyException
+    private String[] splitPath(@Nullable String namespace, String path) throws InvalidKeyException
     {
         if (path == null)
         {
@@ -680,7 +684,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @return The namespace's PropsContainer, or null, if the namespace does not exist
      */
     @Override
-    public @Nullable Props getNamespace(String namespace)
+    public @Nullable Props getNamespace(@Nullable String namespace)
     {
         return findNamespace(namespace).orElse(null);
     }
@@ -703,7 +707,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @param namespace The name of the namespace that should be returned
      * @return The namespace's PropsContainer, or null, if the namespace does not exist
      */
-    private Optional<PropsContainer> findNamespace(String namespace)
+    private Optional<PropsContainer> findNamespace(@Nullable String namespace)
     {
         PropsContainer con = this;
         if (namespace != null)
@@ -817,9 +821,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
         }
     }
 
-    private static void checkKey(String key) throws InvalidKeyException
+    private static void checkKey(@Nullable String key) throws InvalidKeyException
     {
-        if (key.contains(PATH_SEPARATOR))
+        if (key != null && key.contains(PATH_SEPARATOR))
         {
             throw new InvalidKeyException(key);
         }
@@ -1893,7 +1897,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         @Override
         public boolean equals(Object other)
         {
-            boolean equals = other != null && other instanceof Collection;
+            boolean equals = other instanceof Collection;
             if (equals)
             {
                 Collection<?> otherCollection = (Collection<?>) other;
@@ -1921,7 +1925,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         private final Deque<Iterator<PropsContainer>> iterStack;
         private Iterator<PropsContainer> subConIter;
         Iterator<Map.Entry<String, String>> currentIter;
-        String prefix;
+        @Nullable String prefix;
 
         BaseIterator(PropsContainer con)
         {
@@ -1963,6 +1967,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             throw new UnsupportedOperationException();
         }
 
+        @Nullable
         PropsContainer recurseSubContainers()
         {
             PropsContainer subCon = null;

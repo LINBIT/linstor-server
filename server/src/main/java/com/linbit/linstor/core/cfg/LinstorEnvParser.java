@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.cfg;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.function.Function;
 
 public class LinstorEnvParser
@@ -21,17 +23,17 @@ public class LinstorEnvParser
         cfg.setLogLevelLinstor(getEnv(LS_LOG_LEVEL_LINSTOR));
     }
 
-    protected static String getEnv(String env)
+    protected static @Nullable String getEnv(String env)
     {
         return getEnv(env, Function.identity(), null);
     }
 
-    protected static <T> T getEnv(String env, Function<String, T> func)
+    protected static <T> @Nullable T getEnv(String env, Function<String, T> func)
     {
         return getEnv(env, func, null);
     }
 
-    protected static <T> T getEnv(String env, Function<String, T> func, T dfltValue)
+    protected static <T> @Nullable T getEnv(String env, Function<String, T> func, @Nullable T dfltValue)
     {
         String envVal = System.getenv(env);
         return envVal == null ? dfltValue : func.apply(envVal);

@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.data;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -13,7 +14,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Objects;
@@ -27,7 +27,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     protected final RSC_DATA rscData;
 
     // not persisted, serialized, ctrl and stlt
-    protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, String> devicePath;
+    protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, @Nullable String> devicePath;
     protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Long> allocatedSize;
     protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Long> usableSize;
     protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Boolean> exists;
@@ -73,7 +73,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
         return devicePath.get();
     }
 
-    public void setDevicePath(String devicePathRef) throws DatabaseException
+    public void setDevicePath(@Nullable String devicePathRef) throws DatabaseException
     {
         devicePath.set(devicePathRef);
     }

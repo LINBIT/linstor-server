@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -31,7 +32,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -62,7 +62,7 @@ class SnapWritecacheLayerHelper
     }
 
     @Override
-    protected RscDfnLayerObject createSnapDfnData(
+    protected @Nullable RscDfnLayerObject createSnapDfnData(
         SnapshotDefinition rscDfnRef,
         String rscNameSuffixRef
     )
@@ -72,7 +72,7 @@ class SnapWritecacheLayerHelper
     }
 
     @Override
-    protected VlmDfnLayerObject createSnapVlmDfnData(
+    protected @Nullable VlmDfnLayerObject createSnapVlmDfnData(
         SnapshotVolumeDefinition snapVlmDfnRef,
         String rscNameSuffixRef
     )
@@ -111,7 +111,7 @@ class SnapWritecacheLayerHelper
     }
 
     @Override
-    protected RscDfnLayerObject restoreSnapDfnData(
+    protected @Nullable RscDfnLayerObject restoreSnapDfnData(
         SnapshotDefinition snapshotDefinitionRef,
         RscLayerDataApi rscLayerDataApiRef,
         Map<String, String> renameStorPoolMapRef
@@ -123,7 +123,7 @@ class SnapWritecacheLayerHelper
     }
 
     @Override
-    protected VlmDfnLayerObject restoreSnapVlmDfnData(
+    protected @Nullable VlmDfnLayerObject restoreSnapVlmDfnData(
         SnapshotVolumeDefinition snapshotVolumeDefinitionRef,
         VlmLayerDataApi vlmLayerDataApiRef,
         Map<String, String> renameStorPoolMapRef
@@ -138,7 +138,7 @@ class SnapWritecacheLayerHelper
     protected WritecacheRscData<Snapshot> restoreSnapDataImpl(
         Snapshot snapRef,
         RscLayerDataApi rscLayerDataApiRef,
-        AbsRscLayerObject<Snapshot> parentRef,
+        @Nullable AbsRscLayerObject<Snapshot> parentRef,
         Map<String, String> renameStorPoolMapRef
     ) throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException
     {

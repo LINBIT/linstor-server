@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -370,9 +371,9 @@ public class CtrlBackupShippingSentInternalCallHandler
         boolean successRef,
         SnapshotDefinition snapDfn,
         boolean forceSkip,
-        AbsRemote remoteForSchedule,
+        @Nullable AbsRemote remoteForSchedule,
         NodeName nodeName,
-        String scheduleName
+        @Nullable String scheduleName
     ) throws AccessDeniedException, IOException
     {
         Flux<ApiCallRc> flux = Flux.empty();

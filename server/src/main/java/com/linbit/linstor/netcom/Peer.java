@@ -2,6 +2,7 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.api.protobuf.common.Ping;
@@ -12,7 +13,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
-import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
@@ -264,6 +264,7 @@ public interface Peer
      *
      * @return Internet address of the peer
      */
+    @Nullable
     InetSocketAddress peerAddress();
 
     /**
@@ -332,6 +333,7 @@ public interface Peer
      *
      * The locks from {@link #getSatelliteState()}} synchronize access to the data.
      */
+    @Nullable
     SatelliteState getSatelliteState();
 
     /**

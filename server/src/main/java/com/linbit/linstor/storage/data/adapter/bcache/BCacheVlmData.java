@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.bcache;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
@@ -18,7 +19,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -31,10 +31,10 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     implements BCacheVlmObject<RSC>, VlmLayerObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final StorPool cacheStorPool;
+    private final @Nullable StorPool cacheStorPool;
 
     // persisted, serialized, ctrl and stlt
-    private final TransactionSimpleObject<BCacheVlmData<?>, UUID> deviceUuid;
+    private final TransactionSimpleObject<BCacheVlmData<?>, @Nullable UUID> deviceUuid;
 
     // not persisted, serialized, ctrl and stlt
     private @Nullable String cacheDevice;
@@ -49,7 +49,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     public BCacheVlmData(
         AbsVolume<RSC> vlmRef,
         BCacheRscData<RSC> rscDataRef,
-        StorPool cacheStorPoolRef,
+        @Nullable StorPool cacheStorPoolRef,
         LayerBCacheVlmDatabaseDriver bcacheVlmdbDriver,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
@@ -85,7 +85,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public VlmDfnLayerObject getVlmDfnLayerObject()
+    public @Nullable VlmDfnLayerObject getVlmDfnLayerObject()
     {
         return null;
     }
@@ -118,7 +118,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getDataDevice()
+    public @Nullable String getDataDevice()
     {
         return dataDevice;
     }
@@ -128,7 +128,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
         dataDevice = dataDeviceRef;
     }
 
-    public String getCacheDevice()
+    public @Nullable String getCacheDevice()
     {
         return cacheDevice;
     }
@@ -139,7 +139,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public Size getSizeState()
+    public @Nullable Size getSizeState()
     {
         return sizeState;
     }
@@ -151,17 +151,17 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getIdentifier()
+    public @Nullable String getIdentifier()
     {
         return identifier;
     }
 
-    public void setIdentifier(String identifierRef)
+    public void setIdentifier(@Nullable String identifierRef)
     {
         identifier = identifierRef;
     }
 
-    public String getDiskState()
+    public @Nullable String getDiskState()
     {
         return diskState;
     }
@@ -171,17 +171,17 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
         diskState = diskStateRef;
     }
 
-    public StorPool getCacheStorPool()
+    public @Nullable StorPool getCacheStorPool()
     {
         return cacheStorPool;
     }
 
-    public UUID getDeviceUuid()
+    public @Nullable UUID getDeviceUuid()
     {
         return deviceUuid.get();
     }
 
-    public void setDeviceUuid(UUID deviceUuidRef) throws DatabaseException
+    public void setDeviceUuid(@Nullable UUID deviceUuidRef) throws DatabaseException
     {
         deviceUuid.set(deviceUuidRef);
     }

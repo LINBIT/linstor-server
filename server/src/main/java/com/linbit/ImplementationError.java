@@ -1,5 +1,7 @@
 package com.linbit;
 
+import com.linbit.linstor.annotation.Nullable;
+
 public class ImplementationError extends Error
 {
     public ImplementationError(String message)
@@ -12,7 +14,7 @@ public class ImplementationError extends Error
         super(cause);
     }
 
-    public ImplementationError(String message, Throwable cause)
+    public ImplementationError(String message, @Nullable Throwable cause)
     {
         super(message, cause);
     }

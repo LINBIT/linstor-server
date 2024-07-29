@@ -1,8 +1,7 @@
 package com.linbit.linstor.event.common;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-
-import javax.annotation.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -12,15 +11,15 @@ public class ResourceState
 {
     private final Boolean accessToUpToDateData;
     private final Map<VolumeNumber, Map<Integer, Boolean>> peersConnected;
-    private final Boolean inUse;
+    private final @Nullable Boolean inUse;
     private final Boolean upToDate;
-    private final Integer promotionScore;
-    private final Boolean mayPromote;
+    private final @Nullable Integer promotionScore;
+    private final @Nullable Boolean mayPromote;
 
     public ResourceState(
         Boolean accessToUpToDateDataRef,
         Map<VolumeNumber, Map<Integer /* peer-node-id */, Boolean /* peer connected */>> peersConnectedRef,
-        Boolean inUseRef,
+        @Nullable Boolean inUseRef,
         Boolean upToDateRef,
         @Nullable Integer promotionScoreRef,
         @Nullable Boolean mayPromoteRef)
@@ -71,7 +70,7 @@ public class ResourceState
         return peersConnected;
     }
 
-    public Boolean getInUse()
+    public @Nullable Boolean getInUse()
     {
         return inUse;
     }

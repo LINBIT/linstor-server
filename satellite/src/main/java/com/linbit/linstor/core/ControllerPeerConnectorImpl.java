@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
@@ -19,7 +20,6 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -49,11 +49,11 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     private final CommonSerializer commonSerializer;
 
     // Local NodeName received from the currently active controller
-    private NodeName localNodeName;
+    private @Nullable NodeName localNodeName;
 
     // The currently connected controller peer
     private final PeerOffline offlineCtrlPeer;
-    private UUID ctrlUuid;
+    private @Nullable UUID ctrlUuid;
     private Peer controllerPeer;
     private final Provider<StltApiCallHandlerUtils> stltApiCallHandlerUtils;
 
@@ -105,7 +105,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     }
 
     @Override
-    public Node getLocalNode()
+    public @Nullable Node getLocalNode()
     {
         return localNodeName == null ? null : (Node) nodesMap.get(localNodeName);
     }
@@ -117,7 +117,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     }
 
     @Override
-    public NodeName getLocalNodeName()
+    public @Nullable NodeName getLocalNodeName()
     {
         return localNodeName;
     }

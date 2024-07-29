@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.annotation.Nullable;
+
 public class AccessToDeletedDataException extends LinStorRuntimeException
 {
     private static final long serialVersionUID = -4216737156323935538L;
@@ -9,17 +11,17 @@ public class AccessToDeletedDataException extends LinStorRuntimeException
         super(message, null);
     }
 
-    public AccessToDeletedDataException(String messageRef, Throwable causeRef)
+    public AccessToDeletedDataException(String messageRef, @Nullable Throwable causeRef)
     {
         super(messageRef, causeRef);
     }
 
     public AccessToDeletedDataException(
         String messageRef,
-        String descriptionTextRef,
-        String causeTextRef,
-        String correctionTextRef,
-        String detailsTextRef
+        @Nullable String descriptionTextRef,
+        @Nullable String causeTextRef,
+        @Nullable String correctionTextRef,
+        @Nullable String detailsTextRef
     )
     {
         super(messageRef, descriptionTextRef, causeTextRef, correctionTextRef, detailsTextRef);
@@ -27,11 +29,11 @@ public class AccessToDeletedDataException extends LinStorRuntimeException
 
     public AccessToDeletedDataException(
         String messageRef,
-        String descriptionTextRef,
-        String causeTextRef,
-        String correctionTextRef,
-        String detailsTextRef,
-        Throwable causeRef
+        @Nullable String descriptionTextRef,
+        @Nullable String causeTextRef,
+        @Nullable String correctionTextRef,
+        @Nullable String detailsTextRef,
+        @Nullable Throwable causeRef
     )
     {
         super(messageRef, descriptionTextRef, causeTextRef, correctionTextRef, detailsTextRef, causeRef);
@@ -39,12 +41,12 @@ public class AccessToDeletedDataException extends LinStorRuntimeException
 
     public AccessToDeletedDataException(
         String messageRef,
-        String descriptionTextRef,
-        String causeTextRef,
-        String correctionTextRef,
-        String detailsTextRef,
-        Long numericCodeRef,
-        Throwable causeRef
+        @Nullable String descriptionTextRef,
+        @Nullable String causeTextRef,
+        @Nullable String correctionTextRef,
+        @Nullable String detailsTextRef,
+        @Nullable Long numericCodeRef,
+        @Nullable Throwable causeRef
     )
     {
         super(

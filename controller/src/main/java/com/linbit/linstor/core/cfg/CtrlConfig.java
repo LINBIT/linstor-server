@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.cfg;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,22 +19,22 @@ public class CtrlConfig extends LinstorConfig
     /*
      * Database
      */
-    private String dbUser;
-    private String dbPassword;
-    private String dbConnectionUrl;
-    private String dbCaCertificate;
-    private String dbClientCertificate;
-    private String dbClientKeyPkcs8Pem;
-    private String dbClientKeyPassword;
+    private @Nullable String dbUser;
+    private @Nullable String dbPassword;
+    private @Nullable String dbConnectionUrl;
+    private @Nullable String dbCaCertificate;
+    private @Nullable String dbClientCertificate;
+    private @Nullable String dbClientKeyPkcs8Pem;
+    private @Nullable String dbClientKeyPassword;
 
-    private String dbInMemory;
+    private @Nullable String dbInMemory;
     private boolean dbDisableVersionCheck;
 
     /*
      * Database.ETCD
      */
     private int etcdOperationsPerTransaction = 128;
-    private String etcdPrefix;
+    private @Nullable String etcdPrefix;
 
     /*
      * Database.k8s
@@ -45,48 +46,48 @@ public class CtrlConfig extends LinstorConfig
     /*
      * Logging
      */
-    private String logRestAccessLogPath;
-    private RestAccessLogMode logRestAccessMode;
+    private @Nullable String logRestAccessLogPath;
+    private @Nullable RestAccessLogMode logRestAccessMode;
 
     /*
      * REST
      */
     private boolean restEnabled;
-    private String restBindAddress;
+    private @Nullable String restBindAddress;
     private int restBindPort;
 
     /*
      * REST.secure
      */
     private boolean restSecureEnabled;
-    private String restSecureBindAddress;
+    private @Nullable String restSecureBindAddress;
     private int restSecureBindPort;
-    private String restSecureKeystore;
-    private String restSecureKeystorePassword;
-    private String restSecureTruststore;
-    private String restSecureTruststorePassword;
+    private @Nullable String restSecureKeystore;
+    private @Nullable String restSecureKeystorePassword;
+    private @Nullable String restSecureTruststore;
+    private @Nullable String restSecureTruststorePassword;
 
     /*
      * LDAP
      */
     private boolean ldapEnabled;
     private boolean ldapAllowPublicAccess;
-    private String ldapUri;
-    private String ldapDn;
-    private String ldapSearchBase;
-    private String ldapSearchFilter;
+    private @Nullable String ldapUri;
+    private @Nullable String ldapDn;
+    private @Nullable String ldapSearchBase;
+    private @Nullable String ldapSearchFilter;
 
     /*
      * Encryption
      */
-    private String masterPassphrase;
+    private @Nullable String masterPassphrase;
 
     /*
      * Web-UI
      */
-    private String webUiDirectory;
+    private @Nullable String webUiDirectory;
 
-    public CtrlConfig(String[] args)
+    public CtrlConfig(@Nullable String[] args)
     {
         super(args);
     }
@@ -155,7 +156,7 @@ public class CtrlConfig extends LinstorConfig
         CtrlCmdLineArgsParser.parseCommandLine(cmdLineArgs, this);
     }
 
-    public void setDbUser(String dbUserRef)
+    public void setDbUser(@Nullable String dbUserRef)
     {
         if (dbUserRef != null)
         {
@@ -163,7 +164,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setDbPassword(String dbPasswordRef)
+    public void setDbPassword(@Nullable String dbPasswordRef)
     {
         if (dbPasswordRef != null)
         {
@@ -171,7 +172,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setDbConnectionUrl(String dbConnectionUrlRef)
+    public void setDbConnectionUrl(@Nullable String dbConnectionUrlRef)
     {
         if (dbConnectionUrlRef != null)
         {
@@ -179,7 +180,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setDbCaCertificate(String dbCaCertificateRef)
+    public void setDbCaCertificate(@Nullable String dbCaCertificateRef)
     {
         if (dbCaCertificateRef != null)
         {
@@ -187,7 +188,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setDbClientCertificate(String dbClientCertificateRef)
+    public void setDbClientCertificate(@Nullable String dbClientCertificateRef)
     {
         if (dbClientCertificateRef != null)
         {
@@ -195,7 +196,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setDbClientKeyPkcs8Pem(String dbClientKeyPkcs8PemRef)
+    public void setDbClientKeyPkcs8Pem(@Nullable String dbClientKeyPkcs8PemRef)
     {
         if (dbClientKeyPkcs8PemRef != null)
         {
@@ -203,7 +204,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setDbClientKeyPassword(String dbClientKeyPasswordRef)
+    public void setDbClientKeyPassword(@Nullable String dbClientKeyPasswordRef)
     {
         if (dbClientKeyPasswordRef != null)
         {
@@ -211,7 +212,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setDbInMemory(String dbInMemoryRef)
+    public void setDbInMemory(@Nullable String dbInMemoryRef)
     {
         if (dbInMemoryRef != null)
         {
@@ -219,7 +220,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setDbDisableVersionCheck(Boolean dbDisableVersionCheckRef)
+    public void setDbDisableVersionCheck(@Nullable Boolean dbDisableVersionCheckRef)
     {
         if (dbDisableVersionCheckRef != null)
         {
@@ -227,7 +228,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setEtcdOperationsPerTransaction(Integer etcdOperationsPerTransactionRef)
+    public void setEtcdOperationsPerTransaction(@Nullable Integer etcdOperationsPerTransactionRef)
     {
         if (etcdOperationsPerTransactionRef != null)
         {
@@ -235,7 +236,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setEtcdPrefix(final String etcdPrefixRef)
+    public void setEtcdPrefix(final @Nullable String etcdPrefixRef)
     {
         if (etcdPrefixRef != null)
         {
@@ -243,7 +244,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setK8sRequestRetries(final Integer k8sRequestRetriesRef)
+    public void setK8sRequestRetries(final @Nullable Integer k8sRequestRetriesRef)
     {
         if (k8sRequestRetriesRef != null)
         {
@@ -251,7 +252,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setK8sMaxRollbackEntries(final Integer k8sMaxRollbackEntriesRef)
+    public void setK8sMaxRollbackEntries(final @Nullable Integer k8sMaxRollbackEntriesRef)
     {
         if (k8sMaxRollbackEntriesRef != null)
         {
@@ -259,7 +260,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setLogRestAccessLogPath(String logRestAccessLogPathRef)
+    public void setLogRestAccessLogPath(@Nullable String logRestAccessLogPathRef)
     {
         if (logRestAccessLogPathRef != null)
         {
@@ -267,7 +268,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setLogRestAccessMode(RestAccessLogMode logRestAccessModeRef)
+    public void setLogRestAccessMode(@Nullable RestAccessLogMode logRestAccessModeRef)
     {
         if (logRestAccessModeRef != null)
         {
@@ -275,7 +276,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestEnabled(Boolean restEnabledRef)
+    public void setRestEnabled(@Nullable Boolean restEnabledRef)
     {
         if (restEnabledRef != null)
         {
@@ -283,7 +284,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestBindAddress(String restBindAddressRef)
+    public void setRestBindAddress(@Nullable String restBindAddressRef)
     {
         if (restBindAddressRef != null)
         {
@@ -291,7 +292,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestBindPort(Integer restBindPortRef)
+    public void setRestBindPort(@Nullable Integer restBindPortRef)
     {
         if (restBindPortRef != null)
         {
@@ -299,7 +300,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestSecureEnabled(Boolean restSecureEnabledRef)
+    public void setRestSecureEnabled(@Nullable Boolean restSecureEnabledRef)
     {
         if (restSecureEnabledRef != null)
         {
@@ -307,7 +308,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestSecureBindAddress(String restSecureBindAddressRef)
+    public void setRestSecureBindAddress(@Nullable String restSecureBindAddressRef)
     {
         if (restSecureBindAddressRef != null)
         {
@@ -315,7 +316,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestSecureBindPort(Integer restSecureBindPortRef)
+    public void setRestSecureBindPort(@Nullable Integer restSecureBindPortRef)
     {
         if (restSecureBindPortRef != null)
         {
@@ -323,7 +324,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestSecureKeystore(String restSecureKeystoreRef)
+    public void setRestSecureKeystore(@Nullable String restSecureKeystoreRef)
     {
         if (restSecureKeystoreRef != null)
         {
@@ -331,7 +332,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestSecureKeystorePassword(String restSecureKeystorePasswordRef)
+    public void setRestSecureKeystorePassword(@Nullable String restSecureKeystorePasswordRef)
     {
         if (restSecureKeystorePasswordRef != null)
         {
@@ -339,7 +340,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestSecureTruststore(String restSecureTruststoreRef)
+    public void setRestSecureTruststore(@Nullable String restSecureTruststoreRef)
     {
         if (restSecureTruststoreRef != null)
         {
@@ -347,7 +348,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestSecureTruststorePassword(String restSecureTruststorePasswordRef)
+    public void setRestSecureTruststorePassword(@Nullable String restSecureTruststorePasswordRef)
     {
         if (restSecureTruststorePasswordRef != null)
         {
@@ -355,7 +356,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setLdapEnabled(Boolean ldapEnabledRef)
+    public void setLdapEnabled(@Nullable Boolean ldapEnabledRef)
     {
         if (ldapEnabledRef != null)
         {
@@ -363,7 +364,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setLdapAllowPublicAccess(Boolean ldapAllowPublicAccessRef)
+    public void setLdapAllowPublicAccess(@Nullable Boolean ldapAllowPublicAccessRef)
     {
         if (ldapAllowPublicAccessRef != null)
         {
@@ -371,7 +372,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setLdapUri(String ldapUriRef)
+    public void setLdapUri(@Nullable String ldapUriRef)
     {
         if (ldapUriRef != null)
         {
@@ -379,7 +380,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setLdapDn(String ldapDnRef)
+    public void setLdapDn(@Nullable String ldapDnRef)
     {
         if (ldapDnRef != null)
         {
@@ -387,7 +388,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setLdapSearchBase(String ldapSearchBaseRef)
+    public void setLdapSearchBase(@Nullable String ldapSearchBaseRef)
     {
         if (ldapSearchBaseRef != null)
         {
@@ -395,7 +396,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setLdapSearchFilter(String ldapSearchFilterRef)
+    public void setLdapSearchFilter(@Nullable String ldapSearchFilterRef)
     {
         if (ldapSearchFilterRef != null)
         {
@@ -403,7 +404,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setMasterPassphrase(String passphraseRef)
+    public void setMasterPassphrase(@Nullable String passphraseRef)
     {
         if (passphraseRef != null)
         {
@@ -411,7 +412,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setWebUiDirectory(String webUiDirectoryRef)
+    public void setWebUiDirectory(@Nullable String webUiDirectoryRef)
     {
         if (webUiDirectoryRef != null)
         {
@@ -419,42 +420,42 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public String getDbUser()
+    public @Nullable String getDbUser()
     {
         return dbUser;
     }
 
-    public String getDbPassword()
+    public @Nullable String getDbPassword()
     {
         return dbPassword;
     }
 
-    public String getDbConnectionUrl()
+    public @Nullable String getDbConnectionUrl()
     {
         return dbConnectionUrl;
     }
 
-    public String getDbCaCertificate()
+    public @Nullable String getDbCaCertificate()
     {
         return dbCaCertificate;
     }
 
-    public String getDbClientCertificate()
+    public @Nullable String getDbClientCertificate()
     {
         return dbClientCertificate;
     }
 
-    public String getDbClientKeyPkcs8Pem()
+    public @Nullable String getDbClientKeyPkcs8Pem()
     {
         return dbClientKeyPkcs8Pem;
     }
 
-    public String getDbClientKeyPassword()
+    public @Nullable String getDbClientKeyPassword()
     {
         return dbClientKeyPassword;
     }
 
-    public String getDbInMemory()
+    public @Nullable String getDbInMemory()
     {
         return dbInMemory;
     }
@@ -469,7 +470,7 @@ public class CtrlConfig extends LinstorConfig
         return etcdOperationsPerTransaction;
     }
 
-    public String getEtcdPrefix()
+    public @Nullable String getEtcdPrefix()
     {
         return etcdPrefix;
     }
@@ -484,12 +485,12 @@ public class CtrlConfig extends LinstorConfig
         return k8sMaxRollbackEntries;
     }
 
-    public String getLogRestAccessLogPath()
+    public @Nullable String getLogRestAccessLogPath()
     {
         return logRestAccessLogPath;
     }
 
-    public RestAccessLogMode getLogRestAccessMode()
+    public @Nullable RestAccessLogMode getLogRestAccessMode()
     {
         return logRestAccessMode;
     }
@@ -509,7 +510,7 @@ public class CtrlConfig extends LinstorConfig
         return addr + ":" + restBindPort;
     }
 
-    public String getRestBindAddress()
+    public @Nullable String getRestBindAddress()
     {
         return restBindAddress;
     }
@@ -534,7 +535,7 @@ public class CtrlConfig extends LinstorConfig
         return addr + ":" + restSecureBindPort;
     }
 
-    public String getRestSecureBindAddress()
+    public @Nullable String getRestSecureBindAddress()
     {
         return restSecureBindAddress;
     }
@@ -544,22 +545,22 @@ public class CtrlConfig extends LinstorConfig
         return restSecureBindPort;
     }
 
-    public String getRestSecureKeystore()
+    public @Nullable String getRestSecureKeystore()
     {
         return restSecureKeystore;
     }
 
-    public String getRestSecureKeystorePassword()
+    public @Nullable String getRestSecureKeystorePassword()
     {
         return restSecureKeystorePassword;
     }
 
-    public String getRestSecureTruststore()
+    public @Nullable String getRestSecureTruststore()
     {
         return restSecureTruststore;
     }
 
-    public String getRestSecureTruststorePassword()
+    public @Nullable String getRestSecureTruststorePassword()
     {
         return restSecureTruststorePassword;
     }
@@ -574,32 +575,32 @@ public class CtrlConfig extends LinstorConfig
         return ldapAllowPublicAccess;
     }
 
-    public String getLdapUri()
+    public @Nullable String getLdapUri()
     {
         return ldapUri;
     }
 
-    public String getLdapDn()
+    public @Nullable String getLdapDn()
     {
         return ldapDn;
     }
 
-    public String getLdapSearchBase()
+    public @Nullable String getLdapSearchBase()
     {
         return ldapSearchBase;
     }
 
-    public String getLdapSearchFilter()
+    public @Nullable String getLdapSearchFilter()
     {
         return ldapSearchFilter;
     }
 
-    public String getMasterPassphrase()
+    public @Nullable String getMasterPassphrase()
     {
         return masterPassphrase;
     }
 
-    public String getWebUiDirectory()
+    public @Nullable String getWebUiDirectory()
     {
         return webUiDirectory;
     }

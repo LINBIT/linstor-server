@@ -88,7 +88,7 @@ public class ZfsUtils
             String pathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long volBlockSizeRef,
+            @Nullable Long volBlockSizeRef,
             String originStrRef,
             String[] clonesArrRef
         )

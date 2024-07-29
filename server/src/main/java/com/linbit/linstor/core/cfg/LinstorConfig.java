@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.cfg;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -13,8 +15,8 @@ public abstract class LinstorConfig
         APPEND, ROTATE_HOURLY, ROTATE_DAILY, NO_LOG;
     }
 
-    protected String configDir;
-    protected Path configPath;
+    protected @Nullable String configDir;
+    protected @Nullable Path configPath;
 
     /*
      * Debug
@@ -25,9 +27,9 @@ public abstract class LinstorConfig
      * Logging
      */
     protected boolean logPrintStackTrace;
-    protected String logDirectory;
-    protected String logLevel;
-    protected String logLevelLinstor;
+    protected @Nullable String logDirectory;
+    protected @Nullable String logLevel;
+    protected @Nullable String logLevelLinstor;
 
     /**
      * Order or priority of config sources (top has highest priority)
@@ -40,7 +42,7 @@ public abstract class LinstorConfig
      *
      * @return
      */
-    public LinstorConfig(String[] cmdLineArgs)
+    public LinstorConfig(@Nullable String[] cmdLineArgs)
     {
         applyDefaultValues();
 
@@ -81,7 +83,7 @@ public abstract class LinstorConfig
 
     protected abstract void applyTomlArgs();
 
-    public void setConfigDir(String configDirRef)
+    public void setConfigDir(@Nullable String configDirRef)
     {
         if (configDirRef != null)
         {
@@ -90,7 +92,7 @@ public abstract class LinstorConfig
         }
     }
 
-    public void setDebugConsoleEnable(Boolean debugConsoleEnableRef)
+    public void setDebugConsoleEnable(@Nullable Boolean debugConsoleEnableRef)
     {
         if (debugConsoleEnableRef != null)
         {
@@ -98,7 +100,7 @@ public abstract class LinstorConfig
         }
     }
 
-    public void setLogPrintStackTrace(Boolean logPrintStackTraceRef)
+    public void setLogPrintStackTrace(@Nullable Boolean logPrintStackTraceRef)
     {
         if (logPrintStackTraceRef != null)
         {
@@ -106,7 +108,7 @@ public abstract class LinstorConfig
         }
     }
 
-    public void setLogDirectory(String logDirectoryRef)
+    public void setLogDirectory(@Nullable String logDirectoryRef)
     {
         if (logDirectoryRef != null)
         {
@@ -114,7 +116,7 @@ public abstract class LinstorConfig
         }
     }
 
-    public void setLogLevel(String logLevelRef)
+    public void setLogLevel(@Nullable String logLevelRef)
     {
         if (logLevelRef != null)
         {
@@ -122,7 +124,7 @@ public abstract class LinstorConfig
         }
     }
 
-    public void setLogLevelLinstor(String linstorLogLevelRef)
+    public void setLogLevelLinstor(@Nullable String linstorLogLevelRef)
     {
         if (linstorLogLevelRef != null)
         {
@@ -130,12 +132,12 @@ public abstract class LinstorConfig
         }
     }
 
-    public String getConfigDir()
+    public @Nullable String getConfigDir()
     {
         return configDir;
     }
 
-    public Path getConfigPath()
+    public @Nullable Path getConfigPath()
     {
         return configPath;
     }
@@ -150,17 +152,17 @@ public abstract class LinstorConfig
         return logPrintStackTrace;
     }
 
-    public String getLogDirectory()
+    public @Nullable String getLogDirectory()
     {
         return logDirectory;
     }
 
-    public String getLogLevel()
+    public @Nullable String getLogLevel()
     {
         return logLevel;
     }
 
-    public String getLogLevelLinstor()
+    public @Nullable String getLogLevelLinstor()
     {
         return logLevelLinstor;
     }

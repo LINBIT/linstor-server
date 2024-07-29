@@ -4,6 +4,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -80,7 +81,7 @@ public class LayerStorageRscDbDriver
         ParentObjects parentRef,
         AbsRscLayerObject<?> currentDummyLoadingRLORef,
         Pair<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePairRef,
-        AbsRscLayerObject<?> loadedParentRscDataRef,
+        @Nullable AbsRscLayerObject<?> loadedParentRscDataRef,
         RSC absRscRef
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
@@ -100,7 +101,7 @@ public class LayerStorageRscDbDriver
     @SuppressWarnings("unchecked")
     private <RSC extends AbsResource<RSC>> StorageRscData<RSC> genericCreate(
         AbsRscLayerObject<?> absRscLayerObjectRef,
-        AbsRscLayerObject<?> loadedParentRscDataRef,
+        @Nullable AbsRscLayerObject<?> loadedParentRscDataRef,
         RSC absRscRef,
         Map<VolumeNumber, VlmProviderObject<?>> vlmMapRef
     )

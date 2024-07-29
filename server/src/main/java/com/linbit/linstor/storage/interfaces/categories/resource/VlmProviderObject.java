@@ -17,7 +17,7 @@ import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.ExceptionThrowingSupplier;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.List;
 

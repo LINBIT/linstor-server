@@ -5,6 +5,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -63,9 +64,9 @@ public class ResourceDefinitionControllerFactory
     public ResourceDefinition create(
         AccessContext accCtx,
         ResourceName rscName,
-        byte[] extName,
-        ResourceDefinition.Flags[] flags,
-        List<DeviceLayerKind> layerStack,
+        @Nullable byte[] extName,
+        @Nullable ResourceDefinition.Flags[] flags,
+        @Nullable List<DeviceLayerKind> layerStack,
         LayerPayload payload,
         ResourceGroup rscGroup
     )

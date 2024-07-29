@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.EntryBuilder;
@@ -44,7 +45,7 @@ public class ApiSuccessUtils
             .build();
     }
 
-    public static ApiCallRc.RcEntry defaultDeletedEntry(UUID uuid, String objectDescriptionInline)
+    public static ApiCallRc.RcEntry defaultDeletedEntry(@Nullable UUID uuid, String objectDescriptionInline)
     {
         EntryBuilder entryBuilder = ApiCallRcImpl.entryBuilder(
             ApiConsts.DELETED,

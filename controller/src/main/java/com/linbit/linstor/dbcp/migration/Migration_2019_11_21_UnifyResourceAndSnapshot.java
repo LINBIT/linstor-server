@@ -3,6 +3,7 @@ package com.linbit.linstor.dbcp.migration;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo.DbProduct;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.utils.StringUtils;
 
@@ -1056,7 +1057,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
 
     private int createLayerDrbdRscEntry(
         PreparedStatement insertLRI,
-        Integer parentId,
+        @Nullable Integer parentId,
         PreparedStatement insertDrbdRsc,
         String nodeName,
         String rscName,
@@ -1141,7 +1142,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
         String rscName,
         String snapName,
         String kind,
-        Integer parentId
+        @Nullable Integer parentId
     )
         throws SQLException
     {

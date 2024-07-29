@@ -1,55 +1,57 @@
 package com.linbit.linstor.layer.storage.exos.rest.responses;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Deprecated(forRemoval = true)
 public class ExosRestEventsCollection extends ExosRestBaseResponse
 {
     @JsonProperty("events")
-    public ExosRestEvent[] events;
+    public @Nullable ExosRestEvent[] events;
 
     public static class ExosRestEvent
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("time-stamp")
-        public String timeStamp;
+        public @Nullable String timeStamp;
 
         @JsonProperty("time-stamp-numeric")
         public long timeStampNumeric;
 
         @JsonProperty("event-code")
-        public String eventCode;
+        public @Nullable String eventCode;
 
         @JsonProperty("event-id")
-        public String eventId;
+        public @Nullable String eventId;
 
         @JsonProperty("model")
-        public String model;
+        public @Nullable String model;
 
         @JsonProperty("serial-number")
-        public String serialNumber;
+        public @Nullable String serialNumber;
 
         @JsonProperty("controller")
-        public String controller;
+        public @Nullable String controller;
 
         @JsonProperty("controller-numeric")
         public long controllerNumeric;
 
         @JsonProperty("severity")
-        public String severity;
+        public @Nullable String severity;
 
         @JsonProperty("severity-numeric")
         public long severityNumeric;
 
         @JsonProperty("message")
-        public String message;
+        public @Nullable String message;
 
         @JsonProperty("additional-information")
-        public String additionalInformation;
+        public @Nullable String additionalInformation;
 
         @JsonProperty("recommended-action")
-        public String recommendedAction;
+        public @Nullable String recommendedAction;
     }
 }

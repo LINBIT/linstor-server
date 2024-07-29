@@ -1,5 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
@@ -17,7 +18,7 @@ public class RscConnApiData implements ResourceConnectionApi
     }
 
     @Override
-    public UUID getUuid()
+    public @Nullable UUID getUuid()
     {
         return rscConnProto.hasRscConnUuid() ? UUID.fromString(rscConnProto.getRscConnUuid()) : null;
     }
@@ -53,7 +54,7 @@ public class RscConnApiData implements ResourceConnectionApi
     }
 
     @Override
-    public Integer getPort()
+    public @Nullable Integer getPort()
     {
         return rscConnProto.hasPort() ? rscConnProto.getPort() : null;
     }

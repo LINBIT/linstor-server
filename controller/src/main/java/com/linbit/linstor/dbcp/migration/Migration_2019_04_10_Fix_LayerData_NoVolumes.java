@@ -1,7 +1,8 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.linbit.linstor.DatabaseInfo;
 import com.linbit.crypto.SecretGenerator;
+import com.linbit.linstor.DatabaseInfo;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import java.sql.Connection;
@@ -195,7 +196,7 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
         int id,
         RscKey key,
         String kind,
-        Integer parentId
+        @Nullable Integer parentId
     )
         throws SQLException
     {
@@ -218,7 +219,7 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
         }
     }
 
-    private String queryProp(Connection connection, String instanceName, String key)
+    private @Nullable String queryProp(Connection connection, String instanceName, String key)
         throws SQLException
     {
         String ret = null;

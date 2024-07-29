@@ -442,12 +442,17 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
                     storPoolDfn.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolDfnProps());
                     storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                 }
+                DeviceProviderKind deviceProviderKind = storPoolApi.getDeviceProviderKind();
+                if (deviceProviderKind == null)
+                {
+                    throw new ImplementationError("deviceProviderKind must not be null");
+                }
                 storPool = storPoolFactory.getInstanceSatellite(
                     apiCtx,
                     storPoolApi.getStorPoolUuid(),
                     vlm.getAbsResource().getNode(),
                     storPoolDfn,
-                    storPoolApi.getDeviceProviderKind(),
+                    deviceProviderKind,
                     freeSpaceMgrFactory.getInstance(
                         SharedStorPoolName.restoreName(storPoolApi.getFreeSpaceManagerName())
                     ),

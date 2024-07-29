@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
@@ -31,7 +32,6 @@ import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -81,13 +81,13 @@ public class CtrlAuthResponseApiCallHandler
         Peer peer,
         boolean success,
         ApiCallRcImpl apiCallResponse,
-        Long expectedFullSyncId,
-        String nodeUname,
-        Integer linstorVersionMajor,
-        Integer linstorVersionMinor,
-        Integer linstorVersionPatch,
-        List<ExtToolsInfo> externalToolsInfoList,
-        StltConfig stltConfig,
+        @Nullable Long expectedFullSyncId,
+        @Nullable String nodeUname,
+        @Nullable Integer linstorVersionMajor,
+        @Nullable Integer linstorVersionMinor,
+        @Nullable Integer linstorVersionPatch,
+        @Nullable List<ExtToolsInfo> externalToolsInfoList,
+        @Nullable StltConfig stltConfig,
         List<Property> dynamicPropListRef,
         boolean waitForFullSyncAnswerRef
     )
@@ -164,13 +164,13 @@ public class CtrlAuthResponseApiCallHandler
         Peer peer,
         boolean success,
         ApiCallRcImpl apiCallResponse,
-        Long expectedFullSyncId,
-        String nodeUname,
-        Integer linstorVersionMajor,
-        Integer linstorVersionMinor,
-        Integer linstorVersionPatch,
-        List<ExtToolsInfo> externalToolsInfoList,
-        StltConfig stltConfig,
+        @Nullable Long expectedFullSyncId,
+        @Nullable String nodeUname,
+        @Nullable Integer linstorVersionMajor,
+        @Nullable Integer linstorVersionMinor,
+        @Nullable Integer linstorVersionPatch,
+        @Nullable List<ExtToolsInfo> externalToolsInfoList,
+        @Nullable StltConfig stltConfig,
         List<Property> dynamicPropListRef,
         boolean waitForFullSyncAnswerRef
     )

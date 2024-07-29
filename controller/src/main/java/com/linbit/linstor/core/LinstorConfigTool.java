@@ -6,6 +6,7 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlTomlConfig;
@@ -31,8 +32,6 @@ import com.linbit.utils.Pair;
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CMDLINE_ERROR;
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
-
-import javax.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -68,7 +67,7 @@ import picocli.CommandLine;
 
 public class LinstorConfigTool
 {
-    private static CommandLine commandLine;
+    private static @Nullable CommandLine commandLine;
 
     private static final String DB_USER = "linstor";
     private static final String DB_PASSWORD = "linstor";
@@ -200,7 +199,7 @@ public class LinstorConfigTool
         private String dbtype = "h2";
 
         @CommandLine.Parameters(description = "Path to the database")
-        private String dbpath;
+        private @Nullable String dbpath;
 
         @Override
         public Object call() throws Exception
@@ -292,7 +291,7 @@ public class LinstorConfigTool
         private File linstorTomlFile = new File("./linstor.toml");
 
         @CommandLine.Parameters(index = "1", description = "SQL script.", arity = "0..1")
-        private File sqlFile = null;
+        private @Nullable File sqlFile = null;
 
         @Override
         public Object call() throws Exception

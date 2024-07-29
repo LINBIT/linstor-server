@@ -114,6 +114,8 @@ project(':server') {
                     because('previous versions had a bug when validationg certificates against IPv6 addresses')
                 }
             }
+            
+            api group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.8.4'
 
             testCompileOnly group: 'junit', name: 'junit', version: '4.+'
         }

@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.BCacheRscPojo;
@@ -107,7 +108,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     private void merge(
         RSC rsc,
         RscLayerDataApi rscLayerDataPojo,
-        AbsRscLayerObject<RSC> parent,
+        @Nullable AbsRscLayerObject<RSC> parent,
         boolean remoteResourceRef
     )
         throws AccessDeniedException, DatabaseException, IllegalArgumentException,
@@ -779,7 +780,11 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         }
     }
 
-    protected StorPool getStoragePool(AbsVolume<RSC> vlmRef, VlmLayerDataApi vlmPojoRef, boolean remoteResourceRef)
+    protected @Nullable StorPool getStoragePool(
+        AbsVolume<RSC> vlmRef,
+        VlmLayerDataApi vlmPojoRef,
+        boolean remoteResourceRef
+    )
         throws InvalidNameException, AccessDeniedException
     {
         return vlmRef.getAbsResource().getNode().getStorPool(
@@ -789,7 +794,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends AbsRscLayerObject<RSC>> T findChild(AbsRscLayerObject<RSC> parent, int id)
+    private <T extends AbsRscLayerObject<RSC>> @Nullable T findChild(AbsRscLayerObject<RSC> parent, int id)
     {
         AbsRscLayerObject<RSC> matchingChild = null;
         for (AbsRscLayerObject<RSC> child : parent.getChildren())

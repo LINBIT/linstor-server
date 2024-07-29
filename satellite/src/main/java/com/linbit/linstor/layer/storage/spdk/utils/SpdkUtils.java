@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.spdk.utils;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -47,21 +48,21 @@ public class SpdkUtils
     public static class LvsInfo
     {
         public final String volumeGroup;
-        public final String thinPool;
+        public final @Nullable String thinPool;
         public final String identifier;
         public final String path;
         public final long size;
         public final float dataPercent;
-        public final String attributes;
+        public final @Nullable String attributes;
 
         LvsInfo(
             String volumeGroupRef,
-            String thinPoolRef,
+            @Nullable String thinPoolRef,
             String identifierRef,
             String pathRef,
             long sizeRef,
             float dataPercentRef,
-            String attributesRef
+            @Nullable String attributesRef
         )
         {
             volumeGroup = volumeGroupRef;

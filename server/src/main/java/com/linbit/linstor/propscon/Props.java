@@ -13,14 +13,20 @@ import javax.annotation.Nullable;
  */
 public interface Props extends TransactionObject, ReadOnlyProps
 {
+    @Nullable
     String setProp(String key, String value)
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException;
-    String setProp(String key, String value, String namespace)
+
+    @Nullable
+    String setProp(String key, String value, @Nullable String namespace)
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException;
 
+    @Nullable
     String removeProp(String key)
         throws InvalidKeyException, AccessDeniedException, DatabaseException;
-    String removeProp(String key, String namespace)
+
+    @Nullable
+    String removeProp(String key, @Nullable String namespace)
         throws InvalidKeyException, AccessDeniedException, DatabaseException;
     boolean removeNamespace(String namespaceRef)
         throws AccessDeniedException, DatabaseException;

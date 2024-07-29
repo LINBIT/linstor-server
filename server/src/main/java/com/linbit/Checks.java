@@ -1,5 +1,7 @@
 package com.linbit;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.regex.Pattern;
 
 /**
@@ -37,7 +39,7 @@ public class Checks
      * @throws InvalidNameException If the name is not valid
      */
     public static void nameCheck(
-        String name,
+        @Nullable String name,
         int minLength,
         int maxLength,
         byte[] validChars,
@@ -171,7 +173,7 @@ public class Checks
      * @param name The hostname to check for validity
      * @throws InvalidNameException If the hostname is not valid
      */
-    public static void hostNameCheck(String name) throws InvalidNameException
+    public static void hostNameCheck(@Nullable String name) throws InvalidNameException
     {
         if (name == null)
         {

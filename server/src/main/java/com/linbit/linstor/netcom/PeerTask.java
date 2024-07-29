@@ -3,6 +3,7 @@ package com.linbit.linstor.netcom;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.prop.Property;
@@ -14,7 +15,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
-import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
@@ -64,7 +64,7 @@ public class PeerTask implements Peer
     }
 
     @Override
-    public Node getNode()
+    public @Nullable Node getNode()
     {
         return null;
     }
@@ -95,13 +95,13 @@ public class PeerTask implements Peer
     }
 
     @Override
-    public Object getAttachment()
+    public @Nullable Object getAttachment()
     {
         return null;
     }
 
     @Override
-    public Message createMessage()
+    public @Nullable Message createMessage()
     {
         return null;
     }
@@ -247,13 +247,13 @@ public class PeerTask implements Peer
     }
 
     @Override
-    public InetSocketAddress peerAddress()
+    public @Nullable InetSocketAddress peerAddress()
     {
         return null;
     }
 
     @Override
-    public InetSocketAddress localAddress()
+    public @Nullable InetSocketAddress localAddress()
     {
         return null;
     }
@@ -269,7 +269,7 @@ public class PeerTask implements Peer
     }
 
     @Override
-    public TcpConnector getConnector()
+    public @Nullable TcpConnector getConnector()
     {
         return null;
     }
@@ -302,19 +302,19 @@ public class PeerTask implements Peer
     }
 
     @Override
-    public ReadWriteLock getSatelliteStateLock()
+    public @Nullable ReadWriteLock getSatelliteStateLock()
     {
         return null;
     }
 
     @Override
-    public SatelliteState getSatelliteState()
+    public @Nullable SatelliteState getSatelliteState()
     {
         return null;
     }
 
     @Override
-    public ReadWriteLock getSerializerLock()
+    public @Nullable ReadWriteLock getSerializerLock()
     {
         return null;
     }
@@ -366,7 +366,7 @@ public class PeerTask implements Peer
     }
 
     @Override
-    public Message nextCurrentMsgIn()
+    public @Nullable Message nextCurrentMsgIn()
     {
         return null;
     }
@@ -378,7 +378,7 @@ public class PeerTask implements Peer
     }
 
     @Override
-    public StltConfig getStltConfig()
+    public @Nullable StltConfig getStltConfig()
     {
         return null;
     }
@@ -395,7 +395,7 @@ public class PeerTask implements Peer
     }
 
     @Override
-    public Property getDynamicProperty(String keyRef)
+    public @Nullable Property getDynamicProperty(String keyRef)
     {
         return null;
     }

@@ -11,6 +11,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.LinStorScope;
@@ -77,7 +78,6 @@ import com.linbit.utils.Either;
 
 import static com.linbit.linstor.api.ApiConsts.MODIFIED;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -101,6 +101,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import reactor.core.publisher.FluxSink;
@@ -157,7 +158,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     // Tracks sinks that need to be completed once the dispatch phase is complete
     private final List<FluxSink<ApiCallRc>> pendingResponseSinks = new ArrayList<>();
 
-    private Thread svcThr;
+    private @Nullable Thread svcThr;
 
     private final AtomicBoolean runningFlag     = new AtomicBoolean(false);
     private final AtomicBoolean svcCondFlag     = new AtomicBoolean(false);
@@ -224,8 +225,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private BackupShippingMgr backupServiceMgr;
 
     // Saved for later check against what the controller granted
-    private TreeSet<SharedStorPoolName> grantedLocks;
-    private TreeSet<SharedStorPoolName> requiredLocks;
+    private @Nullable TreeSet<SharedStorPoolName> grantedLocks;
+    private @Nullable TreeSet<SharedStorPoolName> requiredLocks;
 
     private HashSet<ExtCmdFactoryStlt> sharedExtCmdFactories;
     private final StltExternalFileHandler extFileHandler;
@@ -240,6 +241,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
      */
     private volatile StltReadOnlyInfo stltReadOnlyInfo;
 
+    @SuppressFBWarnings
     @Inject
     DeviceManagerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,
@@ -564,7 +566,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     private void markPendingRscDispatch(
-        UpdateNotification updateNotification,
+        @Nullable UpdateNotification updateNotification,
         Set<ResourceName> rscSet
     )
     {
@@ -572,7 +574,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     private void markPendingSnapDispatch(
-        UpdateNotification updateNotification,
+        @Nullable UpdateNotification updateNotification,
         Set<SnapshotDefinition.Key> snapKeySet
     )
     {
@@ -580,7 +582,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     private <T> void markPendingGenericDispatch(
-        UpdateNotification updateNotification,
+        @Nullable UpdateNotification updateNotification,
         Set<T> keySet,
         Map<T, List<FluxSink<ApiCallRc>>> pendingDispatchMap
     )

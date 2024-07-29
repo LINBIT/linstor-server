@@ -1,6 +1,7 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPool;
@@ -42,13 +43,13 @@ public class CmdDisplayStorPoolDfn extends BaseDebugCmd
 
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock storPoolDfnMapLock;
-    private final Supplier<ObjectProtection> storPoolDfnMapProt;
+    private final @Nullable Supplier<ObjectProtection> storPoolDfnMapProt;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     public CmdDisplayStorPoolDfn(
         ReadWriteLock reconfigurationLockRef,
         ReadWriteLock storPoolDfnMapLockRef,
-        Supplier<ObjectProtection> storPoolDfnMapProtRef,
+        @Nullable Supplier<ObjectProtection> storPoolDfnMapProtRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
     )
     {
@@ -112,7 +113,7 @@ public class CmdDisplayStorPoolDfn extends BaseDebugCmd
         }
 
         @Override
-        public StorPoolDefinition getByName(final String name)
+        public @Nullable StorPoolDefinition getByName(final String name)
             throws InvalidNameException
         {
             return storPoolDfnMap.get(new StorPoolName(name));

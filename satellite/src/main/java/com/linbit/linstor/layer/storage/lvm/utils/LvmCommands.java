@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.lvm.utils;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.RaidLevel;
@@ -10,8 +11,6 @@ import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 
 import static com.linbit.linstor.storage.utils.Commands.genericExecutor;
-
-import javax.annotation.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -62,7 +61,7 @@ public class LvmCommands
 
     private static String[] buildCmd(
         String baseCmd,
-        String lvmConfig,
+        @Nullable String lvmConfig,
         String[] appendedString,
         String... baseOptions
     )
@@ -72,7 +71,7 @@ public class LvmCommands
 
     private static String[] buildCmd(
         String baseCmd,
-        String lvmConfig,
+        @Nullable String lvmConfig,
         @Nullable Collection<String> appendedString,
         String... baseOptions
     )
@@ -163,7 +162,7 @@ public class LvmCommands
         String volumeGroup,
         String vlmId,
         long size,
-        String lvmConfig,
+        @Nullable String lvmConfig,
         String... additionalParameters
     )
         throws StorageException
@@ -291,7 +290,7 @@ public class LvmCommands
         String volumeGroup,
         String vlmCurrentId,
         String vlmNewId,
-        String lvmConfig
+        @Nullable String lvmConfig
     )
         throws StorageException
     {

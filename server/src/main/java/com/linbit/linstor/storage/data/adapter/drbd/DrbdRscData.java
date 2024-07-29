@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.data.adapter.drbd;
 
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -29,8 +30,6 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -143,7 +142,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void setParent(@Nonnull AbsRscLayerObject<RSC> parentObj) throws DatabaseException
+    public void setParent(@Nullable AbsRscLayerObject<RSC> parentObj) throws DatabaseException
     {
         parent.set(parentObj);
     }
@@ -278,12 +277,12 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         mayPromote = mayPromoteFlag;
     }
 
-    public Integer getPromotionScore()
+    public @Nullable Integer getPromotionScore()
     {
         return promotionScore;
     }
 
-    public void setPromotionScore(Integer promotionScoreRef)
+    public void setPromotionScore(@Nullable Integer promotionScoreRef)
     {
         promotionScore = promotionScoreRef;
     }

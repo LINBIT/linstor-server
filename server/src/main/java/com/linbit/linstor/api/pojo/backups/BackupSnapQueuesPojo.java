@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo.backups;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.List;
 
@@ -10,14 +10,14 @@ public class BackupSnapQueuesPojo
     private final String snapshotName;
     private final String remoteName;
     private final boolean incremental;
-    private final String basedOn;
-    private final Long startTimestamp;
-    private final String prefNode;
+    private final @Nullable String basedOn;
+    private final @Nullable Long startTimestamp;
+    private final @Nullable String prefNode;
     /**
      * The list of nodes this snapshot is queued on. Will be empty if this
      * is an item of BackupNodeQueuesPojo.queue
      */
-    private final List<BackupNodeQueuesPojo> queue;
+    private final @Nullable List<BackupNodeQueuesPojo> queue;
 
     public BackupSnapQueuesPojo(
         String resourceNameRef,
@@ -26,7 +26,7 @@ public class BackupSnapQueuesPojo
         boolean incrementalRef,
         @Nullable String basedOnRef,
         @Nullable Long startTimestampRef,
-        String prefNodeRef,
+        @Nullable String prefNodeRef,
         @Nullable List<BackupNodeQueuesPojo> queueRef
     )
     {
@@ -60,22 +60,22 @@ public class BackupSnapQueuesPojo
         return incremental;
     }
 
-    public String getBasedOn()
+    public @Nullable String getBasedOn()
     {
         return basedOn;
     }
 
-    public Long getStartTimestamp()
+    public @Nullable Long getStartTimestamp()
     {
         return startTimestamp;
     }
 
-    public String getPrefNode()
+    public @Nullable String getPrefNode()
     {
         return prefNode;
     }
 
-    public List<BackupNodeQueuesPojo> getQueue()
+    public @Nullable List<BackupNodeQueuesPojo> getQueue()
     {
         return queue;
     }

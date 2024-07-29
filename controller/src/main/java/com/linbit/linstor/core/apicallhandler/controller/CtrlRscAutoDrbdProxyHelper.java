@@ -106,7 +106,7 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
             !rscConn.getStateFlags().isSet(
                 peerCtx,
                 ResourceConnection.Flags.LOCAL_DRBD_PROXY
-            )
+                )
         )
         {
             drbdProxyHelper.enableProxy(

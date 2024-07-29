@@ -2,6 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -72,7 +73,7 @@ public class SecObjectProtectionAclDbDriver extends
     }
 
     @Override
-    protected Pair<AccessControlEntry, Void> load(RawParameters rawRef, SecObjProtAclParent parentRef)
+    protected @Nullable Pair<AccessControlEntry, Void> load(RawParameters rawRef, SecObjProtAclParent parentRef)
         throws IllegalArgumentException, InvalidNameException, DatabaseException
     {
         String objPath = rawRef.get(OBJECT_PATH);
@@ -89,7 +90,10 @@ public class SecObjectProtectionAclDbDriver extends
             new AccessControlEntry(
                 objPath,
                 role,
-                rawRef.<Short, AccessType, IllegalArgumentException>buildParsed(ACCESS_TYPE, AccessType::get)
+                rawRef.<@Nullable Short, @Nullable AccessType, IllegalArgumentException>buildParsed(
+                    ACCESS_TYPE,
+                    AccessType::get
+                )
             )
         );
         loadedCount++;

@@ -4,6 +4,7 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
@@ -60,7 +61,7 @@ public class DrbdVersion
 
     private Version drbdVsn = UNDETERMINED_VERSION;
     private Version utilsVsn = UNDETERMINED_VERSION;
-    private String windrbdVsn = null;
+    private @Nullable String windrbdVsn = null;
 
     private final CoreTimer timerRef;
     private final ErrorReporter errorLogRef;
@@ -170,7 +171,7 @@ public class DrbdVersion
         return ret;
     }
 
-    private String getVersionAsString(OutputData cmdDataRef, String key) throws IOException
+    private @Nullable String getVersionAsString(OutputData cmdDataRef, String key) throws IOException
     {
         String ret = null;
 
@@ -338,7 +339,7 @@ public class DrbdVersion
      * @return WinDRBD version as reported by drbdadm --version or
      * null if driver not loaded or not a WinDRBD machine.
      */
-    public String getWindrbdVsn()
+    public @Nullable String getWindrbdVsn()
     {
         synchronized (SYNC_OBJ)
         {

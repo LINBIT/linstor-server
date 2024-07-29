@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 
@@ -18,7 +19,7 @@ public class SatelliteStorPoolDfnDriver
     }
 
     @Override
-    public StorPoolDefinition createDefaultDisklessStorPool()
+    public @Nullable StorPoolDefinition createDefaultDisklessStorPool()
     {
         return null;
     }

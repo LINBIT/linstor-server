@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -34,7 +35,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import com.linbit.utils.Pair;
 import com.linbit.utils.Triple;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -56,10 +56,14 @@ public abstract class AbsLayerRscDataDbDriver<
     public static class SuffixedResourceName implements Comparable<SuffixedResourceName>
     {
         final ResourceName rscName;
-        final SnapshotName snapName;
+        final @Nullable SnapshotName snapName;
         final String rscNameSuffix;
 
-        public SuffixedResourceName(ResourceName resourceNameRef, SnapshotName snapshotNameRef, String rscNameSuffixRef)
+        public SuffixedResourceName(
+            ResourceName resourceNameRef,
+            @Nullable SnapshotName snapshotNameRef,
+            String rscNameSuffixRef
+        )
         {
             rscName = resourceNameRef;
             snapName = snapshotNameRef;
@@ -169,12 +173,12 @@ public abstract class AbsLayerRscDataDbDriver<
         VLM_DATA_LOAD extends VlmProviderObject<?>>
     {
         final RSC_DATA_LOAD rscData;
-        final Set<AbsRscLayerObject<?>> rscDataChildren;
+        final @Nullable Set<AbsRscLayerObject<?>> rscDataChildren;
         final Map<VolumeNumber, VLM_DATA_LOAD> vlmDataMap;
 
         RscDataLoadOutput(
             RSC_DATA_LOAD rscDataRef,
-            Set<AbsRscLayerObject<?>> rscDataChildrenRef,
+            @Nullable Set<AbsRscLayerObject<?>> rscDataChildrenRef,
             Map<VolumeNumber, VLM_DATA_LOAD> vlmDataMapRef
         )
         {
@@ -198,17 +202,17 @@ public abstract class AbsLayerRscDataDbDriver<
     protected final Provider<TransactionMgrSQL> transMgrProvider;
 
     private final LayerResourceIdDatabaseDriver rscLayerIdDriver;
-    private final AbsLayerRscDfnDataDbDriver<RSC_DFN_DATA, RSC_DATA> rscDfnDriver;
-    private final AbsLayerVlmDfnDataDbDriver<RSC_DFN_DATA, VLM_DFN_DATA> vlmDfnDriver;
-    private final AbsLayerVlmDataDbDriver<VLM_DFN_DATA, RSC_DATA, VLM_DATA> vlmDriver;
+    private final @Nullable AbsLayerRscDfnDataDbDriver<RSC_DFN_DATA, RSC_DATA> rscDfnDriver;
+    private final @Nullable AbsLayerVlmDfnDataDbDriver<RSC_DFN_DATA, VLM_DFN_DATA> vlmDfnDriver;
+    private final @Nullable AbsLayerVlmDataDbDriver<VLM_DFN_DATA, RSC_DATA, VLM_DATA> vlmDriver;
 
-    private final Column layerRscIdColumn;
+    private final @Nullable Column layerRscIdColumn;
     private final Map<Integer, RawParameters> rscDataRawCache;
 
     private final Map<SuffixedResourceName, RSC_DFN_DATA> allRscDfnData = new HashMap<>();
     private final Map<Pair<SuffixedResourceName, VolumeNumber>, VLM_DFN_DATA> allVlmDfnData = new HashMap<>();
 
-    private ParentObjects parentObjects;
+    private @Nullable ParentObjects parentObjects;
     private final Map<Integer, RscDataLoadOutput<RSC_DATA, VLM_DATA>> rscDataByLayerId = new HashMap<>();
 
     private final Map<RSC_DFN_DATA, List<RSC_DATA>> loadedRscDfnChildRscDataMap = new HashMap<>();
@@ -217,14 +221,14 @@ public abstract class AbsLayerRscDataDbDriver<
     protected AbsLayerRscDataDbDriver(
         AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
-        DatabaseTable tableRef,
-        Column layerRscIdColumnRef,
+        @Nullable DatabaseTable tableRef,
+        @Nullable Column layerRscIdColumnRef,
         DbEngine dbEngineRef,
         ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
-        AbsLayerRscDfnDataDbDriver<RSC_DFN_DATA, RSC_DATA> rscDfnDriverRef,
-        AbsLayerVlmDfnDataDbDriver<RSC_DFN_DATA, VLM_DFN_DATA> vlmDfnDriverRef,
-        AbsLayerVlmDataDbDriver<VLM_DFN_DATA, RSC_DATA, VLM_DATA> vlmDriverRef,
+        @Nullable AbsLayerRscDfnDataDbDriver<RSC_DFN_DATA, RSC_DATA> rscDfnDriverRef,
+        @Nullable AbsLayerVlmDfnDataDbDriver<RSC_DFN_DATA, VLM_DFN_DATA> vlmDfnDriverRef,
+        @Nullable AbsLayerVlmDataDbDriver<VLM_DFN_DATA, RSC_DATA, VLM_DATA> vlmDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
@@ -325,7 +329,7 @@ public abstract class AbsLayerRscDataDbDriver<
      * entirely before the other)
      */
     @Override
-    protected Pair<RSC_DATA, Pair<Set<AbsRscLayerObject<?>>, Map<VolumeNumber, VLM_DATA>>> load(
+    protected @Nullable Pair<RSC_DATA, Pair<Set<AbsRscLayerObject<?>>, Map<VolumeNumber, VLM_DATA>>> load(
         RawParameters rawRef,
         ParentObjects parentRef
     )
@@ -468,7 +472,7 @@ public abstract class AbsLayerRscDataDbDriver<
         return getDummyLoadingRLO(rscLayerIdRef, true);
     }
 
-    protected AbsRscLayerObject<?> getDummyLoadingRLO(
+    protected @Nullable AbsRscLayerObject<?> getDummyLoadingRLO(
         int rscLayerIdRef,
         boolean failIfNull
     )
@@ -513,16 +517,17 @@ public abstract class AbsLayerRscDataDbDriver<
     }
 
     @SuppressWarnings("unchecked")
-    protected <RSC extends AbsResource<RSC>> AbsRscLayerObject<RSC> getParentRLO(
+    protected <RSC extends AbsResource<RSC>> @Nullable AbsRscLayerObject<RSC> getParentRLO(
         AbsRscLayerObject<?> dummyLoadingRLO,
         ParentObjects parentRef
     )
     {
         AbsRscLayerObject<RSC> ret = null;
-        if (dummyLoadingRLO.getParent() != null)
+        AbsRscLayerObject<?> dummyParent = dummyLoadingRLO.getParent();
+        if (dummyParent != null)
         {
             ret = (AbsRscLayerObject<RSC>) parentRef.loadedLayerResourceObjectyById.get(
-                dummyLoadingRLO.getParent().getRscLayerId()
+                dummyParent.getRscLayerId()
             );
         }
         return ret;
@@ -574,7 +579,7 @@ public abstract class AbsLayerRscDataDbDriver<
         }
 
         @Override
-        public DatabaseTable getTable()
+        public @Nullable DatabaseTable getTable()
         {
             return null;
         }

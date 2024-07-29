@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects.remotes;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.backupshipping.BackupConsts;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.AbsCoreObj;
@@ -131,24 +132,24 @@ public abstract class AbsRemote extends AbsCoreObj<AbsRemote> implements Compara
         EBS(null, null) // only used by special (EBS) satellite
         ;
 
-        private final Map<ExtTools, Version> requiredExtTools;
-        private final Map<ExtTools, Version> optionalExtTools;
+        private final @Nullable Map<ExtTools, Version> requiredExtTools;
+        private final @Nullable Map<ExtTools, Version> optionalExtTools;
 
         RemoteType(
-            Map<ExtTools, Version> requiredExtToolsRef,
-            Map<ExtTools, Version> optionalExtToolsRef
+            @Nullable Map<ExtTools, Version> requiredExtToolsRef,
+            @Nullable Map<ExtTools, Version> optionalExtToolsRef
         )
         {
             requiredExtTools = requiredExtToolsRef;
             optionalExtTools = optionalExtToolsRef;
         }
 
-        public Map<ExtTools, Version> getRequiredExtTools()
+        public @Nullable Map<ExtTools, Version> getRequiredExtTools()
         {
             return requiredExtTools;
         }
 
-        public Map<ExtTools, Version> getOptionalExtTools()
+        public @Nullable Map<ExtTools, Version> getOptionalExtTools()
         {
             return optionalExtTools;
         }

@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.prop;
 
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
@@ -280,7 +281,13 @@ public class WhitelistProps
         return result;
     }
 
-    public boolean isAllowed(LinStorObject lsObj, List<String> ignoredKeys, String key, String value, boolean log)
+    public boolean isAllowed(
+        LinStorObject lsObj,
+        List<String> ignoredKeys,
+        String key,
+        @Nullable String value,
+        boolean log
+    )
     {
         boolean validProp = ignoredKeys.stream().anyMatch(ignoredKey -> key.startsWith(ignoredKey));
         if (!validProp)

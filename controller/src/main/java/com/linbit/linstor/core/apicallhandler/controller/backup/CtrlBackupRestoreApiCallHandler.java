@@ -8,6 +8,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -106,7 +107,6 @@ import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.backupshipping.BackupConsts.META_SUFFIX;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -1431,7 +1431,7 @@ public class CtrlBackupRestoreApiCallHandler
                     {
                         throw new ImplementationError("Cannot receive LUKS data without LuksInfo");
                     }
-                    byte[] remoteMasterKey = getRemoteMasterKey(data.getSrcClusterId(), luksInfo);
+                    @Nullable byte[] remoteMasterKey = getRemoteMasterKey(data.getSrcClusterId(), luksInfo);
                     if (remoteMasterKey == null)
                     {
                         throw new ImplementationError(
@@ -1728,10 +1728,10 @@ public class CtrlBackupRestoreApiCallHandler
     /**
      * Returns the master key from the source cluster
      */
-    private byte[] getRemoteMasterKey(String sourceClusterIdStr, LuksLayerMetaPojo luksInfo)
+    private @Nullable byte[] getRemoteMasterKey(String sourceClusterIdStr, LuksLayerMetaPojo luksInfo)
         throws AccessDeniedException
     {
-        byte[] remoteMasterKey = null;
+        @Nullable byte[] remoteMasterKey = null;
         UUID srcClusterId = UUID.fromString(sourceClusterIdStr);
         for (AbsRemote sourceRemote : remoteRepo.getMapForView(sysCtx).values())
         {

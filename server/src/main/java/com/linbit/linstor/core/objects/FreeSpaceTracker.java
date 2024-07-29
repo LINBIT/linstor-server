@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -23,8 +24,8 @@ public interface FreeSpaceTracker extends TransactionObject
     void vlmCreationFinished(
         AccessContext accCtx,
         VlmProviderObject<?> vlmProviderObjRef,
-        Long freeCapacityRef,
-        Long totalCapacityRef
+        @Nullable Long freeCapacityRef,
+        @Nullable Long totalCapacityRef
     )
         throws AccessDeniedException;
 

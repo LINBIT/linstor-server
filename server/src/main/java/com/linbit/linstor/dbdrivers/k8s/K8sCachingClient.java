@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbdrivers.k8s;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,7 +95,7 @@ public class K8sCachingClient<T extends HasMetadata, L extends KubernetesResourc
     }
 
     @Override
-    public T get(String name)
+    public @Nullable T get(String name)
     {
         return cache.get(name);
     }

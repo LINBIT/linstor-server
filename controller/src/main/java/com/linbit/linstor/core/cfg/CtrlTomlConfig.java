@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.cfg;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.LinstorConfigTool;
 import com.linbit.linstor.core.cfg.LinstorConfig.RestAccessLogMode;
 
@@ -8,9 +9,9 @@ public class CtrlTomlConfig
 {
     static class HTTP
     {
-        private Boolean enabled;
-        private String listen_addr;
-        private Integer port;
+        private @Nullable Boolean enabled;
+        private @Nullable String listen_addr;
+        private @Nullable Integer port;
 
         public void applyTo(CtrlConfig cfg)
         {
@@ -22,13 +23,13 @@ public class CtrlTomlConfig
 
     static class HTTPS
     {
-        private Boolean enabled;
-        private String listen_addr;
-        private Integer port;
-        private String keystore;
-        private String keystore_password;
-        private String truststore;
-        private String truststore_password;
+        private @Nullable Boolean enabled;
+        private @Nullable String listen_addr;
+        private @Nullable Integer port;
+        private @Nullable String keystore;
+        private @Nullable String keystore_password;
+        private @Nullable String truststore;
+        private @Nullable String truststore_password;
 
         public void applyTo(CtrlConfig cfg)
         {
@@ -44,12 +45,12 @@ public class CtrlTomlConfig
 
     static class LDAP
     {
-        private Boolean enabled;
-        private Boolean allow_public_access;
-        private String uri;
-        private String dn;
-        private String search_base;
-        private String search_filter;
+        private @Nullable Boolean enabled;
+        private @Nullable Boolean allow_public_access;
+        private @Nullable String uri;
+        private @Nullable String dn;
+        private @Nullable String search_base;
+        private @Nullable String search_filter;
 
         public void applyTo(CtrlConfig cfg)
         {
@@ -64,22 +65,22 @@ public class CtrlTomlConfig
 
     public static class DB
     {
-        private String user;
-        private String password;
-        private String connection_url;
-        private String ca_certificate;
-        private String client_certificate;
+        private @Nullable String user;
+        private @Nullable String password;
+        private @Nullable String connection_url;
+        private @Nullable String ca_certificate;
+        private @Nullable String client_certificate;
         /**
          * Typo in linstor version 1.2.1
          */
         @Deprecated
-        private String client_key_pcks8_pem;
-        private String client_key_pkcs8_pem;
-        private String client_key_password;
+        private @Nullable String client_key_pcks8_pem;
+        private @Nullable String client_key_pkcs8_pem;
+        private @Nullable String client_key_password;
 
-        private Etcd etcd = new Etcd();
+        private @Nullable Etcd etcd = new Etcd();
 
-        private K8s k8s = new K8s();
+        private @Nullable K8s k8s = new K8s();
 
         public void applyTo(CtrlConfig cfg)
         {
@@ -98,7 +99,7 @@ public class CtrlTomlConfig
         /**
          * Getter needed by {@link LinstorConfigTool}
          */
-        public String getConnectionUrl()
+        public @Nullable String getConnectionUrl()
         {
             return connection_url;
         }
@@ -106,7 +107,7 @@ public class CtrlTomlConfig
         /**
          * Getter needed by {@link LinstorConfigTool}
          */
-        public String getUser()
+        public @Nullable String getUser()
         {
             return user;
         }
@@ -114,7 +115,7 @@ public class CtrlTomlConfig
         /**
          * Getter needed by {@link LinstorConfigTool}
          */
-        public String getPassword()
+        public @Nullable String getPassword()
         {
             return password;
         }
@@ -122,10 +123,10 @@ public class CtrlTomlConfig
 
     static class Logging
     {
-        private String level;
-        private String linstor_level;
-        private String rest_access_log_path;
-        private RestAccessLogMode rest_access_log_mode;
+        private @Nullable String level;
+        private @Nullable String linstor_level;
+        private @Nullable String rest_access_log_path;
+        private @Nullable RestAccessLogMode rest_access_log_mode;
 
         public void applyTo(CtrlConfig cfg)
         {
@@ -138,7 +139,7 @@ public class CtrlTomlConfig
 
     static class Encrypt
     {
-        private String passphrase;
+        private @Nullable String passphrase;
 
         public void applyTo(CtrlConfig cfg)
         {
@@ -148,8 +149,8 @@ public class CtrlTomlConfig
 
     static class Etcd
     {
-        private Integer ops_per_transaction;
-        private String prefix;
+        private @Nullable Integer ops_per_transaction;
+        private @Nullable String prefix;
 
         public void applyTo(CtrlConfig cfg)
         {
@@ -160,8 +161,8 @@ public class CtrlTomlConfig
 
     static class K8s
     {
-        private Integer request_retries;
-        private Integer max_rollback_entries;
+        private @Nullable Integer request_retries;
+        private @Nullable Integer max_rollback_entries;
 
         public void applyTo(CtrlConfig cfg)
         {
@@ -172,7 +173,7 @@ public class CtrlTomlConfig
 
     static class WebUi
     {
-        private String directory;
+        private @Nullable String directory;
 
         public void applyTo(CtrlConfig cfg)
         {

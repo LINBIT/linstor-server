@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer.drbd.utils;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.propscon.ReadOnlyProps;
@@ -44,7 +45,7 @@ public class ConfFileBuilderAutoRules
         );
     }
 
-    public AutoRule get(String keyWithNamespaceRef)
+    public @Nullable AutoRule get(String keyWithNamespaceRef)
     {
         return autoRules.get(keyWithNamespaceRef);
     }

@@ -1,5 +1,7 @@
 package com.linbit;
 
+import com.linbit.linstor.annotation.Nullable;
+
 /**
  * Implementation error checks
  *
@@ -12,7 +14,7 @@ public class ErrorCheck
     {
     }
 
-    public static final void ctorNotNull(Class<?> objClass, Class<?> argClass, Object param)
+    public static final void ctorNotNull(Class<?> objClass, Class<?> argClass, @Nullable Object param)
     {
         if (param == null)
         {

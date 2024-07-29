@@ -1,13 +1,12 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
-
-import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -96,7 +95,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         );
     }
 
-    public static AutoSelectFilterPojo merge(AutoSelectFilterApi... cfgArr)
+    public static AutoSelectFilterPojo merge(@Nullable AutoSelectFilterApi... cfgArr)
     {
         @Nullable Integer placeCount = null;
         @Nullable Integer additionalPlaceCount = null;
@@ -237,7 +236,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     }
 
     @Override
-    public List<String> getStorPoolDisklessNameList()
+    public @Nullable List<String> getStorPoolDisklessNameList()
     {
         return storPoolDisklessNameList;
     }
@@ -297,7 +296,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     }
 
     @Override
-    public Boolean skipAlreadyPlacedOnAllNodeCheck()
+    public @Nullable Boolean skipAlreadyPlacedOnAllNodeCheck()
     {
         return skipAlreadyPlacedOnAllNodeCheck;
     }

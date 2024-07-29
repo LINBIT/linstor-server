@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
@@ -29,7 +30,6 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -73,7 +73,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         ResourceGroupName rscGrpNameRef,
         String descriptionRef,
         List<DeviceLayerKind> autoPlaceLayerStackRef,
-        Integer autoPlaceReplicaCountRef,
+        @Nullable Integer autoPlaceReplicaCountRef,
         List<String> autoPlaceNodeNameListRef,
         List<String> autoPlaceStorPoolNameListRef,
         List<String> autoPlaceStorPoolDisklessNameListRef,
@@ -83,7 +83,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         List<String> autoPlaceReplicasOnDifferentListRef,
         Map<String, Integer> autoPlaceXReplicasOnDifferentMapRef,
         List<DeviceProviderKind> autoPlaceAllowedProviderListRef,
-        Boolean autoPlaceDisklessOnRemainingRef,
+        @Nullable Boolean autoPlaceDisklessOnRemainingRef,
         Map<VolumeNumber, VolumeGroup> vlmGrpMapRef,
         Map<ResourceName, ResourceDefinition> rscDfnMapRef,
         @Nullable Short peerSlotsRef,
@@ -246,7 +246,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         return vlmMap.values().stream();
     }
 
-    public VolumeGroup getVolumeGroup(AccessContext accCtx, VolumeNumber vlmNr)
+    public @Nullable VolumeGroup getVolumeGroup(AccessContext accCtx, VolumeNumber vlmNr)
         throws AccessDeniedException
     {
         checkDeleted();

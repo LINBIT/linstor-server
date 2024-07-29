@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
@@ -134,7 +135,7 @@ public class StltNodeApiCallHandler
         }
     }
 
-    public Node applyChanges(NodePojo nodePojo)
+    public @Nullable Node applyChanges(NodePojo nodePojo)
     {
         Lock reConfReadLock = reconfigurationLock.readLock();
         Lock nodesWriteLock = nodesMapLock.writeLock();

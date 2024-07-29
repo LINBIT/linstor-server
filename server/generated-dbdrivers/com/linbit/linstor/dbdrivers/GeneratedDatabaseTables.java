@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 
 import java.sql.Types;
@@ -2175,7 +2176,7 @@ public class GeneratedDatabaseTables
         private final int sqlType;
         private final boolean isPk;
         private final boolean isNullable;
-        private DatabaseTable table;
+        private @Nullable DatabaseTable table;
 
         public ColumnImpl(
             final String nameRef,
@@ -2215,7 +2216,7 @@ public class GeneratedDatabaseTables
         }
 
         @Override
-        public DatabaseTable getTable()
+        public @Nullable DatabaseTable getTable()
         {
             return table;
         }

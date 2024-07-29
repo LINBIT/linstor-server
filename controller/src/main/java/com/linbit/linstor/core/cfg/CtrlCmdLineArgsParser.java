@@ -2,6 +2,7 @@ package com.linbit.linstor.core.cfg;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.utils.Pair;
 
@@ -17,57 +18,57 @@ class CtrlCmdLineArgsParser
     @CommandLine.Option(names = {"-c", "--config-directory"},
         description = "Configuration directory for the controller"
     )
-    private String configurationDirectory;
+    private @Nullable String configurationDirectory;
     @CommandLine.Option(names = {"-d", "--debug-console"}, description = "")
-    private Boolean debugConsole;
+    private @Nullable Boolean debugConsole;
     @CommandLine.Option(
         names = {"--memory-database"},
         description = "Use a in memory database for testing. [format=dbtype;port;listenaddr]"
     )
-    private String memoryDB;
+    private @Nullable String memoryDB;
 
     @CommandLine.Option(
         names = {"-p", "--stack-traces"},
         description = "print error stack traces on standard error"
     )
-    private Boolean printStackTrace;
+    private @Nullable Boolean printStackTrace;
 
     @CommandLine.Option(names = {"-l", "--logs"}, description = "Path to the log directory")
-    private String logDirectory;
+    private @Nullable String logDirectory;
 
     @CommandLine.Option(names = {"--log-level"},
         description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
-    private String logLevel;
+    private @Nullable String logLevel;
 
     @CommandLine.Option(names = {"--log-level-linstor"},
         description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
-    private String logLevelLinstor;
+    private @Nullable String logLevelLinstor;
 
     @CommandLine.Option(
         names = {"--rest-bind"},
         description = "Bind address for the REST HTTP server. e.g. 0.0.0.0:3370"
     )
-    private String restBindAddress;
+    private @Nullable String restBindAddress;
 
     @CommandLine.Option(
         names = {"--rest-bind-secure"},
         description = "Bind address for the REST HTTPS server. e.g. 0.0.0.0:3371"
     )
-    private String restBindAddressSecure;
+    private @Nullable String restBindAddressSecure;
 
     @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Show the version number")
-    private Boolean versionInfoRequested;
+    private @Nullable Boolean versionInfoRequested;
 
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
-    private Boolean usageHelpRequested;
+    private @Nullable Boolean usageHelpRequested;
 
     @CommandLine.Option(
         names = {"--disable-db-version-check"},
         description = "Disable database version version checks supported by Linstor")
-    private Boolean disableDbVersionCheck;
+    private @Nullable Boolean disableDbVersionCheck;
 
     @CommandLine.Option(names = {"--webui-directory"}, description = "Path to the webui directory")
-    private String webUiDirectory;
+    private @Nullable String webUiDirectory;
 
     static void parseCommandLine(String[] args, CtrlConfig linstorCfgRef)
     {
@@ -150,7 +151,7 @@ class CtrlCmdLineArgsParser
         linstorCfgRef.setWebUiDirectory(linArgParser.webUiDirectory);
     }
 
-    public static Pair<String, Integer> splitIpPort(String addrPort)
+    public static Pair<String, Integer> splitIpPort(@Nullable String addrPort)
     {
         String addr = null;
         Integer port = null;

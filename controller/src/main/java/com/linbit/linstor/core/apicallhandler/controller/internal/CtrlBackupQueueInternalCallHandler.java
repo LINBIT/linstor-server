@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -21,6 +22,7 @@ import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrc
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRestClient;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingRequestPrevSnap;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponsePrevSnap;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingSrcData;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -40,7 +42,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.utils.ExceptionThrowingIterator;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -112,7 +113,7 @@ public class CtrlBackupQueueInternalCallHandler
     }
 
     public Flux<ApiCallRc> handleBackupQueues(
-        SnapshotDefinition snapDfn,
+        @Nullable SnapshotDefinition snapDfn,
         AbsRemote remoteForSchedule,
         @Nullable StltRemote optStltRemote
     ) throws AccessDeniedException
@@ -432,14 +433,19 @@ public class CtrlBackupQueueInternalCallHandler
                 srcSnapDfnUuids.add(snapDfn.getUuid().toString());
             }
         }
+        final @Nullable BackupShippingSrcData l2lData = current.l2lData;
+        if (l2lData == null)
+        {
+            throw new ImplementationError("The QueueItem is missing its l2lData");
+        }
         flux = Flux.merge(
             restClient.sendPrevSnapRequest(
                 new BackupShippingRequestPrevSnap(
                     LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
-                    current.l2lData.getSrcClusterId(),
-                    current.l2lData.getDstRscName(),
+                    l2lData.getSrcClusterId(),
+                    l2lData.getDstRscName(),
                     srcSnapDfnUuids,
-                    current.l2lData.getDstNodeName()
+                    l2lData.getDstNodeName()
                 ),
                 (LinstorRemote) current.remote,
                 sysCtx
@@ -453,15 +459,15 @@ public class CtrlBackupQueueInternalCallHandler
                 errorReporter.reportError(exc);
             })
                 .map(
-                resp -> scopeRunner.fluxInTransactionalScope(
-                    "Backup shipping L2L: start queued shipping",
-                    lockGuardFactory.create()
-                        .read(LockObj.NODES_MAP)
-                        .write(LockObj.RSC_DFN_MAP)
-                        .buildDeferred(),
-                    () -> startQueuedL2LShippingInTransaction(node, nextItem, current, resp)
+                    resp -> scopeRunner.fluxInTransactionalScope(
+                        "Backup shipping L2L: start queued shipping",
+                        lockGuardFactory.create()
+                            .read(LockObj.NODES_MAP)
+                            .write(LockObj.RSC_DFN_MAP)
+                            .buildDeferred(),
+                        () -> startQueuedL2LShippingInTransaction(node, nextItem, current, resp)
+                    )
                 )
-            )
         );
         return flux;
     }
@@ -483,9 +489,14 @@ public class CtrlBackupQueueInternalCallHandler
             }
             else
             {
-                next.l2lData.setResetData(resp.resetData);
-                next.l2lData.setDstBaseSnapName(resp.dstBaseSnapName);
-                next.l2lData.setDstActualNodeName(resp.dstActualNodeName);
+                @Nullable final BackupShippingSrcData l2lData = next.l2lData;
+                if (l2lData == null)
+                {
+                    throw new ImplementationError("The QueueItem is missing its l2lData");
+                }
+                l2lData.setResetData(resp.resetData);
+                l2lData.setDstBaseSnapName(resp.dstBaseSnapName);
+                l2lData.setDstActualNodeName(resp.dstActualNodeName);
                 SnapshotDefinition l2lPrevSnapDfn = backupCrtHandler.getIncrementalBaseL2L(
                     next.snapDfn.getResourceDefinition(),
                     resp.prevSnapUuid,
@@ -507,10 +518,10 @@ public class CtrlBackupQueueInternalCallHandler
                 );
                 if (l2lNodeForShipping != null)
                 {
-                    next.l2lData.setSrcSnapshot(
+                    l2lData.setSrcSnapshot(
                         next.snapDfn.getSnapshot(peerAccCtx.get(), l2lNodeForShipping.getName())
                     );
-                    next.l2lData.setSrcNodeName(l2lNodeForShipping.getName().displayValue);
+                    l2lData.setSrcNodeName(l2lNodeForShipping.getName().displayValue);
                     final Node nodeForEffectivelyFinal = l2lNodeForShipping;
                     ret = backupCrtHandler.startShippingInTransaction(
                         next.snapDfn,
@@ -777,7 +788,7 @@ public class CtrlBackupQueueInternalCallHandler
         return queueMap;
     }
 
-    private BackupSnapQueuesPojo createSnapQueuesPojo(
+    private @Nullable BackupSnapQueuesPojo createSnapQueuesPojo(
         Set<String> queuedOnNodes,
         QueueItem item,
         boolean matches
@@ -900,7 +911,7 @@ public class CtrlBackupQueueInternalCallHandler
         return items;
     }
 
-    private BackupSnapQueuesPojo queueItemToPojo(QueueItem item, List<BackupNodeQueuesPojo> nodes)
+    private @Nullable BackupSnapQueuesPojo queueItemToPojo(QueueItem item, @Nullable List<BackupNodeQueuesPojo> nodes)
     {
         BackupSnapQueuesPojo ret;
         String startTimeStr = null;
@@ -908,13 +919,20 @@ public class CtrlBackupQueueInternalCallHandler
         {
             startTimeStr = item.snapDfn.getSnapDfnProps(peerAccCtx.get())
                 .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-            boolean inc = item.prevSnapDfn != null;
+            @Nullable final SnapshotDefinition prevSnapDfn = item.prevSnapDfn;
+            boolean inc = false;
+            @Nullable String basedOn = null;
+            if (prevSnapDfn != null)
+            {
+                inc = true;
+                basedOn = prevSnapDfn.getName().displayValue;
+            }
             ret = new BackupSnapQueuesPojo(
                 item.snapDfn.getResourceName().displayValue,
                 item.snapDfn.getName().displayValue,
                 item.remote.getName().displayValue,
                 inc,
-                inc ? item.prevSnapDfn.getName().displayValue : null,
+                basedOn,
                 (startTimeStr == null || startTimeStr.isEmpty()) ? null : Long.parseLong(startTimeStr),
                 item.preferredNode,
                 nodes
@@ -967,7 +985,7 @@ public class CtrlBackupQueueInternalCallHandler
         }
 
         @Override
-        public QueueItem next() throws AccessDeniedException
+        public @Nullable QueueItem next() throws AccessDeniedException
         {
             return backupInfoMgr.getNextFromQueue(accCtx, node, true);
         }
@@ -975,9 +993,9 @@ public class CtrlBackupQueueInternalCallHandler
 
     private class IteratorFromSingleItem implements ExceptionThrowingIterator<QueueItem, AccessDeniedException>
     {
-        private QueueItem item;
+        private @Nullable QueueItem item;
 
-        IteratorFromSingleItem(QueueItem itemRef)
+        IteratorFromSingleItem(@Nullable QueueItem itemRef)
         {
             item = itemRef;
         }
@@ -989,9 +1007,9 @@ public class CtrlBackupQueueInternalCallHandler
         }
 
         @Override
-        public QueueItem next() throws AccessDeniedException
+        public @Nullable QueueItem next() throws AccessDeniedException
         {
-            QueueItem ret = item;
+            @Nullable QueueItem ret = item;
             if (ret != null)
             {
                 backupInfoMgr.deleteFromQueue(ret.snapDfn, ret.remote);

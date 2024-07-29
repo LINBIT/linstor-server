@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -145,7 +146,7 @@ public class LayerWritecacheVlmDbDriver
     private <RSC extends AbsResource<RSC>> WritecacheVlmData<RSC> createAbsVlmData(
         AbsVolume<?> absVlmRef,
         WritecacheRscData<?> writecacheRscDataRef,
-        StorPool cacheStorPoolRef
+        @Nullable StorPool cacheStorPoolRef
     )
     {
         return new WritecacheVlmData<>(

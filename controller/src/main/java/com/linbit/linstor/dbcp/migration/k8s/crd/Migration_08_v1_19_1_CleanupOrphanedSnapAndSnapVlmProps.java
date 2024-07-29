@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbcp.migration.Migration_2022_10_03_CleanupOrphanedSnapAndSnapVlmProps;
 import com.linbit.linstor.dbcp.migration.Migration_2022_10_03_CleanupOrphanedSnapAndSnapVlmProps.SnapshotKey;
 import com.linbit.linstor.dbcp.migration.Migration_2022_10_03_CleanupOrphanedSnapAndSnapVlmProps.SnapshotVolumeKey;
@@ -32,7 +33,7 @@ public class Migration_08_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps extends Bas
     }
 
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         Collection<ResourcesSpec> absResources = txFrom.<Resources, ResourcesSpec>getSpec(
             GenCrdV1_19_1.GeneratedDatabaseTables.RESOURCES

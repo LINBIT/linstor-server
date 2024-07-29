@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.satellite.authentication;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
@@ -7,7 +8,7 @@ import java.util.Collection;
 
 public class AuthenticationResult
 {
-    private final Collection<ExtToolsInfo> extToolsInfoList;
+    private final @Nullable Collection<ExtToolsInfo> extToolsInfoList;
 
     private final boolean authenticated;
 
@@ -35,7 +36,7 @@ public class AuthenticationResult
         return authenticated;
     }
 
-    public Collection<ExtToolsInfo> getExternalToolsInfoList()
+    public @Nullable Collection<ExtToolsInfo> getExternalToolsInfoList()
     {
         return extToolsInfoList;
     }

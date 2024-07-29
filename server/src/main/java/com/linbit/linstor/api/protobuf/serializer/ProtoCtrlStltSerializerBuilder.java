@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
@@ -146,8 +147,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         AccessContext serializerCtx,
         CtrlSecurityObjects secObjsRef,
         ReadOnlyProps ctrlConfRef,
-        final String apiCall,
-        Long apiCallId,
+        final @Nullable String apiCall,
+        @Nullable Long apiCallId,
         boolean isAnswer
     )
     {
@@ -1471,7 +1472,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         return this;
     }
 
-    private void appendObjectId(UUID objUuid, String objName)
+    private void appendObjectId(@Nullable UUID objUuid, String objName)
     {
         try
         {

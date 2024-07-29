@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -30,8 +31,6 @@ import com.linbit.locks.LockGuard;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyEnableApiCallHandler.makeDrbdProxyContext;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscConnectionApiCallHandler.getResourceConnectionDescriptionInline;
 
-import reactor.core.publisher.Flux;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -39,6 +38,8 @@ import javax.inject.Singleton;
 
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlDrbdProxyDisableApiCallHandler
@@ -84,7 +85,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
     }
 
     public Flux<ApiCallRc> disableProxy(
-        UUID rscConnUuid,
+        @Nullable UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscNameStr
@@ -116,7 +117,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
     }
 
     private Flux<ApiCallRc> configureProxyInTransaction(
-        UUID rscConnUuid,
+        @Nullable UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscNameStr

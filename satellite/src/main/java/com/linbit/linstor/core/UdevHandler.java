@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
@@ -10,7 +11,6 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import java.util.TreeSet;

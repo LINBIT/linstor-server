@@ -1,6 +1,7 @@
 package com.linbit.linstor.transaction;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
@@ -20,15 +21,15 @@ public abstract class AbsTransactionObject implements TransactionObject
 {
     private static final boolean DEBUG_MODE = false;
 
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final @Nullable Provider<? extends TransactionMgr> transMgrProvider;
 
-    private TransactionMgr activeTransMgr = null;
+    private @Nullable TransactionMgr activeTransMgr = null;
     private boolean inCommit = false;
     private boolean inRollback = false;
 
-    private StackTraceElement[] dbgActivationStackstrace;
+    private @Nullable StackTraceElement[] dbgActivationStackstrace;
 
-    public AbsTransactionObject(Provider<? extends TransactionMgr> transMgrProviderRef)
+    public AbsTransactionObject(@Nullable Provider<? extends TransactionMgr> transMgrProviderRef)
     {
         transMgrProvider = transMgrProviderRef;
     }
@@ -45,7 +46,7 @@ public abstract class AbsTransactionObject implements TransactionObject
     }
 
     @Override
-    public final void setConnection(TransactionMgr transMgrRef) throws ImplementationError
+    public final void setConnection(@Nullable TransactionMgr transMgrRef) throws ImplementationError
     {
         if (activeTransMgr != transMgrRef) // prevent cyclic .setConnection calls
         {
@@ -92,7 +93,7 @@ public abstract class AbsTransactionObject implements TransactionObject
      *
      * @param transMgrRef
      */
-    protected void postSetConnection(TransactionMgr transMgrRef)
+    protected void postSetConnection(@Nullable TransactionMgr transMgrRef)
     {
 
     }

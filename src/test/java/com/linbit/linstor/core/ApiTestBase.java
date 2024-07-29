@@ -31,12 +31,10 @@ import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 
 import java.util.List;
 
 import com.google.inject.testing.fieldbinder.Bind;
-import com.google.inject.util.Modules;
 import org.junit.Assert;
 import org.junit.Before;
 import org.mockito.Mock;
@@ -64,18 +62,12 @@ public abstract class ApiTestBase extends GenericDbBase
     @Inject @Named(LinStor.SATELLITE_PROPS)
     protected Props stltConf;
 
-    @Inject
-    protected Provider<TransactionMgr> transMgrProvider;
-
     @Before
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public void setUp() throws Exception
     {
         // SatelliteConnectorImpl stltConnector = Mockito.mock(SatelliteConnectorImpl.class);
-        super.setUpWithoutEnteringScope(Modules.combine(
-            new CtrlApiCallHandlerModule()
-            // new ApiTestModule(stltConnector)
-        ));
+        super.setUpWithoutEnteringScope(new CtrlApiCallHandlerModule());
 
         try (LinStorScope.ScopeAutoCloseable close = testScope.enter())
         {

@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -143,9 +144,9 @@ public class LayerUtils
     {
         private Map<DeviceLayerKind, LayerNode> successor = new HashMap<>();
         private boolean endAllowed = false;
-        private DeviceLayerKind kind;
+        private @Nullable DeviceLayerKind kind;
 
-        LayerNode(DeviceLayerKind kindRef)
+        LayerNode(@Nullable DeviceLayerKind kindRef)
         {
             kind = kindRef;
         }

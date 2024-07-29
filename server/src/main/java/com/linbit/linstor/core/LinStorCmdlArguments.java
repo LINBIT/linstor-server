@@ -1,16 +1,18 @@
 package com.linbit.linstor.core;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class LinStorCmdlArguments
 {
-    private String configurationDirectory;
-    private Boolean startDebugConsole;
-    private Boolean printStacktraces;
-    private String logDirectory;
-    private String logLevel;
-    private Boolean dbStartupVerification;
+    private @Nullable String configurationDirectory;
+    private @Nullable Boolean startDebugConsole;
+    private @Nullable Boolean printStacktraces;
+    private @Nullable String logDirectory;
+    private @Nullable String logLevel;
+    private @Nullable Boolean dbStartupVerification;
 
     public LinStorCmdlArguments()
     {
@@ -35,12 +37,12 @@ public class LinStorCmdlArguments
         startDebugConsole = startDebugConsoleRef;
     }
 
-    public Boolean startDebugConsole()
+    public @Nullable Boolean startDebugConsole()
     {
         return startDebugConsole;
     }
 
-    public Boolean isPrintStacktraces()
+    public @Nullable Boolean isPrintStacktraces()
     {
         return printStacktraces;
     }
@@ -50,7 +52,7 @@ public class LinStorCmdlArguments
         printStacktraces = printStacktracesRef;
     }
 
-    public String getLogDirectory()
+    public @Nullable String getLogDirectory()
     {
         return logDirectory;
     }
@@ -60,7 +62,7 @@ public class LinStorCmdlArguments
         logDirectory = newLogDirectory;
     }
 
-    public String getLogLevel()
+    public @Nullable String getLogLevel()
     {
         return logLevel;
     }
@@ -75,7 +77,7 @@ public class LinStorCmdlArguments
         dbStartupVerification = dbStartupVerificationRef;
     }
 
-    public Boolean isDbStartupVerification()
+    public @Nullable Boolean isDbStartupVerification()
     {
         return dbStartupVerification;
     }

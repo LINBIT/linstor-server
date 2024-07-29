@@ -113,6 +113,7 @@ import com.google.inject.Module;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import com.google.inject.util.Modules;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -310,6 +311,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject
     protected ResourceGroupDatabaseDriver rscGrpDbDriver;
 
+    @SuppressFBWarnings
     @BeforeClass
     public static void setUpBeforeClass()
         throws DatabaseException, SQLException, InvalidNameException, InitializationException, AccessDeniedException,

@@ -1,9 +1,7 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
-
-import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -12,13 +10,15 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import javax.inject.Provider;
 
 public class CmdSetConfValue extends BaseDebugCmd
 {

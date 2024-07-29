@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer.drbd.drbdstate;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 
 import java.util.Iterator;
@@ -214,7 +215,7 @@ public class DrbdConnection
         return volListCopy.iterator();
     }
 
-    public DrbdVolume getVolume(VolumeNumber volNr)
+    public @Nullable DrbdVolume getVolume(VolumeNumber volNr)
     {
         DrbdVolume vol = null;
         synchronized (volList)
@@ -232,6 +233,7 @@ public class DrbdConnection
         }
     }
 
+    @Nullable
     DrbdVolume removeVolume(VolumeNumber volNr)
     {
         DrbdVolume removedVol = null;

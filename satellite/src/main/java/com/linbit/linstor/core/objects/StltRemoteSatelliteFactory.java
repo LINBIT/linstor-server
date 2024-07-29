@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.DivergentUuidsException;
@@ -47,7 +48,7 @@ public class StltRemoteSatelliteFactory
         AccessContext accCtx,
         UUID uuid,
         RemoteName remoteNameRef,
-        Node nodeRef,
+        @Nullable Node nodeRef,
         long initflags,
         String ipRef,
         Map<String, Integer> portsRef,

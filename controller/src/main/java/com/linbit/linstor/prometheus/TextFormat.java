@@ -1,6 +1,7 @@
 package com.linbit.linstor.prometheus;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -13,7 +14,7 @@ import io.prometheus.client.Collector;
 public class TextFormat
 {
     private final StringBuilder sb = new StringBuilder();
-    private String currentSection;
+    private @Nullable String currentSection;
 
     private enum Type
     {

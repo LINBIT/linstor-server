@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -155,7 +156,7 @@ public class Volume extends AbsVolume<Resource>
         return volumeConnections.values().stream();
     }
 
-    public VolumeConnection getVolumeConnection(AccessContext accCtx, Volume othervolume)
+    public @Nullable VolumeConnection getVolumeConnection(AccessContext accCtx, Volume othervolume)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -419,7 +420,7 @@ public class Volume extends AbsVolume<Resource>
         return nodeName.value + "/" + rscName.value + "/" + volNr.value;
     }
 
-    public VolumeApi getApiData(Long allocated, AccessContext accCtx) throws AccessDeniedException
+    public VolumeApi getApiData(@Nullable Long allocated, AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         VolumeNumber vlmNr = volumeDfn.getVolumeNumber();

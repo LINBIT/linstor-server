@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo.backups;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 
 import java.util.List;
@@ -16,12 +17,12 @@ public class BackupMetaDataPojo
     private final String nodeName;
     private final long startTimestamp;
     private final long finishTimestamp;
-    private final String basedOn;
+    private final @Nullable String basedOn;
 
     private final RscLayerDataApi layerData;
     private final RscDfnMetaPojo rscDfn;
     private final RscMetaPojo rsc;
-    private final LuksLayerMetaPojo luksInfo;
+    private final @Nullable LuksLayerMetaPojo luksInfo;
     private final Map<Integer, List<BackupMetaInfoPojo>> backups; // vlmNr -> List<backupInfo>
 
     private final String clusterId;
@@ -33,11 +34,11 @@ public class BackupMetaDataPojo
         @JsonProperty("nodeName") String nodeNameRef,
         @JsonProperty("startTimestamp") long startTimestampRef,
         @JsonProperty("finishTimestamp") long finishTimestampRef,
-        @JsonProperty("basedOn") String basedOnRef,
+        @JsonProperty("basedOn") @Nullable String basedOnRef,
         @JsonProperty("layerData") RscLayerDataApi layerDataRef,
         @JsonProperty("rscDfn") RscDfnMetaPojo rscDfnRef,
         @JsonProperty("rsc") RscMetaPojo rscRef,
-        @JsonProperty("luksInfo") LuksLayerMetaPojo luksInfoRef,
+        @JsonProperty("luksInfo") @Nullable LuksLayerMetaPojo luksInfoRef,
         @JsonProperty("backups") Map<Integer, List<BackupMetaInfoPojo>> backupsRef,
         @JsonProperty("clusterId") String clusterIdRef,
         @JsonProperty("snapDfnUuid") String snapDfnUuidRef
@@ -77,7 +78,7 @@ public class BackupMetaDataPojo
         return finishTimestamp;
     }
 
-    public String getBasedOn()
+    public @Nullable String getBasedOn()
     {
         return basedOn;
     }
@@ -97,7 +98,7 @@ public class BackupMetaDataPojo
         return rsc;
     }
 
-    public LuksLayerMetaPojo getLuksInfo()
+    public @Nullable LuksLayerMetaPojo getLuksInfo()
     {
         return luksInfo;
     }

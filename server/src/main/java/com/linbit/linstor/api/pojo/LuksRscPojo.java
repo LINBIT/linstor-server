@@ -1,13 +1,12 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import javax.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -110,9 +109,9 @@ public class LuksRscPojo implements RscLayerDataApi
         private final byte[] encryptedPassword;
         private final @Nullable byte[] modifyPassword;
         @JsonIgnore
-        private final String devicePath;
+        private final @Nullable String devicePath;
         @JsonIgnore
-        private final String dataDevice;
+        private final @Nullable String dataDevice;
         @JsonIgnore
         private final long allocatedSize;
         @JsonIgnore
@@ -120,7 +119,7 @@ public class LuksRscPojo implements RscLayerDataApi
         @JsonIgnore
         private final boolean open;
         @JsonIgnore
-        private final String diskState;
+        private final @Nullable String diskState;
         @JsonIgnore
         private final long discGran;
         @JsonIgnore
@@ -129,12 +128,12 @@ public class LuksRscPojo implements RscLayerDataApi
         public LuksVlmPojo(
             int vlmNrRef,
             byte[] encryptedPasswordRef,
-            String devicePathRef,
-            String dataDeviceRef,
+            @Nullable String devicePathRef,
+            @Nullable String dataDeviceRef,
             long allocatedSizeRef,
             long usableSizeRef,
             boolean isOpenRef,
-            String diskStateRef,
+            @Nullable String diskStateRef,
             long discGranRef,
             boolean existsRef,
             @Nullable byte[] modifyPasswordRef

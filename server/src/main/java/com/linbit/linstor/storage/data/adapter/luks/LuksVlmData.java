@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.luks;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
@@ -16,7 +17,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
@@ -30,19 +30,19 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     // persisted, serialized, ctrl and stlt
     private final TransactionSimpleObject<LuksVlmData<?>, byte[]> encryptedPassword;
 
-    private String dataDevice;
-    private String diskState;
+    private @Nullable String dataDevice;
+    private @Nullable String diskState;
 
     // not persisted, not serialized, stlt only
     private boolean opened;
-    private String identifier;
-    private byte[] decryptedPassword = null;
+    private @Nullable String identifier;
+    private @Nullable byte[] decryptedPassword = null;
     /**
      * This field will be set, if we want to change the luks password on the satellite.
      */
     private @Nullable byte[] modifyPassword = null;
     private final List<? extends State> unmodStates;
-    private Size sizeState;
+    private @Nullable Size sizeState;
 
     // TODO maybe introduce States like "OPEN", "CLOSED", "UNINITIALIZED" or something...
 
@@ -122,7 +122,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getDataDevice()
+    public @Nullable String getDataDevice()
     {
         return dataDevice;
     }
@@ -133,7 +133,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public Size getSizeState()
+    public @Nullable Size getSizeState()
     {
         return sizeState;
     }
@@ -143,7 +143,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         sizeState = sizeStateRef;
     }
 
-    public String getDiskState()
+    public @Nullable String getDiskState()
     {
         return diskState;
     }
@@ -182,7 +182,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         return null;
     }
 
-    public byte[] getDecryptedPassword()
+    public @Nullable byte[] getDecryptedPassword()
     {
         return decryptedPassword;
     }
@@ -203,7 +203,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getIdentifier()
+    public @Nullable String getIdentifier()
     {
         return identifier;
     }

@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -36,7 +37,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -104,7 +104,7 @@ public abstract class AbsRscLayerHelper<
      * If the resource definition already has such an object, it depends on the layer whether the
      * content can be merged / updated or not.
      */
-    public RSC_DFN_LO ensureResourceDefinitionExists(
+    public @Nullable RSC_DFN_LO ensureResourceDefinitionExists(
         ResourceDefinition rscDfn,
         String rscNameSuffix,
         LayerPayload payload
@@ -180,7 +180,7 @@ public abstract class AbsRscLayerHelper<
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        AbsRscLayerObject<Resource> parentObjectRef,
+        @Nullable AbsRscLayerObject<Resource> parentObjectRef,
         List<DeviceLayerKind> layerList,
         Set<LayerIgnoreReason> ignoreReasonsRef
     )
@@ -364,7 +364,7 @@ public abstract class AbsRscLayerHelper<
     }
 
     private boolean addIgnoreReasonRec(
-        AbsRscLayerObject<Resource> rscDataRef,
+        @Nullable AbsRscLayerObject<Resource> rscDataRef,
         LayerIgnoreReason ignoreReasonRef,
         Predicate<AbsRscLayerObject<Resource>> setIgnoreReasonForRscDataPredicateRef,
         HashSet<AbsRscLayerObject<Resource>> visitedRef
@@ -436,7 +436,7 @@ public abstract class AbsRscLayerHelper<
     public <RSC extends AbsResource<RSC>> RSC_LO restoreFromAbsRsc(
         Resource rsc,
         AbsRscLayerObject<RSC> fromAbsRscDataRef,
-        AbsRscLayerObject<Resource> rscParentRef,
+        @Nullable AbsRscLayerObject<Resource> rscParentRef,
         Map<String, String> storpoolRenameMap,
         @Nullable ApiCallRc apiCallRc
     )
@@ -503,7 +503,7 @@ public abstract class AbsRscLayerHelper<
         return rscData;
     }
 
-    private <RSC extends AbsResource<RSC>> RSC_DFN_LO ensureResourceDefinitionDataCopiedFromAbsRsc(
+    private <RSC extends AbsResource<RSC>> @Nullable RSC_DFN_LO ensureResourceDefinitionDataCopiedFromAbsRsc(
         ResourceDefinition rscDfn,
         AbsRscLayerObject<RSC> fromAbsRscData
     )
@@ -577,7 +577,7 @@ public abstract class AbsRscLayerHelper<
      * @throws InvalidNameException
      */
     @SuppressWarnings("unused") // exceptions needed by implementations
-    public StorPool getStorPool(Volume vlmRef, AbsRscLayerObject<Resource> rscDataRef)
+    public @Nullable StorPool getStorPool(Volume vlmRef, AbsRscLayerObject<Resource> rscDataRef)
         throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         return null;
@@ -634,7 +634,7 @@ public abstract class AbsRscLayerHelper<
         ExhaustedPoolException, ValueOutOfRangeException;
 
 
-    protected abstract RSC_DFN_LO createRscDfnData(
+    protected abstract @Nullable RSC_DFN_LO createRscDfnData(
         ResourceDefinition rscDfn,
         String rscNameSuffix,
         LayerPayload payload
@@ -729,7 +729,7 @@ public abstract class AbsRscLayerHelper<
 
     // abstract methods used for restoring data from snapshot
 
-    protected abstract <RSC extends AbsResource<RSC>> RSC_DFN_LO restoreRscDfnData(
+    protected abstract <RSC extends AbsResource<RSC>> @Nullable RSC_DFN_LO restoreRscDfnData(
         ResourceDefinition rscDfn,
         AbsRscLayerObject<RSC> fromAbsRscData
     )

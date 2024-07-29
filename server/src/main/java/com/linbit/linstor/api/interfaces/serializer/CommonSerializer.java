@@ -15,7 +15,7 @@ import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -91,7 +91,7 @@ public interface CommonSerializer
             boolean withContent,
             Date since,
             Date to,
-            Set<String> ids,
+            @Nonnull Set<String> ids,
             Long limit,
             Long offset
         );

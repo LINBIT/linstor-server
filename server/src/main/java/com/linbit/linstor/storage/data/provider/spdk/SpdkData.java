@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider.spdk;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SpdkVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -17,7 +18,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -27,8 +27,8 @@ public class SpdkData<RSC extends AbsResource<RSC>>
     implements SpdkProviderObject<RSC>
 {
     // not persisted, not serialized, stlt only
-    private transient String volumeGroup;
-    private String spdkPath;
+    private transient @Nullable String volumeGroup;
+    private @Nullable String spdkPath;
 
     public SpdkData(
         AbsVolume<RSC> vlmRef,
@@ -65,7 +65,7 @@ public class SpdkData<RSC extends AbsResource<RSC>>
         volumeGroup = null; // force SpdkProvider to repeat the lookup using the new storage pool
     }
 
-    public String getVolumeGroup()
+    public @Nullable String getVolumeGroup()
     {
         return volumeGroup;
     }
@@ -92,12 +92,12 @@ public class SpdkData<RSC extends AbsResource<RSC>>
         );
     }
 
-    public void setSpdkPath(String pathRef)
+    public void setSpdkPath(@Nullable String pathRef)
     {
         spdkPath = pathRef;
     }
 
-    public String getSpdkPath()
+    public @Nullable String getSpdkPath()
     {
         return spdkPath;
     }

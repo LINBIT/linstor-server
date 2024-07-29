@@ -1,6 +1,7 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.propscon.PropsContainer.EntrySet;
 import com.linbit.linstor.security.GenericDbBase;
 
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_AMOUNT;
@@ -46,7 +47,7 @@ public class PropsContainerTest extends GenericDbBase
     private PropsContainer root;
     private Map<String, String> rootMap;
     private Set<String> rootKeySet;
-    private Set<Entry<String, String>> rootEntrySet;
+    private PropsContainer.EntrySet rootEntrySet;
     private Collection<String> rootValues;
 
     @Before
@@ -59,7 +60,7 @@ public class PropsContainerTest extends GenericDbBase
         fillProps(root, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
         rootMap = root.map();
-        rootEntrySet = root.entrySet();
+        rootEntrySet = (EntrySet) root.entrySet();
         rootKeySet = root.keySet();
         rootValues = root.values();
     }

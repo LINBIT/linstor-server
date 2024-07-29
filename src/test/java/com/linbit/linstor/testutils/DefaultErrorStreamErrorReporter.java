@@ -66,12 +66,16 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     }
 
     @Override
-    public String reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+    public String reportError(Throwable errorInfo, @Nullable AccessContext accCtx, Peer client, String contextInfo)
     {
-        System.err.println("AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
-            "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
-            "        Role          :" + accCtx.subjectRole.name.value
-        );
+        if (accCtx != null)
+        {
+            System.err.println(
+                "AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
+                    "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
+                    "        Role          :" + accCtx.subjectRole.name.value
+            );
+        }
         System.err.println("Peer id: " + client);
         System.err.println(contextInfo);
         errorInfo.printStackTrace(System.err);
@@ -83,15 +87,19 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     public String reportError(
         Level logLevel,
         Throwable errorInfo,
-        AccessContext accCtx,
+        @Nullable AccessContext accCtx,
         Peer client,
         String contextInfo
     )
     {
-        System.err.println("AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
-            "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
-            "        Role          :" + accCtx.subjectRole.name.value
-        );
+        if (accCtx != null)
+        {
+            System.err.println(
+                "AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
+                    "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
+                    "        Role          :" + accCtx.subjectRole.name.value
+            );
+        }
         System.err.println("Peer id: " + client);
         System.err.println(contextInfo);
         errorInfo.printStackTrace(System.err);
@@ -103,15 +111,19 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     public String reportProblem(
         Level logLevel,
         LinStorException errorInfo,
-        AccessContext accCtx,
+        @Nullable AccessContext accCtx,
         Peer client,
         String contextInfo
     )
     {
-        System.err.println("AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
-            "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
-            "        Role          :" + accCtx.subjectRole.name.value
-        );
+        if (accCtx != null)
+        {
+            System.err.println(
+                "AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
+                    "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
+                    "        Role          :" + accCtx.subjectRole.name.value
+            );
+        }
         System.err.println("Peer id: " + client);
         System.err.println(contextInfo);
         errorInfo.printStackTrace(System.err);

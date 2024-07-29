@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -14,7 +15,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.util.Arrays;
@@ -94,7 +94,7 @@ public class S3Remote extends AbsRemote
     }
 
     @Override
-    public int compareTo(@Nonnull AbsRemote remote)
+    public int compareTo(AbsRemote remote)
     {
         int cmp = remote.getClass().getSimpleName().compareTo(S3Remote.class.getSimpleName());
         if (cmp == 0)
@@ -257,7 +257,8 @@ public class S3Remote extends AbsRemote
         return RemoteType.S3;
     }
 
-    public S3RemotePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId) throws AccessDeniedException
+    public S3RemotePojo getApiData(AccessContext accCtx, @Nullable Long fullSyncId, @Nullable Long updateId)
+        throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);

@@ -9,6 +9,7 @@ import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -59,7 +60,6 @@ import com.linbit.linstor.utils.NameShortener;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -121,7 +121,7 @@ public class RscStorageLayerHelper extends
     }
 
     @Override
-    protected RscDfnLayerObject createRscDfnData(
+    protected @Nullable RscDfnLayerObject createRscDfnData(
         ResourceDefinition rscDfnRef,
         String rscNameSuffixRef,
         LayerPayload payloadRef
@@ -138,7 +138,7 @@ public class RscStorageLayerHelper extends
     }
 
     @Override
-    protected VlmDfnLayerObject createVlmDfnData(
+    protected @Nullable VlmDfnLayerObject createVlmDfnData(
         VolumeDefinition vlmDfnRef,
         String rscNameSuffixRef,
         LayerPayload payloadRef
@@ -400,7 +400,7 @@ public class RscStorageLayerHelper extends
         return vlmData;
     }
 
-    public static String getEbsVlmId(
+    public static @Nullable String getEbsVlmId(
         AccessContext accCtxRef,
         StorageRscData<Resource> rscDataRef,
         Volume vlmRef
@@ -410,7 +410,7 @@ public class RscStorageLayerHelper extends
         return getEbsVlmId(accCtxRef, rscDataRef.getResourceNameSuffix(), vlmRef);
     }
 
-    private static String getEbsVlmId(
+    private static @Nullable String getEbsVlmId(
         AccessContext accCtxRef,
         String rscNameSuffix,
         Volume vlmRef
@@ -764,7 +764,7 @@ public class RscStorageLayerHelper extends
     }
 
     @Override
-    protected <RSC extends AbsResource<RSC>> RscDfnLayerObject restoreRscDfnData(
+    protected <RSC extends AbsResource<RSC>> @Nullable RscDfnLayerObject restoreRscDfnData(
         ResourceDefinition rscDfnRef,
         AbsRscLayerObject<RSC> fromSnapDataRef
     )
@@ -774,7 +774,7 @@ public class RscStorageLayerHelper extends
     }
 
     @Override
-    protected <RSC extends AbsResource<RSC>> VlmDfnLayerObject restoreVlmDfnData(
+    protected <RSC extends AbsResource<RSC>> @Nullable VlmDfnLayerObject restoreVlmDfnData(
         VolumeDefinition vlmDfnRef,
         VlmProviderObject<RSC> fromSnapVlmDataRef
     )

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.exos;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.ExosEnclosureHealthPojo;
@@ -15,7 +16,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 import com.linbit.linstor.utils.PropsUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -85,7 +85,7 @@ public class ExosEnclosurePingTask implements Task
         }
     }
 
-    public ExosRestClient getClient(String enclosureName)
+    public @Nullable ExosRestClient getClient(String enclosureName)
     {
         ExosRestClient ret = null;
 
@@ -193,8 +193,8 @@ public class ExosEnclosurePingTask implements Task
         String ctrlAIp;
         String ctrlBIp;
 
-        ExosRestSystemCollection system;
-        StorageException exception;
+        @Nullable ExosRestSystemCollection system;
+        @Nullable StorageException exception;
 
         final ExosRestClient client;
 

@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -243,11 +244,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     public Flux<ApiCallRc> resourceToggleDisk(
         String nodeNameStr,
         String rscNameStr,
-        String storPoolNameStr,
-        String migrateFromNodeNameStr,
-        List<String> layerListRef,
+        @Nullable String storPoolNameStr,
+        @Nullable String migrateFromNodeNameStr,
+        @Nullable List<String> layerListRef,
         boolean removeDisk,
-        Resource.DiskfulBy diskfulByRef
+        @Nullable Resource.DiskfulBy diskfulByRef
     )
     {
         return resourceToggleDisk(
@@ -265,11 +266,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     public Flux<ApiCallRc> resourceToggleDisk(
         String nodeNameStr,
         String rscNameStr,
-        String storPoolNameStr,
-        String migrateFromNodeNameStr,
-        List<String> layerListRef,
+        @Nullable String storPoolNameStr,
+        @Nullable String migrateFromNodeNameStr,
+        @Nullable List<String> layerListRef,
         boolean removeDisk,
-        Resource.DiskfulBy diskfulByRef,
+        @Nullable Resource.DiskfulBy diskfulByRef,
         boolean toggleIntoTiebreakerRef
     )
     {
@@ -301,11 +302,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private Flux<ApiCallRc> toggleDiskInTransaction(
         String nodeNameStr,
         String rscNameStr,
-        String storPoolNameStr,
-        String migrateFromNodeNameStr,
-        List<String> layerListStr,
+        @Nullable String storPoolNameStr,
+        @Nullable String migrateFromNodeNameStr,
+        @Nullable List<String> layerListStr,
         boolean removeDisk,
-        Resource.DiskfulBy diskfulByRef,
+        @Nullable Resource.DiskfulBy diskfulByRef,
         boolean toggleIntoTiebreakerRef,
         ResponseContext context
     )

@@ -1,5 +1,7 @@
 package com.linbit.linstor.layer.storage.exos.rest.responses;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -8,10 +10,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ExosRestMaps extends ExosRestBaseResponse
 {
     @JsonProperty("volume-group-view")
-    public ExosVolumeGroupView[] volumeGroupView;
+    public @Nullable ExosVolumeGroupView[] volumeGroupView;
 
     @JsonProperty("volume-view")
-    public ExosVolumeView[] volumeView;
+    public @Nullable ExosVolumeView[] volumeView;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ExosVolumeGroupView
@@ -23,56 +25,56 @@ public class ExosRestMaps extends ExosRestBaseResponse
     public static class ExosVolumeView
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("durable-id")
-        public String durableId;
+        public @Nullable String durableId;
 
         @JsonProperty("volume-serial")
-        public String volumeSerial;
+        public @Nullable String volumeSerial;
 
         @JsonProperty("volume-name")
-        public String volumeName;
+        public @Nullable String volumeName;
 
         @JsonProperty("volume-view-mapping")
-        public ExosVolumeViewMapping[] volumeViewMappings;
+        public @Nullable ExosVolumeViewMapping[] volumeViewMappings;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public class ExosVolumeViewMapping
     {
         @JsonProperty("object-name")
-        public String objectName;
+        public @Nullable String objectName;
 
         @JsonProperty("durable-id")
-        public String durableId;
+        public @Nullable String durableId;
 
         @JsonProperty("parent-id")
-        public String parentId;
+        public @Nullable String parentId;
 
         @JsonProperty("mapped-id")
-        public String mappedId;
+        public @Nullable String mappedId;
 
         @JsonProperty("ports")
-        public String ports;
+        public @Nullable String ports;
 
         @JsonProperty("lun")
-        public String lun;
+        public @Nullable String lun;
 
         @JsonProperty("access")
-        public String access;
+        public @Nullable String access;
 
         @JsonProperty("access-numeric")
         public long accessNumeric;
 
         @JsonProperty("identifier")
-        public String identifier;
+        public @Nullable String identifier;
 
         @JsonProperty("nickname")
-        public String nickname;
+        public @Nullable String nickname;
 
         @JsonProperty("host-profile")
-        public String hostProfile;
+        public @Nullable String hostProfile;
 
         @JsonProperty("host-profile-numeric")
         public long hostProfileNumeric;

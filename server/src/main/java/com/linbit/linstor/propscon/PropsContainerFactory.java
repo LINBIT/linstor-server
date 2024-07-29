@@ -1,6 +1,7 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver;
@@ -25,7 +26,7 @@ public class PropsContainerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public PropsContainer getInstance(String instanceName, String description, LinStorObject type)
+    public PropsContainer getInstance(String instanceName, @Nullable String description, LinStorObject type)
         throws DatabaseException
     {
         PropsContainer container = create(instanceName, description, type);
@@ -42,7 +43,7 @@ public class PropsContainerFactory
         return container;
     }
 
-    public PropsContainer create(String instanceName, String description, LinStorObject type)
+    public PropsContainer create(@Nullable String instanceName, @Nullable String description, LinStorObject type)
     {
         PropsContainer container;
         try

@@ -1,17 +1,19 @@
 package com.linbit.utils;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.Objects;
 
 public class Pair<A, B> implements Comparable<Pair<A, B>>
 {
-    public A objA;
-    public B objB;
+    public @Nullable A objA;
+    public @Nullable B objB;
 
     public Pair()
     {
     }
 
-    public Pair(A aRef, B bRef)
+    public Pair(@Nullable A aRef, @Nullable B bRef)
     {
         objA = aRef;
         objB = bRef;

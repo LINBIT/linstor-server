@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -55,8 +56,8 @@ public class NodeControllerFactory
     public Node create(
         AccessContext accCtx,
         NodeName nameRef,
-        Node.Type type,
-        Node.Flags[] flags
+        @Nullable Node.Type type,
+        @Nullable Node.Flags[] flags
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {

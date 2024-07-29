@@ -5,6 +5,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.cfg.StltConfig;
@@ -44,7 +45,7 @@ public final class SatelliteNetComInitializer
     private final Map<ServiceName, SystemService> systemServicesMap;
     private final StltConfig stltCfg;
 
-    public TcpConnector netComSvc;
+    public @Nullable TcpConnector netComSvc;
 
     @Inject
     public SatelliteNetComInitializer(

@@ -2,6 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 
 /**
  * Access types
@@ -61,7 +62,7 @@ public enum AccessType
      * @param second Second AccessType, or null to indicate no access
      * @return AccessType resulting from combining the level of access of both arguments to the method
      */
-    public static AccessType union(AccessType first, AccessType second)
+    public static AccessType union(@Nullable AccessType first, @Nullable AccessType second)
     {
         AccessType result = null;
         if (first == null)
@@ -149,7 +150,7 @@ public enum AccessType
      * @param mask Access mask value
      * @return AccessType associated with the specified access mask value
      */
-    private static AccessType getAccessByMask(long mask)
+    private static @Nullable AccessType getAccessByMask(long mask)
     {
         AccessType result = null;
         if ((mask & CONTROL.accessMask) == CONTROL.accessMask)

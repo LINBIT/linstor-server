@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.sql.Connection;
 
@@ -22,7 +23,7 @@ public abstract class LinstorMigration extends AbsMigration implements JavaMigra
 {
     public static final String PLACEHOLDER_KEY_DB_TYPE = "dbType";
 
-    private String dbType;
+    private @Nullable String dbType;
 
     @Override
     public MigrationVersion getVersion()
@@ -66,7 +67,7 @@ public abstract class LinstorMigration extends AbsMigration implements JavaMigra
         migrate(context.getConnection(), dbProduct);
     }
 
-    protected String getDbType()
+    protected @Nullable String getDbType()
     {
         // FIXME: May want to use DatabaseInfo.DbProduct instead in the future
         return dbType;

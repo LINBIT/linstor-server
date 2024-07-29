@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcWith;
@@ -23,7 +24,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -329,7 +329,7 @@ public class CtrlQuerySizeInfoHelper
         }
     }
 
-    private <T> Pair<T, Double> getCached(
+    private <T> @Nullable Pair<T, Double> getCached(
         Map<AutoSelectFilterPojo, CacheEntry<T>> cachedMapRef,
         int ignoreCacheOlderThanSecRef,
         @Nullable AutoSelectFilterApi autoSelectFilterRef

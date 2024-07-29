@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -60,7 +61,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -204,14 +204,14 @@ public class LayerDataFactory
 
     public <RSC extends AbsResource<RSC>> DrbdRscDfnData<RSC> createDrbdRscDfnData(
         ResourceName rscName,
-        SnapshotName snapName,
+        @Nullable SnapshotName snapName,
         String resourceNameSuffix,
         short peerSlots,
         int alStripes,
         long alStripeSize,
         Integer portInt,
         TransportType transportType,
-        String secret
+        @Nullable String secret
     )
         throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
@@ -239,10 +239,10 @@ public class LayerDataFactory
     public <RSC extends AbsResource<RSC>> DrbdVlmDfnData<RSC> createDrbdVlmDfnData(
         VolumeDefinition vlmDfn,
         ResourceName rscName,
-        SnapshotName snapName,
+        @Nullable SnapshotName snapName,
         String resourceNameSuffix,
         VolumeNumber vlmNr,
-        Integer minorNrInt,
+        @Nullable Integer minorNrInt,
         DrbdRscDfnData<RSC> drbdRscDfnData
     )
         throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
@@ -265,7 +265,7 @@ public class LayerDataFactory
 
     public <RSC extends AbsResource<RSC>> DrbdVlmData<RSC> createDrbdVlmData(
         AbsVolume<RSC> vlm,
-        StorPool extMetaStorPool,
+        @Nullable StorPool extMetaStorPool,
         DrbdRscData<RSC> rscData,
         DrbdVlmDfnData<RSC> vlmDfnData
     )
@@ -309,7 +309,7 @@ public class LayerDataFactory
         int rscLayerId,
         RSC rsc,
         String rscNameSuffix,
-        AbsRscLayerObject<RSC> parentData
+        @Nullable AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
@@ -351,7 +351,7 @@ public class LayerDataFactory
 
     public <RSC extends AbsResource<RSC>> StorageRscData<RSC> createStorageRscData(
         int rscLayerId,
-        AbsRscLayerObject<RSC> parentRscData,
+        @Nullable AbsRscLayerObject<RSC> parentRscData,
         RSC rsc,
         String rscNameSuffix
     )
@@ -377,7 +377,7 @@ public class LayerDataFactory
         int rscLayerId,
         RSC rsc,
         String rscNameSuffix,
-        AbsRscLayerObject<RSC> parentData
+        @Nullable AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
@@ -415,7 +415,7 @@ public class LayerDataFactory
         int rscLayerId,
         RSC rsc,
         String rscNameSuffix,
-        AbsRscLayerObject<RSC> parentData
+        @Nullable AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
@@ -438,7 +438,7 @@ public class LayerDataFactory
 
     public <RSC extends AbsResource<RSC>> WritecacheVlmData<RSC> createWritecacheVlmData(
         AbsVolume<RSC> vlm,
-        StorPool cacheStorPool,
+        @Nullable StorPool cacheStorPool,
         WritecacheRscData<RSC> rscData
     )
         throws DatabaseException
@@ -458,7 +458,7 @@ public class LayerDataFactory
         int rscLayerId,
         RSC rsc,
         String rscNameSuffix,
-        AbsRscLayerObject<RSC> parentData
+        @Nullable AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
@@ -481,8 +481,8 @@ public class LayerDataFactory
 
     public <RSC extends AbsResource<RSC>> CacheVlmData<RSC> createCacheVlmData(
         AbsVolume<RSC> vlm,
-        StorPool cacheStorPool,
-        StorPool metaStorPool,
+        @Nullable StorPool cacheStorPool,
+        @Nullable StorPool metaStorPool,
         CacheRscData<RSC> rscData
     )
         throws DatabaseException
@@ -503,7 +503,7 @@ public class LayerDataFactory
         int rscLayerId,
         RSC rsc,
         String rscNameSuffix,
-        AbsRscLayerObject<RSC> parentData
+        @Nullable AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
@@ -526,7 +526,7 @@ public class LayerDataFactory
 
     public <RSC extends AbsResource<RSC>> BCacheVlmData<RSC> createBCacheVlmData(
         AbsVolume<RSC> vlm,
-        StorPool cacheStorPool,
+        @Nullable StorPool cacheStorPool,
         BCacheRscData<RSC> rscData
     )
         throws DatabaseException

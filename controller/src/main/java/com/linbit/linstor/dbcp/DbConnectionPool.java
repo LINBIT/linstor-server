@@ -12,6 +12,7 @@ import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.ClassPathLoader;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
@@ -78,10 +79,10 @@ public class DbConnectionPool implements ControllerSQLDatabase
     private static final int DEFAULT_MAX_IDLE_CONNECTIONS = 100;
     private static final int DEFAULT_IDLE_TIMEOUT = 1 * 60 * 60 * 1000; // 1 hour in ms
 
-    private PoolingDataSource<PoolableConnection> dataSource = null;
+    private @Nullable PoolingDataSource<PoolableConnection> dataSource = null;
 
     private ServiceName serviceNameInstance;
-    private String dbConnectionUrl;
+    private @Nullable String dbConnectionUrl;
     private final AtomicBoolean atomicStarted = new AtomicBoolean(false);
 
     private final ThreadLocal<List<Connection>> threadLocalConnections;
@@ -185,7 +186,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
     }
 
     @Override
-    public void returnConnection(Connection dbConn)
+    public void returnConnection(@Nullable Connection dbConn)
     {
         try
         {

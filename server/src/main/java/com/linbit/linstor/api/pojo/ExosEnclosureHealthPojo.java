@@ -1,22 +1,22 @@
 package com.linbit.linstor.api.pojo;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 @Deprecated(forRemoval = true)
 public class ExosEnclosureHealthPojo implements Comparable<ExosEnclosureHealthPojo>
 {
     private final String enclosureName;
     private final String ctrlAIp;
-    private final String ctrlBIp;
-    private final String health;
-    private final String healthReason;
+    private final @Nullable String ctrlBIp;
+    private final @Nullable String health;
+    private final @Nullable String healthReason;
 
     public ExosEnclosureHealthPojo(
         final String enclosureNameRef,
         final String ctrlAIpRef,
         @Nullable final String ctrlBIpRef,
-        final String healthRef,
-        final String healthReasonRef
+        @Nullable final String healthRef,
+        @Nullable final String healthReasonRef
     )
     {
         enclosureName = enclosureNameRef;
@@ -36,17 +36,17 @@ public class ExosEnclosureHealthPojo implements Comparable<ExosEnclosureHealthPo
         return ctrlAIp;
     }
 
-    public String getCtrlBIp()
+    public @Nullable String getCtrlBIp()
     {
         return ctrlBIp;
     }
 
-    public String getHealth()
+    public @Nullable String getHealth()
     {
         return health;
     }
 
-    public String getHealthReason()
+    public @Nullable String getHealthReason()
     {
         return healthReason;
     }

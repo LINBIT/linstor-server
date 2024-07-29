@@ -5,6 +5,7 @@ import com.linbit.crypto.KeyDerivation;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerSQLDatabase;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 
 import java.util.Arrays;
@@ -44,11 +45,11 @@ public final class Authentication
         return GLOBAL_AUTH_REQUIRED.get();
     }
 
-    public static void setRequired(
+    public static <T extends ControllerDatabase> void setRequired(
         AccessContext accCtx,
         boolean newPolicy,
-        ControllerDatabase ctrlDb,
-        DbAccessor secDb
+        @Nullable T ctrlDb,
+        @Nullable DbAccessor<T> secDb
     )
         throws AccessDeniedException, DatabaseException
     {

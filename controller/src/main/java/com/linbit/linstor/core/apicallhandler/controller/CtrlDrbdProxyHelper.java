@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -47,11 +48,11 @@ public class CtrlDrbdProxyHelper
     }
 
     public ResourceConnection enableProxy(
-        UUID rscConnUuid,
+        @Nullable UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscNameStr,
-        Integer port
+        @Nullable Integer port
     )
     {
         ResourceConnection rscConn = ctrlRscConnectionHelper.loadOrCreateRscConn(

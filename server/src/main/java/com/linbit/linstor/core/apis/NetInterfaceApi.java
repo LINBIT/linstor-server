@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apis;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.UUID;
 
 public interface NetInterfaceApi
@@ -10,6 +12,9 @@ public interface NetInterfaceApi
 
     boolean isUsableAsSatelliteConnection();
 
-    int getSatelliteConnectionPort();
+    @Nullable
+    Integer getSatelliteConnectionPort();
+
+    @Nullable
     String getSatelliteConnectionEncryptionType();
 }

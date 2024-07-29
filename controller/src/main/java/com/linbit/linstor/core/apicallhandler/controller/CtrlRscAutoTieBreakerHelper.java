@@ -73,6 +73,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 {
+    private static final Autoplacer.StorPoolWithScore[] NO_SORTED_SPS = new Autoplacer.StorPoolWithScore[0];
     private final SystemConfRepository systemConfRepository;
     private final CtrlRscLayerDataFactory layerDataHelper;
     private final CtrlRscCrtApiHelper rscCrtApiHelper;
@@ -428,7 +429,7 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         }
     }
 
-    private Resource getTieBreaker(ResourceDefinition rscDfn)
+    private @Nullable Resource getTieBreaker(ResourceDefinition rscDfn)
     {
         Resource tieBreaker = null;
         try
@@ -536,7 +537,7 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
             0,
             Collections.emptyList(),
             Collections.emptyMap(),
-            null,
+            NO_SORTED_SPS,
             false // not that it matters for tiebreaker selection
         );
 
@@ -575,7 +576,10 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         );
     }
 
-    private StorPool getStorPoolForTieBreaker(AutoHelperContext ctx, @Nullable Collection<Node> nodesToChooseFromRef)
+    private @Nullable StorPool getStorPoolForTieBreaker(
+        AutoHelperContext ctx,
+        @Nullable Collection<Node> nodesToChooseFromRef
+    )
     {
         StorPool storPool = null;
 

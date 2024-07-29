@@ -7,6 +7,7 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.ClassPathLoader;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.DbUtils;
@@ -23,7 +24,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -59,9 +59,9 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     private final CtrlConfig ctrlCfg;
     private final Provider<ControllerK8sCrdDatabase> controllerDatabaseProvider;
 
-    private KubernetesClient k8sClient;
+    private @Nullable KubernetesClient k8sClient;
 
-    private HashMap<Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>>, K8sResourceClient<?>> k8sCachingClient;
+    private @Nullable HashMap<Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>>, K8sResourceClient<?>> k8sCachingClient;
 
     static
     {

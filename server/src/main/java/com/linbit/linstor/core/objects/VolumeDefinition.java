@@ -7,6 +7,7 @@ import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -348,7 +349,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends VlmDfnLayerObject> T getLayerData(
+    public <T extends VlmDfnLayerObject> @Nullable T getLayerData(
         AccessContext accCtx,
         DeviceLayerKind kind,
         String rscNameSuffix

@@ -9,7 +9,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;

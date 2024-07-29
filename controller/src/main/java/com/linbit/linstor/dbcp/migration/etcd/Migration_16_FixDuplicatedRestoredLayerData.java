@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
@@ -140,10 +141,10 @@ public class Migration_16_FixDuplicatedRestoredLayerData extends BaseEtcdMigrati
 
     private static class LriKey
     {
-        String nodeName;
-        String rscName;
-        String snapName;
-        String kind;
+        @Nullable String nodeName;
+        @Nullable String rscName;
+        @Nullable String snapName;
+        @Nullable String kind;
 
         LriKey()
         {

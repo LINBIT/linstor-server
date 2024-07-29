@@ -1,9 +1,8 @@
 package com.linbit.linstor.core.pojos;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.interfaces.StorPoolInfo;
-
-import javax.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;

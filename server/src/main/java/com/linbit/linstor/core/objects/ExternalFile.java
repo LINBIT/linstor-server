@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -182,8 +183,8 @@ public class ExternalFile extends AbsCoreObj<ExternalFile> implements ProtectedO
 
     public ExternalFilePojo getApiData(
         AccessContext accCtx,
-        Long fullSyncId,
-        Long updateId
+        @Nullable Long fullSyncId,
+        @Nullable Long updateId
     )
         throws AccessDeniedException
     {

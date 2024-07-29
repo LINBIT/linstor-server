@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
@@ -16,6 +17,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,7 +58,7 @@ public class KeyValueStore
     @Path("{instance}")
     public Response listKVStore(
         @Context Request request,
-        @PathParam("instance") String instanceName
+        @PathParam("instance") @Nullable String instanceName
     )
     {
         return requestHelper.doInScope(ApiConsts.API_LST_KVS, request, () ->

@@ -3,6 +3,8 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nonnull;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
@@ -26,7 +28,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.BidirectionalMultiMap;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -237,7 +238,7 @@ public class BackupInfoManager
     /**
      * get a copy of all the restore-related snapshots that need to be aborted of a specific rscDfn
      */
-    public Set<Snapshot> abortRestoreGetEntries(String rscNameStr)
+    public @Nullable Set<Snapshot> abortRestoreGetEntries(String rscNameStr)
     {
         try
         {
@@ -407,7 +408,7 @@ public class BackupInfoManager
     /**
      * get a copy of the abort-information to use it
      */
-    public Map<SnapshotDefinition.Key, AbortInfo> abortCreateGetEntries(NodeName nodeName)
+    public @Nullable Map<SnapshotDefinition.Key, AbortInfo> abortCreateGetEntries(NodeName nodeName)
     {
         synchronized (abortCreateMap)
         {
@@ -434,7 +435,7 @@ public class BackupInfoManager
     /**
      * get the successor of the given snapshot and delete the entry
      */
-    public Snapshot getNextBackupToDownload(Snapshot snap)
+    public @Nullable Snapshot getNextBackupToDownload(Snapshot snap)
     {
         synchronized (restoreSyncObj)
         {
@@ -540,7 +541,7 @@ public class BackupInfoManager
         }
     }
 
-    public BackupShippingSrcData removeL2LSrcData(
+    public @Nullable BackupShippingSrcData removeL2LSrcData(
         RemoteName linstorRemoteName,
         RemoteName stltRemoteName
     )
@@ -669,7 +670,8 @@ public class BackupInfoManager
      * Return the next snapDfn from the queue of the given node and remove it from all queues it was in (including the
      * given node's)
      */
-    public QueueItem getNextFromQueue(AccessContext accCtx, Node node, boolean consume) throws AccessDeniedException
+    public @Nullable QueueItem getNextFromQueue(AccessContext accCtx, Node node, boolean consume)
+        throws AccessDeniedException
     {
         QueueItem ret = null;
         synchronized (uploadQueues)
@@ -800,18 +802,28 @@ public class BackupInfoManager
         }
     }
 
-    public QueueItem getItemFromPrevNodeUndecidedQueue(SnapshotDefinition snapDfn, AbsRemote remote)
+    public @Nullable QueueItem getItemFromPrevNodeUndecidedQueue(SnapshotDefinition snapDfn, AbsRemote remote)
     {
         synchronized (uploadQueues)
         {
             QueueItem ret = null;
             for (QueueItem item : prevNodeUndecidedQueue)
             {
-                // this list CANNOT contain items where prevSnapDfn == null
-                if (!item.prevSnapDfn.isDeleted() && item.prevSnapDfn.equals(snapDfn) && item.remote.equals(remote))
+                // this list SHOULD NOT contain items where prevSnapDfn == null
+                final SnapshotDefinition prevSnap = item.prevSnapDfn;
+                if (prevSnap != null)
                 {
-                    ret = item;
-                    break;
+                    if (!prevSnap.isDeleted() && prevSnap.equals(snapDfn) && item.remote.equals(remote))
+                    {
+                        ret = item;
+                        break;
+                    }
+                }
+                else
+                {
+                    throw new ImplementationError(
+                        "prevNodeUndecidedQueue is not allowed to contain items where prevSnapDfn is null"
+                    );
                 }
             }
             if (ret != null)
@@ -837,9 +849,10 @@ public class BackupInfoManager
                 QueueItem item = entry.getKey();
                 // TODO: for optimizing when snaps get started, the isDeleted check in this method is a good starting
                 // point, since those that trigger this check will never be started by a getFollowUpSnaps call.
+                SnapshotDefinition prevSnapDfn = item.prevSnapDfn;
                 if (
-                    item.remote.equals(remote) && item.prevSnapDfn != null &&
-                        !item.prevSnapDfn.isDeleted() && item.prevSnapDfn.equals(snapDfn)
+                    item.remote.equals(remote) && prevSnapDfn != null &&
+                        !prevSnapDfn.isDeleted() && prevSnapDfn.equals(snapDfn)
                 )
                 {
                     ret.put(item, new TreeSet<>(entry.getValue()));
@@ -873,7 +886,7 @@ public class BackupInfoManager
      * Returns null if cleanup can not be started
      * if srcSuccessRef is false, this method will ignore the finishedCount and return the cleanup data anyways
      */
-    public CleanupData l2lShippingFinished(StltRemote remote, boolean srcSuccessRef)
+    public @Nullable CleanupData l2lShippingFinished(StltRemote remote, boolean srcSuccessRef)
     {
         synchronized (cleanupDataMap)
         {
@@ -903,7 +916,7 @@ public class BackupInfoManager
     public class QueueItem implements Comparable<QueueItem>
     {
         public final SnapshotDefinition snapDfn;
-        public final AbsRemote remote;
+        public final @Nonnull AbsRemote remote;
         /* if prevSnapDfn is null, it means a full backup should be made */
         public @Nullable SnapshotDefinition prevSnapDfn;
         public final @Nullable String preferredNode;
@@ -916,10 +929,10 @@ public class BackupInfoManager
 
         private QueueItem(
             SnapshotDefinition snapDfnRef,
-            AbsRemote remoteRef,
-            SnapshotDefinition prevSnapDfnRef,
-            String preferredNodeRef,
-            BackupShippingSrcData l2lDataRef
+            @Nonnull AbsRemote remoteRef,
+            @Nullable SnapshotDefinition prevSnapDfnRef,
+            @Nullable String preferredNodeRef,
+            @Nullable BackupShippingSrcData l2lDataRef
         )
         {
             snapDfn = snapDfnRef;
@@ -941,8 +954,8 @@ public class BackupInfoManager
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((remote == null) ? 0 : remote.hashCode());
-            result = prime * result + ((snapDfn == null) ? 0 : snapDfn.hashCode());
+            result = prime * result + remote.hashCode();
+            result = prime * result + snapDfn.hashCode();
             return result;
         }
 
@@ -1063,7 +1076,7 @@ public class BackupInfoManager
     public static class CleanupData
     {
         public final BackupShippingSrcData data;
-        private StltRemoteCleanupTask task;
+        private @Nullable StltRemoteCleanupTask task;
         private int finishedCount = 0;
 
         private CleanupData(BackupShippingSrcData dataRef)
@@ -1071,7 +1084,7 @@ public class BackupInfoManager
             data = dataRef;
         }
 
-        public StltRemoteCleanupTask getTask()
+        public @Nullable StltRemoteCleanupTask getTask()
         {
             return task;
         }

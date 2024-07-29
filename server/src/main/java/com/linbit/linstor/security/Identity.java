@@ -2,6 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +75,7 @@ public final class Identity implements Comparable<Identity>
         return idObj;
     }
 
-    public static Identity get(IdentityName idName)
+    public static @Nullable Identity get(IdentityName idName)
     {
         Lock readLock = GLOBAL_IDENTITY_MAP_LOCK.readLock();
 

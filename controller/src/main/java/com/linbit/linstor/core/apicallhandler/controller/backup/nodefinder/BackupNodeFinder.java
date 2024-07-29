@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.backup.nodefinder;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -36,7 +37,6 @@ import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -461,7 +461,7 @@ public class BackupNodeFinder
     /**
      * Checks if the given ext-tool is supported and returns an error-rc instead of throwing an exception if not.
      */
-    private ApiCallRcEntry getErrorRcIfNotSupported(
+    private @Nullable ApiCallRcEntry getErrorRcIfNotSupported(
         DeviceProviderKind deviceProviderKind,
         ExtToolsManager extToolsManagerRef,
         ExtTools extTool,

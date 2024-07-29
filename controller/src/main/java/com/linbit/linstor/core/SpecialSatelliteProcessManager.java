@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -124,7 +125,7 @@ public class SpecialSatelliteProcessManager
         }
     }
 
-    private Path getSatellitePath()
+    private @Nullable Path getSatellitePath()
     {
         URL uLoc = getClass().getProtectionDomain().getCodeSource().getLocation();
         Path satellitePath = null;
@@ -133,7 +134,11 @@ public class SpecialSatelliteProcessManager
             Path sourcePath = Paths.get(uLoc.toURI());
             if (sourcePath.toString().endsWith(".jar"))
             {
-                satellitePath = sourcePath.getParent().resolve("../bin/Satellite").normalize();
+                Path parent = sourcePath.getParent();
+                if (parent != null)
+                {
+                    satellitePath = parent.resolve("../bin/Satellite").normalize();
+                }
             }
             else
             {
@@ -227,12 +232,16 @@ public class SpecialSatelliteProcessManager
         if (!Files.exists(confPath))
         {
             Files.createDirectories(confPath);
-            Path dfltSpecialStltConfPath = confPath.getParent().resolve(LinstorConfig.LINSTOR_STLT_CONFIG);
-            if (Files.exists(dfltSpecialStltConfPath))
+            Path parent = confPath.getParent();
+            if (parent != null)
             {
-                // copy /etc/linstor/linstor_satellite.toml (if exists) to
-                // /etc/linstor/specialStlt_<port>/linstor_satellite.toml
-                Files.copy(dfltSpecialStltConfPath, confPath.resolve(LinstorConfig.LINSTOR_STLT_CONFIG));
+                Path dfltSpecialStltConfPath = parent.resolve(LinstorConfig.LINSTOR_STLT_CONFIG);
+                if (Files.exists(dfltSpecialStltConfPath))
+                {
+                    // copy /etc/linstor/linstor_satellite.toml (if exists) to
+                    // /etc/linstor/specialStlt_<port>/linstor_satellite.toml
+                    Files.copy(dfltSpecialStltConfPath, confPath.resolve(LinstorConfig.LINSTOR_STLT_CONFIG));
+                }
             }
         }
 
@@ -268,7 +277,7 @@ public class SpecialSatelliteProcessManager
         childPorts.put(nodeNameStr.toUpperCase(), port);
     }
 
-    private Path getSpecStltConfPath(Integer port)
+    private Path getSpecStltConfPath(@Nullable Integer port)
     {
         return Paths.get(ctrlConf.getConfigDir(), "specialStlt_" + port);
     }
@@ -307,11 +316,11 @@ public class SpecialSatelliteProcessManager
         }
     }
 
-    public Integer stopProcess(Node node)
+    public @Nullable Integer stopProcess(Node node)
     {
         final String nodeName = node.getName().value;
         final Process process = childSatellites.get(nodeName);
-        Integer port = childPorts.get(nodeName);
+        @Nullable Integer port = childPorts.get(nodeName);
         final Path specStltConfPath = getSpecStltConfPath(port);
         if (process == null)
         {
@@ -386,7 +395,11 @@ public class SpecialSatelliteProcessManager
         }
     }
 
-    private void closeOrThrow(Closeable closeable, String description, PortAlreadyInUseException portAlreadyInUseExc)
+    private void closeOrThrow(
+        @Nullable Closeable closeable,
+        String description,
+        @Nullable PortAlreadyInUseException portAlreadyInUseExc
+    )
     {
         if (closeable != null)
         {

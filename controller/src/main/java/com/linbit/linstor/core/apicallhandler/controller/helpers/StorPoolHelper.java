@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.helpers;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -24,6 +25,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -54,8 +56,8 @@ public class StorPoolHelper
     public StorPool createStorPool(
         String nodeNameStr,
         String storPoolNameStr,
-        DeviceProviderKind deviceProviderKindRef,
-        String sharedStorPoolNameStr,
+        @Nonnull DeviceProviderKind deviceProviderKindRef,
+        @Nullable String sharedStorPoolNameStr,
         boolean externalLockingRef
     )
     {

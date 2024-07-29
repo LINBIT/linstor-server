@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.kinds;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.storage.EbsInitiatorDriverKind;
 import com.linbit.linstor.storage.EbsTargetDriverKind;
@@ -16,8 +17,6 @@ import com.linbit.linstor.storage.StorageSpacesThinKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
-
-import javax.annotation.Nullable;
 
 public enum DeviceProviderKind
 {
@@ -230,7 +229,7 @@ public enum DeviceProviderKind
     private final boolean isSharedVolumeSupported;
     private final boolean isCloneSupported;
     @Deprecated
-    private final StorageDriverKind storageDriverKind;
+    private final @Nullable StorageDriverKind storageDriverKind;
     private final ExtTools[] startupVerifications;
 
     DeviceProviderKind(
@@ -243,7 +242,7 @@ public enum DeviceProviderKind
         boolean usesThinProvisioningRef,
         boolean isSharedVolumeSupportedRef,
         boolean isCloneSupportedRef,
-        StorageDriverKind storageDriverKindRef,
+        @Nullable StorageDriverKind storageDriverKindRef,
         ExtTools... startupVerificationsRef
     )
     {
@@ -301,7 +300,7 @@ public enum DeviceProviderKind
     }
 
     @Deprecated
-    public StorageDriverKind getStorageDriverKind()
+    public @Nullable StorageDriverKind getStorageDriverKind()
     {
         return storageDriverKind;
     }

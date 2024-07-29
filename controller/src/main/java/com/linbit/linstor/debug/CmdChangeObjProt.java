@@ -3,6 +3,7 @@ package com.linbit.linstor.debug;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -437,10 +438,10 @@ public class CmdChangeObjProt extends BaseDebugCmd
         final boolean ovrdDscAccCtrl,
         final boolean ovrdMndAccCtrl,
         final StringBuilder responseMsg,
-        final String newOwnerPrm,
-        final String newSecTypePrm,
-        final String accessRolePrm,
-        final String accessTypePrm
+        final @Nullable String newOwnerPrm,
+        final @Nullable String newSecTypePrm,
+        final @Nullable String accessRolePrm,
+        final @Nullable String accessTypePrm
     )
         throws AccessDeniedException, LinStorException, DatabaseException
     {
@@ -713,7 +714,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
     }
 
     // Caller must hold rcfgLock and nodeRpsLock
-    private Node getNode(AccessContext accCtx, String objName)
+    private @Nullable Node getNode(AccessContext accCtx, String objName)
         throws AccessDeniedException, LinStorException
     {
         Node nodeObj = null;
@@ -736,7 +737,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
     }
 
     // Caller must hold rcfgLock and rscDfnRpsLock
-    private ResourceDefinition getResourceDefinition(AccessContext accCtx, String objName)
+    private @Nullable ResourceDefinition getResourceDefinition(AccessContext accCtx, String objName)
         throws AccessDeniedException, LinStorException
     {
         ResourceDefinition rscDfn = null;
@@ -759,7 +760,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
     }
 
     // Caller must hold rcfgLock, nodeRpsLock and rscDfnRpsLock
-    private Resource getResource(AccessContext accCtx, String objName)
+    private @Nullable Resource getResource(AccessContext accCtx, String objName)
         throws AccessDeniedException, LinStorException
     {
         int splitIdx = objName.indexOf('/');
@@ -819,7 +820,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
     }
 
     // Caller must hold rcfgLock and storPoolDfnRpsLock
-    private StorPoolDefinition getStorPoolDefinition(AccessContext accCtx, String objName)
+    private @Nullable StorPoolDefinition getStorPoolDefinition(AccessContext accCtx, String objName)
         throws AccessDeniedException, LinStorException
     {
         StorPoolDefinition storPoolDfn = null;
@@ -842,7 +843,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
     }
 
     // Caller must hold rcfgLock and kvStoreRpsLock
-    private KeyValueStore getKeyValueStore(AccessContext accCtx, String objName)
+    private @Nullable KeyValueStore getKeyValueStore(AccessContext accCtx, String objName)
         throws AccessDeniedException, LinStorException
     {
         KeyValueStore kvStoreObj;

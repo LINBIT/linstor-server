@@ -1,9 +1,11 @@
 package com.linbit.linstor.api.rest.v1.config;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -58,13 +60,12 @@ import org.glassfish.jersey.server.ResourceConfig;
 
 public class GrizzlyHttpService implements SystemService
 {
+    private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
+
     private final ErrorReporter errorReporter;
-    private HttpServer httpServer;
-    private HttpServer httpSslServer;
-    private ServiceName instanceName;
     private final String listenAddress;
     private final String listenAddressSecure;
-    private final Path keyStoreFile;
+    private final @Nullable Path keyStoreFile;
     private final String keyStorePassword;
     private final Path trustStoreFile;
     private final String trustStorePassword;
@@ -73,17 +74,19 @@ public class GrizzlyHttpService implements SystemService
     private final SystemConfRepository systemConfRepository;
     private final AccessContext sysCtx;
     private final LockGuardFactory lockGuardFactory;
-    private RestAccessLogMode restAccessLogMode;
     private final String webUiDirectory;
 
-    private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
+    private @Nullable HttpServer httpServer;
+    private @Nullable HttpServer httpSslServer;
+    private ServiceName instanceName;
+    private RestAccessLogMode restAccessLogMode;
 
     public GrizzlyHttpService(
         Injector injector,
         ErrorReporter errorReporterRef,
         String listenAddressRef,
         String listenAddressSecureRef,
-        Path keyStoreFileRef,
+        @Nullable Path keyStoreFileRef,
         String keyStorePasswordRef,
         Path trustStoreFileRef,
         String trustStorePasswordRef,
@@ -239,7 +242,8 @@ public class GrizzlyHttpService implements SystemService
         if (restAccessLogMode != LinstorConfig.RestAccessLogMode.NO_LOG)
         {
             final Path accessLogPath = restAccessLogPath.isAbsolute() ?
-                restAccessLogPath : errorReporter.getLogDirectory().resolve(restAccessLogPath);
+                restAccessLogPath :
+                errorReporter.getLogDirectory().resolve(restAccessLogPath);
             final AccessLogBuilder builder = new AccessLogBuilder(accessLogPath.toFile());
 
             switch (restAccessLogMode)
@@ -397,6 +401,10 @@ public class GrizzlyHttpService implements SystemService
         }
         catch (InvalidNameException ignored)
         {
+        }
+        if (svcName == null)
+        {
+            throw new ImplementationError("unable to create service-name Grizzly-HTTP-Server");
         }
         return svcName;
     }

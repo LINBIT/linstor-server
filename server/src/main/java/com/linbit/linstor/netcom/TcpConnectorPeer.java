@@ -2,6 +2,7 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.prop.Property;
@@ -16,7 +17,6 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.utils.OrderingFlux;
 
-import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
@@ -43,6 +43,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.prometheus.client.Histogram;
 import org.reactivestreams.Publisher;
 import org.slf4j.MDC;
@@ -88,7 +89,7 @@ public class TcpConnectorPeer implements Peer
 
     private static final long CLOSE_FLUSH_TIMEOUT_MS = 500;
 
-    private final Node node;
+    private final @Nullable Node node;
 
     private final ErrorReporter errorReporter;
 
@@ -107,7 +108,7 @@ public class TcpConnectorPeer implements Peer
     protected Message msgIn;
 
     // Current outbound message; cached for quicker access
-    protected Message msgOut;
+    protected @Nullable Message msgOut;
 
     // Queue of pending outbound messages
     // TODO: Put a capacity limit on the maximum number of queued outbound messages
@@ -117,7 +118,7 @@ public class TcpConnectorPeer implements Peer
 
     private AccessContext peerAccCtx;
 
-    private Object attachment;
+    private @Nullable Object attachment;
 
     protected volatile boolean connected = false;
     protected ApiConsts.ConnectionStatus connectionStatus = ApiConsts.ConnectionStatus.OFFLINE;
@@ -175,7 +176,7 @@ public class TcpConnectorPeer implements Peer
         TcpConnector connectorRef,
         SelectionKey key,
         AccessContext accCtx,
-        Node nodeRef,
+        @Nullable Node nodeRef,
         boolean clientModeRef
     )
     {
@@ -258,7 +259,7 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public Node getNode()
+    public @Nullable Node getNode()
     {
         return node;
     }
@@ -698,6 +699,7 @@ public class TcpConnectorPeer implements Peer
         authenticated = authenticatedFlag;
     }
 
+    @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
     protected void nextInMessage()
     {
         msgIn = createMessage(false);
@@ -714,6 +716,7 @@ public class TcpConnectorPeer implements Peer
         selKey = selKeyRef;
     }
 
+    @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
     protected void nextOutMessage()
     {
         synchronized (this)
@@ -757,7 +760,7 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public Object getAttachment()
+    public @Nullable Object getAttachment()
     {
         return attachment;
     }
@@ -799,7 +802,7 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public InetSocketAddress peerAddress()
+    public @Nullable InetSocketAddress peerAddress()
     {
         InetSocketAddress peerAddr = null;
         try
@@ -825,7 +828,7 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public InetSocketAddress localAddress()
+    public @Nullable InetSocketAddress localAddress()
     {
         InetSocketAddress localAddr = null;
         try

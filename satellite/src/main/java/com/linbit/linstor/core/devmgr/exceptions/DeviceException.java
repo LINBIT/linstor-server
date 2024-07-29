@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.devmgr.exceptions;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts.DeviceLayerKind;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.storage.StorageException;
@@ -11,7 +12,7 @@ public class DeviceException extends StorageException
     private static final long serialVersionUID = -1604152350394905076L;
 
     private final transient AbsRscLayerObject<Resource> rscData;
-    private final transient VlmProviderObject<Resource> vlmData;
+    private final transient @Nullable VlmProviderObject<Resource> vlmData;
 
     public DeviceException(
         String actionRef,
@@ -61,7 +62,7 @@ public class DeviceException extends StorageException
         return rscData;
     }
 
-    public VlmProviderObject<Resource> getVlmData()
+    public @Nullable VlmProviderObject<Resource> getVlmData()
     {
         return vlmData;
     }

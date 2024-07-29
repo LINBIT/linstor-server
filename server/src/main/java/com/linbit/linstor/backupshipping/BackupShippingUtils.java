@@ -2,6 +2,7 @@ package com.linbit.linstor.backupshipping;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
@@ -81,7 +82,7 @@ public class BackupShippingUtils
         byte[] hash,
         byte[] salt,
         Map<Integer, List<BackupMetaInfoPojo>> backupsRef,
-        String basedOnMetaNameRef
+        @Nullable String basedOnMetaNameRef
     )
         throws AccessDeniedException, ParseException
     {

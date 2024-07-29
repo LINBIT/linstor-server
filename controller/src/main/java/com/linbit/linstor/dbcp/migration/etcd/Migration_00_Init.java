@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
 @SuppressWarnings("checkstyle:typename")
@@ -74,7 +75,7 @@ public class Migration_00_Init extends BaseEtcdMigration
 
     private static final String TBL_PROPS_CONTAINERS = "PROPS_CONTAINERS";
 
-    private String etcdPrefix = null;
+    private @Nullable String etcdPrefix = null;
 
     private void secConfiguration(
         EtcdTransaction tx,

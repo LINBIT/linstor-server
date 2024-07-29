@@ -12,6 +12,7 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.VolumeNumberAlloc;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -104,7 +105,6 @@ import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -238,14 +238,14 @@ public class CtrlRscDfnApiCallHandler
         autoplacer = autoplacerRef;
     }
 
-    public ResourceDefinition createResourceDefinition(
+    public @Nullable ResourceDefinition createResourceDefinition(
         String rscNameStr,
         @Nullable byte[] extName,
         Map<String, String> props,
         List<VolumeDefinitionWithCreationPayload> volDescrMap,
         List<String> layerStackStrList,
         @Nullable LayerPayload payloadPrm,
-        String rscGrpNameStr,
+        @Nullable String rscGrpNameStr,
         boolean throwOnError,
         ApiCallRcImpl apiCallRc,
         boolean commit
@@ -407,14 +407,14 @@ public class CtrlRscDfnApiCallHandler
     }
 
     public Flux<ApiCallRc> modify(
-        UUID rscDfnUuid,
+        @Nullable UUID rscDfnUuid,
         String rscNameStr,
         Integer portInt,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deleteNamespaces,
         List<String> layerStackStrList,
-        Short newRscPeerSlots,
+        @Nullable Short newRscPeerSlots,
         @Nullable String rscGroupName
     )
     {
@@ -448,14 +448,14 @@ public class CtrlRscDfnApiCallHandler
     }
 
     private Flux<ApiCallRc> modifyInTransaction(
-        UUID rscDfnUuid,
+        @Nullable UUID rscDfnUuid,
         String rscNameStr,
         Integer portInt,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deletePropNamespaces,
         List<String> layerStackStrList,
-        Short newRscPeerSlots,
+        @Nullable Short newRscPeerSlots,
         @Nullable String rscGroupName,
         ResponseContext context
     )
@@ -1480,10 +1480,10 @@ public class CtrlRscDfnApiCallHandler
 
     private ResourceDefinition createRscDfn(
         String rscNameStr,
-        byte[] extNamePrm,
+        @Nullable byte[] extNamePrm,
         List<DeviceLayerKind> layerStack,
         LayerPayload payload,
-        String rscGrpNameStrPrm
+        @Nullable String rscGrpNameStrPrm
     )
         throws InvalidNameException
     {

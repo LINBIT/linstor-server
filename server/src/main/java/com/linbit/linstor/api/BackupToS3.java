@@ -1,6 +1,7 @@
 package com.linbit.linstor.api;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -398,7 +399,12 @@ public class BackupToS3
         return obj.getObjectContent();
     }
 
-    public List<S3ObjectSummary> listObjects(String withPrefix, S3Remote remote, AccessContext accCtx, byte[] masterKey)
+    public List<S3ObjectSummary> listObjects(
+        @Nullable String withPrefix,
+        S3Remote remote,
+        AccessContext accCtx,
+        byte[] masterKey
+    )
         throws AccessDeniedException
     {
         ReadOnlyProps backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);

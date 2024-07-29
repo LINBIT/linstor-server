@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.lvm.utils;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageException;
@@ -23,8 +24,6 @@ import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_SIZ
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_STRIPES;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_VG;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.VGS_COL_VG_NAME;
-
-import javax.annotation.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -85,7 +84,7 @@ public class LvmUtils
     public static class LvsInfo
     {
         public final String volumeGroup;
-        public final String thinPool;
+        public final @Nullable String thinPool;
         public final String identifier;
         public final String path;
         public final long size;
@@ -97,7 +96,7 @@ public class LvmUtils
 
         LvsInfo(
             String volumeGroupRef,
-            String thinPoolRef,
+            @Nullable String thinPoolRef,
             String identifierRef,
             String pathRef,
             long sizeRef,
@@ -772,7 +771,7 @@ public class LvmUtils
         );
     }
 
-    private static <T> T parseGeneric(
+    private static <T> @Nullable T parseGeneric(
         @Nullable String numToParseRef,
         String descriptionOfNumberRef,
         String vgNameRef,

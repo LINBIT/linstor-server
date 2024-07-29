@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -25,8 +26,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
-
-import javax.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -63,7 +62,7 @@ public abstract class AbsSnapLayerHelper<
     public SNAP_LO copySnapData(
         Snapshot snapRef,
         AbsRscLayerObject<Resource> rscDataRef,
-        AbsRscLayerObject<Snapshot> parentRef
+        @Nullable AbsRscLayerObject<Snapshot> parentRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
@@ -127,7 +126,7 @@ public abstract class AbsSnapLayerHelper<
     public SNAP_LO restoreSnapData(
         Snapshot snapRef,
         RscLayerDataApi rscLayerDataApiRef,
-        AbsRscLayerObject<Snapshot> parentRef,
+        @Nullable AbsRscLayerObject<Snapshot> parentRef,
         Map<String, String> renameStorPoolMapRef,
         @Nullable ApiCallRc apiCallRc
     )
@@ -239,7 +238,7 @@ public abstract class AbsSnapLayerHelper<
      * If the resource definition already has such an object, it depends on the layer whether the
      * content can be merged / updated or not.
      */
-    private SNAP_DFN_LO ensureSnapshotDefinitionExists(
+    private @Nullable SNAP_DFN_LO ensureSnapshotDefinitionExists(
         SnapshotDefinition snapDfn,
         String rscNameSuffix
     )
@@ -266,7 +265,7 @@ public abstract class AbsSnapLayerHelper<
      * If the volume definition already has such an object, it depends on the layer whether the
      * content can be merged / updated or not.
      */
-    private SNAPVLM_DFN_LO ensureVolumeDefinitionExists(
+    private @Nullable SNAPVLM_DFN_LO ensureVolumeDefinitionExists(
         SnapshotVolumeDefinition snapVlmDfn,
         String rscNameSuffix
     )
@@ -285,14 +284,14 @@ public abstract class AbsSnapLayerHelper<
         return snapVlmDfnData;
     }
 
-    protected abstract SNAP_DFN_LO createSnapDfnData(
+    protected abstract @Nullable SNAP_DFN_LO createSnapDfnData(
         SnapshotDefinition rscDfn,
         String rscNameSuffix
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException;
 
-    protected abstract SNAPVLM_DFN_LO createSnapVlmDfnData(
+    protected abstract @Nullable SNAPVLM_DFN_LO createSnapVlmDfnData(
         SnapshotVolumeDefinition snapVlmDfnRef,
         String rscNameSuffixRef
     )
@@ -302,7 +301,7 @@ public abstract class AbsSnapLayerHelper<
     protected abstract SNAP_LO createSnapData(
         Snapshot snapRef,
         AbsRscLayerObject<Resource> rscDataRef,
-        AbsRscLayerObject<Snapshot> parentRef
+        @Nullable AbsRscLayerObject<Snapshot> parentRef
     )
         throws AccessDeniedException, DatabaseException, ExhaustedPoolException;
 
@@ -313,7 +312,7 @@ public abstract class AbsSnapLayerHelper<
     )
         throws DatabaseException, AccessDeniedException;
 
-    protected abstract SNAP_DFN_LO restoreSnapDfnData(
+    protected abstract @Nullable SNAP_DFN_LO restoreSnapDfnData(
         SnapshotDefinition snapshotDefinitionRef,
         RscLayerDataApi rscLayerDataApiRef,
         Map<String, String> renameStorPoolMapRef
@@ -321,7 +320,7 @@ public abstract class AbsSnapLayerHelper<
         throws DatabaseException, IllegalArgumentException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException;
 
-    protected abstract SNAPVLM_DFN_LO restoreSnapVlmDfnData(
+    protected abstract @Nullable SNAPVLM_DFN_LO restoreSnapVlmDfnData(
         SnapshotVolumeDefinition snapshotVolumeDefinitionRef,
         VlmLayerDataApi vlmLayerDataApiRef,
         Map<String, String> renameStorPoolMapRef
@@ -332,7 +331,7 @@ public abstract class AbsSnapLayerHelper<
     protected abstract SNAP_LO restoreSnapDataImpl(
         Snapshot snapRef,
         RscLayerDataApi rscLayerDataApiRef,
-        AbsRscLayerObject<Snapshot> parentRef,
+        @Nullable AbsRscLayerObject<Snapshot> parentRef,
         Map<String, String> renameStorPoolMapRef
     )
         throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException;

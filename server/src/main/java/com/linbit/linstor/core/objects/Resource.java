@@ -4,6 +4,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.PriorityProps.MultiResult;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.EffectivePropertiesPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -34,7 +35,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -100,7 +100,7 @@ public class Resource extends AbsResource<Resource>
         Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<Resource.ResourceKey, ResourceConnection> rscConnMapRef,
         Map<VolumeNumber, Volume> vlmMapRef,
-        Date createTimestampRef
+        @Nullable Date createTimestampRef
     )
         throws DatabaseException
     {
@@ -173,7 +173,7 @@ public class Resource extends AbsResource<Resource>
     }
 
     @Override
-    public Volume getVolume(VolumeNumber volNr)
+    public @Nullable Volume getVolume(VolumeNumber volNr)
     {
         checkDeleted();
         return vlmMap.get(volNr);
@@ -219,61 +219,73 @@ public class Resource extends AbsResource<Resource>
         return Collections.unmodifiableCollection(vlmMap.values()).stream();
     }
 
-    public synchronized void setAbsResourceConnection(AccessContext accCtx, ResourceConnection resCon)
+    public void setAbsResourceConnection(AccessContext accCtx, ResourceConnection resCon)
         throws AccessDeniedException
     {
-        checkDeleted();
-
-        Resource sourceResource = resCon.getSourceResource(accCtx);
-        Resource targetResource = resCon.getTargetResource(accCtx);
-
-        sourceResource.getObjProt().requireAccess(accCtx, AccessType.USE);
-        targetResource.getObjProt().requireAccess(accCtx, AccessType.USE);
-
-        if (this == sourceResource)
+        synchronized (resourceConnections)
         {
-            resourceConnections.put(targetResource.getKey(), resCon);
-        }
-        else
-        {
-            resourceConnections.put(sourceResource.getKey(), resCon);
+            checkDeleted();
+
+            Resource sourceResource = resCon.getSourceResource(accCtx);
+            Resource targetResource = resCon.getTargetResource(accCtx);
+
+            sourceResource.getObjProt().requireAccess(accCtx, AccessType.USE);
+            targetResource.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+            if (this == sourceResource)
+            {
+                resourceConnections.put(targetResource.getKey(), resCon);
+            }
+            else
+            {
+                resourceConnections.put(sourceResource.getKey(), resCon);
+            }
         }
     }
 
-    public synchronized void removeResourceConnection(AccessContext accCtx, ResourceConnection con)
+    public void removeResourceConnection(AccessContext accCtx, ResourceConnection con)
         throws AccessDeniedException
     {
-        checkDeleted();
-        Resource sourceResource = con.getSourceResource(accCtx);
-        Resource targetResource = con.getTargetResource(accCtx);
-
-        sourceResource.getObjProt().requireAccess(accCtx, AccessType.USE);
-        targetResource.getObjProt().requireAccess(accCtx, AccessType.USE);
-
-        if (this == sourceResource)
+        synchronized (resourceConnections)
         {
-            resourceConnections.remove(targetResource.getKey());
-        }
-        else
-        {
-            resourceConnections.remove(sourceResource.getKey());
+            checkDeleted();
+            Resource sourceResource = con.getSourceResource(accCtx);
+            Resource targetResource = con.getTargetResource(accCtx);
+
+            sourceResource.getObjProt().requireAccess(accCtx, AccessType.USE);
+            targetResource.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+            if (this == sourceResource)
+            {
+                resourceConnections.remove(targetResource.getKey());
+            }
+            else
+            {
+                resourceConnections.remove(sourceResource.getKey());
+            }
         }
     }
 
     public Stream<ResourceConnection> streamAbsResourceConnections(AccessContext accCtx)
         throws AccessDeniedException
     {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-        return resourceConnections.values().stream();
+        synchronized (resourceConnections)
+        {
+            checkDeleted();
+            objProt.requireAccess(accCtx, AccessType.VIEW);
+            return resourceConnections.values().stream();
+        }
     }
 
-    public ResourceConnection getAbsResourceConnection(AccessContext accCtx, Resource otherResource)
+    public @Nullable ResourceConnection getAbsResourceConnection(AccessContext accCtx, Resource otherResource)
         throws AccessDeniedException
     {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-        return resourceConnections.get(otherResource.getKey());
+        synchronized (resourceConnections)
+        {
+            checkDeleted();
+            objProt.requireAccess(accCtx, AccessType.VIEW);
+            return resourceConnections.get(otherResource.getKey());
+        }
     }
 
 
@@ -407,8 +419,8 @@ public class Resource extends AbsResource<Resource>
 
     public ResourceApi getApiData(
         AccessContext accCtx,
-        Long fullSyncId,
-        Long updateId,
+        @Nullable Long fullSyncId,
+        @Nullable Long updateId,
         @Nullable EffectivePropertiesPojo effectiveProps
     )
         throws AccessDeniedException
@@ -687,7 +699,7 @@ public class Resource extends AbsResource<Resource>
             return FlagsHelper.fromStringList(Flags.class, listFlags);
         }
 
-        public static Flags valueOfOrNull(String str)
+        public static @Nullable Flags valueOfOrNull(@Nullable String str)
         {
             Flags ret = null;
             for (Flags flag : Flags.values())

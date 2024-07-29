@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.PropsCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver.PropsDbEntry;
@@ -62,7 +63,7 @@ public class PropsDbDriver extends AbsDatabaseDriver<PropsDbEntry, Void, Void> i
     }
 
     @Override
-    protected Pair<PropsDbEntry, Void> load(RawParameters rawRef, Void parentRef)
+    protected @Nullable Pair<PropsDbEntry, Void> load(RawParameters rawRef, Void parentRef)
         throws DatabaseException
     {
         String instanceName = rawRef.get(PROPS_INSTANCE);

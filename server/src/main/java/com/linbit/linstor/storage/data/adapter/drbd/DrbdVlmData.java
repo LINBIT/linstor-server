@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.drbd;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
@@ -32,7 +33,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     private final DrbdVlmDfnData<RSC> vlmDfnData;
 
     // persisted, serialized, ctrl and stlt
-    private final TransactionSimpleObject<DrbdVlmData<?>, StorPool> externalMetaDataStorPool;
+    private final TransactionSimpleObject<DrbdVlmData<?>, @Nullable StorPool> externalMetaDataStorPool;
 
     // not persisted, not serialized, stlt only
     private boolean hasMetaData;
@@ -40,14 +41,14 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     private boolean isMetaDataNew;
     private boolean hasDisk;
     private final TransactionList<DrbdVlmData<RSC>, State> states;
-    private Size sizeState;
-    private String diskState;
+    private @Nullable Size sizeState;
+    private @Nullable String diskState;
 
     public DrbdVlmData(
         AbsVolume<RSC> vlmRef,
         DrbdRscData<RSC> rscDataRef,
         DrbdVlmDfnData<RSC> vlmDfnDataRef,
-        StorPool extMetaDataStorPoolRef,
+        @Nullable StorPool extMetaDataStorPoolRef,
         LayerDrbdVlmDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProvider
@@ -89,7 +90,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public Size getSizeState()
+    public @Nullable Size getSizeState()
     {
         return sizeState;
     }
@@ -112,7 +113,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getMetaDiskPath()
+    public @Nullable String getMetaDiskPath()
     {
         String metaDiskPath;
         if (getExternalMetaDataStorPool() == null)
@@ -141,7 +142,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getDataDevice()
+    public @Nullable String getDataDevice()
     {
         VlmProviderObject<RSC> childBySuffix = getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
         String bdDevPath = null;
@@ -154,7 +155,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getDiskState()
+    public @Nullable String getDiskState()
     {
         return diskState;
     }
@@ -204,12 +205,12 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
         isMetaDataNew = isMetaDataNewRef;
     }
 
-    public StorPool getExternalMetaDataStorPool()
+    public @Nullable StorPool getExternalMetaDataStorPool()
     {
         return externalMetaDataStorPool.get();
     }
 
-    public void setExternalMetaDataStorPool(StorPool extMetaStorPool) throws DatabaseException
+    public void setExternalMetaDataStorPool(@Nullable StorPool extMetaStorPool) throws DatabaseException
     {
         externalMetaDataStorPool.set(extMetaStorPool);
     }

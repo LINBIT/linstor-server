@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -328,6 +329,7 @@ public class GenerateSql
         Files.write(path, javaClazzContentRef.getBytes());
     }
 
+    @SuppressFBWarnings
     private static void renderResourceFile(
         String gitRoot,
         String relativePath,

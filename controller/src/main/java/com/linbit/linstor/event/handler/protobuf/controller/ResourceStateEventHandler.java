@@ -3,6 +3,7 @@ package com.linbit.linstor.event.handler.protobuf.controller;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.rest.v1.events.EventDrbdHandlerBridge;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
@@ -38,7 +39,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -216,7 +216,7 @@ public class ResourceStateEventHandler implements EventHandler
         return vlmNrToConnectedPeerStates;
     }
 
-    private void processEvent(EventIdentifier eventIdentifierRef, Boolean inUseRef)
+    private void processEvent(EventIdentifier eventIdentifierRef, @Nullable Boolean inUseRef)
     {
         NodeName nodeName = eventIdentifierRef.getNodeName();
         ResourceName resourceName = eventIdentifierRef.getResourceName();
@@ -255,8 +255,9 @@ public class ResourceStateEventHandler implements EventHandler
 
     private void processEventUpdateVolatile(
         EventIdentifier eventIdentifierRef,
-        Integer promotionScore,
-        Boolean mayPromote)
+        @Nullable Integer promotionScore,
+        @Nullable Boolean mayPromote
+    )
     {
         NodeName nodeName = eventIdentifierRef.getNodeName();
         ResourceName resourceName = eventIdentifierRef.getResourceName();

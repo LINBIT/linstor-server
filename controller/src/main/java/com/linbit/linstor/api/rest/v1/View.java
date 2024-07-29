@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.backups.BackupNodeQueuesPojo;
 import com.linbit.linstor.api.pojo.backups.BackupSnapQueuesPojo;
@@ -304,9 +305,9 @@ public class View
     @Path("schedules-by-resource")
     public Response listActiveRscs(
         @Context Request request,
-        @QueryParam("rsc") String rscName,
-        @QueryParam("remote") String remoteName,
-        @QueryParam("schedule") String scheduleName,
+        @Nullable @QueryParam("rsc") String rscName,
+        @Nullable @QueryParam("remote") String remoteName,
+        @Nullable @QueryParam("schedule") String scheduleName,
         @QueryParam("active-only") @DefaultValue("false") boolean activeOnly
     )
     {

@@ -1,5 +1,6 @@
 package com.linbit.linstor.logging;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -9,7 +10,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -158,7 +159,7 @@ public class H2ErrorReporter
         }
     }
 
-    public ErrorReportResult listReports(
+    public @Nonnull ErrorReportResult listReports(
         boolean withText,
         @Nullable final Date since,
         @Nullable final Date to,
@@ -219,9 +220,14 @@ public class H2ErrorReporter
                     // this is how you get the whole string back from a CLOB
                     text = clob.getSubString(1, (int) clob.length());
                 }
+                String nodeName = rslt.getString("NODE");
+                if (nodeName == null)
+                {
+                    throw new ImplementationError("nodeName must not be null");
+                }
                 errors.add(
                     new ErrorReport(
-                        rslt.getString("NODE"),
+                        nodeName,
                         Node.Type.getByValue(rslt.getInt("MODULE")),
                         "ErrorReport-" + rslt.getString("ERROR_ID") + ".log",
                         rslt.getString("VERSION"),

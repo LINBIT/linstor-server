@@ -1,6 +1,7 @@
 package com.linbit.linstor.stateflags;
 
 import com.linbit.ErrorCheck;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -232,7 +233,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
         return mask;
     }
 
-    public static final long getMask(final Flags... flags)
+    public static final long getMask(final @Nullable Flags... flags)
     {
         long bitMask = 0L;
         if (flags != null)

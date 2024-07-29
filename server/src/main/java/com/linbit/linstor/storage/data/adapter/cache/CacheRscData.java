@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.cache;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
@@ -35,7 +36,7 @@ public class CacheRscData<RSC extends AbsResource<RSC>>
     public CacheRscData(
         int rscLayerIdRef,
         RSC rscRef,
-        AbsRscLayerObject<RSC> parentRef,
+        @Nullable AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
         String rscNameSuffixRef,
         LayerCacheRscDatabaseDriver cacheRscDbDriverRef,
@@ -61,7 +62,7 @@ public class CacheRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public RscDfnLayerObject getRscDfnLayerObject()
+    public @Nullable RscDfnLayerObject getRscDfnLayerObject()
     {
         return null;
     }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 
 import java.util.List;
@@ -8,9 +9,9 @@ public class ResourceWithPayloadPojo implements ResourceWithPayloadApi
 {
     private final RscPojo rscPojo;
     private final List<String> layerStackStr;
-    private final Integer drbdNodeId;
+    private final @Nullable Integer drbdNodeId;
 
-    public ResourceWithPayloadPojo(RscPojo rscPojoRef, List<String> layerStackStrRef, Integer drbdNodeIdRef)
+    public ResourceWithPayloadPojo(RscPojo rscPojoRef, List<String> layerStackStrRef, @Nullable Integer drbdNodeIdRef)
     {
         rscPojo = rscPojoRef;
         layerStackStr = layerStackStrRef;
@@ -30,7 +31,7 @@ public class ResourceWithPayloadPojo implements ResourceWithPayloadApi
     }
 
     @Override
-    public Integer getDrbdNodeId()
+    public @Nullable Integer getDrbdNodeId()
     {
         return drbdNodeId;
     }

@@ -7,6 +7,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -237,7 +238,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     private RawParameters buildRawParams(
         DatabaseTable table,
         Map<String, String> dataMap,
-        String composedPk,
+        @Nullable String composedPk,
         Map<String, Object> rawObjects
     )
     {

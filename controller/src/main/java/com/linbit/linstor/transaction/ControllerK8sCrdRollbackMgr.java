@@ -1,5 +1,6 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
@@ -196,7 +197,7 @@ public class ControllerK8sCrdRollbackMgr
     {
         private int maxRollbackEntries;
 
-        private RollbackCrd currentRollback;
+        private @Nullable RollbackCrd currentRollback;
         private final List<RollbackCrd> rollbacks = new ArrayList<>();
         private int currentUpdates;
 

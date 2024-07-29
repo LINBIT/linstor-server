@@ -4,6 +4,7 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -39,9 +40,9 @@ public class ApplicationLifecycleManager
     private final ReadWriteLock reconfigurationLock;
 
     private boolean shutdownFinished;
-    private WorkerPool workerThrPool;
+    private @Nullable WorkerPool workerThrPool;
 
-    private ArrayList<StartupInitializer> services;
+    private @Nullable ArrayList<StartupInitializer> services;
 
     @Inject
     public ApplicationLifecycleManager(

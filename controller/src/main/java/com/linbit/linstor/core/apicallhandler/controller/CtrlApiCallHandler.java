@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -57,7 +58,6 @@ import static com.linbit.locks.LockGuardFactory.LockType.READ;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -184,7 +184,7 @@ public class CtrlApiCallHandler
      * @return
      */
     public Flux<ApiCallRc> modifyNode(
-        UUID nodeUuid,
+        @Nullable UUID nodeUuid,
         String nodeName,
         String nodeType,
         Map<String, String> overrideProps,
@@ -300,14 +300,14 @@ public class CtrlApiCallHandler
      * @param newRscPeerSlotsRef
      */
     public Flux<ApiCallRc> modifyRscDfn(
-        UUID rscDfnUuid,
+        @Nullable UUID rscDfnUuid,
         String rscName,
         Integer port,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deletePropNamespaces,
         List<String> layerStackStrList,
-        Short newRscPeerSlotsRef,
+        @Nullable Short newRscPeerSlotsRef,
         @Nullable String rscGroupName
     )
     {
@@ -380,7 +380,7 @@ public class CtrlApiCallHandler
      *            required
      */
     public Flux<ApiCallRc> modifyRsc(
-        UUID rscUuid,
+        @Nullable UUID rscUuid,
         String nodeName,
         String rscName,
         Map<String, String> overridePropsRef,
@@ -498,7 +498,7 @@ public class CtrlApiCallHandler
      *            optional
      */
     public Flux<ApiCallRc> modifyStorPoolDfn(
-        UUID storPoolDfnUuid,
+        @Nullable UUID storPoolDfnUuid,
         String storPoolName,
         Map<String, String> overridePropsRef,
         Set<String> deletePropKeysRef,
@@ -687,7 +687,7 @@ public class CtrlApiCallHandler
      *            optional
      */
     public Flux<ApiCallRc> modifyRscConn(
-        UUID rscConnUuid,
+        @Nullable UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscName,
@@ -1158,7 +1158,7 @@ public class CtrlApiCallHandler
     }
 
     public Flux<ApiCallRc> modifyVlm(
-        UUID uuidRef,
+        @Nullable UUID uuidRef,
         String nodeNameRef,
         String rscNameRef,
         Integer vlmNrRef,
@@ -1226,7 +1226,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public List<VolumeGroupApi> listVolumeGroups(String rscNameRef, Integer vlmNrRef)
+    public List<VolumeGroupApi> listVolumeGroups(String rscNameRef, @Nullable Integer vlmNrRef)
     {
         List<VolumeGroupApi> listVolumeGroups;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_GRP_MAP))

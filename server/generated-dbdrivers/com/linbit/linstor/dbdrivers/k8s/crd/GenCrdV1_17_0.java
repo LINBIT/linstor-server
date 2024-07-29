@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -144,6 +145,7 @@ public class GenCrdV1_17_0
     }
 
     @SuppressWarnings("unchecked")
+    @Nullable
     public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<? extends LinstorCrd<SPEC>> databaseTableToCustomResourceClass(
         DatabaseTable table
     )
@@ -243,6 +245,7 @@ public class GenCrdV1_17_0
     }
 
     @SuppressWarnings("unchecked")
+    @Nullable
     public static <SPEC extends LinstorSpec> Class<SPEC> databaseTableToSpecClass(
         DatabaseTable table
     )
@@ -342,6 +345,7 @@ public class GenCrdV1_17_0
     }
 
     @SuppressWarnings("unchecked")
+    @Nullable
     public static <SPEC extends LinstorSpec> LinstorCrd<SPEC> specToCrd(SPEC spec)
     {
         switch(spec.getDatabaseTable().getName())
@@ -969,7 +973,7 @@ public class GenCrdV1_17_0
         }
     }
 
-    public static String databaseTableToYamlLocation(DatabaseTable dbTable)
+    public static @Nullable String databaseTableToYamlLocation(DatabaseTable dbTable)
     {
         switch(dbTable.getName())
         {
@@ -1065,7 +1069,7 @@ public class GenCrdV1_17_0
         }
     }
 
-    public static String databaseTableToYamlName(DatabaseTable dbTable)
+    public static @Nullable String databaseTableToYamlName(DatabaseTable dbTable)
     {
         switch(dbTable.getName())
         {
@@ -1303,7 +1307,7 @@ public class GenCrdV1_17_0
     public static class Files extends CustomResource<FilesSpec, Void> implements LinstorCrd<FilesSpec>
     {
         private static final long serialVersionUID = 983795080803947353L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public Files()
@@ -1332,7 +1336,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -1441,7 +1445,7 @@ public class GenCrdV1_17_0
     public static class KeyValueStore extends CustomResource<KeyValueStoreSpec, Void> implements LinstorCrd<KeyValueStoreSpec>
     {
         private static final long serialVersionUID = 4861390495520422682L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public KeyValueStore()
@@ -1470,7 +1474,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -1596,7 +1600,7 @@ public class GenCrdV1_17_0
     public static class LayerBcacheVolumes extends CustomResource<LayerBcacheVolumesSpec, Void> implements LinstorCrd<LayerBcacheVolumesSpec>
     {
         private static final long serialVersionUID = -3594094288534402268L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerBcacheVolumes()
@@ -1625,7 +1629,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -1751,7 +1755,7 @@ public class GenCrdV1_17_0
     public static class LayerCacheVolumes extends CustomResource<LayerCacheVolumesSpec, Void> implements LinstorCrd<LayerCacheVolumesSpec>
     {
         private static final long serialVersionUID = -5213633844272793362L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerCacheVolumes()
@@ -1780,7 +1784,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -1913,7 +1917,7 @@ public class GenCrdV1_17_0
     public static class LayerDrbdResources extends CustomResource<LayerDrbdResourcesSpec, Void> implements LinstorCrd<LayerDrbdResourcesSpec>
     {
         private static final long serialVersionUID = -5524357106676328753L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerDrbdResources()
@@ -1942,7 +1946,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -2101,7 +2105,7 @@ public class GenCrdV1_17_0
     public static class LayerDrbdResourceDefinitions extends CustomResource<LayerDrbdResourceDefinitionsSpec, Void> implements LinstorCrd<LayerDrbdResourceDefinitionsSpec>
     {
         private static final long serialVersionUID = -1494844944230147169L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerDrbdResourceDefinitions()
@@ -2130,7 +2134,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -2248,7 +2252,7 @@ public class GenCrdV1_17_0
     public static class LayerDrbdVolumes extends CustomResource<LayerDrbdVolumesSpec, Void> implements LinstorCrd<LayerDrbdVolumesSpec>
     {
         private static final long serialVersionUID = 3326924562237374623L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerDrbdVolumes()
@@ -2277,7 +2281,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -2405,7 +2409,7 @@ public class GenCrdV1_17_0
     public static class LayerDrbdVolumeDefinitions extends CustomResource<LayerDrbdVolumeDefinitionsSpec, Void> implements LinstorCrd<LayerDrbdVolumeDefinitionsSpec>
     {
         private static final long serialVersionUID = 2556967029413927317L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerDrbdVolumeDefinitions()
@@ -2434,7 +2438,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -2544,7 +2548,7 @@ public class GenCrdV1_17_0
     public static class LayerLuksVolumes extends CustomResource<LayerLuksVolumesSpec, Void> implements LinstorCrd<LayerLuksVolumesSpec>
     {
         private static final long serialVersionUID = -3821706346239734981L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerLuksVolumes()
@@ -2573,7 +2577,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -2691,7 +2695,7 @@ public class GenCrdV1_17_0
     public static class LayerOpenflexResourceDefinitions extends CustomResource<LayerOpenflexResourceDefinitionsSpec, Void> implements LinstorCrd<LayerOpenflexResourceDefinitionsSpec>
     {
         private static final long serialVersionUID = -3979399124966702119L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerOpenflexResourceDefinitions()
@@ -2720,7 +2724,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -2838,7 +2842,7 @@ public class GenCrdV1_17_0
     public static class LayerOpenflexVolumes extends CustomResource<LayerOpenflexVolumesSpec, Void> implements LinstorCrd<LayerOpenflexVolumesSpec>
     {
         private static final long serialVersionUID = 5419441513647430192L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerOpenflexVolumes()
@@ -2867,7 +2871,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -3016,7 +3020,7 @@ public class GenCrdV1_17_0
     public static class LayerResourceIds extends CustomResource<LayerResourceIdsSpec, Void> implements LinstorCrd<LayerResourceIdsSpec>
     {
         private static final long serialVersionUID = 7017142423012505242L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerResourceIds()
@@ -3045,7 +3049,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -3171,7 +3175,7 @@ public class GenCrdV1_17_0
     public static class LayerStorageVolumes extends CustomResource<LayerStorageVolumesSpec, Void> implements LinstorCrd<LayerStorageVolumesSpec>
     {
         private static final long serialVersionUID = -9174449913255384466L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerStorageVolumes()
@@ -3200,7 +3204,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -3318,7 +3322,7 @@ public class GenCrdV1_17_0
     public static class LayerWritecacheVolumes extends CustomResource<LayerWritecacheVolumesSpec, Void> implements LinstorCrd<LayerWritecacheVolumesSpec>
     {
         private static final long serialVersionUID = -8297729401151792727L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LayerWritecacheVolumes()
@@ -3347,7 +3351,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -3488,7 +3492,7 @@ public class GenCrdV1_17_0
     public static class LinstorRemotes extends CustomResource<LinstorRemotesSpec, Void> implements LinstorCrd<LinstorRemotesSpec>
     {
         private static final long serialVersionUID = -4345101058385650998L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public LinstorRemotes()
@@ -3517,7 +3521,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -3642,7 +3646,7 @@ public class GenCrdV1_17_0
     public static class Nodes extends CustomResource<NodesSpec, Void> implements LinstorCrd<NodesSpec>
     {
         private static final long serialVersionUID = 7835341643938951420L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public Nodes()
@@ -3671,7 +3675,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -3781,7 +3785,7 @@ public class GenCrdV1_17_0
     public static class NodeConnections extends CustomResource<NodeConnectionsSpec, Void> implements LinstorCrd<NodeConnectionsSpec>
     {
         private static final long serialVersionUID = -8238112373280947078L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public NodeConnections()
@@ -3810,7 +3814,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -3952,7 +3956,7 @@ public class GenCrdV1_17_0
     public static class NodeNetInterfaces extends CustomResource<NodeNetInterfacesSpec, Void> implements LinstorCrd<NodeNetInterfacesSpec>
     {
         private static final long serialVersionUID = 5359493513722232110L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public NodeNetInterfaces()
@@ -3981,7 +3985,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -4123,7 +4127,7 @@ public class GenCrdV1_17_0
     public static class NodeStorPool extends CustomResource<NodeStorPoolSpec, Void> implements LinstorCrd<NodeStorPoolSpec>
     {
         private static final long serialVersionUID = 1736270031947981724L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public NodeStorPool()
@@ -4152,7 +4156,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -4262,7 +4266,7 @@ public class GenCrdV1_17_0
     public static class PropsContainers extends CustomResource<PropsContainersSpec, Void> implements LinstorCrd<PropsContainersSpec>
     {
         private static final long serialVersionUID = -3139673947091555331L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public PropsContainers()
@@ -4291,7 +4295,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -4426,7 +4430,7 @@ public class GenCrdV1_17_0
     public static class Resources extends CustomResource<ResourcesSpec, Void> implements LinstorCrd<ResourcesSpec>
     {
         private static final long serialVersionUID = -2332546427873833041L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public Resources()
@@ -4455,7 +4459,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -4599,7 +4603,7 @@ public class GenCrdV1_17_0
     public static class ResourceConnections extends CustomResource<ResourceConnectionsSpec, Void> implements LinstorCrd<ResourceConnectionsSpec>
     {
         private static final long serialVersionUID = 181230831480379595L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public ResourceConnections()
@@ -4628,7 +4632,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -4794,7 +4798,7 @@ public class GenCrdV1_17_0
     public static class ResourceDefinitions extends CustomResource<ResourceDefinitionsSpec, Void> implements LinstorCrd<ResourceDefinitionsSpec>
     {
         private static final long serialVersionUID = -7925191541259090921L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public ResourceDefinitions()
@@ -4823,7 +4827,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -5028,7 +5032,7 @@ public class GenCrdV1_17_0
     public static class ResourceGroups extends CustomResource<ResourceGroupsSpec, Void> implements LinstorCrd<ResourceGroupsSpec>
     {
         private static final long serialVersionUID = -8624444798904902369L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public ResourceGroups()
@@ -5057,7 +5061,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -5214,7 +5218,7 @@ public class GenCrdV1_17_0
     public static class S3Remotes extends CustomResource<S3RemotesSpec, Void> implements LinstorCrd<S3RemotesSpec>
     {
         private static final long serialVersionUID = 4385733551670638749L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public S3Remotes()
@@ -5243,7 +5247,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -5368,7 +5372,7 @@ public class GenCrdV1_17_0
     public static class SatellitesCapacity extends CustomResource<SatellitesCapacitySpec, Void> implements LinstorCrd<SatellitesCapacitySpec>
     {
         private static final long serialVersionUID = -4270491975989317343L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SatellitesCapacity()
@@ -5397,7 +5401,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -5498,7 +5502,7 @@ public class GenCrdV1_17_0
     public static class SecAccessTypes extends CustomResource<SecAccessTypesSpec, Void> implements LinstorCrd<SecAccessTypesSpec>
     {
         private static final long serialVersionUID = -8458908980065138195L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecAccessTypes()
@@ -5527,7 +5531,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -5637,7 +5641,7 @@ public class GenCrdV1_17_0
     public static class SecAclMap extends CustomResource<SecAclMapSpec, Void> implements LinstorCrd<SecAclMapSpec>
     {
         private static final long serialVersionUID = 4984347634982100001L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecAclMap()
@@ -5666,7 +5670,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -5775,7 +5779,7 @@ public class GenCrdV1_17_0
     public static class SecConfiguration extends CustomResource<SecConfigurationSpec, Void> implements LinstorCrd<SecConfigurationSpec>
     {
         private static final long serialVersionUID = 8803490581492511255L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecConfiguration()
@@ -5804,7 +5808,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -5905,7 +5909,7 @@ public class GenCrdV1_17_0
     public static class SecDfltRoles extends CustomResource<SecDfltRolesSpec, Void> implements LinstorCrd<SecDfltRolesSpec>
     {
         private static final long serialVersionUID = 5180997538443769104L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecDfltRoles()
@@ -5934,7 +5938,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -6067,7 +6071,7 @@ public class GenCrdV1_17_0
     public static class SecIdentities extends CustomResource<SecIdentitiesSpec, Void> implements LinstorCrd<SecIdentitiesSpec>
     {
         private static final long serialVersionUID = 4981036090599870735L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecIdentities()
@@ -6096,7 +6100,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -6198,7 +6202,7 @@ public class GenCrdV1_17_0
     public static class SecIdRoleMap extends CustomResource<SecIdRoleMapSpec, Void> implements LinstorCrd<SecIdRoleMapSpec>
     {
         private static final long serialVersionUID = 2602964504592052997L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecIdRoleMap()
@@ -6227,7 +6231,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -6344,7 +6348,7 @@ public class GenCrdV1_17_0
     public static class SecObjectProtection extends CustomResource<SecObjectProtectionSpec, Void> implements LinstorCrd<SecObjectProtectionSpec>
     {
         private static final long serialVersionUID = 1684500116755989805L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecObjectProtection()
@@ -6373,7 +6377,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -6498,7 +6502,7 @@ public class GenCrdV1_17_0
     public static class SecRoles extends CustomResource<SecRolesSpec, Void> implements LinstorCrd<SecRolesSpec>
     {
         private static final long serialVersionUID = 2397067742047309241L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecRoles()
@@ -6527,7 +6531,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -6636,7 +6640,7 @@ public class GenCrdV1_17_0
     public static class SecTypes extends CustomResource<SecTypesSpec, Void> implements LinstorCrd<SecTypesSpec>
     {
         private static final long serialVersionUID = -3264690693445282898L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecTypes()
@@ -6665,7 +6669,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -6775,7 +6779,7 @@ public class GenCrdV1_17_0
     public static class SecTypeRules extends CustomResource<SecTypeRulesSpec, Void> implements LinstorCrd<SecTypeRulesSpec>
     {
         private static final long serialVersionUID = 1330914594020584971L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SecTypeRules()
@@ -6804,7 +6808,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -6905,7 +6909,7 @@ public class GenCrdV1_17_0
     public static class SpaceHistory extends CustomResource<SpaceHistorySpec, Void> implements LinstorCrd<SpaceHistorySpec>
     {
         private static final long serialVersionUID = 6310522793327255857L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public SpaceHistory()
@@ -6934,7 +6938,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -7043,7 +7047,7 @@ public class GenCrdV1_17_0
     public static class StorPoolDefinitions extends CustomResource<StorPoolDefinitionsSpec, Void> implements LinstorCrd<StorPoolDefinitionsSpec>
     {
         private static final long serialVersionUID = -112908593299083650L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public StorPoolDefinitions()
@@ -7072,7 +7076,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -7166,7 +7170,7 @@ public class GenCrdV1_17_0
     public static class TrackingDate extends CustomResource<TrackingDateSpec, Void> implements LinstorCrd<TrackingDateSpec>
     {
         private static final long serialVersionUID = -5455226697788114374L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public TrackingDate()
@@ -7195,7 +7199,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -7331,7 +7335,7 @@ public class GenCrdV1_17_0
     public static class Volumes extends CustomResource<VolumesSpec, Void> implements LinstorCrd<VolumesSpec>
     {
         private static final long serialVersionUID = 3964119522018929590L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public Volumes()
@@ -7360,7 +7364,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -7497,7 +7501,7 @@ public class GenCrdV1_17_0
     public static class VolumeConnections extends CustomResource<VolumeConnectionsSpec, Void> implements LinstorCrd<VolumeConnectionsSpec>
     {
         private static final long serialVersionUID = 3033713771805666226L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public VolumeConnections()
@@ -7526,7 +7530,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -7661,7 +7665,7 @@ public class GenCrdV1_17_0
     public static class VolumeDefinitions extends CustomResource<VolumeDefinitionsSpec, Void> implements LinstorCrd<VolumeDefinitionsSpec>
     {
         private static final long serialVersionUID = -8699900264453724929L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public VolumeDefinitions()
@@ -7690,7 +7694,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -7808,7 +7812,7 @@ public class GenCrdV1_17_0
     public static class VolumeGroups extends CustomResource<VolumeGroupsSpec, Void> implements LinstorCrd<VolumeGroupsSpec>
     {
         private static final long serialVersionUID = 3454698622037109605L;
-        String k8sKey = null;
+        @Nullable String k8sKey = null;
 
         @JsonCreator
         public VolumeGroups()
@@ -7837,7 +7841,7 @@ public class GenCrdV1_17_0
 
         @Override
         @JsonIgnore
-        public String getK8sKey()
+        public @Nullable String getK8sKey()
         {
             return k8sKey;
         }
@@ -7868,7 +7872,7 @@ public class GenCrdV1_17_0
 
     public static class JsonTypeResolver extends TypeIdResolverBase
     {
-        private JavaType baseType;
+        private @Nullable JavaType baseType;
 
         @Override
         public void init(JavaType baseTypeRef)
@@ -10271,7 +10275,7 @@ public class GenCrdV1_17_0
             private final int sqlType;
             private final boolean isPk;
             private final boolean isNullable;
-            private DatabaseTable table;
+            private @Nullable DatabaseTable table;
 
             public ColumnImpl(
                 final String nameRef,
@@ -10311,7 +10315,7 @@ public class GenCrdV1_17_0
             }
 
             @Override
-            public DatabaseTable getTable()
+            public @Nullable DatabaseTable getTable()
             {
                 return table;
             }

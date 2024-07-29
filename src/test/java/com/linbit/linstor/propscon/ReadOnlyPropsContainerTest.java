@@ -53,7 +53,7 @@ public class ReadOnlyPropsContainerTest
     private ReadOnlyPropsImpl roProp;
     private Map<String, String> roMap;
     private Set<String> roKeySet;
-    private Set<Entry<String, String>> roEntrySet;
+    private Set<Map.Entry<String, String>> roEntrySet;
     private Collection<String> roValues;
 
     @Before

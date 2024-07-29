@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.data.provider.zfs;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
@@ -20,7 +21,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.io.File;
@@ -37,8 +37,7 @@ public class ZfsData<RSC extends AbsResource<RSC>>
     private @Nullable Long extentSize = null;
 
     // not persisted, not serialized, stlt only
-    private transient String zpool = null;
-    private transient boolean shippingInProgress;
+    private transient @Nullable String zpool = null;
     private boolean initialShipment;
     private boolean markedForDeletion = false;
 
@@ -68,7 +67,7 @@ public class ZfsData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getZPool()
+    public @Nullable String getZPool()
     {
         return zpool;
     }

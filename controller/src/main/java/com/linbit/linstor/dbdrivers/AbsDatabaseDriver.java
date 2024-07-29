@@ -8,6 +8,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
@@ -27,8 +28,6 @@ import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
-
-import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,9 +63,9 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
      * do need a (rscData-) driver without having a dedicated table to work with, but are still needed in order to
      * correctly load vlmData entries from existing database tables
      */
-    protected final DatabaseTable table;
+    protected final @Nullable DatabaseTable table;
     private final DbEngine dbEngine;
-    private final ObjectProtectionFactory objProtFactory;
+    private final @Nullable ObjectProtectionFactory objProtFactory;
 
     private final Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters;
 
@@ -75,7 +74,7 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
         ErrorReporter errorReporterRef,
         @Nullable DatabaseTable tableRef,
         DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef
+        @Nullable ObjectProtectionFactory objProtFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -88,7 +87,7 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
     }
 
     @Override
-    public DatabaseTable getDbTable()
+    public @Nullable DatabaseTable getDbTable()
     {
         return table;
     }
@@ -168,7 +167,7 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
     }
 
     @Override
-    public Map<DATA, INIT_MAPS> loadAll(LOAD_ALL parentRef) throws DatabaseException
+    public Map<DATA, INIT_MAPS> loadAll(@Nullable LOAD_ALL parentRef) throws DatabaseException
     {
         // fail fast is not configured correctly
         performSanityCheck();
@@ -329,7 +328,7 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
         }
     }
 
-    protected abstract Pair<DATA, INIT_MAPS> load(
+    protected abstract @Nullable Pair<DATA, INIT_MAPS> load(
         RawParameters raw,
         LOAD_ALL parentRef
     )

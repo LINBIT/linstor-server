@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.UUID;
 
 public class LinstorRemotePojo implements Comparable<LinstorRemotePojo>
@@ -10,16 +12,16 @@ public class LinstorRemotePojo implements Comparable<LinstorRemotePojo>
     private final String url;
     // intentionally NO encryptedPassphrase. will not be serialized
 
-    private final Long fullSyncId;
-    private final Long updateId;
+    private final @Nullable Long fullSyncId;
+    private final @Nullable Long updateId;
 
     public LinstorRemotePojo(
         UUID uuidRef,
         String remoteNameRef,
         long flagsRef,
         String urlStrRef,
-        Long fullSyncIdRef,
-        Long updateIdRef
+        @Nullable Long fullSyncIdRef,
+        @Nullable Long updateIdRef
     )
     {
         uuid = uuidRef;
@@ -50,12 +52,12 @@ public class LinstorRemotePojo implements Comparable<LinstorRemotePojo>
         return url;
     }
 
-    public Long getFullSyncId()
+    public @Nullable Long getFullSyncId()
     {
         return fullSyncId;
     }
 
-    public Long getUpdateId()
+    public @Nullable Long getUpdateId()
     {
         return updateId;
     }

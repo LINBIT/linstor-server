@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.layer.LayerIgnoreReason;
@@ -106,18 +107,18 @@ public class WritecacheRscPojo implements RscLayerDataApi
     {
         private final int vlmNr;
         @JsonIgnore
-        private final String devicePath;
+        private final @Nullable String devicePath;
         @JsonIgnore
-        private final String dataDevice;
+        private final @Nullable String dataDevice;
         @JsonIgnore
-        private final String cacheDevice;
-        private final String cacheStorPoolName;
+        private final @Nullable String cacheDevice;
+        private final @Nullable String cacheStorPoolName;
         @JsonIgnore
         private final long allocatedSize;
         @JsonIgnore
         private final long usableSize;
         @JsonIgnore
-        private final String diskState;
+        private final @Nullable String diskState;
         @JsonIgnore
         private final long discGran;
         @JsonIgnore
@@ -125,13 +126,13 @@ public class WritecacheRscPojo implements RscLayerDataApi
 
         public WritecacheVlmPojo(
             int vlmNrRef,
-            String devicePathRef,
-            String dataDeviceRef,
-            String cacheDeviceRef,
-            String cacheStorPoolNameRef,
+            @Nullable String devicePathRef,
+            @Nullable String dataDeviceRef,
+            @Nullable String cacheDeviceRef,
+            @Nullable String cacheStorPoolNameRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef,
+            @Nullable String diskStateRef,
             long discGranRef,
             boolean existsRef
         )
@@ -185,22 +186,22 @@ public class WritecacheRscPojo implements RscLayerDataApi
         }
 
         @Override
-        public String getDevicePath()
+        public @Nullable String getDevicePath()
         {
             return devicePath;
         }
 
-        public String getDataDevice()
+        public @Nullable String getDataDevice()
         {
             return dataDevice;
         }
 
-        public String getCacheDevice()
+        public @Nullable String getCacheDevice()
         {
             return cacheDevice;
         }
 
-        public String getCacheStorPoolName()
+        public @Nullable String getCacheStorPoolName()
         {
             return cacheStorPoolName;
         }

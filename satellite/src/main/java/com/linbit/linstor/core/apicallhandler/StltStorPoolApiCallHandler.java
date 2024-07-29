@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.DecryptionHelper;
@@ -150,7 +151,7 @@ class StltStorPoolApiCallHandler
         }
     }
 
-    public ChangedData applyChanges(StorPoolPojo storPoolRaw)
+    public @Nullable ChangedData applyChanges(StorPoolPojo storPoolRaw)
     {
         ChangedData changedData = null;
         Set<StorPoolName> storPoolSet = new HashSet<>();
@@ -175,10 +176,11 @@ class StltStorPoolApiCallHandler
             }
             storPool = localNode.getStorPool(apiCtx, storPoolName);
 
-            boolean storPoolExists = storPool != null;
-            if (storPoolExists)
+            String action;
+            if (storPool != null)
             {
                 boolean storPoolChanged = false;
+                action = "updated";
 
                 checkUuid(storPool, storPoolRaw);
                 checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
@@ -234,6 +236,7 @@ class StltStorPoolApiCallHandler
             }
             else
             {
+                action = "created";
                 StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
                 if (storPoolDfn == null)
                 {
@@ -249,12 +252,17 @@ class StltStorPoolApiCallHandler
                     storPoolDfnToRegister = storPoolDfn;
                 }
 
+                DeviceProviderKind deviceProviderKind = storPoolRaw.getDeviceProviderKind();
+                if (deviceProviderKind == null)
+                {
+                    throw new ImplementationError("deviceProviderKind must not be null");
+                }
                 storPool = storPoolFactory.getInstanceSatellite(
                     apiCtx,
                     storPoolRaw.getStorPoolUuid(),
                     controllerPeerConnector.getLocalNode(),
                     storPoolDfn,
-                    storPoolRaw.getDeviceProviderKind(),
+                    deviceProviderKind,
                     freeSpaceMgrFactory.getInstance(
                         SharedStorPoolName.restoreName(storPoolRaw.getFreeSpaceManagerName())
                     ),
@@ -275,20 +283,11 @@ class StltStorPoolApiCallHandler
             }
             transMgrProvider.get().commit();
 
-            if (storPoolExists)
-            {
-                errorReporter.logInfo(
-                    "Storage pool '%s' updated.",
-                    storPoolName.displayValue
-                );
-            }
-            else
-            {
-                errorReporter.logInfo(
-                    "Storage pool '%s' created.",
-                    storPoolName.displayValue
-                );
-            }
+            errorReporter.logInfo(
+                "Storage pool '%s' %s.",
+                storPoolName.displayValue,
+                action
+            );
 
             storPoolSet.add(storPoolName);
 
@@ -415,9 +414,9 @@ class StltStorPoolApiCallHandler
 
     public static class ChangedData
     {
-        StorPoolDefinition storPoolDfnToRegister;
+        @Nullable StorPoolDefinition storPoolDfnToRegister;
 
-        ChangedData(StorPoolDefinition storPoolDfnToRegisterRef)
+        ChangedData(@Nullable StorPoolDefinition storPoolDfnToRegisterRef)
         {
             storPoolDfnToRegister = storPoolDfnToRegisterRef;
         }

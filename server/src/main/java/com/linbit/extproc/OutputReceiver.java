@@ -1,5 +1,6 @@
 package com.linbit.extproc;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import java.io.IOException;
@@ -29,13 +30,13 @@ public class OutputReceiver implements OutputHandler
     public static final int EOF = -1;
 
     private final InputStream dataIn;
-    private byte[] data;
+    private @Nullable byte[] data;
     private int dataSize;
 
     private boolean finished;
     private boolean overflow;
 
-    private IOException savedIoExc;
+    private @Nullable IOException savedIoExc;
     private final ErrorReporter errLog;
     private final boolean logExecution;
     private final String logId;

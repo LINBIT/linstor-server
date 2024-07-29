@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbcp.migration.Migration_2022_03_23_RenameNetComProps;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_17_0;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_17_0.PropsContainers;
@@ -20,7 +21,7 @@ public class Migration_05_v1_17_0_RenameNetComNamespace extends BaseK8sCrdMigrat
     }
 
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         HashMap<String, GenCrdV1_17_0.PropsContainers> propsCrd = txFrom
             .getCrd(GenCrdV1_17_0.GeneratedDatabaseTables.PROPS_CONTAINERS);

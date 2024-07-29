@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.objects.Resource;
@@ -10,7 +11,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -50,8 +50,7 @@ public class Autoplacer
      * @param rscSize
      * @return Null if no selection could be made of a non-empty Set of selected StorPools
      */
-    public @Nullable
-    Set<StorPool> autoPlace(
+    public @Nullable Set<StorPool> autoPlace(
         AutoSelectFilterApi selectFilter,
         @Nullable ResourceDefinition rscDfnRef,
         long rscSize
@@ -122,7 +121,7 @@ public class Autoplacer
         return selection;
     }
 
-    static class StorPoolWithScore implements Comparable<StorPoolWithScore>
+    public static class StorPoolWithScore implements Comparable<StorPoolWithScore>
     {
         StorPool storPool;
         double score;

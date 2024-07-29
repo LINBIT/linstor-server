@@ -8,6 +8,7 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -46,7 +47,7 @@ public class CtrlVlmDfnCrtApiHelper
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         VolumeNumber volNr,
-        Integer minorNr,
+        @Nullable Integer minorNr,
         long size,
         VolumeDefinition.Flags[] vlmDfnInitFlags
     )

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.identifier.RemoteName;
@@ -16,7 +17,7 @@ import javax.inject.Singleton;
 public class RemoteProtectionRepository implements RemoteRepository
 {
     private final CoreModule.RemoteMap remoteMap;
-    private ObjectProtection remoteMapObjProt;
+    private @Nullable ObjectProtection remoteMapObjProt;
 
     @Inject
     public RemoteProtectionRepository(CoreModule.RemoteMap remoteMapRef)
@@ -48,7 +49,7 @@ public class RemoteProtectionRepository implements RemoteRepository
     }
 
     @Override
-    public AbsRemote get(AccessContext accCtx, RemoteName remoteNameRef) throws AccessDeniedException
+    public @Nullable AbsRemote get(AccessContext accCtx, RemoteName remoteNameRef) throws AccessDeniedException
     {
         checkProtSet();
         requireAccess(accCtx, AccessType.VIEW);

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.repository;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -21,7 +22,7 @@ public class ResourceDefinitionProtectionRepository implements ResourceDefinitio
 {
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.ResourceDefinitionMapExtName rscDfnMapExtName;
-    private ObjectProtection resourceDefinitionMapObjProt;
+    private @Nullable ObjectProtection resourceDefinitionMapObjProt;
 
     @Inject
     public ResourceDefinitionProtectionRepository(CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -56,12 +57,12 @@ public class ResourceDefinitionProtectionRepository implements ResourceDefinitio
     }
 
     @Override
-    public ResourceDefinition get(AccessContext accCtx, ResourceName resourceName)
+    public @Nullable ResourceDefinition get(AccessContext accCtx, ResourceName resourceName)
         throws AccessDeniedException
     {
         checkProtSet();
         resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (ResourceDefinition) rscDfnMap.get(resourceName);
+        return rscDfnMap.get(resourceName);
     }
 
     @Override
@@ -70,7 +71,7 @@ public class ResourceDefinitionProtectionRepository implements ResourceDefinitio
     {
         checkProtSet();
         resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (ResourceDefinition) rscDfnMapExtName.get(externalName);
+        return rscDfnMapExtName.get(externalName);
     }
 
     @Override

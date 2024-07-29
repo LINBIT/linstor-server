@@ -8,6 +8,7 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.ClassPathLoader;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.DbUtils;
@@ -20,7 +21,6 @@ import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
 import com.linbit.linstor.transaction.ControllerETCDTransactionMgrGenerator;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -53,7 +53,7 @@ public class DbEtcd implements ControllerETCDDatabase
     private final ControllerETCDTransactionMgrGenerator txMgrGenerator;
 
     private int dbTimeout = ControllerDatabase.DEFAULT_TIMEOUT;
-    private KvStoreClient etcdClient;
+    private @Nullable KvStoreClient etcdClient;
 
     static
     {

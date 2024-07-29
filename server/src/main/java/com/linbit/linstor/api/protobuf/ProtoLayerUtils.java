@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.protobuf;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
@@ -56,8 +57,6 @@ import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
 import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheVlm;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -65,7 +64,7 @@ import java.util.UUID;
 
 public class ProtoLayerUtils
 {
-    public static RscLayerDataApi extractRscLayerData(
+    public static @Nullable RscLayerDataApi extractRscLayerData(
         RscLayerData protoRscData,
         long fullSyncId,
         long updateId
@@ -342,7 +341,7 @@ public class ProtoLayerUtils
 
     public static List<Pair<String, RscDfnLayerDataApi>> extractRscDfnLayerData(RscDfn rscDfnRef)
     {
-        List<Pair<String, RscDfnLayerDataApi>> ret = new ArrayList<>();
+        List<Pair<String, @Nullable RscDfnLayerDataApi>> ret = new ArrayList<>();
 
         for (RscDfnLayerData rscDfnLayerData : rscDfnRef.getLayerDataList())
         {
@@ -708,7 +707,7 @@ public class ProtoLayerUtils
         return ret;
     }
 
-    private static VlmDfnLayerDataApi extractStorageVlmDfn(StorageVlmDfn storageVlmDfnRef)
+    private static @Nullable VlmDfnLayerDataApi extractStorageVlmDfn(StorageVlmDfn storageVlmDfnRef)
     {
         VlmDfnLayerDataApi vlmDfnApi;
         switch (storageVlmDfnRef.getProviderKind())

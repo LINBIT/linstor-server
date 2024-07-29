@@ -10,6 +10,7 @@ import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ControllerCoreModule;
@@ -740,7 +741,8 @@ public class DatabaseLoader implements DatabaseDriver
             }
         );
 
-        Set<Snapshot> snapshotsWithLayerData = loadLayerData(
+        // this needs to be called to load the snapshot-layerdata and save it into the respective snapshot
+        loadLayerData(
             parentObjects,
             tmpStorPoolMapWithInitMapsRef,
             rli ->
@@ -940,7 +942,7 @@ public class DatabaseLoader implements DatabaseDriver
 
     private List<AbsRscLayerObject<?>> nextRscLayerObjPojosToLoad(
         List<AbsRscLayerObject<?>> rscLayerInfoListRef,
-        Set<Integer> ids
+        @Nullable Set<Integer> ids
     )
     {
         List<AbsRscLayerObject<?>> ret;

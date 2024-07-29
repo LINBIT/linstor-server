@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.nvme;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
@@ -15,7 +16,6 @@ import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -27,10 +27,9 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     implements NvmeVlmObject<RSC>, VlmLayerObject<RSC>
 {
     // not persisted, not serialized, stlt only
-    private boolean hasDisk;
     private final TransactionList<NvmeVlmData<RSC>, State> states;
-    private Size sizeState;
-    private String diskState;
+    private @Nullable Size sizeState;
+    private @Nullable String diskState;
 
     public NvmeVlmData(
         AbsVolume<RSC> vlmRef,
@@ -88,7 +87,7 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public Size getSizeState()
+    public @Nullable Size getSizeState()
     {
         return sizeState;
     }
@@ -111,7 +110,7 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getDiskState()
+    public @Nullable String getDiskState()
     {
         return diskState;
     }
@@ -119,11 +118,6 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     public void setDiskState(String diskStateRef)
     {
         diskState = diskStateRef;
-    }
-
-    public boolean hasDisk()
-    {
-        return hasDisk;
     }
 
     @Override

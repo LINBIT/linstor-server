@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.drbd.drbdstate;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -10,7 +11,6 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
-
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -72,9 +72,9 @@ public class DrbdResource
     protected final ResourceName resName;
     protected final String resNameStr;
     protected Role resRole;
-    protected Boolean suspendedUser;
-    protected Boolean mayPromote;
-    protected Integer promotionScore;
+    protected @Nullable Boolean suspendedUser;
+    protected @Nullable Boolean mayPromote;
+    protected @Nullable Integer promotionScore;
     private final Map<String, DrbdConnection> connList;
     private final Map<VolumeNumber, DrbdVolume> volList;
     protected boolean isLinstorDrbdResource;
@@ -89,7 +89,7 @@ public class DrbdResource
         volList = new TreeMap<>();
     }
 
-    private ResourceName asRscName(String nameStr)
+    private @Nullable ResourceName asRscName(String nameStr)
     {
         ResourceName rscName = null;
         try
@@ -117,17 +117,17 @@ public class DrbdResource
         return resRole;
     }
 
-    public Boolean getSuspendedUser()
+    public @Nullable Boolean getSuspendedUser()
     {
         return suspendedUser;
     }
 
-    public Integer getPromotionScore()
+    public @Nullable Integer getPromotionScore()
     {
         return promotionScore;
     }
 
-    public Boolean mayPromote()
+    public @Nullable Boolean mayPromote()
     {
         return mayPromote;
     }
@@ -226,7 +226,7 @@ public class DrbdResource
         }
     }
 
-    public DrbdConnection getConnection(String name)
+    public @Nullable DrbdConnection getConnection(String name)
     {
         if (name == null)
         {
@@ -251,6 +251,7 @@ public class DrbdResource
         }
     }
 
+    @Nullable
     DrbdConnection removeConnection(String name)
     {
         // Map.remove(null) is a valid operation, avoid hiding bugs
@@ -279,7 +280,7 @@ public class DrbdResource
         return connListCopy;
     }
 
-    public DrbdVolume getVolume(VolumeNumber volNr)
+    public @Nullable DrbdVolume getVolume(VolumeNumber volNr)
     {
         DrbdVolume vol;
         synchronized (volList)
@@ -317,6 +318,7 @@ public class DrbdResource
         }
     }
 
+    @Nullable
     DrbdVolume removeVolume(VolumeNumber volNr)
     {
         DrbdVolume removedVol;

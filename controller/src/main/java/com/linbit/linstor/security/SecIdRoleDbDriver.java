@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -36,7 +37,7 @@ public class SecIdRoleDbDriver extends AbsDatabaseDriver<Pair<Identity, Role>, V
     }
 
     @Override
-    protected Pair<Pair<Identity, Role>, Void> load(RawParameters rawRef, Void parent)
+    protected @Nullable Pair<Pair<Identity, Role>, Void> load(RawParameters rawRef, Void parent)
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
         MdException, ExhaustedPoolException, ValueInUseException, RuntimeException, AccessDeniedException
     {

@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 
 import java.util.UUID;
@@ -10,18 +11,18 @@ import java.util.UUID;
  */
 public class NetInterfacePojo implements NetInterfaceApi
 {
-    private final UUID uuid;
+    private final @Nullable UUID uuid;
     private final String name;
     private final String address;
-    private final Integer port;
-    private final String encrType;
+    private final @Nullable Integer port;
+    private final @Nullable String encrType;
 
     public NetInterfacePojo(
-        final UUID uuidRef,
+        final @Nullable UUID uuidRef,
         final String nameRef,
         final String addressRef,
-        final Integer portRef,
-        final String encrTypeRef
+        final @Nullable Integer portRef,
+        final @Nullable String encrTypeRef
     )
     {
         uuid = uuidRef;
@@ -32,7 +33,7 @@ public class NetInterfacePojo implements NetInterfaceApi
     }
 
     @Override
-    public UUID getUuid()
+    public @Nullable UUID getUuid()
     {
         return uuid;
     }
@@ -56,13 +57,13 @@ public class NetInterfacePojo implements NetInterfaceApi
     }
 
     @Override
-    public int getSatelliteConnectionPort()
+    public @Nullable Integer getSatelliteConnectionPort()
     {
         return port;
     }
 
     @Override
-    public String getSatelliteConnectionEncryptionType()
+    public @Nullable String getSatelliteConnectionEncryptionType()
     {
         return encrType;
     }

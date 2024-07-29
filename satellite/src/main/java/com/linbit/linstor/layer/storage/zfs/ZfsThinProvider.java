@@ -54,7 +54,7 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
-    protected String getZPool(StorPoolInfo storPool)
+    protected @Nullable String getZPool(StorPoolInfo storPool)
     {
         String zPool;
         try

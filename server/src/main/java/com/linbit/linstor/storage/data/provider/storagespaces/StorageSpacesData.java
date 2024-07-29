@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider.storagespaces;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.StorageSpacesThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.StorageSpacesVlmPojo;
@@ -17,7 +18,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ import java.util.ArrayList;
 public class StorageSpacesData<RSC extends AbsResource<RSC>>
     extends AbsStorageVlmData<RSC> implements StorageSpacesProviderObject<RSC>
 {
-    private transient String storagePoolFriendlyName;
+    private transient @Nullable String storagePoolFriendlyName;
 
     public StorageSpacesData(
         AbsVolume<RSC> vlmRef,
@@ -48,7 +48,7 @@ public class StorageSpacesData<RSC extends AbsResource<RSC>>
         );
     }
 
-    public String getStoragePoolFriendlyName()
+    public @Nullable String getStoragePoolFriendlyName()
     {
         return storagePoolFriendlyName;
     }
@@ -65,7 +65,7 @@ public class StorageSpacesData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
+    public @Nullable VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         if (providerKind.equals(DeviceProviderKind.STORAGE_SPACES))
         {

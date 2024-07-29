@@ -2,6 +2,7 @@ package com.linbit.linstor.event.handler;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
@@ -13,6 +14,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Consumer;
@@ -37,7 +39,11 @@ public class SatelliteStateHelper
         nodesMapLock = nodesMapLockRef;
     }
 
-    public <T> T withSatelliteState(NodeName nodeName, Function<SatelliteState, T> extractor, T defaultIfNoPeer)
+    public <T> @Nullable T withSatelliteState(
+        NodeName nodeName,
+        Function<SatelliteState, T> extractor,
+        @Nullable T defaultIfNoPeer
+    )
     {
         T value = defaultIfNoPeer;
 
@@ -86,7 +92,7 @@ public class SatelliteStateHelper
         );
     }
 
-    private <T> Void acceptAndReturnNull(Consumer<T> consumer, T value)
+    private <T> @Nullable Void acceptAndReturnNull(Consumer<T> consumer, T value)
     {
         consumer.accept(value);
         return null;

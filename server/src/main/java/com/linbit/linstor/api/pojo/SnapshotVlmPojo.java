@@ -1,8 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
-
-import javax.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.Map;
@@ -15,7 +14,7 @@ public class SnapshotVlmPojo implements SnapshotVolumeApi
     private final int snapshotVlmNr;
     private final Map<String, String> snapVlmPropsMap;
     private final Map<String, String> vlmPropsMap;
-    private final String state;
+    private final @Nullable String state;
 
     public SnapshotVlmPojo(
         final UUID snapshotVlmDfnUuidRef,
@@ -65,7 +64,7 @@ public class SnapshotVlmPojo implements SnapshotVolumeApi
     }
 
     @Override
-    public String getState()
+    public @Nullable String getState()
     {
         return state;
     }

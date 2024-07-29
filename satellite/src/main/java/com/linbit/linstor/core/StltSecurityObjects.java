@@ -1,5 +1,7 @@
 package com.linbit.linstor.core;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import javax.inject.Inject;
 
 import com.google.inject.Singleton;
@@ -7,10 +9,10 @@ import com.google.inject.Singleton;
 @Singleton
 public class StltSecurityObjects
 {
-    private byte[] cryptKey;
-    private byte[] hash;
-    private byte[] salt;
-    private byte[] encKey;
+    private @Nullable byte[] cryptKey;
+    private @Nullable byte[] hash;
+    private @Nullable byte[] salt;
+    private @Nullable byte[] encKey;
 
     @Inject
     public StltSecurityObjects()
@@ -25,22 +27,22 @@ public class StltSecurityObjects
         encKey = encKeyRef;
     }
 
-    public byte[] getCryptKey()
+    public @Nullable byte[] getCryptKey()
     {
         return cryptKey;
     }
 
-    public byte[] getHash()
+    public @Nullable byte[] getHash()
     {
         return hash;
     }
 
-    public byte[] getSalt()
+    public @Nullable byte[] getSalt()
     {
         return salt;
     }
 
-    public byte[] getEncKey()
+    public @Nullable byte[] getEncKey()
     {
         return encKey;
     }

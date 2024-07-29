@@ -1,11 +1,10 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.NodeConnectionApi;
-
-import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -20,16 +19,16 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final ApiConsts.ConnectionStatus connectionStatus;
     private final long nodeFlags;
     private final List<NetInterfaceApi> nodeNetInterfaces;
-    private final NetInterfaceApi nodeActiveStltConn;
+    private final @Nullable NetInterfaceApi nodeActiveStltConn;
     private final List<NodeConnPojo> nodeConns;
     private final Map<String, String> nodeProps;
-    private final Long fullSyncId;
-    private final Long updateId;
-    private final List<String> deviceLayerKindNames;
-    private final List<String> deviceProviderKindNames;
-    private final Map<String, List<String>> unsupportedLayersWithReasons;
-    private final Map<String, List<String>> unsupportedProvidersWithReasons;
-    private final Long evictionTimestamp;
+    private final @Nullable Long fullSyncId;
+    private final @Nullable Long updateId;
+    private final @Nullable List<String> deviceLayerKindNames;
+    private final @Nullable List<String> deviceProviderKindNames;
+    private final @Nullable Map<String, List<String>> unsupportedLayersWithReasons;
+    private final @Nullable Map<String, List<String>> unsupportedProvidersWithReasons;
+    private final @Nullable Long evictionTimestamp;
     private final long reconnectAttemptCount;
 
     public NodePojo(
@@ -38,17 +37,17 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         final String nodeTypeRef,
         final long nodeFlagsRef,
         final List<NetInterfaceApi> nodeNetInterfacesRef,
-        @Nullable final NetInterfaceApi nodeActiveStltConnRef,
+        final @Nullable NetInterfaceApi nodeActiveStltConnRef,
         final List<NodeConnPojo> nodeConnsRef,
         final Map<String, String> nodePropsRef,
         final ApiConsts.ConnectionStatus connectionStatusRef,
-        final Long fullSyncIdRef,
-        final Long updateIdRef,
-        final List<String> deviceLayerKindNamesRef,
-        final List<String> deviceProviderKindNamesRef,
-        final Map<String, List<String>> unsupportedLayersWithReasonsRef,
-        final Map<String, List<String>> unsupportedProvidersWithReasonsRef,
-        final Long evictionTimestampRef,
+        final @Nullable Long fullSyncIdRef,
+        final @Nullable Long updateIdRef,
+        final @Nullable List<String> deviceLayerKindNamesRef,
+        final @Nullable List<String> deviceProviderKindNamesRef,
+        final @Nullable Map<String, List<String>> unsupportedLayersWithReasonsRef,
+        final @Nullable Map<String, List<String>> unsupportedProvidersWithReasonsRef,
+        final @Nullable Long evictionTimestampRef,
         final long reconnectAttemptCountRef
     )
     {
@@ -113,7 +112,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     }
 
     @Override
-    public NetInterfaceApi getActiveStltConn()
+    public @Nullable NetInterfaceApi getActiveStltConn()
     {
         return nodeActiveStltConn;
     }
@@ -141,56 +140,56 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         return nodeName.compareTo(otherNodePojo.nodeName);
     }
 
-    public long getFullSyncId()
+    public @Nullable Long getFullSyncId()
     {
         return fullSyncId;
     }
 
-    public long getUpdateId()
+    public @Nullable Long getUpdateId()
     {
         return updateId;
     }
 
     @Override
-    public List<String> getDeviceLayerKindNames()
+    public @Nullable List<String> getDeviceLayerKindNames()
     {
         return deviceLayerKindNames;
     }
 
     @Override
-    public List<String> getDeviceProviderKindNames()
+    public @Nullable List<String> getDeviceProviderKindNames()
     {
         return deviceProviderKindNames;
     }
 
     @Override
-    public Map<String, List<String>> getUnsupportedLayersWithReasons()
+    public @Nullable Map<String, List<String>> getUnsupportedLayersWithReasons()
     {
         return unsupportedLayersWithReasons;
     }
 
     @Override
-    public Map<String, List<String>> getUnsupportedProvidersWithReasons()
+    public @Nullable Map<String, List<String>> getUnsupportedProvidersWithReasons()
     {
         return unsupportedProvidersWithReasons;
     }
 
     @Override
-    public Long getEvictionTimestamp()
+    public @Nullable Long getEvictionTimestamp()
     {
         return evictionTimestamp;
     }
 
     public static class NodeConnPojo implements NodeConnectionApi, Comparable<NodeConnPojo>
     {
-        private final UUID uuid;
+        private final @Nullable UUID uuid;
         private final String localNodeName;
         private final NodePojo otherNodePojo;
 
         private final Map<String, String> props;
 
         public NodeConnPojo(
-            UUID nodeConnUuidRef,
+            @Nullable UUID nodeConnUuidRef,
             String localNodeNameRef,
             NodePojo otherNodePojoRef,
             Map<String, String> nodeConnPropsRef
@@ -203,7 +202,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         }
 
         @Override
-        public UUID getUuid()
+        public @Nullable UUID getUuid()
         {
             return uuid;
         }

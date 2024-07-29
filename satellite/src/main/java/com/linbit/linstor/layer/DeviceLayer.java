@@ -3,6 +3,7 @@ package com.linbit.linstor.layer;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -26,8 +27,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-
-import javax.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.Map;
@@ -98,6 +97,7 @@ public interface DeviceLayer
 
     void clearCache() throws StorageException;
 
+    @Nullable
     LocalPropsChangePojo setLocalNodeProps(Props localNodeProps) throws StorageException, AccessDeniedException;
 
     boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
@@ -162,7 +162,7 @@ public interface DeviceLayer
      * @throws AccessDeniedException
      * @throws StorageException
      */
-    default LocalPropsChangePojo checkStorPool(StorPoolInfo storPoolInfoRef, boolean update)
+    default @Nullable LocalPropsChangePojo checkStorPool(StorPoolInfo storPoolInfoRef, boolean update)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op, no change in props

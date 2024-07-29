@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -8,8 +9,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-
-import javax.annotation.Nullable;
 
 import java.util.Map;
 
@@ -31,7 +30,7 @@ public class ResponseUtils
      * @param peer
      */
     public static void reportStatic(
-        Throwable throwableRef,
+        @Nullable Throwable throwableRef,
         String errorMsg,
         long retCode,
         @Nullable Map<String, String> objRefsRef,
@@ -77,9 +76,9 @@ public class ResponseUtils
     public static void reportStatic(
         @Nullable Throwable throwableRef,
         String errorMsg,
-        String causeMsg,
-        String detailsMsg,
-        String correctionMsg,
+        @Nullable String causeMsg,
+        @Nullable String detailsMsg,
+        @Nullable String correctionMsg,
         long retCode,
         @Nullable Map<String, String> objRefsRef,
         boolean skipErrorReport,
@@ -137,9 +136,9 @@ public class ResponseUtils
      */
     public static void addAnswerStatic(
         String msg,
-        String cause,
-        String details,
-        String correction,
+        @Nullable String cause,
+        @Nullable String details,
+        @Nullable String correction,
         long retCode,
         @Nullable Map<String, String> objRefsRef,
         @Nullable String errorId,
@@ -171,7 +170,7 @@ public class ResponseUtils
 
     public static void reportSuccessStatic(
         String msg,
-        String details,
+        @Nullable String details,
         long retCode,
         @Nullable ApiCallRcImpl apiCallRcRef,
         @Nullable Map<String, String> objsRef,

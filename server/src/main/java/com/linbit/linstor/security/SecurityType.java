@@ -2,6 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
 
@@ -106,7 +107,7 @@ public final class SecurityType implements Comparable<SecurityType>
         return secTypeObj;
     }
 
-    public static SecurityType get(SecTypeName typeName)
+    public static @Nullable SecurityType get(SecTypeName typeName)
     {
         Lock readLock = GLOBAL_TYPE_MAP_LOCK.readLock();
 

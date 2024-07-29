@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -37,7 +38,7 @@ public class CryptSetupCommands implements Luks
     @SuppressWarnings("unused")
     private final ErrorReporter errorReporter;
     private final ExtCmdFactory extCmdFactory;
-    private final Version version;
+    private final @Nullable Version version;
 
     @Inject
     public CryptSetupCommands(
@@ -381,7 +382,8 @@ public class CryptSetupCommands implements Luks
         }
     }
 
-    private void resize(LuksVlmData<Resource> vlmDataRef, Long sizeRef, byte[] passphraseRef) throws StorageException
+    private void resize(LuksVlmData<Resource> vlmDataRef, @Nullable Long sizeRef, byte[] passphraseRef)
+        throws StorageException
     {
         ExtCmd extCmd = extCmdFactory.create();
         try

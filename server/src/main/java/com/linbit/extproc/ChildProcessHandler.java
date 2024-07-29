@@ -1,12 +1,13 @@
 package com.linbit.extproc;
 
-import com.linbit.ImplementationError;
-import com.linbit.NegativeTimeException;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.NegativeTimeException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.timer.Timer;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.timer.Action;
+import com.linbit.timer.Timer;
 
 /**
  * Process spawner &amp; handler for running external processes
@@ -42,7 +43,7 @@ public class ChildProcessHandler
     private boolean autoKill = true;
 
     private final Timer<String, Action<String>> timeoutScheduler;
-    private Process childProcess;
+    private @Nullable Process childProcess;
 
     public ChildProcessHandler(Timer<String, Action<String>> timer)
     {

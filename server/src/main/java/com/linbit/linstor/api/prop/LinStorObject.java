@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.prop;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 
 public enum LinStorObject
@@ -42,15 +43,15 @@ public enum LinStorObject
     DRBD_PROXY_LZ4(0, null);
 
     public final long apiMask;
-    public final String path;
+    public final @Nullable String path;
 
-    LinStorObject(long apiMaskRef, String pathRef)
+    LinStorObject(long apiMaskRef, @Nullable String pathRef)
     {
         apiMask = apiMaskRef;
         path = pathRef;
     }
 
-    public static LinStorObject drbdProxyCompressionObject(String compressionType)
+    public static @Nullable LinStorObject drbdProxyCompressionObject(String compressionType)
     {
         LinStorObject linStorObject;
         switch (compressionType)

@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.annotation.Nullable;
+
 /**
  * Database driver information for IBM DB2
  *
@@ -14,7 +16,7 @@ public class Db2DatabaseInfo implements DatabaseDriverInfo
     }
 
     @Override
-    public String jdbcInMemoryUrl()
+    public @Nullable String jdbcInMemoryUrl()
     {
         return null;
     }

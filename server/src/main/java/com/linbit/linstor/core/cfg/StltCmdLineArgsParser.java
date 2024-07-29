@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.cfg;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.LinStor;
 
 import java.io.File;
@@ -14,34 +15,34 @@ class StltCmdLineArgsParser
     @CommandLine.Option(names = {"-c", "--config-directory"},
         description = "Configuration directory for the controller"
     )
-    private String configurationDirectory;
+    private @Nullable String configurationDirectory;
 
     @CommandLine.Option(names = {"-d", "--debug-console"}, description = "")
-    private Boolean debugConsole;
+    private @Nullable Boolean debugConsole;
 
     @CommandLine.Option(
         names = {"-p", "--stack-traces"},
         description = "print error stack traces on standard error"
     )
-    private Boolean printStackTrace;
+    private @Nullable Boolean printStackTrace;
 
     @CommandLine.Option(names = {"-l", "--logs"}, description = "Path to the log directory")
-    private String logDirectory;
+    private @Nullable String logDirectory;
 
     @CommandLine.Option(names = {"--log-level"},
         description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
-    private String logLevel;
+    private @Nullable String logLevel;
 
     @CommandLine.Option(names = {"--log-level-linstor"},
         description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
-    private String logLevelLinstor;
+    private @Nullable String logLevelLinstor;
 
 
     @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Show the version number")
-    private Boolean versionInfoRequested;
+    private @Nullable Boolean versionInfoRequested;
 
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
-    private Boolean usageHelpRequested;
+    private @Nullable Boolean usageHelpRequested;
 
     @CommandLine.Option(
         names = {"-k", "--keep-res"},
@@ -49,15 +50,15 @@ class StltCmdLineArgsParser
             "if this regex matches a file of a drbd resource file created by linstor, the " +
             "matched file will NOT be deleted"
     )
-    private String keepResourceRegex;
+    private @Nullable String keepResourceRegex;
 
     @CommandLine.Option(names = {"--port"}, description = "overrides the plain port")
-    private Integer plainPort;
+    private @Nullable Integer plainPort;
 
     @CommandLine.Option(names = {"-s", "--skip-hostname-check"},
         description = "deprecated. this argument will be silently ignored")
     @Deprecated
-    private Boolean skipHostNameCheck;
+    private @Nullable Boolean skipHostNameCheck;
 
     @CommandLine.Option(names = {"--skip-drbd-check"},
                         description = "deprecated. this argument will be silently ignored.")
@@ -65,10 +66,10 @@ class StltCmdLineArgsParser
     private boolean skipDrbdCheck;
 
     @CommandLine.Option(names = {"--bind-address"}, description = "overrides the bind address")
-    private String bindAddress;
+    private @Nullable String bindAddress;
 
     @CommandLine.Option(names = {"--override-node-name"}, description = "Overrides node name used in error reports.")
-    private String nodeName;
+    private @Nullable String nodeName;
 
     @CommandLine.Option(names = { "--remote-spdk" }, hidden = true)
     private boolean remoteSpdk;
@@ -77,7 +78,7 @@ class StltCmdLineArgsParser
     private boolean ebs;
 
     @CommandLine.Option(names = "--allow-ext-files", split = ",", description = "Whitelist paths for external files")
-    private String[] extFilesWhitelist;
+    private @Nullable String[] extFilesWhitelist;
 
     static void parseCommandLine(String[] args, StltConfig stltCfg)
     {

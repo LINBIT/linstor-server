@@ -6,6 +6,7 @@ import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -70,7 +71,6 @@ import com.linbit.utils.UuidUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -152,6 +152,7 @@ public class CtrlConfApiCallHandler
          * This method is expected to delete the entries of the input map/sets once those are handled and should NOT be
          * passed through to the usual whitelisting mechanism
          */
+        @Nullable
         ApiCallRc handle(
             HashMap<String, String> filteredOverrideProps,
             HashSet<String> filteredDeletePropKeys,
@@ -661,13 +662,13 @@ public class CtrlConfApiCallHandler
         }
 
         @Override
-        public String getLogLevel()
+        public @Nullable String getLogLevel()
         {
             return config.log.level;
         }
 
         @Override
-        public String getLogLevelLinstor()
+        public @Nullable String getLogLevelLinstor()
         {
             return config.log.level_linstor;
         }
@@ -749,7 +750,7 @@ public class CtrlConfApiCallHandler
         AccessContext accCtx,
         String key,
         String value,
-        String namespace,
+        @Nullable String namespace,
         PropertyChangedListener propChangedListenerRef
     )
         throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
@@ -831,7 +832,7 @@ public class CtrlConfApiCallHandler
 
     public Triple<ApiCallRc, Boolean, Set<Resource>> setProp(
         String key,
-        String namespace,
+        @Nullable String namespace,
         String value,
         Map<String, PropertyChangedListener> propsChangedListenersRef
     )
@@ -1442,7 +1443,7 @@ public class CtrlConfApiCallHandler
 
     private Triple<ApiCallRc, Boolean, Set<Resource>> deleteProp(
         String key,
-        String namespace,
+        @Nullable String namespace,
         Map<String, PropertyChangedListener> propsChangedListenersRef
     )
     {
@@ -1735,7 +1736,7 @@ public class CtrlConfApiCallHandler
         return Flux.<ApiCallRc>just(apiCallRc).concatWith(flux);
     }
 
-    public Flux<ApiCallRc> setPassphrase(String newPassphrase, String oldPassphrase)
+    public Flux<ApiCallRc> setPassphrase(String newPassphrase, @Nullable String oldPassphrase)
     {
         ResponseContext context = makeCtrlConfContext(
             ApiOperation.makeCreateOperation()
@@ -1751,7 +1752,7 @@ public class CtrlConfApiCallHandler
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> setPassphraseInTransaction(String newPassphrase, String oldPassphrase)
+    private Flux<ApiCallRc> setPassphraseInTransaction(String newPassphrase, @Nullable String oldPassphrase)
     {
         Flux<ApiCallRc> flux = Flux.empty();
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();

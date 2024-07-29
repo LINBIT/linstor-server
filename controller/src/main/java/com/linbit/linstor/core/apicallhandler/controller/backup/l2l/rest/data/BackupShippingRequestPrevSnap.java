@@ -1,6 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.Objects;
 import java.util.Set;

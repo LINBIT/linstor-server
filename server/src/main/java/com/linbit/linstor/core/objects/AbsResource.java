@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.AbsResourceDatabaseDriver;
@@ -13,6 +14,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -31,18 +33,18 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
     public static final int CREATE_DATE_INIT_VALUE = 1000;
 
     // Reference to the node this resource is assigned to
-    protected final Node node;
+    protected final @Nonnull Node node;
 
-    protected final TransactionSimpleObject<AbsResource<RSC>, Date> createTimestamp;
+    protected final TransactionSimpleObject<AbsResource<RSC>, @Nullable Date> createTimestamp;
 
-    protected final TransactionSimpleObject<AbsResource<RSC>, AbsRscLayerObject<RSC>> rootLayerData;
+    protected final TransactionSimpleObject<AbsResource<RSC>, @Nullable AbsRscLayerObject<RSC>> rootLayerData;
 
     protected AbsResource(
         UUID objIdRef,
-        Node nodeRef,
+        @Nonnull Node nodeRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
         TransactionObjectFactory transObjFactory,
-        Date createTimestampRef,
+        @Nullable Date createTimestampRef,
         AbsResourceDatabaseDriver<RSC> dbDriverRef
     )
     {
@@ -63,7 +65,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
     }
 
 
-    public Node getNode()
+    public @Nonnull Node getNode()
     {
         checkDeleted();
         return node;
@@ -83,7 +85,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
         createTimestamp.set(creationDate);
     }
 
-    public AbsRscLayerObject<RSC> getLayerData(AccessContext accCtx)
+    public @Nullable AbsRscLayerObject<RSC> getLayerData(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -91,7 +93,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
         return rootLayerData.get();
     }
 
-    public void setLayerData(AccessContext accCtx, AbsRscLayerObject<RSC> layerData)
+    public void setLayerData(AccessContext accCtx, @Nullable AbsRscLayerObject<RSC> layerData)
         throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
@@ -99,7 +101,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
         rootLayerData.set(layerData);
     }
 
-    public abstract AbsVolume<RSC> getVolume(VolumeNumber vlmNr);
+    public abstract @Nullable AbsVolume<RSC> getVolume(VolumeNumber vlmNr);
 
     public abstract Iterator<? extends AbsVolume<RSC>> iterateVolumes();
 

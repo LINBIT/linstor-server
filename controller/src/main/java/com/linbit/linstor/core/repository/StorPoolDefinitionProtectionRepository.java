@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
@@ -19,7 +20,7 @@ import javax.inject.Singleton;
 public class StorPoolDefinitionProtectionRepository implements StorPoolDefinitionRepository
 {
     private final CoreModule.StorPoolDefinitionMap storPoolDefinitionMap;
-    private ObjectProtection storPoolDefinitionMapObjProt;
+    private @Nullable ObjectProtection storPoolDefinitionMapObjProt;
 
     @Inject
     public StorPoolDefinitionProtectionRepository(CoreModule.StorPoolDefinitionMap storPoolDefinitionMapRef)
@@ -52,7 +53,7 @@ public class StorPoolDefinitionProtectionRepository implements StorPoolDefinitio
     }
 
     @Override
-    public StorPoolDefinition get(
+    public @Nullable StorPoolDefinition get(
         AccessContext accCtx,
         StorPoolName storPoolName
     )
@@ -60,7 +61,7 @@ public class StorPoolDefinitionProtectionRepository implements StorPoolDefinitio
     {
         checkProtSet();
         storPoolDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (StorPoolDefinition) storPoolDefinitionMap.get(storPoolName);
+        return storPoolDefinitionMap.get(storPoolName);
     }
 
     @Override

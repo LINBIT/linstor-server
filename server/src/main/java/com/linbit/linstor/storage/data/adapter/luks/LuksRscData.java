@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.luks;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
@@ -18,7 +19,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;

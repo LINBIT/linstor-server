@@ -13,19 +13,19 @@ public class ExtToolsInfo
 
     private final Version version;
 
-    private final List<String> notSupportedReasons;
+    private final @Nullable List<String> notSupportedReasons;
 
     public ExtToolsInfo(
         ExtTools extToolRef,
         boolean isSupportedRef,
-        Integer versionMajorRef,
-        Integer versionMinorRef,
+        @Nullable Integer versionMajorRef,
+        @Nullable Integer versionMinorRef,
         /**
          * versionPatch might be null even if the ExtTool is supported (versionMajor and versionMinor have to be not
-         * null)
+         * null if the ExtTool is supported)
          */
-        Integer versionPatchRef,
-        List<String> notSupportedReasonsRef
+        @Nullable Integer versionPatchRef,
+        @Nullable List<String> notSupportedReasonsRef
     )
     {
         this(
@@ -40,7 +40,7 @@ public class ExtToolsInfo
         ExtTools extToolRef,
         boolean isSupportedRef,
         Version versionRef,
-        List<String> notSupportedReasonsRef
+        @Nullable List<String> notSupportedReasonsRef
     )
     {
         extTool = extToolRef;

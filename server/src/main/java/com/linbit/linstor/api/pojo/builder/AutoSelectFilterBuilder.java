@@ -56,73 +56,73 @@ public class AutoSelectFilterBuilder
     {
     }
 
-    public AutoSelectFilterBuilder setPlaceCount(Integer placeCountRef)
+    public AutoSelectFilterBuilder setPlaceCount(@Nullable Integer placeCountRef)
     {
         placeCount = placeCountRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setAdditionalPlaceCount(Integer additionalPlaceCountRef)
+    public AutoSelectFilterBuilder setAdditionalPlaceCount(@Nullable Integer additionalPlaceCountRef)
     {
         additionalPlaceCount = additionalPlaceCountRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setNodeNameList(List<String> nodeNameListRef)
+    public AutoSelectFilterBuilder setNodeNameList(@Nullable List<String> nodeNameListRef)
     {
         nodeNameList = nodeNameListRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setStorPoolNameList(List<String> storPoolNameListRef)
+    public AutoSelectFilterBuilder setStorPoolNameList(@Nullable List<String> storPoolNameListRef)
     {
         storPoolNameList = storPoolNameListRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setStorPoolDisklessNameList(List<String> storPoolDisklessNameListRef)
+    public AutoSelectFilterBuilder setStorPoolDisklessNameList(@Nullable List<String> storPoolDisklessNameListRef)
     {
         storPoolDisklessNameList = storPoolDisklessNameListRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setDoNotPlaceWithRscList(List<String> doNotPlaceWithRscListRef)
+    public AutoSelectFilterBuilder setDoNotPlaceWithRscList(@Nullable List<String> doNotPlaceWithRscListRef)
     {
         doNotPlaceWithRscList = doNotPlaceWithRscListRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setDoNotPlaceWithRegex(String doNotPlaceWithRegexRef)
+    public AutoSelectFilterBuilder setDoNotPlaceWithRegex(@Nullable String doNotPlaceWithRegexRef)
     {
         doNotPlaceWithRegex = doNotPlaceWithRegexRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setReplicasOnSameList(List<String> replicasOnSameListRef)
+    public AutoSelectFilterBuilder setReplicasOnSameList(@Nullable List<String> replicasOnSameListRef)
     {
         replicasOnSameList = replicasOnSameListRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setReplicasOnDifferentList(List<String> replicasOnDifferentListRef)
+    public AutoSelectFilterBuilder setReplicasOnDifferentList(@Nullable List<String> replicasOnDifferentListRef)
     {
         replicasOnDifferentList = replicasOnDifferentListRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setXReplicasOnDifferentMap(Map<String, Integer> xReplicasOnDifferentMapRef)
+    public AutoSelectFilterBuilder setXReplicasOnDifferentMap(@Nullable Map<String, Integer> xReplicasOnDifferentMapRef)
     {
         xReplicasOnDifferentMap = xReplicasOnDifferentMapRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setLayerStackList(List<DeviceLayerKind> layerStackListRef)
+    public AutoSelectFilterBuilder setLayerStackList(@Nullable List<DeviceLayerKind> layerStackListRef)
     {
         layerStackList = layerStackListRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setDeviceProviderKinds(List<DeviceProviderKind> deviceProviderKindsRef)
+    public AutoSelectFilterBuilder setDeviceProviderKinds(@Nullable List<DeviceProviderKind> deviceProviderKindsRef)
     {
         deviceProviderKinds = deviceProviderKindsRef;
         return this;
@@ -135,20 +135,22 @@ public class AutoSelectFilterBuilder
     }
 
     public AutoSelectFilterBuilder setSkipAlreadyPlacedOnNodeNamesCheck(
-        List<String> skipAlreadyPlacedOnNodeNamesCheckRef
+        @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheckRef
     )
     {
         skipAlreadyPlacedOnNodeNamesCheck = skipAlreadyPlacedOnNodeNamesCheckRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setSkipAlreadyPlacedOnAllNodeCheck(Boolean skipAlreadyPlacedOnAllNodeCheckRef)
+    public AutoSelectFilterBuilder setSkipAlreadyPlacedOnAllNodeCheck(
+        @Nullable Boolean skipAlreadyPlacedOnAllNodeCheckRef
+    )
     {
         skipAlreadyPlacedOnAllNodeCheck = skipAlreadyPlacedOnAllNodeCheckRef;
         return this;
     }
 
-    public AutoSelectFilterBuilder setDisklessType(String disklessTypeRef)
+    public AutoSelectFilterBuilder setDisklessType(@Nullable String disklessTypeRef)
     {
         disklessType = disklessTypeRef;
         return this;
@@ -176,7 +178,7 @@ public class AutoSelectFilterBuilder
         );
     }
 
-    public AutoSelectFilterBuilder setRequireExtTools(Map<ExtTools, Version> extToolsRef)
+    public AutoSelectFilterBuilder setRequireExtTools(@Nullable Map<ExtTools, Version> extToolsRef)
     {
         extTools = extToolsRef;
         return this;

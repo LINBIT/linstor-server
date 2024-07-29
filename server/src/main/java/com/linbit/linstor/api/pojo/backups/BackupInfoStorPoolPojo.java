@@ -1,8 +1,7 @@
 package com.linbit.linstor.api.pojo.backups;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import javax.annotation.Nullable;
 
 import java.util.List;
 
@@ -10,8 +9,8 @@ public class BackupInfoStorPoolPojo
 {
     private final String storPoolName;
     private final DeviceProviderKind providerKind;
-    private final String targetStorPoolName;
-    private final Long remainingSpaceKib;
+    private final @Nullable String targetStorPoolName;
+    private final @Nullable Long remainingSpaceKib;
     private final List<BackupInfoVlmPojo> vlms;
 
     public BackupInfoStorPoolPojo(
@@ -39,12 +38,12 @@ public class BackupInfoStorPoolPojo
         return providerKind;
     }
 
-    public String getTargetStorPoolName()
+    public @Nullable String getTargetStorPoolName()
     {
         return targetStorPoolName;
     }
 
-    public Long getRemainingSpaceKib()
+    public @Nullable Long getRemainingSpaceKib()
     {
         return remainingSpaceKib;
     }

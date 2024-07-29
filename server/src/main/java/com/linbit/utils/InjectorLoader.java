@@ -1,6 +1,7 @@
 package com.linbit.utils;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -27,7 +28,7 @@ public class InjectorLoader
         final String className,
         final List<Module> injModList,
         final ErrorReporter errorLog,
-        final DatabaseDriverInfo.DatabaseType dbType
+        @Nullable final DatabaseDriverInfo.DatabaseType dbType
     )
     {
         boolean loaded = false;

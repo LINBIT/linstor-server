@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -72,7 +73,7 @@ public class CtrlDrbdProxyEnableApiCallHandler
     }
 
     public Flux<ApiCallRc> enableProxy(
-        UUID rscConnUuid,
+        @Nullable UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscNameStr,
@@ -106,7 +107,7 @@ public class CtrlDrbdProxyEnableApiCallHandler
     }
 
     private Flux<ApiCallRc> enableProxyInTransaction(
-        UUID rscConnUuid,
+        @Nullable UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscNameStr,

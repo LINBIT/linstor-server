@@ -2,6 +2,7 @@ package com.linbit;
 
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.layer.storage.utils.WmiHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
@@ -12,8 +13,8 @@ import javax.inject.Singleton;
 @Singleton
 public class PlatformStlt extends Platform
 {
-    private static String winDRBDRoot = null;
-    private static String winDRBDRootWinPath = null;
+    private static @Nullable String winDRBDRoot = null;
+    private static @Nullable String winDRBDRootWinPath = null;
 
     private final ExtCmdFactoryStlt extCmdFactoryStlt;
     private final ErrorReporter errorReporter;
@@ -48,7 +49,7 @@ public class PlatformStlt extends Platform
                         "WinDRBDRootWinPath"
                     });
 
-                    winDRBDRootWinPath = new String(res.stdoutData).trim();
+                    setWinDrbdRootWinPath(res);
                 }
                 catch (StorageException exc)
                 {
@@ -66,6 +67,11 @@ public class PlatformStlt extends Platform
         }
 
         return path;
+    }
+
+    private static void setWinDrbdRootWinPath(OutputData res)
+    {
+        winDRBDRootWinPath = new String(res.stdoutData).trim();
     }
 
     public String sysRootCygwin()
@@ -89,7 +95,7 @@ public class PlatformStlt extends Platform
                         "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WinDRBD",
                         "WinDRBDRoot"
                     });
-                    winDRBDRoot = new String(res.stdoutData).trim();
+                    setWinDrbdRoot(res);
                 }
                 catch (StorageException exc)
                 {
@@ -107,5 +113,10 @@ public class PlatformStlt extends Platform
         }
 
         return path;
+    }
+
+    private static void setWinDrbdRoot(OutputData res)
+    {
+        winDRBDRoot = new String(res.stdoutData).trim();
     }
 }

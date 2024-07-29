@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -45,7 +46,7 @@ public class StorPoolDefinitionDbDriver
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
-    private StorPoolDefinition disklessStorPoolDfn;
+    private @Nullable StorPoolDefinition disklessStorPoolDfn;
 
     @Inject
     public StorPoolDefinitionDbDriver(

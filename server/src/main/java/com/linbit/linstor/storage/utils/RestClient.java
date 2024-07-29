@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.utils;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -18,11 +19,11 @@ public interface RestClient
     <T> void addFailHandler(UnexpectedReturnCodeHandler<T> handler);
 
     default <T> RestResponse<T> execute(
-        VlmProviderObject<Resource> vlmData,
+        @Nullable VlmProviderObject<Resource> vlmData,
         RestOp op,
         String restURL,
-        Map<String, String> httpHeaders,
-        String jsonString,
+        @Nullable Map<String, String> httpHeaders,
+        @Nullable String jsonString,
         List<Integer> expectedRcs,
         Class<T> responseClass
     )
@@ -39,19 +40,19 @@ public interface RestClient
     {
         final RestOp op;
         final String restURL;
-        final Map<String, String> httpHeaders;
-        final String payload;
+        final @Nullable Map<String, String> httpHeaders;
+        final @Nullable String payload;
         final List<Integer> expectedRcs;
         final Class<T> responseClass;
 
-        final VlmProviderObject<Resource> vlmData;
+        final @Nullable VlmProviderObject<Resource> vlmData;
 
         RestHttpRequest(
-            VlmProviderObject<Resource> vlmDataRef,
+            @Nullable VlmProviderObject<Resource> vlmDataRef,
             RestOp opRef,
             String restURLRef,
-            Map<String, String> httpHeadersRef,
-            String payloadRef,
+            @Nullable Map<String, String> httpHeadersRef,
+            @Nullable String payloadRef,
             List<Integer> expectedRcsRef,
             Class<T> responseClassRef
         )

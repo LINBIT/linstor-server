@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -19,7 +20,7 @@ import javax.inject.Singleton;
 public class ResourceGroupProtectionRepository implements ResourceGroupRepository
 {
     private final CoreModule.ResourceGroupMap rscGrpMap;
-    private ObjectProtection rscGrpMapObjProt;
+    private @Nullable ObjectProtection rscGrpMapObjProt;
 
     @Inject
     public ResourceGroupProtectionRepository(CoreModule.ResourceGroupMap rscGrpRef)
@@ -52,7 +53,7 @@ public class ResourceGroupProtectionRepository implements ResourceGroupRepositor
     }
 
     @Override
-    public ResourceGroup get(
+    public @Nullable ResourceGroup get(
         AccessContext accCtx,
         ResourceGroupName rscGrpName
     )
@@ -60,7 +61,7 @@ public class ResourceGroupProtectionRepository implements ResourceGroupRepositor
     {
         checkProtSet();
         rscGrpMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (ResourceGroup) rscGrpMap.get(rscGrpName);
+        return rscGrpMap.get(rscGrpName);
     }
 
     @Override

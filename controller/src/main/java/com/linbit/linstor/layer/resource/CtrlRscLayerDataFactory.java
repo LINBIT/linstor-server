@@ -8,6 +8,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -35,7 +36,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -143,7 +143,7 @@ public class CtrlRscLayerDataFactory
 
     public void ensureStackDataExists(
         Resource rscRef,
-        List<DeviceLayerKind> layerListRef,
+        @Nullable List<DeviceLayerKind> layerListRef,
         LayerPayload payload
     )
     {
@@ -217,12 +217,12 @@ public class CtrlRscLayerDataFactory
         }
     }
 
-    private AbsRscLayerObject<Resource> ensureDataRec(
+    private @Nullable AbsRscLayerObject<Resource> ensureDataRec(
         Resource rscRef,
         LayerPayload payloadRef,
         List<DeviceLayerKind> layerStackRef,
         ChildResourceData currentData,
-        AbsRscLayerObject<Resource> parentRscObj
+        @Nullable AbsRscLayerObject<Resource> parentRscObj
     )
         throws InvalidKeyException, DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
         ValueInUseException, LinStorException, InvalidNameException
@@ -538,7 +538,7 @@ public class CtrlRscLayerDataFactory
     private <RSC extends AbsResource<RSC>> AbsRscLayerObject<Resource> copyRec(
         Resource rsc,
         AbsRscLayerObject<RSC> fromRscData,
-        AbsRscLayerObject<Resource> rscParentRef,
+        @Nullable AbsRscLayerObject<Resource> rscParentRef,
         Map<String, String> storpoolRenameMap,
         @Nullable ApiCallRc apiCallRc
     )
@@ -700,16 +700,16 @@ public class CtrlRscLayerDataFactory
 
     public static class LayerResult<RSC extends AbsResource<RSC>>
     {
-        private AbsRscLayerObject<RSC> rscObj;
+        private @Nullable AbsRscLayerObject<RSC> rscObj;
         private List<ChildResourceData> childRsc = new ArrayList<>();
 
-        LayerResult(AbsRscLayerObject<RSC> rscObjRef)
+        LayerResult(@Nullable AbsRscLayerObject<RSC> rscObjRef)
         {
             rscObj = rscObjRef;
             childRsc.add(new ChildResourceData(""));
         }
 
-        LayerResult(AbsRscLayerObject<RSC> rscObjref, List<ChildResourceData> childRscListRef)
+        LayerResult(@Nullable AbsRscLayerObject<RSC> rscObjref, List<ChildResourceData> childRscListRef)
         {
             rscObj = rscObjref;
             childRsc.addAll(childRscListRef);

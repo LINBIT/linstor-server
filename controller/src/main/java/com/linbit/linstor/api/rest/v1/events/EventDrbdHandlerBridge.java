@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1.events;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
@@ -52,7 +53,7 @@ public class EventDrbdHandlerBridge extends EventHandlerBridge
         }
     }
 
-    public void triggerMayPromote(final ResourceApi rsc, final Boolean mayPromote)
+    public void triggerMayPromote(final ResourceApi rsc, final @Nullable Boolean mayPromote)
     {
         JsonGenTypes.EventMayPromoteChange eventMayPromoteChange = new JsonGenTypes.EventMayPromoteChange();
         eventMayPromoteChange.node_name = rsc.getNodeName();

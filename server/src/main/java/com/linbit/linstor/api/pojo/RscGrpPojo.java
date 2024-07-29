@@ -4,7 +4,7 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;

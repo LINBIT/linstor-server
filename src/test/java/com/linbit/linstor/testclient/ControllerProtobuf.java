@@ -10,6 +10,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.logging.StderrErrorReporter;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class ControllerProtobuf extends ProtobufIO
             new StderrErrorReporter("ControllerProtobuf"),
             accCtx,
             new CtrlSecurityObjects(),
-            null
+            ReadOnlyPropsImpl.emptyRoProps()
         );
     }
 

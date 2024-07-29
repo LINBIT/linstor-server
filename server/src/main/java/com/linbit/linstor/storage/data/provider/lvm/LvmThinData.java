@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider.lvm;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -22,7 +23,7 @@ public class LvmThinData<RSC extends AbsResource<RSC>>
     extends LvmData<RSC>
 {
     // not persisted, not serialized, stlt only (copied from storpool)
-    private transient String thinPool;
+    private transient @Nullable String thinPool;
     private transient float dataPercent;
 
     public LvmThinData(
@@ -45,7 +46,7 @@ public class LvmThinData<RSC extends AbsResource<RSC>>
         thinPool = null; // force LvmThinProvider to repeat the lookup using the new storage pool
     }
 
-    public String getThinPool()
+    public @Nullable String getThinPool()
     {
         return thinPool;
     }

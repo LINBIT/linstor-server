@@ -1,11 +1,13 @@
 package com.linbit.linstor.api.pojo.backups;
 
+import com.linbit.linstor.annotation.Nullable;
+
 public class ScheduledRscsPojo
 {
     public final String rsc_name;
-    public final String remote;
-    public final String schedule;
-    public final String reason;
+    public final @Nullable String remote;
+    public final @Nullable String schedule;
+    public final @Nullable String reason;
     public final long last_snap_time;
     public final boolean last_snap_inc;
     public final long next_exec_time;
@@ -15,9 +17,9 @@ public class ScheduledRscsPojo
 
     public ScheduledRscsPojo(
         String rsc_nameRef,
-        String remoteRef,
-        String scheduleRef,
-        String reasonRef,
+        @Nullable String remoteRef,
+        @Nullable String scheduleRef,
+        @Nullable String reasonRef,
         long lastSnapTimeRef,
         boolean lastSnapIncRef,
         long nextExecTimeRef,
@@ -43,12 +45,12 @@ public class ScheduledRscsPojo
         return rsc_name;
     }
 
-    public String getRemote()
+    public @Nullable String getRemote()
     {
         return remote;
     }
 
-    public String getSchedule()
+    public @Nullable String getSchedule()
     {
         return schedule;
     }

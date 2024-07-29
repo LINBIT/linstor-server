@@ -1,7 +1,7 @@
 package com.linbit.utils;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.Iterator;
 import java.util.Map;

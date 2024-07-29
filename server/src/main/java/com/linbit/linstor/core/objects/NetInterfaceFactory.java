@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.types.LsIpAddress;
@@ -42,8 +43,8 @@ public class NetInterfaceFactory
         Node node,
         NetInterfaceName netName,
         LsIpAddress addr,
-        TcpPortNumber port,
-        EncryptionType encrType
+        @Nullable TcpPortNumber port,
+        @Nullable EncryptionType encrType
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {

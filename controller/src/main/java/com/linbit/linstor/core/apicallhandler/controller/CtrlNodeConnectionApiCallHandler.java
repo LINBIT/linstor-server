@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -35,7 +36,6 @@ import com.linbit.utils.Pair;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -222,7 +222,7 @@ public class CtrlNodeConnectionApiCallHandler
      *     optional, can be empty
      */
     public Flux<ApiCallRc> modifyNodeConn(
-        UUID nodeConnUuid,
+        @Nullable UUID nodeConnUuid,
         String nodeName1,
         String nodeName2,
         Map<String, String> overridePropsRef,
@@ -253,7 +253,7 @@ public class CtrlNodeConnectionApiCallHandler
     }
 
     public Flux<ApiCallRc> modifyNodeConnectionInTransaction(
-        UUID nodeConnUuidRef,
+        @Nullable UUID nodeConnUuidRef,
         String nodeName1,
         String nodeName2,
         Map<String, String> overrideProps,

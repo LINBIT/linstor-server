@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.ControllerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclCtrlDatabaseDriver.SecObjProtAclParent;
 import com.linbit.linstor.security.AccessControlEntry;
@@ -32,7 +33,7 @@ public interface SecObjProtAclCtrlDatabaseDriver extends SecObjProtAclDatabaseDr
             return roles.get(roleNameRef);
         }
 
-        public Map<RoleName, AccessControlEntry> getParentAcl(String objPathRef)
+        public @Nullable Map<RoleName, AccessControlEntry> getParentAcl(String objPathRef)
         {
             return objProtMap.get(objPathRef).objB;
         }

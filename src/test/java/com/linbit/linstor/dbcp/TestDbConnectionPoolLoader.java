@@ -1,8 +1,8 @@
 package com.linbit.linstor.dbcp;
 
 import com.linbit.linstor.core.cfg.CtrlConfig;
-import com.linbit.linstor.testutils.DefaultErrorStreamErrorReporter;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.testutils.DefaultErrorStreamErrorReporter;
 
 import java.util.Properties;
 

@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -65,7 +66,6 @@ import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -143,7 +143,7 @@ public class CtrlBackupCreateApiCallHandler
         String snapNameRef,
         String remoteNameRef,
         String nodeNameRef,
-        String scheduleNameRef,
+        @Nullable String scheduleNameRef,
         boolean incremental,
         boolean runInBackgroundRef
     )
@@ -195,7 +195,7 @@ public class CtrlBackupCreateApiCallHandler
         LocalDateTime nowRef,
         boolean allowIncremental,
         RemoteType remoteTypeRef,
-        String scheduleNameRef,
+        @Nullable String scheduleNameRef,
         boolean runInBackgroundRef,
         @Nullable String prevSnapDfnUuid,
         @Nullable BackupShippingSrcData l2lData
@@ -635,10 +635,10 @@ public class CtrlBackupCreateApiCallHandler
     @Nullable
     public Node getNodeForBackupOrQueue(
         ResourceDefinition rscDfn,
-        SnapshotDefinition prevSnapDfn,
+        @Nullable SnapshotDefinition prevSnapDfn,
         SnapshotDefinition snapDfn,
         AbsRemote remote,
-        String prefNodeName,
+        @Nullable String prefNodeName,
         ApiCallRcImpl responses,
         boolean queueAnyways,
         @Nullable BackupShippingSrcData l2lData
@@ -668,7 +668,11 @@ public class CtrlBackupCreateApiCallHandler
         return chosenNode;
     }
 
-    private void setBackupSnapDfnFlagsAndProps(SnapshotDefinition snapDfn, String scheduleNameRef, LocalDateTime nowRef)
+    private void setBackupSnapDfnFlagsAndProps(
+        SnapshotDefinition snapDfn,
+        @Nullable String scheduleNameRef,
+        LocalDateTime nowRef
+    )
         throws AccessDeniedException, DatabaseException, InvalidKeyException, InvalidValueException
     {
         if (scheduleNameRef != null)
@@ -803,7 +807,7 @@ public class CtrlBackupCreateApiCallHandler
      * @throws InvalidNameException
      *     when detected previous snapshot name is invalid
      */
-    public SnapshotDefinition getIncrementalBase(
+    public @Nullable SnapshotDefinition getIncrementalBase(
         ResourceDefinition rscDfn,
         AbsRemote remote,
         boolean allowIncremental,
@@ -918,9 +922,9 @@ public class CtrlBackupCreateApiCallHandler
         return prevSnapDfn;
     }
 
-    public SnapshotDefinition getIncrementalBaseL2L(
+    public @Nullable SnapshotDefinition getIncrementalBaseL2L(
         ResourceDefinition rscDfn,
-        String prevSnapDfnUuid,
+        @Nullable String prevSnapDfnUuid,
         RemoteName remoteName,
         boolean allowIncremental,
         ApiCallRcImpl responses
@@ -1021,9 +1025,9 @@ public class CtrlBackupCreateApiCallHandler
         return prevSnapDfn;
     }
 
-    private Node chooseNode(
+    private @Nullable Node chooseNode(
         Set<Node> nodesList,
-        String prefNode,
+        @Nullable String prefNode,
         ApiCallRcImpl responses,
         Map<ExtTools, ExtToolsInfo.Version> optionalExtToolsMap
     )
@@ -1094,8 +1098,8 @@ public class CtrlBackupCreateApiCallHandler
     public static boolean hasNodeAllExtTools(
         Node node,
         Map<ExtTools, ExtToolsInfo.Version> extTools,
-        ApiCallRcImpl apiCallRcRef,
-        String errorMsgPrefix,
+        @Nullable ApiCallRcImpl apiCallRcRef,
+        @Nullable String errorMsgPrefix,
         AccessContext accCtx
     )
         throws AccessDeniedException
@@ -1137,9 +1141,9 @@ public class CtrlBackupCreateApiCallHandler
      */
     void setIncrementalDependentProps(
         SnapshotDefinition curSnapDfn,
-        SnapshotDefinition prevSnapDfn,
+        @Nullable SnapshotDefinition prevSnapDfn,
         String remoteName,
-        String scheduleName
+        @Nullable String scheduleName
     )
         throws InvalidValueException, AccessDeniedException, DatabaseException
     {

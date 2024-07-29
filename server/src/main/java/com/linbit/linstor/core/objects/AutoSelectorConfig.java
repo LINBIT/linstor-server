@@ -52,7 +52,7 @@ public class AutoSelectorConfig extends BaseTransactionObject
 
     public AutoSelectorConfig(
         ResourceGroup rscGrpRef,
-        Integer replicaCountRef,
+        @Nullable Integer replicaCountRef,
         List<String> nodeNameListRef,
         List<String> storPoolNameListRef,
         List<String> storPoolDisklessNameListRef,
@@ -63,7 +63,7 @@ public class AutoSelectorConfig extends BaseTransactionObject
         Map<String, Integer> xReplicasOnDifferentMapRef,
         List<DeviceLayerKind> layerStackRef,
         List<DeviceProviderKind> allowedProviderListRef,
-        Boolean disklessOnRemainingRef,
+        @Nullable Boolean disklessOnRemainingRef,
         ResourceGroupDatabaseDriver dbDriverRef,
         TransactionObjectFactory transactionObjectFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef

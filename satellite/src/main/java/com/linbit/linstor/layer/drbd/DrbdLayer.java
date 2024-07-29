@@ -10,6 +10,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -1894,7 +1895,7 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public @Nullable LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
     {
         // ignored
         return null;

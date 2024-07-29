@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.SchedulePojo;
 import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
@@ -16,8 +17,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -103,7 +102,7 @@ public class Schedule extends AbsCoreObj<Schedule> implements ProtectedObject
     }
 
     @Override
-    public int compareTo(@Nonnull Schedule schedule)
+    public int compareTo(Schedule schedule)
     {
         return scheduleName.compareTo(schedule.getName());
     }
@@ -153,14 +152,15 @@ public class Schedule extends AbsCoreObj<Schedule> implements ProtectedObject
         fullCron.set(parser.parse(fullCronRef));
     }
 
-    public Cron getIncCron(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable Cron getIncCron(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return incCron.get();
     }
 
-    public void setIncCron(AccessContext accCtx, String incCronRef) throws AccessDeniedException, DatabaseException
+    public void setIncCron(AccessContext accCtx, @Nullable String incCronRef) throws AccessDeniedException,
+        DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -174,28 +174,29 @@ public class Schedule extends AbsCoreObj<Schedule> implements ProtectedObject
         }
     }
 
-    public Integer getKeepLocal(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable Integer getKeepLocal(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return keepLocal.get();
     }
 
-    public void setKeepLocal(AccessContext accCtx, Integer keepLocalRef) throws AccessDeniedException, DatabaseException
+    public void setKeepLocal(AccessContext accCtx, @Nullable Integer keepLocalRef) throws AccessDeniedException,
+        DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         keepLocal.set(keepLocalRef);
     }
 
-    public Integer getKeepRemote(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable Integer getKeepRemote(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return keepRemote.get();
     }
 
-    public void setKeepRemote(AccessContext accCtx, Integer keepRemoteRef)
+    public void setKeepRemote(AccessContext accCtx, @Nullable Integer keepRemoteRef)
         throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
@@ -218,14 +219,14 @@ public class Schedule extends AbsCoreObj<Schedule> implements ProtectedObject
         onFailure.set(OnFailure.valueOfIgnoreCase(onFailureRef));
     }
 
-    public Integer getMaxRetries(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable Integer getMaxRetries(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return maxRetries.get();
     }
 
-    public void setMaxRetries(AccessContext accCtx, Integer maxRetriesRef)
+    public void setMaxRetries(AccessContext accCtx, @Nullable Integer maxRetriesRef)
         throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
@@ -245,7 +246,8 @@ public class Schedule extends AbsCoreObj<Schedule> implements ProtectedObject
         return RemoteType.S3;
     }
 
-    public SchedulePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId) throws AccessDeniedException
+    public SchedulePojo getApiData(AccessContext accCtx, @Nullable Long fullSyncId, @Nullable Long updateId)
+        throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -375,7 +377,7 @@ public class Schedule extends AbsCoreObj<Schedule> implements ProtectedObject
             value = valueRef;
         }
 
-        public static OnFailure getByValueOrNull(long valueRef)
+        public static @Nullable OnFailure getByValueOrNull(long valueRef)
         {
             OnFailure ret = null;
             for (OnFailure val : OnFailure.values())

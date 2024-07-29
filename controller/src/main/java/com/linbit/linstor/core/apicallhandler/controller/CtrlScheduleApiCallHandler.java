@@ -7,6 +7,7 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.PriorityProps.MultiResult;
 import com.linbit.linstor.PriorityProps.ValueWithDescription;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -47,7 +48,6 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -313,7 +313,7 @@ public class CtrlScheduleApiCallHandler
             }
             if (keepRemoteRef != null)
             {
-                if (keepLocalRef < 0)
+                if (keepRemoteRef < 0)
                 {
                     schedule.setKeepRemote(peerAccCtx.get(), null);
                 }
@@ -438,9 +438,9 @@ public class CtrlScheduleApiCallHandler
     }
 
     public List<ScheduledRscsPojo> listScheduledRscs(
-        String rscName,
-        String remoteName,
-        String scheduleName,
+        @Nullable String rscName,
+        @Nullable String remoteName,
+        @Nullable String scheduleName,
         boolean activeOnly
     )
     {
@@ -476,7 +476,7 @@ public class CtrlScheduleApiCallHandler
         return ret;
     }
 
-    private List<ScheduledRscsPojo> listUnscheduledRsc(String rscName)
+    private List<ScheduledRscsPojo> listUnscheduledRsc(@Nullable String rscName)
         throws AccessDeniedException
     {
         // Map<rscName, Pair<reason, List<Pair<remoteName, scheduleName>>>>
@@ -597,7 +597,11 @@ public class CtrlScheduleApiCallHandler
         return ret;
     }
 
-    private List<ScheduledRscsPojo> listActiveSchedules(String rscName, String remoteName, String scheduleName)
+    private List<ScheduledRscsPojo> listActiveSchedules(
+        @Nullable String rscName,
+        @Nullable String remoteName,
+        @Nullable String scheduleName
+    )
         throws AccessDeniedException
     {
         List<ScheduledRscsPojo> ret = new ArrayList<>();
@@ -756,7 +760,7 @@ public class CtrlScheduleApiCallHandler
         return ret;
     }
 
-    private Boolean getBoolFromProp(String str)
+    private @Nullable Boolean getBoolFromProp(String str)
     {
         Boolean ret = null;
         if (str.equals(ApiConsts.VAL_TRUE))

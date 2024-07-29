@@ -57,7 +57,7 @@ public class TransactionList<PARENT, VALUE>
     }
 
     @Override
-    protected void postSetConnection(TransactionMgr transMgrRef)
+    protected void postSetConnection(@Nullable TransactionMgr transMgrRef)
     {
         // forward transaction manager to values
         for (VALUE val : backingList)

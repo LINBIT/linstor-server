@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.Objects;
 import java.util.UUID;
 
@@ -13,8 +15,8 @@ public class EbsRemotePojo implements Comparable<EbsRemotePojo>
     private final String region;
     private final byte[] accessKey;
     private final byte[] secretKey;
-    private final Long fullSyncId;
-    private final Long updateId;
+    private final @Nullable Long fullSyncId;
+    private final @Nullable Long updateId;
 
     public EbsRemotePojo(
         UUID uuidRef,
@@ -25,8 +27,8 @@ public class EbsRemotePojo implements Comparable<EbsRemotePojo>
         String regionRef,
         byte[] accessKeyRef,
         byte[] secretKeyRef,
-        Long fullSyncIdRef,
-        Long updateIdRef
+        @Nullable Long fullSyncIdRef,
+        @Nullable Long updateIdRef
     )
     {
         uuid = uuidRef;
@@ -81,12 +83,12 @@ public class EbsRemotePojo implements Comparable<EbsRemotePojo>
         return secretKey;
     }
 
-    public Long getFullSyncId()
+    public @Nullable Long getFullSyncId()
     {
         return fullSyncId;
     }
 
-    public Long getUpdateId()
+    public @Nullable Long getUpdateId()
     {
         return updateId;
     }

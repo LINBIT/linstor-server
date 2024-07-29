@@ -1,6 +1,8 @@
 package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -13,7 +15,7 @@ import java.util.TreeSet;
  */
 public final class PrivilegeSet implements Cloneable
 {
-    private PrivilegeSet limitPrivs;
+    private @Nullable PrivilegeSet limitPrivs;
 
     // Privileges bit field
     // Assignment is guaranteed to be atomic by means of declaring the long volatile
@@ -237,7 +239,7 @@ public final class PrivilegeSet implements Cloneable
      *
      * @return MAC AccessType granted by enabled privileges
      */
-    public AccessType toMacAccess()
+    public @Nullable AccessType toMacAccess()
     {
         AccessType result = null;
         long limitMask = limitPrivs != null ? limitPrivs.privileges : ~(0L);
@@ -255,7 +257,7 @@ public final class PrivilegeSet implements Cloneable
      *
      * @return RBAC AccessType granted by enabled privileges
      */
-    public AccessType toRbacAccess()
+    public @Nullable AccessType toRbacAccess()
     {
         AccessType result = null;
         long limitMask = limitPrivs != null ? limitPrivs.privileges : ~(0L);

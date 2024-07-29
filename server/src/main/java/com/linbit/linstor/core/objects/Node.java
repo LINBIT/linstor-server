@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.pojo.NodePojo;
@@ -44,7 +45,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.utils.LocalInetAddresses;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -114,22 +114,22 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
 
     private final NodeDatabaseDriver dbDriver;
 
-    private transient Peer peer;
+    private transient @Nullable Peer peer;
 
-    private transient TransactionSimpleObject<Node, NetInterface> activeStltConn;
+    private transient TransactionSimpleObject<Node, @Nullable NetInterface> activeStltConn;
 
     private final Map<Object, FluxSink<Boolean>> initialConnectSinkMap;
 
     private final ArrayList<ProcCryptoEntry> supportedCryptos;
 
-    private Long evictionTimstamp;
+    private @Nullable Long evictionTimstamp;
     private long reconnectAttemptCount = 0;
 
     Node(
         UUID uuidRef,
         ObjectProtection objProtRef,
         NodeName nameRef,
-        Type type,
+        @Nullable Type type,
         long initialFlags,
         NodeDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
@@ -160,7 +160,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         UUID uuidRef,
         ObjectProtection objProtRef,
         NodeName nameRef,
-        Type type,
+        @Nullable Type type,
         long initialFlags,
         NodeDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
@@ -269,7 +269,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         return nodeName;
     }
 
-    public Resource getResource(AccessContext accCtx, ResourceName resName)
+    public @Nullable Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -278,7 +278,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
     }
 
 
-    public NodeConnection getNodeConnection(AccessContext accCtx, Node otherNode)
+    public @Nullable NodeConnection getNodeConnection(AccessContext accCtx, Node otherNode)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -468,7 +468,8 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         return snapshotMap.values().iterator();
     }
 
-    public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
+    public @Nullable NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName)
+        throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -548,7 +549,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
     }
 
 
-    public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
+    public @Nullable StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -649,7 +650,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
     }
 
 
-    public Peer getPeer(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable Peer getPeer(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -670,7 +671,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         return reconnectAttemptCount;
     }
 
-    public NetInterface getActiveStltConn(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable NetInterface getActiveStltConn(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -805,14 +806,19 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         return getFlags().isSet(accessCtx, Flags.EVICTED);
     }
 
-    public NodePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    public NodePojo getApiData(AccessContext accCtx, @Nullable Long fullSyncId, @Nullable Long updateId)
         throws AccessDeniedException
     {
         checkDeleted();
         return getApiData(accCtx, true, fullSyncId, updateId);
     }
 
-    NodePojo getApiData(AccessContext accCtx, boolean includeOtherNode, Long fullSyncId, Long updateId)
+    NodePojo getApiData(
+        AccessContext accCtx,
+        boolean includeOtherNode,
+        @Nullable Long fullSyncId,
+        @Nullable Long updateId
+    )
         throws AccessDeniedException
     {
         checkDeleted();
@@ -1076,7 +1082,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
             return flag;
         }
 
-        public static Type getByValue(long value)
+        public static @Nullable Type getByValue(long value)
         {
             Type ret = null;
             for (Type type : Type.values())
@@ -1090,17 +1096,13 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
             return ret;
         }
 
-        public static Type valueOfIgnoreCase(String string, Type defaultValue)
+        public static Type valueOfIgnoreCase(@Nullable String string, @Nullable Type defaultValue)
             throws IllegalArgumentException
         {
             Type ret = defaultValue;
             if (string != null)
             {
-                Type val = valueOf(string.toUpperCase());
-                if (val != null)
-                {
-                    ret = val;
-                }
+                ret = valueOf(string.toUpperCase());
             }
             return ret;
         }

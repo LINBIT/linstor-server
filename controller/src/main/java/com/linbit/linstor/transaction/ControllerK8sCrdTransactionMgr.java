@@ -1,6 +1,7 @@
 package com.linbit.linstor.transaction;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -102,7 +103,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
         );
     }
 
-    public Integer getDbVersion()
+    public @Nullable Integer getDbVersion()
     {
         Integer ret = null;
         CustomResourceDefinitionList list = k8sClient.apiextensions().v1().customResourceDefinitions()

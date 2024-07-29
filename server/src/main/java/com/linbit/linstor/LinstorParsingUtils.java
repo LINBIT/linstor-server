@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -25,6 +26,8 @@ import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
+
+import javax.annotation.Nonnull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -313,7 +316,7 @@ public class LinstorParsingUtils
         return kvsName;
     }
 
-    public static DeviceLayerKind asDeviceLayerKindOrNull(final String layerName)
+    public static @Nullable DeviceLayerKind asDeviceLayerKindOrNull(final String layerName)
     {
         DeviceLayerKind kind;
         switch (layerName.toUpperCase())
@@ -379,7 +382,7 @@ public class LinstorParsingUtils
         return ret;
     }
 
-    public static DeviceProviderKind asProviderKind(String stringRef)
+    public static @Nonnull DeviceProviderKind asProviderKind(String stringRef)
     {
         DeviceProviderKind kind;
 

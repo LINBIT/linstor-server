@@ -1,5 +1,6 @@
 package com.linbit.linstor.event.serializer;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.event.LinstorEvent;
 
 /**
@@ -16,7 +17,7 @@ public interface EventSerializer
         /**
          * Serialize an event value.
          */
-        byte[] writeEventValue(T value);
+        byte[] writeEventValue(@Nullable T value);
 
         /**
          * Get the corresponding event source.

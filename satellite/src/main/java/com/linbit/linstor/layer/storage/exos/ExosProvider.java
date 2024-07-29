@@ -102,7 +102,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     private Set<String> exosInitiatorIds;
     // private Map<String, String> exosCtrlMacAddrMapById;
     private Map<String, String> exosCtrlNameMapByTargetId;
-    private Set<String> enclosureHostIds;
+    private @Nullable Set<String> enclosureHostIds;
     /**
      * Stores the exos-internal pool name (usually "A" or "B").
      * The exos pool is found by the linstor-property exos_pool_sn (serial number)
@@ -231,7 +231,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         }
     }
 
-    protected void updateInfo(ExosData<?> vlmDataRef, ExosRestVolume exosVlm)
+    protected void updateInfo(ExosData<?> vlmDataRef, @Nullable ExosRestVolume exosVlm)
         throws DatabaseException, AccessDeniedException, StorageException
     {
         if (exosVlm == null)
@@ -788,7 +788,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
-    public String getDevicePath(String storageName, String lvId)
+    public @Nullable String getDevicePath(String storageName, String lvId)
     {
         return null;
     }

@@ -2,6 +2,7 @@ package com.linbit.linstor.tasks;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -68,7 +69,7 @@ public class ReconnectorTask implements Task
     private final AccessContext apiCtx;
     private final HashSet<ReconnectConfig> reconnectorConfigSet = new HashSet<>();
     private final ErrorReporter errorReporter;
-    private PingTask pingTask;
+    private @Nullable PingTask pingTask;
     private final Provider<CtrlAuthenticator> authenticatorProvider;
     private final Provider<SatelliteConnector> satelliteConnector;
     private final TransactionMgrGenerator transactionMgrGenerator;

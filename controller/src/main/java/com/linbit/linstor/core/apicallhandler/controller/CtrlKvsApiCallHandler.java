@@ -4,6 +4,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -228,7 +229,7 @@ public class CtrlKvsApiCallHandler
         try
         {
             requireKvsMapChangeAccess();
-            KeyValueStore kvs = ctrlApiDataLoader.loadKvs(kvsNameStr, false);
+            @Nullable KeyValueStore kvs = ctrlApiDataLoader.loadKvs(kvsNameStr, false);
             if (kvsUuidRef != null && kvs != null && !kvsUuidRef.equals(kvs.getUuid()))
             {
                 throw new ApiRcException(

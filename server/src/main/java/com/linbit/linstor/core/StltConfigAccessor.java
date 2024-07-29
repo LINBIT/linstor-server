@@ -1,13 +1,13 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -56,7 +56,7 @@ public class StltConfigAccessor
         return getReadonlyProps(null);
     }
 
-    public ReadOnlyProps getReadonlyProps(String namespace)
+    public ReadOnlyProps getReadonlyProps(@Nullable String namespace)
     {
         ReadOnlyProps roRet;
         @Nullable ReadOnlyProps ns = stltProps.getNamespace(namespace);

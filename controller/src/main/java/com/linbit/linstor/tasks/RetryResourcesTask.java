@@ -2,6 +2,7 @@ package com.linbit.linstor.tasks;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
@@ -67,7 +68,7 @@ public class RetryResourcesTask implements Task
         errorReporter = errorReporterRef;
     }
 
-    public boolean add(Resource rsc, Publisher<ApiCallRc> nextStepRef)
+    public boolean add(Resource rsc, @Nullable Publisher<ApiCallRc> nextStepRef)
     {
         boolean added = false;
         synchronized (syncObj)
@@ -232,11 +233,11 @@ public class RetryResourcesTask implements Task
     {
         private final Resource rsc;
 
-        private Publisher<ApiCallRc> fluxAfterSuccess;
+        private @Nullable Publisher<ApiCallRc> fluxAfterSuccess;
         private long lastFailTimestamp;
         private int retryTimes;
 
-        private RetryConfig(Resource rscRef, Publisher<ApiCallRc> fluxAfterSuccessRef)
+        private RetryConfig(Resource rscRef, @Nullable Publisher<ApiCallRc> fluxAfterSuccessRef)
         {
             rsc = rscRef;
             fluxAfterSuccess = fluxAfterSuccessRef;

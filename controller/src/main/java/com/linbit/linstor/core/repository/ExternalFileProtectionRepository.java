@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.repository;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ExternalFileMap;
 import com.linbit.linstor.core.identifier.ExternalFileName;
@@ -16,7 +17,7 @@ import javax.inject.Singleton;
 public class ExternalFileProtectionRepository implements ExternalFileRepository
 {
     private final CoreModule.ExternalFileMap extFileMap;
-    private ObjectProtection extFileMapObjProt;
+    private @Nullable ObjectProtection extFileMapObjProt;
 
     @Inject
     public ExternalFileProtectionRepository(CoreModule.ExternalFileMap extFileMapRef)
@@ -34,7 +35,7 @@ public class ExternalFileProtectionRepository implements ExternalFileRepository
     }
 
     @Override
-    public ObjectProtection getObjProt()
+    public @Nullable ObjectProtection getObjProt()
     {
         checkProtSet();
         return extFileMapObjProt;
@@ -49,7 +50,8 @@ public class ExternalFileProtectionRepository implements ExternalFileRepository
     }
 
     @Override
-    public ExternalFile get(AccessContext accCtx, ExternalFileName externalFileNameRef) throws AccessDeniedException
+    public @Nullable ExternalFile get(AccessContext accCtx, ExternalFileName externalFileNameRef)
+        throws AccessDeniedException
     {
         checkProtSet();
         extFileMapObjProt.requireAccess(accCtx, AccessType.VIEW);

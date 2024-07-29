@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.ResourceConnection;
@@ -10,8 +11,6 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
-
-import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,7 +94,8 @@ public class PriorityProps
      * @return A Pair containing the property value and the container it is contained.
      * @throws InvalidKeyException
      */
-    public Pair<String, ReadOnlyProps> getPropAndContainer(String key, String namespace) throws InvalidKeyException
+    public Pair<String, ReadOnlyProps> getPropAndContainer(String key, @Nullable String namespace)
+        throws InvalidKeyException
     {
         String value = null;
         @Nullable ReadOnlyProps container = null;
@@ -121,7 +121,7 @@ public class PriorityProps
         return getPropAndContainer(key, namespace).objA;
     }
 
-    public String getProp(String key, String namespace, String defaultValue) throws InvalidKeyException
+    public String getProp(String key, @Nullable String namespace, String defaultValue) throws InvalidKeyException
     {
         final String val = getProp(key, namespace);
         return val == null ? defaultValue : val;
@@ -350,13 +350,13 @@ public class PriorityProps
         public final List<ValueWithDescription> conflictingList;
         private final List<ValueWithDescription> modifiableList = new ArrayList<>();
 
-        public MultiResult(String valueRef, String propDescr, String objDescr, LinStorObject objType)
+        public MultiResult(String valueRef, String propDescr, String objDescr, @Nullable LinStorObject objType)
         {
             first = new ValueWithDescription(valueRef, propDescr, objDescr, objType);
             conflictingList = Collections.unmodifiableList(modifiableList);
         }
 
-        private void addResult(String valueRef, String propDescr, String objDescr, LinStorObject objType)
+        private void addResult(String valueRef, String propDescr, String objDescr, @Nullable LinStorObject objType)
         {
             modifiableList.add(new ValueWithDescription(valueRef, propDescr, objDescr, objType));
         }
@@ -367,13 +367,13 @@ public class PriorityProps
         public final String value;
         public final String propsDescription;
         public final String objDescription;
-        public final LinStorObject objType;
+        public final @Nullable LinStorObject objType;
 
         private ValueWithDescription(
             String valueRef,
             String propsDescriptionRef,
             String objDescrRef,
-            LinStorObject objTypeRef
+            @Nullable LinStorObject objTypeRef
         )
         {
             value = valueRef;

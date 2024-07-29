@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.LUKSVolume;
 import com.linbit.linstor.core.apicallhandler.controller.db.DbExportPojoData;
@@ -90,6 +91,7 @@ public interface DbEngine
          * @throws DatabaseException
          * @throws MdException
          */
+        @Nullable
         Pair<DATA, INIT_MAPS> loadImpl(
             RawParameters raw,
             LOAD_ALL parents
@@ -346,7 +348,7 @@ public interface DbEngine
      */
     <DATA extends Comparable<? super DATA>, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
         DatabaseTable table,
-        LOAD_ALL parents,
+        @Nullable LOAD_ALL parents,
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoaderRef
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
@@ -356,7 +358,7 @@ public interface DbEngine
 
     ApiCallRc backupDb(String backupPath) throws DatabaseException;
 
-    List<RawParameters> export(DatabaseTable tableRef) throws DatabaseException;
+    List<RawParameters> export(@Nullable DatabaseTable tableRef) throws DatabaseException;
 
     /**
      * Unlike the {@link #truncate(DatabaseTable)} method, this method is not linked to the current

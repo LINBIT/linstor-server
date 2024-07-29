@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -51,7 +52,7 @@ public class ResourceDefinitionSatelliteFactory
         UUID uuid,
         ResourceGroup rscGrpRef,
         ResourceName rscName,
-        ResourceDefinition.Flags[] initFlags
+        @Nullable ResourceDefinition.Flags[] initFlags
     )
         throws ImplementationError
     {

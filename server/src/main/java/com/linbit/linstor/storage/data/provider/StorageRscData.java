@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
@@ -65,7 +66,7 @@ public class StorageRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public RscDfnLayerObject getRscDfnLayerObject()
+    public @Nullable RscDfnLayerObject getRscDfnLayerObject()
     {
         return null;
     }

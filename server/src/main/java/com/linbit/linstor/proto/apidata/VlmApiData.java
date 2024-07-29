@@ -1,5 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -25,19 +26,19 @@ public class VlmApiData implements VolumeApi
     }
 
     @Override
-    public UUID getVlmUuid()
+    public @Nullable UUID getVlmUuid()
     {
         return vlm.hasVlmUuid() ? UUID.fromString(vlm.getVlmUuid()) : null;
     }
 
     @Override
-    public UUID getVlmDfnUuid()
+    public @Nullable UUID getVlmDfnUuid()
     {
         return vlm.hasVlmDfnUuid() ? UUID.fromString(vlm.getVlmDfnUuid()) : null;
     }
 
     @Override
-    public String getStorPoolName()
+    public @Nullable String getStorPoolName()
     {
         return null; // only needed for compat, not available on protobuf (as that is java-internal only)
     }
@@ -61,7 +62,7 @@ public class VlmApiData implements VolumeApi
     }
 
     @Override
-    public DeviceProviderKind getStorPoolDeviceProviderKind()
+    public @Nullable DeviceProviderKind getStorPoolDeviceProviderKind()
     {
         return null; // only needed for compat, not available on protobuf (as that is java-internal only)
     }
@@ -89,7 +90,7 @@ public class VlmApiData implements VolumeApi
     }
 
     @Override
-    public List<Pair<String, VlmLayerDataApi>> getVlmLayerData()
+    public @Nullable List<Pair<String, VlmLayerDataApi>> getVlmLayerData()
     {
         return null; // only needed for compat, not available on protobuf (as that is java-internal only)
     }
@@ -106,7 +107,11 @@ public class VlmApiData implements VolumeApi
         }
         builder.addAllVlmFlags(Volume.Flags.toStringList(vlmApi.getFlags()));
         builder.putAllVlmProps(vlmApi.getVlmProps());
-        vlmApi.getAllocatedSize().ifPresent(builder::setAllocatedSize);
+        Optional<Long> allocatedSize = vlmApi.getAllocatedSize();
+        if (allocatedSize.isPresent())
+        {
+            builder.setAllocatedSize(allocatedSize.get());
+        }
 
         return builder.build();
     }

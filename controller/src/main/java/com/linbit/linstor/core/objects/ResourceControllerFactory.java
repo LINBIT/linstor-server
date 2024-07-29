@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -26,7 +27,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -69,8 +69,8 @@ public class ResourceControllerFactory
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         Node node,
-        LayerPayload payload,
-        Resource.Flags[] initFlags,
+        @Nullable LayerPayload payload,
+        @Nullable Resource.Flags[] initFlags,
         List<DeviceLayerKind> layerStackRef
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
@@ -140,7 +140,7 @@ public class ResourceControllerFactory
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         Node node,
-        Resource.Flags[] initFlags,
+        @Nullable Resource.Flags[] initFlags,
         List<DeviceLayerKind> expectedLayerStack,
         boolean fromBackup
     )

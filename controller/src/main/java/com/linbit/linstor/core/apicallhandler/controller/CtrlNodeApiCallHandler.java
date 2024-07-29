@@ -9,6 +9,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -461,7 +462,7 @@ public class CtrlNodeApiCallHandler
         }
     }
 
-    private NetInterface getActiveStltConn(Node node)
+    private @Nullable NetInterface getActiveStltConn(Node node)
     {
         NetInterface netIf;
         try
@@ -480,7 +481,7 @@ public class CtrlNodeApiCallHandler
     }
 
     public Flux<ApiCallRc> modify(
-        UUID nodeUuid,
+        @Nullable UUID nodeUuid,
         String nodeNameStr,
         String nodeTypeStr,
         Map<String, String> overrideProps,
@@ -511,7 +512,7 @@ public class CtrlNodeApiCallHandler
     }
 
     private Flux<ApiCallRc> modifyInTransaction(
-        UUID nodeUuid,
+        @Nullable UUID nodeUuid,
         String nodeNameStr,
         String nodeTypeStr,
         Map<String, String> overrideProps,
@@ -796,8 +797,8 @@ public class CtrlNodeApiCallHandler
         Node node,
         NetInterfaceName netName,
         LsIpAddress addr,
-        TcpPortNumber port,
-        EncryptionType type
+        @Nullable TcpPortNumber port,
+        @Nullable EncryptionType type
     )
     {
         NetInterface netIf;
@@ -1787,7 +1788,7 @@ public class CtrlNodeApiCallHandler
         return ret;
     }
 
-    private StorPool getStorPoolForEvacuation(ResourceDefinition rscDfn) throws AccessDeniedException
+    private @Nullable StorPool getStorPoolForEvacuation(ResourceDefinition rscDfn) throws AccessDeniedException
     {
         AccessContext peerCtx = peerAccCtx.get();
 

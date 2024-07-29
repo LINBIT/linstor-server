@@ -7,6 +7,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -143,7 +144,7 @@ public class LayerDrbdRscDfnDbDriver
         );
     }
 
-    private Integer getTcpPort(DrbdRscDfnData<?> drbdRscDfnData)
+    private @Nullable Integer getTcpPort(DrbdRscDfnData<?> drbdRscDfnData)
     {
         Integer ret = null;
         TcpPortNumber tcpPort = drbdRscDfnData.getTcpPort();
@@ -252,7 +253,7 @@ public class LayerDrbdRscDfnDbDriver
         Long alStripesSizeRef,
         Integer portRef,
         TransportType transportTypeRef,
-        String secretRef
+                @Nullable String secretRef
     )
         throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {

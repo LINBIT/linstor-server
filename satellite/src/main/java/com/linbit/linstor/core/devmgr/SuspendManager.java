@@ -3,6 +3,7 @@ package com.linbit.linstor.core.devmgr;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.objects.Resource;
@@ -31,7 +32,7 @@ public class SuspendManager
 {
     private final ErrorReporter errorReporter;
     private final AccessContext wrkCtx;
-    private ExceptionHandler excHandler;
+    private @Nullable ExceptionHandler excHandler;
     private final LayerFactory layerFactory;
 
     @Inject

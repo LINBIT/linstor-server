@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 
 import java.util.Map;
@@ -15,7 +16,7 @@ public class LinstorVersionSpec implements LinstorSpec<LinstorVersionCrd, Linsto
 
     @JsonProperty("version") public final int version;
 
-    LinstorVersionCrd parentCrd;
+    @Nullable LinstorVersionCrd parentCrd;
 
     @JsonCreator
     public LinstorVersionSpec(@JsonProperty("version") int versionRef)
@@ -25,7 +26,7 @@ public class LinstorVersionSpec implements LinstorSpec<LinstorVersionCrd, Linsto
 
     @Override
     @JsonIgnore
-    public LinstorVersionCrd getCrd()
+    public @Nullable LinstorVersionCrd getCrd()
     {
         return parentCrd;
     }

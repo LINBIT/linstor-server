@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -313,25 +314,25 @@ public class Controller
         }
 
         @Override
-        public String getLogLevel()
+        public @Nullable String getLogLevel()
         {
             return config.log.level;
         }
 
         @Override
-        public String getLogLevelLinstor()
+        public @Nullable String getLogLevelLinstor()
         {
             return config.log.level_linstor;
         }
 
         @Override
-        public String getLogLevelGlobal()
+        public @Nullable String getLogLevelGlobal()
         {
             return config.log.level_global;
         }
 
         @Override
-        public String getLogLevelLinstorGlobal()
+        public @Nullable String getLogLevelLinstorGlobal()
         {
             return config.log.level_linstor_global;
         }

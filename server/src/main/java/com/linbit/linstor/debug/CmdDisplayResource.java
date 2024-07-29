@@ -1,6 +1,7 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -50,7 +51,7 @@ public class CmdDisplayResource extends BaseDebugCmd
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
-    private final Supplier<ObjectProtection> rscDfnMapProt;
+    private final @Nullable Supplier<ObjectProtection> rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
 
     private final FilteredObjectLister<ResourceDefinition> lister;
@@ -59,7 +60,7 @@ public class CmdDisplayResource extends BaseDebugCmd
         ReadWriteLock reconfigurationLockRef,
         ReadWriteLock nodesMapLockRef,
         ReadWriteLock rscDfnMapLockRef,
-        Supplier<ObjectProtection> rscDfnMapProtRef,
+        @Nullable Supplier<ObjectProtection> rscDfnMapProtRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef
     )
     {
@@ -129,7 +130,7 @@ public class CmdDisplayResource extends BaseDebugCmd
         }
 
         @Override
-        public ResourceDefinition getByName(final String name)
+        public @Nullable ResourceDefinition getByName(final String name)
             throws InvalidNameException
         {
             return rscDfnMap.get(new ResourceName(name));

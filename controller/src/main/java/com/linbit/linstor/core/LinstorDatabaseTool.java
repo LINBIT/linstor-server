@@ -6,6 +6,7 @@ import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerLinstorModule;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorModule;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.BaseApiCall;
@@ -98,7 +99,7 @@ public class LinstorDatabaseTool
         private String configurationDirectory = "/etc/linstor";
 
         @CommandLine.Parameters(description = "Path to the exported database file")
-        private String dbExportPath;
+        private @Nullable String dbExportPath;
 
         @Override
         public Object call() throws Exception
@@ -128,7 +129,7 @@ public class LinstorDatabaseTool
         private String configurationDirectory = "/etc/linstor";
 
         @CommandLine.Parameters(description = "Path to the exported database file")
-        private String dbExportPath;
+        private @Nullable String dbExportPath;
 
         @Override
         public Object call() throws Exception

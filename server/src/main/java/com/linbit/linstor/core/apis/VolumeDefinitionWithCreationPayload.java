@@ -1,6 +1,6 @@
 package com.linbit.linstor.core.apis;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 public interface VolumeDefinitionWithCreationPayload
 {

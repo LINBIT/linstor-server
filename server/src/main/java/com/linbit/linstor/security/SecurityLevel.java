@@ -1,6 +1,7 @@
 package com.linbit.linstor.security;
 
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,11 +46,11 @@ public enum SecurityLevel
      * @throws AccessDeniedException Thrown if the specified access context is not authorized
      * @throws DatabaseException if a database error occurs
      */
-    public static void set(
+    public static <T extends ControllerDatabase> void set(
         AccessContext accCtx,
         SecurityLevel newLevel,
-        ControllerDatabase ctrlDb,
-        DbAccessor secDb
+        @Nullable T ctrlDb,
+        @Nullable DbAccessor<T> secDb
     )
         throws AccessDeniedException, DatabaseException
     {

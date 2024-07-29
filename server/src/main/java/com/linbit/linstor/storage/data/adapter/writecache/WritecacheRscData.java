@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.adapter.writecache;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -35,7 +36,7 @@ public class WritecacheRscData<RSC extends AbsResource<RSC>>
     public WritecacheRscData(
         int rscLayerIdRef,
         RSC rscRef,
-        AbsRscLayerObject<RSC> parentRef,
+        @Nullable AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
         String rscNameSuffixRef,
         LayerWritecacheRscDatabaseDriver writecacheRscDbDriverRef,
@@ -61,7 +62,7 @@ public class WritecacheRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public RscDfnLayerObject getRscDfnLayerObject()
+    public @Nullable RscDfnLayerObject getRscDfnLayerObject()
     {
         return null;
     }

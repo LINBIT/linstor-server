@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.bcache;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.Commands;
@@ -34,8 +35,8 @@ public class BCacheUtils
 
     public static UUID makeBCache(
         ExtCmdFactory extCmdFactoryRef,
-        String backingDev,
-        String cacheDev,
+        @Nullable String backingDev,
+        @Nullable String cacheDev,
         Collection<String> additionalArgs
     )
         throws StorageException
@@ -72,7 +73,7 @@ public class BCacheUtils
         return findUuid(outputData, PATTERN_MAKE_BCACHE_OUT_SET_UUID);
     }
 
-    private static UUID findUuid(OutputData outputData, Pattern pattern)
+    private static @Nullable UUID findUuid(OutputData outputData, Pattern pattern)
     {
         String out = new String(outputData.stdoutData);
         UUID ret = null;
@@ -174,7 +175,7 @@ public class BCacheUtils
      *
      * @throws StorageException
      */
-    public static UUID getCSetUuidFromSuperBlock(ExtCmdFactory extCmdFactoryRef, String devicePath)
+    public static @Nullable UUID getCSetUuidFromSuperBlock(ExtCmdFactory extCmdFactoryRef, String devicePath)
         throws StorageException
     {
         return getUuidFromBCacheSuperShow(extCmdFactoryRef, devicePath, PATTERN_BCACHE_SUPER_SHOW_OUT_CSET_UUID);
@@ -188,12 +189,16 @@ public class BCacheUtils
      *
      * @throws StorageException
      */
-    public static UUID getBackingId(ExtCmdFactory extCmdFactoryRef, String devicePath) throws StorageException
+    public static @Nullable UUID getBackingId(ExtCmdFactory extCmdFactoryRef, String devicePath) throws StorageException
     {
         return getUuidFromBCacheSuperShow(extCmdFactoryRef, devicePath, PATTERN_BCACHE_SUPER_SHOW_OUT_BACKING_UUID);
     }
 
-    private static UUID getUuidFromBCacheSuperShow(ExtCmdFactory extCmdFactoryRef, String devicePath, Pattern pattern)
+    private static @Nullable UUID getUuidFromBCacheSuperShow(
+        ExtCmdFactory extCmdFactoryRef,
+        String devicePath,
+        Pattern pattern
+    )
         throws StorageException
     {
         OutputData outputData = Commands.genericExecutor(
@@ -286,7 +291,7 @@ public class BCacheUtils
      *
      * @throws StorageException
      */
-    public static String getIdentifierByBackingUuid(ExtCmdFactory extCmdFactory, UUID backingUuidRef)
+    public static @Nullable String getIdentifierByBackingUuid(ExtCmdFactory extCmdFactory, UUID backingUuidRef)
         throws StorageException
     {
         OutputData outputData = Commands.genericExecutor(

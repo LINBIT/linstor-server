@@ -1,5 +1,7 @@
 package com.linbit.linstor.core;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -11,17 +13,22 @@ public class CtrlSecurityObjects
      * Key used as a passphrase to encrypt persisted volume definition encryption keys.
      * Satellites will also need this masterKey to decrypt the key they need for dm-crypt.
      */
-    private byte[] cryptKey;
-    private byte[] cryptHash;
-    private byte[] cryptSalt;
-    private byte[] encKey;
+    private @Nullable byte[] cryptKey;
+    private @Nullable byte[] cryptHash;
+    private @Nullable byte[] cryptSalt;
+    private @Nullable byte[] encKey;
 
     @Inject
     public CtrlSecurityObjects()
     {
     }
 
-    public void setCryptKey(byte[] cryptKeyRef, byte[] cryptHashRef, byte[] cryptSaltRef, byte[] encKeyRef)
+    public void setCryptKey(
+        @Nullable byte[] cryptKeyRef,
+        @Nullable byte[] cryptHashRef,
+        @Nullable byte[] cryptSaltRef,
+        @Nullable byte[] encKeyRef
+    )
     {
         cryptKey = cryptKeyRef;
         cryptHash = cryptHashRef;
@@ -29,22 +36,22 @@ public class CtrlSecurityObjects
         encKey = encKeyRef;
     }
 
-    public byte[] getCryptKey()
+    public @Nullable byte[] getCryptKey()
     {
         return cryptKey;
     }
 
-    public byte[] getCryptHash()
+    public @Nullable byte[] getCryptHash()
     {
         return cryptHash;
     }
 
-    public byte[] getCryptSalt()
+    public @Nullable byte[] getCryptSalt()
     {
         return cryptSalt;
     }
 
-    public byte[] getEncKey()
+    public @Nullable byte[] getEncKey()
     {
         return encKey;
     }

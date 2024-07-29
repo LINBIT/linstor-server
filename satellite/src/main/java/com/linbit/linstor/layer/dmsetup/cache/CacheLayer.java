@@ -4,6 +4,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -38,7 +39,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -59,7 +59,7 @@ public class CacheLayer implements DeviceLayer
     private final ExtCmdFactory extCmdFactory;
     private final Provider<DeviceHandler> resourceProcessorProvider;
 
-    private Props localNodeProps;
+    private @Nullable Props localNodeProps;
     private StltConfigAccessor stltConfAccessor;
 
     @Inject
@@ -322,7 +322,7 @@ public class CacheLayer implements DeviceLayer
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public @Nullable LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
     {
         localNodeProps = localNodePropsRef;
         return null;

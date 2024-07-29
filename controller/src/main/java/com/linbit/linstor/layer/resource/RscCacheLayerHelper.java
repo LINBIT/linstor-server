@@ -7,6 +7,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -42,7 +43,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -87,7 +87,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
     }
 
     @Override
-    protected RscDfnLayerObject createRscDfnData(
+    protected @Nullable RscDfnLayerObject createRscDfnData(
         ResourceDefinition rscDfnRef,
         String rscNameSuffixRef,
         LayerPayload payloadRef
@@ -104,7 +104,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
     }
 
     @Override
-    protected VlmDfnLayerObject createVlmDfnData(
+    protected @Nullable VlmDfnLayerObject createVlmDfnData(
         VolumeDefinition vlmDfnRef,
         String rscNameSuffixRef,
         LayerPayload payloadRef
@@ -300,7 +300,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
         return !cacheRscData.hasAnyPreventExecutionIgnoreReason();
     }
 
-    private StorPool getSpecialStorPool(
+    private @Nullable StorPool getSpecialStorPool(
         Volume vlm,
         String propKey,
         String usage,
@@ -317,7 +317,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
         );
     }
 
-    private StorPool getSpecialStorPool(
+    private @Nullable StorPool getSpecialStorPool(
         Resource rsc,
         VolumeDefinition vlmDfn,
         String propKey,
@@ -336,7 +336,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
         );
     }
 
-    private StorPool getSpecialStorPool(
+    private @Nullable StorPool getSpecialStorPool(
         PriorityProps prioProps,
         Node node,
         String propKey,
@@ -401,7 +401,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
         return specStorPool;
     }
 
-    private StorPool getCacheStorPool(Volume vlm) throws InvalidKeyException, AccessDeniedException
+    private @Nullable StorPool getCacheStorPool(Volume vlm) throws InvalidKeyException, AccessDeniedException
     {
         return getSpecialStorPool(
             vlm,
@@ -411,7 +411,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
         );
     }
 
-    private StorPool getMetaStorPool(Volume vlm)
+    private @Nullable StorPool getMetaStorPool(Volume vlm)
         throws InvalidKeyException, AccessDeniedException
     {
         return getSpecialStorPool(
@@ -422,7 +422,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
         );
     }
 
-    private StorPool getCacheStorPool(Resource rsc, VolumeDefinition vlmDfn)
+    private @Nullable StorPool getCacheStorPool(Resource rsc, VolumeDefinition vlmDfn)
         throws InvalidKeyException, AccessDeniedException
     {
         return getSpecialStorPool(
@@ -434,7 +434,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
         );
     }
 
-    private StorPool getMetaStorPool(Resource rsc, VolumeDefinition vlmDfn)
+    private @Nullable StorPool getMetaStorPool(Resource rsc, VolumeDefinition vlmDfn)
         throws InvalidKeyException, AccessDeniedException
     {
         return getSpecialStorPool(
@@ -481,7 +481,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
     }
 
     @Override
-    protected <RSC extends AbsResource<RSC>> RscDfnLayerObject restoreRscDfnData(
+    protected <RSC extends AbsResource<RSC>> @Nullable RscDfnLayerObject restoreRscDfnData(
         ResourceDefinition rscDfnRef,
         AbsRscLayerObject<RSC> fromSnapDataRef
     )
@@ -509,7 +509,7 @@ class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
     }
 
     @Override
-    protected <RSC extends AbsResource<RSC>> VlmDfnLayerObject restoreVlmDfnData(
+    protected <RSC extends AbsResource<RSC>> @Nullable VlmDfnLayerObject restoreVlmDfnData(
         VolumeDefinition vlmDfnRef,
         VlmProviderObject<RSC> fromSnapVlmDataRef
     ) throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,

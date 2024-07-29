@@ -42,7 +42,7 @@ public class TransactionMap<PARENT, KEY, VALUE>
         else
         {
             if (parentRef == null)
-        {
+            {
                 throw new ImplementationError("Parent must not be null when using a database driver!");
             }
             dbDriver = driver;
@@ -52,7 +52,7 @@ public class TransactionMap<PARENT, KEY, VALUE>
     }
 
     @Override
-    public void postSetConnection(TransactionMgr transMgrRef)
+    public void postSetConnection(@Nullable TransactionMgr transMgrRef)
     {
         // forward transaction manager on keys
         backingMap.keySet()
@@ -141,7 +141,7 @@ public class TransactionMap<PARENT, KEY, VALUE>
 
     @Override
     @SuppressWarnings("unchecked")
-    public VALUE remove(Object key)
+    public @Nullable VALUE remove(Object key)
     {
         VALUE oldValue = backingMap.remove(key);
         // value must be removed from the backing map before (possibly) calling the DB driver
@@ -188,7 +188,7 @@ public class TransactionMap<PARENT, KEY, VALUE>
         return Collections.unmodifiableSet(backingMap.entrySet());
     }
 
-    private void cache(KEY key, VALUE value, VALUE oldValue)
+    private void cache(KEY key, @Nullable VALUE value, VALUE oldValue)
     {
         if (!hasTransMgr())
         {

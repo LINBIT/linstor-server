@@ -1,5 +1,7 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -232,10 +234,10 @@ public class ApiRcUtils
 
     public static class ResolvedRetCode
     {
-        String strType; // error, warn, info, success
-        String strOp;   // create, modify, delete
-        String strObj;  // node, rscDfn, rscn, ...
-        String strAction; // actual code. FAIL_SQL, ...
+        @Nullable String strType; // error, warn, info, success
+        @Nullable String strOp;   // create, modify, delete
+        @Nullable String strObj;  // node, rscDfn, rscn, ...
+        @Nullable String strAction; // actual code. FAIL_SQL, ...
 
         long lType;   // only the type-mask of the original return code
         long lOp;     // only the op-mask of the original return code

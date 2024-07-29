@@ -1,5 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass;
@@ -18,7 +19,7 @@ public class VlmGrpApiData implements VolumeGroupApi
     }
 
     @Override
-    public Integer getVolumeNr()
+    public @Nullable Integer getVolumeNr()
     {
         return vlmGrp.hasVlmNr() ? vlmGrp.getVlmNr() : null;
     }
@@ -36,7 +37,7 @@ public class VlmGrpApiData implements VolumeGroupApi
     }
 
     @Override
-    public UUID getUUID()
+    public @Nullable UUID getUUID()
     {
         UUID uuid = null;
         if (vlmGrp.hasUuid())

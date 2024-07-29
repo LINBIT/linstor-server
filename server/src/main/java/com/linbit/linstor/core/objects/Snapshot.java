@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.SnapshotApi;
@@ -83,7 +84,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<VolumeNumber, SnapshotVolume> snapshotVlmMapRef,
-        Date createTimestampRef
+        @Nullable Date createTimestampRef
     )
         throws DatabaseException
     {
@@ -186,7 +187,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
     }
 
     @Override
-    public SnapshotVolume getVolume(VolumeNumber volNr)
+    public @Nullable SnapshotVolume getVolume(VolumeNumber volNr)
     {
         checkDeleted();
         return snapVlmMap.get(volNr);
@@ -372,7 +373,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, accessType);
     }
 
-    public SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    public SnapshotApi getApiData(AccessContext accCtx, @Nullable Long fullSyncId, @Nullable Long updateId)
         throws AccessDeniedException
     {
         checkDeleted();

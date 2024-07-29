@@ -1,6 +1,7 @@
 package com.linbit.linstor.logging;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.netcom.Peer;
@@ -8,7 +9,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -98,6 +98,7 @@ public interface ErrorReporter
      *
      * @return the logName of the generated report; may be null if no report was created
      */
+    @Nullable
     String reportError(Throwable errorInfo);
 
     /**
@@ -121,6 +122,7 @@ public interface ErrorReporter
      *
      * @return the logName of the generated report; may be null if no report was created
      */
+    @Nullable
     String reportError(Level logLevel, Throwable errorInfo);
 
     /**
@@ -137,8 +139,8 @@ public interface ErrorReporter
      */
     String reportError(
         Throwable errorInfo,
-        AccessContext accCtx,
-        Peer client,
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
         // Information about the context in which the problem occurred, e.g., the API call being performed
         String contextInfo
     );
@@ -157,10 +159,10 @@ public interface ErrorReporter
     String reportError(
         Level logLevel,
         Throwable errorInfo,
-        AccessContext accCtx,
-        Peer client,
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
         // Information about the context in which the problem occurred, e.g., the API call being performed
-        String contextInfo
+        @Nullable String contextInfo
     );
 
     /**
@@ -179,8 +181,8 @@ public interface ErrorReporter
     String reportProblem(
         Level logLevel,
         LinStorException errorInfo,
-        AccessContext accCtx,
-        Peer client,
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
         // Information about the context in which the problem occurred, e.g., the API call being performed
         String contextInfo
     );

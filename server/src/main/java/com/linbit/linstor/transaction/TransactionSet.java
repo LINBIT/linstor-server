@@ -53,7 +53,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     }
 
     @Override
-    protected void postSetConnection(TransactionMgr transMgrRef)
+    protected void postSetConnection(@Nullable TransactionMgr transMgrRef)
     {
         // forward transaction manager to values
         backingSet.forEach(to -> to.setConnection(transMgrRef));

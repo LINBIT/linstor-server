@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -46,7 +47,7 @@ class CtrlRscConnectionHelper
     }
 
     public ResourceConnection loadOrCreateRscConn(
-        UUID rscConnUuid,
+        @Nullable UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscNameStr
@@ -73,7 +74,7 @@ class CtrlRscConnectionHelper
         String nodeName1Str,
         String nodeName2Str,
         String rscNameStr,
-        ResourceConnection.Flags[] initFlags
+        @Nullable ResourceConnection.Flags[] initFlags
     )
     {
         Node node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
@@ -89,7 +90,7 @@ class CtrlRscConnectionHelper
     public ResourceConnection createRscConn(
         Resource rsc1,
         Resource rsc2,
-        ResourceConnection.Flags[] initFlags
+        @Nullable ResourceConnection.Flags[] initFlags
     )
     {
         ResourceConnection rscConn;
@@ -133,7 +134,7 @@ class CtrlRscConnectionHelper
         return rscConn;
     }
 
-    public ResourceConnection loadRscConn(
+    public @Nullable ResourceConnection loadRscConn(
         String nodeName1Str,
         String nodeName2Str,
         String rscNameStr,

@@ -1,16 +1,15 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
-
-import javax.annotation.Nullable;
 
 public class VlmDfnWithCreationPayloadPojo implements VolumeDefinitionWithCreationPayload
 {
     private final VolumeDefinitionApi vlmDfnApi;
-    private final Integer drbdMinorNr;
+    private final @Nullable Integer drbdMinorNr;
 
-    public VlmDfnWithCreationPayloadPojo(VolumeDefinitionApi vlmDfnApiRef, Integer drbdMinorNrRef)
+    public VlmDfnWithCreationPayloadPojo(VolumeDefinitionApi vlmDfnApiRef, @Nullable Integer drbdMinorNrRef)
     {
         vlmDfnApi = vlmDfnApiRef;
         drbdMinorNr = drbdMinorNrRef;
@@ -23,7 +22,7 @@ public class VlmDfnWithCreationPayloadPojo implements VolumeDefinitionWithCreati
     }
 
     @Override
-    public Integer getDrbdMinorNr()
+    public @Nullable Integer getDrbdMinorNr()
     {
         return drbdMinorNr;
     }

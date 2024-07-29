@@ -1,6 +1,6 @@
 package com.linbit.linstor;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 public interface ErrorContextSupplier
 {

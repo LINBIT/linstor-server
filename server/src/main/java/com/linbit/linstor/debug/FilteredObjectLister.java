@@ -1,6 +1,7 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -237,6 +238,7 @@ public class FilteredObjectLister<SearchType>
 
         Collection<SearchType> getAll();
 
+        @Nullable
         SearchType getByName(String name)
             throws InvalidNameException;
 

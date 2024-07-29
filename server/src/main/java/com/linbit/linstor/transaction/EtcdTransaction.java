@@ -1,8 +1,7 @@
 package com.linbit.linstor.transaction;
 
-import static com.ibm.etcd.client.KeyUtils.bs;
-
 import com.linbit.linstor.ControllerETCDDatabase;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -22,6 +21,8 @@ import com.ibm.etcd.client.KeyUtils;
 import com.ibm.etcd.client.kv.KvClient;
 import com.ibm.etcd.client.kv.KvClient.FluentRangeRequest;
 import com.ibm.etcd.client.kv.KvClient.FluentTxnOps;
+
+import static com.ibm.etcd.client.KeyUtils.bs;
 
 public class EtcdTransaction
 {
@@ -109,12 +110,12 @@ public class EtcdTransaction
      *
      * @param primaryKey
      */
-    public String getFirstValue(String primaryKey)
+    public @Nullable String getFirstValue(String primaryKey)
     {
         return getFirstValue(primaryKey, null);
     }
 
-    public String getFirstValue(String primaryKeyRef, String dfltValue)
+    public @Nullable String getFirstValue(String primaryKeyRef, @Nullable String dfltValue)
     {
         Map<String, String> row = get(primaryKeyRef);
         Iterator<String> iterator = row.values().iterator();

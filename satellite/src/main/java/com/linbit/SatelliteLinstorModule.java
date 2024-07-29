@@ -1,11 +1,12 @@
 package com.linbit;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 
 public class SatelliteLinstorModule extends AbstractModule
 {

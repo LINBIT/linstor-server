@@ -5,6 +5,7 @@ import com.linbit.PlatformStlt;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -69,7 +70,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -102,7 +102,7 @@ import org.slf4j.event.Level;
 public class StltApiCallHandler
 {
     private final ErrorReporter errorReporter;
-    private final AccessContext apiCtx;
+    private final @Nonnull AccessContext apiCtx;
     private final StltConfig stltCfg;
 
     private final ControllerPeerConnector controllerPeerConnector;
@@ -154,7 +154,7 @@ public class StltApiCallHandler
     @Inject
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
-        @ApiContext AccessContext apiCtxRef,
+        @Nonnull @ApiContext AccessContext apiCtxRef,
         StltConfig stltCfgRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         UpdateMonitor updateMonitorRef,
@@ -1067,8 +1067,8 @@ public class StltApiCallHandler
 
     private class ApplyNode implements ApplyData
     {
-        private NodePojo nodePojo;
-        private String deletedNodeName;
+        private @Nullable NodePojo nodePojo;
+        private @Nullable String deletedNodeName;
         private long fullSyncId;
         private long updateId;
 
@@ -1119,8 +1119,8 @@ public class StltApiCallHandler
 
     private class ApplyRscData implements ApplyData
     {
-        private RscPojo rscPojo;
-        private String deletedRscName;
+        private @Nullable RscPojo rscPojo;
+        private @Nullable String deletedRscName;
         private long fullSyncId;
         private long updateId;
 
@@ -1179,8 +1179,8 @@ public class StltApiCallHandler
 
     private class ApplyStorPool implements ApplyData
     {
-        private StorPoolPojo storPoolPojo;
-        private String deletedStorPoolName;
+        private @Nullable StorPoolPojo storPoolPojo;
+        private @Nullable String deletedStorPoolName;
         private long fullSyncId;
         private long updateId;
 

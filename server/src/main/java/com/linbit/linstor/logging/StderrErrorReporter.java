@@ -1,10 +1,9 @@
 package com.linbit.linstor.logging;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-
-import javax.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -95,39 +94,38 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
         String contextInfo
     )
     {
-        return reportImpl(Level.ERROR, errorInfo, accCtx, client, contextInfo, true);
+        return reportImpl(errorInfo, accCtx, client, contextInfo, true);
     }
 
     @Override
-    public String reportError(
+    public @Nullable String reportError(
         Level logLevel,
         Throwable errorInfo,
-        AccessContext accCtx,
-        Peer client,
-        String contextInfo
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
+        @Nullable String contextInfo
     )
     {
-        return reportImpl(logLevel, errorInfo, accCtx, client, contextInfo, true);
+        return reportImpl(errorInfo, accCtx, client, contextInfo, true);
     }
 
     @Override
-    public String reportProblem(
+    public @Nullable String reportProblem(
         Level logLevel,
         LinStorException errorInfo,
-        AccessContext accCtx,
-        Peer client,
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
         String contextInfo
     )
     {
-        return reportImpl(logLevel, errorInfo, accCtx, client, contextInfo, false);
+        return reportImpl(errorInfo, accCtx, client, contextInfo, false);
     }
 
-    private String reportImpl(
-        Level logLevel,
+    private @Nullable String reportImpl(
         Throwable errorInfoRef,
-        AccessContext accCtx,
-        Peer client,
-        String contextInfo,
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
+        @Nullable String contextInfo,
         boolean includeStackTrace
     )
     {
@@ -172,7 +170,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
     }
 
     @Override
-    public Path getLogDirectory()
+    public @Nullable Path getLogDirectory()
     {
         return null;
     }

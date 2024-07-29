@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
@@ -8,8 +9,6 @@ import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import javax.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -194,10 +193,10 @@ public class DrbdRscPojo implements RscLayerDataApi
         private final int alStripes;
         private final long alStripeSize;
         @JsonIgnore
-        private final Integer port;
+        private final @Nullable Integer port;
         private final String transportType;
         @JsonIgnore
-        private final String secret;
+        private final @Nullable String secret;
         @JsonIgnore
         private final boolean down;
 
@@ -206,9 +205,9 @@ public class DrbdRscPojo implements RscLayerDataApi
             short peerSlotsRef,
             int alStripesRef,
             long alStripeSizeRef,
-            Integer portRef,
+            @Nullable Integer portRef,
             String transportTypeRef,
-            String secretRef,
+            @Nullable String secretRef,
             boolean downRef
         )
         {
@@ -293,18 +292,18 @@ public class DrbdRscPojo implements RscLayerDataApi
     {
         private final DrbdVlmDfnPojo drbdVlmDfn;
         @JsonIgnore
-        private final String devicePath;
+        private final @Nullable String devicePath;
         @JsonIgnore
-        private final String dataDevice;
-        private final String externalMetaDataStorPool;
+        private final @Nullable String dataDevice;
+        private final @Nullable String externalMetaDataStorPool;
         @JsonIgnore
-        private final String metaDevice;
+        private final @Nullable String metaDevice;
         @JsonIgnore
         private final long allocatedSize;
         @JsonIgnore
         private final long usableSize;
         @JsonIgnore
-        private final String diskState;
+        private final @Nullable String diskState;
         @JsonIgnore
         private final long discGran;
         @JsonIgnore
@@ -312,13 +311,13 @@ public class DrbdRscPojo implements RscLayerDataApi
 
         public DrbdVlmPojo(
             DrbdVlmDfnPojo drbdVlmDfnRef,
-            String devicePathRef,
-            String dataDiskRef,
-            String externalMetaDataStorPoolRef,
-            String metaDeviceRef,
+            @Nullable String devicePathRef,
+            @Nullable String dataDiskRef,
+            @Nullable String externalMetaDataStorPoolRef,
+            @Nullable String metaDeviceRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef,
+            @Nullable String diskStateRef,
             long discGranRef,
             boolean existsRef
         )
@@ -360,22 +359,22 @@ public class DrbdRscPojo implements RscLayerDataApi
         }
 
         @Override
-        public String getDevicePath()
+        public @Nullable String getDevicePath()
         {
             return devicePath;
         }
 
-        public String getDataDevice()
+        public @Nullable String getDataDevice()
         {
             return dataDevice;
         }
 
-        public String getExternalMetaDataStorPool()
+        public @Nullable String getExternalMetaDataStorPool()
         {
             return externalMetaDataStorPool;
         }
 
-        public String getMetaDevice()
+        public @Nullable String getMetaDevice()
         {
             return metaDevice;
         }
@@ -399,7 +398,7 @@ public class DrbdRscPojo implements RscLayerDataApi
         }
 
         @Override
-        public String getDiskState()
+        public @Nullable String getDiskState()
         {
             return diskState;
         }
@@ -432,12 +431,12 @@ public class DrbdRscPojo implements RscLayerDataApi
         private final String rscNameSuffix;
         private final int vlmNr;
         @JsonIgnore
-        private final Integer minorNr;
+        private final @Nullable Integer minorNr;
 
         public DrbdVlmDfnPojo(
             String rscNameSuffixRef,
             int vlmNrRef,
-            Integer minorNrRef
+            @Nullable Integer minorNrRef
         )
         {
             rscNameSuffix = rscNameSuffixRef;

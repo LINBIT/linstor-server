@@ -3,12 +3,15 @@ package com.linbit.linstor.modularcrypto;
 import com.linbit.ImplementationError;
 import com.linbit.crypto.KeyDerivation;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.utils.UnicodeConversion;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
+
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 
 public class JclKeyDerivationImpl implements KeyDerivation
@@ -40,7 +43,7 @@ public class JclKeyDerivationImpl implements KeyDerivation
     }
 
     @Override
-    public byte[] passphraseToKey(
+    public @Nullable byte[] passphraseToKey(
         byte[] passphrase,
         byte[] salt
     )
@@ -95,8 +98,7 @@ public class JclKeyDerivationImpl implements KeyDerivation
         {
             clearDataFields(passphrase, salt);
         }
-        final byte[] derivedKeyData = derivedKey.getEncoded();
-        return derivedKeyData;
+        return derivedKey.getEncoded();
     }
 
     /**

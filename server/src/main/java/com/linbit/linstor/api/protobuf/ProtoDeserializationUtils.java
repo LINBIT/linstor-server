@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.protobuf;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.RequestFilePojo;
@@ -133,11 +134,15 @@ public class ProtoDeserializationUtils
         return providerKindList;
     }
 
-    public static DeviceProviderKind parseDeviceProviderKind(ProviderType providerKindRef)
+    public static @Nullable DeviceProviderKind parseDeviceProviderKind(ProviderType providerKindRef)
     {
         return parseDeviceProviderKind(providerKindRef, true);
     }
-    public static DeviceProviderKind parseDeviceProviderKind(ProviderType providerKindRef, boolean throwIfUnknown)
+
+    public static @Nullable DeviceProviderKind parseDeviceProviderKind(
+        ProviderType providerKindRef,
+        boolean throwIfUnknown
+    )
     {
         DeviceProviderKind kind = null;
         if (providerKindRef != null)
@@ -217,12 +222,12 @@ public class ProtoDeserializationUtils
         return devLayerKindList;
     }
 
-    public static DeviceLayerKind parseDeviceLayerKind(LayerTypeOuterClass.LayerType layerTypeRef)
+    public static @Nullable DeviceLayerKind parseDeviceLayerKind(LayerTypeOuterClass.LayerType layerTypeRef)
     {
         return parseDeviceLayerKind(layerTypeRef, true);
     }
 
-    public static DeviceLayerKind parseDeviceLayerKind(
+    public static @Nullable DeviceLayerKind parseDeviceLayerKind(
         LayerTypeOuterClass.LayerType layerTypeRef,
         boolean throwIfUnknown
     )
@@ -377,7 +382,7 @@ public class ProtoDeserializationUtils
         );
     }
 
-    public static ExtTools parseExtToolsKind(ExternalTools extToolsRef, boolean throwIfUnknown)
+    public static @Nullable ExtTools parseExtToolsKind(ExternalTools extToolsRef, boolean throwIfUnknown)
     {
         ExtTools tool = null;
         switch (extToolsRef)

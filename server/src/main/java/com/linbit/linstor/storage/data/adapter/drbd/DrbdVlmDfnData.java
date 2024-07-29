@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -20,7 +21,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
@@ -33,11 +33,11 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     public static final int SNAPSHOT_MINOR = -1;
 
     // unmodifiable data, once initialized
-    private final VolumeDefinition vlmDfn;
+    private final @Nullable VolumeDefinition vlmDfn;
     private final VolumeNumber vlmNr;
     private final ResourceName rscName;
-    private final SnapshotName snapName;
-    private final MinorNumber minorNr;
+    private final @Nullable SnapshotName snapName;
+    private final @Nullable MinorNumber minorNr;
     private final String suffixedResourceName;
     private final String resourceNameSuffix;
     private final LayerDrbdVlmDfnDatabaseDriver dbDriver;
@@ -50,7 +50,7 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
         @Nullable SnapshotName snapNameRef,
         String resourceNameSuffixRef,
         VolumeNumber vlmNrRef,
-        Integer minorRef,
+        @Nullable Integer minorRef,
         DynamicNumberPool minorPoolRef,
         DrbdRscDfnData<RSC> drbdRscDfnRef,
         LayerDrbdVlmDfnDatabaseDriver dbDriverRef,
@@ -109,7 +109,7 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public SnapshotName getSnapshotName()
+    public @Nullable SnapshotName getSnapshotName()
     {
         return snapName;
     }
@@ -121,7 +121,7 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public MinorNumber getMinorNr()
+    public @Nullable MinorNumber getMinorNr()
     {
         return minorNr;
     }
@@ -158,7 +158,7 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
         );
     }
 
-    public VolumeDefinition getVolumeDefinition()
+    public @Nullable VolumeDefinition getVolumeDefinition()
     {
         return vlmDfn;
     }

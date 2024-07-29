@@ -1,6 +1,7 @@
 package com.linbit.utils;
 
 import com.linbit.linstor.DbgInstanceUuid;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -57,7 +58,7 @@ public class UuidUtils
         return UUID_PATTERN.matcher(str).find();
     }
 
-    public static UUID asUuidOrNull(String str)
+    public static @Nullable UUID asUuidOrNull(String str)
     {
         return isUuid(str) ? UUID.fromString(str) : null;
     }
