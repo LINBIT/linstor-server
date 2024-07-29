@@ -93,7 +93,8 @@ public class LvmCommands
         return cmdArr;
     }
 
-    public static OutputData lvs(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig) throws StorageException
+    public static synchronized OutputData lvs(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig)
+        throws StorageException
     {
         return genericExecutor(
             extCmd.setSaveWithoutSharedLocks(true),
@@ -113,7 +114,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData vgsThick(ExtCmd extCmd, @Nullable Set<String> volumeGroups, String lvmConfig)
+    public static synchronized OutputData vgsThick(ExtCmd extCmd, @Nullable Set<String> volumeGroups, String lvmConfig)
         throws StorageException
     {
         return genericExecutor(
@@ -134,7 +135,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData vgsThin(ExtCmd extCmd, @Nullable Set<String> volumeGroups, String lvmConfig)
+    public static synchronized OutputData vgsThin(ExtCmd extCmd, @Nullable Set<String> volumeGroups, String lvmConfig)
         throws StorageException
     {
         return genericExecutor(
@@ -155,7 +156,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData createFat(
+    public static synchronized OutputData createFat(
         ExtCmd extCmd,
         String volumeGroup,
         String vlmId,
@@ -182,7 +183,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData createThinPool(
+    public static synchronized OutputData createThinPool(
         ExtCmd extCmd,
         String volumeGroupFull,
         String thinPoolName,
@@ -207,7 +208,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData createThin(
+    public static synchronized OutputData createThin(
         ExtCmd extCmd,
         String volumeGroup,
         String thinPoolName,
@@ -235,7 +236,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData delete(
+    public static synchronized OutputData delete(
         ExtCmd extCmd,
         String volumeGroup,
         String vlmId,
@@ -259,7 +260,13 @@ public class LvmCommands
         );
     }
 
-    public static OutputData resize(ExtCmd extCmd, String volumeGroup, String vlmId, long size, String lvmConfig)
+    public static synchronized OutputData resize(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String vlmId,
+        long size,
+        String lvmConfig
+    )
         throws StorageException
     {
         return genericExecutor(
@@ -277,7 +284,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData rename(
+    public static synchronized OutputData rename(
         ExtCmd extCmd,
         String volumeGroup,
         String vlmCurrentId,
@@ -323,7 +330,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData createSnapshot(
+    public static synchronized OutputData createSnapshot(
         ExtCmd extCmd,
         String volumeGroup,
         String identifier,
@@ -355,7 +362,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData createSnapshotThin(
+    public static synchronized OutputData createSnapshotThin(
         ExtCmd extCmd,
         String volumeGroup,
         String thinPool,
@@ -386,7 +393,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData restoreFromSnapshot(
+    public static synchronized OutputData restoreFromSnapshot(
         ExtCmd extCmd,
         String sourceLvIdWithSnapName,
         String volumeGroup,
@@ -413,7 +420,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData rollbackToSnapshot(
+    public static synchronized OutputData rollbackToSnapshot(
         ExtCmd extCmd,
         String volumeGroup,
         String sourceResource,
@@ -435,7 +442,12 @@ public class LvmCommands
         );
     }
 
-    public static OutputData activateVolume(ExtCmd extCmd, String volumeGroup, String targetId, String lvmConfig)
+    public static synchronized OutputData activateVolume(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String targetId,
+        String lvmConfig
+    )
         throws StorageException
     {
         String failMsg = "Failed to activate volume " + volumeGroup + File.separator + targetId;
@@ -455,7 +467,12 @@ public class LvmCommands
         );
     }
 
-    public static OutputData deactivateVolume(ExtCmd extCmd, String volumeGroup, String targetId, String lvmConfig)
+    public static synchronized OutputData deactivateVolume(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String targetId,
+        String lvmConfig
+    )
         throws StorageException
     {
         String failMsg = "Failed to deactivate volume " + volumeGroup + File.separator + targetId;
@@ -473,7 +490,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData addTag(
+    public static synchronized OutputData addTag(
         ExtCmd extCmd, String volumeGroup, String targetId, String tagname, String lvmConfig)
         throws StorageException
     {
@@ -492,7 +509,12 @@ public class LvmCommands
         );
     }
 
-    public static OutputData activateZero(ExtCmdFactory extCmdFactory, String vlmGrp, String thinPool, String lvmConfig)
+    public static synchronized OutputData activateZero(
+        ExtCmdFactory extCmdFactory,
+        String vlmGrp,
+        String thinPool,
+        String lvmConfig
+    )
         throws StorageException
     {
         String failMsg = "Failed to activate --zero y on thin pool: " + vlmGrp + "/" + thinPool;
@@ -508,7 +530,8 @@ public class LvmCommands
         ), failMsg, failMsg);
     }
 
-    public static OutputData pvCreate(ExtCmd extCmd, String devicePath, String lvmConfig) throws StorageException
+    public static synchronized OutputData pvCreate(ExtCmd extCmd, String devicePath, String lvmConfig)
+        throws StorageException
     {
         final String failMsg = "Failed to pvcreate on device: " + devicePath;
         return genericExecutor(
@@ -524,7 +547,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData pvRemove(ExtCmd extCmd, Collection<String> devicePaths, String lvmConfig)
+    public static synchronized OutputData pvRemove(ExtCmd extCmd, Collection<String> devicePaths, String lvmConfig)
         throws StorageException
     {
         // no lvm config for pvremove!
@@ -541,7 +564,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData vgCreate(
+    public static synchronized OutputData vgCreate(
         ExtCmd extCmd,
         final String vgName,
         final RaidLevel raidLevel,  // ignore for now as we only support JBOD
@@ -565,7 +588,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData listPhysicalVolumes(ExtCmd extCmdRef, String volumeGroupRef, String lvmConfig)
+    public static synchronized OutputData listPhysicalVolumes(ExtCmd extCmdRef, String volumeGroupRef, String lvmConfig)
         throws StorageException
     {
         final String failMsg = "Failed to get physical devices for volume group: " + volumeGroupRef;
@@ -587,7 +610,7 @@ public class LvmCommands
     }
 
 
-    public static OutputData vgRemove(
+    public static synchronized OutputData vgRemove(
         ExtCmd extCmd,
         final String vgName,
         String lvmConfig
@@ -609,7 +632,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData vgscan(ExtCmd extCmd, boolean ignoreCache) throws StorageException
+    public static synchronized OutputData vgscan(ExtCmd extCmd, boolean ignoreCache) throws StorageException
     {
         String[] cmd;
         if (ignoreCache)

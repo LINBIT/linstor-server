@@ -252,25 +252,25 @@ public class LvmUtils
         return ret;
     }
 
-    public static void recacheNext()
+    public static synchronized void recacheNext()
     {
         recacheNextLvs();
         recacheNextVgs();
     }
 
-    public static void recacheNextLvs()
+    public static synchronized void recacheNextLvs()
     {
         cachedLvs.clear();
         cachedVgsThin.clear();
     }
 
-    public static void recacheNextVgs()
+    public static synchronized void recacheNextVgs()
     {
         cachedVgsThick.clear();
         cachedVgsThin.clear();
     }
 
-    public static Map<String /* vg */, Map<String/* lv */, LvsInfo>> getLvsInfo(
+    public static synchronized Map<String /* vg */, Map<String/* lv */, LvsInfo>> getLvsInfo(
         final ExtCmdFactory ecf,
         final Set<String> volumeGroups
     )
@@ -285,7 +285,7 @@ public class LvmUtils
         return ret;
     }
 
-    public static Map<String, VgsInfo> getVgsInfo(
+    public static synchronized Map<String, VgsInfo> getVgsInfo(
         ExtCmdFactory extCmdFactoryRef,
         Set<String> volumeGroupSetRef,
         boolean thinRef
