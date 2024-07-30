@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.slf4j.MDC;
+
 /**
  * Runs an external command, logs and saves its output
  *
@@ -128,8 +130,10 @@ public class ExtCmd extends ChildProcessHandler
             child = pBuilder.start();
             startTime = System.currentTimeMillis();
             setChild(child);
-            outReceiver = new OutputReceiver(child.getInputStream(), errLog, logExecution);
-            errReceiver = new OutputReceiver(child.getErrorStream(), errLog, logExecution);
+            outReceiver = new OutputReceiver(
+                child.getInputStream(), errLog, logExecution, MDC.get(ErrorReporter.LOGID));
+            errReceiver = new OutputReceiver(
+                child.getErrorStream(), errLog, logExecution, MDC.get(ErrorReporter.LOGID));
         }
         new Thread(outReceiver).start();
         new Thread(errReceiver).start();

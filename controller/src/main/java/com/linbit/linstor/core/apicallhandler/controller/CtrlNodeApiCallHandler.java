@@ -118,6 +118,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.function.Tuple2;
@@ -1150,7 +1151,8 @@ public class CtrlNodeApiCallHandler
         return scopeRunner.fluxInTransactionlessScope(
             "set satellite config",
             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP),
-            () -> setStltConfig(nodeName, config)
+            () -> setStltConfig(nodeName, config),
+            MDC.getCopyOfContextMap()
         );
     }
 
@@ -1464,7 +1466,8 @@ public class CtrlNodeApiCallHandler
                     throw new ApiAccessDeniedException(exc, "to " + nodeName, ApiConsts.FAIL_ACC_DENIED_NODE);
                 }
                 return declareEvicted(node);
-            }
+            },
+            MDC.getCopyOfContextMap()
         );
     }
 

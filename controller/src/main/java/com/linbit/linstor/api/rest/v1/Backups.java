@@ -15,6 +15,7 @@ import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupRestor
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlScheduledBackupsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.BackupApi;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
@@ -42,6 +43,7 @@ import java.util.Set;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -113,7 +115,7 @@ public class Backups
     )
     {
         Flux<ApiCallRc> responses;
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.BackupCreate data = objectMapper.readValue(jsonData, JsonGenTypes.BackupCreate.class);
             boolean incremental = data.incremental != null && data.incremental;
@@ -142,7 +144,7 @@ public class Backups
     {
         Flux<ApiCallRc> responses;
 
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.BackupRestore data = objectMapper.readValue(jsonData, JsonGenTypes.BackupRestore.class);
 
@@ -192,68 +194,71 @@ public class Backups
         @DefaultValue("false") @QueryParam("keep_snaps") boolean keepSnaps
     )
     {
-        /*
-         * timestamp means every backup created BEFORE the given timestamp
-         */
-        int combination = !cascading ? 0 : DEL_OPT_CASCADE;
-        combination |= id.isEmpty() ? 0 : DEL_OPT_ID;
-        combination |= idPrefix.isEmpty() ? 0 : DEL_OPT_ID_PREFIX;
-        combination |= s3key.isEmpty() ? 0 : DEL_OPT_S3_KEY;
-        /*
-         * at least one of timestamp, rscName or nodeName need to be used. If one is used, the other two can also be
-         * used in addition. Therefore we can treat these three as one "combination"
-         */
-        combination |= timestamp.isEmpty() && rscName.isEmpty() && nodeName.isEmpty() ? 0 : DEL_OPT_TIME_RSC_NODE;
-        combination |= !all ? 0 : DEL_OPT_ALL;
-        combination |= !allLocalCluster ? 0 : DEL_OPT_ALL_LOCALCLUSTER;
-        // dryRun is combinable with all allowed combinations, no need to check
-
-        if (!DEL_OPT_ALLOWED_COMBINATIONS.contains(combination))
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
-            String errorMsg;
-            if (combination == 0)
+            /*
+             * timestamp means every backup created BEFORE the given timestamp
+             */
+            int combination = !cascading ? 0 : DEL_OPT_CASCADE;
+            combination |= id.isEmpty() ? 0 : DEL_OPT_ID;
+            combination |= idPrefix.isEmpty() ? 0 : DEL_OPT_ID_PREFIX;
+            combination |= s3key.isEmpty() ? 0 : DEL_OPT_S3_KEY;
+            /*
+             * at least one of timestamp, rscName or nodeName need to be used. If one is used, the other two can also be
+             * used in addition. Therefore we can treat these three as one "combination"
+             */
+            combination |= timestamp.isEmpty() && rscName.isEmpty() && nodeName.isEmpty() ? 0 : DEL_OPT_TIME_RSC_NODE;
+            combination |= !all ? 0 : DEL_OPT_ALL;
+            combination |= !allLocalCluster ? 0 : DEL_OPT_ALL_LOCALCLUSTER;
+            // dryRun is combinable with all allowed combinations, no need to check
+
+            if (!DEL_OPT_ALLOWED_COMBINATIONS.contains(combination))
             {
-                errorMsg = "You have to specify which backups you want to delete. Use 'all' to delete all backups in the specified bucket";
+                String errorMsg;
+                if (combination == 0)
+                {
+                    errorMsg = "You have to specify which backups you want to delete. Use 'all' to delete all backups in the specified bucket";
+                }
+                else
+                {
+                    errorMsg = "Too many parameters given. You can only use the following parameters in combination: id and cascading; s3key and cascading; " +
+                        "since, resource_name and node_name in any combination; all other parameters can only be used on their own.";
+                }
+                // CONFUSION!!!!!
+                requestHelper.doFlux(
+                    asyncResponse,
+                    ApiCallRcRestUtils.mapToMonoResponse(
+                        Flux.just(
+                            ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_INVLD_REQUEST, errorMsg)
+                        ),
+                        Response.Status.BAD_REQUEST
+                    )
+                );
             }
             else
             {
-                errorMsg = "Too many parameters given. You can only use the following parameters in combination: id and cascading; s3key and cascading; " +
-                    "since, resource_name and node_name in any combination; all other parameters can only be used on their own.";
+                Flux<ApiCallRc> deleteFlux = backupApiCallHandler.deleteBackup(
+                    rscName,
+                    id,
+                    idPrefix,
+                    timestamp,
+                    nodeName,
+                    cascading,
+                    allLocalCluster,
+                    all,
+                    s3key,
+                    remoteName,
+                    dryRun,
+                    keepSnaps
+                ).contextWrite(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
+                requestHelper.doFlux(
+                    asyncResponse,
+                    ApiCallRcRestUtils.mapToMonoResponse(
+                        deleteFlux,
+                        Response.Status.OK
+                    )
+                );
             }
-            // CONFUSION!!!!!
-            requestHelper.doFlux(
-                asyncResponse,
-                ApiCallRcRestUtils.mapToMonoResponse(
-                    Flux.just(
-                        ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_INVLD_REQUEST, errorMsg)
-                    ),
-                    Response.Status.BAD_REQUEST
-                )
-            );
-        }
-        else
-        {
-            Flux<ApiCallRc> deleteFlux = backupApiCallHandler.deleteBackup(
-                rscName,
-                id,
-                idPrefix,
-                timestamp,
-                nodeName,
-                cascading,
-                allLocalCluster,
-                all,
-                s3key,
-                remoteName,
-                dryRun,
-                keepSnaps
-            ).contextWrite(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
-            requestHelper.doFlux(
-                asyncResponse,
-                ApiCallRcRestUtils.mapToMonoResponse(
-                    deleteFlux,
-                    Response.Status.OK
-                )
-            );
         }
     }
 
@@ -365,7 +370,7 @@ public class Backups
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.BackupInfoRequest data = objectMapper
                 .readValue(jsonData, JsonGenTypes.BackupInfoRequest.class);
@@ -414,7 +419,7 @@ public class Backups
     )
     {
         Flux<ApiCallRc> responses;
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.BackupSchedule data = objectMapper.readValue(jsonData, JsonGenTypes.BackupSchedule.class);
             responses = scheduledBackupsApiCallHandler
@@ -451,7 +456,7 @@ public class Backups
     )
     {
         Flux<ApiCallRc> responses;
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.BackupSchedule data = objectMapper.readValue(jsonData, JsonGenTypes.BackupSchedule.class);
             responses = scheduledBackupsApiCallHandler
@@ -479,14 +484,17 @@ public class Backups
         @DefaultValue("") @QueryParam("rsc_grp_name") String grpName
     )
     {
-        Flux<ApiCallRc> responses;
-        responses = scheduledBackupsApiCallHandler
-            .deleteSchedule(rscName, grpName, remoteName, scheduleName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
-        requestHelper.doFlux(
-            asyncResponse,
-            ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.OK)
-        );
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            Flux<ApiCallRc> responses;
+            responses = scheduledBackupsApiCallHandler
+                .deleteSchedule(rscName, grpName, remoteName, scheduleName)
+                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
+            requestHelper.doFlux(
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.OK)
+            );
+        }
     }
 
     private Mono<Response> backupInfoPojoToResponse(

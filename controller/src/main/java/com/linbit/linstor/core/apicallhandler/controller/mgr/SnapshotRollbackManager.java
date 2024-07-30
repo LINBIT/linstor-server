@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
@@ -216,7 +217,8 @@ public class SnapshotRollbackManager
             .fluxInTransactionlessScope(
                 "Finishing recovery",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
-                () -> disableForceNewMetadataInTransaction(infoRef)
+                () -> disableForceNewMetadataInTransaction(infoRef),
+                MDC.getCopyOfContextMap()
             );
     }
 

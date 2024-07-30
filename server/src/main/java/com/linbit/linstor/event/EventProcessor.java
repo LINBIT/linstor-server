@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.inject.Key;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 /**
@@ -196,7 +197,8 @@ public class EventProcessor
                 snapshotNameStr,
                 peerNodeNameStr,
                 eventDataIn
-            )
+            ),
+            MDC.getCopyOfContextMap()
         );
     }
 

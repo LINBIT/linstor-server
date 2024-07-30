@@ -26,6 +26,8 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.MDC;
+
 @Singleton
 public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
 {
@@ -97,7 +99,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
         while (running)
         {
             Event event;
-            try
+            try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
             {
                 event = eventDeque.take();
                 if (event instanceof StdOutEvent)

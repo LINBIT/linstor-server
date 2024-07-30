@@ -30,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("metrics")
@@ -74,6 +75,7 @@ public class Metrics
         @DefaultValue("true") @QueryParam("error_reports") boolean withErrorReports
     )
     {
+        MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
         SCRAPE_REQUESTS.incrementAndGet();
         long scrapeStart = System.currentTimeMillis();
 

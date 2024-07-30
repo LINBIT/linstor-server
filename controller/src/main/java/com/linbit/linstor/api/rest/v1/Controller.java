@@ -40,6 +40,7 @@ import java.util.Locale;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("v1/controller")
@@ -113,7 +114,7 @@ public class Controller
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.ControllerPropsModify properties = objectMapper.readValue(
                 jsonData,

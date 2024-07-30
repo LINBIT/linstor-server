@@ -134,7 +134,7 @@ public abstract class LinStor
 
         return String.format(
             "Version:            %s (%s)\n" +
-            "Build time:         %s\n" +
+            "Build time:         %s Log v2\n" +
             "Java Version:       %s\n" +
             "Java VM:            %s, Version %s\n" +
             "Operating system:   %s, Version %s\n" +

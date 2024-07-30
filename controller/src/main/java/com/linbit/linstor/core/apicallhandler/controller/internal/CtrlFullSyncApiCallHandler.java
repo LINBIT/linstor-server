@@ -44,6 +44,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 import static java.util.stream.Collectors.toList;
@@ -122,7 +123,8 @@ public class CtrlFullSyncApiCallHandler
                 remoteMapLock.readLock(),
                 peer.getSerializerLock().writeLock()
             ),
-            () -> sendFullSyncInScope(satelliteNode, expectedFullSyncId, waitForAnswer)
+            () -> sendFullSyncInScope(satelliteNode, expectedFullSyncId, waitForAnswer),
+            MDC.getCopyOfContextMap()
         );
     }
 

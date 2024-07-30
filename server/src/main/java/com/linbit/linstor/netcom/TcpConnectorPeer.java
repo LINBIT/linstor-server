@@ -43,6 +43,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
 import org.reactivestreams.Publisher;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Sinks;
@@ -440,6 +441,7 @@ public class TcpConnectorPeer implements Peer
         return Flux
             .<ByteArrayInputStream>create(fluxSink ->
                 {
+                    MDC.setContextMap(MDC.getCopyOfContextMap());
                     long apiCallId = nextApiCallId.getAndIncrement();
                     byte[] messageBytes = commonSerializer.apiCallBuilder(apiCallName, apiCallId).bytes(data).build();
 
@@ -454,7 +456,7 @@ public class TcpConnectorPeer implements Peer
                     else
                     {
                         errorReporter.logTrace("Peer %s, API call %d '%s' send", this, apiCallId, apiCallName);
-                    boolean isConnected = sendMessage(messageBytes);
+                        boolean isConnected = sendMessage(messageBytes);
                         if (!isConnected)
                         {
                             fluxSink.error(new PeerNotConnectedException());

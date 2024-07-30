@@ -53,6 +53,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("v1/nodes")
@@ -151,7 +152,7 @@ public class Nodes
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.Node data = objectMapper.readValue(jsonData, JsonGenTypes.Node.class);
             Flux<ApiCallRc> flux = ctrlNodeCrtApiCallHandler
@@ -206,7 +207,7 @@ public class Nodes
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.NodeModify modifyData = objectMapper.readValue(jsonData, JsonGenTypes.NodeModify.class);
 

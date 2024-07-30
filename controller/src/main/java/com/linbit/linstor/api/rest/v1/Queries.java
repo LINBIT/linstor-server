@@ -6,6 +6,7 @@ import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.POST;
@@ -20,6 +21,7 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -59,6 +61,7 @@ public class Queries
         );
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
+            MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Mono<Response> flux = ctrlRscGrpApiCallHandler.queryAllSizeInfo(Json.queryAllSizeInfoReqToPojo(qasiReq))
                 .contextWrite(requestHelper.createContext(ApiConsts.API_QRY_ALL_SIZE_INFO, request))
                 .onErrorResume(

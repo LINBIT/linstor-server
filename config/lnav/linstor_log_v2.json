@@ -1,0 +1,73 @@
+{
+  "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+  "linstor_log_v2": {
+    "title": "LinstorV2",
+    "description": "Linstor log v2",
+    "url": "https://github.com/LINBIT/linstor-server",
+    "regex": {
+      "begin": {
+        "pattern": "^Build time:\\s+(?:(?<timestamp>(?:\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}))\\+00:00) Log v2$"
+      },
+      "std": {
+        "pattern": "^(?:(?<timestamp>(?:\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}))) (?:(?<thread_name>(?:\\[[a-zA-Z0-9\\-]+\\]))) (?:(?<severity>[A-Z]+))\\s+(?:(?<component>(?:[a-zA-Z0-9\\.\\/]+)))/(?:(?<logid>(?:[a-fA-F0-9]*))) (?:(?<user>(?:\\w+))) - (?<body>.*)$"
+      },
+      "non-linstor": {
+        "pattern": "^(?:(?<timestamp>(?:\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}))) (?:(?<thread_name>(?:\\[[a-zA-Z0-9\\-]+\\]))) (?:(?<severity>[A-Z]+))\\s+(?:(?<component>(?:[a-zA-Z0-9\\.\\/]+)))/(?:(?<logid>(?:[a-fA-F0-9]*))) (?<body>.*)$"
+      }
+    },
+    "timestamp-format": ["%Y-%m-%d %H:%M:%S.%L", "%Y-%m-%dT%H:%M:%S"],
+    "level-field": "severity",
+    "level": {
+      "error": "ERROR",
+      "warning": "WARN",
+      "info": "INFO",
+      "debug": "DEBUG",
+      "trace": "TRACE"
+    },
+    "opid-field": "logid",
+    "value": {
+      "thread_name": {
+        "kind": "string",
+        "identifier": true,
+        "description": "Name of the current thread"
+      },
+      "severity": {
+        "kind": "string",
+        "identifier": true,
+        "description": "message severity"
+      },
+      "component": {
+        "kind": "string",
+        "identifier": true,
+        "description": "logging module/class"
+      },
+      "logid": {
+        "kind": "string",
+        "identifier": true,
+        "description": "The ID of the current log context"
+      },
+      "user": {
+        "kind": "string",
+        "identifier": true,
+        "description": "Current user context"
+      }
+    },
+    "sample": [
+      {
+        "line": "Build time:         2024-07-02T07:58:19+00:00 Log v2"
+      },
+      {
+        "line": "2024-07-13 20:03:10.633 [MainWorkerPool-2] TRACE LINSTOR/Controller/affee SYSTEM - Peer Node: 'lin3', API call 33 answer received (seq 386)",
+        "level": "trace"
+      },
+      {
+        "line": "2024-07-13 20:46:58.133 [Main] INFO  LINSTOR/Controller/affee SYSTEM - Dependency injection finished: 1149ms",
+        "level": "info"
+      },
+      {
+        "line": "2024-07-17 11:19:36.579 [Main] INFO  org.flywaydb.core.internal.command.DbMigrate/ffffff Migrating schema \"LINSTOR\" to version \"2018.03.27.14.01 - Initialize the database\"",
+        "level": "info"
+      }
+    ]
+  }
+}

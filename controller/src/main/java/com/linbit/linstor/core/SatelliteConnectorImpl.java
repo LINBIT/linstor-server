@@ -25,6 +25,8 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import org.slf4j.MDC;
+
 @Singleton
 public class SatelliteConnectorImpl implements SatelliteConnector
 {
@@ -157,7 +159,10 @@ public class SatelliteConnectorImpl implements SatelliteConnector
         final Node node
     )
     {
-        Runnable connectRunnable = () -> connectSatellite(satelliteAddress, tcpConnector, node, true);
+        Runnable connectRunnable = () -> {
+            MDC.setContextMap(MDC.getCopyOfContextMap());
+            connectSatellite(satelliteAddress, tcpConnector, node, true);
+        };
         // This could possibly be offloaded to some specialized worker pool in the future,
         // but not to the main worker pool used for submitting inbound requests,
         // because submitting to the main worker pool from the Controller's initialization

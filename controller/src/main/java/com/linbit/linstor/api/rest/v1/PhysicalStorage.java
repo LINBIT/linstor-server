@@ -9,6 +9,7 @@ import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPhysicalStorageApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.LvmThinDriverKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -37,6 +38,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -72,6 +74,7 @@ public class PhysicalStorage
     {
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
+            MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Mono<Response> answer = physicalStorageApiCallHandler.listPhysicalStorage()
                 .contextWrite(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
                 .map(physicalStorageMap ->
@@ -115,6 +118,7 @@ public class PhysicalStorage
     {
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
+            MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Mono<Response> answer = physicalStorageApiCallHandler.getPhysicalStorage(nodeName)
                 .contextWrite(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
                 .map(lsBlkEntries -> {

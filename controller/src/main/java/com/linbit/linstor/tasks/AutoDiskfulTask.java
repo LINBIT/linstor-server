@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.inject.Key;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
@@ -421,6 +422,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
 
     private Mono<ApiCallRc> removeExcessFlux(Resource rsc)
     {
+        var logContextMap = MDC.getCopyOfContextMap();
         return Mono.fromRunnable(
             () -> backgroundRunner.runInBackground(
                 "Remove excess rsc",
@@ -434,7 +436,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                         scopeRunner.fluxInTransactionalScope(
                             "Delete excess after auto-diskful of " + CtrlRscApiCallHandler.getRscDescription(rsc),
                             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),
-                            () -> removeExcessFluxInTransaction(rsc)
+                            () -> removeExcessFluxInTransaction(rsc),
+                            logContextMap
                         )
                     )
                     .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())

@@ -20,6 +20,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 @Singleton
@@ -335,7 +336,7 @@ public class TaskScheduleService implements SystemService, Runnable
     private void execute(Task task, long scheduledAt)
     {
         long delay = scheduledAt + DEFAULT_RETRY_DELAY;
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             delay = task.run(scheduledAt);
         }

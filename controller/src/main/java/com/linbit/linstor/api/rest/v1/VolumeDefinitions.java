@@ -13,6 +13,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCall
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("v1/resource-definitions/{rscName}/volume-definitions")
@@ -164,7 +166,7 @@ public class VolumeDefinitions
         String dataJson
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.VolumeDefinitionCreate vlmDfnData = objectMapper.readValue(
                 dataJson,
@@ -197,7 +199,7 @@ public class VolumeDefinitions
         String dataJson
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.VolumeDefinitionModify vlmDfnData = objectMapper
                 .readValue(dataJson, JsonGenTypes.VolumeDefinitionModify.class);
@@ -230,10 +232,13 @@ public class VolumeDefinitions
         @PathParam("vlmNr") int vlmNr
     )
     {
-        Flux<ApiCallRc> flux = ctrlVlmDfnDeleteApiCallHandler.deleteVolumeDefinition(rscName, vlmNr)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_VLM_DFN, request));
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            Flux<ApiCallRc> flux = ctrlVlmDfnDeleteApiCallHandler.deleteVolumeDefinition(rscName, vlmNr)
+                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_VLM_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
     }
 
     @GET
@@ -267,7 +272,7 @@ public class VolumeDefinitions
         String dataJson
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.VolumeDefinitionModifyPassphrase vlmDfnData = objectMapper
                 .readValue(dataJson, JsonGenTypes.VolumeDefinitionModifyPassphrase.class);

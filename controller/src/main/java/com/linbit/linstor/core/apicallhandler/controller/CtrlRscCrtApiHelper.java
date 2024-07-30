@@ -99,6 +99,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.reactivestreams.Publisher;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -880,7 +881,8 @@ public class CtrlRscCrtApiHelper
                     LockObj.RSC_DFN_MAP,
                     LockObj.STOR_POOL_DFN_MAP
                 ),
-                () -> setInitializedInTransaction(deployedResourcesRef)
+                () -> setInitializedInTransaction(deployedResourcesRef),
+                MDC.getCopyOfContextMap()
             );
     }
 

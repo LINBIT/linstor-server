@@ -6,6 +6,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlConfApiCallHandler;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -23,6 +24,7 @@ import java.io.IOException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("v1/encryption")
@@ -56,7 +58,7 @@ public class Encryption
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.PassPhraseCreate passPhraseCreate = objectMapper
                 .readValue(jsonData, JsonGenTypes.PassPhraseCreate.class);
@@ -84,7 +86,7 @@ public class Encryption
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.PassPhraseCreate passPhraseCreate = objectMapper
                 .readValue(jsonData, JsonGenTypes.PassPhraseCreate.class);
@@ -112,7 +114,7 @@ public class Encryption
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             String passPhrase = objectMapper.readValue(jsonData, String.class);
             Flux<ApiCallRc> flux = ctrlConfApiCallHandler.enterPassphrase(passPhrase)

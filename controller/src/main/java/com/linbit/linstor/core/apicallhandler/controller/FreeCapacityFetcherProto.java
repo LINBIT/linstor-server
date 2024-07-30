@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -83,10 +84,13 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     public Mono<Map<StorPool.Key, Long>> fetchThinFreeCapacities(Set<NodeName> nodesFilter)
     {
         return fetchThinFreeSpaceInfo(nodesFilter).map(
-            freeSpaceInfo -> freeSpaceInfo.entrySet().stream().collect(Collectors.toMap(
-                Map.Entry::getKey,
-                entry -> entry.getValue().getT1().freeCapacity
-            ))
+            freeSpaceInfo -> {
+                MDC.setContextMap(MDC.getCopyOfContextMap());
+                return freeSpaceInfo.entrySet().stream().collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> entry.getValue().getT1().freeCapacity
+                ));
+            }
         );
     }
 
@@ -96,7 +100,8 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         return scopeRunner.fluxInTransactionalScope(
             "Fetch thin capacity info",
             lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
-            () -> assembleRequests(nodesFilter).flatMap(this::parseFreeSpaces)
+            () -> assembleRequests(nodesFilter).flatMap(this::parseFreeSpaces),
+            MDC.getCopyOfContextMap()
         )
             .collectMap(
             t -> t.getT1(),

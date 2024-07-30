@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSosReportApiCallHandler;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -28,6 +29,7 @@ import java.util.Set;
 
 import com.google.common.io.ByteStreams;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Mono;
 
 @Path("v1/sos-report")
@@ -61,52 +63,55 @@ public class SosReport
         @Suspended final AsyncResponse asyncResponse
     )
     {
-        Set<String> filterNodes = new HashSet<>();
-        if (nodeNames != null)
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
-            filterNodes.addAll(nodeNames);
-        }
-        Set<String> filterRscs = new HashSet<>();
-        if (rscNames != null)
-        {
-            filterRscs.addAll(rscNames);
-        }
-        Set<String> filterExclude = new HashSet<>();
-        if (excludeNodes != null)
-        {
-            filterExclude.addAll(excludeNodes);
-        }
-        final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
-
-        Mono<Response> flux = ctrlSosReportApiCallHandler
-            .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
-            .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
-            .flatMap(sosReport ->
+            Set<String> filterNodes = new HashSet<>();
+            if (nodeNames != null)
             {
-                Response resp;
-                resp = Response
-                    .ok((StreamingOutput) output ->
-                    {
-                        try
-                        {
-                            java.nio.file.Path path = Paths.get(sosReport);
-                            FileInputStream input = new FileInputStream(path.toFile());
-                            ByteStreams.copy(input, output);
-                            output.flush();
-                            input.close();
-                        }
-                        catch (Exception exc)
-                        {
-                            throw new WebApplicationException("File Not Found !!", exc);
-                        }
-                    }, MediaType.APPLICATION_OCTET_STREAM)
-                    .header("content-disposition", "attachment; filename = " + Paths.get(sosReport).getFileName().toString())
-                    .build();
-                return Mono.just(resp);
-            })
-            .next();
+                filterNodes.addAll(nodeNames);
+            }
+            Set<String> filterRscs = new HashSet<>();
+            if (rscNames != null)
+            {
+                filterRscs.addAll(rscNames);
+            }
+            Set<String> filterExclude = new HashSet<>();
+            if (excludeNodes != null)
+            {
+                filterExclude.addAll(excludeNodes);
+            }
+            final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
 
-        requestHelper.doFlux(asyncResponse, flux);
+            Mono<Response> flux = ctrlSosReportApiCallHandler
+                .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
+                .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
+                .flatMap(sosReport ->
+                {
+                    Response resp;
+                    resp = Response
+                        .ok((StreamingOutput) output ->
+                        {
+                            try
+                            {
+                                java.nio.file.Path path = Paths.get(sosReport);
+                                FileInputStream input = new FileInputStream(path.toFile());
+                                ByteStreams.copy(input, output);
+                                output.flush();
+                                input.close();
+                            }
+                            catch (Exception exc)
+                            {
+                                throw new WebApplicationException("File Not Found !!", exc);
+                            }
+                        }, MediaType.APPLICATION_OCTET_STREAM)
+                        .header("content-disposition", "attachment; filename = " + Paths.get(sosReport).getFileName().toString())
+                        .build();
+                    return Mono.just(resp);
+                })
+                .next();
+
+            requestHelper.doFlux(asyncResponse, flux);
+        }
     }
 
     @GET
@@ -121,37 +126,40 @@ public class SosReport
         @Suspended final AsyncResponse asyncResponse
     )
     {
-        Set<String> filterNodes = new HashSet<>();
-        if (nodeNames != null)
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
-            filterNodes.addAll(nodeNames);
-        }
-        Set<String> filterRscs = new HashSet<>();
-        if (rscNames != null)
-        {
-            filterRscs.addAll(rscNames);
-        }
-        Set<String> filterExclude = new HashSet<>();
-        if (excludeNodes != null)
-        {
-            filterExclude.addAll(excludeNodes);
-        }
-        final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
-
-        Mono<Response> flux = ctrlSosReportApiCallHandler
-            .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
-            .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
-            .flatMap(sosReport ->
+            Set<String> filterNodes = new HashSet<>();
+            if (nodeNames != null)
             {
-                ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
-                    ApiCallRcImpl.entryBuilder(
-                        ApiConsts.CREATED | ApiConsts.MASK_SUCCESS,
-                        "SOS Report created on Controller: " + sosReport
-                        ).putObjRef("path", sosReport).build());
-                return Mono.just(ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED));
-            })
-            .next();
+                filterNodes.addAll(nodeNames);
+            }
+            Set<String> filterRscs = new HashSet<>();
+            if (rscNames != null)
+            {
+                filterRscs.addAll(rscNames);
+            }
+            Set<String> filterExclude = new HashSet<>();
+            if (excludeNodes != null)
+            {
+                filterExclude.addAll(excludeNodes);
+            }
+            final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
 
-        requestHelper.doFlux(asyncResponse, flux);
+            Mono<Response> flux = ctrlSosReportApiCallHandler
+                .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
+                .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
+                .flatMap(sosReport ->
+                {
+                    ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                        ApiCallRcImpl.entryBuilder(
+                            ApiConsts.CREATED | ApiConsts.MASK_SUCCESS,
+                            "SOS Report created on Controller: " + sosReport
+                        ).putObjRef("path", sosReport).build());
+                    return Mono.just(ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED));
+                })
+                .next();
+
+            requestHelper.doFlux(asyncResponse, flux);
+        }
     }
 }

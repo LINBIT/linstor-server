@@ -75,6 +75,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 /**
@@ -387,6 +388,7 @@ public final class Satellite
         Path sentryFilePath = Paths.get(cfg.getConfigDir(), "sentry.properties");
         System.setProperty("sentry.properties.file", sentryFilePath.toString());
 
+        MDC.put(ErrorReporter.LOGID, "ff" + ErrorReporter.getNewLogId().substring(2));
         StdErrorReporter errorLog = new StdErrorReporter(
             LinStor.SATELLITE_MODULE,
             Paths.get(cfg.getLogDirectory()),

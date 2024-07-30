@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingApiCallHandler;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.POST;
@@ -18,6 +19,7 @@ import java.io.IOException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Deprecated(forRemoval = true)
@@ -49,7 +51,7 @@ public class SnapshotShipping
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.SnapshotShipping snapShipData = objectMapper.readValue(
                 jsonData,

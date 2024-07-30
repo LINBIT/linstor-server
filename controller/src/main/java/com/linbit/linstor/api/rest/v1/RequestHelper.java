@@ -45,6 +45,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Key;
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
@@ -182,6 +183,10 @@ public class RequestHelper
 
     public Context createContext(String apiCall, org.glassfish.grizzly.http.server.Request request)
     {
+        if (MDC.get(ErrorReporter.LOGID) == null)
+        {
+            MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
+        }
         final String userAgent = request.getHeader("User-Agent");
         Peer peer = new PeerREST(request.getRemoteAddr(), userAgent, publicContext);
 
@@ -191,7 +196,8 @@ public class RequestHelper
         return  Context.of(
             ApiModule.API_CALL_NAME, apiCall,
             AccessContext.class, peer.getAccessContext(),
-            Peer.class, peer
+            Peer.class, peer,
+            ErrorReporter.LOGID, MDC.get(ErrorReporter.LOGID)
         );
     }
 

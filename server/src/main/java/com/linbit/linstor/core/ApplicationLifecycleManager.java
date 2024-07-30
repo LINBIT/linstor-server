@@ -20,6 +20,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 @Singleton
@@ -255,7 +256,7 @@ public class ApplicationLifecycleManager
         @Override
         public void run()
         {
-            try
+            try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
             {
                 shutdownCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
             }
@@ -263,7 +264,10 @@ public class ApplicationLifecycleManager
             {
             }
 
-            lfCycMgr.executeShutdown();
+            try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+            {
+                lfCycMgr.executeShutdown();
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
 import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest.SnapReq;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.POST;
@@ -25,6 +26,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 /**
@@ -66,7 +68,7 @@ public class Actions
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.CreateMultiSnapshotRequest req = objectMapper
                 .readValue(jsonData, JsonGenTypes.CreateMultiSnapshotRequest.class);

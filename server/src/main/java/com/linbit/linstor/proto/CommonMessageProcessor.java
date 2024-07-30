@@ -46,6 +46,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -278,7 +279,9 @@ public class CommonMessageProcessor implements MessageProcessor
         ByteArrayInputStream msgDataIn = new ByteArrayInputStream(msgData);
 
         MsgHeaderOuterClass.MsgHeader header = MsgHeaderOuterClass.MsgHeader.parseDelimitedFrom(msgDataIn);
-        if (header != null)
+        String apiCallLogId = header.hasApiCallId() ?
+            String.format("%06x", header.getApiCallId()) : ErrorReporter.getNewLogId();
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, apiCallLogId))
         {
             MsgType msgType = header.getMsgType();
 
@@ -287,7 +290,8 @@ public class CommonMessageProcessor implements MessageProcessor
                 case ONEWAY:
                     // fall-through
                 case API_CALL:
-                    flux = callApi(connector, peer, header, msgDataIn, msgType == MsgType.API_CALL, peerSeq);
+                    flux = callApi(
+                        connector, peer, header, msgDataIn, msgType == MsgType.API_CALL, peerSeq);
                     break;
                 case ANSWER:
                     handleAnswer(peer, header, msgDataIn, peerSeq);
@@ -301,12 +305,6 @@ public class CommonMessageProcessor implements MessageProcessor
                     );
                     break;
             }
-        }
-        else
-        {
-            errorLog.logError(
-                "Message didn't contain a header: " + msg.toString() + " from " + peer.getId()
-            );
         }
 
         return flux;
@@ -388,6 +386,7 @@ public class CommonMessageProcessor implements MessageProcessor
         errorLog.logDebug("Peer %s, %s '%s' start (seq %d)", peer, apiCallDescription, apiCallName, peerSeq);
 
         ApiEntry apiMapEntry = apiCallMap.get(apiCallName);
+        String apicallLogId = MDC.get(ErrorReporter.LOGID);
 
         if (apiMapEntry != null)
         {
@@ -488,7 +487,10 @@ public class CommonMessageProcessor implements MessageProcessor
                     errorLog.logDebug("Dropping message generated for oneway call '" + apiCallName + "'"));
 
         return flux.doOnTerminate(() ->
-            errorLog.logDebug("Peer %s, %s '%s' end", peer, apiCallDescription, apiCallName));
+        {
+            MDC.put(ErrorReporter.LOGID, apicallLogId);
+            errorLog.logDebug("Peer %s, %s '%s' end", peer, apiCallDescription, apiCallName);
+        });
     }
 
     private Flux<byte[]> execute(
@@ -501,20 +503,25 @@ public class CommonMessageProcessor implements MessageProcessor
     {
         Flux<byte[]> flux;
         BaseApiCall apiObj = apiMapEntry.apiCall;
+        final var logContextMap = MDC.getCopyOfContextMap();
         if (apiObj instanceof ApiCall)
         {
             flux = scopeRunner.fluxInScope(
                 "Execute single-stage API " + apiCallName,
                 LockGuard.createDeferred(),
                 () -> executeNonReactive((ApiCall) apiObj, msgDataIn),
-                apiMapEntry.transactional
+                apiMapEntry.transactional,
+                logContextMap
             );
         }
         else
         if (apiObj instanceof ApiCallReactive)
         {
             Flux<byte[]> executionFlux = Mono
-                .fromCallable(() -> ((ApiCallReactive) apiObj).executeReactive(msgDataIn))
+                .fromCallable(() -> {
+                    MDC.setContextMap(logContextMap);
+                    return ((ApiCallReactive) apiObj).executeReactive(msgDataIn);
+                })
                 .flatMapMany(Function.identity());
 
             flux = respond ?

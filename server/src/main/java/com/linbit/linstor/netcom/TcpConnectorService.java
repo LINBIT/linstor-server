@@ -48,6 +48,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
@@ -462,7 +463,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         LinkedList<Peer> peersWithFinishedMessages = new LinkedList<>();
         while (!shutdownFlag.get())
         {
-            try
+            try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
             {
                 try
                 {

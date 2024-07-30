@@ -109,6 +109,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Scheduler;
@@ -679,9 +680,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     @Override
     public void run()
     {
-        errLog.logDebug("DeviceManager service started");
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
+            errLog.logDebug("DeviceManager service started");
             devMgrLoop();
         }
         finally
@@ -717,10 +718,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 }
             }
 
-            errLog.logInfo("Begin DeviceManager cycle %d", cycleNr);
             LvmUtils.recacheNext();
-            try
+            try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
             {
+                errLog.logInfo("Begin DeviceManager cycle %d", cycleNr);
                 boolean fullSyncApplied = fullSyncFlag.getAndSet(false);
                 if (fullSyncApplied)
                 {

@@ -5,6 +5,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.slf4j.MDC;
+
 /**
  * Logs and saves the output of external commands
  *
@@ -34,20 +36,21 @@ public class OutputReceiver implements OutputHandler
     private boolean overflow;
 
     private IOException savedIoExc;
-    private ErrorReporter errLog;
-    private boolean logExecution;
+    private final ErrorReporter errLog;
+    private final boolean logExecution;
+    private final String logId;
 
     /**
      * Creates a new instance that reads from the specified InputStream
      *
      * @param in InputStream to read data from
      */
-    public OutputReceiver(InputStream in, ErrorReporter errLogRef)
+    public OutputReceiver(InputStream in, ErrorReporter errLogRef, String logIdRef)
     {
-        this(in, errLogRef, true);
+        this(in, errLogRef, true, logIdRef);
     }
 
-    public OutputReceiver(InputStream in, ErrorReporter errLogRef, boolean logExecutionRef)
+    public OutputReceiver(InputStream in, ErrorReporter errLogRef, boolean logExecutionRef, String logIdRef)
     {
         dataIn = in;
         errLog = errLogRef;
@@ -56,6 +59,7 @@ public class OutputReceiver implements OutputHandler
         dataSize = 0;
         finished = false;
         overflow = false;
+        logId = logIdRef;
 
         savedIoExc = null;
     }
@@ -67,7 +71,7 @@ public class OutputReceiver implements OutputHandler
     @Override
     public void run()
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, logId))
         {
             int lineOffset = 0;
             int lastSearchPos = 0;

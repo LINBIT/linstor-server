@@ -9,6 +9,7 @@ import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
@@ -34,6 +35,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("v1/storage-pool-definitions")
@@ -131,19 +133,22 @@ public class StoragePoolDefinitions
     )
         throws IOException
     {
-        JsonGenTypes.StoragePoolDefinitionModify data = objectMapper
-            .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            JsonGenTypes.StoragePoolDefinitionModify data = objectMapper
+                .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
 
             Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyStorPoolDfn(
-                null,
-                storagePoolName,
-                data.override_props,
-                new HashSet<>(data.delete_props),
-                new HashSet<>(data.delete_namespaces)
-            )
-            .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request));
+                    null,
+                    storagePoolName,
+                    data.override_props,
+                    new HashSet<>(data.delete_props),
+                    new HashSet<>(data.delete_namespaces)
+                )
+                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
     }
 
     @DELETE

@@ -48,6 +48,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -99,7 +100,8 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
                 "Fetch volume allocated",
                 LockGuard.createDeferred(
                     nodesMapLock.readLock(), rscDfnMapLock.readLock(), storPoolDfnMapLock.readLock()),
-                () -> requestVlmAllocated(nodesFilter, storPoolFilter, resourceFilter)
+                () -> requestVlmAllocated(nodesFilter, storPoolFilter, resourceFilter),
+                MDC.getCopyOfContextMap()
             )
             .collect(Collectors.toList())
             .map(this::parseVlmAllocated);

@@ -41,6 +41,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -108,6 +109,7 @@ public class CtrlRscCrtApiCallHandler
                 .map(rscWithPayload -> rscWithPayload.getRscApi().getNodeName())
                 .map(LinstorParsingUtils::asNodeName)
                 .collect(Collectors.toSet());
+            var logContextMap = MDC.getCopyOfContextMap();
             response = freeCapacityFetcher.fetchThinFreeCapacities(nodeNames)
                 .flatMapMany(thinFreeCapacities ->
                     scopeRunner
@@ -117,7 +119,8 @@ public class CtrlRscCrtApiCallHandler
                             LockType.WRITE,
                             LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP
                         ),
-                        () -> createResourceInTransaction(rscApiList, context, thinFreeCapacities, diskfulByRef)
+                        () -> createResourceInTransaction(rscApiList, context, thinFreeCapacities, diskfulByRef),
+                        logContextMap
                     )
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
         }

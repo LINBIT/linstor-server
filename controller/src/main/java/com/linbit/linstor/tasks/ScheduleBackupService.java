@@ -56,6 +56,7 @@ import java.util.TreeSet;
 
 import com.cronutils.model.time.ExecutionTime;
 import com.google.inject.Provider;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -315,7 +316,8 @@ public class ScheduleBackupService implements SystemService
                 () -> {
                     ApiCallRc rc = addAllTasks(rscDfn, accCtx);
                     return Flux.just(rc);
-                }
+                },
+                MDC.getCopyOfContextMap()
             );
     }
 

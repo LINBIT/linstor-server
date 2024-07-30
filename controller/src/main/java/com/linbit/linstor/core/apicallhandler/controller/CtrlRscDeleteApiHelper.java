@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -164,7 +165,8 @@ public class CtrlRscDeleteApiHelper
             .fluxInTransactionlessScope(
                 "Update for resource deletion",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.RSC_DFN_MAP),
-                () -> updateSatellitesInScope(contextRef, nodeNames, rscName)
+                () -> updateSatellitesInScope(contextRef, nodeNames, rscName),
+                MDC.getCopyOfContextMap()
             );
     }
 

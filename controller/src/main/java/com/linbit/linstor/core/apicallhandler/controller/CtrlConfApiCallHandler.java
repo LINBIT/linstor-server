@@ -91,6 +91,7 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 
@@ -251,7 +252,8 @@ public class CtrlConfApiCallHandler
                     overridePropsRef,
                     deletePropKeysRef,
                     deletePropNamespacesRef
-                )
+                ),
+                MDC.getCopyOfContextMap()
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }

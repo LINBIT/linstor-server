@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import org.slf4j.event.Level;
@@ -25,6 +26,8 @@ import org.slf4j.event.Level;
  */
 public interface ErrorReporter
 {
+    String LOGID = "logid";
+
     // TODO: javadoc
     /**
      * Indicates if at least the given LogLevel is enabled.
@@ -208,5 +211,13 @@ public interface ErrorReporter
 
     default void archiveLogDirectory()
     {
+    }
+
+    static String getNewLogId()
+    {
+        String zeros = "000000";
+        Random rnd = new Random();
+        String s = Integer.toString(rnd.nextInt(0X1000000), 16);
+        return zeros.substring(s.length()) + s;
     }
 }

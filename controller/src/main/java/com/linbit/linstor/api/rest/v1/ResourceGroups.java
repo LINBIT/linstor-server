@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHan
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -50,6 +51,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -207,23 +209,26 @@ public class ResourceGroups
     )
         throws IOException
     {
-        JsonGenTypes.ResourceGroupModify modifyData = objectMapper.readValue(
-            jsonData,
-            JsonGenTypes.ResourceGroupModify.class
-        );
-        AutoSelectFilterApi modifyAutoSelectFilter = selectFilterToApi(modifyData.select_filter);
-        Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.modify(
-            rscGrpName,
-            modifyData.description,
-            modifyData.override_props,
-            new HashSet<>(modifyData.delete_props),
-            new HashSet<>(modifyData.delete_namespaces),
-            modifyAutoSelectFilter,
-            parsePeerSlots(modifyData.peer_slots)
-        )
-            .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_GRP, request));
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            JsonGenTypes.ResourceGroupModify modifyData = objectMapper.readValue(
+                jsonData,
+                JsonGenTypes.ResourceGroupModify.class
+            );
+            AutoSelectFilterApi modifyAutoSelectFilter = selectFilterToApi(modifyData.select_filter);
+            Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.modify(
+                    rscGrpName,
+                    modifyData.description,
+                    modifyData.override_props,
+                    new HashSet<>(modifyData.delete_props),
+                    new HashSet<>(modifyData.delete_namespaces),
+                    modifyAutoSelectFilter,
+                    parsePeerSlots(modifyData.peer_slots)
+                )
+                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_GRP, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
     }
 
     @DELETE
@@ -253,7 +258,7 @@ public class ResourceGroups
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.ResourceGroupSpawn rscGrpSpwn = objectMapper.readValue(
                 jsonData,
@@ -294,12 +299,14 @@ public class ResourceGroups
         @PathParam("rscGrpName") String rscGrpName
     )
     {
+        MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
         Mono<Response> flux = ctrlRscGrpApiCallHandler.queryMaxVlmSize(
             rscGrpName
         )
             .contextWrite(requestHelper.createContext(ApiConsts.API_QRY_MAX_VLM_SIZE, request))
             .flatMap(apiCallRcWith ->
             {
+                MDC.setContextMap(MDC.getCopyOfContextMap());
                 Response resp;
                 if (apiCallRcWith.hasApiCallRc())
                 {

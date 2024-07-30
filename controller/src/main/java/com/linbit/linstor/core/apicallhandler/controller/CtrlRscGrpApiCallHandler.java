@@ -106,6 +106,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -471,7 +472,8 @@ public class CtrlRscGrpApiCallHandler
                     autoApiRef,
                     peerSlotsRef,
                     context
-                )
+                ),
+                MDC.getCopyOfContextMap()
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -1203,7 +1205,8 @@ public class CtrlRscGrpApiCallHandler
                     .fluxInTransactionlessScope(
                         "Query max volume size",
                         lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
-                        () -> queryMaxVlmSizeInScope(rscGrpNameRef, thinFreeCapacities)
+                        () -> queryMaxVlmSizeInScope(rscGrpNameRef, thinFreeCapacities),
+                        MDC.getCopyOfContextMap()
                     )
             );
     }
@@ -1272,7 +1275,8 @@ public class CtrlRscGrpApiCallHandler
                                 LockObj.NODES_MAP,
                                 LockObj.STOR_POOL_DFN_MAP
                             ),
-                            () -> querySizeInfoInTransaction(querySizeInfoReqRef, thinFreeCapacities)
+                            () -> querySizeInfoInTransaction(querySizeInfoReqRef, thinFreeCapacities),
+                            MDC.getCopyOfContextMap()
                         )
                 );
         }
@@ -1364,7 +1368,8 @@ public class CtrlRscGrpApiCallHandler
                                 LockObj.NODES_MAP,
                                 LockObj.STOR_POOL_DFN_MAP
                             ),
-                            () -> queryAllSizeInfoInTransaction(thinFreeCapacities, queryAllSizeInfoReqRef)
+                            () -> queryAllSizeInfoInTransaction(thinFreeCapacities, queryAllSizeInfoReqRef),
+                            MDC.getCopyOfContextMap()
                         )
                 );
         }

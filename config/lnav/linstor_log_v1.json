@@ -1,0 +1,56 @@
+{
+  "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+  "linstor_log_v1": {
+    "title": "LinstorV1",
+    "description": "Linstor log v1",
+    "url": "https://github.com/LINBIT/linstor-server",
+    "regex": {
+      "begin": {
+        "pattern": "^Build time:\\s+(?:(?<timestamp>(?:\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}))\\+00:00)$"
+      },
+      "std": {
+        "pattern": "^(?:(?<timestamp>(?:\\d{2}:\\d{2}:\\d{2}\\.\\d{3}))) (?:(?<thread_name>(?:\\[[a-zA-Z0-9\\-]+\\]))) (?:(?<severity>[A-Z]+))\\s+(?:(?<component>(?:[a-zA-Z0-9\\.\\/]+))) - (?<body>.*)$"
+      }
+    },
+    "timestamp-format": ["%H:%M:%S.%L", "%Y-%m-%dT%H:%M:%S"],
+    "level-field": "severity",
+    "level": {
+      "error": "ERROR",
+      "warning": "WARN",
+      "info": "INFO",
+      "debug": "DEBUG",
+      "trace": "TRACE"
+    },
+    "opid-field": "thread_name",
+    "value": {
+      "thread_name": {
+        "kind": "string",
+        "identifier": true,
+        "description": "Name of the current thread"
+      },
+      "severity": {
+        "kind": "string",
+        "identifier": true,
+        "description": "message severity"
+      },
+      "component": {
+        "kind": "string",
+        "identifier": true,
+        "description": "logging module/class"
+      }
+    },
+    "sample": [
+      {
+        "line": "Build time:         2024-07-02T07:58:19+00:00"
+      },
+      {
+        "line": "20:03:10.633 [MainWorkerPool-2] TRACE LINSTOR/Controller - SYSTEM - Peer Node: 'lin3', API call 33 answer received (seq 386)",
+        "level": "trace"
+      },
+      {
+        "line": "20:46:58.133 [Main] INFO  LINSTOR/Controller - SYSTEM - Dependency injection finished: 1149ms",
+        "level": "info"
+      }
+    ]
+  }
+}

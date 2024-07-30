@@ -17,6 +17,7 @@ import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -40,6 +41,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -94,6 +96,7 @@ public class View
 
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
+            MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
                 nodesFilter, storagePoolsFilter, resourcesFilter, propFilters)
                 .contextWrite(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
@@ -161,6 +164,7 @@ public class View
 
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
+            MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
                 .listStorPools(nodesFilter, storagePoolsFilter, propFilters, fromCache)
                 .contextWrite(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));

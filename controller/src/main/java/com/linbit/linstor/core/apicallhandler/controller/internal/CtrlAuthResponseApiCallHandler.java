@@ -35,6 +35,7 @@ import javax.inject.Singleton;
 import java.util.HashSet;
 import java.util.List;
 
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 
@@ -107,7 +108,8 @@ public class CtrlAuthResponseApiCallHandler
                 stltConfig,
                 dynamicPropListRef,
                 waitForFullSyncAnswerRef
-            )
+            ),
+            MDC.getCopyOfContextMap()
         );
     }
 

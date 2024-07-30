@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -156,7 +157,8 @@ public class CtrlFullSyncResponseApiCallHandler
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.readLock()
             ),
-            () -> fullSyncFailedInScope(satellitePeerRef, connectionStatusRef)
+            () -> fullSyncFailedInScope(satellitePeerRef, connectionStatusRef),
+            MDC.getCopyOfContextMap()
         );
     }
 

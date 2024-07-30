@@ -9,6 +9,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
@@ -33,6 +34,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("v1/resource-definitions/{rscName}/snapshots")
@@ -131,7 +133,7 @@ public class Snapshots
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.Snapshot snapData = objectMapper.readValue(jsonData, JsonGenTypes.Snapshot.class);
 
@@ -163,9 +165,12 @@ public class Snapshots
         @QueryParam("nodes") List<String> nodeNames
     )
     {
-        Flux<ApiCallRc> responses = ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(rscName, snapName, nodeNames)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_SNAPSHOT, request));
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            Flux<ApiCallRc> responses = ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(rscName, snapName, nodeNames)
+                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_SNAPSHOT, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(responses));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(responses));
+        }
     }
 }

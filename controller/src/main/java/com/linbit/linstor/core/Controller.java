@@ -101,6 +101,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.ProvisionException;
 import com.google.inject.name.Names;
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 /**
@@ -496,6 +497,7 @@ public final class Controller
 
         EtcdUtils.linstorPrefix = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
 
+        MDC.put(ErrorReporter.LOGID, "ffffff");
         StdErrorReporter errorLog = new StdErrorReporter(
             LinStor.CONTROLLER_MODULE,
             Paths.get(cfg.getLogDirectory()),

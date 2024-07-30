@@ -19,6 +19,7 @@ import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -47,6 +48,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("v1/resource-definitions/{rscName}/resources")
@@ -190,7 +192,7 @@ public class Resources
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             List<JsonGenTypes.ResourceCreate> rscList = Arrays.asList(
                 objectMapper.readValue(jsonData, JsonGenTypes.ResourceCreate[].class)
@@ -225,7 +227,7 @@ public class Resources
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             // stuff single resource in a array and forward to the multiple resource creator
             JsonGenTypes.ResourceCreate rscData = objectMapper.readValue(jsonData, JsonGenTypes.ResourceCreate.class);
@@ -278,10 +280,13 @@ public class Resources
         @DefaultValue("False") @QueryParam("keep_tiebreaker") boolean keepTiebreakerRef
     )
     {
-        Flux<ApiCallRc> flux = ctrlRscDeleteApiCallHandler.deleteResource(nodeName, rscName, keepTiebreakerRef)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_RSC, request));
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            Flux<ApiCallRc> flux = ctrlRscDeleteApiCallHandler.deleteResource(nodeName, rscName, keepTiebreakerRef)
+                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_RSC, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
     }
 
     @POST
@@ -295,7 +300,7 @@ public class Resources
     )
     {
         JsonGenTypes.ResourceMakeAvailable rscData;
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             rscData = objectMapper.readValue(jsonData, JsonGenTypes.ResourceMakeAvailable.class);
 

@@ -6,6 +6,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlErrorListApiCallHandler;
 import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -35,6 +36,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -110,61 +112,63 @@ public class ErrorReports
         {
             filterIds.add(reportId);
         }
-
-        Mono<Response> flux = ctrlErrorListApiCallHandler.listErrorReports(
-                filterNodes,
-                withContent,
-                optSince,
-                optTo,
-                filterIds,
-                limit,
-                offset)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_ERROR_REPORTS, request))
-            .flatMap(errorReportResult ->
-            {
-                Stream<ErrorReport> finalStream = errorReportResult.getErrorReports().stream();
-                if (limit > 0)
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            Mono<Response> flux = ctrlErrorListApiCallHandler.listErrorReports(
+                    filterNodes,
+                    withContent,
+                    optSince,
+                    optTo,
+                    filterIds,
+                    limit,
+                    offset)
+                .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_ERROR_REPORTS, request))
+                .flatMap(errorReportResult ->
                 {
-                    finalStream = finalStream.limit(limit);
-                }
-                List<JsonGenTypes.ErrorReport> jsonReports = finalStream.map(errorReport ->
-                {
-                    JsonGenTypes.ErrorReport jsonErrorReport = new JsonGenTypes.ErrorReport();
-                    jsonErrorReport.node_name = errorReport.getNodeName();
-                    jsonErrorReport.error_time = errorReport.getDateTime().getTime();
-                    jsonErrorReport.filename = errorReport.getFileName();
-                    jsonErrorReport.module = errorReport.getModuleString();
-                    jsonErrorReport.version = errorReport.getVersion().orElse(null);
-                    jsonErrorReport.peer = errorReport.getPeer().orElse(null);
-                    jsonErrorReport.exception = errorReport.getException().orElse(null);
-                    jsonErrorReport.exception_message = errorReport.getExceptionMessage().orElse(null);
-                    jsonErrorReport.origin_file = errorReport.getOriginFile().orElse(null);
-                    jsonErrorReport.origin_method = errorReport.getOriginMethod().orElse(null);
-                    jsonErrorReport.origin_line = errorReport.getOriginLine().orElse(null);
-                    jsonErrorReport.text = errorReport.getText().orElse(null);
+                    Stream<ErrorReport> finalStream = errorReportResult.getErrorReports().stream();
+                    if (limit > 0)
+                    {
+                        finalStream = finalStream.limit(limit);
+                    }
+                    List<JsonGenTypes.ErrorReport> jsonReports = finalStream.map(errorReport ->
+                        {
+                            JsonGenTypes.ErrorReport jsonErrorReport = new JsonGenTypes.ErrorReport();
+                            jsonErrorReport.node_name = errorReport.getNodeName();
+                            jsonErrorReport.error_time = errorReport.getDateTime().getTime();
+                            jsonErrorReport.filename = errorReport.getFileName();
+                            jsonErrorReport.module = errorReport.getModuleString();
+                            jsonErrorReport.version = errorReport.getVersion().orElse(null);
+                            jsonErrorReport.peer = errorReport.getPeer().orElse(null);
+                            jsonErrorReport.exception = errorReport.getException().orElse(null);
+                            jsonErrorReport.exception_message = errorReport.getExceptionMessage().orElse(null);
+                            jsonErrorReport.origin_file = errorReport.getOriginFile().orElse(null);
+                            jsonErrorReport.origin_method = errorReport.getOriginMethod().orElse(null);
+                            jsonErrorReport.origin_line = errorReport.getOriginLine().orElse(null);
+                            jsonErrorReport.text = errorReport.getText().orElse(null);
 
-                    return jsonErrorReport;
+                            return jsonErrorReport;
+                        })
+                        .collect(Collectors.toList());
+
+                    Response resp;
+                    try
+                    {
+                        resp = Response.status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(jsonReports))
+                            .type(MediaType.APPLICATION_JSON_TYPE)
+                            .build();
+                    }
+                    catch (JsonProcessingException exc)
+                    {
+                        exc.printStackTrace();
+                        resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    }
+                    return Mono.just(resp);
                 })
-                    .collect(Collectors.toList());
+                .next();
 
-                Response resp;
-                try
-                {
-                    resp = Response.status(Response.Status.OK)
-                        .entity(objectMapper.writeValueAsString(jsonReports))
-                        .type(MediaType.APPLICATION_JSON_TYPE)
-                        .build();
-                }
-                catch (JsonProcessingException exc)
-                {
-                    exc.printStackTrace();
-                    resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                }
-                return Mono.just(resp);
-            })
-            .next();
-
-        requestHelper.doFlux(asyncResponse, flux);
+            requestHelper.doFlux(asyncResponse, flux);
+        }
     }
 
     @PATCH
@@ -174,7 +178,7 @@ public class ErrorReports
         @Suspended final AsyncResponse asyncResponse,
         String jsonData)
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.ErrorReportDelete data = objectMapper.readValue(
                 jsonData, JsonGenTypes.ErrorReportDelete.class);

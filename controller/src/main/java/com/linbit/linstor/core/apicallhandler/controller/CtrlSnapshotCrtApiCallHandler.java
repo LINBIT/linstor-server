@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 
@@ -444,6 +445,7 @@ public class CtrlSnapshotCrtApiCallHandler
             }
         }
 
+        var logContextMap = MDC.getCopyOfContextMap();
         // we create a supplier to avoid code-duplication.
         Supplier<Flux<ApiCallRc>> fluxSupplier = () ->
         {
@@ -478,7 +480,8 @@ public class CtrlSnapshotCrtApiCallHandler
                         lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                         // we still need to wrap the supplier in a new transactionalScope since otherwise the supplied
                         // flux will be executed without the scope.
-                        fluxSupplier::get
+                        fluxSupplier::get,
+                        logContextMap
                     ),
                     apiCtx,
                     nodeNamesToLock,
@@ -505,7 +508,8 @@ public class CtrlSnapshotCrtApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> abortSnapshotInTransaction(reqRef, exception)
+                () -> abortSnapshotInTransaction(reqRef, exception),
+                MDC.getCopyOfContextMap()
             );
     }
 
@@ -601,7 +605,8 @@ public class CtrlSnapshotCrtApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> takeSnapshotInTransaction(reqRef)
+                () -> takeSnapshotInTransaction(reqRef),
+                MDC.getCopyOfContextMap()
             );
     }
 

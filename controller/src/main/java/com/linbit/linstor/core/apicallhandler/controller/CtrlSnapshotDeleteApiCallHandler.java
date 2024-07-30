@@ -52,6 +52,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -315,7 +316,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             .fluxInTransactionlessScope(
                 "Delete snapshots on nodes",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
-                () -> deleteSnapshotsOnNodesInScope(rscName, snapshotName)
+                () -> deleteSnapshotsOnNodesInScope(rscName, snapshotName),
+                MDC.getCopyOfContextMap()
             );
     }
 

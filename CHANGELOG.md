@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved responsiveness: Allow some API calls to be executed concurrently on the satellite
 - Added a cache for lvs and vgs/pvs commands, reducing the need to call them
+- Changed logback log format to include logid and full timestamp
 
 ### Fixed
 

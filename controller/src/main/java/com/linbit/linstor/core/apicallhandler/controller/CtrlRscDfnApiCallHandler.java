@@ -115,6 +115,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -436,7 +437,8 @@ public class CtrlRscDfnApiCallHandler
                     newRscPeerSlots,
                     rscGroupName,
                     context
-                )
+                ),
+                MDC.getCopyOfContextMap()
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }

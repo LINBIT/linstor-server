@@ -60,6 +60,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -152,7 +153,8 @@ class CtrlVlmDfnApiCallHandler
                     context,
                     rscNameStr,
                     vlmDfnWithPayloadApiList
-                )
+                ),
+                MDC.getCopyOfContextMap()
             ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 

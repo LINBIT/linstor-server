@@ -57,6 +57,7 @@ import com.linbit.linstor.utils.FileUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.CommandExec;
 import com.linbit.utils.FileCollector;
 import com.linbit.utils.StringUtils;
 
@@ -84,6 +85,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -93,6 +95,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -192,6 +195,7 @@ public class CtrlSosReportApiCallHandler
         String queryParams
     )
     {
+        var logContextMap = MDC.getCopyOfContextMap();
         Flux<String> ret;
         try
         {
@@ -202,12 +206,14 @@ public class CtrlSosReportApiCallHandler
             ret = scopeRunner.fluxInTransactionlessScope(
                 "Send SOS report queries",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
-                () -> sendRequests(nodes, rscs, excludeNodes, tmpDir, sosReportName, since)
+                () -> sendRequests(nodes, rscs, excludeNodes, tmpDir, sosReportName, since),
+                logContextMap
             ).flatMap(
                 sosFileList -> scopeRunner.fluxInTransactionalScope(
                     "Receiving SOS FileList",
                     lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
-                    () -> handleSosFileList(tmpDir, sosReportName, sosFileList)
+                    () -> handleSosFileList(tmpDir, sosReportName, sosFileList),
+                    logContextMap
                 )
             ).transform(
                 // until now we were working with Flux<ByteArrayInputStream>s (proto messages from the satellites), but
@@ -221,7 +227,8 @@ public class CtrlSosReportApiCallHandler
                     lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                     () -> finishReport(
                         nodes, rscs, excludeNodes, tmpDir, sosReportName, since, includeCtrl, queryParams
-                    )
+                    ),
+                    logContextMap
                 )
             );
         }
@@ -632,7 +639,7 @@ public class CtrlSosReportApiCallHandler
                     resourceGroupListJson(sosDir);
                     spaceReportingQuery(sosDir);
                     return Flux.empty();
-                }));
+                }, MDC.getCopyOfContextMap()));
     }
 
     private void appendJSON(Path file, Object content)
@@ -666,7 +673,9 @@ public class CtrlSosReportApiCallHandler
         Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
             .listStorPools(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), true);
 
+        var logContextMap = MDC.getCopyOfContextMap();
         return flux.flatMap(storPoolApis -> {
+            MDC.setContextMap(logContextMap);
             List<JsonGenTypes.StoragePool> storPoolDataList = storPoolApis.stream()
                 .map(Json::storPoolApiToStoragePool)
                 .collect(Collectors.toList());
@@ -692,7 +701,9 @@ public class CtrlSosReportApiCallHandler
         Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
                 Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
 
+        var logContextMap = MDC.getCopyOfContextMap();
         return flux.flatMap(resourceList -> {
+            MDC.setContextMap(logContextMap);
             final List<JsonGenTypes.Resource> rscs = resourceList.getResources().stream()
                 .map(rscApi -> Json.apiToResourceWithVolumes(rscApi, resourceList.getSatelliteStates(), true))
                 .collect(Collectors.toList());

@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 import static java.util.stream.Collectors.toList;
@@ -107,7 +108,8 @@ public class CtrlVlmListApiCallHandler
                     "Assemble volume list",
                     lockGuardFactory.buildDeferred(READ, NODES_MAP, RSC_DFN_MAP),
                     () -> Flux.just(
-                        assembleList(nodesFilter, storPoolsFilter, resourceFilter, propFilters, vlmAllocatedAnswers))
+                        assembleList(nodesFilter, storPoolsFilter, resourceFilter, propFilters, vlmAllocatedAnswers)),
+                    MDC.getCopyOfContextMap()
                 )
             );
     }

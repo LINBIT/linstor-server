@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 
@@ -310,16 +311,17 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
         Flux<ApiCallRc> finishRollback = finishRollback(rscName);
         Flux<ApiCallRc> snapRollbackFlux = snapRollbackMgr.prepareFlux(rscDfn, diskNodeNames);
+        var logContextMap = MDC.getCopyOfContextMap();
         return Flux.merge(
             // both fluxes need to be started simultaneously, since the updateSatellites triggers
             // "SnapshotRollbackResult" responses that require an initialized fluxSink within the snapRollbackFlux. That
             // however only gets initialized when snapRollbackFlux is subscribed to
             ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, finishRollback)
                 .map(
-                    nodeResponse -> handleRollbackResponse(
-                        rscName,
-                        nodeResponse
-                    )
+                    nodeResponse -> {
+                        MDC.setContextMap(logContextMap);
+                        return handleRollbackResponse(rscName, nodeResponse);
+                    }
                 )
                 .transform(
                     responses -> CtrlResponseUtils.combineResponses(
@@ -343,6 +345,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         NodeName nodeName = nodeResponse.getT1();
 
+        var logContextMap = MDC.getCopyOfContextMap();
         return nodeResponse.mapT2(responses -> responses
             .concatWith(scopeRunner
                 .fluxInTransactionalScope(
@@ -351,7 +354,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                         .read(LockObj.NODES_MAP)
                         .write(LockObj.RSC_DFN_MAP)
                         .buildDeferred(),
-                    () -> resourceRollbackSuccessfulInTransaction(rscName, nodeName)
+                    () -> resourceRollbackSuccessfulInTransaction(rscName, nodeName),
+                    logContextMap
                 )
             )
         );

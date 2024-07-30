@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotRollbackApiCallHandler;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.POST;
@@ -14,6 +15,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("v1/resource-definitions/{rscName}/snapshot-rollback")
@@ -41,9 +43,12 @@ public class SnapshotRollback
         @PathParam("snapName") String snapName
     )
     {
-        Flux<ApiCallRc> flux = ctrlSnapshotRollbackApiCallHandler.rollbackSnapshot(rscName, snapName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_ROLLBACK_SNAPSHOT, request));
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            Flux<ApiCallRc> flux = ctrlSnapshotRollbackApiCallHandler.rollbackSnapshot(rscName, snapName)
+                .contextWrite(requestHelper.createContext(ApiConsts.API_ROLLBACK_SNAPSHOT, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
     }
 }

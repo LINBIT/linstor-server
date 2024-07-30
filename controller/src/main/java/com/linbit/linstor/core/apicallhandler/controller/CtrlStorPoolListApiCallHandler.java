@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 
@@ -114,7 +115,8 @@ public class CtrlStorPoolListApiCallHandler
                     freeCapacityAnswers -> scopeRunner.fluxInTransactionlessScope(
                         "Assemble storage pool list",
                         lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.STOR_POOL_DFN_MAP),
-                        () -> Flux.just(assembleList(nodesFilter, storPoolsFilter, propFilters, freeCapacityAnswers))
+                        () -> Flux.just(assembleList(nodesFilter, storPoolsFilter, propFilters, freeCapacityAnswers)),
+                        MDC.getCopyOfContextMap()
                     )
                 );
         }

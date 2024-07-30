@@ -17,11 +17,13 @@ import com.linbit.locks.LockGuard;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -52,7 +54,17 @@ public class ScopeRunner
         Callable<Flux<T>> callable
     )
     {
-        return fluxInScope(scopeDescription, lockGuard, callable, true);
+        return fluxInScope(scopeDescription, lockGuard, callable, true, MDC.getCopyOfContextMap());
+    }
+
+    public <T> Flux<T> fluxInTransactionalScope(
+        String scopeDescription,
+        LockGuard lockGuard,
+        Callable<Flux<T>> callable,
+        Map<String, String> logContextMap
+    )
+    {
+        return fluxInScope(scopeDescription, lockGuard, callable, true, logContextMap);
     }
 
     public <T> Flux<T> fluxInTransactionlessScope(
@@ -61,19 +73,31 @@ public class ScopeRunner
         Callable<Flux<T>> callable
     )
     {
-        return fluxInScope(scopeDescription, lockGuard, callable, false);
+        return fluxInScope(scopeDescription, lockGuard, callable, false, MDC.getCopyOfContextMap());
+    }
+
+    public <T> Flux<T> fluxInTransactionlessScope(
+        String scopeDescription,
+        LockGuard lockGuard,
+        Callable<Flux<T>> callable,
+        Map<String, String> logContextMap
+    )
+    {
+        return fluxInScope(scopeDescription, lockGuard, callable, false, logContextMap);
     }
 
     public <T> Flux<T> fluxInScope(
         String scopeDescription,
         LockGuard lockGuard,
         Callable<Flux<T>> callable,
-        boolean transactional
+        boolean transactional,
+        Map<String, String> logContextMap
     )
     {
         return Mono.deferContextual(Mono::just)
             .flatMapMany(subscriberContext -> Mono
-                .fromCallable(() -> doInScope(subscriberContext, scopeDescription, lockGuard, callable, transactional))
+                .fromCallable(() ->
+                    doInScope(subscriberContext, scopeDescription, lockGuard, callable, transactional, logContextMap))
                 .flatMapMany(Function.identity())
             )
             .checkpoint(scopeDescription);
@@ -84,10 +108,12 @@ public class ScopeRunner
         String scopeDescription,
         LockGuard lockGuard,
         Callable<Flux<T>> callable,
-        boolean transactional
+        boolean transactional,
+        Map<String, String> logContextMap
     )
         throws Exception
     {
+        MDC.setContextMap(logContextMap);
         String apiCallName = subscriberContext.get(ApiModule.API_CALL_NAME);
         AccessContext accCtx = subscriberContext.get(AccessContext.class);
         Peer peer = subscriberContext.getOrDefault(Peer.class, null);
@@ -192,6 +218,7 @@ public class ScopeRunner
             {
                 throw caughtImplError;
             }
+            MDC.remove(ErrorReporter.LOGID);
         }
 
         return ret;

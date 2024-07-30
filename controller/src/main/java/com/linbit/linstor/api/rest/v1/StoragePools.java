@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHand
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 
@@ -49,6 +50,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -135,6 +137,7 @@ public class StoragePools
 
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
+            MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             // check the node was accessed with the FQDN, needs context
             Response nodeCheck = requestHelper.doInScope(
                 requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request),
@@ -164,6 +167,7 @@ public class StoragePools
             {
                 asyncResponse.resume(nodeCheck);
             }
+            MDC.remove(ErrorReporter.LOGID);
         });
     }
 
@@ -259,7 +263,7 @@ public class StoragePools
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.StoragePool storPoolData = objectMapper
                 .readValue(jsonData, JsonGenTypes.StoragePool.class);

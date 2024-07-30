@@ -6,6 +6,7 @@ import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
 @Path("v1/remotes")
@@ -108,7 +110,7 @@ public class Remotes
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.S3Remote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.S3Remote.class);
             Flux<ApiCallRc> flux = remoteHandler.createS3(
@@ -141,7 +143,7 @@ public class Remotes
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.S3Remote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.S3Remote.class);
             Flux<ApiCallRc> flux = remoteHandler.changeS3(
@@ -193,7 +195,7 @@ public class Remotes
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.LinstorRemote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.LinstorRemote.class);
             Flux<ApiCallRc> flux = remoteHandler.createLinstor(
@@ -223,7 +225,7 @@ public class Remotes
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.LinstorRemote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.LinstorRemote.class);
             Flux<ApiCallRc> flux = remoteHandler.changeLinstor(
@@ -273,7 +275,7 @@ public class Remotes
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.EbsRemote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.EbsRemote.class);
             Flux<ApiCallRc> flux = remoteHandler.createEbs(
@@ -305,7 +307,7 @@ public class Remotes
         String jsonData
     )
     {
-        try
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             JsonGenTypes.EbsRemote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.EbsRemote.class);
             Flux<ApiCallRc> flux = remoteHandler.changeEbs(

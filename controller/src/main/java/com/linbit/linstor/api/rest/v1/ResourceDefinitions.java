@@ -16,6 +16,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandle
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 
 import javax.inject.Inject;
@@ -50,6 +51,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonParseException;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -201,24 +203,27 @@ public class ResourceDefinitions
     )
         throws IOException
     {
-        JsonGenTypes.ResourceDefinitionModify modifyData =
-            objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionModify.class);
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            JsonGenTypes.ResourceDefinitionModify modifyData =
+                objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionModify.class);
 
-        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyRscDfn(
-            null,
-            rscName,
-            modifyData.drbd_port,
-            modifyData.override_props,
-            new HashSet<>(modifyData.delete_props),
-            new HashSet<>(modifyData.delete_namespaces),
-            modifyData.layer_stack,
-            modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue(),
-            modifyData.resource_group
-        )
-        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request))
-        .contextWrite(reactor.util.context.Context.of(InternalApiConsts.ONLY_WARN_IF_OFFLINE, Boolean.TRUE));
+            Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyRscDfn(
+                    null,
+                    rscName,
+                    modifyData.drbd_port,
+                    modifyData.override_props,
+                    new HashSet<>(modifyData.delete_props),
+                    new HashSet<>(modifyData.delete_namespaces),
+                    modifyData.layer_stack,
+                    modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue(),
+                    modifyData.resource_group
+                )
+                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request))
+                .contextWrite(reactor.util.context.Context.of(InternalApiConsts.ONLY_WARN_IF_OFFLINE, Boolean.TRUE));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
     }
 
     @DELETE
@@ -228,10 +233,13 @@ public class ResourceDefinitions
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName)
     {
-        Flux<ApiCallRc> flux = ctrlRscDfnDeleteApiCallHandler.deleteResourceDefinition(rscName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_RSC_DFN, request));
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            Flux<ApiCallRc> flux = ctrlRscDfnDeleteApiCallHandler.deleteResourceDefinition(rscName)
+                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_RSC_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
     }
 
     @GET
@@ -344,19 +352,22 @@ public class ResourceDefinitions
         String jsonData
     ) throws IOException
     {
-        JsonGenTypes.ResourceDefinitionCloneRequest requestData =
-            objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionCloneRequest.class);
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            JsonGenTypes.ResourceDefinitionCloneRequest requestData =
+                objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionCloneRequest.class);
 
-        Flux<ApiCallRc> flux = ctrlRscDfnApiCallHandler.cloneRscDfn(
-            srcName,
-            requestData.name,
-            requestData.external_name != null ? requestData.external_name.getBytes(StandardCharsets.UTF_8) : null,
-            requestData.use_zfs_clone,
-            requestData.volume_passphrases
-        )
-            .contextWrite(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN, request));
+            Flux<ApiCallRc> flux = ctrlRscDfnApiCallHandler.cloneRscDfn(
+                    srcName,
+                    requestData.name,
+                    requestData.external_name != null ? requestData.external_name.getBytes(StandardCharsets.UTF_8) : null,
+                    requestData.use_zfs_clone,
+                    requestData.volume_passphrases
+                )
+                .contextWrite(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN, request));
 
-        requestHelper.doFlux(asyncResponse, mapToCloneStarted(srcName, requestData.name, flux));
+            requestHelper.doFlux(asyncResponse, mapToCloneStarted(srcName, requestData.name, flux));
+        }
     }
 
     @GET

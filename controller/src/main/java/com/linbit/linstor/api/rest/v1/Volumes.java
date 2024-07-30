@@ -16,6 +16,7 @@ import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 
@@ -43,6 +44,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -102,6 +104,7 @@ public class Volumes
 
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
+            MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
                     nodes, Collections.emptyList(), rscNames, Collections.emptyList())
                 .contextWrite(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
