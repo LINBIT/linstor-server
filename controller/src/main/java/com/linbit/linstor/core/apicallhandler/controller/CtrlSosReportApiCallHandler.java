@@ -85,7 +85,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -867,7 +866,23 @@ public class CtrlSosReportApiCallHandler
         };
         for (CommandHelper cmd : commands)
         {
-            makeFileFromCmdNoFailed(cmd.file, nowMillis, cmd.cmd);
+            try
+            {
+                CommandExec.executeCmd(cmd.cmd, cmd.file.toFile(), new java.io.File(cmd.file + ".err"), nowMillis);
+            }
+            catch (IOException | InterruptedException exc)
+            {
+                byte[] exceptionData = CommandExec.exceptionToString(exc).getBytes();
+                try
+                {
+                    Path fileNameIoExc = sosDir.resolve(cmd.file.getFileName() + "io_exc");
+                    Files.write(fileNameIoExc, exceptionData);
+                }
+                catch (IOException exc1)
+                {
+                    errorReporter.reportError(exc1);
+                }
+            }
         }
 
         FileCollector collector = new FileCollector();

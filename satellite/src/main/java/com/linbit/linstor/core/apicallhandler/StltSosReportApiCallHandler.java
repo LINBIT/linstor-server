@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
-import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.SosReportType;
 import com.linbit.linstor.SosReportType.SosCommandType;
 import com.linbit.linstor.SosReportType.SosFileType;
@@ -14,9 +13,9 @@ import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.utils.FileUtils;
+import com.linbit.utils.CommandExec;
 import com.linbit.utils.FileCollector;
 import com.linbit.utils.Pair;
-import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -24,9 +23,7 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.RandomAccessFile;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,7 +33,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @Singleton
@@ -188,7 +184,7 @@ public class StltSosReportApiCallHandler
         }
         catch (IOException exc)
         {
-            byte[] exceptionData = exceptionToString(exc).getBytes();
+            byte[] exceptionData = CommandExec.exceptionToString(exc).getBytes();
             try
             {
                 Path fileNameIoExc = sosReportDirRef.resolve(fileName + SUFFIX_IO_EXC);
@@ -232,7 +228,7 @@ public class StltSosReportApiCallHandler
             String errFileName = fileName + SUFFIX_CMD_STDERR;
             File errFile = sosReportDirRef.resolve(errFileName).toFile();
 
-            boolean hasErrFile = executeCmd(
+            boolean hasErrFile = CommandExec.executeCmd(
                 reportRef.getCommand(),
                 outFile,
                 errFile,
@@ -247,7 +243,7 @@ public class StltSosReportApiCallHandler
         }
         catch (IOException | InterruptedException exc)
         {
-            byte[] exceptionData = exceptionToString(exc).getBytes();
+            byte[] exceptionData = CommandExec.exceptionToString(exc).getBytes();
             try
             {
                 Path fileNameIoExc = sosReportDirRef.resolve(fileName + SUFFIX_IO_EXC);
@@ -267,74 +263,7 @@ public class StltSosReportApiCallHandler
      */
     private void appendExcToStringBuilder(StringBuilder errors, Exception exc)
     {
-        errors.append(exceptionToString(exc));
-    }
-
-    /**
-     * Converts the exception's stacktrace to a String
-     */
-    private String exceptionToString(Exception exc)
-    {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        exc.printStackTrace(pw);
-        pw.flush();
-        return sw.toString();
-    }
-
-    /**
-     * Executes the given command and stores the stdOut and stdErr in the given files. If the always created error-file
-     * is empty after the command finishes, it is deleted again.
-     *
-     * @param commandRef
-     * @param outFileRef
-     * @param errFileRef
-     * @param timepstampRef
-     *
-     * @return Whether the error file exists or not after this method
-     *
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    private boolean executeCmd(
-        final String[] commandRef,
-        final File outFileRef,
-        final File errFileRef,
-        final long timepstampRef
-    )
-        throws IOException, InterruptedException
-    {
-        // we would need to rework ExtCmd to support redirecting Out and Err into given files instead of collecting them
-        // in the OutputData.
-        ProcessBuilder pb = new ProcessBuilder(commandRef);
-        pb.redirectOutput(outFileRef);
-        pb.redirectError(errFileRef);
-
-        Process proc = pb.start();
-        boolean exited = proc.waitFor(ChildProcessHandler.dfltWaitTimeout, TimeUnit.MILLISECONDS);
-        if (!exited)
-        {
-            proc.destroyForcibly();
-            Files.write(
-                errFileRef.toPath(),
-                ("\n\nCommand did not terminate within " + ChildProcessHandler.dfltWaitTimeout + "ms. Command was: " +
-                    StringUtils.joinShellQuote(commandRef)).getBytes()
-            );
-        }
-
-        outFileRef.setLastModified(timepstampRef);
-        boolean errFileExists;
-        if (errFileRef.length() == 0)
-        {
-            Files.delete(errFileRef.toPath());
-            errFileExists = false;
-        }
-        else
-        {
-            errFileRef.setLastModified(timepstampRef);
-            errFileExists = true;
-        }
-        return errFileExists;
+        errors.append(CommandExec.exceptionToString(exc));
     }
 
     /**
@@ -387,7 +316,7 @@ public class StltSosReportApiCallHandler
                         new FilePojo(
                             fileName + errorSuffix,
                             now,
-                            exceptionToString(exc).getBytes(),
+                            CommandExec.exceptionToString(exc).getBytes(),
                             0
                         )
                     );
@@ -520,7 +449,7 @@ public class StltSosReportApiCallHandler
             try
             {
                 String fileNameIoExc = "error_reports_list" + SUFFIX_IO_EXC;
-                byte[] exceptionData = exceptionToString(ioExc).getBytes();
+                byte[] exceptionData = CommandExec.exceptionToString(ioExc).getBytes();
                 Files.write(sosReportDir.resolve(fileNameIoExc), exceptionData);
                 reportTypes.add(new SosFileType(fileNameIoExc, false, now));
                 errorReporter.reportError(ioExc);
