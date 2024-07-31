@@ -1,3 +1,34 @@
+linstor-server (1.29.0-1) experimental; urgency=medium
+
+  [ Moritz Wanzenböck ]
+  * gitlab-ci: build for RHEL 9
+  * gitlab-ci: update vmshed and virter
+
+  [ Gabor Hernadi ]
+  * Snap,crt: Fix possible deadlock
+  * Refactored ReadOnlyProps
+  * Guice,ReadOnlyProps: Allow ReadOnlyProps to be injected
+  * DevMgr: Remove uncessary seeding of local props
+  * Introduce StorPoolInfo and NodeInfo
+  * RequestThinFreeSpace: Allow concurrent execution with devMgrRun
+  * Props: Changed getNamespaces return type
+  * Reconnect: Fix deadlock
+  * Lvm: Added cache for lvs and vgs
+  * LVM: synchronize methods
+
+  [ Michael Troutman ]
+  * update and improve README.md
+
+  [ Rene Peinthor ]
+  * Fix wrong resource definition already exists error message
+  * Log format v2
+  * sos-report: Controller not always dumping full log content
+
+  [ Johanna Kucera ]
+  * Props: use ReadOnlyProps where applicable
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 31 Jul 2024 09:59:10 +0000
+
 linstor-server (1.28.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
