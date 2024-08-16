@@ -77,6 +77,7 @@ public class WhitelistPropsReconfigurator
         OutputData peerDevOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "peer-device-options");
         OutputData netOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "new-peer");
         OutputData diskOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "disk-options");
+        OutputData newMinorOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "new-minor");
 
         whitelistProps.clearDynamicProps();
         whitelistProps.appendRules(
@@ -103,6 +104,13 @@ public class WhitelistPropsReconfigurator
         whitelistProps.appendRules(
             false, // override existing property
             new ByteArrayInputStream(diskOptsData.stdoutData),
+            ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
+            true,
+            LinStorObject.CTRL
+        );
+        whitelistProps.appendRules(
+            false, // override existing property
+            new ByteArrayInputStream(newMinorOptsData.stdoutData),
             ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
             true,
             LinStorObject.CTRL

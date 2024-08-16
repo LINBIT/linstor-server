@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +35,15 @@ import org.xml.sax.SAXException;
 @Singleton
 public class WhitelistProps
 {
+    private static final HashSet<String> XML_HELP_IGNORED_PROPNAMES = new HashSet<>();
+
+    static
+    {
+        XML_HELP_IGNORED_PROPNAMES.add("set-defaults");
+        XML_HELP_IGNORED_PROPNAMES.add("_name");
+        XML_HELP_IGNORED_PROPNAMES.add("diskless");
+    }
+
     private final ErrorReporter errorReporter;
     private final Map<LinStorObject, Map<String, Property>> rules;
     private final Map<String, Property> dynamicProps = new HashMap<>();
@@ -165,9 +175,9 @@ public class WhitelistProps
                 String propName = optionArgs.getNamedItem("name").getTextContent();
                 String propType = optionArgs.getNamedItem("type").getTextContent();
 
-                if (!"set-defaults".equals(propName))
+                if (!XML_HELP_IGNORED_PROPNAMES.contains(propName))
                 {
-                    // just ignore "set-defaults"
+                    // just ignore "set-defaults", "_name" and "diskless"
 
                     PropertyBuilder propBuilder = new PropertyBuilder();
                     propBuilder.name(propName);
