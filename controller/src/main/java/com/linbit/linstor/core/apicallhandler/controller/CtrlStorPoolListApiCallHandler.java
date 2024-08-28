@@ -212,12 +212,12 @@ public class CtrlStorPoolListApiCallHandler
                                     final Tuple2<SpaceInfo, List<ApiCallRc>> storageInfo = freeCapacityAnswers != null ?
                                         freeCapacityAnswers.get(new StorPool.Key(storPool)) : null;
 
+                                    storPool.clearReports();
                                     Peer peer = storPool.getNode().getPeer(peerAccCtx.get());
                                     if (peer == null || !peer.isOnline())
                                     {
                                         freeCapacity = null;
                                         totalCapacity = null;
-                                        storPool.clearReports();
                                         storPool.addReports(
                                             new ApiCallRcImpl(
                                                 ResponseUtils.makeNotConnectedWarning(storPool.getNode().getName())
@@ -235,7 +235,6 @@ public class CtrlStorPoolListApiCallHandler
                                     else
                                     {
                                         SpaceInfo spaceInfo = storageInfo.getT1();
-                                        storPool.clearReports();
                                         for (ApiCallRc apiCallRc : storageInfo.getT2())
                                         {
                                             storPool.addReports(apiCallRc);

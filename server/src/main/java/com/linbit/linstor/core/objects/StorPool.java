@@ -313,13 +313,21 @@ public class StorPool extends AbsCoreObj<StorPool>
     @Override
     public ApiCallRc getReports()
     {
-        return reports;
+        final ApiCallRcImpl localReports = reports;
+        synchronized (localReports)
+        {
+            return new ApiCallRcImpl(localReports);
+        }
     }
 
     @Override
     public void addReports(ApiCallRc apiCallRc)
     {
-        reports.addEntries(apiCallRc);
+        final ApiCallRcImpl localReports = reports;
+        synchronized (localReports)
+        {
+            localReports.addEntries(apiCallRc);
+        }
     }
 
     @Override
