@@ -1351,7 +1351,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         long vdoLogicalSizeKib,
         long vdoSlabSize,
         boolean sed,
-        String sedPassword
+        List<String> sedPasswords
     )
     {
         try
@@ -1363,7 +1363,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setPoolName(poolName)
                 .setLogicalSizeKib(vdoLogicalSizeKib)
                 .setSed(sed)
-                .setSedPassword(sedPassword);
+                .addAllSedPasswords(sedPasswords);
 
             if (vdoEnabled)
             {

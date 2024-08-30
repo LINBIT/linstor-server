@@ -77,16 +77,21 @@ public class CreateDevicePool implements ApiCall
             // check if sed enabled and prepare sed device
             if (msgCreateDevicePool.getSed())
             {
-                for (String devicePath : devicePaths)
+                final List<String> sedPasswords = msgCreateDevicePool.getSedPasswordsList();
+                for (int idx = 0; idx < devicePaths.size(); idx++)
                 {
+                    String devicePath = devicePaths.get(idx);
+                    String sedPassword = sedPasswords.get(idx);
                     String realPath = SEDUtils.realpath(errorReporter, devicePath);
-                    SEDUtils.initializeSED(
+                    if (SEDUtils.initializeSED(
                         extCmdFactory,
                         errorReporter,
                         apiCallRc,
                         realPath,
-                        msgCreateDevicePool.getSedPassword());
-                    SEDUtils.unlockSED(extCmdFactory, errorReporter, realPath, msgCreateDevicePool.getSedPassword());
+                        sedPassword))
+                    {
+                        SEDUtils.unlockSED(extCmdFactory, errorReporter, realPath, sedPassword);
+                    }
                 }
             }
 
@@ -125,12 +130,15 @@ public class CreateDevicePool implements ApiCall
         if (apiCallRc.hasErrors() && msgCreateDevicePool.getSed())
         {
             final List<String> devicePaths = msgCreateDevicePool.getDevicePathsList();
-            for (String devicePath : devicePaths)
+            final List<String> sedPasswords = msgCreateDevicePool.getSedPasswordsList();
+            for (int idx = 0; idx < devicePaths.size(); idx++)
             {
+                String devicePath = devicePaths.get(idx);
+                String sedPassword = sedPasswords.get(idx);
                 // try revert sed locking
                 String realPath = SEDUtils.realpath(errorReporter, devicePath);
                 SEDUtils.revertSEDLocking(
-                    extCmdFactory, errorReporter, realPath, msgCreateDevicePool.getSedPassword());
+                    extCmdFactory, errorReporter, realPath, sedPassword);
             }
         }
 

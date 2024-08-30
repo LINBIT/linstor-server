@@ -2,7 +2,6 @@ package com.linbit.linstor.layer.storage.utils;
 
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -22,7 +21,7 @@ public class SEDUtils
 {
     private static final boolean LOG_SED_COMMANDS = false;
 
-    public static ApiCallRc initializeSED(
+    public static boolean initializeSED(
         final ExtCmdFactory extCmdFactory,
         final ErrorReporter errorReporter,
         final ApiCallRcImpl apiCallRc,
@@ -93,12 +92,16 @@ public class SEDUtils
                 ExtCmd extCmd = extCmdFactory.create();
                 extCmd.logExecution(LOG_SED_COMMANDS);
                 errorReporter.logInfo(cmd.objA);
-                Commands.genericExecutor(
+                var outputData = Commands.genericExecutor(
                     extCmd,
                     cmd.objC,
                     cmd.objB,
                     cmd.objB
                 );
+                if (outputData.exitCode != 0)
+                {
+                    throw new StorageException("Failed command: " + cmd.objA);
+                }
             }
 
             apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
@@ -111,7 +114,7 @@ public class SEDUtils
             apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_UNKNOWN_ERROR, storExc));
         }
 
-        return apiCallRc;
+        return !apiCallRc.hasErrors();
     }
 
     /**

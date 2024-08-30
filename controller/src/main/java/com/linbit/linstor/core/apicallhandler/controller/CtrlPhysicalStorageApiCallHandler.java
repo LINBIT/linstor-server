@@ -248,13 +248,14 @@ public class CtrlPhysicalStorageApiCallHandler
         String poolName = getDevicePoolName(poolNameArg, devicePaths);
         try
         {
-            String sedPassword = "";
+            List<String> devicePasswords = new ArrayList<>();
             if (sed)
             {
                 for (String device : devicePaths)
                 {
                     final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
-                    sedPassword = secretGen.generateSecretString(SED_PASSWORD_LENGTH);
+                    String sedPassword = secretGen.generateSecretString(SED_PASSWORD_LENGTH);
+                    devicePasswords.add(sedPassword);
                     byte[] sedEncBytePassword = encryptionHelper.encrypt(sedPassword);
                     storagePoolProps.put(
                         ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR + device,
@@ -275,7 +276,7 @@ public class CtrlPhysicalStorageApiCallHandler
                             vdoLogicalSizeKib,
                             vdoSlabSize,
                             sed,
-                            sedPassword
+                            devicePasswords
                         ).build()
                 )
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
