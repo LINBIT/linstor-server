@@ -129,7 +129,8 @@ public class StltCryptApiCallHelper
                 {
                     String sedEncPassword = sedMap.get(drive);
                     String sedPassword = decryptionHelper.decryptB64ToString(masterKey, sedEncPassword);
-                    SEDUtils.unlockSED(extCmdFactory, errorReporter, drive, sedPassword);
+                    String realPath = SEDUtils.realpath(errorReporter, drive);
+                    SEDUtils.unlockSED(extCmdFactory, errorReporter, realPath, sedPassword);
                 }
 
                 updateResources.addAll(findResourcesUsingStorPool(sp.getName()));

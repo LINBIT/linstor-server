@@ -79,13 +79,14 @@ public class CreateDevicePool implements ApiCall
             {
                 for (String devicePath : devicePaths)
                 {
+                    String realPath = SEDUtils.realpath(errorReporter, devicePath);
                     SEDUtils.initializeSED(
                         extCmdFactory,
                         errorReporter,
                         apiCallRc,
-                        devicePath,
+                        realPath,
                         msgCreateDevicePool.getSedPassword());
-                    SEDUtils.unlockSED(extCmdFactory, errorReporter, devicePath, msgCreateDevicePool.getSedPassword());
+                    SEDUtils.unlockSED(extCmdFactory, errorReporter, realPath, msgCreateDevicePool.getSedPassword());
                 }
             }
 
@@ -127,8 +128,9 @@ public class CreateDevicePool implements ApiCall
             for (String devicePath : devicePaths)
             {
                 // try revert sed locking
+                String realPath = SEDUtils.realpath(errorReporter, devicePath);
                 SEDUtils.revertSEDLocking(
-                    extCmdFactory, errorReporter, devicePath, msgCreateDevicePool.getSedPassword());
+                    extCmdFactory, errorReporter, realPath, msgCreateDevicePool.getSedPassword());
             }
         }
 

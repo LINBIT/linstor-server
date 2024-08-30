@@ -11,6 +11,8 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.utils.Triple;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -110,6 +112,30 @@ public class SEDUtils
         }
 
         return apiCallRc;
+    }
+
+    /**
+     * Returns the resolved final path of the device.
+     * @param errorReporter
+     * @param devicePath
+     * @return realpath result for devicePath, if an IOException happens we return the original path
+     */
+    public static String realpath(
+        final ErrorReporter errorReporter,
+        final String devicePath)
+    {
+        String realPath;
+        try
+        {
+            realPath = Paths.get(devicePath).toRealPath().toString();
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.logError("Unable to resolve realpath for " + devicePath);
+            errorReporter.reportError(ioExc);
+            realPath = devicePath;
+        }
+        return realPath;
     }
 
     public static void unlockSED(

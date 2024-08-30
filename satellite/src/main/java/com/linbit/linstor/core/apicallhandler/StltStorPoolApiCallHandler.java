@@ -198,7 +198,8 @@ class StltStorPoolApiCallHandler
                             String newPassEnc = newSEDMap.get(sedDevice);
                             String oldPass = decryptionHelper.decryptB64ToString(masterKey, oldPassEnc);
                             String newPass = decryptionHelper.decryptB64ToString(masterKey, newPassEnc);
-                            SEDUtils.changeSEDPassword(extCmdFactory, errorReporter, sedDevice, oldPass, newPass);
+                            String realPath = SEDUtils.realpath(errorReporter, sedDevice);
+                            SEDUtils.changeSEDPassword(extCmdFactory, errorReporter, realPath, oldPass, newPass);
                             storPoolChanged = true;
                         }
                         else

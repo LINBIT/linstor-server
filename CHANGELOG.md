@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- sedutils-cli calls will now resolve given paths before using them (as sedutils-cli only allows /dev/nvme*)
+
 ### Fixed
 
 - storage-pool list reporting offline nodes even tough everything is connected
