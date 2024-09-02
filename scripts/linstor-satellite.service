@@ -9,6 +9,8 @@ Before=pvedaemon.service
 [Service]
 Type=simple
 ExecStart=/usr/share/linstor-server/bin/Satellite --logs=/var/log/linstor-satellite --config-directory=/etc/linstor
+# send SIGTERM only to satellite, send SIGKILL to all spawned processes
+KillMode=mixed
 # if killed by signal 143 -> SIGTERM, 129 -> SIGHUP
 SuccessExitStatus=0 143 129
 User=root
