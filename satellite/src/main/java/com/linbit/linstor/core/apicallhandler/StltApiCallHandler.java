@@ -48,6 +48,7 @@ import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
 import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -321,7 +322,7 @@ public class StltApiCallHandler
                 // only apply this fullSync if it is newer than the last one
 
                 stltApiCallHandlerUtils.clearCoreMaps();
-                deviceManager.clearReadOnlyStltInfo(); // avoid working with outdated data
+                stltApiCallHandlerUtils.clearCaches();
 
                 for (NodePojo node : nodes)
                 {
@@ -574,6 +575,8 @@ public class StltApiCallHandler
             {
                 ChildProcessHandler.dfltWaitTimeout = Long.parseLong(extCmdWaitToStr);
             }
+
+            LvmUtils.updateCacheTime(stltConf, controllerPeerConnector.getLocalNode().getProps(apiCtx));
 
             transMgrProvider.get().commit();
 

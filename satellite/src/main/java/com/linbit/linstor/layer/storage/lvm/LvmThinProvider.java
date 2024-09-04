@@ -407,7 +407,6 @@ public class LvmThinProvider extends LvmProvider
     @Override
     public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
-        LvmUtils.recacheNext();
         String vgName = getVolumeGroup(storPool);
         String thinPool = getThinPool(storPool);
         String vgWithThinPool = vgName + File.separator + thinPool;

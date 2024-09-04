@@ -10,6 +10,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -24,6 +25,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -59,6 +61,7 @@ public class StltNodeApiCallHandler
     private final NetInterfaceFactory netInterfaceFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final ControllerPeerConnector controllerPeerConnector;
+    private final StltConfigAccessor stltConfigAccessor;
 
     @Inject
     StltNodeApiCallHandler(
@@ -72,6 +75,7 @@ public class StltNodeApiCallHandler
         NodeConnectionFactory nodeConnectionFactoryRef,
         NetInterfaceFactory netInterfaceFactoryRef,
         ControllerPeerConnector controllerPeerConnectorRef,
+        StltConfigAccessor stltConfigAccessorRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -85,6 +89,7 @@ public class StltNodeApiCallHandler
         nodeConnectionFactory = nodeConnectionFactoryRef;
         netInterfaceFactory = netInterfaceFactoryRef;
         controllerPeerConnector = controllerPeerConnectorRef;
+        stltConfigAccessor = stltConfigAccessorRef;
         transMgrProvider = transMgrProviderRef;
     }
 
@@ -185,6 +190,8 @@ public class StltNodeApiCallHandler
                 .collect(Collectors.toSet());
 
             transMgrProvider.get().commit();
+
+            LvmUtils.updateCacheTime(stltConfigAccessor.getReadonlyProps(), nodeProps);
 
             errorReporter.logInfo("Node '" + nodePojo.getName() + "' created.");
             Set<NodeName> updatedNodes = new TreeSet<>();

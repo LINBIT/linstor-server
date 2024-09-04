@@ -176,7 +176,9 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                     new Node.Flags[] {}
                 );
 
-                stltApiCallHandlerUtils.get().clearCoreMaps();
+                StltApiCallHandlerUtils stltUtils = stltApiCallHandlerUtils.get();
+                stltUtils.clearCoreMaps();
+                stltUtils.clearCaches();
 
                 nodesMap.put(localNode.getName(), localNode);
                 setControllerPeerToCurrentLocalNode();

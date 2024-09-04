@@ -106,8 +106,6 @@ public class StltApiCallHandlerUtils
     {
         Map<Volume.Key, Either<Long, ApiRcException>> allocatedMap = new HashMap<>();
 
-        LvmUtils.recacheNext();
-
         StltReadOnlyInfo stltReadOnlyInfo = devMgr.get().getReadOnlyData();
         // this method deliberately does not use the StorPoolInfo interface, since the getReadOnlyVolumes method is not
         // part of that interface, since that would require StorPool also to implement it. For now this is not
@@ -264,7 +262,6 @@ public class StltApiCallHandlerUtils
 
         StltReadOnlyInfo roInfo = devMgr.get().getReadOnlyData();
 
-        LvmUtils.recacheNext();
         for (StorPoolInfo storPoolInfo : roInfo.getStorPoolReadOnlyInfoList())
         {
             if (shouldIncludeSpTestRef.test(storPoolInfo))
@@ -324,5 +321,11 @@ public class StltApiCallHandlerUtils
         rscGrpMap.clear();
         scheduleMap.clear();
         storPoolDfnMap.clear();
+    }
+
+    public void clearCaches()
+    {
+        devMgr.get().clearReadOnlyStltInfo(); // avoid working with outdated data
+        LvmUtils.recacheNext();
     }
 }

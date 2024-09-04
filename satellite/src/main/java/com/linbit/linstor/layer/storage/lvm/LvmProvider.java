@@ -339,7 +339,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 )
             );
         }
-        LvmUtils.recacheNextLvs();
+        LvmUtils.recacheNext();
     }
 
     protected String getLvCreateType(LvmData<Resource> vlmDataRef)
@@ -461,7 +461,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 config
             )
         );
-        LvmUtils.recacheNextLvs();
+        LvmUtils.recacheNext();
     }
 
     @Override
@@ -486,7 +486,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 )
             );
             vlmData.setExists(false);
-            LvmUtils.recacheNextLvs();
+            LvmUtils.recacheNext();
         }
         else
         {
@@ -515,7 +515,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                     config
                 )
             );
-            LvmUtils.recacheNextLvs();
+            LvmUtils.recacheNext();
 
             vlmData.setExists(false);
 
@@ -534,7 +534,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                             LvmVolumeType.VOLUME
                         )
                     );
-                    LvmUtils.recacheNextLvs();
+                    LvmUtils.recacheNext();
                 }
             );
         }
@@ -677,7 +677,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     @Override
     public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
-        LvmUtils.recacheNext();
         String vg = getVolumeGroup(storPool);
         if (vg == null)
         {
@@ -941,7 +940,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 LvmVolumeType.SNAPSHOT
             )
         );
-        LvmUtils.recacheNextLvs();
+        LvmUtils.recacheNext();
     }
 
     @Override

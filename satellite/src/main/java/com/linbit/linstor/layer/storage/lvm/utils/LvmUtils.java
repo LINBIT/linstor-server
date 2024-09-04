@@ -2,11 +2,15 @@ package com.linbit.linstor.layer.storage.lvm.utils;
 
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.StringUtils;
+import com.linbit.utils.TimedCache;
 
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_ATTRIBUTES;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_CHUNK_SIZE;
@@ -42,26 +46,36 @@ public class LvmUtils
 
     private static final HashMap<Set<String>, String> CACHED_LVM_CONFIG_STRING = new HashMap<>();
 
+    private static final String LVM_CACHE_PROP_KEY = ApiConsts.NAMESPC_STORAGE_DRIVER + "/" +
+        ApiConsts.KEY_STOR_POOL_LVM_SIZES_CACHE_TIME;
+    private static final long DFLT_LVM_CACHE_TIME_IN_MS = 10_000L;
     /**
-     * Outer map's key: Collection of volume groups to "filter" for
+     * TimedCache's key: Collection of volume groups to "filter" for
      * <br/>
-     * Middle map's key: single volume-group name
+     * TimedCache's value's outer map's key: single volume-group name
      * <br/>
-     * Inner map's key: LV identifier
+     * LvmCache's map's key: LV identifier
      */
-    private static final Map<Collection<String>, Map<String, Map<String, LvsInfo>>> cachedLvs = new HashMap<>();
+    private static final TimedCache<Collection<String>, Map<String, Map<String, LvsInfo>>> CACHED_LVS;
     /**
-     * Outer map's key: Collection of volume groups to "filter" for
+     * TimedCache's key: Collection of volume groups to "filter" for
      * <br/>
-     * Inner map's key: single volume-group name
+     * TimedCache's value's map's key: single volume-group name
      */
-    private static final Map<Collection<String>/* vgs */, Map<String/* vg */, VgsInfo>> cachedVgsThin = new HashMap<>();
+    private static final TimedCache<Collection<String>, Map<String, VgsInfo>> CACHED_VGS_THIN;
     /**
-     * Outer map's key: Collection of volume groups to "filter" for
+     * TimedCache's key: Collection of volume groups to "filter" for
      * <br/>
-     * Inner map's key: single volume-group name
+     * TimedCache's value's map's key: single volume-group name
      */
-    private static final Map<Collection<String>/* vgs */, Map<String/*vg*/, VgsInfo>> cachedVgsThick = new HashMap<>();
+    private static final TimedCache<Collection<String>, Map<String, VgsInfo>> CACHED_VGS_THICK;
+
+    static
+    {
+        CACHED_LVS = new TimedCache<>(DFLT_LVM_CACHE_TIME_IN_MS);
+        CACHED_VGS_THIN = new TimedCache<>(DFLT_LVM_CACHE_TIME_IN_MS);
+        CACHED_VGS_THICK = new TimedCache<>(DFLT_LVM_CACHE_TIME_IN_MS);
+    }
 
     private LvmUtils()
     {
@@ -252,6 +266,25 @@ public class LvmUtils
         return ret;
     }
 
+    public static synchronized void updateCacheTime(ReadOnlyProps stltConfRef, ReadOnlyProps nodePropsRef)
+    {
+        PriorityProps prioProps = new PriorityProps(nodePropsRef, stltConfRef);
+        @Nullable String prop = prioProps.getProp(LVM_CACHE_PROP_KEY);
+        long cacheTime;
+        if (prop == null)
+        {
+            cacheTime = DFLT_LVM_CACHE_TIME_IN_MS;
+        }
+        else
+        {
+            cacheTime = Long.parseLong(prop);
+        }
+
+        CACHED_LVS.setMaxCacheTime(cacheTime, true);
+        CACHED_VGS_THIN.setMaxCacheTime(cacheTime, true);
+        CACHED_VGS_THICK.setMaxCacheTime(cacheTime, true);
+    }
+
     public static synchronized void recacheNext()
     {
         recacheNextLvs();
@@ -260,14 +293,14 @@ public class LvmUtils
 
     public static synchronized void recacheNextLvs()
     {
-        cachedLvs.clear();
-        cachedVgsThin.clear();
+        CACHED_LVS.clear();
+        CACHED_VGS_THIN.clear();
     }
 
     public static synchronized void recacheNextVgs()
     {
-        cachedVgsThick.clear();
-        cachedVgsThin.clear();
+        CACHED_VGS_THICK.clear();
+        CACHED_VGS_THIN.clear();
     }
 
     public static synchronized Map<String /* vg */, Map<String/* lv */, LvsInfo>> getLvsInfo(
@@ -276,11 +309,12 @@ public class LvmUtils
     )
         throws StorageException
     {
-        @Nullable Map<String /* vg */, Map<String/* lv */, LvsInfo>> ret = cachedLvs.get(volumeGroups);
+        final long now = System.currentTimeMillis();
+        @Nullable Map<String /* vg */, Map<String/* lv */, LvsInfo>> ret = CACHED_LVS.get(volumeGroups, now);
         if (ret == null)
         {
             ret = getLvsInfoImpl(ecf, volumeGroups);
-            cachedLvs.put(volumeGroups, ret);
+            CACHED_LVS.put(volumeGroups, ret, now);
         }
         return ret;
     }
@@ -292,9 +326,10 @@ public class LvmUtils
     )
         throws StorageException
     {
-        Map<Collection<String>, Map<String, VgsInfo>> cache = thinRef ? cachedVgsThin : cachedVgsThick;
+        final long now = System.currentTimeMillis();
+        TimedCache<Collection<String>, Map<String, VgsInfo>> cache = thinRef ? CACHED_VGS_THIN : CACHED_VGS_THICK;
 
-        @Nullable Map<String, VgsInfo> ret = cache.get(volumeGroupSetRef);
+        @Nullable Map<String, VgsInfo> ret = cache.get(volumeGroupSetRef, now);
         if (ret == null)
         {
             ret = retryIfNotAllContainingVgsExist(
@@ -302,7 +337,7 @@ public class LvmUtils
                 volumeGroupSetRef,
                 () -> getVgsInfoImpl(extCmdFactoryRef, volumeGroupSetRef, thinRef)
             );
-            cache.put(volumeGroupSetRef, ret);
+            cache.put(volumeGroupSetRef, ret, now);
         }
         return ret;
     }
