@@ -264,6 +264,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         vlmData.getRscLayerObject().getResourceNameSuffix()))
                 {
                     errorReporter.logTrace("Lv %s found", lvId);
+                    @Nullable String parentTypeMarkedForDeletion = getParentTypeNameInDeletingState(vlmData);
                     if (!vlmShouldExist)
                     {
                         if (SharedStorageUtils.isNeededBySharedResource(storDriverAccCtx, vlmData))
@@ -293,6 +294,28 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         }
                     }
                     else
+                    if (parentTypeMarkedForDeletion != null)
+                    {
+                        // DO NOT try to resize. If the resize (or any other non-deleting action) failed and any of our
+                        // parent types is marked for deletion, chances are that the controller is trying to first
+                        // delete the diskless resources. Since we apparently are as diskful resource (since we are
+                        // right now in the AbsStorageProvider), we should receive our deletion request "soon" (tm).
+                        // Which means, if we would try our non-deleting action and this fails again, we would make the
+                        // deletion of our diskless resource fail, preventing our own eventual deletion-operation.
+
+                        // additionally, if we expect to be deleted soon, it should not matter whether or not we
+                        // properly resize / de-/activate the LV, since it should be deleted soon anyways.
+
+                        // if the delete flags gets removed again from all our parents, the original resize/inactivate
+                        // flag should still be set, so this if here should be skipped and the original task should be
+                        // continued as wanted
+                        errorReporter.logTrace(
+                            "Lv %s's %s is marked for deletion. Lv itself not (yet) in deleting state. Noop for now",
+                            lvId,
+                            parentTypeMarkedForDeletion
+                        );
+                    }
+                    else
                     if (!vlmShouldBeActive)
                     {
                         if (vlmData.isActive(storDriverAccCtx))
@@ -310,11 +333,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         if (vlmData.isActive(storDriverAccCtx))
                         {
                             Size sizeState = vlmData.getSizeState();
+                            Volume volume = (Volume) vlmData.getVolume();
                             if (
                                 sizeState.equals(VlmProviderObject.Size.TOO_SMALL) ||
-                                    ((Volume) vlmData.getVolume()).getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
-                                        (sizeState.equals(VlmProviderObject.Size.TOO_LARGE)
-                                    )
+                                    volume.getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
+                                    sizeState.equals(VlmProviderObject.Size.TOO_LARGE)
                             )
                             {
                                 errorReporter.logTrace(
@@ -375,6 +398,40 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 setDevicePath(vlmData, null);
             }
         }
+    }
+
+    private @Nullable String getParentTypeNameInDeletingState(LAYER_DATA vlmDataRef) throws AccessDeniedException
+    {
+        @Nullable String ret = null;
+        Volume vlm = (Volume) vlmDataRef.getVolume();
+        if (vlm.getFlags().isSet(storDriverAccCtx, Volume.Flags.DELETE))
+        {
+            ret = Volume.class.getSimpleName();
+        }
+        else
+        {
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+            if (vlmDfn.getFlags().isSet(storDriverAccCtx, VolumeDefinition.Flags.DELETE))
+            {
+                ret = VolumeDefinition.class.getSimpleName();
+            }
+            else
+            {
+                Resource rsc = vlm.getAbsResource();
+                if (rsc.getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE))
+                {
+                    ret = Resource.class.getSimpleName();
+                }
+                else
+                {
+                    if (rsc.getResourceDefinition().getFlags().isSet(storDriverAccCtx, ResourceDefinition.Flags.DELETE))
+                    {
+                        ret = ResourceDefinition.class.getSimpleName();
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
     @Override
