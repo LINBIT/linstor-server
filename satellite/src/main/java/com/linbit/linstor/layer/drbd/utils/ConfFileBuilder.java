@@ -340,17 +340,19 @@ public class ConfFileBuilder
                         ResourceConnection rscConn = localRsc.getAbsResourceConnection(accCtx, peerRsc);
                         @Nullable ReadOnlyProps paths = null;
 
-                        PriorityProps prioPropsConn = rscConn != null ?
-                            new PriorityProps()
-                                .addProps(
-                                    rscConn.getProps(accCtx),
-                                    String.format(
-                                        "Resource connection(%s <-> %s)",
-                                        rscConn.getSourceResource(accCtx),
-                                        rscConn.getTargetResource(accCtx)
-                                    )
-                                ) :
-                            new PriorityProps();
+                        PriorityProps prioPropsConn = new PriorityProps();
+                        if (rscConn != null)
+                        {
+                            prioPropsConn.addProps(
+                                rscConn.getProps(accCtx),
+                                String.format(
+                                    "Resource connection(%s <-> %s)",
+                                    rscConn.getSourceResource(accCtx),
+                                    rscConn.getTargetResource(accCtx)
+                                )
+                            );
+                        }
+                        prioPropsConn.addProps(rscDfnProps, "RD (" + rscDfn.getName() + ")");
 
                         if (nodeConn != null)
                         {
@@ -363,6 +365,9 @@ public class ConfFileBuilder
                                 )
                             );
                         }
+
+                        prioPropsConn.addProps(rscGrpProps, "RG (" + rscGrp.getName() + ")");
+                        prioPropsConn.addProps(stltProps, "C");
 
                         if (prioPropsConn.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_NET_OPTIONS))
                         {

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - sedutils-cli calls will now resolve given paths before using them (as sedutils-cli only allows /dev/nvme*)
+- resource-definition properties are now included in drbd connection net section
 
 ### Fixed
 
