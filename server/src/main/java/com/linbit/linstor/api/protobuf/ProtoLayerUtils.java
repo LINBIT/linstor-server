@@ -37,6 +37,7 @@ import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.proto.common.BCacheRscOuterClass.BCacheVlm;
 import com.linbit.linstor.proto.common.CacheRscOuterClass.CacheVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
@@ -60,7 +61,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 
 public class ProtoLayerUtils
 {
@@ -96,7 +96,7 @@ public class ProtoLayerUtils
                             protoRscData.getSuspend(),
                             null,
                             null,
-                            protoRscData.getIgnoreReason()
+                            LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
                         );
 
                         for (DrbdVlm protoDrbdVlm : protoDrbdRsc.getDrbdVlmsList())
@@ -122,7 +122,7 @@ public class ProtoLayerUtils
                             protoRscData.getRscNameSuffix(),
                             new ArrayList<>(),
                             protoRscData.getSuspend(),
-                            protoRscData.getIgnoreReason()
+                            LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
                         );
                         for (LuksVlm protoLuksVlm : protoRscData.getLuks().getLuksVlmsList())
                         {
@@ -147,7 +147,7 @@ public class ProtoLayerUtils
                             protoRscData.getRscNameSuffix(),
                             new ArrayList<>(),
                             protoRscData.getSuspend(),
-                            protoRscData.getIgnoreReason()
+                            LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
                         );
                         for (StorageVlm protoVlm : protoRscData.getStorage().getStorageVlmsList())
                         {
@@ -178,7 +178,7 @@ public class ProtoLayerUtils
                         protoRscData.getRscNameSuffix(),
                         new ArrayList<>(),
                         protoRscData.getSuspend(),
-                        protoRscData.getIgnoreReason()
+                        LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
                     );
                     for (NvmeVlm protoVlm : protoRscData.getNvme().getNvmeVlmsList())
                     {
@@ -203,7 +203,7 @@ public class ProtoLayerUtils
                         protoRscData.getRscNameSuffix(),
                         new ArrayList<>(),
                         protoRscData.getSuspend(),
-                        protoRscData.getIgnoreReason()
+                        LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
                     );
                     List<WritecacheVlmPojo> volumeList = writecacheRscPojo.getVolumeList();
                     for (WritecacheVlm protoVlm : protoRscData.getWritecache().getVlmsList())
@@ -228,7 +228,7 @@ public class ProtoLayerUtils
                         protoRscData.getRscNameSuffix(),
                         new ArrayList<>(),
                         protoRscData.getSuspend(),
-                        protoRscData.getIgnoreReason()
+                        LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
                     );
                     List<CacheVlmPojo> volumeList = cacheRscPojo.getVolumeList();
                     for (CacheVlm protoVlm : protoRscData.getCache().getVlmsList())
@@ -253,7 +253,7 @@ public class ProtoLayerUtils
                     protoRscData.getRscNameSuffix(),
                     new ArrayList<>(),
                     protoRscData.getSuspend(),
-                    protoRscData.getIgnoreReason()
+                    LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
                 );
                 List<BCacheVlmPojo> volumeList = bcacheRscPojo.getVolumeList();
                 for (BCacheVlm protoVlm : protoRscData.getBcache().getVlmsList())

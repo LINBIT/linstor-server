@@ -426,7 +426,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                             "Not calling resourceFinished for any layer as the resource '%s' is completely ignored. " +
                                 "Topmost reason: %s",
                             rsc.getLayerData(wrkCtx).getSuffixedResourceName(),
-                            rsc.getLayerData(wrkCtx).getIgnoreReason()
+                            rsc.getLayerData(wrkCtx).getIgnoreReason().getDescription()
                         );
                     }
                     else
@@ -838,7 +838,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 "%s: %s has reason: %s",
                 data.getLayerKind(),
                 data.getSuffixedResourceName(),
-                data.getIgnoreReason()
+                data.getIgnoreReason().getDescription()
             );
             if (!data.hasIgnoreReason())
             {
@@ -960,7 +960,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 "Ignoring layer '%s' for %s because '%s'",
                 nextLayer.getName(),
                 dataDescrFct.apply(rscLayerData),
-                rscLayerData.getIgnoreReason()
+                rscLayerData.getIgnoreReason().getDescription()
             );
             for (AbsRscLayerObject<RSC> child : rscLayerData.getChildren())
             {

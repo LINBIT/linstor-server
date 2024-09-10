@@ -35,6 +35,7 @@ import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.AbsLayerHelperUtils;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
@@ -638,14 +639,14 @@ public class RscDrbdLayerHelper extends
             ret.add(
                 new ChildResourceData(
                     RscLayerSuffixes.SUFFIX_DATA,
-                    IGNORE_REASON_DRBD_DISKLESS,
+                    LayerIgnoreReason.DRBD_DISKLESS,
                     DeviceLayerKind.STORAGE
                 )
             );
         }
         else
         {
-            ret.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA, IGNORE_REASON_NONE));
+            ret.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA, null));
         }
 
         if (needsMetaData(rscDataRef, layerListRef))
@@ -653,7 +654,7 @@ public class RscDrbdLayerHelper extends
             ret.add(
                 new ChildResourceData(
                     RscLayerSuffixes.SUFFIX_DRBD_META,
-                    IGNORE_REASON_DRBD_METADATA,
+                    null,
                     DeviceLayerKind.STORAGE
                 )
             );
@@ -768,11 +769,11 @@ public class RscDrbdLayerHelper extends
         boolean changed = false;
         if (isDrbdDiskless(rscDataRef))
         {
-            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_DRBD_DISKLESS, false, true, true);
+            changed = setIgnoreReason(rscDataRef, LayerIgnoreReason.DRBD_DISKLESS, false, true, true);
         }
         if (rscDataRef.isSkipDiskEnabled(apiCtx, stltConf))
         {
-            changed |= setIgnoreReason(rscDataRef, IGNORE_REASON_DRBD_SKIP_DISK, false, true, true);
+            changed |= setIgnoreReason(rscDataRef, LayerIgnoreReason.DRBD_SKIP_DISK, false, true, true);
         }
         return changed;
     }
@@ -837,7 +838,7 @@ public class RscDrbdLayerHelper extends
     @Override
     protected boolean isExpectedToProvideDevice(DrbdRscData<Resource> drbdRscData)
     {
-        return drbdRscData.getIgnoreReason() != null;
+        return !drbdRscData.hasIgnoreReason();
     }
 
     @Override

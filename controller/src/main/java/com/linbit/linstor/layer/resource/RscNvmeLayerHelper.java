@@ -18,6 +18,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -292,12 +293,12 @@ class RscNvmeLayerHelper
         if (rscDataRef.getAbsResource().isNvmeInitiator(apiCtx))
         {
             // we are initiator, ignore everything below us
-            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_INITIATOR, false, true, true);
+            changed = setIgnoreReason(rscDataRef, LayerIgnoreReason.NVME_INITIATOR, false, true, true);
         }
         else
         {
             // we are target, so tell all of our ancestors to ignoreNonDataPaths
-            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_TARGET, true, false, true);
+            changed = setIgnoreReason(rscDataRef, LayerIgnoreReason.NVME_TARGET, true, false, true);
         }
         return changed;
     }
@@ -306,7 +307,7 @@ class RscNvmeLayerHelper
     protected boolean isExpectedToProvideDevice(NvmeRscData<Resource> nvmeRscData) throws AccessDeniedException
     {
         return nvmeRscData.getAbsResource().isNvmeInitiator(apiCtx) &&
-            nvmeRscData.getIgnoreReason() != null;
+            !nvmeRscData.hasIgnoreReason();
     }
 
     @Override

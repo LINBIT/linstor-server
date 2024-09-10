@@ -1759,10 +1759,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             }
             builder.setLayerType(asLayerType(rscLayerPojo.getLayerKind()));
             builder.setSuspend(rscLayerPojo.getSuspend());
-            if (rscLayerPojo.getIgnoreReason() != null)
-            {
-                builder.setIgnoreReason(rscLayerPojo.getIgnoreReason());
-            }
+            builder.setIgnoreReason(rscLayerPojo.getIgnoreReason().toString());
             return builder.build();
         }
 

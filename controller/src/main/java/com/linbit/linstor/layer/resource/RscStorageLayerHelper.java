@@ -29,6 +29,7 @@ import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.AbsLayerHelperUtils;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
@@ -639,7 +640,7 @@ public class RscStorageLayerHelper extends
             {
                 CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
                 ctrlRscLayerDataFactory.getLayerHelperByKind(DeviceLayerKind.STORAGE)
-                    .setIgnoreReason(rscData, "Sed drive locked", true, false, false);
+                    .setIgnoreReason(rscData, LayerIgnoreReason.SED_MISSING_KEY, true, false, false);
                 ret = true;
                 break;
             }
@@ -671,15 +672,15 @@ public class RscStorageLayerHelper extends
                 providerKindSet.add(vlmData.getProviderKind());
             }
 
-            String reason = IGNORE_REASON_NONE;
+            @Nullable LayerIgnoreReason reason = null;
             if (providerKindSet.contains(DeviceProviderKind.EBS_TARGET))
             {
-                reason = IGNORE_REASON_EBS_TARGET;
+                reason = LayerIgnoreReason.EBS_TARGET;
             }
             else if (providerKindSet.contains(DeviceProviderKind.SPDK) ||
                 providerKindSet.contains(DeviceProviderKind.REMOTE_SPDK))
             {
-                reason = IGNORE_REASON_SPDK_TARGET;
+                reason = LayerIgnoreReason.SPDK_TARGET;
             }
 
             if (reason != null) // IGNORE_REASON_NONE == null
@@ -692,7 +693,7 @@ public class RscStorageLayerHelper extends
         if (rscFlags.isSet(apiCtx, Resource.Flags.INACTIVE) && rscFlags.isUnset(apiCtx, Resource.Flags.INACTIVATING))
         {
             // do not propagate the reason while we are still inactivating the resource.
-            changed |= setIgnoreReason(rscDataRef, IGNORE_REASON_RSC_INACTIVE, true, false, true);
+            changed |= setIgnoreReason(rscDataRef, LayerIgnoreReason.RSC_INACTIVE, true, false, true);
         }
         if (rsc.streamVolumes().anyMatch(
             vlm -> isAnyVolumeFlagSetPrivileged(vlm, Volume.Flags.CLONING, Volume.Flags.CLONING_START) &&
@@ -701,7 +702,7 @@ public class RscStorageLayerHelper extends
         {
             changed |= setIgnoreReason(
                 rscDataRef,
-                IGNORE_REASON_RSC_CLONING,
+                LayerIgnoreReason.RSC_CLONING,
                 true,
                 false, // does not matter, it should not be possible that anything exists below storage layer
                 rscData ->
@@ -722,7 +723,7 @@ public class RscStorageLayerHelper extends
                 if (devProviderKind.equals(DeviceProviderKind.EBS_INIT) ||
                     devProviderKind.equals(DeviceProviderKind.EBS_TARGET))
                 {
-                    changed |= setIgnoreReason(rscDataRef, IGNORE_REASON_EBS_MISSING_KEY, false, false, false);
+                    changed |= setIgnoreReason(rscDataRef, LayerIgnoreReason.EBS_MISSING_KEY, false, false, false);
                     break;
                 }
             }
@@ -759,7 +760,7 @@ public class RscStorageLayerHelper extends
     @Override
     protected boolean isExpectedToProvideDevice(StorageRscData<Resource> storageRscData) throws AccessDeniedException
     {
-        return storageRscData.getIgnoreReason() != null;
+        return !storageRscData.hasIgnoreReason();
     }
 
     @Override

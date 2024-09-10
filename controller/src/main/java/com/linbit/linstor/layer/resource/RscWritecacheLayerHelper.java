@@ -215,7 +215,7 @@ class RscWritecacheLayerHelper
             children.add(
                 new ChildResourceData(
                     RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE,
-                    IGNORE_REASON_WRITECACHE_CACHE,
+                    null,
                     DeviceLayerKind.STORAGE
                 )
             );
@@ -279,7 +279,7 @@ class RscWritecacheLayerHelper
     protected boolean isExpectedToProvideDevice(WritecacheRscData<Resource> writecacheRscData)
         throws AccessDeniedException
     {
-        return writecacheRscData.getIgnoreReason() != null;
+        return !writecacheRscData.hasIgnoreReason();
     }
 
     private StorPool getCacheStorPool(Volume vlm) throws InvalidKeyException, AccessDeniedException

@@ -18,6 +18,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -436,13 +437,13 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
         }
 
         @Override
-        public void setIgnoreReason(String ignoreReasonRef) throws DatabaseException
+        public void setIgnoreReason(@Nullable LayerIgnoreReason ignoreReasonRef) throws DatabaseException
         {
             throw new ImplementationError(IMPL_ERR_TEXT);
         }
 
         @Override
-        public String getIgnoreReason()
+        public LayerIgnoreReason getIgnoreReason()
         {
             throw new ImplementationError(IMPL_ERR_TEXT);
         }

@@ -2,6 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -24,7 +25,7 @@ public class BCacheRscPojo implements RscLayerDataApi
     @JsonIgnore
     private final boolean suspend;
     @JsonIgnore
-    private final @Nullable String ignoreReason;
+    private final LayerIgnoreReason ignoreReason;
 
     private final List<BCacheVlmPojo> vlms;
 
@@ -34,10 +35,9 @@ public class BCacheRscPojo implements RscLayerDataApi
         String rscNameSuffixRef,
         List<BCacheVlmPojo> vlmsRef,
         boolean suspendRef,
-        @Nullable String ignoreReasonRef
+        LayerIgnoreReason ignoreReasonRef
     )
     {
-        super();
         id = idRef;
         children = childrenRef;
         rscNameSuffix = rscNameSuffixRef;
@@ -53,7 +53,6 @@ public class BCacheRscPojo implements RscLayerDataApi
         @JsonProperty("volumeList") List<BCacheVlmPojo> vlmsRef
     )
     {
-        super();
         id = BACK_DFLT_ID;
         children = childrenRef;
         rscNameSuffix = rscNameSuffixRef;
@@ -93,7 +92,7 @@ public class BCacheRscPojo implements RscLayerDataApi
     }
 
     @Override
-    public @Nullable String getIgnoreReason()
+    public LayerIgnoreReason getIgnoreReason()
     {
         return ignoreReason;
     }
@@ -142,7 +141,6 @@ public class BCacheRscPojo implements RscLayerDataApi
             boolean existsRef
         )
         {
-            super();
             vlmNr = vlmNrRef;
             devicePath = devicePathRef;
             dataDevice = dataDeviceRef;
@@ -162,7 +160,6 @@ public class BCacheRscPojo implements RscLayerDataApi
             @JsonProperty("cacheStorPoolName") String cacheStorPoolNameRef
         )
         {
-            super();
             vlmNr = vlmNrRef;
             devicePath = null;
             dataDevice = null;

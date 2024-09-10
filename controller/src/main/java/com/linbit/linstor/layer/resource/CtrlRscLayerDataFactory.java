@@ -20,6 +20,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
@@ -564,7 +565,7 @@ public class CtrlRscLayerDataFactory
 
     private void clearIgnoreReasonsRec(AbsRscLayerObject<Resource> rscDataRef) throws DatabaseException
     {
-        rscDataRef.setIgnoreReason(AbsRscLayerHelper.IGNORE_REASON_NONE);
+        rscDataRef.setIgnoreReason(LayerIgnoreReason.NONE);
         for (AbsRscLayerObject<Resource> child : rscDataRef.getChildren())
         {
             clearIgnoreReasonsRec(child);
@@ -730,7 +731,7 @@ public class CtrlRscLayerDataFactory
 
         private final String rscNameSuffix;
         private final List<DeviceLayerKind> skipUntilList = new ArrayList<>();
-        private final @Nullable String ignoreReason;
+        private final @Nullable LayerIgnoreReason ignoreReason;
 
         ChildResourceData(String rscNameSuffixRef)
         {
@@ -741,7 +742,7 @@ public class CtrlRscLayerDataFactory
 
         ChildResourceData(
             String rscNameSuffixRef,
-            String ignoreReasonRef,
+            @Nullable LayerIgnoreReason ignoreReasonRef,
             List<DeviceLayerKind> skipUntilListRef
         )
         {
@@ -759,7 +760,7 @@ public class CtrlRscLayerDataFactory
 
         ChildResourceData(
             String rscNameSuffixRef,
-            String ignoreReasonRef,
+            @Nullable LayerIgnoreReason ignoreReasonRef,
             DeviceLayerKind... skipUntilKindsRef
         )
         {

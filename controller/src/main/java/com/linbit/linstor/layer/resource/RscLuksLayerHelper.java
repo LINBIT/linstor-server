@@ -23,6 +23,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -358,7 +359,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         {
             // we do not need to ignore all layers above LUKS if we want to delete everything (and including) the luks
             // layer
-            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_LUKS_MISSING_KEY, true, true, false);
+            changed = setIgnoreReason(rscDataRef, LayerIgnoreReason.LUKS_MISSING_KEY, true, true, false);
         }
         return changed;
     }
@@ -366,7 +367,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     @Override
     protected boolean isExpectedToProvideDevice(LuksRscData<Resource> luksRscData)
     {
-        return luksRscData.getIgnoreReason() != null;
+        return !luksRscData.hasIgnoreReason();
     }
 
     @Override

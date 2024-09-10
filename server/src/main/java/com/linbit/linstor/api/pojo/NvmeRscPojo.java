@@ -2,11 +2,10 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import javax.annotation.Nullable;
 
 import java.util.List;
 
@@ -24,7 +23,7 @@ public class NvmeRscPojo implements RscLayerDataApi
     @JsonIgnore
     private final boolean suspend;
     @JsonIgnore
-    private final @Nullable String ignoreReason;
+    private final LayerIgnoreReason ignoreReason;
 
     public NvmeRscPojo(
         int idRef,
@@ -32,7 +31,7 @@ public class NvmeRscPojo implements RscLayerDataApi
         String rscNameSuffixRef,
         List<NvmeVlmPojo> vlmsRef,
         boolean suspendRef,
-        @Nullable String ignoreReasonRef
+        LayerIgnoreReason ignoreReasonRef
     )
     {
         id = idRef;
@@ -89,7 +88,7 @@ public class NvmeRscPojo implements RscLayerDataApi
     }
 
     @Override
-    public @Nullable String getIgnoreReason()
+    public LayerIgnoreReason getIgnoreReason()
     {
         return ignoreReason;
     }

@@ -217,7 +217,7 @@ class RscBCacheLayerHelper
             children.add(
                 new ChildResourceData(
                     RscLayerSuffixes.SUFFIX_BCACHE_CACHE,
-                    IGNORE_REASON_BCACHE_CACHE,
+                    null,
                     DeviceLayerKind.STORAGE
                 )
             );
@@ -279,7 +279,7 @@ class RscBCacheLayerHelper
     protected boolean isExpectedToProvideDevice(BCacheRscData<Resource> bcacheRscData)
         throws AccessDeniedException
     {
-        return bcacheRscData.getIgnoreReason() != null;
+        return !bcacheRscData.hasIgnoreReason();
     }
 
     private StorPool getCacheStorPool(Resource rsc, VolumeDefinition vlmDfn)

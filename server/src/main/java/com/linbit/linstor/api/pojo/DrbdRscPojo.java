@@ -4,6 +4,7 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -37,7 +38,7 @@ public class DrbdRscPojo implements RscLayerDataApi
     @JsonIgnore
     private final @Nullable Boolean mayPromote;
     @JsonIgnore
-    private final @Nullable String ignoreReason;
+    private final LayerIgnoreReason ignoreReason;
 
     public DrbdRscPojo(
         int idRef,
@@ -53,7 +54,7 @@ public class DrbdRscPojo implements RscLayerDataApi
         boolean suspendRef,
         @Nullable Integer promotionScoreRef,
         @Nullable Boolean mayPromoteRef,
-        @Nullable String ignoreReasonRef
+        LayerIgnoreReason ignoreReasonRef
     )
     {
         id = idRef;
@@ -173,7 +174,7 @@ public class DrbdRscPojo implements RscLayerDataApi
     }
 
     @Override
-    public @Nullable String getIgnoreReason()
+    public LayerIgnoreReason getIgnoreReason()
     {
         return ignoreReason;
     }

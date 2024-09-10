@@ -2,11 +2,10 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import javax.annotation.Nullable;
 
 import java.util.List;
 
@@ -23,7 +22,7 @@ public class WritecacheRscPojo implements RscLayerDataApi
     @JsonIgnore
     private final boolean suspend;
     @JsonIgnore
-    private final @Nullable String ignoreReason;
+    private final LayerIgnoreReason ignoreReason;
 
     private final List<WritecacheVlmPojo> vlms;
 
@@ -33,10 +32,9 @@ public class WritecacheRscPojo implements RscLayerDataApi
         String rscNameSuffixRef,
         List<WritecacheVlmPojo> vlmsRef,
         boolean suspendRef,
-        @Nullable String ignoreReasonRef
+        LayerIgnoreReason ignoreReasonRef
     )
     {
-        super();
         id = idRef;
         children = childrenRef;
         rscNameSuffix = rscNameSuffixRef;
@@ -52,7 +50,6 @@ public class WritecacheRscPojo implements RscLayerDataApi
         @JsonProperty("volumeList") List<WritecacheVlmPojo> vlmsRef
     )
     {
-        super();
         id = BACK_DFLT_ID;
         children = childrenRef;
         rscNameSuffix = rscNameSuffixRef;
@@ -92,7 +89,7 @@ public class WritecacheRscPojo implements RscLayerDataApi
     }
 
     @Override
-    public @Nullable String getIgnoreReason()
+    public LayerIgnoreReason getIgnoreReason()
     {
         return ignoreReason;
     }
@@ -137,7 +134,6 @@ public class WritecacheRscPojo implements RscLayerDataApi
             boolean existsRef
         )
         {
-            super();
             vlmNr = vlmNrRef;
             devicePath = devicePathRef;
             dataDevice = dataDeviceRef;
@@ -156,7 +152,6 @@ public class WritecacheRscPojo implements RscLayerDataApi
             @JsonProperty("cacheStorPoolName") String cacheStorPoolNameRef
         )
         {
-            super();
             vlmNr = vlmNrRef;
             devicePath = null;
             dataDevice = null;

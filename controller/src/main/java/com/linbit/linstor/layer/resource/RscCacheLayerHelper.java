@@ -235,14 +235,14 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
             children.add(
                 new ChildResourceData(
                     RscLayerSuffixes.SUFFIX_CACHE_CACHE,
-                    IGNORE_REASON_CACHE_CACHE,
+                    null,
                     DeviceLayerKind.STORAGE
                 )
             );
             children.add(
                 new ChildResourceData(
                     RscLayerSuffixes.SUFFIX_CACHE_META,
-                    IGNORE_REASON_CACHE_META,
+                    null,
                     DeviceLayerKind.STORAGE
                 )
             );
@@ -309,7 +309,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     @Override
     protected boolean isExpectedToProvideDevice(CacheRscData<Resource> cacheRscData) throws AccessDeniedException
     {
-        return cacheRscData.getIgnoreReason() != null;
+        return !cacheRscData.hasIgnoreReason();
     }
 
     private StorPool getSpecialStorPool(

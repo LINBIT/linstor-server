@@ -9,6 +9,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -44,7 +45,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected final TransactionSet<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> children;
 
     // not persisted, serialized
-    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, String> ignoreReason;
+    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, LayerIgnoreReason> ignoreReason;
 
     // persisted, serialized
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> parent;
@@ -77,7 +78,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         children = transObjFactory.createTransactionSet(this, childrenRef, null);
         vlmMap = transObjFactory.createTransactionMap(this, vlmProviderObjectsRef, null);
         suspend = transObjFactory.createTransactionSimpleObject(this, false, dbDriverRef.getSuspendDriver());
-        ignoreReason = transObjFactory.createTransactionSimpleObject(this, null, null);
+        ignoreReason = transObjFactory.createTransactionSimpleObject(this, LayerIgnoreReason.NONE, null);
 
         checkFileSystem = true;
 
@@ -236,13 +237,13 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     }
 
     @Override
-    public String getIgnoreReason()
+    public LayerIgnoreReason getIgnoreReason()
     {
         return ignoreReason.get();
     }
 
     @Override
-    public void setIgnoreReason(String ignoreReasonRef) throws DatabaseException
+    public void setIgnoreReason(LayerIgnoreReason ignoreReasonRef) throws DatabaseException
     {
         ignoreReason.set(ignoreReasonRef);
     }

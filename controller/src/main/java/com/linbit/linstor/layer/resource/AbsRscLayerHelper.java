@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.LayerResult;
@@ -53,28 +54,6 @@ public abstract class AbsRscLayerHelper<
     VLM_DFN_LO extends VlmDfnLayerObject
 >
 {
-    public static final String IGNORE_REASON_NONE = null;
-
-    public static final String IGNORE_REASON_SNAPSHOT = "snapshot";
-
-    public static final String IGNORE_REASON_BCACHE_CACHE = "BCache cache";
-    public static final String IGNORE_REASON_CACHE_CACHE = "Cache cache";
-    public static final String IGNORE_REASON_CACHE_META = "Cache meta";
-    public static final String IGNORE_REASON_DRBD_DISKLESS = "DRBD diskless device";
-    public static final String IGNORE_REASON_DRBD_METADATA = "DRBD metadata";
-    public static final String IGNORE_REASON_DRBD_SKIP_DISK = "DRBD skip-disk";
-    public static final String IGNORE_REASON_EBS_TARGET = "EBS target";
-    public static final String IGNORE_REASON_EBS_MISSING_KEY = "EBS no key";
-    @Deprecated(forRemoval = true)
-    public static final String IGNORE_REASON_EXOS_TARGET = "EXOS target";
-    public static final String IGNORE_REASON_LUKS_MISSING_KEY = "LUKS no key";
-    public static final String IGNORE_REASON_NVME_TARGET = "NVMe target";
-    public static final String IGNORE_REASON_NVME_INITIATOR = "NVMe initiator";
-    public static final String IGNORE_REASON_RSC_INACTIVE = "Resource inactive";
-    public static final String IGNORE_REASON_RSC_CLONING = "Resource cloning";
-    public static final String IGNORE_REASON_SPDK_TARGET = "SPDK target";
-    public static final String IGNORE_REASON_WRITECACHE_CACHE = "Writecache cache";
-
     protected static boolean loadingFromDatabase = true;
 
     protected final ErrorReporter errorReporter;
@@ -202,7 +181,7 @@ public abstract class AbsRscLayerHelper<
         String rscNameSuffixRef,
         AbsRscLayerObject<Resource> parentObjectRef,
         List<DeviceLayerKind> layerList,
-        @Nullable String ignoreReasonRef
+        @Nullable LayerIgnoreReason ignoreReasonRef
     )
         throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
         ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
@@ -327,7 +306,7 @@ public abstract class AbsRscLayerHelper<
      */
     protected boolean setIgnoreReason(
         @Nullable AbsRscLayerObject<Resource> rscDataRef,
-        String ignoreReasonRef,
+        LayerIgnoreReason ignoreReasonRef,
         boolean goUpRef,
         boolean goDownRef,
         boolean skipSelfRef
@@ -345,7 +324,7 @@ public abstract class AbsRscLayerHelper<
 
     protected boolean setIgnoreReason(
         @Nullable AbsRscLayerObject<Resource> rscDataRef,
-        String ignoreReasonRef,
+        LayerIgnoreReason ignoreReasonRef,
         boolean goUpRef,
         boolean goDownRef,
         Predicate<AbsRscLayerObject<Resource>> setIgnoreReasonForRscDataPredicateRef
@@ -385,7 +364,7 @@ public abstract class AbsRscLayerHelper<
 
     private boolean setIgnoreReasonRec(
         AbsRscLayerObject<Resource> rscDataRef,
-        String ignoreReasonRef,
+        LayerIgnoreReason ignoreReasonRef,
         Predicate<AbsRscLayerObject<Resource>> setIgnoreReasonForRscDataPredicateRef,
         HashSet<AbsRscLayerObject<Resource>> visitedRef
     )
@@ -398,7 +377,7 @@ public abstract class AbsRscLayerHelper<
 
             AbsRscLayerHelper<?, ?, ?, ?> layerHelperByKind = layerDataHelperProvider.get()
                 .getLayerHelperByKind(rscDataRef.getLayerKind());
-            String reasonPreSet = rscDataRef.getIgnoreReason();
+            LayerIgnoreReason ignoreReasonPreSet = rscDataRef.getIgnoreReason();
 
             boolean setIgnoreReasonForCurrent = setIgnoreReasonForRscDataPredicateRef.test(rscDataRef);
             if (setIgnoreReasonForCurrent)
@@ -414,12 +393,12 @@ public abstract class AbsRscLayerHelper<
                 visitedRef
             );
 
-            String currentIgnoreReason = rscDataRef.getIgnoreReason();
+            LayerIgnoreReason currentIgnoreReason = rscDataRef.getIgnoreReason();
 
             // we only need to process our children if the ignore reason has changed.
             // however, since we are able to skip changing the ignore reason for some rscData, we also have to
             // process our children in those cases.
-            boolean hasOwnIgnoreReasonChanged = !Objects.equals(reasonPreSet, currentIgnoreReason);
+            boolean hasOwnIgnoreReasonChanged = !Objects.equals(ignoreReasonPreSet, currentIgnoreReason);
             if (!setIgnoreReasonForCurrent || hasOwnIgnoreReasonChanged)
             {
                 // if goDown was set to false, our children (if any) were added to visited set so we will
@@ -440,12 +419,11 @@ public abstract class AbsRscLayerHelper<
 
     protected boolean setIgnoreReasonImpl(
         AbsRscLayerObject<Resource> rscDataRef,
-        String ignoreReasonRef
+        LayerIgnoreReason ignoreReasonRef
     )
         throws DatabaseException
     {
         boolean reasonChanged = false;
-        // by default, always set the ignoreReason
         if (!Objects.equals(rscDataRef.getIgnoreReason(), ignoreReasonRef))
         {
             rscDataRef.setIgnoreReason(ignoreReasonRef);

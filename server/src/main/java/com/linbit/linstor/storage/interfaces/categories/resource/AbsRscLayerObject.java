@@ -9,6 +9,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.LayerObject;
@@ -66,14 +67,13 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
 
     boolean getShouldSuspendIo();
 
-    void setIgnoreReason(String ignoreReasonRef) throws DatabaseException;
+    void setIgnoreReason(LayerIgnoreReason ignoreReasonRef) throws DatabaseException;
 
-    String getIgnoreReason();
+    LayerIgnoreReason getIgnoreReason();
 
     default boolean hasIgnoreReason()
     {
-        String ignoreReason = getIgnoreReason();
-        return ignoreReason != null && !ignoreReason.isEmpty();
+        return getIgnoreReason().isPreventExecution();
     }
 
     default AbsRscLayerObject<RSC> getSingleChild()
