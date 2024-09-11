@@ -11,6 +11,8 @@ import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -47,6 +49,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -78,6 +81,7 @@ public class CtrlRscApiCallHandler
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final StltConfigAccessor stltCfgAccessor;
+    private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProvider;
 
     @Inject
     public CtrlRscApiCallHandler(
@@ -94,7 +98,8 @@ public class CtrlRscApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
-        StltConfigAccessor stltCfgAccessorRef
+        StltConfigAccessor stltCfgAccessorRef,
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -111,6 +116,7 @@ public class CtrlRscApiCallHandler
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         stltCfgAccessor = stltCfgAccessorRef;
+        propsChangeListenerBuilderProvider = propsChangeListenerBuilderProviderRef;
     }
 
     public Flux<ApiCallRc> modify(
@@ -162,6 +168,7 @@ public class CtrlRscApiCallHandler
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         boolean notifyStlts = false;
 
+        List<Flux<ApiCallRc>> specialPropFluxes = new ArrayList<>();
         try
         {
             Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
@@ -173,6 +180,9 @@ public class CtrlRscApiCallHandler
                     "UUID-check failed"
                 ));
             }
+
+            Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilderProvider.get()
+                .buildPropsChangedListeners(peerAccCtx.get(), rsc, specialPropFluxes);
 
             Props props = ctrlPropsHelper.getProps(rsc);
 
@@ -191,9 +201,23 @@ public class CtrlRscApiCallHandler
             );
 
             notifyStlts = ctrlPropsHelper.fillProperties(
-                apiCallRcs, LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
+                apiCallRcs,
+                LinStorObject.RESOURCE,
+                overrideProps,
+                props,
+                ApiConsts.FAIL_ACC_DENIED_RSC,
+                Collections.emptyList(),
+                propsChangedListeners
+            ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
-                apiCallRcs, LinStorObject.RESOURCE, props, deletePropKeys, deletePropNamespacesRef) || notifyStlts;
+                apiCallRcs,
+                LinStorObject.RESOURCE,
+                props,
+                deletePropKeys,
+                deletePropNamespacesRef,
+                Collections.emptyList(),
+                propsChangedListeners
+            ) || notifyStlts;
 
             ctrlTransactionHelper.commit();
 
@@ -212,7 +236,9 @@ public class CtrlRscApiCallHandler
             apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
+        return Flux.just((ApiCallRc) apiCallRcs)
+            .concatWith(flux)
+            .concatWith(Flux.merge(specialPropFluxes));
     }
 
     ResourceList listResources(

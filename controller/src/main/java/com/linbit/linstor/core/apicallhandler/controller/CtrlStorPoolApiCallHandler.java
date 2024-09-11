@@ -11,7 +11,9 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -50,9 +52,11 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -76,6 +80,7 @@ public class CtrlStorPoolApiCallHandler
     private final CtrlSecurityObjects securityObjects;
     private final EncryptionHelper encryptionHelper;
     private final StorPoolDefinitionRepository storPoolDfnRepo;
+    private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProvider;
 
     @Inject
     public CtrlStorPoolApiCallHandler(
@@ -91,7 +96,8 @@ public class CtrlStorPoolApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         CtrlSecurityObjects ctrlSecurityObjects,
         EncryptionHelper encryptionHelperRef,
-        StorPoolDefinitionRepository storPoolDfnRepoRef
+        StorPoolDefinitionRepository storPoolDfnRepoRef,
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProviderRef
     )
     {
         ctrlTransactionHelper = ctrlTransactionHelperRef;
@@ -107,6 +113,7 @@ public class CtrlStorPoolApiCallHandler
         securityObjects = ctrlSecurityObjects;
         encryptionHelper = encryptionHelperRef;
         storPoolDfnRepo = storPoolDfnRepoRef;
+        propsChangeListenerBuilderProvider = propsChangeListenerBuilderProviderRef;
     }
 
     public Flux<ApiCallRc> modify(
@@ -155,6 +162,7 @@ public class CtrlStorPoolApiCallHandler
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         boolean notifyStlts = false;
 
+        List<Flux<ApiCallRc>> specialPropFluxes = new ArrayList<>();
         try
         {
             StorPool storPool = loadStorPool(nodeNameStr, storPoolNameStr, true);
@@ -166,6 +174,8 @@ public class CtrlStorPoolApiCallHandler
                     "UUID-check failed"
                 ));
             }
+            Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilderProvider.get()
+                .buildPropsChangedListeners(peerAccCtx.get(), storPool, specialPropFluxes);
 
             Props props = ctrlPropsHelper.getProps(storPool);
 
@@ -218,10 +228,18 @@ public class CtrlStorPoolApiCallHandler
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL,
-                Collections.singletonList(ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR)
+                Collections.singletonList(ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR),
+                propsChangedListeners
             ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
-                apiCallRcs, LinStorObject.STORAGEPOOL, props, deletePropKeys, deletePropNamespaces) || notifyStlts;
+                apiCallRcs,
+                LinStorObject.STORAGEPOOL,
+                props,
+                deletePropKeys,
+                deletePropNamespaces,
+                Collections.emptyList(),
+                propsChangedListeners
+            ) || notifyStlts;
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
@@ -246,7 +264,9 @@ public class CtrlStorPoolApiCallHandler
             apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return Flux.<ApiCallRc>just(apiCallRcs).concatWith(flux);
+        return Flux.<ApiCallRc>just(apiCallRcs)
+            .concatWith(flux)
+            .concatWith(Flux.merge(specialPropFluxes));
     }
 
     public Flux<ApiCallRc> deleteStorPool(

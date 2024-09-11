@@ -675,12 +675,13 @@ public class CtrlPropsHelper
         Props props,
         Collection<String> deletePropKeys,
         Collection<String> deleteNamespaces,
-        List<String> ignoredKeys,
+        List<String> ignoredKeysRef,
         Map<String, PropertyChangedListener> propsChangedListenersRef
     )
         throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
         boolean propsModified = false;
+        ArrayList<String> ignoredKeys = new ArrayList<>(ignoredKeysRef);
         ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
 
         for (String key : deletePropKeys)

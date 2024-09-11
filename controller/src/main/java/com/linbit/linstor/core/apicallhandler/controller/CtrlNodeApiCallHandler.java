@@ -28,9 +28,11 @@ import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -161,6 +163,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandler;
     private final CtrlRscAutoHelper ctrlRscAutoHelper;
     private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
+    private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProvider;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -198,7 +201,8 @@ public class CtrlNodeApiCallHandler
         CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef,
         CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef,
         CtrlRscAutoHelper ctrlRscAutoHelperRef,
-        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProviderRef
     )
     {
         apiCtx = apiCtxRef;
@@ -236,6 +240,7 @@ public class CtrlNodeApiCallHandler
         ctrlBackupQueueHandler = ctrlBackupQueueHandlerRef;
         ctrlRscAutoHelper = ctrlRscAutoHelperRef;
         ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
+        propsChangeListenerBuilderProvider = propsChangeListenerBuilderProviderRef;
     }
 
     Node createNodeImpl(
@@ -519,6 +524,7 @@ public class CtrlNodeApiCallHandler
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         boolean notifyStlts = false;
 
+        List<Flux<ApiCallRc>> specialPropFluxes = new ArrayList<>();
         try
         {
             requireNodesMapChangeAccess();
@@ -541,6 +547,9 @@ public class CtrlNodeApiCallHandler
                 notifyStlts = true;
             }
 
+            Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilderProvider.get()
+                .buildPropsChangedListeners(peerAccCtx.get(), node, specialPropFluxes);
+
             List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
             prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EXOS);
             prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
@@ -552,7 +561,8 @@ public class CtrlNodeApiCallHandler
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_NODE,
-                prefixesIgnoringWhitelistCheck
+                prefixesIgnoringWhitelistCheck,
+                propsChangedListeners
             ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs,
@@ -560,7 +570,8 @@ public class CtrlNodeApiCallHandler
                 props,
                 deletePropKeys,
                 deleteNamespaces,
-                prefixesIgnoringWhitelistCheck
+                prefixesIgnoringWhitelistCheck,
+                propsChangedListeners
             ) || notifyStlts;
 
             flux = flux.concatWith(checkProperties(apiCallRcs, node, overrideProps, deletePropKeys, deleteNamespaces));
@@ -591,7 +602,9 @@ public class CtrlNodeApiCallHandler
             apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
+        return Flux.just((ApiCallRc) apiCallRcs)
+            .concatWith(flux)
+            .concatWith(Flux.merge(specialPropFluxes));
     }
 
     public Flux<ApiCallRc> reconnectNode(
