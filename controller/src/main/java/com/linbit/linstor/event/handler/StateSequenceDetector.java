@@ -4,12 +4,15 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.layer.drbd.drbdstate.DiskState;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -20,23 +23,31 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import reactor.core.publisher.Flux;
+
 @Singleton
 public class StateSequenceDetector
 {
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ErrorReporter errorReporter;
     private final AccessContext accCtx;
+    private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
     @Inject
     public StateSequenceDetector(
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ErrorReporter errorReporterRef,
-        @SystemContext AccessContext accCtxRef
+        @SystemContext AccessContext accCtxRef,
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
     )
     {
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         errorReporter = errorReporterRef;
         accCtx = accCtxRef;
+        ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
     }
 
     public void processAndSetDiskState(EventIdentifier eventIdentifier, SatelliteVolumeState vlmState, String nextState)
@@ -57,6 +68,12 @@ public class StateSequenceDetector
                             ApiConsts.VAL_TRUE,
                             ApiConsts.NAMESPC_DRBD_OPTIONS
                         );
+                    boolean changed = ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
+                    if (changed)
+                    {
+                        ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty())
+                            .subscribe();
+                    }
                 }
                 else
                 {

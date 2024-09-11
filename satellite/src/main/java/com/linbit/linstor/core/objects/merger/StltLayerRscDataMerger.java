@@ -41,6 +41,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
@@ -65,6 +66,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
 import javax.inject.Inject;
@@ -413,7 +415,23 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         throws AccessDeniedException, DatabaseException
     {
         storRscDataRef.setShouldSuspendIo(storRscPojoRef.getSuspend());
+
+        final boolean hadIgnoreReason = storRscDataRef.hasIgnoreReason();
         storRscDataRef.setIgnoreReason(storRscPojoRef.getIgnoreReason());
+        boolean hasLvm = false;
+        for (VlmProviderObject<Resource> storVlmData : storRscDataRef.getVlmLayerObjects().values())
+        {
+            DeviceProviderKind providerKind = storVlmData.getProviderKind();
+            if (providerKind.equals(DeviceProviderKind.LVM) || providerKind.equals(DeviceProviderKind.LVM_THIN))
+            {
+                hasLvm = true;
+                break;
+            }
+        }
+        if (hasLvm && hadIgnoreReason && !storRscDataRef.hasIgnoreReason())
+        {
+            LvmUtils.recacheNext();
+        }
     }
 
     @Override
