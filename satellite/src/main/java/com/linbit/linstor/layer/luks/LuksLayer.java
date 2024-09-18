@@ -388,6 +388,12 @@ public class LuksLayer implements DeviceLayer
         }
     }
 
+    @Override
+    public boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef)
+    {
+        return false; // no layer specific DELETE flag
+    }
+
     private String getIdentifier(LuksVlmData<Resource> vlmData)
     {
         String identifier = vlmData.getIdentifier();

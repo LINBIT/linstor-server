@@ -469,4 +469,10 @@ public class WritecacheLayer implements DeviceLayer
         }
         return resourceReadySent;
     }
+
+    @Override
+    public boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef)
+    {
+        return false; // no layer specific DELETE flag
+    }
 }

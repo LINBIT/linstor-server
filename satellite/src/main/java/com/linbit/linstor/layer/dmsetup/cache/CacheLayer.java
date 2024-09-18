@@ -368,6 +368,12 @@ public class CacheLayer implements DeviceLayer
         return resourceReadySent;
     }
 
+    @Override
+    public boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef)
+    {
+        return false; // no layer specific DELETE flag
+    }
+
     private long getBlocksize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
     {
         return Long.parseLong(

@@ -450,4 +450,10 @@ public class StorageLayer implements DeviceLayer
             updatePropsPojo
         );
     }
+
+    @Override
+    public boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef)
+    {
+        return false; // no layer specific DELETE flag
+    }
 }

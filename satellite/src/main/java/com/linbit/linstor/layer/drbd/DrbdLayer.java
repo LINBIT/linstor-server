@@ -22,6 +22,7 @@ import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -230,13 +231,7 @@ public class DrbdLayer implements DeviceLayer
         }
         else
         {
-            StateFlags<Flags> rscFlags = rsc.getStateFlags();
-            if (
-                drbdRscData.getRscDfnLayerObject().isDown() ||
-                    rscFlags.isSet(workerCtx, Resource.Flags.DELETE) ||
-                    rscFlags.isSet(workerCtx, Resource.Flags.DRBD_DELETE) ||
-                    rscFlags.isSet(workerCtx, Resource.Flags.INACTIVE)
-            )
+            if (shouldDrbdDeviceBeDeleted(drbdRscData))
             {
                 deleteDrbd(drbdRscData, apiCallRc);
 
@@ -260,6 +255,16 @@ public class DrbdLayer implements DeviceLayer
                 }
             }
         }
+    }
+
+    private boolean shouldDrbdDeviceBeDeleted(DrbdRscData<Resource> drbdRscData)
+        throws AccessDeniedException
+    {
+        StateFlags<Flags> rscFlags = drbdRscData.getAbsResource().getStateFlags();
+        return drbdRscData.getRscDfnLayerObject().isDown() ||
+            rscFlags.isSet(workerCtx, Resource.Flags.DELETE) ||
+            rscFlags.isSet(workerCtx, Resource.Flags.DRBD_DELETE) ||
+            rscFlags.isSet(workerCtx, Resource.Flags.INACTIVE);
     }
 
     private void addDeletedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
@@ -1850,5 +1855,30 @@ public class DrbdLayer implements DeviceLayer
     {
         // ignored
         return null;
+    }
+
+    @Override
+    public boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef) throws AccessDeniedException
+    {
+        if (!(rscDataRef instanceof DrbdRscData))
+        {
+            throw new ImplementationError(
+                "method called with unexpected rscData: " + rscDataRef.getClass().getCanonicalName()
+            );
+        }
+        boolean isDeleteFlagSet;
+        AbsResource<?> absRsc = rscDataRef.getAbsResource();
+        if (absRsc instanceof Resource)
+        {
+            @SuppressWarnings("unchecked")
+            DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscDataRef;
+            isDeleteFlagSet = shouldDrbdDeviceBeDeleted(drbdRscData);
+        }
+        else
+        {
+            isDeleteFlagSet = false; // DRBD does not manage snapshots
+        }
+
+        return isDeleteFlagSet;
     }
 }

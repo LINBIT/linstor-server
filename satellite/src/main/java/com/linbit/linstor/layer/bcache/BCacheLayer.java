@@ -579,6 +579,12 @@ public class BCacheLayer implements DeviceLayer
         return resourceReadySent;
     }
 
+    @Override
+    public boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef)
+    {
+        return false; // no layer specific DELETE flag
+    }
+
     private String toString(BCacheVlmData<Resource> vlmData)
     {
         StringBuilder sb = new StringBuilder("Resource: ")

@@ -418,7 +418,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     extFileHandler.handle(rsc);
 
                     // give the layer the opportunity to send a "resource ready" event
-                    AbsRscLayerObject<Resource> firstNonIgnoredRscData = getFirstRscDataWithoutIgnoredReasonForDataPath(
+                    @Nullable AbsRscLayerObject<Resource> firstNonIgnoredRscData = getFirstRscDataToExecuteForDataPath(
                         rsc.getLayerData(wrkCtx)
                     );
                     if (firstNonIgnoredRscData == null)
@@ -549,16 +549,125 @@ public class DeviceHandlerImpl implements DeviceHandler
         return apiCallRc;
     }
 
-    private <RSC extends AbsResource<RSC>> AbsRscLayerObject<RSC> getFirstRscDataWithoutIgnoredReasonForDataPath(
+    /**
+     * Returns the first (if any) layer resource data, following ONLY the {@link RscLayerSuffixes#SUFFIX_DATA} path that
+     * should not be ignored. The latter means that either no set {@link LayerIgnoreReason} wants to prevent execution
+     * or if all those {@link LayerIgnoreReason} have an exception when the resource is in deleting state, and the
+     * resource is indeed in deleting state. This method can return <code>null</code> if all layer resource data should
+     * be ignored.
+     *
+     * @param <RSC>
+     * @param rscData
+     *
+     * @return
+     *
+     * @throws AccessDeniedException
+     */
+    private @Nullable <RSC extends AbsResource<RSC>> AbsRscLayerObject<RSC> getFirstRscDataToExecuteForDataPath(
         AbsRscLayerObject<RSC> rscData
     )
+        throws AccessDeniedException
     {
-        AbsRscLayerObject<RSC> curRscData = rscData;
-        while (curRscData != null && curRscData.hasAnyPreventExecutionIgnoreReason())
+        @Nullable AbsRscLayerObject<RSC> curRscData = rscData;
+        final boolean shouldAbsRscBeDeleted = isAbsRscDeleteFlagSet(curRscData);
+        while (curRscData != null && !shouldRscDataBeProcessed(curRscData, shouldAbsRscBeDeleted))
         {
             curRscData = curRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
         }
         return curRscData;
+    }
+
+    private <RSC extends AbsResource<RSC>> boolean shouldRscDataBeProcessed(
+        AbsRscLayerObject<RSC> curRscData,
+        final boolean shouldAbsRscBeDeleted
+    )
+        throws AccessDeniedException
+    {
+        boolean processResource = true;
+        for (LayerIgnoreReason ignoreReason : curRscData.getIgnoreReasons())
+        {
+            if (ignoreReason.isPreventExecution())
+            {
+                if (shouldAbsRscBeDeleted || hasLayerSpecificDeleteFlagSet(curRscData))
+                {
+                    if (ignoreReason.isPreventExecutionWhenDeleting())
+                    {
+                        processResource = false;
+                    }
+                }
+                else
+                {
+                    processResource = false;
+                }
+            }
+            if (!processResource)
+            {
+                // cannot get true anymore
+                break;
+            }
+        }
+        return processResource;
+    }
+
+    private <RSC extends AbsResource<RSC>> boolean isAbsRscDeleteFlagSet(AbsRscLayerObject<RSC> rscDataRef)
+        throws AccessDeniedException
+    {
+        final boolean ret;
+        final RSC absRsc = rscDataRef.getAbsResource();
+        if (absRsc instanceof Resource)
+        {
+            ret = ((Resource) absRsc).getStateFlags().isSet(wrkCtx, Resource.Flags.DELETE);
+        }
+        else
+        {
+            ret = ((Snapshot) absRsc).getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE);
+        }
+        return ret;
+    }
+
+    private <RSC extends AbsResource<RSC>> boolean hasLayerSpecificDeleteFlagSet(AbsRscLayerObject<RSC> rscDataRef)
+        throws AccessDeniedException
+    {
+        return layerFactory.getDeviceLayer(rscDataRef.getLayerKind()).isDeleteFlagSet(rscDataRef);
+    }
+
+    private <RSC extends AbsResource<RSC>> boolean shouldExceptionBeIgnored(
+        AbsRscLayerObject<RSC> rscLayerDataRef
+    )
+        throws AccessDeniedException
+    {
+        boolean ret;
+        Set<LayerIgnoreReason> ignoreReasons = rscLayerDataRef.getIgnoreReasons();
+        if (ignoreReasons.isEmpty())
+        {
+            ret = false; // do not ignore exception without ignore reason
+        }
+        else
+        {
+            boolean isDeleting = isAbsRscDeleteFlagSet(rscLayerDataRef) ||
+                hasLayerSpecificDeleteFlagSet(rscLayerDataRef);
+            if (isDeleting)
+            {
+                // if we have ignore reasons, still tried to delete the resource and got an exception in the
+                // progress, we want to ignore the exception by default, unless an ignore-reason that wanted
+                // the processing does not want to ignore the exception
+                ret = true;
+                for (LayerIgnoreReason ignoreReason : ignoreReasons)
+                {
+                    if (ignoreReason.isPreventExecutionWhenDeleting() &&
+                        !ignoreReason.isSuppressErrorOnDelete())
+                    {
+                        ret = false;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                ret = false;
+            }
+        }
+        return ret;
     }
 
     private void ensureAllVlmDataDeleted(
@@ -833,12 +942,13 @@ public class DeviceHandlerImpl implements DeviceHandler
     private <RSC extends AbsResource<RSC>> Set<AbsRscLayerObject<RSC>> filterNonIgnored(
         Set<AbsRscLayerObject<RSC>> dataSetRef
     )
+        throws AccessDeniedException
     {
         Set<AbsRscLayerObject<RSC>> ret = new HashSet<>();
         for (AbsRscLayerObject<RSC> data : dataSetRef)
         {
             Set<LayerIgnoreReason> ignoreReasons = data.getIgnoreReasons();
-            boolean processRscData = !data.hasAnyPreventExecutionIgnoreReason();
+            boolean processRscData = shouldRscDataBeProcessed(data, isAbsRscDeleteFlagSet(data));
             errorReporter.logTrace(
                 "%s: %s has reason%s: %s. %s",
                 data.getLayerKind(),
@@ -946,14 +1056,28 @@ public class DeviceHandlerImpl implements DeviceHandler
         boolean processedChildren = false;
         DeviceLayer currentLayer = layerFactory.getDeviceLayer(rscLayerData.getLayerKind());
 
-        if (!rscLayerData.hasAnyPreventExecutionIgnoreReason())
+        if (shouldRscDataBeProcessed(rscLayerData, isAbsRscDeleteFlagSet(rscLayerData)))
         {
             errorReporter.logTrace(
                 "Layer '%s' processing %s",
                 currentLayer.getName(),
                 dataDescrFct.apply(rscLayerData)
             );
-            processedChildren = procFctRef.process(currentLayer, rscLayerData, apiCallRc);
+            try
+            {
+                processedChildren = procFctRef.process(currentLayer, rscLayerData, apiCallRc);
+            }
+            catch (StorageException | ResourceException | VolumeException exc)
+            {
+                if (!shouldExceptionBeIgnored(rscLayerData))
+                {
+                    throw exc;
+                }
+                errorReporter.logTrace(
+                    "Suppressing exception due to ignore reasons. Exception message: %s",
+                    exc.getMessage()
+                );
+            }
         }
         /*
          * Even if the current rscLayerData was skipped due to ignoreReasons, we might need to process one of its

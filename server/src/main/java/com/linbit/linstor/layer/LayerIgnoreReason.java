@@ -8,7 +8,7 @@ public enum LayerIgnoreReason
     // NONE("-", false),
 
     DRBD_DISKLESS("DRBD diskless device"),
-    DRBD_SKIP_DISK("DRBD skip-disk", true, true, true),
+    DRBD_SKIP_DISK("DRBD skip-disk", true, false, true),
 
     EBS_TARGET("EBS target"),
     EBS_MISSING_KEY("EBS no key"),
@@ -95,12 +95,12 @@ public enum LayerIgnoreReason
 
     LayerIgnoreReason(String descrRef)
     {
-        this(descrRef, true, false, false);
+        this(descrRef, true, true, false);
     }
 
     LayerIgnoreReason(String descrRef, boolean preventExecutionRef)
     {
-        this(descrRef, preventExecutionRef, false, false);
+        this(descrRef, preventExecutionRef, preventExecutionRef, false);
     }
 
     LayerIgnoreReason(

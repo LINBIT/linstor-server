@@ -228,4 +228,6 @@ public interface DeviceLayer
             rscLayerObject = rscLayerObjectRef;
         }
     }
+
+    boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef) throws AccessDeniedException;
 }

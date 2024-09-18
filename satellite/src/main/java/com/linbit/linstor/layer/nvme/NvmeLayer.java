@@ -343,4 +343,10 @@ public class NvmeLayer implements DeviceLayer
         }
         return true;
     }
+
+    @Override
+    public boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef)
+    {
+        return false; // no layer specific DELETE flag
+    }
 }
