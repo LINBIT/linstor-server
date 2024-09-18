@@ -241,7 +241,7 @@ public class CtrlRscLayerDataFactory
                 currentData.rscNameSuffix,
                 parentRscObj,
                 childList,
-                currentData.ignoreReason
+                currentData.ignoreReasons
             );
 
             if (result == null)
@@ -565,7 +565,7 @@ public class CtrlRscLayerDataFactory
 
     private void clearIgnoreReasonsRec(AbsRscLayerObject<Resource> rscDataRef) throws DatabaseException
     {
-        rscDataRef.setIgnoreReason(LayerIgnoreReason.NONE);
+        rscDataRef.clearIgnoreReasons();
         for (AbsRscLayerObject<Resource> child : rscDataRef.getChildren())
         {
             clearIgnoreReasonsRec(child);
@@ -731,22 +731,23 @@ public class CtrlRscLayerDataFactory
 
         private final String rscNameSuffix;
         private final List<DeviceLayerKind> skipUntilList = new ArrayList<>();
-        private final @Nullable LayerIgnoreReason ignoreReason;
+        private final Set<LayerIgnoreReason> ignoreReasons;
 
         ChildResourceData(String rscNameSuffixRef)
         {
             rscNameSuffix = rscNameSuffixRef;
             skipUntilList.addAll(ANY_KIND);
-            ignoreReason = null;
+            ignoreReasons = Collections.emptySet();
         }
 
         ChildResourceData(
             String rscNameSuffixRef,
-            @Nullable LayerIgnoreReason ignoreReasonRef,
-            List<DeviceLayerKind> skipUntilListRef
+            @Nullable Set<LayerIgnoreReason> ignoreReasonsRef,
+            @Nullable List<DeviceLayerKind> skipUntilListRef
         )
         {
             rscNameSuffix = rscNameSuffixRef;
+            ignoreReasons = ignoreReasonsRef == null ? Collections.emptySet() : ignoreReasonsRef;
             if (skipUntilListRef == null || skipUntilListRef.isEmpty())
             {
                 skipUntilList.addAll(ANY_KIND);
@@ -755,16 +756,16 @@ public class CtrlRscLayerDataFactory
             {
                 skipUntilList.addAll(skipUntilListRef);
             }
-            ignoreReason = ignoreReasonRef;
         }
 
         ChildResourceData(
             String rscNameSuffixRef,
-            @Nullable LayerIgnoreReason ignoreReasonRef,
-            DeviceLayerKind... skipUntilKindsRef
+            @Nullable Set<LayerIgnoreReason> ignoreReasonsRef,
+            @Nullable DeviceLayerKind... skipUntilKindsRef
         )
         {
             rscNameSuffix = rscNameSuffixRef;
+            ignoreReasons = ignoreReasonsRef == null ? Collections.emptySet() : ignoreReasonsRef;
             if (skipUntilKindsRef == null || skipUntilKindsRef.length == 0)
             {
                 skipUntilList.addAll(ANY_KIND);
@@ -773,7 +774,6 @@ public class CtrlRscLayerDataFactory
             {
                 skipUntilList.addAll(Arrays.asList(skipUntilKindsRef));
             }
-            ignoreReason = ignoreReasonRef;
         }
 
         @Override

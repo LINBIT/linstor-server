@@ -181,7 +181,7 @@ public abstract class AbsRscLayerHelper<
         String rscNameSuffixRef,
         AbsRscLayerObject<Resource> parentObjectRef,
         List<DeviceLayerKind> layerList,
-        @Nullable LayerIgnoreReason ignoreReasonRef
+        Set<LayerIgnoreReason> ignoreReasonsRef
     )
         throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
         ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
@@ -222,7 +222,7 @@ public abstract class AbsRscLayerHelper<
                 parentObjectRef,
                 layerList
             );
-            rscData.setIgnoreReason(ignoreReasonRef);
+            rscData.addAllIgnoreReasons(ignoreReasonsRef);
         }
         else
         {
@@ -297,14 +297,14 @@ public abstract class AbsRscLayerHelper<
     }
 
     /**
-     * Calling this method will call {@link #setIgnoreReasonImpl(AbsRscLayerObject, String)} of the
+     * Calling this method will call {@link #addIgnoreReasonImpl(AbsRscLayerObject, String)} of the
      * layerHelper class matching the rscDataRef's DeviceLayerKind AND upwards until the parent is null.
      *
      * If a layerHelper has set the new ignoreReason, its children are also iterated (recursively)
      *
      * @return true if recalculation changed something that requires an updateSatellites, false otherwise
      */
-    protected boolean setIgnoreReason(
+    protected boolean addIgnoreReason(
         @Nullable AbsRscLayerObject<Resource> rscDataRef,
         LayerIgnoreReason ignoreReasonRef,
         boolean goUpRef,
@@ -313,7 +313,7 @@ public abstract class AbsRscLayerHelper<
     )
         throws DatabaseException
     {
-        return setIgnoreReason(
+        return addIgnoreReason(
             rscDataRef,
             ignoreReasonRef,
             goUpRef,
@@ -322,7 +322,7 @@ public abstract class AbsRscLayerHelper<
         );
     }
 
-    protected boolean setIgnoreReason(
+    protected boolean addIgnoreReason(
         @Nullable AbsRscLayerObject<Resource> rscDataRef,
         LayerIgnoreReason ignoreReasonRef,
         boolean goUpRef,
@@ -354,7 +354,7 @@ public abstract class AbsRscLayerHelper<
                 }
             }
         }
-        return setIgnoreReasonRec(
+        return addIgnoreReasonRec(
             rscDataRef,
             ignoreReasonRef,
             setIgnoreReasonForRscDataPredicateRef,
@@ -362,7 +362,7 @@ public abstract class AbsRscLayerHelper<
         );
     }
 
-    private boolean setIgnoreReasonRec(
+    private boolean addIgnoreReasonRec(
         AbsRscLayerObject<Resource> rscDataRef,
         LayerIgnoreReason ignoreReasonRef,
         Predicate<AbsRscLayerObject<Resource>> setIgnoreReasonForRscDataPredicateRef,
@@ -377,23 +377,23 @@ public abstract class AbsRscLayerHelper<
 
             AbsRscLayerHelper<?, ?, ?, ?> layerHelperByKind = layerDataHelperProvider.get()
                 .getLayerHelperByKind(rscDataRef.getLayerKind());
-            LayerIgnoreReason ignoreReasonPreSet = rscDataRef.getIgnoreReason();
+            Set<LayerIgnoreReason> ignoreReasonPreSet = rscDataRef.getIgnoreReasons();
 
             boolean setIgnoreReasonForCurrent = setIgnoreReasonForRscDataPredicateRef.test(rscDataRef);
             if (setIgnoreReasonForCurrent)
             {
-                changed |= layerHelperByKind.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
+                changed |= layerHelperByKind.addIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
             }
 
             // if goUp was set to false, our parent (if not null) was added to visited set so we will soon continue here
-            changed |= setIgnoreReasonRec(
+            changed |= addIgnoreReasonRec(
                 rscDataRef.getParent(),
                 ignoreReasonRef,
                 setIgnoreReasonForRscDataPredicateRef,
                 visitedRef
             );
 
-            LayerIgnoreReason currentIgnoreReason = rscDataRef.getIgnoreReason();
+            Set<LayerIgnoreReason> currentIgnoreReason = rscDataRef.getIgnoreReasons();
 
             // we only need to process our children if the ignore reason has changed.
             // however, since we are able to skip changing the ignore reason for some rscData, we also have to
@@ -405,7 +405,7 @@ public abstract class AbsRscLayerHelper<
                 // come back here soon
                 for (AbsRscLayerObject<Resource> childRscData : rscDataRef.getChildren())
                 {
-                    changed |= setIgnoreReasonRec(
+                    changed |= addIgnoreReasonRec(
                         childRscData,
                         ignoreReasonRef,
                         setIgnoreReasonForRscDataPredicateRef,
@@ -417,16 +417,16 @@ public abstract class AbsRscLayerHelper<
         return changed;
     }
 
-    protected boolean setIgnoreReasonImpl(
+    protected boolean addIgnoreReasonImpl(
         AbsRscLayerObject<Resource> rscDataRef,
         LayerIgnoreReason ignoreReasonRef
     )
         throws DatabaseException
     {
         boolean reasonChanged = false;
-        if (!Objects.equals(rscDataRef.getIgnoreReason(), ignoreReasonRef))
+        if (!rscDataRef.getIgnoreReasons().contains(ignoreReasonRef))
         {
-            rscDataRef.setIgnoreReason(ignoreReasonRef);
+            rscDataRef.addIgnoreReasons(ignoreReasonRef);
             reasonChanged = true;
         }
         return reasonChanged;

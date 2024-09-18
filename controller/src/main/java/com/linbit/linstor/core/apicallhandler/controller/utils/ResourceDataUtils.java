@@ -100,7 +100,7 @@ public class ResourceDataUtils
             else
             {
                 AbsRscLayerObject<Resource> drbdRscData = drbdRscDataSet.iterator().next();
-                if (!drbdRscData.hasIgnoreReason())
+                if (!drbdRscData.hasAnyPreventExecutionIgnoreReason())
                 {
                     if (rscFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS))
                     {

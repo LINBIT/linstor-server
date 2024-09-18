@@ -74,6 +74,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -639,7 +640,7 @@ public class RscDrbdLayerHelper extends
             ret.add(
                 new ChildResourceData(
                     RscLayerSuffixes.SUFFIX_DATA,
-                    LayerIgnoreReason.DRBD_DISKLESS,
+                    Collections.singleton(LayerIgnoreReason.DRBD_DISKLESS),
                     DeviceLayerKind.STORAGE
                 )
             );
@@ -769,11 +770,11 @@ public class RscDrbdLayerHelper extends
         boolean changed = false;
         if (isDrbdDiskless(rscDataRef))
         {
-            changed = setIgnoreReason(rscDataRef, LayerIgnoreReason.DRBD_DISKLESS, false, true, true);
+            changed = addIgnoreReason(rscDataRef, LayerIgnoreReason.DRBD_DISKLESS, false, true, true);
         }
         if (rscDataRef.isSkipDiskEnabled(apiCtx, stltConf))
         {
-            changed |= setIgnoreReason(rscDataRef, LayerIgnoreReason.DRBD_SKIP_DISK, false, true, true);
+            changed |= addIgnoreReason(rscDataRef, LayerIgnoreReason.DRBD_SKIP_DISK, false, true, true);
         }
         return changed;
     }
@@ -838,7 +839,7 @@ public class RscDrbdLayerHelper extends
     @Override
     protected boolean isExpectedToProvideDevice(DrbdRscData<Resource> drbdRscData)
     {
-        return !drbdRscData.hasIgnoreReason();
+        return !drbdRscData.hasAnyPreventExecutionIgnoreReason();
     }
 
     @Override

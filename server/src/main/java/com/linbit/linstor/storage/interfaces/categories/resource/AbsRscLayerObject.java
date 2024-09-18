@@ -67,13 +67,40 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
 
     boolean getShouldSuspendIo();
 
-    void setIgnoreReason(LayerIgnoreReason ignoreReasonRef) throws DatabaseException;
-
-    LayerIgnoreReason getIgnoreReason();
-
-    default boolean hasIgnoreReason()
+    default boolean addAllIgnoreReasons(Set<LayerIgnoreReason> ignoreReasonsRef) throws DatabaseException
     {
-        return getIgnoreReason().isPreventExecution();
+        boolean changed = false;
+        for (LayerIgnoreReason ignoreReason : ignoreReasonsRef)
+        {
+            changed |= addIgnoreReasons(ignoreReason);
+        }
+        return changed;
+    }
+    boolean addIgnoreReasons(LayerIgnoreReason... ignoreReasonsRef) throws DatabaseException;
+
+    Set<LayerIgnoreReason> getIgnoreReasons();
+
+    void clearIgnoreReasons() throws DatabaseException;
+
+    default boolean hasAnyPreventExecutionIgnoreReason()
+    {
+        return LayerIgnoreReason.hasAnyPreventExecutionSet(getIgnoreReasons());
+    }
+
+    default boolean hasAnyPreventExecutionWhenDeletingReason()
+    {
+        return LayerIgnoreReason.hasAnyPreventExecutionWhenDeletingSet(getIgnoreReasons());
+    }
+
+    default boolean hasAnySuppressErrorOnDeleteSet()
+    {
+        return LayerIgnoreReason.hasAnySuppressErrorOnDeleteSet(getIgnoreReasons());
+    }
+
+    default void resetIgnoreReasonsTo(Set<LayerIgnoreReason> ignoreReasonsRef) throws DatabaseException
+    {
+        clearIgnoreReasons();
+        addAllIgnoreReasons(ignoreReasonsRef);
     }
 
     default AbsRscLayerObject<RSC> getSingleChild()
@@ -98,7 +125,7 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
         return ret;
     }
 
-    default AbsRscLayerObject<RSC> getChildBySuffix(String suffixRef)
+    default @Nullable AbsRscLayerObject<RSC> getChildBySuffix(String suffixRef)
     {
         Iterator<AbsRscLayerObject<RSC>> iterator = getChildren().iterator();
         AbsRscLayerObject<RSC> ret = null;

@@ -26,6 +26,8 @@ import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +47,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected final TransactionSet<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> children;
 
     // not persisted, serialized
-    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, LayerIgnoreReason> ignoreReason;
+    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, Set<LayerIgnoreReason>> ignoreReasons;
 
     // persisted, serialized
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> parent;
@@ -78,7 +80,11 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         children = transObjFactory.createTransactionSet(this, childrenRef, null);
         vlmMap = transObjFactory.createTransactionMap(this, vlmProviderObjectsRef, null);
         suspend = transObjFactory.createTransactionSimpleObject(this, false, dbDriverRef.getSuspendDriver());
-        ignoreReason = transObjFactory.createTransactionSimpleObject(this, LayerIgnoreReason.NONE, null);
+        ignoreReasons = transObjFactory.createTransactionSimpleObject(
+            this,
+            EnumSet.noneOf(LayerIgnoreReason.class),
+            null
+        );
 
         checkFileSystem = true;
 
@@ -88,7 +94,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         transObjs.add(children);
         transObjs.add(vlmMap);
         transObjs.add(suspend);
-        transObjs.add(ignoreReason);
+        transObjs.add(ignoreReasons);
     }
 
     @Override
@@ -237,15 +243,27 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     }
 
     @Override
-    public LayerIgnoreReason getIgnoreReason()
+    public Set<LayerIgnoreReason> getIgnoreReasons()
     {
-        return ignoreReason.get();
+        return ignoreReasons.get();
     }
 
     @Override
-    public void setIgnoreReason(LayerIgnoreReason ignoreReasonRef) throws DatabaseException
+    public boolean addAllIgnoreReasons(Set<LayerIgnoreReason> ignoreReasonsRef)
     {
-        ignoreReason.set(ignoreReasonRef);
+        return ignoreReasons.get().addAll(ignoreReasonsRef);
+    }
+
+    @Override
+    public boolean addIgnoreReasons(LayerIgnoreReason... ignoreReasonsRef) throws DatabaseException
+    {
+        return ignoreReasons.get().addAll(Arrays.asList(ignoreReasonsRef));
+    }
+
+    @Override
+    public void clearIgnoreReasons() throws DatabaseException
+    {
+        ignoreReasons.get().clear();
     }
 
     @Override

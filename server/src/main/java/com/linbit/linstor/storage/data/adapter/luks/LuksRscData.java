@@ -99,7 +99,7 @@ public class LuksRscData<RSC extends AbsResource<RSC>>
             rscSuffix,
             vlmPojos,
             suspend.get(),
-            ignoreReason.get()
+            ignoreReasons.get()
         );
     }
 }

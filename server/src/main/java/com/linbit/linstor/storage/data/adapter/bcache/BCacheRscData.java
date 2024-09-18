@@ -80,7 +80,7 @@ public class BCacheRscData<RSC extends AbsResource<RSC>>
             rscSuffix,
             vlmPojos,
             suspend.get(),
-            ignoreReason.get()
+            ignoreReasons.get()
         );
     }
 

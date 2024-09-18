@@ -60,6 +60,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -1759,7 +1760,10 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             }
             builder.setLayerType(asLayerType(rscLayerPojo.getLayerKind()));
             builder.setSuspend(rscLayerPojo.getSuspend());
-            builder.setIgnoreReason(rscLayerPojo.getIgnoreReason().toString());
+            for (LayerIgnoreReason reason : rscLayerPojo.getIgnoreReasons())
+            {
+                builder.addIgnoreReasons(reason.toString());
+            }
             return builder.build();
         }
 

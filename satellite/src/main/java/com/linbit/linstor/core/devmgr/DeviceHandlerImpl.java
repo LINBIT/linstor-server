@@ -38,6 +38,7 @@ import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.AbortLayerProcessingException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.LayerFactory;
+import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.layer.LayerSizeHelper;
 import com.linbit.linstor.layer.storage.StorageLayer;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
@@ -422,11 +423,13 @@ public class DeviceHandlerImpl implements DeviceHandler
                     );
                     if (firstNonIgnoredRscData == null)
                     {
+                        Set<LayerIgnoreReason> ignoreReasons = rsc.getLayerData(wrkCtx).getIgnoreReasons();
                         errorReporter.logDebug(
                             "Not calling resourceFinished for any layer as the resource '%s' is completely ignored. " +
-                                "Topmost reason: %s",
+                                "Topmost reason%s: %s",
                             rsc.getLayerData(wrkCtx).getSuffixedResourceName(),
-                            rsc.getLayerData(wrkCtx).getIgnoreReason().getDescription()
+                            ignoreReasons.size() > 1 ? "s" : "",
+                            LayerIgnoreReason.getDescriptions(ignoreReasons)
                         );
                     }
                     else
@@ -551,7 +554,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     )
     {
         AbsRscLayerObject<RSC> curRscData = rscData;
-        while (curRscData != null && curRscData.hasIgnoreReason())
+        while (curRscData != null && curRscData.hasAnyPreventExecutionIgnoreReason())
         {
             curRscData = curRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
         }
@@ -834,13 +837,17 @@ public class DeviceHandlerImpl implements DeviceHandler
         Set<AbsRscLayerObject<RSC>> ret = new HashSet<>();
         for (AbsRscLayerObject<RSC> data : dataSetRef)
         {
+            Set<LayerIgnoreReason> ignoreReasons = data.getIgnoreReasons();
+            boolean processRscData = !data.hasAnyPreventExecutionIgnoreReason();
             errorReporter.logTrace(
-                "%s: %s has reason: %s",
+                "%s: %s has reason%s: %s. %s",
                 data.getLayerKind(),
                 data.getSuffixedResourceName(),
-                data.getIgnoreReason().getDescription()
+                ignoreReasons.size() > 1 ? "s" : "",
+                LayerIgnoreReason.getDescriptions(ignoreReasons),
+                processRscData ? "Processing" : "Skipping"
             );
-            if (!data.hasIgnoreReason())
+            if (processRscData)
             {
                 ret.add(data);
             }
@@ -937,16 +944,16 @@ public class DeviceHandlerImpl implements DeviceHandler
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         boolean processedChildren = false;
-        DeviceLayer nextLayer = layerFactory.getDeviceLayer(rscLayerData.getLayerKind());
+        DeviceLayer currentLayer = layerFactory.getDeviceLayer(rscLayerData.getLayerKind());
 
-        if (!rscLayerData.hasIgnoreReason())
+        if (!rscLayerData.hasAnyPreventExecutionIgnoreReason())
         {
             errorReporter.logTrace(
                 "Layer '%s' processing %s",
-                nextLayer.getName(),
+                currentLayer.getName(),
                 dataDescrFct.apply(rscLayerData)
             );
-            processedChildren = procFctRef.process(nextLayer, rscLayerData, apiCallRc);
+            processedChildren = procFctRef.process(currentLayer, rscLayerData, apiCallRc);
         }
         /*
          * Even if the current rscLayerData was skipped due to ignoreReasons, we might need to process one of its
@@ -958,9 +965,9 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             errorReporter.logTrace(
                 "Ignoring layer '%s' for %s because '%s'",
-                nextLayer.getName(),
+                currentLayer.getName(),
                 dataDescrFct.apply(rscLayerData),
-                rscLayerData.getIgnoreReason().getDescription()
+                LayerIgnoreReason.getDescriptions(rscLayerData.getIgnoreReasons())
             );
             for (AbsRscLayerObject<RSC> child : rscLayerData.getChildren())
             {
@@ -975,7 +982,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
         errorReporter.logTrace(
             "Layer '%s' finished processing resource '%s'",
-            nextLayer.getName(),
+            currentLayer.getName(),
             rscLayerData.getSuffixedResourceName()
         );
     }
@@ -1169,7 +1176,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         if (!Platform.isWindows() && rscLayerObjectRef != null)
         {
             DeviceLayer layer = layerFactory.getDeviceLayer(rscLayerObjectRef.getLayerKind());
-            if (!rscLayerObjectRef.hasIgnoreReason() && layer.isDiscGranFeasible(rscLayerObjectRef))
+            if (!rscLayerObjectRef.hasAnyPreventExecutionIgnoreReason() && layer.isDiscGranFeasible(rscLayerObjectRef))
             {
                 for (VlmProviderObject<Resource> vlmData : rscLayerObjectRef.getVlmLayerObjects().values())
                 {

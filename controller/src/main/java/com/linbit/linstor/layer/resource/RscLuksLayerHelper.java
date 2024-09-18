@@ -359,7 +359,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         {
             // we do not need to ignore all layers above LUKS if we want to delete everything (and including) the luks
             // layer
-            changed = setIgnoreReason(rscDataRef, LayerIgnoreReason.LUKS_MISSING_KEY, true, true, false);
+            changed = addIgnoreReason(rscDataRef, LayerIgnoreReason.LUKS_MISSING_KEY, true, true, false);
         }
         return changed;
     }
@@ -367,7 +367,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     @Override
     protected boolean isExpectedToProvideDevice(LuksRscData<Resource> luksRscData)
     {
-        return !luksRscData.hasIgnoreReason();
+        return !luksRscData.hasAnyPreventExecutionIgnoreReason();
     }
 
     @Override

@@ -169,7 +169,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             drbdRscPojo.getFlags()
         );
         drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
-        drbdRscData.setIgnoreReason(drbdRscPojo.getIgnoreReason());
+        drbdRscData.addAllIgnoreReasons(drbdRscPojo.getIgnoreReasons());
 
         if (parent == null)
         {
@@ -207,7 +207,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         }
         updateParent(drbdRscDataRef, parentRef);
         drbdRscDataRef.setShouldSuspendIo(drbdRscPojoRef.getSuspend());
-        drbdRscDataRef.setIgnoreReason(drbdRscPojoRef.getIgnoreReason());
+        drbdRscDataRef.resetIgnoreReasonsTo(drbdRscPojoRef.getIgnoreReasons());
     }
 
     @Override
@@ -310,7 +310,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             luksRscPojoRef.getRscNameSuffix(),
             parentRef
         );
-        luksRscData.setIgnoreReason(luksRscPojoRef.getIgnoreReason());
+        luksRscData.addAllIgnoreReasons(luksRscPojoRef.getIgnoreReasons());
 
         if (parentRef == null)
         {
@@ -332,7 +332,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         throws AccessDeniedException, DatabaseException
     {
         luksRscDataRef.setShouldSuspendIo(luksRscPojoRef.getSuspend());
-        luksRscDataRef.setIgnoreReason(luksRscPojoRef.getIgnoreReason());
+        luksRscDataRef.resetIgnoreReasonsTo(luksRscPojoRef.getIgnoreReasons());
     }
 
     @Override
@@ -394,7 +394,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             rscRef,
             storRscPojoRef.getRscNameSuffix()
         );
-        storRscData.setIgnoreReason(storRscPojoRef.getIgnoreReason());
+        storRscData.addAllIgnoreReasons(storRscPojoRef.getIgnoreReasons());
         if (parentRef == null)
         {
             rscRef.setLayerData(apiCtx, storRscData);
@@ -416,8 +416,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     {
         storRscDataRef.setShouldSuspendIo(storRscPojoRef.getSuspend());
 
-        final boolean hadIgnoreReason = storRscDataRef.hasIgnoreReason();
-        storRscDataRef.setIgnoreReason(storRscPojoRef.getIgnoreReason());
+        final boolean hadIgnoreReason = storRscDataRef.hasAnyPreventExecutionIgnoreReason();
+        storRscDataRef.resetIgnoreReasonsTo(storRscPojoRef.getIgnoreReasons());
         boolean hasLvm = false;
         for (VlmProviderObject<Resource> storVlmData : storRscDataRef.getVlmLayerObjects().values())
         {
@@ -428,7 +428,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
                 break;
             }
         }
-        if (hasLvm && hadIgnoreReason && !storRscDataRef.hasIgnoreReason())
+        if (hasLvm && hadIgnoreReason && !storRscDataRef.hasAnyPreventExecutionIgnoreReason())
         {
             LvmUtils.recacheNext();
         }
@@ -707,7 +707,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             nvmeRscPojoRef.getRscNameSuffix(),
             parentRef
         );
-        nvmeRscData.setIgnoreReason(nvmeRscPojoRef.getIgnoreReason());
+        nvmeRscData.addAllIgnoreReasons(nvmeRscPojoRef.getIgnoreReasons());
 
         if (parentRef == null)
         {
@@ -729,7 +729,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         throws AccessDeniedException, DatabaseException
     {
         nvmeRscDataRef.setShouldSuspendIo(nvmeRscPojoRef.getSuspend());
-        nvmeRscDataRef.setIgnoreReason(nvmeRscPojoRef.getIgnoreReason());
+        nvmeRscDataRef.resetIgnoreReasonsTo(nvmeRscPojoRef.getIgnoreReasons());
     }
 
     @Override
@@ -775,7 +775,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             writecacheRscPojoRef.getRscNameSuffix(),
             parentRef
         );
-        writecacheRscData.setIgnoreReason(writecacheRscPojoRef.getIgnoreReason());
+        writecacheRscData.addAllIgnoreReasons(writecacheRscPojoRef.getIgnoreReasons());
 
         if (parentRef == null)
         {
@@ -796,7 +796,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         throws AccessDeniedException, DatabaseException
     {
         writecacheRscData.setShouldSuspendIo(writecacheRscPojo.getSuspend());
-        writecacheRscData.setIgnoreReason(writecacheRscPojo.getIgnoreReason());
+        writecacheRscData.resetIgnoreReasonsTo(writecacheRscPojo.getIgnoreReasons());
     }
 
     @Override
@@ -864,7 +864,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             cacheRscPojoRef.getRscNameSuffix(),
             parentRef
         );
-        cacheRscData.setIgnoreReason(cacheRscPojoRef.getIgnoreReason());
+        cacheRscData.addAllIgnoreReasons(cacheRscPojoRef.getIgnoreReasons());
 
         if (parentRef == null)
         {
@@ -886,7 +886,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         throws AccessDeniedException, DatabaseException
     {
         cacheRscDataRef.setShouldSuspendIo(cacheRscPojoRef.getSuspend());
-        cacheRscDataRef.setIgnoreReason(cacheRscPojoRef.getIgnoreReason());
+        cacheRscDataRef.resetIgnoreReasonsTo(cacheRscPojoRef.getIgnoreReasons());
     }
 
     @Override
@@ -963,7 +963,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             bcacheRscPojoRef.getRscNameSuffix(),
             parentRef
         );
-        bcacheRscData.setIgnoreReason(bcacheRscPojoRef.getIgnoreReason());
+        bcacheRscData.addAllIgnoreReasons(bcacheRscPojoRef.getIgnoreReasons());
         if (parentRef == null)
         {
             rscRef.setLayerData(apiCtx, bcacheRscData);
@@ -983,7 +983,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         throws AccessDeniedException, DatabaseException
     {
         bCacheRscData.setShouldSuspendIo(bCacheRscPojo.getSuspend());
-        bCacheRscData.setIgnoreReason(bCacheRscPojo.getIgnoreReason());
+        bCacheRscData.resetIgnoreReasonsTo(bCacheRscPojo.getIgnoreReasons());
     }
 
     @Override

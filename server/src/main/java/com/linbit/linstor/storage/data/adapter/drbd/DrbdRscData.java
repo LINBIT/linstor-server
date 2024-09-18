@@ -332,7 +332,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             suspend.get(),
             promotionScore,
             mayPromote,
-            ignoreReason.get()
+            ignoreReasons.get()
         );
     }
 

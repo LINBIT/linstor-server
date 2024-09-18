@@ -279,7 +279,7 @@ class RscBCacheLayerHelper
     protected boolean isExpectedToProvideDevice(BCacheRscData<Resource> bcacheRscData)
         throws AccessDeniedException
     {
-        return !bcacheRscData.hasIgnoreReason();
+        return !bcacheRscData.hasAnyPreventExecutionIgnoreReason();
     }
 
     private StorPool getCacheStorPool(Resource rsc, VolumeDefinition vlmDfn)

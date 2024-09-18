@@ -309,7 +309,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     @Override
     protected boolean isExpectedToProvideDevice(CacheRscData<Resource> cacheRscData) throws AccessDeniedException
     {
-        return !cacheRscData.hasIgnoreReason();
+        return !cacheRscData.hasAnyPreventExecutionIgnoreReason();
     }
 
     private StorPool getSpecialStorPool(

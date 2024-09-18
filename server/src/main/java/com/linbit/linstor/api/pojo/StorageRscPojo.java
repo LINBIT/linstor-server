@@ -25,7 +25,9 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
 
 import javax.annotation.Nullable;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -40,7 +42,7 @@ public class StorageRscPojo implements RscLayerDataApi
     @JsonIgnore
     private final boolean suspend;
     @JsonIgnore
-    private final LayerIgnoreReason ignoreReason;
+    private final Set<LayerIgnoreReason> ignoreReasons;
 
     private final List<VlmLayerDataApi> vlms;
 
@@ -50,7 +52,7 @@ public class StorageRscPojo implements RscLayerDataApi
         String rscNameSuffixRef,
         List<VlmLayerDataApi> vlmsRef,
         boolean suspendRef,
-        LayerIgnoreReason ignoreReasonRef
+        Set<LayerIgnoreReason> ignoreReasonsRef
     )
     {
         id = idRef;
@@ -58,7 +60,7 @@ public class StorageRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = suspendRef;
-        ignoreReason = ignoreReasonRef;
+        ignoreReasons = Collections.unmodifiableSet(ignoreReasonsRef);
     }
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -73,7 +75,7 @@ public class StorageRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = false;
-        ignoreReason = null;
+        ignoreReasons = null;
     }
 
     @Override
@@ -107,9 +109,9 @@ public class StorageRscPojo implements RscLayerDataApi
     }
 
     @Override
-    public LayerIgnoreReason getIgnoreReason()
+    public Set<LayerIgnoreReason> getIgnoreReasons()
     {
-        return ignoreReason;
+        return ignoreReasons;
     }
 
     @Override

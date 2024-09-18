@@ -28,5 +28,5 @@ message RscLayerData
     optional BCacheRsc          bcache = 14;
 
     required bool               suspend = 11;
-    optional string             ignore_reason = 15;
+    repeated string             ignore_reasons = 15;
 }

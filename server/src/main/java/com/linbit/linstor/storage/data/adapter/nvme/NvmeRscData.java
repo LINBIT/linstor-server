@@ -158,7 +158,7 @@ public class NvmeRscData<RSC extends AbsResource<RSC>>
             getResourceNameSuffix(),
             vlmPojos,
             suspend.get(),
-            ignoreReason.get()
+            ignoreReasons.get()
         );
     }
 }

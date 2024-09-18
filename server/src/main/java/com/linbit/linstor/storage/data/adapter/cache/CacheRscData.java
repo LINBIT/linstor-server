@@ -80,7 +80,7 @@ public class CacheRscData<RSC extends AbsResource<RSC>>
             rscSuffix,
             vlmPojos,
             suspend.get(),
-            ignoreReason.get()
+            ignoreReasons.get()
         );
     }
 

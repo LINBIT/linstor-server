@@ -59,6 +59,7 @@ import com.linbit.utils.Pair;
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -96,7 +97,7 @@ public class ProtoLayerUtils
                             protoRscData.getSuspend(),
                             null,
                             null,
-                            LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
+                            parseEnumSet(LayerIgnoreReason.class, protoRscData.getIgnoreReasonsList())
                         );
 
                         for (DrbdVlm protoDrbdVlm : protoDrbdRsc.getDrbdVlmsList())
@@ -122,7 +123,7 @@ public class ProtoLayerUtils
                             protoRscData.getRscNameSuffix(),
                             new ArrayList<>(),
                             protoRscData.getSuspend(),
-                            LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
+                            parseEnumSet(LayerIgnoreReason.class, protoRscData.getIgnoreReasonsList())
                         );
                         for (LuksVlm protoLuksVlm : protoRscData.getLuks().getLuksVlmsList())
                         {
@@ -147,7 +148,7 @@ public class ProtoLayerUtils
                             protoRscData.getRscNameSuffix(),
                             new ArrayList<>(),
                             protoRscData.getSuspend(),
-                            LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
+                            parseEnumSet(LayerIgnoreReason.class, protoRscData.getIgnoreReasonsList())
                         );
                         for (StorageVlm protoVlm : protoRscData.getStorage().getStorageVlmsList())
                         {
@@ -178,7 +179,7 @@ public class ProtoLayerUtils
                         protoRscData.getRscNameSuffix(),
                         new ArrayList<>(),
                         protoRscData.getSuspend(),
-                        LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
+                        parseEnumSet(LayerIgnoreReason.class, protoRscData.getIgnoreReasonsList())
                     );
                     for (NvmeVlm protoVlm : protoRscData.getNvme().getNvmeVlmsList())
                     {
@@ -203,7 +204,7 @@ public class ProtoLayerUtils
                         protoRscData.getRscNameSuffix(),
                         new ArrayList<>(),
                         protoRscData.getSuspend(),
-                        LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
+                        parseEnumSet(LayerIgnoreReason.class, protoRscData.getIgnoreReasonsList())
                     );
                     List<WritecacheVlmPojo> volumeList = writecacheRscPojo.getVolumeList();
                     for (WritecacheVlm protoVlm : protoRscData.getWritecache().getVlmsList())
@@ -228,7 +229,7 @@ public class ProtoLayerUtils
                         protoRscData.getRscNameSuffix(),
                         new ArrayList<>(),
                         protoRscData.getSuspend(),
-                        LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
+                        parseEnumSet(LayerIgnoreReason.class, protoRscData.getIgnoreReasonsList())
                     );
                     List<CacheVlmPojo> volumeList = cacheRscPojo.getVolumeList();
                     for (CacheVlm protoVlm : protoRscData.getCache().getVlmsList())
@@ -253,7 +254,7 @@ public class ProtoLayerUtils
                     protoRscData.getRscNameSuffix(),
                     new ArrayList<>(),
                     protoRscData.getSuspend(),
-                    LayerIgnoreReason.valueOf(protoRscData.getIgnoreReason())
+                    parseEnumSet(LayerIgnoreReason.class, protoRscData.getIgnoreReasonsList())
                 );
                 List<BCacheVlmPojo> volumeList = bcacheRscPojo.getVolumeList();
                 for (BCacheVlm protoVlm : protoRscData.getBcache().getVlmsList())
@@ -806,6 +807,16 @@ public class ProtoLayerUtils
             uuid,
             false
         );
+    }
+
+    private static <E extends Enum<E>> EnumSet<E> parseEnumSet(Class<E> enumClazz, List<String> strList)
+    {
+        EnumSet<E> ret = EnumSet.noneOf(enumClazz);
+        for (String str : strList)
+        {
+            ret.add(Enum.valueOf(enumClazz, str));
+        }
+        return ret;
     }
 
     private ProtoLayerUtils()

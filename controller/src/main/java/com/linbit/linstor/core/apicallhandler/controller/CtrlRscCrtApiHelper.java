@@ -1307,7 +1307,7 @@ public class CtrlRscCrtApiHelper
             );
             for (AbsRscLayerObject<Resource> drbdData : drbdLayerDataSet)
             {
-                if (!drbdData.hasIgnoreReason())
+                if (!drbdData.hasAnyPreventExecutionIgnoreReason())
                 {
                     ret = true;
                 }

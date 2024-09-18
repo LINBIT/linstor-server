@@ -293,12 +293,12 @@ class RscNvmeLayerHelper
         if (rscDataRef.getAbsResource().isNvmeInitiator(apiCtx))
         {
             // we are initiator, ignore everything below us
-            changed = setIgnoreReason(rscDataRef, LayerIgnoreReason.NVME_INITIATOR, false, true, true);
+            changed = addIgnoreReason(rscDataRef, LayerIgnoreReason.NVME_INITIATOR, false, true, true);
         }
         else
         {
             // we are target, so tell all of our ancestors to ignoreNonDataPaths
-            changed = setIgnoreReason(rscDataRef, LayerIgnoreReason.NVME_TARGET, true, false, true);
+            changed = addIgnoreReason(rscDataRef, LayerIgnoreReason.NVME_TARGET, true, false, true);
         }
         return changed;
     }
@@ -307,7 +307,7 @@ class RscNvmeLayerHelper
     protected boolean isExpectedToProvideDevice(NvmeRscData<Resource> nvmeRscData) throws AccessDeniedException
     {
         return nvmeRscData.getAbsResource().isNvmeInitiator(apiCtx) &&
-            !nvmeRscData.hasIgnoreReason();
+            !nvmeRscData.hasAnyPreventExecutionIgnoreReason();
     }
 
     @Override

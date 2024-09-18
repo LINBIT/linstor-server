@@ -42,7 +42,7 @@ public class ResourceUtils
             {
                 for (AbsRscLayerObject<Resource> rscData : drbdRscDataSet)
                 {
-                    if (rscData.hasIgnoreReason())
+                    if (rscData.hasAnyPreventExecutionIgnoreReason())
                     {
                         match = false;
                         break;

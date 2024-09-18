@@ -12,6 +12,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -57,7 +58,7 @@ public interface RscLayerDataApi
     boolean getSuspend();
 
     @JsonIgnore
-    LayerIgnoreReason getIgnoreReason();
+    Set<LayerIgnoreReason> getIgnoreReasons();
 
     <T extends VlmLayerDataApi> List<T> getVolumeList();
 

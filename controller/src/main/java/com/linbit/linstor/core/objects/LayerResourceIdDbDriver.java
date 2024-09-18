@@ -437,13 +437,19 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
         }
 
         @Override
-        public void setIgnoreReason(@Nullable LayerIgnoreReason ignoreReasonRef) throws DatabaseException
+        public boolean addIgnoreReasons(LayerIgnoreReason... ignoreReasonsRef) throws DatabaseException
         {
             throw new ImplementationError(IMPL_ERR_TEXT);
         }
 
         @Override
-        public LayerIgnoreReason getIgnoreReason()
+        public Set<LayerIgnoreReason> getIgnoreReasons()
+        {
+            throw new ImplementationError(IMPL_ERR_TEXT);
+        }
+
+        @Override
+        public void clearIgnoreReasons() throws DatabaseException
         {
             throw new ImplementationError(IMPL_ERR_TEXT);
         }

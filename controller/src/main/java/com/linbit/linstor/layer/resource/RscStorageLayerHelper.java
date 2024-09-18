@@ -640,7 +640,7 @@ public class RscStorageLayerHelper extends
             {
                 CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
                 ctrlRscLayerDataFactory.getLayerHelperByKind(DeviceLayerKind.STORAGE)
-                    .setIgnoreReason(rscData, LayerIgnoreReason.SED_MISSING_KEY, true, false, false);
+                    .addIgnoreReason(rscData, LayerIgnoreReason.SED_MISSING_KEY, true, false, false);
                 ret = true;
                 break;
             }
@@ -685,7 +685,7 @@ public class RscStorageLayerHelper extends
 
             if (reason != null) // IGNORE_REASON_NONE == null
             {
-                changed |= setIgnoreReason(rscDataRef, reason, true, false, true);
+                changed |= addIgnoreReason(rscDataRef, reason, true, false, true);
             }
         }
 
@@ -693,14 +693,14 @@ public class RscStorageLayerHelper extends
         if (rscFlags.isSet(apiCtx, Resource.Flags.INACTIVE) && rscFlags.isUnset(apiCtx, Resource.Flags.INACTIVATING))
         {
             // do not propagate the reason while we are still inactivating the resource.
-            changed |= setIgnoreReason(rscDataRef, LayerIgnoreReason.RSC_INACTIVE, true, false, true);
+            changed |= addIgnoreReason(rscDataRef, LayerIgnoreReason.RSC_INACTIVE, true, false, true);
         }
         if (rsc.streamVolumes().anyMatch(
             vlm -> isAnyVolumeFlagSetPrivileged(vlm, Volume.Flags.CLONING, Volume.Flags.CLONING_START) &&
                 !areAllVolumeFlagsSetPrivileged(vlm, Volume.Flags.CLONING_FINISHED)
         ))
         {
-            changed |= setIgnoreReason(
+            changed |= addIgnoreReason(
                 rscDataRef,
                 LayerIgnoreReason.RSC_CLONING,
                 true,
@@ -723,7 +723,7 @@ public class RscStorageLayerHelper extends
                 if (devProviderKind.equals(DeviceProviderKind.EBS_INIT) ||
                     devProviderKind.equals(DeviceProviderKind.EBS_TARGET))
                 {
-                    changed |= setIgnoreReason(rscDataRef, LayerIgnoreReason.EBS_MISSING_KEY, false, false, false);
+                    changed |= addIgnoreReason(rscDataRef, LayerIgnoreReason.EBS_MISSING_KEY, false, false, false);
                     break;
                 }
             }
@@ -760,7 +760,7 @@ public class RscStorageLayerHelper extends
     @Override
     protected boolean isExpectedToProvideDevice(StorageRscData<Resource> storageRscData) throws AccessDeniedException
     {
-        return !storageRscData.hasIgnoreReason();
+        return !storageRscData.hasAnyPreventExecutionIgnoreReason();
     }
 
     @Override

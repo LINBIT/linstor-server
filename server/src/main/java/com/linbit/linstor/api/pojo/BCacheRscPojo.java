@@ -9,7 +9,9 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.annotation.Nullable;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -25,7 +27,7 @@ public class BCacheRscPojo implements RscLayerDataApi
     @JsonIgnore
     private final boolean suspend;
     @JsonIgnore
-    private final LayerIgnoreReason ignoreReason;
+    private final Set<LayerIgnoreReason> ignoreReasons;
 
     private final List<BCacheVlmPojo> vlms;
 
@@ -35,7 +37,7 @@ public class BCacheRscPojo implements RscLayerDataApi
         String rscNameSuffixRef,
         List<BCacheVlmPojo> vlmsRef,
         boolean suspendRef,
-        LayerIgnoreReason ignoreReasonRef
+        Set<LayerIgnoreReason> ignoreReasonRef
     )
     {
         id = idRef;
@@ -43,7 +45,7 @@ public class BCacheRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = suspendRef;
-        ignoreReason = ignoreReasonRef;
+        ignoreReasons = Collections.unmodifiableSet(ignoreReasonRef);
     }
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -58,7 +60,7 @@ public class BCacheRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = false;
-        ignoreReason = null;
+        ignoreReasons = null;
     }
 
     @Override
@@ -92,9 +94,9 @@ public class BCacheRscPojo implements RscLayerDataApi
     }
 
     @Override
-    public LayerIgnoreReason getIgnoreReason()
+    public Set<LayerIgnoreReason> getIgnoreReasons()
     {
-        return ignoreReason;
+        return ignoreReasons;
     }
 
     @SuppressWarnings("unchecked")

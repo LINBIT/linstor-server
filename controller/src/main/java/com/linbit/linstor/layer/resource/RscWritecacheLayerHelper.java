@@ -279,7 +279,7 @@ class RscWritecacheLayerHelper
     protected boolean isExpectedToProvideDevice(WritecacheRscData<Resource> writecacheRscData)
         throws AccessDeniedException
     {
-        return !writecacheRscData.hasIgnoreReason();
+        return !writecacheRscData.hasAnyPreventExecutionIgnoreReason();
     }
 
     private StorPool getCacheStorPool(Volume vlm) throws InvalidKeyException, AccessDeniedException
