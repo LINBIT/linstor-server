@@ -100,9 +100,38 @@ public class BackgroundRunner
             }
             else
             {
-                queue(runCfgRef);
+                /*
+                 * we MUST NOT add runCfg into the queue at this point.
+                 *
+                 * if we add runCfg into the queue here, runCfgRef.delayFluxSink is still only initialized within the
+                 * lambda of Flux.create(...). This will happen sometimes later, but we will be already outside of the
+                 * synchronized block. There is a quite small time-windows, where runCfgRef.delayFluxSink is still null
+                 * (i.e. not initialized because the flux is not being executed yet) but another thread/flux might just
+                 * finish with another background task, calling the "finished" method of this class. In that method we
+                 * take the next element from the queue (which as a reminder still has not initialized its
+                 * runCfg.delayFluxSink) and calls runCfg.runDeferredFlux(), which in turn tries to access
+                 * runCfg.delayFluxSink, causing a NullPointerException.
+                 *
+                 * To avoid this, we add the runCfg only to the queue once our fluxSink is initialized and we still have
+                 * to wait/queue.
+                 */
 
-                Flux<Boolean> finishedFlux = Flux.create(fluxSink -> runCfgRef.delayFluxSink = fluxSink);
+                Flux<Boolean> finishedFlux = Flux.create(fluxSink ->
+                {
+                    synchronized (runQueuesByNode)
+                    {
+                        runCfgRef.delayFluxSink = fluxSink;
+                        if (canRun(runCfgRef, busyNodes, true))
+                        {
+                            runCfgRef.flux = runCfgRef.fluxSupplier.get();
+                            runCfgRef.runDeferredFlux();
+                        }
+                        else
+                        {
+                            queue(runCfgRef);
+                        }
+                    }
+                });
 
                 ret = finishedFlux.concatMap(keepGoing ->
                 {
