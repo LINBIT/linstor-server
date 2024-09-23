@@ -400,6 +400,17 @@ public class StltSosReportApiCallHandler
                 TimeUtils.JOURNALCTL_DF.format(sinceRef)
             )
         );
+        reportTypes.add(
+            new SosCommandType(
+                "journalctl-kernel-log",
+                now,
+                "journalctl",
+                "--dmesg", // "-k": show only kernel messages
+                "-b", "all", // show messages from a specific boot, or "all" as in this case
+                "--since",
+                TimeUtils.JOURNALCTL_DF.format(sinceRef)
+            )
+        );
         reportTypes.add(new SosCommandType("ip-a", now, "ip", "a"));
         reportTypes.add(new SosCommandType("drbdadm-version", now, "drbdadm", "--version"));
         reportTypes.add(new SosCommandType("log-syslog", now, "cat", "/var/log/syslog"));

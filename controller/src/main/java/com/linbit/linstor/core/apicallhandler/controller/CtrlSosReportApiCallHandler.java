@@ -827,6 +827,13 @@ public class CtrlSosReportApiCallHandler
                 }
             ),
             new CommandHelper(
+                sosDir.resolve("journalctl-kernel-log"),
+                new String[]
+                    {
+                        "journalctl", "--dmesg", "-b", "all", "--since", TimeUtils.JOURNALCTL_DF.format(since)
+                    }
+                ),
+            new CommandHelper(
                 sosDir.resolve("ip-a"),
                 new String[]
                 {
