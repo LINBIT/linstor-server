@@ -632,9 +632,13 @@ public class CtrlRscGrpApiCallHandler
 
             if (notifyStlts)
             {
+                // TODO: instead of this loop, we should introduce an updateSatellites(rscGrp) method
+                // since there is no need to update every single resource(-definition) when we know that only the RG
+                // changed.
+                List<Flux<ApiCallRc>> updateStltFluxList = new ArrayList<>();
                 for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx))
                 {
-                    updateStlts = updateStlts.concatWith(
+                    updateStltFluxList.add(
                         ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                             .transform(
                                 updateResponses -> CtrlResponseUtils.combineResponses(
@@ -646,6 +650,7 @@ public class CtrlRscGrpApiCallHandler
                             )
                     );
                 }
+                updateStlts = updateStlts.concatWith(Flux.merge(updateStltFluxList));
             }
         }
         catch (Exception | ImplementationError exc)
