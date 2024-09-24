@@ -147,8 +147,6 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
-    private final CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelper;
-    private final CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelper;
     private final CtrlRscAutoHelper ctrlRscAutoHelper;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final ResourceControllerFactory resourceControllerFactory;
@@ -184,8 +182,6 @@ public class CtrlRscDfnApiCallHandler
         CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef,
         CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
-        CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelperRef,
-        CtrlRscAutoQuorumHelper ctrRscAutoQuorumHelperRef,
         CtrlRscAutoHelper ctrlRscAutoHelperRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         ResourceControllerFactory resourceControllerFactoryRef,
@@ -221,8 +217,6 @@ public class CtrlRscDfnApiCallHandler
         ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
-        ctrlRscAutoTiebreakerHelper = ctrlRscAutoTiebreakerHelperRef;
-        ctrlRscAutoQuorumHelper = ctrRscAutoQuorumHelperRef;
         ctrlRscAutoHelper = ctrlRscAutoHelperRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         resourceControllerFactory = resourceControllerFactoryRef;
@@ -518,14 +512,17 @@ public class CtrlRscDfnApiCallHandler
                 @Nullable String exactSizeValue = overrideProps.get(
                     ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE
                 );
-                if (exactSizeValue != null && Boolean.parseBoolean(exactSizeValue) && rscDfn.getResourceCount() > 0)
+                if (Boolean.parseBoolean(exactSizeValue) && rscDfn.getResourceCount() > 0)
                 {
+                    String msg = String.format(
+                        "The property '%s/%s' cannot be set to True while there are currently deployed resources(%d).",
+                        ApiConsts.NAMESPC_DRBD_OPTIONS,
+                        ApiConsts.KEY_DRBD_EXACT_SIZE,
+                        rscDfn.getResourceCount());
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_INVLD_PROP,
-                            "The property '" + ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE +
-                                "' must not be set to True when resources are deployed in the given " +
-                                "resource-definition.",
+                            msg,
                             true
                         )
                     );
