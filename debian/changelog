@@ -1,3 +1,38 @@
+linstor-server (1.29.1-1) experimental; urgency=medium
+
+  [ Moritz Wanzenböck ]
+  * systemd: allow satellite to handle shutdown
+  * ci: also build master for RHEL 9
+
+  [ Rene Peinthor ]
+  * storage-pool-list: fix cleanup of error-reports
+  * sedutils: resolve real path now before using with sedutil-cli
+  * physical-storage: SED-setup used same password for all drives
+  * confbuilder: rd/rg/c props now included in connection-net section
+  * rscdfn: improve ExactSize property error message
+
+  [ Johanna Kucera ]
+  * SQL: prevent SQL-Injection
+  * Refactor date-formatting to be thread-safe
+
+  [ Gabor Hernadi ]
+  * Resize: Allow LV deletion during a failing resize
+  * Lvm,Cache: Add time-based cache for lvs,vgs commands
+  * SkipDisk: Update ignore reason and satellites after detection
+  * PropsChangedListener: Add SkipDisk
+  * Layer: Changed ignore reasons from string to enum
+  * LayerIgnoreReasons: Changed nullable String to Set
+  * DevHandler: Implement ignoreReason's preventOnDelete
+  * RG,modify: eagerly subscribe to flux-list
+  * BackgroundRunner: Fix Flux-race
+  * SOS: Additionally gather journalctl -k -b all --since
+  * GenCrd: Use ZonedDateTime for RFC3339
+
+  [ Michael Troutman ]
+  * remove Slack channel badge from README
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 24 Sep 2024 13:47:17 +0000
+
 linstor-server (1.29.0-1) experimental; urgency=medium
 
   [ Moritz Wanzenböck ]
