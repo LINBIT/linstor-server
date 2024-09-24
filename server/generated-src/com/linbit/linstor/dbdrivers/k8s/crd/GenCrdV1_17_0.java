@@ -6846,7 +6846,7 @@ public class GenCrdV1_17_0
 
             formattedPrimaryKey = String.format(
                 SpaceHistorySpec.PK_FORMAT,
-                RFC3339.format(TimeUtils.millisToDate(entryDate.getTime()))
+                RFC3339.format(TimeUtils.toLocalZonedDateTime(entryDate.getTime()))
             );
         }
 
@@ -7110,7 +7110,7 @@ public class GenCrdV1_17_0
 
             formattedPrimaryKey = String.format(
                 TrackingDateSpec.PK_FORMAT,
-                RFC3339.format(TimeUtils.millisToDate(entryDate.getTime()))
+                RFC3339.format(TimeUtils.toLocalZonedDateTime(entryDate.getTime()))
             );
         }
 

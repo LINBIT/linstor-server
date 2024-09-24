@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed stuck deletion of resource during failed / failing resize
 - Fixed failing rsc-dfn-update-chain when updating rsc-grp
 - Fixed rare race-condition during snapshot create
+- Fixed dateformatting with offsets
 
 ## [1.29.0] - 2024-07-31
 

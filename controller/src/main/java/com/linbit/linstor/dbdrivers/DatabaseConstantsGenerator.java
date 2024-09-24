@@ -1238,7 +1238,7 @@ public final class DatabaseConstantsGenerator
                                 if (clm.sqlType.equals("DATE"))
                                 {
                                     appendLine(
-                                        "RFC3339.format(TimeUtils.millisToDate(%s.getTime())),",
+                                        "RFC3339.format(TimeUtils.toLocalZonedDateTime(%s.getTime())),",
                                         clmName
                                     );
                                 }
