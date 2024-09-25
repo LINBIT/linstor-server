@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- LVM cache is now time-based, configurable by new property StorDriver/SizesCacheTime
 - sedutils-cli calls will now resolve given paths before using them (as sedutils-cli only allows /dev/nvme*)
 - resource-definition properties are now included in drbd connection net section
 - Attempt to delete LV during DELETE flag even if SkipDisk is enabled (suppressing error reports)
