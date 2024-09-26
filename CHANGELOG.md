@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed usage of FileSystemWatch to properly trigger when devices appear
 - Do not update disc granularity while resource is cloning
 - Drbd-layer should not try to adjust resource while still cloning
+- Fixed possible "access to deleted resource" in case of an issue during rsc-creation + manual delete
 
 ## [1.29.1] - 2024-09-24
 

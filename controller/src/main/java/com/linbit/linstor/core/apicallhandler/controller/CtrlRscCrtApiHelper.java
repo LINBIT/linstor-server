@@ -895,17 +895,24 @@ public class CtrlRscCrtApiHelper
             AccessContext peerCtx = peerAccCtx.get();
             for (Resource rsc : deployedResourcesRef)
             {
-                if (rscDfn == null)
+                // rsc might have been deleted.
+                // probably rsc-creation had a problem, resource got deleted again but the retryResource task still
+                // tried to continue. if it somehow managed (race-condition?) we might end up here...
+                // just ignore the resource and noop if needed.
+                if (!rsc.isDeleted())
                 {
-                    rscDfn = rsc.getResourceDefinition();
+                    if (rscDfn == null)
+                    {
+                        rscDfn = rsc.getResourceDefinition();
+                    }
+                    List<AbsRscLayerObject<Resource>> drbdRscList = LayerUtils
+                        .getChildLayerDataByKind(rsc.getLayerData(peerCtx), DeviceLayerKind.DRBD);
+                    for (AbsRscLayerObject<Resource> drbdRsc : drbdRscList)
+                    {
+                        ((DrbdRscData<Resource>) drbdRsc).getFlags().enableFlags(peerCtx, DrbdRscFlags.INITIALIZED);
+                    }
+                    allocationGranularityHelper.updateIfNeeded(rscDfn, false);
                 }
-                List<AbsRscLayerObject<Resource>> drbdRscList = LayerUtils
-                    .getChildLayerDataByKind(rsc.getLayerData(peerCtx), DeviceLayerKind.DRBD);
-                for (AbsRscLayerObject<Resource> drbdRsc : drbdRscList)
-                {
-                    ((DrbdRscData<Resource>) drbdRsc).getFlags().enableFlags(peerCtx, DrbdRscFlags.INITIALIZED);
-                }
-                allocationGranularityHelper.updateIfNeeded(rscDfn, false);
             }
             ctrlTransactionHelper.commit();
         }
