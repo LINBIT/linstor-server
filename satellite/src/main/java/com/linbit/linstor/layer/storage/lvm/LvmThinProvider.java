@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.lvm;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
@@ -69,7 +70,8 @@ public class LvmThinProvider extends LvmProvider
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef,
+        FileSystemWatch fileSystemWatchRef
     )
     {
         super(
@@ -85,7 +87,8 @@ public class LvmThinProvider extends LvmProvider
             snapShipMrgRef,
             extToolsCheckerRef,
             cloneServiceRef,
-            backupShipMgrRef
+            backupShipMgrRef,
+            fileSystemWatchRef
         );
     }
 

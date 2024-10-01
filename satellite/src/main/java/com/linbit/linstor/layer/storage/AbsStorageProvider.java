@@ -6,7 +6,6 @@ import com.linbit.Platform;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -68,7 +67,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -127,7 +125,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         SnapshotShippingService snapShipMgrRef,
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef,
+        FileSystemWatch fsWatchRef
     )
     {
         errorReporter = errorReporterRef;
@@ -143,17 +142,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         extToolsChecker = extToolsCheckerRef;
         cloneService = cloneServiceRef;
         backupShipMapper = backupShipMgrRef;
+        fsWatch = fsWatchRef;
 
         subclassMaintainsInfoListCache = false;
         infoListCache = new HashMap<>();
-        try
-        {
-            fsWatch = new FileSystemWatch(errorReporter);
-        }
-        catch (IOException exc)
-        {
-            throw new LinStorRuntimeException("Unable to create FileSystemWatch", exc);
-        }
     }
 
     @Override

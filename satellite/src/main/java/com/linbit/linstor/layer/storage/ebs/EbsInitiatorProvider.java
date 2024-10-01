@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.ebs;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
@@ -129,7 +130,8 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         BackupShippingMgr backupShipMgrRef,
         RemoteMap remoteMapRef,
         DecryptionHelper decHelperRef,
-        StltSecurityObjects stltSecObjRef
+        StltSecurityObjects stltSecObjRef,
+        FileSystemWatch fileSystemWatchRef
     )
         throws StorageException
     {
@@ -149,7 +151,8 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
             backupShipMgrRef,
             remoteMapRef,
             decHelperRef,
-            stltSecObjRef
+            stltSecObjRef,
+            fileSystemWatchRef
         );
 
         awsRestClient = new AwsRestClient(storDriverAccCtx, errorReporter);

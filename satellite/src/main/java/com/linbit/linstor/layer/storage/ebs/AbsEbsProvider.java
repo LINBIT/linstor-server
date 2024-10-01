@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.api.ApiConsts;
@@ -126,7 +127,8 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
         BackupShippingMgr backupShipMgrRef,
         RemoteMap remoteMapRef,
         DecryptionHelper decHelperRef,
-        StltSecurityObjects stltSecObjRef
+        StltSecurityObjects stltSecObjRef,
+        FileSystemWatch fileSystemWatchRef
     )
     {
         super(
@@ -142,7 +144,8 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
             snapShipMgrRef,
             extToolsCheckerRef,
             cloneServiceRef,
-            backupShipMgrRef
+            backupShipMgrRef,
+            fileSystemWatchRef
         );
         remoteMap = remoteMapRef;
         decHelper = decHelperRef;

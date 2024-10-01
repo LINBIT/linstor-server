@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed usage of FileSystemWatch to properly trigger when devices appear
+
 ## [1.29.1] - 2024-09-24
 
 ### Changed

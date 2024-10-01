@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
@@ -87,7 +88,8 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
         StltExtToolsChecker extToolsCheckerRef,
         SpdkCommands<T> spdkCommandsRef,
         CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef,
+        FileSystemWatch fileSystemWatchRef
     )
     {
         super(
@@ -103,7 +105,8 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
             snapShipMrgRef,
             extToolsCheckerRef,
             cloneServiceRef,
-            backupShipMgrRef
+            backupShipMgrRef,
+            fileSystemWatchRef
         );
         spdkCommands = spdkCommandsRef;
         isDevPathExpectedToBeNull = true;

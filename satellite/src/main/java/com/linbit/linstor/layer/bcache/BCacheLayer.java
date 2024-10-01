@@ -3,7 +3,6 @@ package com.linbit.linstor.layer.bcache;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -42,7 +41,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -79,7 +77,8 @@ public class BCacheLayer implements DeviceLayer
         Provider<DeviceHandler> resourceProcessorProviderRef,
         StltConfigAccessor stltConfAccessorRef,
         WipeHandler wipeHandlerRef,
-        SysFsHandler sysFsHandlerRef
+        SysFsHandler sysFsHandlerRef,
+        FileSystemWatch fileSystemWatchRef
     )
     {
         errorReporter = errorReporterRef;
@@ -89,15 +88,7 @@ public class BCacheLayer implements DeviceLayer
         stltConfAccessor = stltConfAccessorRef;
         wipeHandler = wipeHandlerRef;
         sysFsHandler = sysFsHandlerRef;
-
-        try
-        {
-            fsWatch = new FileSystemWatch(errorReporter);
-        }
-        catch (IOException exc)
-        {
-            throw new LinStorRuntimeException("Unable to create FileSystemWatch", exc);
-        }
+        fsWatch = fileSystemWatchRef;
     }
 
     @Override

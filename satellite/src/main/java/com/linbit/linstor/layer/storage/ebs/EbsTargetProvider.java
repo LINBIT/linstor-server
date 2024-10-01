@@ -6,6 +6,7 @@ import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
@@ -108,7 +109,8 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         RemoteMap remoteMapRef,
         DecryptionHelper decHelperRef,
         StltSecurityObjects stltSecObjRef,
-        ResourceDefinitionMap rscDfnMapRef
+        ResourceDefinitionMap rscDfnMapRef,
+        FileSystemWatch fileSystemWatchRef
     )
     {
         super(
@@ -127,7 +129,8 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
             backupShipMgrRef,
             remoteMapRef,
             decHelperRef,
-            stltSecObjRef
+            stltSecObjRef,
+            fileSystemWatchRef
         );
         rscDfnMap = rscDfnMapRef;
 

@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.exos;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -132,7 +133,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef,
+        FileSystemWatch fileSystemWatchRef
     )
     {
         super(
@@ -148,7 +150,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             snapShipMrgRef,
             extToolsCheckerRef,
             cloneServiceRef,
-            backupShipMgrRef
+            backupShipMgrRef,
+            fileSystemWatchRef
         );
         restClientMap = new HashMap<>();
 

@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.PlatformStlt;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
@@ -102,7 +103,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
         BackupShippingMgr backupShipMgrRef,
-        PlatformStlt platformStltRef
+        PlatformStlt platformStltRef,
+        FileSystemWatch fileSystemWatchRef
     )
     {
         super(
@@ -118,7 +120,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             snapShipMrgRef,
             extToolsCheckerRef,
             cloneServiceRef,
-            backupShipMgrRef
+            backupShipMgrRef,
+            fileSystemWatchRef
         );
         platformStlt = platformStltRef;
     }
@@ -136,7 +139,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
         BackupShippingMgr backupShipMgrRef,
-        PlatformStlt platformStltRef
+        PlatformStlt platformStltRef,
+        FileSystemWatch fileSystemWatchRef
     )
     {
         super(
@@ -152,7 +156,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             snapShipMrgRef,
             extToolsCheckerRef,
             cloneServiceRef,
-            backupShipMgrRef
+            backupShipMgrRef,
+            fileSystemWatchRef
         );
         platformStlt = platformStltRef;
     }

@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.file;
 import com.linbit.PlatformStlt;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
@@ -51,7 +52,8 @@ public class FileThinProvider extends FileProvider
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
         BackupShippingMgr backupShipMgrRef,
-        PlatformStlt platformStltRef
+        PlatformStlt platformStltRef,
+        FileSystemWatch fileSystemWatchRef
     )
     {
         super(
@@ -68,7 +70,8 @@ public class FileThinProvider extends FileProvider
             extToolsCheckerRef,
             cloneServiceRef,
             backupShipMgrRef,
-            platformStltRef
+            platformStltRef,
+            fileSystemWatchRef
         );
     }
 
