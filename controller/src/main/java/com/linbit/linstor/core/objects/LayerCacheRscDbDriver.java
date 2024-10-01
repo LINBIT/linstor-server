@@ -15,7 +15,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -47,7 +46,6 @@ public class LayerCacheRscDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         LayerCacheVlmDbDriver layerCacheVlmDbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -60,7 +58,6 @@ public class LayerCacheRscDbDriver
             null,
             null,
             dbEngineRef,
-            objProtFactoryRef,
             rscLayerIdDriverRef,
             null,
             null,

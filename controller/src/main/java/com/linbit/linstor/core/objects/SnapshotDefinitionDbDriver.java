@@ -12,7 +12,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.SnapshotDefinition.InitMaps;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -50,8 +50,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class SnapshotDefinitionDbDriver
-    extends AbsDatabaseDriver<SnapshotDefinition,
+public final class SnapshotDefinitionDbDriver
+    extends AbsProtectedDatabaseDriver<SnapshotDefinition,
         SnapshotDefinition.InitMaps,
         Map<ResourceName, ResourceDefinition>>
     implements SnapshotDefinitionCtrlDatabaseDriver

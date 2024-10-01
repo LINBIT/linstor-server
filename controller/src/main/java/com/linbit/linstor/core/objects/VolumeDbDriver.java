@@ -9,7 +9,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Volume.InitMaps;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -40,10 +40,12 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class VolumeDbDriver
-    extends AbsDatabaseDriver<Volume,
+public final class VolumeDbDriver
+    extends AbsProtectedDatabaseDriver<
+        Volume,
         Volume.InitMaps,
-        Pair<Map<Pair<NodeName, ResourceName>, ? extends Resource>,
+        Pair<
+            Map<Pair<NodeName, ResourceName>, ? extends Resource>,
             Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition>>>
     implements VolumeCtrlDatabaseDriver
 {

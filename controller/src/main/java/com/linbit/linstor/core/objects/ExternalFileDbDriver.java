@@ -8,7 +8,7 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.objects.ExternalFile.InitMaps;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -41,7 +41,7 @@ import javax.inject.Singleton;
 import java.util.function.Function;
 
 @Singleton
-public class ExternalFileDbDriver extends AbsDatabaseDriver<ExternalFile, ExternalFile.InitMaps, Void>
+public final class ExternalFileDbDriver extends AbsProtectedDatabaseDriver<ExternalFile, ExternalFile.InitMaps, Void>
     implements ExternalFileCtrlDatabaseDriver
 {
     protected final PropsContainerFactory propsContainerFactory;

@@ -30,7 +30,7 @@ public class SecIdRoleDbDriver extends AbsDatabaseDriver<Pair<Identity, Role>, V
     @Inject
     SecIdRoleDbDriver(@SystemContext AccessContext dbCtxRef, ErrorReporter errorReporterRef, DbEngine dbEngineRef)
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_ID_ROLE_MAP, dbEngineRef, null);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_ID_ROLE_MAP, dbEngineRef);
 
         setColumnSetter(IDENTITY_NAME, pair -> pair.objA.name.value);
         setColumnSetter(ROLE_NAME, pair -> pair.objB.name.value);

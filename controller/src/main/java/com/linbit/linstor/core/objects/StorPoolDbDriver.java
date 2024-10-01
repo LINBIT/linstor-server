@@ -8,7 +8,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -39,10 +39,12 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class StorPoolDbDriver
-    extends AbsDatabaseDriver<StorPool,
+public final class StorPoolDbDriver
+    extends AbsProtectedDatabaseDriver<
+        StorPool,
         StorPool.InitMaps,
-        Pair<Map<NodeName, ? extends Node>,
+        Pair<
+            Map<NodeName, ? extends Node>,
             Map<StorPoolName, ? extends StorPoolDefinition>>>
     implements StorPoolCtrlDatabaseDriver
 {

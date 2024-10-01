@@ -12,7 +12,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition.InitMaps;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.DbEngine;
@@ -53,9 +53,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class ResourceDefinitionDbDriver
-    extends
-    AbsDatabaseDriver<ResourceDefinition, ResourceDefinition.InitMaps, Map<ResourceGroupName, ResourceGroup>>
+public final class ResourceDefinitionDbDriver
+    extends AbsProtectedDatabaseDriver<
+        ResourceDefinition,
+        ResourceDefinition.InitMaps,
+        Map<ResourceGroupName, ResourceGroup>>
     implements ResourceDefinitionCtrlDatabaseDriver
 {
     static final String DFLT_SNAP_NAME_FOR_RSC = "";

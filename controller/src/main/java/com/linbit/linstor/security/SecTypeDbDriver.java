@@ -39,11 +39,10 @@ public class SecTypeDbDriver extends AbsDatabaseDriver<SecurityType, SecTypeInit
     public SecTypeDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporter,
-        DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef
+        DbEngine dbEngineRef
     )
     {
-        super(dbCtxRef, errorReporter, GeneratedDatabaseTables.SEC_TYPES, dbEngineRef, objProtFactoryRef);
+        super(dbCtxRef, errorReporter, GeneratedDatabaseTables.SEC_TYPES, dbEngineRef);
         dbCtx = dbCtxRef;
 
         setColumnSetter(TYPE_NAME, type -> type.name.value);

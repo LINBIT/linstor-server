@@ -37,11 +37,10 @@ public class SecConfigDbDriver extends AbsDatabaseDriver<SecConfigDbEntry, Void,
     public SecConfigDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
-        DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef
+        DbEngine dbEngineRef
     )
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_CONFIGURATION, dbEngineRef, objProtFactoryRef);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_CONFIGURATION, dbEngineRef);
 
         setColumnSetter(
             ENTRY_KEY,

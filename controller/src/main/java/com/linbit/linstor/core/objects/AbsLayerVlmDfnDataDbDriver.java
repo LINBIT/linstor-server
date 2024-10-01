@@ -13,7 +13,6 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.utils.Pair;
@@ -49,11 +48,10 @@ public abstract class AbsLayerVlmDfnDataDbDriver<
         AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DatabaseTable tableRef,
-        DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef
+        DbEngine dbEngineRef
     )
     {
-        super(dbCtxRef, errorReporterRef, tableRef, dbEngineRef, objProtFactoryRef);
+        super(dbCtxRef, errorReporterRef, tableRef, dbEngineRef);
         dbCtx = dbCtxRef;
     }
 

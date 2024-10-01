@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Singleton
-public class PropsDbDriver extends AbsDatabaseDriver<PropsDbEntry, Void, Void> implements PropsCtrlDatabaseDriver
+public class PropsDbDriver extends AbsProtectedDatabaseDriver<PropsDbEntry, Void, Void>
+    implements PropsCtrlDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<PropsDbEntry, String> valueDriver;
     private final Map<String, Map<String, String>> cachedPropsConMap;

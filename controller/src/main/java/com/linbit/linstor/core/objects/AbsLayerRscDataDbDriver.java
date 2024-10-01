@@ -24,7 +24,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -49,8 +48,11 @@ public abstract class AbsLayerRscDataDbDriver<
         RSC_DFN_DATA extends RscDfnLayerObject,
         VLM_DFN_DATA extends VlmDfnLayerObject,
         RSC_DATA extends AbsRscLayerObject<?>,
-        VLM_DATA extends VlmProviderObject<?>>
-    extends AbsDatabaseDriver<RSC_DATA, Pair<Set<AbsRscLayerObject<?>>, Map<VolumeNumber, VLM_DATA>>, ParentObjects>
+    VLM_DATA extends VlmProviderObject<?>>
+    extends AbsDatabaseDriver<
+        RSC_DATA,
+        Pair<Set<AbsRscLayerObject<?>>, Map<VolumeNumber, VLM_DATA>>,
+        ParentObjects>
     implements ControllerLayerRscDatabaseDriver
 {
     public static class SuffixedResourceName implements Comparable<SuffixedResourceName>
@@ -224,7 +226,6 @@ public abstract class AbsLayerRscDataDbDriver<
         @Nullable DatabaseTable tableRef,
         @Nullable Column layerRscIdColumnRef,
         DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         @Nullable AbsLayerRscDfnDataDbDriver<RSC_DFN_DATA, RSC_DATA> rscDfnDriverRef,
         @Nullable AbsLayerVlmDfnDataDbDriver<RSC_DFN_DATA, VLM_DFN_DATA> vlmDfnDriverRef,
@@ -233,7 +234,7 @@ public abstract class AbsLayerRscDataDbDriver<
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
-        super(dbCtxRef, errorReporterRef, tableRef, dbEngineRef, objProtFactoryRef);
+        super(dbCtxRef, errorReporterRef, tableRef, dbEngineRef);
         dbCtx = dbCtxRef;
         layerRscIdColumn = layerRscIdColumnRef;
         rscLayerIdDriver = rscLayerIdDriverRef;

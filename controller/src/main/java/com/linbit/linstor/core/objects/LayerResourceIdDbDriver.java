@@ -23,7 +23,6 @@ import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
@@ -63,11 +62,10 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
     public LayerResourceIdDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
-        DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef
+        DbEngine dbEngineRef
     )
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.LAYER_RESOURCE_IDS, dbEngineRef, objProtFactoryRef);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.LAYER_RESOURCE_IDS, dbEngineRef);
 
         setColumnSetter(LAYER_RESOURCE_ID, rlo -> rlo.getRscLayerId());
         setColumnSetter(LAYER_RESOURCE_KIND, rlo -> rlo.getLayerKind().name());

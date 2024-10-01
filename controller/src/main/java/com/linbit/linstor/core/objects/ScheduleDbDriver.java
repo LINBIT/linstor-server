@@ -9,7 +9,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.objects.Schedule.InitMaps;
 import com.linbit.linstor.core.objects.Schedule.OnFailure;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -50,7 +50,7 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
 
 @Singleton
-public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitMaps, Void>
+public final class ScheduleDbDriver extends AbsProtectedDatabaseDriver<Schedule, Schedule.InitMaps, Void>
     implements ScheduleCtrlDatabaseDriver
 {
     protected final PropsContainerFactory propsContainerFactory;

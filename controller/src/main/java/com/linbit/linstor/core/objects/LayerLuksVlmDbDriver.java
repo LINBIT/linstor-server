@@ -15,7 +15,6 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -43,13 +42,12 @@ public class LayerLuksVlmDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.LAYER_LUKS_VOLUMES, dbEngineRef, objProtFactoryRef);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.LAYER_LUKS_VOLUMES, dbEngineRef);
         rscLayerIdDriver = rscLayerIdDriverRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;

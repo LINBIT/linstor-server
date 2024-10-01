@@ -36,7 +36,7 @@ public class SecTypeRulesDbDriver extends AbsDatabaseDriver<TypeEnforcementRuleP
         DbEngine dbEngineRef
     )
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_TYPE_RULES, dbEngineRef, null);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_TYPE_RULES, dbEngineRef);
 
         setColumnSetter(TYPE_NAME, teRule -> teRule.getTypeName());
         setColumnSetter(DOMAIN_NAME, teRule -> teRule.getDomainName());

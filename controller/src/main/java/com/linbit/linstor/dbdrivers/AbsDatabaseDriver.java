@@ -22,8 +22,6 @@ import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.ExceptionThrowingFunction;
@@ -65,7 +63,6 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
      */
     protected final @Nullable DatabaseTable table;
     private final DbEngine dbEngine;
-    private final @Nullable ObjectProtectionFactory objProtFactory;
 
     private final Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters;
 
@@ -73,15 +70,13 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         @Nullable DatabaseTable tableRef,
-        DbEngine dbEngineRef,
-        @Nullable ObjectProtectionFactory objProtFactoryRef
+        DbEngine dbEngineRef
     )
     {
         errorReporter = errorReporterRef;
         table = tableRef;
         dbEngine = dbEngineRef;
         dbCtx = dbCtxRef;
-        objProtFactory = objProtFactoryRef;
 
         setters = new HashMap<>();
     }
@@ -280,11 +275,6 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
     )
     {
         setters.put(colRef, setterRef);
-    }
-
-    protected ObjectProtection getObjectProtection(String objProtPath) throws DatabaseException
-    {
-        return objProtFactory.getInstance(dbCtx, objProtPath, false);
     }
 
     protected DatabaseType getDbType()

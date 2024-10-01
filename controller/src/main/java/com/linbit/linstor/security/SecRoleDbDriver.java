@@ -44,7 +44,7 @@ public class SecRoleDbDriver extends AbsDatabaseDriver<Role, SecRoleInit, SecRol
     @Inject
     public SecRoleDbDriver(@SystemContext AccessContext dbCtxRef, ErrorReporter errorReporterRef, DbEngine dbEngineRef)
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_ROLES, dbEngineRef, null);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_ROLES, dbEngineRef);
         dbCtx = dbCtxRef;
 
         setColumnSetter(ROLE_NAME, role -> role.name.value);

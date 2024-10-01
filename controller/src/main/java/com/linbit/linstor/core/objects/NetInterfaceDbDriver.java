@@ -12,7 +12,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -43,8 +43,8 @@ import java.util.Map;
 import java.util.Objects;
 
 @Singleton
-public class NetInterfaceDbDriver
-    extends AbsDatabaseDriver<NetInterface, Void, Map<NodeName, ? extends Node>>
+public final class NetInterfaceDbDriver
+    extends AbsProtectedDatabaseDriver<NetInterface, Void, Map<NodeName, ? extends Node>>
     implements NetInterfaceCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;

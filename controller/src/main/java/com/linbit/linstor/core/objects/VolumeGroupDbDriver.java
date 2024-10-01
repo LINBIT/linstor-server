@@ -8,7 +8,7 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -35,8 +35,8 @@ import javax.inject.Singleton;
 import java.util.Map;
 
 @Singleton
-public class VolumeGroupDbDriver
-    extends AbsDatabaseDriver<VolumeGroup, Void, Map<ResourceGroupName, ? extends ResourceGroup>>
+public final class VolumeGroupDbDriver
+    extends AbsProtectedDatabaseDriver<VolumeGroup, Void, Map<ResourceGroupName, ? extends ResourceGroup>>
     implements VolumeGroupCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;

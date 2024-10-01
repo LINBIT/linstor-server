@@ -10,7 +10,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource.InitMaps;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -46,9 +46,11 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 @Singleton
-public class ResourceDbDriver extends
-    AbsDatabaseDriver<AbsResource<Resource>, Resource.InitMaps, Pair<Map<NodeName, Node>,
-    Map<ResourceName, ResourceDefinition>>>
+public final class ResourceDbDriver
+    extends AbsProtectedDatabaseDriver<
+        AbsResource<Resource>,
+        Resource.InitMaps,
+        Pair<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>>>
     implements ResourceCtrlDatabaseDriver
 {
 

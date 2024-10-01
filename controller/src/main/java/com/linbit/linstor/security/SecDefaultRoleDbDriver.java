@@ -34,7 +34,7 @@ public class SecDefaultRoleDbDriver extends AbsDatabaseDriver<Pair<Identity, Rol
         DbEngine dbEngineRef
     )
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_DFLT_ROLES, dbEngineRef, null);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_DFLT_ROLES, dbEngineRef);
 
         setColumnSetter(IDENTITY_NAME, pair -> pair.objA.name.value);
         setColumnSetter(ROLE_NAME, pair -> pair.objB.name.value);

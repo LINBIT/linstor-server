@@ -19,7 +19,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
@@ -55,7 +54,6 @@ public class LayerDrbdRscDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         LayerDrbdRscDfnDbDriver drbdRscDfnDriverRef,
         LayerDrbdVlmDfnDbDriver drbdVlmDfnDriverRef,
@@ -70,7 +68,6 @@ public class LayerDrbdRscDbDriver
             GeneratedDatabaseTables.LAYER_DRBD_RESOURCES,
             LayerDrbdResources.LAYER_RESOURCE_ID,
             dbEngineRef,
-            objProtFactoryRef,
             rscLayerIdDriverRef,
             drbdRscDfnDriverRef,
             drbdVlmDfnDriverRef,

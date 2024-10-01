@@ -33,8 +33,8 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 @Singleton
-public class SecObjectProtectionDbDriver extends
-    AbsDatabaseDriver<ObjectProtection, SecObjProtInitObj, SecObjProtParent>
+public class SecObjectProtectionDbDriver
+    extends AbsDatabaseDriver<ObjectProtection, SecObjProtInitObj, SecObjProtParent>
     implements SecObjProtCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
@@ -58,7 +58,7 @@ public class SecObjectProtectionDbDriver extends
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_OBJECT_PROTECTION, dbEngineRef, null);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_OBJECT_PROTECTION, dbEngineRef);
         dbCtx = dbCtxRef;
         objProtMap = objProtMapRef;
         objProtAclDriver = objProtAclDriverRef;

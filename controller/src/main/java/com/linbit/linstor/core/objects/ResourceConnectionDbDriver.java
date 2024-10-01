@@ -10,7 +10,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.types.TcpPortNumber;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -47,8 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 
 @Singleton
-public class ResourceConnectionDbDriver
-    extends AbsDatabaseDriver<ResourceConnection, Void, Map<Pair<NodeName, ResourceName>, ? extends Resource>>
+public final class ResourceConnectionDbDriver
+    extends AbsProtectedDatabaseDriver<ResourceConnection, Void, Map<Pair<NodeName, ResourceName>, ? extends Resource>>
     implements ResourceConnectionCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;

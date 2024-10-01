@@ -6,7 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -32,7 +32,7 @@ import javax.inject.Singleton;
 
 @Singleton
 public class KeyValueStoreDbDriver
-    extends AbsDatabaseDriver<KeyValueStore, KeyValueStore.InitMaps, Void>
+    extends AbsProtectedDatabaseDriver<KeyValueStore, KeyValueStore.InitMaps, Void>
     implements KeyValueStoreCtrlDatabaseDriver
 {
     private final Provider<TransactionMgr> transMgrProvider;

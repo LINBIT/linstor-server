@@ -15,7 +15,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheRscCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -47,7 +46,6 @@ public class LayerWritecacheRscDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         LayerWritecacheVlmDbDriver layerWritecacheVlmDbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -60,7 +58,6 @@ public class LayerWritecacheRscDbDriver
             null,
             null,
             dbEngineRef,
-            objProtFactoryRef,
             rscLayerIdDriverRef,
             null,
             null,

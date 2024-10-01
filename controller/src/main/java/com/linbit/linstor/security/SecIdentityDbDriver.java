@@ -46,11 +46,10 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<SecIdentityDbObj, Voi
     public SecIdentityDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
-        DbEngine dbEngineRef,
-        ObjectProtectionFactory objProtFactoryRef
+        DbEngine dbEngineRef
     )
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_IDENTITIES, dbEngineRef, objProtFactoryRef);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_IDENTITIES, dbEngineRef);
         dbCtx = dbCtxRef;
 
         setColumnSetter(IDENTITY_NAME, id -> id.getIdentity().name.value);

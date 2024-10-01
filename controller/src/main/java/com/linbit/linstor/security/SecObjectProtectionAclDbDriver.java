@@ -25,8 +25,8 @@ import javax.inject.Singleton;
 import java.util.Map;
 
 @Singleton
-public class SecObjectProtectionAclDbDriver extends
-    AbsDatabaseDriver<AccessControlEntry, Void, SecObjProtAclParent>
+public final class SecObjectProtectionAclDbDriver
+    extends AbsDatabaseDriver<AccessControlEntry, Void, SecObjProtAclParent>
     implements SecObjProtAclCtrlDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<AccessControlEntry, AccessType> accessTypeDriver;
@@ -40,7 +40,7 @@ public class SecObjectProtectionAclDbDriver extends
         DbEngine dbEngineRef
     )
     {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_ACL_MAP, dbEngineRef, null);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_ACL_MAP, dbEngineRef);
 
         setColumnSetter(OBJECT_PATH, acEntry -> acEntry.objPath);
         setColumnSetter(ROLE_NAME, acEntry -> acEntry.subjectRole.name.value);

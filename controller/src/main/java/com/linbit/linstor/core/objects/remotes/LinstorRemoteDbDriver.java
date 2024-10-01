@@ -7,7 +7,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.RemoteName;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsProtectedDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -44,7 +44,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 @Singleton
-public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, LinstorRemote.InitMaps, Void>
+public final class LinstorRemoteDbDriver extends AbsProtectedDatabaseDriver<LinstorRemote, LinstorRemote.InitMaps, Void>
     implements LinstorRemoteCtrlDatabaseDriver
 {
     protected final PropsContainerFactory propsContainerFactory;
