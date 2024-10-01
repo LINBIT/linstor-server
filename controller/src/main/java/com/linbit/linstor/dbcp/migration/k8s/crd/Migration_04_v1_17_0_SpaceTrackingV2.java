@@ -1,9 +1,9 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_17_0;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.util.HashMap;
 
@@ -20,8 +20,11 @@ public class Migration_04_v1_17_0_SpaceTrackingV2 extends BaseK8sCrdMigration
 
     @SuppressWarnings("unchecked")
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public MigrationResult migrateImpl(MigrationContext migrationCtxRef) throws Exception
     {
+        K8sCrdTransaction txFrom = migrationCtxRef.txFrom;
+        K8sCrdTransaction txTo = migrationCtxRef.txTo;
+
         HashMap<String, LinstorCrd<LinstorSpec<?, ?>>> crdMap;
         crdMap = (HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>) txFrom.getCrd(
             GenCrdV1_17_0.GeneratedDatabaseTables.SPACE_HISTORY
@@ -41,7 +44,6 @@ public class Migration_04_v1_17_0_SpaceTrackingV2 extends BaseK8sCrdMigration
             txTo.delete(GenCrdV1_17_0.GeneratedDatabaseTables.SATELLITES_CAPACITY, value);
         }
 
-        MigrationResult result = new MigrationResult();
-        return result;
+        return null;
     }
 }

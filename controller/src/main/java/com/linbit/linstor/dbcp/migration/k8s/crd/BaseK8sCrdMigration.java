@@ -38,8 +38,6 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
     protected final K8sCrdMigrationContext toCtx;
 
     private @Nullable KubernetesClient k8sClient;
-    protected @Nullable K8sCrdTransaction txFrom;
-    protected @Nullable K8sCrdTransaction txTo;
 
     protected boolean schemeUpgraded = false;
 
@@ -242,13 +240,13 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             k8sDbRef,
             toCtx.txMgrContext
         );
-        txTo = txMgrTo.getTransaction();
+        K8sCrdTransaction txTo = txMgrTo.getTransaction();
 
         ControllerK8sCrdTransactionMgr txMgrFrom = new ControllerK8sCrdTransactionMgr(
             k8sDbRef,
             fromCtx.txMgrContext
         );
-        txFrom = txMgrFrom.getTransaction();
+        K8sCrdTransaction txFrom = txMgrFrom.getTransaction();
 
         try
         {
@@ -259,7 +257,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
                     "Cannot perform Migration " + version + " while a rollback has to be done"
                 );
             }
-            @Nullable MigrationResult result = migrateImpl(k8sDbRef);
+            @Nullable MigrationResult result = migrateImpl(new MigrationContext(k8sDbRef, txFrom, txTo));
             if (result == null)
             {
                 result = new MigrationResult();
@@ -288,7 +286,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
         k8sDbRef.clearCache();
     }
 
-    public abstract @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception;
+    public abstract @Nullable MigrationResult migrateImpl(MigrationContext k8sDbRef) throws Exception;
 
     /**
      * <p>
@@ -336,6 +334,24 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             }
         }
         return ret;
+    }
+
+    protected static class MigrationContext
+    {
+        protected final ControllerK8sCrdDatabase k8sDb;
+        protected final K8sCrdTransaction txFrom;
+        protected final K8sCrdTransaction txTo;
+
+        private MigrationContext(
+            ControllerK8sCrdDatabase k8sDbRef,
+            K8sCrdTransaction txFromRef,
+            K8sCrdTransaction txToRef
+        )
+        {
+            k8sDb = k8sDbRef;
+            txFrom = txFromRef;
+            txTo = txToRef;
+        }
     }
 
     protected static class MigrationResult

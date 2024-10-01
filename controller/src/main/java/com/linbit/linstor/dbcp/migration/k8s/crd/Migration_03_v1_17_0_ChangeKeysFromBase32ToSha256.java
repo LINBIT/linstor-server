@@ -1,12 +1,12 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_17_0;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,11 +30,14 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
 
     @SuppressWarnings("unchecked")
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public MigrationResult migrateImpl(MigrationContext migrationCtxRef) throws Exception
     {
         // We load entries from v1_15_0.ALL_TABLES, but will later write the corresponding v1_17_0 version of the same
         // table.
         HashMap<DatabaseTable, DatabaseTable> dbTableRemapping = getDbTableRemapping();
+
+        K8sCrdTransaction txFrom = migrationCtxRef.txFrom;
+        K8sCrdTransaction txTo = migrationCtxRef.txTo;
 
         // load data from database that needs to change
         HashMap<DatabaseTable, HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>> loadedData = new HashMap<>();
@@ -99,7 +102,6 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
             }
         }
 
-        MigrationResult result = new MigrationResult();
-        return result;
+        return null;
     }
 }

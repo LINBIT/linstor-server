@@ -1,10 +1,10 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.NodeStorPool;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.NodeStorPoolSpec;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.util.Collection;
 
@@ -20,8 +20,11 @@ public class Migration_14_v1_19_1_CleanupFsmName extends BaseK8sCrdMigration
     }
 
     @Override
-    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(MigrationContext migrationCtxRef) throws Exception
     {
+        K8sCrdTransaction txFrom = migrationCtxRef.txFrom;
+        K8sCrdTransaction txTo = migrationCtxRef.txTo;
+
         // FSM's objProt (with ACLs) were removed in an earlier commit than support for K8s was added.
         // therefore there is nothing to cleanup in secObjProt or in secAcl
 

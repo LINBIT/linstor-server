@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbcp.migration.Migration_2022_10_03_CleanupOrphanedSnapAndSnapVlmProps;
 import com.linbit.linstor.dbcp.migration.Migration_2022_10_03_CleanupOrphanedSnapAndSnapVlmProps.SnapshotKey;
@@ -12,6 +11,7 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.Resources;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.ResourcesSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.Volumes;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.VolumesSpec;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,8 +33,11 @@ public class Migration_08_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps extends Bas
     }
 
     @Override
-    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(MigrationContext migrationCtxRef) throws Exception
     {
+        K8sCrdTransaction txFrom = migrationCtxRef.txFrom;
+        K8sCrdTransaction txTo = migrationCtxRef.txTo;
+
         Collection<ResourcesSpec> absResources = txFrom.<Resources, ResourcesSpec>getSpec(
             GenCrdV1_19_1.GeneratedDatabaseTables.RESOURCES
         ).values();

@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.LayerDrbdResourceDefinitions;
@@ -9,6 +8,7 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.LayerDrbdVolumeDefinit
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.LayerDrbdVolumeDefinitionsSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.LayerResourceIds;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.LayerResourceIdsSpec;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.util.Collection;
 
@@ -26,8 +26,11 @@ public class Migration_15_v1_19_1_AddEmptySnapNameToLRI extends BaseK8sCrdMigrat
     }
 
     @Override
-    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(MigrationContext migrationCtxRef) throws Exception
     {
+        K8sCrdTransaction txFrom = migrationCtxRef.txFrom;
+        K8sCrdTransaction txTo = migrationCtxRef.txTo;
+
         Collection<LayerResourceIds> crdList = txFrom.<LayerResourceIds, LayerResourceIdsSpec>getCrd(
             GenCrdV1_19_1.GeneratedDatabaseTables.LAYER_RESOURCE_IDS
         ).values();

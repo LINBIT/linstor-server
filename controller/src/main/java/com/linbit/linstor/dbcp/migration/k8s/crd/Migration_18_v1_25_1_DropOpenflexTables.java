@@ -1,9 +1,9 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_25_1;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.util.Collection;
 
@@ -22,8 +22,10 @@ public class Migration_18_v1_25_1_DropOpenflexTables extends BaseK8sCrdMigration
     }
 
     @Override
-    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(MigrationContext migrationCtxRef) throws Exception
     {
+        K8sCrdTransaction txFrom = migrationCtxRef.txFrom;
+
         Collection<GenCrdV1_19_1.LayerOpenflexResourceDefinitions> ofRdList = txFrom.<GenCrdV1_19_1.LayerOpenflexResourceDefinitions, GenCrdV1_19_1.LayerOpenflexResourceDefinitionsSpec>getCrd(
             GenCrdV1_19_1.GeneratedDatabaseTables.LAYER_OPENFLEX_RESOURCE_DEFINITIONS
         ).values();

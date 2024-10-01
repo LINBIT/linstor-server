@@ -1,11 +1,11 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbcp.migration.Migration_2024_11_21_CreateSnapshotsFromZfsClones;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_27_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_27_1.NodeStorPool;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_27_1.NodeStorPoolSpec;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import static com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_27_1.GeneratedDatabaseTables.NODE_STOR_POOL;
 import static com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_27_1.GeneratedDatabaseTables.PROPS_CONTAINERS;
@@ -26,8 +26,10 @@ public class Migration_27_v1_27_1_CreateSnapshotsFromZfsClones extends BaseK8sCr
     }
 
     @Override
-    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public MigrationResult migrateImpl(MigrationContext migrationCtxRef) throws Exception
     {
+        K8sCrdTransaction txFrom = migrationCtxRef.txFrom;
+        K8sCrdTransaction txTo = migrationCtxRef.txTo;
         Collection<NodeStorPool> crdList = txFrom.<NodeStorPool, NodeStorPoolSpec>getCrd(
             NODE_STOR_POOL
         ).values();

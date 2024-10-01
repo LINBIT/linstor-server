@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_25_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_27_1;
@@ -17,9 +16,10 @@ public class Migration_22_v1_27_1_AddXReplicasOnDifferent extends BaseK8sCrdMigr
     }
 
     @Override
-    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(MigrationContext ignoredCtxRef) throws Exception
     {
         updateCrdSchemaForAllTables();
+
         return null;
     }
 }

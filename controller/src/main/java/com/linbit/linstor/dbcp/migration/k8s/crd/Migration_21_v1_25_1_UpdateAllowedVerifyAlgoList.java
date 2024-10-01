@@ -1,9 +1,9 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_25_1;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 @K8sCrdMigration(
     description = "Update allowed verify algorithm list",
@@ -21,8 +21,10 @@ public class Migration_21_v1_25_1_UpdateAllowedVerifyAlgoList extends BaseK8sCrd
     }
 
     @Override
-    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(MigrationContext migrationCtxRef) throws Exception
     {
+        K8sCrdTransaction txTo = migrationCtxRef.txTo;
+
         txTo.upsert(
             GenCrdV1_25_1.GeneratedDatabaseTables.PROPS_CONTAINERS,
             GenCrdV1_25_1.createPropsContainers(

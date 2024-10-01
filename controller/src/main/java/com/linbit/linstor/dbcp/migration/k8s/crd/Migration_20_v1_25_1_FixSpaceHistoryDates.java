@@ -1,9 +1,9 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_25_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_25_1.SpaceHistory;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -27,8 +27,11 @@ public class Migration_20_v1_25_1_FixSpaceHistoryDates extends BaseK8sCrdMigrati
     }
 
     @Override
-    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(MigrationContext migrationCtxRef) throws Exception
     {
+        K8sCrdTransaction txFrom = migrationCtxRef.txFrom;
+        K8sCrdTransaction txTo = migrationCtxRef.txTo;
+
         // Pre 1.24.0 the entryDates also stored the time, although they should not.
         // this did not cause any issue, until recently where the first entries with time are getting too old and are
         // marked for deletion.

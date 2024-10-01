@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_18_2;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
@@ -20,7 +19,7 @@ public class Migration_07_v1_19_1_AddEbsRemoteTable extends BaseK8sCrdMigration
     }
 
     @Override
-    public @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    public @Nullable MigrationResult migrateImpl(MigrationContext ignoredCtxRef) throws Exception
     {
         // update CRD entries for all DatabaseTables
         updateCrdSchemaForAllTables();
