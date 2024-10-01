@@ -2,7 +2,11 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
+import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
+import com.linbit.linstor.transaction.K8sCrdMigrationContext;
+import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 
 @K8sCrdMigration(
     description = "initial data",
@@ -13,9 +17,27 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     public Migration_01_v1_15_0_init()
     {
         super(
-            null, // only valid for migration 0 -> 1
+            new SpecialK8sTxMgrCtx(), // only valid for migration 0 -> 1
             GenCrdV1_15_0.createMigrationContext()
         );
+    }
+
+    /**
+     * Special class that basically states that there are no tables. This class is only needed so that we do not have to
+     * declare the fromCtx field as @Nullable. Otherwise ALL other migrations would also have to do null-checks
+     */
+    private static class SpecialK8sTxMgrCtx extends K8sCrdMigrationContext
+    {
+        private SpecialK8sTxMgrCtx()
+        {
+            // these Functions returning null should not be a problem, since the function's input should be a
+            // DatabaseTable from "allDbTables" which we define being empty... In other words, the given Functions
+            // should never be called anyways
+            super(
+                new BaseControllerK8sCrdTransactionMgrContext(ignored -> null, new DatabaseTable[0], "v0"),
+                new K8sCrdSchemaUpdateContext(ignored -> null, ignored -> null, "v0")
+            );
+        }
     }
 
     @Override

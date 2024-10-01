@@ -34,11 +34,10 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
 {
     protected final int version;
     protected final String description;
-    protected final @Nullable K8sCrdMigrationContext fromCtx;
+    protected final K8sCrdMigrationContext fromCtx;
     protected final K8sCrdMigrationContext toCtx;
 
     private @Nullable KubernetesClient k8sClient;
-
     protected @Nullable K8sCrdTransaction txFrom;
     protected @Nullable K8sCrdTransaction txTo;
 
@@ -51,7 +50,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
     }
 
     protected BaseK8sCrdMigration(
-        @Nullable K8sCrdMigrationContext fromCtxRef,
+        K8sCrdMigrationContext fromCtxRef,
         K8sCrdMigrationContext toCtxRef
     )
     {
@@ -59,6 +58,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
         version = k8sMigAnnot.version();
         description = k8sMigAnnot.description();
 
+        fromCtx = Objects.requireNonNull(fromCtxRef);
         toCtx = Objects.requireNonNull(toCtxRef);
 
         if (description.isEmpty())
@@ -68,15 +68,6 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
         if (version == -1)
         {
             throw new ImplementationError("Version must not be -1");
-        }
-
-        if (version != 1)
-        {
-            fromCtx = Objects.requireNonNull(fromCtxRef);
-        }
-        else
-        {
-            fromCtx = null;
         }
     }
 
@@ -162,26 +153,24 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             throw new DatabaseException("Failed to update CRDs: " + tablesToUpdate);
         }
 
-        if (fromCtx != null)
+        // for the very first migration .getAllDatabaseTables will simply return an empty list of database tables
+        // so there will be no database tables to delete.
+        HashMap<String, DatabaseTable> dbTablesToDelete = new HashMap<>();
+        for (DatabaseTable dbTable : fromCtx.txMgrContext.getAllDatabaseTables())
         {
-            // if fromCtx is null, there cannot be db-tables to delete
-            HashMap<String, DatabaseTable> dbTablesToDelete = new HashMap<>();
-            for (DatabaseTable dbTable : fromCtx.txMgrContext.getAllDatabaseTables())
+            dbTablesToDelete.put(dbTable.getName(), dbTable);
+        }
+        for (DatabaseTable dbTable : toCtx.txMgrContext.getAllDatabaseTables())
+        {
+            dbTablesToDelete.remove(dbTable.getName());
+        }
+        Function<DatabaseTable, String> dbTableFromYamlLocation = fromCtx.schemaCtx.getGetYamlLocations();
+        for (DatabaseTable dbTable : dbTablesToDelete.values())
+        {
+            String yamlLocation = dbTableFromYamlLocation.apply(dbTable);
+            if (yamlLocation != null)
             {
-                dbTablesToDelete.put(dbTable.getName(), dbTable);
-            }
-            for (DatabaseTable dbTable : toCtx.txMgrContext.getAllDatabaseTables())
-            {
-                dbTablesToDelete.remove(dbTable.getName());
-            }
-            Function<DatabaseTable, String> dbTableFromYamlLocation = fromCtx.schemaCtx.getGetYamlLocations();
-            for (DatabaseTable dbTable : dbTablesToDelete.values())
-            {
-                String yamlLocation = dbTableFromYamlLocation.apply(dbTable);
-                if (yamlLocation != null)
-                {
-                    deleteCrdSchema(k8sClient, yamlLocation);
-                }
+                deleteCrdSchema(k8sClient, yamlLocation);
             }
         }
 
@@ -253,36 +242,24 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             k8sDbRef,
             toCtx.txMgrContext
         );
-
         txTo = txMgrTo.getTransaction();
 
-        ControllerK8sCrdTransactionMgr txMgrFrom;
-        if (fromCtx != null)
-        {
-            txMgrFrom = new ControllerK8sCrdTransactionMgr(
-                k8sDbRef,
-                fromCtx.txMgrContext
-            );
-            txFrom = txMgrFrom.getTransaction();
-        }
-        else
-        {
-            txMgrFrom = null;
-        }
+        ControllerK8sCrdTransactionMgr txMgrFrom = new ControllerK8sCrdTransactionMgr(
+            k8sDbRef,
+            fromCtx.txMgrContext
+        );
+        txFrom = txMgrFrom.getTransaction();
 
         try
         {
-            if (txFrom != null)
+            List<RollbackCrd> rollbackList = txFrom.getRollbackClient().list().getItems();
+            if (!rollbackList.isEmpty())
             {
-                List<RollbackCrd> rollbackList = txFrom.getRollbackClient().list().getItems();
-                if (!rollbackList.isEmpty())
-                {
-                    throw new DatabaseException(
-                        "Cannot perform Migration " + version + " while a rollback has to be done"
-                    );
-                }
+                throw new DatabaseException(
+                    "Cannot perform Migration " + version + " while a rollback has to be done"
+                );
             }
-            MigrationResult result = migrateImpl(k8sDbRef);
+            @Nullable MigrationResult result = migrateImpl(k8sDbRef);
             if (result == null)
             {
                 result = new MigrationResult();
@@ -296,7 +273,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             }
 
             txMgrTo.commit();
-            if (txMgrFrom != null && (txMgrFrom.isDirty() || result.forceFromTxCommit))
+            if (txMgrFrom.isDirty() || result.forceFromTxCommit)
             {
                 txMgrFrom.commit();
             }
@@ -304,17 +281,14 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
         catch (Exception exc)
         {
             txMgrTo.rollback();
-            if (txMgrFrom != null)
-            {
-                txMgrFrom.rollback();
-            }
+            txMgrFrom.rollback();
             throw exc;
         }
 
         k8sDbRef.clearCache();
     }
 
-    public abstract MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception;
+    public abstract @Nullable MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception;
 
     /**
      * <p>
