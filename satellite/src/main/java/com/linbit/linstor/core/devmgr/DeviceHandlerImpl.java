@@ -25,6 +25,7 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -372,7 +373,8 @@ public class DeviceHandlerImpl implements DeviceHandler
 
                     StateFlags<Flags> rscFlags = rsc.getStateFlags();
                     if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) &&
-                        rscFlags.isUnset(wrkCtx, Resource.Flags.INACTIVE))
+                        rscFlags.isUnset(wrkCtx, Resource.Flags.INACTIVE) &&
+                        rsc.getResourceDefinition().getFlags().isUnset(wrkCtx, ResourceDefinition.Flags.CLONING))
                     {
                         if (rscLayerObject.getLayerKind().isLocalOnly())
                         {
