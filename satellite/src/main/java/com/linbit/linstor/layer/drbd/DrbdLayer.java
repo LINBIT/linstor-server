@@ -260,11 +260,32 @@ public class DrbdLayer implements DeviceLayer
     private boolean shouldDrbdDeviceBeDeleted(DrbdRscData<Resource> drbdRscData)
         throws AccessDeniedException
     {
-        StateFlags<Flags> rscFlags = drbdRscData.getAbsResource().getStateFlags();
-        return drbdRscData.getRscDfnLayerObject().isDown() ||
-            rscFlags.isSet(workerCtx, Resource.Flags.DELETE) ||
-            rscFlags.isSet(workerCtx, Resource.Flags.DRBD_DELETE) ||
-            rscFlags.isSet(workerCtx, Resource.Flags.INACTIVE);
+        boolean ret = drbdRscData.getRscDfnLayerObject().isDown();
+        if (!ret)
+        {
+            Resource rsc = drbdRscData.getAbsResource();
+            StateFlags<Flags> rscFlags = rsc.getStateFlags();
+            ret = rscFlags.isSomeSet(
+                workerCtx,
+                Resource.Flags.DELETE,
+                Resource.Flags.DRBD_DELETE,
+                Resource.Flags.INACTIVE
+            );
+            if (!ret)
+            {
+                Iterator<Volume> vlmIt = rsc.iterateVolumes();
+                while (vlmIt.hasNext())
+                {
+                    Volume vlm = vlmIt.next();
+                    if (vlm.getFlags().isSet(workerCtx, Volume.Flags.CLONING))
+                    {
+                        ret = true;
+                        break;
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
     private void addDeletedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
