@@ -18,6 +18,7 @@ variables:
   LINSTOR_TEST_REPEATS:
     value: "1"
     description: How often to repeat each run
+  RUNNER_TAG_LIBVIRT: "libvirt"
 
 cache:
   paths:
@@ -31,6 +32,15 @@ stages:
   - deploy
   - integration
   - integration-all
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'jenkins'
+      variables:
+        RUNNER_TAG_LIBVIRT: "libvirt-xl"
+    - if: $CI_COMMIT_BRANCH == 'master'
+      variables:
+        RUNNER_TAG_LIBVIRT: "libvirt-xl"
 
 .upload_nexus:
   script:
@@ -229,7 +239,7 @@ test-e2e:
     - if: $CI_COMMIT_BRANCH == 'jenkins'
     - if: $CI_COMMIT_BRANCH == 'master'
   tags:
-    - libvirt
+    - $RUNNER_TAG_LIBVIRT
   before_script:
     - echo "no before"
   script:
