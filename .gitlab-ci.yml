@@ -41,6 +41,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH == 'master'
       variables:
         RUNNER_TAG_LIBVIRT: "libvirt-xl"
+    - when: always  # Other pipelines can run, but use the default variables
 
 .upload_nexus:
   script:
