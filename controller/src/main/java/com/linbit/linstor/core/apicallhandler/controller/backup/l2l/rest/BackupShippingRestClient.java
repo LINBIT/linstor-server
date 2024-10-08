@@ -138,13 +138,15 @@ public class BackupShippingRestClient
                                 data.getDstNetIfName(),
                                 data.getDstStorPool(),
                                 data.getStorPoolRename(),
+                                data.getDstRscGrp(),
                                 data.isUseZstd(),
                                 data.isDownloadOnly(),
                                 data.isForceRestore(),
                                 data.isResetData(),
                                 data.getDstBaseSnapName(),
                                 data.getDstActualNodeName(),
-                                data.getSrcRscName()
+                                data.getSrcRscName(),
+                                data.isForceRscGrp()
                             )
                         ),
                         Arrays.asList(OK, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR),

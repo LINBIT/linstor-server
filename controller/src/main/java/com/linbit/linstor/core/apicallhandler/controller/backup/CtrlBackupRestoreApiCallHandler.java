@@ -241,10 +241,12 @@ public class CtrlBackupRestoreApiCallHandler
         Map<String, String> storPoolMapRef,
         String nodeName,
         String targetRscName,
+        @Nullable String dstRscGrpRef,
         String remoteName,
         String passphrase,
         boolean downloadOnly,
-        boolean forceRestore
+        boolean forceRestore,
+        boolean forceRscGrpRef
     )
     {
         return freeCapacityFetcher
@@ -262,10 +264,12 @@ public class CtrlBackupRestoreApiCallHandler
                         storPoolMapRef,
                         nodeName,
                         targetRscName,
+                        dstRscGrpRef,
                         remoteName,
                         passphrase,
                         downloadOnly,
-                        forceRestore
+                        forceRestore,
+                        forceRscGrpRef
                     )
                 )
             );
@@ -289,10 +293,12 @@ public class CtrlBackupRestoreApiCallHandler
         Map<String, String> storPoolMap,
         String nodeNameStrRef,
         String targetRscName,
+        @Nullable String dstRscGrpRef,
         String remoteName,
         String passphrase,
         boolean downloadOnly,
-        boolean forceRestore
+        boolean forceRestore,
+        boolean forceRscGrpRef
     ) throws AccessDeniedException, InvalidNameException
     {
         // 1. Ensure node is ready
@@ -508,6 +514,7 @@ public class CtrlBackupRestoreApiCallHandler
                     storPoolMap,
                     node,
                     targetRscName,
+                    dstRscGrpRef,
                     passphrase,
                     remote,
                     s3keys,
@@ -515,7 +522,8 @@ public class CtrlBackupRestoreApiCallHandler
                     responses,
                     resetData,
                     downloadOnly,
-                    forceRestore
+                    forceRestore,
+                    forceRscGrpRef
                 );
                 allSnaps.add(snap);
                 // all other "basedOn" snapshots should not change props / size / etc..
@@ -620,6 +628,7 @@ public class CtrlBackupRestoreApiCallHandler
         Map<String, String> storPoolMap,
         Node node,
         String targetRscName,
+        @Nullable String dstRscGrpRef,
         String passphrase,
         S3Remote remote,
         Set<String> s3keys,
@@ -627,7 +636,8 @@ public class CtrlBackupRestoreApiCallHandler
         ApiCallRcImpl responses,
         boolean resetData,
         boolean downloadOnly,
-        boolean forceRestore
+        boolean forceRestore,
+        boolean forceRscGrpRef
     )
         throws AccessDeniedException, ImplementationError, DatabaseException
     {
@@ -697,7 +707,16 @@ public class CtrlBackupRestoreApiCallHandler
 
         // 3. Create definitions based on metadata
         SnapshotName snapName = LinstorParsingUtils.asSnapshotName(metafileNameInfo.snapName);
-        ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, resetData);
+        ResourceDefinition rscDfn = getRscDfnForBackupRestore(
+            targetRscName,
+            snapName,
+            metadata,
+            resetData,
+            dstRscGrpRef,
+            forceRscGrpRef,
+            responses
+        );
+
         SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(
             metadata,
             snapName,
@@ -1073,7 +1092,10 @@ public class CtrlBackupRestoreApiCallHandler
         String targetRscName,
         SnapshotName snapName,
         BackupMetaDataPojo metadata,
-        boolean resetData
+        boolean resetData,
+        @Nullable String dstRscGrpRef,
+        boolean forceMoveRscGrpRef,
+        ApiCallRcImpl responsesRef
     )
     {
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(targetRscName, false);
@@ -1090,7 +1112,7 @@ public class CtrlBackupRestoreApiCallHandler
                     Collections.emptyList(),
                     Collections.emptyList(),
                     null,
-                    null,
+                    dstRscGrpRef,
                     true,
                     apiCallRcs,
                     false
@@ -1118,6 +1140,39 @@ public class CtrlBackupRestoreApiCallHandler
                 // force the node to become primary afterwards in case we needed to recreate
                 // the metadata
                 rscDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+
+                // if we already reset data, we can also move the resource-group, regardless if --force-rsc-grp was set
+                // or not
+                if (dstRscGrpRef != null && !dstRscGrpRef.isBlank() &&
+                    !rscDfn.getResourceGroup().getName().value.equalsIgnoreCase(dstRscGrpRef))
+                {
+                    rscDfn.setResourceGroup(sysCtx, ctrlApiDataLoader.loadResourceGroup(dstRscGrpRef, true));
+                }
+            }
+            else
+            {
+                if (dstRscGrpRef != null && !dstRscGrpRef.isBlank() &&
+                    !rscDfn.getResourceGroup().getName().value.equalsIgnoreCase(dstRscGrpRef))
+                {
+                    if (rscDfn.getResourceCount() == 0 || forceMoveRscGrpRef)
+                    {
+                        rscDfn.setResourceGroup(sysCtx, ctrlApiDataLoader.loadResourceGroup(dstRscGrpRef, true));
+                    }
+                    else
+                    {
+                        responsesRef.add(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.WARN_RSC_ALREADY_DEPLOYED,
+                                String.format(
+                                    "Target resource definition '%s' has resources deployed. --target-resource-group " +
+                                        "is ignored in order to prevent unexpected future autoplacements. " +
+                                        "Use --force-move-resource-group to override this warning.",
+                                    rscDfn.getName().displayValue
+                                )
+                            )
+                        );
+                    }
+                }
             }
             rscDfn.getFlags().enableFlags(peerAccCtx.get(), ResourceDefinition.Flags.RESTORE_TARGET);
         }
@@ -1153,12 +1208,17 @@ public class CtrlBackupRestoreApiCallHandler
             // 5. create layerPayload
             RscLayerDataApi layers = data.getMetaData().getLayerData();
             // 8. create rscDfn
+            @Nullable String dstRscGrp = data.getDstRscGrp();
             ResourceDefinition rscDfn = getRscDfnForBackupRestore(
                 data.getDstRscName(),
                 data.getSnapName(),
                 data.getMetaData(),
-                data.isResetData()
+                data.isResetData(),
+                dstRscGrp,
+                data.isForceRscGrp(),
+                responses
             );
+
             SnapshotDefinition snapDfn;
             Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
             Set<StorPool> storPools;

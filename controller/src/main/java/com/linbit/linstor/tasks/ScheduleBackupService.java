@@ -398,6 +398,8 @@ public class ScheduleBackupService implements SystemService
             {
                 String prefNode = null;
                 Map<String, String> renameStorpoolMap = new HashMap<>();
+                @Nullable String dstRscGrp = null;
+                boolean forceRscGrp = false;
                 boolean forceRestore = false;
                 try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP))
                 {
@@ -417,10 +419,17 @@ public class ScheduleBackupService implements SystemService
                     {
                         renameStorpoolMap.put(prop.getKey(), prop.getValue());
                     }
-                    prefNode = prioProps.getProp(
-                        InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                    prefNode = prioProps.getProp(InternalApiConsts.KEY_SCHEDULE_PREF_NODE, namespace);
+                    dstRscGrp = prioProps.getProp(InternalApiConsts.KEY_SCHEDULE_DST_RSC_GRP, namespace);
+                    @Nullable String forceRscGrpStr = prioProps.getProp(
+                        InternalApiConsts.KEY_SCHEDULE_DST_RSC_GRP_FORCE,
                         namespace
                     );
+                    if (forceRscGrpStr != null)
+                    {
+                        forceRscGrp = Boolean.parseBoolean(forceRscGrpStr);
+                    }
+
                     // key for prefNode is {remoteName}/{scheduleName}/KEY_FORCE_RESTORE
                     forceRestore = Boolean.parseBoolean(
                         prioProps.getProp(
@@ -457,7 +466,9 @@ public class ScheduleBackupService implements SystemService
                     lastInc,
                     infoPair,
                     now.toEpochSecond() * 1000,
-                    renameStorpoolMap
+                    renameStorpoolMap,
+                    dstRscGrp,
+                    forceRscGrp
                 );
                 boolean confIsActive = activeShippings.contains(config);
                 if (lastStartTime >= 0 && confIsActive || lastStartTime == NOT_STARTED_YET)
@@ -798,7 +809,10 @@ public class ScheduleBackupService implements SystemService
 
     public void removeSingleTask(Schedule schedule, AbsRemote remote, ResourceDefinition rscDfn)
     {
-        removeSingleTask(new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>(), null, null), false);
+        removeSingleTask(
+            new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>(), null, null, null, false),
+            false
+        );
     }
 
     /**
@@ -919,6 +933,8 @@ public class ScheduleBackupService implements SystemService
         public final ResourceDefinition rscDfn;
         public final boolean lastInc;
         public final Map<String, String> storpoolRenameMap;
+        public final @Nullable String dstRscGrp;
+        public final boolean forceRscGrp;
 
         public Pair<Long, Boolean> timeoutAndType;
         public Long timeoutAndTypeCalculatedFrom;
@@ -932,7 +948,9 @@ public class ScheduleBackupService implements SystemService
             boolean lastIncRef,
             Pair<Long, Boolean> timeoutAndTypeRef,
             Long timeoutAndTypeCalculatedFromRef,
-            Map<String, String> storpoolRenameMapRef
+            Map<String, String> storpoolRenameMapRef,
+            @Nullable String dstRscGrpRef,
+            boolean forceRscGrpRef
         )
         {
             schedule = scheduleRef;
@@ -941,6 +959,9 @@ public class ScheduleBackupService implements SystemService
             lastInc = lastIncRef;
             timeoutAndType = timeoutAndTypeRef;
             storpoolRenameMap = storpoolRenameMapRef;
+            dstRscGrp = dstRscGrpRef;
+            forceRscGrp = forceRscGrpRef;
+
             retryCt = 0;
             timeoutAndTypeCalculatedFrom = timeoutAndTypeCalculatedFromRef;
         }

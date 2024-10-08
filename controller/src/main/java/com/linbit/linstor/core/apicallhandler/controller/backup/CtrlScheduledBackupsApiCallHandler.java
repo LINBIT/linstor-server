@@ -508,7 +508,9 @@ public class CtrlScheduledBackupsApiCallHandler
         String nodeNameRef,
         String dstStorPool,
         Map<String, String> storpoolRename,
-        boolean forceRestoreRef
+        @Nullable String dstRscGrpRef,
+        boolean forceRestoreRef,
+        boolean forceRscGrpRef
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -524,8 +526,10 @@ public class CtrlScheduledBackupsApiCallHandler
                 nodeNameRef,
                 dstStorPool,
                 storpoolRename,
+                dstRscGrpRef,
                 true,
-                forceRestoreRef
+                forceRestoreRef,
+                forceRscGrpRef
             )
         );
     }
@@ -554,6 +558,8 @@ public class CtrlScheduledBackupsApiCallHandler
                 nodeNameRef,
                 null,
                 null,
+                null,
+                false,
                 false,
                 false
             )
@@ -571,8 +577,10 @@ public class CtrlScheduledBackupsApiCallHandler
         String nodeNameRef,
         @Nullable String dstStorPool,
         @Nullable Map<String, String> storpoolRename,
+        @Nullable String dstRscGrpRef,
         boolean add,
-        boolean forceRestore
+        boolean forceRestore,
+        boolean forceRscGrp
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
         AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
@@ -608,6 +616,22 @@ public class CtrlScheduledBackupsApiCallHandler
                     namespace
                 );
             }
+            if (dstRscGrpRef != null && !dstRscGrpRef.isEmpty())
+            {
+                propsRef.setProp(
+                    InternalApiConsts.KEY_SCHEDULE_DST_RSC_GRP,
+                    dstRscGrpRef,
+                    namespace
+                );
+                if (forceRscGrp)
+                {
+                    propsRef.setProp(
+                        InternalApiConsts.KEY_SCHEDULE_DST_RSC_GRP_FORCE,
+                        ApiConsts.VAL_TRUE,
+                        namespace
+                    );
+                }
+            }
             for (Entry<String, String> renameEntry : renameMap.entrySet())
             {
                 propsRef.setProp(
@@ -619,10 +643,9 @@ public class CtrlScheduledBackupsApiCallHandler
             if (add && forceRestore)
             {
                 propsRef.setProp(
-                    InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR + remote.getName().displayValue +
-                        ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
-                        InternalApiConsts.KEY_FORCE_RESTORE,
-                    ApiConsts.VAL_TRUE
+                    InternalApiConsts.KEY_FORCE_RESTORE,
+                    ApiConsts.VAL_TRUE,
+                    namespace
                 );
             }
             rscDfnsToCheck.add(rscDfn);
@@ -657,10 +680,9 @@ public class CtrlScheduledBackupsApiCallHandler
             if (add && forceRestore)
             {
                 propsRef.setProp(
-                    InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR + remote.getName().displayValue +
-                        ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
-                        InternalApiConsts.KEY_FORCE_RESTORE,
-                    ApiConsts.VAL_TRUE
+                    InternalApiConsts.KEY_FORCE_RESTORE,
+                    ApiConsts.VAL_TRUE,
+                    namespace
                 );
             }
             rscDfnsToCheck.addAll(rscGrp.getRscDfns(peerAccCtx.get()));
@@ -697,10 +719,9 @@ public class CtrlScheduledBackupsApiCallHandler
             {
                 systemConfRepository.setCtrlProp(
                     peerAccCtx.get(),
-                    remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue +
-                        ReadOnlyProps.PATH_SEPARATOR + InternalApiConsts.KEY_FORCE_RESTORE,
+                    InternalApiConsts.KEY_FORCE_RESTORE,
                     ApiConsts.VAL_TRUE,
-                    InternalApiConsts.NAMESPC_SCHEDULE
+                    namespace
                 );
             }
             rscDfnsToCheck.addAll(rscDfnRepo.getMapForView(peerAccCtx.get()).values());

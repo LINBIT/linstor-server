@@ -91,11 +91,13 @@ public class BackupShippingTask implements TaskScheduleService.Task
                     null,
                     null,
                     conf.storpoolRenameMap,
+                    conf.dstRscGrp,
                     !forceRestore,
                     forceRestore,
                     conf.schedule.getName().displayValue,
                     inc,
-                    true
+                    true,
+                    conf.forceRscGrp
                 );
         }
         else

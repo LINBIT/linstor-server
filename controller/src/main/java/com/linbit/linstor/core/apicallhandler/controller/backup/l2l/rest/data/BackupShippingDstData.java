@@ -4,6 +4,8 @@ import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 
+import javax.annotation.Nullable;
+
 import java.util.Map;
 
 public class BackupShippingDstData
@@ -24,6 +26,7 @@ public class BackupShippingDstData
     private String dstNetIfName;
     private String dstStorPool;
     private Map<String, String> storPoolRenameMap;
+    private final @Nullable String dstRscGrp;
     private final Map<String, Integer> snapShipPorts;
     private boolean useZstd;
     private boolean downloadOnly;
@@ -31,6 +34,7 @@ public class BackupShippingDstData
     private final boolean resetData;
     private final String dstBaseSnapName;
     private final String dstActualNodeName;
+    private final boolean forceRscGrp;
 
     public BackupShippingDstData(
         int[] srcVersionRef,
@@ -46,13 +50,15 @@ public class BackupShippingDstData
         String dstNetIfNameRef,
         String dstStorPoolRef,
         Map<String, String> storPoolRenameMapRef,
+        @Nullable String dstRscGrpRef,
         Map<String, Integer> snapShipPortsRef,
         boolean useZstdRef,
         boolean downloadOnlyRef,
         boolean forceRestoreRef,
         boolean resetDataRef,
         String dstBaseSnapNameRef,
-        String dstActualNodeNameRef // the node that needs to do the receive
+        String dstActualNodeNameRef, // the node that needs to do the receive
+        boolean forceRscGrpRef
     )
     {
         srcVersion = srcVersionRef;
@@ -68,6 +74,7 @@ public class BackupShippingDstData
         dstNetIfName = dstNetIfNameRef;
         dstStorPool = dstStorPoolRef;
         storPoolRenameMap = storPoolRenameMapRef;
+        dstRscGrp = dstRscGrpRef;
         snapShipPorts = snapShipPortsRef;
         useZstd = useZstdRef;
         downloadOnly = downloadOnlyRef;
@@ -75,6 +82,7 @@ public class BackupShippingDstData
         resetData = resetDataRef;
         dstBaseSnapName = dstBaseSnapNameRef;
         dstActualNodeName = dstActualNodeNameRef;
+        forceRscGrp = forceRscGrpRef;
     }
 
     public StltRemote getStltRemote()
@@ -157,6 +165,11 @@ public class BackupShippingDstData
         return storPoolRenameMap;
     }
 
+    public String getDstRscGrp()
+    {
+        return dstRscGrp;
+    }
+
     public Map<String, Integer> getSnapShipPorts()
     {
         return snapShipPorts;
@@ -190,6 +203,11 @@ public class BackupShippingDstData
     public String getDstActualNodeName()
     {
         return dstActualNodeName;
+    }
+
+    public boolean isForceRscGrp()
+    {
+        return forceRscGrp;
     }
 
     public void setStltRemote(StltRemote stltRemoteRef)

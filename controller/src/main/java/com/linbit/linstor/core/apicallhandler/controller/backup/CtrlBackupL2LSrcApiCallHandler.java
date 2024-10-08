@@ -169,11 +169,13 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String dstNetIfNameRef,
         @Nullable String dstStorPoolRef,
         @Nullable Map<String, String> storPoolRenameRef,
+        @Nullable String dstRscGrpNameRef,
         boolean downloadOnly,
         boolean forceRestore,
         String scheduleNameRef,
         boolean allowIncremental,
-        boolean runInBackgroundRef
+        boolean runInBackgroundRef,
+        boolean forceRscGrp
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -190,11 +192,13 @@ public class CtrlBackupL2LSrcApiCallHandler
                 dstNetIfNameRef,
                 dstStorPoolRef,
                 storPoolRenameRef,
+                dstRscGrpNameRef,
                 downloadOnly,
                 forceRestore,
                 scheduleNameRef,
                 allowIncremental,
-                runInBackgroundRef
+                runInBackgroundRef,
+                forceRscGrp
             )
         );
     }
@@ -208,11 +212,13 @@ public class CtrlBackupL2LSrcApiCallHandler
         String dstNetIfNameRef,
         String dstStorPoolRef,
         Map<String, String> storPoolRenameRef,
+        @Nullable String dstRscGrpRef,
         boolean downloadOnly,
         boolean forceRestore,
         String scheduleNameRef,
         boolean allowIncremental,
-        boolean runInBackgroundRef
+        boolean runInBackgroundRef,
+        boolean forceRscGrp
     )
     {
         AbsRemote remote = ctrlApiDataLoader.loadRemote(linstorRemoteNameRef, true);
@@ -285,10 +291,12 @@ public class CtrlBackupL2LSrcApiCallHandler
             dstNetIfNameRef,
             dstStorPoolRef,
             storPoolRenameMap,
+            dstRscGrpRef,
             downloadOnly,
             forceRestore,
             scheduleNameRef,
-            allowIncremental
+            allowIncremental,
+            forceRscGrp
         );
 
         return Flux.merge(

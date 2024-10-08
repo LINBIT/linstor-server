@@ -163,10 +163,12 @@ public class Backups
                 data.stor_pool_map,
                 data.node_name,
                 data.target_rsc_name,
+                data.dst_rsc_grp,
                 remoteName,
                 data.passphrase,
                 data.download_only,
-                data.force_restore
+                data.force_restore,
+                data.force_mv_rsc_grp
             ).contextWrite(requestHelper.createContext(ApiConsts.API_RESTORE_BACKUP, request));
                 requestHelper.doFlux(asyncResponse,ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED));
         }
@@ -343,11 +345,13 @@ public class Backups
                 data.dst_net_if_name,
                 data.dst_stor_pool,
                 data.stor_pool_rename,
+                data.dst_rsc_grp,
                 data.download_only,
                 data.force_restore,
                 null,
                 data.allow_incremental,
-                false
+                false,
+                data.force_mv_rsc_grp
             )
                 .contextWrite(requestHelper.createContext(ApiConsts.API_SHIP_BACKUP, request));
             requestHelper.doFlux(
@@ -431,7 +435,9 @@ public class Backups
                     data.node_name,
                     data.dst_stor_pool,
                     data.stor_pool_rename,
-                    data.force_restore
+                    data.dst_rsc_grp,
+                    data.force_restore,
+                    data.force_mv_rsc_grp
                 )
                 .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(

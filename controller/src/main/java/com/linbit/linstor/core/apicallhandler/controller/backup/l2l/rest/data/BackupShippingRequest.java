@@ -37,12 +37,14 @@ public class BackupShippingRequest
     public final @Nullable String dstNodeName;
     public final @Nullable String dstNodeNetIfName;
     public final @Nullable String dstStorPool;
+    public final @Nullable String dstRscGrp;
     public final boolean useZstd;
     public final boolean downloadOnly;
     public final boolean forceRestore;
     public final boolean resetData;
     public final @Nullable String dstBaseSnapName;
     public final String dstActualNodeName;
+    public final boolean forceRscGrp;
 
     @JsonCreator
     public BackupShippingRequest(
@@ -57,13 +59,15 @@ public class BackupShippingRequest
         @JsonProperty("dstNodeNetIfName") @Nullable String dstNodeNetIfNameRef,
         @JsonProperty("dstStorPool") @Nullable String dstStorPoolRef,
         @JsonProperty("storPoolRenameMap") @Nullable Map<String, String> storPoolRenameMapRef,
+        @JsonProperty("dstRscGrp") @Nullable String dstRscGrpRef,
         @JsonProperty("useZstd") boolean useZstdRef,
         @JsonProperty("downloadOnly") boolean downloadOnlyRef,
         @JsonProperty("forceRestore") boolean forceRestoreRef,
         @JsonProperty("resetData") boolean resetDataRef,
         @JsonProperty("dstBaseSnapName") @Nullable String dstBaseSnapNameRef,
         @JsonProperty("dstActualNodeName") @Nullable String dstActualNodeNameRef,
-        @JsonProperty("srcRscName") String srcRscNameRef
+        @JsonProperty("srcRscName") String srcRscNameRef,
+        @JsonProperty("forceRscGrp") boolean forceRscGrpRef
     )
     {
         srcL2LRemoteName = Objects.requireNonNull(srcL2LRemoteNameRef, "source linstor remote name must not be null!");
@@ -81,11 +85,13 @@ public class BackupShippingRequest
         dstNodeName = dstNodeNameRef;
         dstNodeNetIfName = dstNodeNetIfNameRef;
         dstStorPool = dstStorPoolRef;
+        dstRscGrp = dstRscGrpRef;
         useZstd = useZstdRef;
         downloadOnly = downloadOnlyRef;
         forceRestore = forceRestoreRef;
         resetData = resetDataRef;
         dstBaseSnapName = dstBaseSnapNameRef;
         dstActualNodeName = dstActualNodeNameRef;
+        forceRscGrp = forceRscGrpRef;
     }
 }

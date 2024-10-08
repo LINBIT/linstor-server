@@ -1391,6 +1391,13 @@ public class JsonGenTypes
         public String node_name;
         public boolean download_only = false;
         public boolean force_restore = false;
+        public String dst_rsc_grp;
+        /**
+         * If the destination resource-definition exists and has resources, the force_mv_rsc_grp must be used in order
+         * to change the resource-group of the destination resource-definition. This is a safety-option to prevent
+         * unexpected autoplace-actions for example performed by the BalanceResourceTask.
+         */
+        public boolean force_mv_rsc_grp = false;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1423,6 +1430,13 @@ public class JsonGenTypes
         public boolean download_only = false;
         public boolean force_restore = false;
         public boolean allow_incremental = true;
+        public String dst_rsc_grp;
+        /**
+         * If the destination resource-definition exists and has resources, the force_mv_rsc_grp must be used in order
+         * to change the resource-group of the destination resource-definition. This is a safety-option to prevent
+         * unexpected autoplace-actions for example performed by the BalanceResourceTask.
+         */
+        public boolean force_mv_rsc_grp = false;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1477,6 +1491,13 @@ public class JsonGenTypes
         public String dst_stor_pool;
         public Map<String, String> stor_pool_rename = Collections.emptyMap();
         public boolean force_restore = false;
+        public String dst_rsc_grp;
+        /**
+         * If the destination resource-definition exists and has resources, the force_mv_rsc_grp must be used in order
+         * to change the resource-group of the destination resource-definition. This is a safety-option to prevent
+         * unexpected autoplace-actions for example performed by the BalanceResourceTask.
+         */
+        public boolean force_mv_rsc_grp = false;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

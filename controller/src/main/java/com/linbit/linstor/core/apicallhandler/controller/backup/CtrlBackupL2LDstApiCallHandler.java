@@ -298,6 +298,7 @@ public class CtrlBackupL2LDstApiCallHandler
         @Nullable String dstNetIfNameRef,
         @Nullable String dstStorPoolRef,
         @Nullable Map<String, String> storPoolRenameMapRef,
+        @Nullable String dstRscGrpRef,
         boolean useZstd,
         boolean downloadOnly,
         boolean forceRestore,
@@ -306,7 +307,8 @@ public class CtrlBackupL2LDstApiCallHandler
         String srcRscName,
         boolean resetData,
         String dstBaseSnapName,
-        String dstActualNodeName
+        String dstActualNodeName,
+        boolean forceRscGrpRef
     )
     {
         Flux<BackupShippingResponse> flux;
@@ -338,13 +340,15 @@ public class CtrlBackupL2LDstApiCallHandler
                     dstNetIfNameRef,
                     dstStorPoolRef,
                     storPoolRenameMapRef,
+                    dstRscGrpRef,
                     snapShipPorts,
                     useZstd,
                     downloadOnly,
                     forceRestore,
                     resetData,
                     dstBaseSnapName,
-                    dstActualNodeName
+                    dstActualNodeName,
+                    forceRscGrpRef
                 );
                 flux = scopeRunner.fluxInTransactionalScope(
                     "Backupshipping L2L start receive",

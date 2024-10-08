@@ -8091,6 +8091,15 @@ components:
         force_restore:
           type: boolean
           default: false
+        dst_rsc_grp:
+          type: string
+        force_mv_rsc_grp:
+          type: boolean
+          default: false
+          description: |
+            If the destination resource-definition exists and has resources, the force_mv_rsc_grp must be used in order
+            to change the resource-group of the destination resource-definition. This is a safety-option to prevent
+            unexpected autoplace-actions for example performed by the BalanceResourceTask.
     BackupCreate:
       type: object
       required:
@@ -8146,6 +8155,15 @@ components:
         allow_incremental:
           type: boolean
           default: true
+        dst_rsc_grp:
+          type: string
+        force_mv_rsc_grp:
+          type: boolean
+          default: false
+          description: |
+            If the destination resource-definition exists and has resources, the force_mv_rsc_grp must be used in order
+            to change the resource-group of the destination resource-definition. This is a safety-option to prevent
+            unexpected autoplace-actions for example performed by the BalanceResourceTask.
     BackupInfo:
       type: object
       required:
@@ -8247,6 +8265,15 @@ components:
         force_restore:
           type: boolean
           default: false
+        dst_rsc_grp:
+          type: string
+        force_mv_rsc_grp:
+          type: boolean
+          default: false
+          description: |
+            If the destination resource-definition exists and has resources, the force_mv_rsc_grp must be used in order
+            to change the resource-group of the destination resource-definition. This is a safety-option to prevent
+            unexpected autoplace-actions for example performed by the BalanceResourceTask.
     ScheduleDetailsList:
       type: object
       properties:

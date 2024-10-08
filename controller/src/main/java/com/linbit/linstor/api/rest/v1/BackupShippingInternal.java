@@ -168,6 +168,7 @@ public class BackupShippingInternal
                 shipRequest.dstNodeNetIfName,
                 shipRequest.dstStorPool,
                 shipRequest.storPoolRenameMap,
+                shipRequest.dstRscGrp,
                 shipRequest.useZstd,
                 shipRequest.downloadOnly,
                 shipRequest.forceRestore,
@@ -176,7 +177,8 @@ public class BackupShippingInternal
                 shipRequest.srcRscName,
                 shipRequest.resetData,
                 shipRequest.dstBaseSnapName,
-                shipRequest.dstActualNodeName
+                shipRequest.dstActualNodeName,
+                shipRequest.forceRscGrp
             ).contextWrite(
                 requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
             );

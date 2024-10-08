@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added options dst_rsc_grp and force_rsc_grp to BackupShip, BackupRestore and BackupSchedule
+
 ### Fixed
 
 - Fixed usage of FileSystemWatch to properly trigger when devices appear

@@ -5,6 +5,8 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 
+import javax.annotation.Nullable;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -24,6 +26,7 @@ public class BackupShippingSrcData
     private String dstNodeName;
     private String dstNetIfName;
     private String dstStorPool;
+    private @Nullable String dstRscGrp;
     private String scheduleName;
 
     private StltRemote stltRemote;
@@ -34,6 +37,7 @@ public class BackupShippingSrcData
     private boolean downloadOnly;
     private boolean forceRestore;
     private boolean allowIncremental;
+    private boolean forceRscGrp;
 
     public BackupShippingSrcData(
         String srcClusterIdRef,
@@ -47,10 +51,12 @@ public class BackupShippingSrcData
         String dstNetIfNameRef,
         String dstStorPoolRef,
         Map<String, String> storPoolRenameRef,
+        @Nullable String dstRscGrpRef,
         boolean downloadOnlyRef,
         boolean forceRestoreRef,
         String scheduleNameRef,
-        boolean allowIncrementalRef
+        boolean allowIncrementalRef,
+        boolean forceRscGrpRef
     )
     {
         srcClusterId = srcClusterIdRef;
@@ -64,10 +70,12 @@ public class BackupShippingSrcData
         dstNetIfName = dstNetIfNameRef;
         dstStorPool = dstStorPoolRef;
         storPoolRename = storPoolRenameRef;
+        dstRscGrp = dstRscGrpRef;
         downloadOnly = downloadOnlyRef;
         forceRestore = forceRestoreRef;
         scheduleName = scheduleNameRef;
         allowIncremental = allowIncrementalRef;
+        forceRscGrp = forceRscGrpRef;
     }
 
     public String getSrcClusterId()
@@ -135,6 +143,11 @@ public class BackupShippingSrcData
         return dstStorPool;
     }
 
+    public @Nullable String getDstRscGrp()
+    {
+        return dstRscGrp;
+    }
+
     public String getScheduleName()
     {
         return scheduleName;
@@ -178,6 +191,11 @@ public class BackupShippingSrcData
     public boolean isAllowIncremental()
     {
         return allowIncremental;
+    }
+
+    public boolean isForceRscGrp()
+    {
+        return forceRscGrp;
     }
 
     public void setSrcSnapshot(Snapshot srcSnapshotRef)
