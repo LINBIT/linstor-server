@@ -220,65 +220,67 @@ public class SelectionManager
         throws InvalidKeyException, AccessDeniedException
     {
         final HashMap<String, Map<String, Integer>> initDiffProps = new HashMap<>();
-        final Map<String, Integer> xReplicasOnDifferentMap = selectFilterRef.getXReplicasOnDifferentMap() == null ?
-            new HashMap<>() :
-            selectFilterRef.getXReplicasOnDifferentMap();
+        final Map</* PropKey */ String, /* maxCount */Integer> xReplicasOnDifferentMap;
+        xReplicasOnDifferentMap = selectFilterRef.getXReplicasOnDifferentMap() == null ?
+            new HashMap<>() : // do not use Collections.emptyMap since we might modify this map later
+            new HashMap<>(selectFilterRef.getXReplicasOnDifferentMap());
 
-        if (selectFilterRef.getReplicasOnDifferentList() != null)
+        // replicasOnDifferentList can contain elements that are either a single "$key", or "$key=$value"
+        // (currently multiple values like "$key=$value1,$value2,..." is not supported)
+        final List<String> replicasOnDifferentList = selectFilterRef.getReplicasOnDifferentList() == null ?
+            Collections.emptyList() :
+            selectFilterRef.getReplicasOnDifferentList();
+
+
+        // xReplicasOnDifferent might contain property keys that are not contained in replicasOnDifferentList (neither
+        // entirely as in "$key" nor partially as in "$key=$value").
+
+        // processing both sources of keys (xReplicasOnDifferent and the actual "$key"s of replicasOnDifferentList) are
+        // still identical. Therefore we just combine all keys and possibly skip already processed keys (this could
+        // happen if we first process "k1=v1" from replicasOnDifferentList and afterwards "k1" from
+        // xReplicasOnDifferent).
+        final Set<String> combinedSetOfKeys = new HashSet<>(xReplicasOnDifferentMap.keySet());
+        combinedSetOfKeys.addAll(replicasOnDifferentList);
+
+        for (String keyAndMaybeValue : combinedSetOfKeys)
         {
-            for (String replOnDiff : selectFilterRef.getReplicasOnDifferentList())
+            HashMap<String, Integer> valueToRemainingCount = new HashMap<>();
+            int assignIdx = keyAndMaybeValue.indexOf("=");
+            final Integer maxCount;
+            String key;
+            if (assignIdx != -1)
             {
-                HashMap<String, Integer> valueToRemainingCount = new HashMap<>();
-                int assignIdx = replOnDiff.indexOf("=");
-                final Integer maxCount;
-                String key;
-                if (assignIdx != -1)
+                key = keyAndMaybeValue.substring(0, assignIdx);
+                String val = keyAndMaybeValue.substring(assignIdx + 1);
+                // we are not allowed to use this value at all
+                valueToRemainingCount.put(val, X_REPLICAS_USAGE_NOT_ALLOWED);
+                // maxCount = xReplicasOnDifferentMap.computeIfAbsent(key, ignored -> X_REPLICAS_DFLT_COUNT);
+            }
+            else
+            {
+                key = keyAndMaybeValue;
+            }
+            maxCount = xReplicasOnDifferentMap.computeIfAbsent(key, ignored -> X_REPLICAS_DFLT_COUNT);
+            for (Node node : areadyDeployedNode)
+            {
+                @Nullable String nodeVal = node.getProps(accessContext).getProp(key);
+                if (nodeVal != null)
                 {
-                    key = replOnDiff.substring(0, assignIdx);
-                    String val = replOnDiff.substring(assignIdx + 1);
-                    // we are not allowed to use this value at all
-                    valueToRemainingCount.put(val, X_REPLICAS_USAGE_NOT_ALLOWED);
-                    // maxCount = xReplicasOnDifferentMap.computeIfAbsent(key, ignored -> X_REPLICAS_DFLT_COUNT);
-                }
-                else
-                {
-                    key = replOnDiff;
-                }
-                maxCount = xReplicasOnDifferentMap.computeIfAbsent(key, ignored -> X_REPLICAS_DFLT_COUNT);
-                for (Node node : areadyDeployedNode)
-                {
-                    @Nullable String nodeVal = node.getProps(accessContext).getProp(key);
-                    if (nodeVal != null)
+                    final int oldRemainingCount = valueToRemainingCount.getOrDefault(nodeVal, maxCount);
+                    if (oldRemainingCount > 0)
                     {
-                        final int oldRemainingCount = valueToRemainingCount.getOrDefault(nodeVal, maxCount);
-                        if (oldRemainingCount > 0)
-                        {
-                            // if oldRemainingCount is already 0, we do not want to go to -1, since that is a special
-                            // case using X_REPLICAS_USAGE_NOT_ALLOWED
-                            // if we are already at -1 (X_REPLICAS_USAGE_NOT_ALLOWED) we also want to stay at that value
-                            valueToRemainingCount.put(nodeVal, oldRemainingCount - 1);
-                        }
+                        // if oldRemainingCount is already 0, we do not want to go to -1, since that is a special
+                        // case using X_REPLICAS_USAGE_NOT_ALLOWED
+                        // if we are already at -1 (X_REPLICAS_USAGE_NOT_ALLOWED) we also want to stay at that value
+                        valueToRemainingCount.put(nodeVal, oldRemainingCount - 1);
                     }
                 }
-                xReplicasOnDiffCount.put(key, maxCount);
+            }
+            xReplicasOnDiffCount.put(key, maxCount);
 
-                initDiffProps.put(key, Collections.unmodifiableMap(valueToRemainingCount));
-            }
+            initDiffProps.put(key, Collections.unmodifiableMap(valueToRemainingCount));
         }
-        // also there is the possibility that we receive entries in the xReplicasOnDiffMap which were not present in the
-        // replicasOnDiffList
-        for (Entry<String, Integer> xReplEntry : xReplicasOnDifferentMap.entrySet())
-        {
-            String propKey = xReplEntry.getKey();
-            if (!xReplicasOnDiffCount.containsKey(propKey))
-            {
-                xReplicasOnDiffCount.put(propKey, xReplEntry.getValue());
-            }
-            if (!initDiffProps.containsKey(propKey))
-            {
-                initDiffProps.put(propKey, Collections.emptyMap());
-            }
-        }
+
         return initDiffProps;
     }
 

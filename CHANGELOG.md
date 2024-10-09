@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drbd-layer should not try to adjust resource while still cloning
 - Fixed possible "access to deleted resource" in case of an issue during rsc-creation + manual delete
 - AutoPlaceAPI: remove unnecessary resource definition loading
+- Fixed bug that could be lead to violation of configured --x-replicas-on-different restriction
 
 ## [1.29.1] - 2024-09-24
 
