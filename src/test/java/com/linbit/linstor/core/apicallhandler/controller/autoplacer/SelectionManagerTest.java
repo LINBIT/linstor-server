@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.Assert;
@@ -25,8 +26,9 @@ import org.junit.Test;
 
 public class SelectionManagerTest extends GenericDbBase
 {
-    private static final String zoneKey = "Aux/zone";
-    private static final String rackKey = "Aux/rack";
+    private static final String ZONE_KEY = "Aux/zone";
+    private static final String RACK_KEY = "Aux/rack";
+    private static final String UNIQUE_KEY = "Aux/uniqueId";
     private Autoplacer.StorPoolWithScore[] storPoolWithScores;
     private HashMap<String, Node> nodes;
 
@@ -63,8 +65,9 @@ public class SelectionManagerTest extends GenericDbBase
                         new NodeName(nodeName),
                         Node.Type.SATELLITE,
                         new Node.Flags[0]);
-                    node.getProps(accessContext).setProp(zoneKey, zone);
-                    node.getProps(accessContext).setProp(rackKey, Integer.toString(rack + 1));
+                    node.getProps(accessContext).setProp(ZONE_KEY, zone);
+                    node.getProps(accessContext).setProp(RACK_KEY, Integer.toString(rack + 1));
+                    node.getProps(accessContext).setProp(UNIQUE_KEY, zone + "-" + (rack + 1) + "-" + (i + 1));
 
                     nodes.put(nodeName, node);
 
@@ -132,8 +135,8 @@ public class SelectionManagerTest extends GenericDbBase
     {
         AutoSelectFilterApi selectFilter = new AutoSelectFilterBuilder()
             .setPlaceCount(3)
-            .setReplicasOnSameList(Collections.singletonList(rackKey))
-            .setReplicasOnDifferentList(Collections.singletonList(zoneKey))
+            .setReplicasOnSameList(Collections.singletonList(RACK_KEY))
+            .setReplicasOnDifferentList(Collections.singletonList(ZONE_KEY))
             .build();
 
         SelectionManager selectionManager = new SelectionManager(
@@ -152,13 +155,13 @@ public class SelectionManagerTest extends GenericDbBase
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
         Assert.assertEquals(3, actual.size());
 
-        String expectedKey = storPoolWithScores[0].storPool.getNode().getProps(accessContext).getProp(rackKey);
+        String expectedKey = storPoolWithScores[0].storPool.getNode().getProps(accessContext).getProp(RACK_KEY);
         Set<String> seenZones = new HashSet<>();
 
         for (Autoplacer.StorPoolWithScore pool : actual)
         {
-            Assert.assertEquals(expectedKey, pool.storPool.getNode().getProps(accessContext).getProp(rackKey));
-            Assert.assertTrue(seenZones.add(pool.storPool.getNode().getProps(accessContext).getProp(zoneKey)));
+            Assert.assertEquals(expectedKey, pool.storPool.getNode().getProps(accessContext).getProp(RACK_KEY));
+            Assert.assertTrue(seenZones.add(pool.storPool.getNode().getProps(accessContext).getProp(ZONE_KEY)));
         }
     }
 
@@ -168,7 +171,7 @@ public class SelectionManagerTest extends GenericDbBase
         AutoSelectFilterApi selectFilter = new AutoSelectFilterBuilder()
             .setPlaceCount(3)
             // There are only 2 nodes in a zone/rack combination
-            .setReplicasOnSameList(Arrays.asList(zoneKey, rackKey))
+            .setReplicasOnSameList(Arrays.asList(ZONE_KEY, RACK_KEY))
             .build();
 
         SelectionManager selectionManager = new SelectionManager(
@@ -193,7 +196,7 @@ public class SelectionManagerTest extends GenericDbBase
     {
         AutoSelectFilterApi selectFilter = new AutoSelectFilterBuilder()
             .setPlaceCount(3)
-            .setReplicasOnDifferentList(Collections.singletonList(zoneKey))
+            .setReplicasOnDifferentList(Collections.singletonList(ZONE_KEY))
             .build();
 
         SelectionManager selectionManager = new SelectionManager(
@@ -213,7 +216,7 @@ public class SelectionManagerTest extends GenericDbBase
         Assert.assertEquals(1, actual.size());
         for (Autoplacer.StorPoolWithScore selected : actual)
         {
-            Assert.assertEquals("c", selected.storPool.getNode().getProps(accessContext).getProp(zoneKey));
+            Assert.assertEquals("c", selected.storPool.getNode().getProps(accessContext).getProp(ZONE_KEY));
         }
     }
 
@@ -222,7 +225,7 @@ public class SelectionManagerTest extends GenericDbBase
     {
         AutoSelectFilterApi selectFilter = new AutoSelectFilterBuilder()
             .setPlaceCount(3)
-            .setReplicasOnSameList(Collections.singletonList(zoneKey))
+            .setReplicasOnSameList(Collections.singletonList(ZONE_KEY))
             .build();
 
         SelectionManager selectionManager = new SelectionManager(
@@ -242,7 +245,7 @@ public class SelectionManagerTest extends GenericDbBase
         Assert.assertEquals(1, actual.size());
         for (Autoplacer.StorPoolWithScore selected : actual)
         {
-            Assert.assertEquals("c", selected.storPool.getNode().getProps(accessContext).getProp(zoneKey));
+            Assert.assertEquals("c", selected.storPool.getNode().getProps(accessContext).getProp(ZONE_KEY));
         }
     }
 
@@ -253,8 +256,8 @@ public class SelectionManagerTest extends GenericDbBase
         // might want to filter it again here.
         AutoSelectFilterApi selectFilter = new AutoSelectFilterBuilder()
             .setPlaceCount(3)
-            .setReplicasOnSameList(Collections.singletonList(rackKey + "=2"))
-            .setReplicasOnDifferentList(Collections.singletonList(zoneKey))
+            .setReplicasOnSameList(Collections.singletonList(RACK_KEY + "=2"))
+            .setReplicasOnDifferentList(Collections.singletonList(ZONE_KEY))
             .build();
 
         SelectionManager selectionManager = new SelectionManager(
@@ -277,8 +280,40 @@ public class SelectionManagerTest extends GenericDbBase
 
         for (Autoplacer.StorPoolWithScore pool : actual)
         {
-            Assert.assertEquals("2", pool.storPool.getNode().getProps(accessContext).getProp(rackKey));
-            Assert.assertTrue(seenZones.add(pool.storPool.getNode().getProps(accessContext).getProp(zoneKey)));
+            Assert.assertEquals("2", pool.storPool.getNode().getProps(accessContext).getProp(RACK_KEY));
+            Assert.assertTrue(seenZones.add(pool.storPool.getNode().getProps(accessContext).getProp(ZONE_KEY)));
         }
+    }
+
+    @Test
+    public void additionalPlacementWithXReplicasOnDifferentTest() throws Exception
+    {
+        /*
+         * If we have all nodes in different datacenter (i.e. only one node per datacenter), something like
+         * "--x-replicas-on-different dc 2" is expected to fail with a placecount >= 2.
+         * However, we had a bug where you have such a RG with "--x-replicas-on-different dc 2", spawn a resource
+         * with "--place-count 1" (which is fine), and afterwards increase the --place-count of the RG back to 2.
+         * Increasing the --place-count can be fine to get persisted, but it certainly should not automatically
+         * spawn a second resource which violates the --x-replicas-on-different constraint
+         */
+        AutoSelectFilterApi selectFilter = new AutoSelectFilterBuilder()
+            .setAdditionalPlaceCount(1)
+            .setXReplicasOnDifferentMap(Map.of(UNIQUE_KEY, 2))
+            .build();
+
+        SelectionManager selectionManager = new SelectionManager(
+            DummySecurityInitializer.getSystemAccessContext(),
+            errorReporter,
+            selectFilter,
+            Collections.singletonList(nodes.get("node-a1-1")),
+            0,
+            0,
+            Collections.emptyList(),
+            Collections.emptyMap(),
+            storPoolWithScores,
+            false
+        );
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Assert.assertEquals(0, actual.size());
     }
 }
