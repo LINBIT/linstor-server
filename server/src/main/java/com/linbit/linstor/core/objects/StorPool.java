@@ -124,7 +124,7 @@ public class StorPool extends AbsCoreObj<StorPool>
         final boolean isFileProviderKind = providerKindRef == DeviceProviderKind.FILE ||
             providerKindRef == DeviceProviderKind.FILE_THIN;
 
-        supportsSnapshots = transObjFactory.createTransactionSimpleObject(
+        supportsSnapshots = transObjFactory.<StorPool, Boolean>createTransactionSimpleObject(
             this,
             isFileProviderKind ? null : providerKindRef.isSnapshotSupported(),
             null
@@ -385,6 +385,7 @@ public class StorPool extends AbsCoreObj<StorPool>
         return freeSpaceTracker.getName().isShared() && !externalLocking;
     }
 
+    @Override
     public SharedStorPoolName getSharedStorPoolName()
     {
         checkDeleted();

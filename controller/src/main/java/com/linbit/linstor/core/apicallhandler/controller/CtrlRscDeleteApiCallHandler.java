@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -13,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoH
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
@@ -27,18 +29,25 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
+import com.linbit.utils.TimeUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -47,6 +56,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -58,6 +68,9 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListener
 {
+    private static final String PROP_KEY_ZFS_RENAME_SUFFIX = InternalApiConsts.NAMESPC_INTERNAL + "/" +
+        ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + InternalApiConsts.KEY_ZFS_RENAME_SUFFIX;
+
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
@@ -201,8 +214,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         ctrlRscDeleteApiHelper.ensureNotInUse(rsc);
         ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc);
 
-        failIfDependentSnapshot(rsc);
-
         return activateIfLast(rsc).concatWith(
             scopeRunner.fluxInTransactionalScope(
                 "Prepare resource delete",
@@ -234,13 +245,14 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         ctrlRscDeleteApiHelper.ensureNotInUse(rsc);
         ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc);
 
-        failIfDependentSnapshot(rsc);
-
         AccessContext accCtx = peerAccCtx.get();
 
         Flux<ApiCallRc> flux;
         try
         {
+            ResourceDefinition rscDfn = rsc.getResourceDefinition();
+            Set<SnapshotDefinition> snapDfnsToUpdate = CtrlRscDeleteApiCallHandler.handleZfsRenameIfNeeded(apiCtx, rsc);
+
             if (LayerUtils.hasLayer(rsc.getLayerData(accCtx), DeviceLayerKind.DRBD))
             {
                 ctrlRscDeleteApiHelper.markDrbdDeletedWithVolumes(rsc);
@@ -305,6 +317,10 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                 // are in a transaction, we can just return that
                 flux = deleteResourceOnPeersInTransaction(nodeNameStr, rscNameStr, context);
             }
+
+            flux = flux.concatWith(
+                CtrlSnapshotApiCallHandler.updateSnapDfns(ctrlSatelliteUpdateCaller, errorReporter, snapDfnsToUpdate)
+            );
         }
         catch (AccessDeniedException exc)
         {
@@ -312,6 +328,81 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         }
 
         return flux;
+    }
+
+    public static Set<SnapshotDefinition> handleZfsRenameIfNeeded(AccessContext accCtxRef, Resource rscRef)
+    {
+        final Set<SnapshotDefinition> snapDfnsToUpdate = new HashSet<>();
+        ResourceDefinition rscDfn = rscRef.getResourceDefinition();
+        try
+        {
+            if (hasZfsVlm(accCtxRef, rscRef))
+            {
+                NodeName nodeName = rscRef.getNode().getName();
+                final Set<Props> snapPropsToUpdate = new HashSet<>();
+                for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(accCtxRef))
+                {
+                    @Nullable Snapshot snap = snapDfn.getSnapshot(accCtxRef, nodeName);
+                    if (snap != null)
+                    {
+                        Props snapProps = snap.getSnapProps(accCtxRef);
+                        @Nullable String snapValue = snapProps.getProp(PROP_KEY_ZFS_RENAME_SUFFIX);
+                        if (snapValue == null)
+                        {
+                            snapDfnsToUpdate.add(snapDfn);
+                            snapPropsToUpdate.add(snapProps);
+                        }
+                    }
+                }
+
+                Props rscProps = rscRef.getProps(accCtxRef);
+                @Nullable String rscRenameSuffix = rscProps.getProp(PROP_KEY_ZFS_RENAME_SUFFIX);
+
+                // this "is already set" check prevents that a resource's ZFS_RENAME property is updated during
+                // deleting a resource in multiple steps. This MUST NOT happen.
+                // (not exactly sure how this could happen, since we are about to delete the resource... no idea how
+                // someone should manage to create a snapshot in between, but who knows what the future holds :) )
+                String nextRenameSufixStr = rscRenameSuffix == null ? TimeUtils.getZfsRenameTime() : rscRenameSuffix;
+
+                for (Props snapProps : snapPropsToUpdate)
+                {
+                    // if the snapDfn has not yet been renamed, it will be renamed now.
+                    snapProps.setProp(PROP_KEY_ZFS_RENAME_SUFFIX, nextRenameSufixStr);
+                }
+
+                if (!nextRenameSufixStr.equals(rscRenameSuffix))
+                {
+                    // although this resource is going to be deleted soon, the controller still needs to tell the
+                    // satellite's ZfsProvider the target-rename-suffix
+                    rscRef.getProps(accCtxRef).setProp(PROP_KEY_ZFS_RENAME_SUFFIX, nextRenameSufixStr);
+                }
+            }
+        }
+        catch (InvalidKeyException | NumberFormatException | InvalidValueException | AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        return snapDfnsToUpdate;
+    }
+
+    private static boolean hasZfsVlm(AccessContext accCtxRef, Resource rscRef) throws AccessDeniedException
+    {
+        boolean ret = false;
+        Set<StorPool> storPools = LayerVlmUtils.getStorPools(rscRef, accCtxRef);
+        for (StorPool sp : storPools)
+        {
+            DeviceProviderKind spKind = sp.getDeviceProviderKind();
+            if (spKind.equals(DeviceProviderKind.ZFS) || spKind.equals(DeviceProviderKind.ZFS_THIN))
+            {
+                ret = true;
+                break;
+            }
+        }
+        return ret;
     }
 
     private Flux<ApiCallRc> deleteResourceOnPeers(String nodeNameStr, String rscNameStr, ResponseContext context)

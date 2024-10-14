@@ -2,9 +2,14 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -15,6 +20,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -30,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlSnapshotApiCallHandler
@@ -107,6 +115,35 @@ public class CtrlSnapshotApiCallHandler
         }
 
         return snapshotDfns;
+    }
+
+    public static Flux<ApiCallRc> updateSnapDfns(
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller,
+        ErrorReporter errorReporter,
+        Collection<SnapshotDefinition> snapDfnsRef
+    )
+    {
+        Flux<ApiCallRc> updatSnapDfnFlux = Flux.empty();
+        for (SnapshotDefinition snapDfn : snapDfnsRef)
+        {
+            updatSnapDfnFlux = updatSnapDfnFlux.concatWith(
+                ctrlSatelliteUpdateCaller.updateSatellites(
+                    snapDfn,
+                    nodeName -> Flux.error(
+                        new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))
+                    )
+                )
+                    .transform(
+                        updateResponses -> CtrlResponseUtils.combineResponses(
+                            errorReporter,
+                            updateResponses,
+                            snapDfn.getResourceName(),
+                            "SnapshotDefinition " + snapDfn.toStringImpl() + " on {0} updated"
+                        )
+                    )
+            );
+        }
+        return updatSnapDfnFlux;
     }
 
     public static String getSnapshotDescription(

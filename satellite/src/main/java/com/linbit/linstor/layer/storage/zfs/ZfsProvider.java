@@ -22,6 +22,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -45,15 +46,19 @@ import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.ZfsPropsUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -392,15 +397,26 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
 
     @Override
     protected void deleteLvImpl(ZfsData<Resource> vlmData, String lvId)
-        throws StorageException, DatabaseException
+        throws StorageException, DatabaseException, AccessDeniedException
     {
-        ZfsCommands.delete(
-            extCmdFactory.create(),
-            vlmData.getZPool(),
-            lvId,
-            ZfsVolumeType.VOLUME
-        );
+        List<ZfsData<Snapshot>> snapshots = getSnapshots(vlmData);
+        if (!snapshots.isEmpty())
+        {
+            String renameSuffix = getNextRenameSuffix(vlmData);
+            ZfsCommands.rename(extCmdFactory.create(), vlmData.getZPool(), lvId, lvId + renameSuffix);
+        }
+        else
+        {
+            ZfsCommands.delete(
+                extCmdFactory.create(),
+                vlmData.getZPool(),
+                lvId,
+                ZfsVolumeType.VOLUME
+            );
+        }
         vlmData.setExists(false);
+
+        // TODO: the next block is broken. currently we do not track ZFS snapshots from "rd clone" events
 
         // This block will delete the clone snapshot on the base resource if `zfs clone` was used
         // if deleting fails we should just ignore it as it doesn't have any impact on the
@@ -435,6 +451,57 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             errorReporter.logWarning("Unable to remove base snapshot of resource %s",
                 vlmData.getRscLayerObject().getResourceName());
         }
+    }
+
+    private List<ZfsData<Snapshot>> getSnapshots(ZfsData<Resource> vlmDataRef) throws AccessDeniedException
+    {
+        List<ZfsData<Snapshot>> ret = new ArrayList<>();
+        VolumeNumber localVlmNr = vlmDataRef.getVlmNr();
+        StorageRscData<Resource> localRscData = vlmDataRef.getRscLayerObject();
+        String localRscSuffix = localRscData.getResourceNameSuffix();
+        Resource localRsc = localRscData.getAbsResource();
+        ResourceDefinition rscDfn = localRsc.getResourceDefinition();
+        for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(storDriverAccCtx))
+        {
+            @Nullable Snapshot localSnap = snapDfn.getSnapshot(storDriverAccCtx, localRsc.getNode().getName());
+            // localSnap could be null if while snapDfn was created the localRsc did not exist, or was diskless, etc...
+            if (localSnap != null)
+            {
+                AbsRscLayerObject<Snapshot> snapLayerData = localSnap.getLayerData(storDriverAccCtx);
+                Set<AbsRscLayerObject<Snapshot>> storSnapSet = LayerRscUtils.getRscDataByLayer(
+                    snapLayerData,
+                    DeviceLayerKind.STORAGE,
+                    localRscSuffix::equals
+                );
+
+                if (storSnapSet.size() > 1)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    for (AbsRscLayerObject<Snapshot> storSnap : storSnapSet)
+                    {
+                        sb.append(storSnap.getSuffixedResourceName()).append("\n");
+                    }
+                    throw new ImplementationError(
+                        "Unexectedly many storage snapshot layer data found: " + storSnapSet.size() + "\n" +
+                            sb.toString()
+                    );
+                }
+                if (!storSnapSet.isEmpty())
+                {
+                    ret.add(storSnapSet.iterator().next().getVlmProviderObject(localVlmNr));
+                }
+            }
+        }
+        return ret;
+    }
+
+    private String getNextRenameSuffix(ZfsData<Resource> vlmDataRef) throws InvalidKeyException, AccessDeniedException
+    {
+        String nextNum = vlmDataRef.getRscLayerObject()
+            .getAbsResource()
+            .getProps(storDriverAccCtx)
+            .getProp(InternalApiConsts.KEY_ZFS_RENAME_SUFFIX, STORAGE_NAMESPACE);
+        return "_" + nextNum;
     }
 
     @Override
@@ -934,6 +1001,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return ret;
     }
 
+    @Override
     public void openForClone(VlmProviderObject<?> vlm, @Nullable String cloneName, boolean readOnly)
         throws StorageException
     {

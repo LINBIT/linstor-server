@@ -317,12 +317,12 @@ public class ProtoDeserializationUtils
             fullSyncId,
             updateId,
             storPoolProto.getFreeSpaceMgrName(),
-            Optional.ofNullable(
+            Optional.<Long>ofNullable(
                 storPoolProto.hasFreeSpace() && storPoolProto.getFreeSpace().hasFreeCapacity() ?
                     storPoolProto.getFreeSpace().getFreeCapacity() :
                     null
             ),
-            Optional.ofNullable(
+            Optional.<Long>ofNullable(
                 storPoolProto.hasFreeSpace() && storPoolProto.getFreeSpace().hasTotalCapacity() ?
                     storPoolProto.getFreeSpace().getTotalCapacity() :
                     null

@@ -14,6 +14,9 @@ public class TimeUtils
     public static final DateTimeFormatter JOURNALCTL_DF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     public static final DateTimeFormatter DTF_NO_SPACE = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
     public static final DateTimeFormatter DTF_NO_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    public static final DateTimeFormatter DTF_ISO_8601_FOR_ZFS_RENAME = DateTimeFormatter.ofPattern(
+        "yyyy-MM-dd'T'HH-mm-ss-SSS"
+    );
 
     /**
      * ATTENTION: DateTimeFormatter.ofPattern("X") requires an {@link ChronoField#OFFSET_SECONDS} (which results in "Z"
@@ -35,8 +38,19 @@ public class TimeUtils
         return date.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
+    public static String getZfsRenameTime()
+    {
+        return getZfsRenameTime(LocalDateTime.now());
+    }
+
+    public static String getZfsRenameTime(LocalDateTime nowRef)
+    {
+        return DTF_ISO_8601_FOR_ZFS_RENAME.format(nowRef);
+    }
+
     private TimeUtils()
     {
         // utils-class, do not allow instance
     }
+
 }

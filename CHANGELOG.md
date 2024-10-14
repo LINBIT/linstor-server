@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tiebreaker: Improved decision making if a deleting resource should be kept as tiebreaker
 - Write a full documented linstor.toml and remove the linstor.toml-example
 - Snapshot rollback now does internally a resource delete + snapshot restore
+- ZFS resource can now be deleted while having ZFS snapshots (ZFS volumes will be renamed)
+- ZFS snapshots can now be deleted while having ZFS clones (ZFS snapshots will be renamed)
 
 ### Fixed
 

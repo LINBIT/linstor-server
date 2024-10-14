@@ -257,6 +257,7 @@ public class InternalApiConsts
     // storage
     public static final String NAMESPC_STORAGE = "Storage";
     public static final String ALLOCATION_GRANULARITY = "AllocationGranularity";
+    public static final String KEY_ZFS_RENAME_SUFFIX = "ZfsRenameSuffix";
 
     // lvm
     public static final String NAMESPC_LVM = "Lvm";
