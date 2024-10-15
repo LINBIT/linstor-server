@@ -73,14 +73,12 @@ public class CtrlRscAutoPlaceApiCallHandler
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodesMap nodesMap;
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<CtrlRscAutoHelper> autoHelperProvider;
-    private CtrlRscToggleDiskApiCallHandler toggleDiskHelper;
 
     @Inject
     public CtrlRscAutoPlaceApiCallHandler(
@@ -91,14 +89,12 @@ public class CtrlRscAutoPlaceApiCallHandler
         FreeCapacityFetcher freeCapacityFetcherRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodesMap nodesMapRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<CtrlRscAutoHelper> autoHelperProviderRef,
-        CtrlRscToggleDiskApiCallHandler toggleDiskHelperRef
+        Provider<CtrlRscAutoHelper> autoHelperProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -108,14 +104,12 @@ public class CtrlRscAutoPlaceApiCallHandler
         freeCapacityFetcher = freeCapacityFetcherRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodesMap = nodesMapRef;
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         autoHelperProvider = autoHelperProviderRef;
-        toggleDiskHelper = toggleDiskHelperRef;
     }
 
     public Flux<ApiCallRc> autoPlace(
@@ -171,10 +165,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             rscGrpSelectConfig.getApiData()
         );
 
-        List<Resource> alreadyPlaced = privilegedStreamResources(
-            ctrlApiDataLoader.loadRscDfn(rscNameStr, true)
-        )
-            .collect(Collectors.toList());
+        List<Resource> alreadyPlaced = privilegedStreamResources(rscDfn).collect(Collectors.toList());
 
         alreadyPlaced = filterOnlyOneRscPerSharedSp(alreadyPlaced);
 
@@ -301,7 +292,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 .setSkipAlreadyPlacedOnNodeNamesCheck(disklessNodeNames)
                 .build();
 
-            final long rscSize = calculateResourceDefinitionSize(rscNameStr);
+            final long rscSize = calculateResourceDefinitionSize(rscDfn, peerAccCtx.get());
 
             Set<StorPool> candidate = findBestCandidate(
                 autoStorConfig,
@@ -656,11 +647,6 @@ public class CtrlRscAutoPlaceApiCallHandler
             );
         }
         return flagSet;
-    }
-
-    private long calculateResourceDefinitionSize(String rscNameStr)
-    {
-        return calculateResourceDefinitionSize(ctrlApiDataLoader.loadRscDfn(rscNameStr, true), peerAccCtx.get());
     }
 
     static long calculateResourceDefinitionSize(ResourceDefinition rscDfn, AccessContext accCtx)
