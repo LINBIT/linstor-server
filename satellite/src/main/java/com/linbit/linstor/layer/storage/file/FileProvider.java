@@ -44,6 +44,7 @@ import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -458,7 +459,6 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     {
         Path storageDirectory = fileData.getStorageDirectory();
         Path snapPath = getSnapVlmPath(
-            fileData.getStorPool().getName().displayValue,
             fileData.getStorageDirectory(),
             fileData.getRscLayerObject().getResourceName().displayValue,
             fileData.getRscLayerObject().getResourceNameSuffix(),
@@ -475,7 +475,6 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     private Path getSnapVlmPath(
-        String storPoolName,
         Path storageDirectoryRef,
         String rscName,
         String rscSuffix,
@@ -485,30 +484,35 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     {
         return storageDirectoryRef.resolve(
             asSnapLvIdentifierRaw(
-                storPoolName,
                 rscName,
                 rscSuffix,
-                snapName,
-                vlmNr
+                vlmNr,
+                snapName
             )
         );
     }
 
     @Override
-    protected String asSnapLvIdentifierRaw(
-        String ignoredSpName,
-        String rscName,
-        String rscNameSuffix,
-        String snapName,
-        int vlmNr
-    )
+    protected String asSnapLvIdentifier(FileData<Snapshot> snapVlmDataRef)
     {
+        StorageRscData<Snapshot> snapData = snapVlmDataRef.getRscLayerObject();
+        return asSnapLvIdentifierRaw(
+            snapData.getResourceName().displayValue,
+            snapData.getResourceNameSuffix(),
+            snapVlmDataRef.getVlmNr().value,
+            snapData.getAbsResource().getSnapshotName().displayValue
+        );
+    }
+
+    private String asSnapLvIdentifierRaw(String rscNameRef, String rscNameSuffixRef, int vlmNrRef, String snapNameRef)
+    {
+
         return String.format(
             FORMAT_SNAP_VLM_TO_ID,
-            rscName,
-            rscNameSuffix,
-            vlmNr,
-            snapName
+            rscNameRef,
+            rscNameSuffixRef,
+            vlmNrRef,
+            snapNameRef
         );
     }
 
@@ -518,7 +522,6 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
         StorPool storPool = snapVlmData.getStorPool();
         return getSnapVlmPath(
-            storPool.getName().displayValue,
             getStorageDirectory(storPool),
             snapVlm.getResourceName().displayValue,
             snapVlmData.getRscLayerObject().getResourceNameSuffix(),

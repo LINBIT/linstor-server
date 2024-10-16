@@ -80,7 +80,10 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmData<Resource>, LAYER_SNAP_DATA extends AbsStorageVlmData<Snapshot>>
+public abstract class AbsStorageProvider<
+    INFO,
+    LAYER_DATA extends AbsStorageVlmData<Resource>,
+    LAYER_SNAP_DATA extends AbsStorageVlmData<Snapshot>>
     implements DeviceProvider
 {
     private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 5000;
@@ -1833,14 +1836,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
     }
 
-    protected String asSnapLvIdentifier(LAYER_SNAP_DATA snapVlmData)
-    {
-        return asSnapLvIdentifier(
-            snapVlmData.getStorPool(),
-            snapVlmData.getRscLayerObject().getResourceNameSuffix(),
-            ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotVolumeDefinition()
-        );
-    }
+    protected abstract String asSnapLvIdentifier(LAYER_SNAP_DATA snapVlmData) throws AccessDeniedException;
 
     protected String asLvIdentifier(StorPool storPool, String rscNameSuffix, VolumeDefinition vlmDfn)
     {
@@ -1851,17 +1847,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 rscNameSuffix,
                 vlmDfn.getVolumeNumber()
             )
-        );
-    }
-
-    protected String asSnapLvIdentifier(StorPool storPool, String rscNameSuffix, SnapshotVolumeDefinition snapVlmDfn)
-    {
-        return asSnapLvIdentifier(
-            storPool.getName(),
-            snapVlmDfn.getResourceName(),
-            rscNameSuffix,
-            snapVlmDfn.getSnapshotName(),
-            snapVlmDfn.getVolumeNumber()
         );
     }
 
@@ -1900,31 +1885,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         ResourceName resourceName,
         String rscNameSuffix,
         VolumeNumber volumeNumber
-    );
-
-    protected String asSnapLvIdentifier(
-        StorPoolName spName,
-        ResourceName rscName,
-        String rscNameSuffix,
-        SnapshotName snapName,
-        VolumeNumber vlmNr
-    )
-    {
-        return asSnapLvIdentifierRaw(
-            spName.displayValue,
-            rscName.displayValue,
-            rscNameSuffix,
-            snapName.displayValue,
-            vlmNr.value
-        );
-    }
-
-    protected abstract String asSnapLvIdentifierRaw(
-        String spName,
-        String rscName,
-        String rscNameSuffix,
-        String snapName,
-        int vlmNr
     );
 
     public abstract String getDevicePath(String storageName, String lvId);

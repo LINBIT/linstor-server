@@ -39,6 +39,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -318,21 +319,16 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     }
 
     @Override
-    protected String asSnapLvIdentifierRaw(
-        String spNameRef,
-        String rscNameRef,
-        String rscNameSuffixRef,
-        String snapNameRef,
-        int vlmNrRef
-    )
+    protected String asSnapLvIdentifier(EbsData<Snapshot> snapVlmDataRef)
     {
+        StorageRscData<Snapshot> snapData = snapVlmDataRef.getRscLayerObject();
         return String.format(
             FORMAT_SNAP_TO_LVM_ID,
-            spNameRef,
-            rscNameRef,
-            rscNameSuffixRef,
-            vlmNrRef,
-            snapNameRef
+            snapVlmDataRef.getStorPool().getName().displayValue,
+            snapData.getResourceName().displayValue,
+            snapData.getResourceNameSuffix(),
+            snapVlmDataRef.getVlmNr().value,
+            snapData.getAbsResource().getSnapshotName().displayValue
         );
     }
 

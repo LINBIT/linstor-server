@@ -55,6 +55,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -851,20 +852,15 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
-    protected String asSnapLvIdentifierRaw(
-        String ignoredSpName,
-        String rscNameRef,
-        String rscNameSuffixRef,
-        String snapNameRef,
-        int vlmNrRef
-    )
+    protected String asSnapLvIdentifier(ExosData<Snapshot> snapVlmDataRef)
     {
+        StorageRscData<Snapshot> snapData = snapVlmDataRef.getRscLayerObject();
         return String.format(
             FORMAT_SNAP_TO_LVM_ID,
-            rscNameRef,
-            rscNameSuffixRef,
-            vlmNrRef,
-            snapNameRef
+            snapData.getResourceName().displayValue,
+            snapData.getResourceNameSuffix(),
+            snapVlmDataRef.getVlmNr().value,
+            snapData.getAbsResource().getSnapshotName().displayValue
         );
     }
 

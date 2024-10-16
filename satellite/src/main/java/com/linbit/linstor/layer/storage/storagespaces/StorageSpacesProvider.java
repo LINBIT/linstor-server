@@ -481,9 +481,8 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
         );
     }
 
-
     @Override
-    protected String asSnapLvIdentifierRaw(String spName, String rscNameRef, String rscNameSuffixRef, String snapNameRef, int vlmNrRef)
+    protected String asSnapLvIdentifier(StorageSpacesData<Snapshot> snapVlmDataRef)
     {
         return "";  /* not implemented */
     }

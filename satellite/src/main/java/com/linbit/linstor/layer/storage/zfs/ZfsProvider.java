@@ -81,8 +81,19 @@ import java.util.TreeSet;
 public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, ZfsData<Snapshot>>
 {
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
+    /** Format: "<code>{rscName}{rscNameSuffix}_{vlmNr}</code>" */
     public static final String FORMAT_RSC_TO_ZFS_ID = "%s%s_%05d";
-    public static final String FORMAT_SNAP_TO_ZFS_ID = FORMAT_RSC_TO_ZFS_ID + "@%s";
+    /**
+     * <p>
+     * Format: "<code>{FORMAT_RSC_TO_ZFS_ID}{rscFormatSuffix}@{snap_name}</code>"
+     * </p>
+     * <p>
+     * <code>rscFormatSuffix</code> is only non-empty if the base resource should have been deleted but could not (i.e.
+     * because it still has snapshot(s)). In this case the resource (including all of its snapshots) are renamed, given
+     * a unique rscFormatSuffix
+     * </p>
+     */
+    public static final String FORMAT_SNAP_TO_ZFS_ID = FORMAT_RSC_TO_ZFS_ID + "%s@%s";
     private static final String FORMAT_ZFS_DEV_PATH = "/dev/zvol/%s/%s";
     private static final int TOLERANCE_FACTOR = 3;
 
@@ -208,12 +219,26 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
+    protected String asSnapLvIdentifier(ZfsData<Snapshot> snapVlmDataRef) throws AccessDeniedException
+    {
+        StorageRscData<Snapshot> snapData = snapVlmDataRef.getRscLayerObject();
+        return asSnapLvIdentifierRaw(
+            snapData.getResourceName().displayValue,
+            snapData.getResourceNameSuffix(),
+            snapVlmDataRef.getVlmNr().value,
+            snapData.getAbsResource()
+                .getSnapProps(storDriverAccCtx)
+                .getProp(InternalApiConsts.KEY_ZFS_RENAME_SUFFIX, STORAGE_NAMESPACE),
+            snapData.getAbsResource().getSnapshotName().displayValue
+        );
+    }
+
     protected String asSnapLvIdentifierRaw(
-        String ignoredSpName,
         String rscNameRef,
         String rscNameSuffixRef,
-        String snapNameRef,
-        int vlmNrRef
+        int vlmNrRef,
+        @Nullable String rscFormatSuffixRef,
+        String snapNameRef
     )
     {
         return String.format(
@@ -221,6 +246,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             rscNameRef,
             rscNameSuffixRef,
             vlmNrRef,
+            rscFormatSuffixRef == null ? "" : ("_" + rscFormatSuffixRef),
             snapNameRef
         );
     }
@@ -242,7 +268,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @SuppressWarnings("unchecked")
-    private String asIdentifierRaw(ZfsData<?> zfsData)
+    private String asIdentifierRaw(ZfsData<?> zfsData) throws AccessDeniedException
     {
         AbsVolume<?> volume = zfsData.getVolume();
         String identifier;
@@ -433,9 +459,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 String srcFullSnapshotName = asSnapLvIdentifierRaw(
                     vlmData.getStorPool().getName().displayValue,
                     clonedFromRsc,
-                    vlmData.getRscLayerObject().getResourceNameSuffix(),
+                    vlmData.getVlmNr().value,
                     getCloneSnapshotName(rsc.getResourceDefinition().getName().displayValue, vlmData.getVlmNr().value),
-                    vlmData.getVlmNr().value);
+                    vlmData.getRscLayerObject().getResourceNameSuffix()
+                );
                 ZfsCommands.delete(
                     extCmdFactory.create(),
                     getZPool(vlmData.getStorPool()),

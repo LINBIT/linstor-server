@@ -44,6 +44,7 @@ import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -361,12 +362,22 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     }
 
     @Override
+    protected String asSnapLvIdentifier(SpdkData<Snapshot> snapVlmDataRef)
+    {
+        StorageRscData<Snapshot> snapData = snapVlmDataRef.getRscLayerObject();
+        return asSnapLvIdentifierRaw(
+            snapData.getResourceName().displayValue,
+            snapData.getResourceNameSuffix(),
+            snapVlmDataRef.getVlmNr().value,
+            snapData.getAbsResource().getSnapshotName().displayValue
+        );
+    }
+
     protected String asSnapLvIdentifierRaw(
-        String ignoredSpName,
         String rscNameRef,
         String rscNameSuffixRef,
-        String snapNameRef,
-        int vlmNrRef
+        int vlmNrRef,
+        String snapNameRef
     )
     {
         return String.format(
@@ -556,11 +567,10 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
         String vlmGrp = vlmDataRef.getVolumeGroup();
 
         String fullQualSnapName = vlmGrp + "/" + asSnapLvIdentifierRaw(
-            vlmDataRef.getStorPool().getName().displayValue,
             vlmDataRef.getRscLayerObject().getResourceName().displayValue,
             vlmDataRef.getRscLayerObject().getResourceNameSuffix(),
-            rollbackTargetSnapshotNameRef,
-            vlmDataRef.getVlmNr().value
+            vlmDataRef.getVlmNr().value,
+            rollbackTargetSnapshotNameRef
         );
         String vlmLvId = asLvIdentifier(vlmDataRef);
         String rollbackVlmLvId = vlmLvId + "_rollback";

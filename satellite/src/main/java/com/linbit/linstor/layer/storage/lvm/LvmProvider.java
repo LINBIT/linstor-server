@@ -52,6 +52,7 @@ import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
@@ -683,13 +684,18 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    protected String asSnapLvIdentifierRaw(
-        String ignoredSpName,
-        String rscNameRef,
-        String rscNameSuffixRef,
-        String snapNameRef,
-        int vlmNrRef
-    )
+    protected String asSnapLvIdentifier(LvmData<Snapshot> snapVlmDataRef)
+    {
+        StorageRscData<Snapshot> snapData = snapVlmDataRef.getRscLayerObject();
+        return asSnapLvIdentifierRaw(
+            snapData.getResourceName().displayValue,
+            snapData.getResourceNameSuffix(),
+            snapVlmDataRef.getVlmNr().value,
+            snapData.getAbsResource().getSnapshotName().displayValue
+        );
+    }
+
+    protected String asSnapLvIdentifierRaw(String rscNameRef, String rscNameSuffixRef, int vlmNrRef, String snapNameRef)
     {
         return String.format(
             FORMAT_SNAP_TO_LVM_ID,
