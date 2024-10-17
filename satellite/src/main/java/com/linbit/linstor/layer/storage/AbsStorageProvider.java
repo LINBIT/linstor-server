@@ -55,6 +55,7 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
@@ -1100,6 +1101,70 @@ public abstract class AbsStorageProvider<
         return ret;
     }
 
+    protected @Nullable LAYER_SNAP_DATA getSnapVlmData(LAYER_DATA vlmDataRef, String snapNameStrRef)
+        throws AccessDeniedException
+    {
+        try
+        {
+            return getSnapVlmData(vlmDataRef, new SnapshotName(snapNameStrRef, true));
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError("Invalid resource name as rollback target", exc);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected @Nullable LAYER_SNAP_DATA getSnapVlmData(LAYER_DATA vlmDataRef, SnapshotName snapNameRef)
+        throws AccessDeniedException
+    {
+        final @Nullable LAYER_SNAP_DATA ret;
+
+        final StorageRscData<Resource> rscData = vlmDataRef.getRscLayerObject();
+        final Resource rsc = rscData.getAbsResource();
+        final @Nullable SnapshotDefinition snapDfn = rsc.getResourceDefinition()
+            .getSnapshotDfn(storDriverAccCtx, snapNameRef);
+        @Nullable Snapshot snap = null;
+        if (snapDfn != null)
+        {
+            snap = snapDfn.getSnapshot(storDriverAccCtx, rsc.getNode().getName());
+        }
+
+        if (snap == null)
+        {
+            ret = null;
+        }
+        else
+        {
+            AbsRscLayerObject<Snapshot> snapLayerData = snap.getLayerData(storDriverAccCtx);
+            // since we are in the STORAGE layer...
+            Set<AbsRscLayerObject<Snapshot>> storageSnapLayerDataSet = LayerRscUtils.getRscDataByLayer(
+                snapLayerData,
+                DeviceLayerKind.STORAGE,
+                rscData.getResourceNameSuffix()::equals
+            );
+
+            if (storageSnapLayerDataSet.isEmpty())
+            {
+                ret = null;
+            }
+            else if (storageSnapLayerDataSet.size() > 1)
+            {
+                throw new ImplementationError(
+                    "Unexpected number of storage data for: " + rscData
+                        .getSuffixedResourceName() + "/" + vlmDataRef.getVlmNr() + ", snapshot: " +
+                        snapNameRef.displayValue
+                );
+            }
+            else
+            {
+                AbsRscLayerObject<Snapshot> storSnapData = storageSnapLayerDataSet.iterator().next();
+                ret = (LAYER_SNAP_DATA) storSnapData.getVlmLayerObjects().get(vlmDataRef.getVlmNr());
+            }
+        }
+        return ret;
+    }
+
     protected void createLvForBackupIfNeeded(LAYER_SNAP_DATA snapVlm) throws StorageException
     {
         // do nothing, override if needed
@@ -1325,7 +1390,19 @@ public abstract class AbsStorageProvider<
                 boolean success = false;
                 try
                 {
-                    rollbackImpl(vlmData, rollbackTargetSnapshotName);
+                    @Nullable LAYER_SNAP_DATA rollbackToSnapVlmData = getSnapVlmData(
+                        vlmData,
+                        rollbackTargetSnapshotName
+                    );
+                    if (rollbackToSnapVlmData == null)
+                    {
+                        throw new StorageException(
+                            "Could not find storage snapshot of " + vlmData.getRscLayerObject()
+                                .getSuffixedResourceName() + "/" + vlmData.getVlmNr() + ", snapshot: " +
+                                rollbackTargetSnapshotName
+                        );
+                    }
+                    rollbackImpl(vlmData, rollbackToSnapVlmData);
                     success = true;
                 }
                 finally
@@ -1601,8 +1678,18 @@ public abstract class AbsStorageProvider<
         return rsc;
     }
 
-    protected final @Nonnull LAYER_DATA getVlmDataFromResource(Resource rsc, String rscNameSuffix, VolumeNumber vlmNr)
+    protected final @Nonnull LAYER_DATA getVlmDataFromOtherResource(LAYER_DATA vlmData, String otherRscName)
         throws AccessDeniedException, StorageException
+    {
+        return getVlmDataFromResource(
+            getResource(vlmData, otherRscName),
+            vlmData.getRscLayerObject().getResourceNameSuffix(),
+            vlmData.getVlmNr()
+        );
+    }
+
+    protected final @Nonnull LAYER_DATA getVlmDataFromResource(Resource rsc, String rscNameSuffix, VolumeNumber vlmNr)
+        throws AccessDeniedException
     {
         LAYER_DATA vlmData = null;
         List<AbsRscLayerObject<Resource>> storageRscDataList = LayerUtils.getChildLayerDataByKind(
@@ -1769,7 +1856,7 @@ public abstract class AbsStorageProvider<
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
-    protected void rollbackImpl(LAYER_DATA vlmData, String rollbackTargetSnapshotName)
+    protected void rollbackImpl(LAYER_DATA vlmData, LAYER_SNAP_DATA rollbackToSnapVlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());

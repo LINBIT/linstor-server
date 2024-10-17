@@ -497,30 +497,14 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     }
 
     @Override
-    protected void rollbackImpl(EbsData<Resource> vlmDataRef, String rollbackTargetSnapshotNameRef)
+    protected void rollbackImpl(EbsData<Resource> vlmDataRef, EbsData<Snapshot> rollbackToSnapVlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        AbsRscLayerObject<Resource> rscData = vlmDataRef.getRscLayerObject();
-        EbsData<Snapshot> srcEbsData = findSourceEbsData(
-            rscData.getAbsResource().getNode().getName(),
-            rscData.getResourceName().displayValue,
-            rscData.getResourceNameSuffix(),
-            vlmDataRef.getVolume().getVolumeNumber(),
-            rollbackTargetSnapshotNameRef
-        );
-        if (srcEbsData == null)
-        {
-            throw new StorageException(
-                "Failed to find source snapshot by LV ID: " + asLvIdentifier(vlmDataRef) + " and snapshot name: " +
-                    rollbackTargetSnapshotNameRef
-            );
-        }
-
         // we will need to delete the old volume if the rollback/restore worked
         String oldEbsVlmId = getEbsVlmId(vlmDataRef);
 
         // will override the EbsVlmId property
-        createEbsVolume(vlmDataRef, getEbsSnapId(srcEbsData));
+        createEbsVolume(vlmDataRef, getEbsSnapId(rollbackToSnapVlmDataRef));
 
         AmazonEC2 client = getClient(vlmDataRef.getStorPool());
 

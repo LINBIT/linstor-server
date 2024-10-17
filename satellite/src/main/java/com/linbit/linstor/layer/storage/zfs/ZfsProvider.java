@@ -590,14 +590,14 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected void rollbackImpl(ZfsData<Resource> vlmData, String rollbackTargetSnapshotName)
+    protected void rollbackImpl(ZfsData<Resource> vlmDataRef, ZfsData<Snapshot> rollbackToSnapVlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.rollback(
             extCmdFactory.create(),
-            vlmData.getZPool(),
-            asLvIdentifier(vlmData),
-            rollbackTargetSnapshotName
+            rollbackToSnapVlmDataRef.getZPool(),
+            asLvIdentifier(vlmDataRef),
+            rollbackToSnapVlmDataRef.getRscLayerObject().getSnapName().displayValue
         );
     }
 

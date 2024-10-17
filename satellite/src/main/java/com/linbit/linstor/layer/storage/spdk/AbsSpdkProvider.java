@@ -561,17 +561,13 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     }
 
     @Override
-    protected void rollbackImpl(SpdkData<Resource> vlmDataRef, String rollbackTargetSnapshotNameRef)
+    protected void rollbackImpl(SpdkData<Resource> vlmDataRef, SpdkData<Snapshot> rollbackToSnapVlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         String vlmGrp = vlmDataRef.getVolumeGroup();
 
-        String fullQualSnapName = vlmGrp + "/" + asSnapLvIdentifierRaw(
-            vlmDataRef.getRscLayerObject().getResourceName().displayValue,
-            vlmDataRef.getRscLayerObject().getResourceNameSuffix(),
-            vlmDataRef.getVlmNr().value,
-            rollbackTargetSnapshotNameRef
-        );
+        String fullQualSnapName = vlmGrp + "/" + asSnapLvIdentifier(rollbackToSnapVlmDataRef);
+
         String vlmLvId = asLvIdentifier(vlmDataRef);
         String rollbackVlmLvId = vlmLvId + "_rollback";
         String fullQualVlmName = vlmDataRef.getVolumeGroup() + "/" + vlmLvId;

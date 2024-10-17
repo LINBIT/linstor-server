@@ -18,7 +18,6 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
@@ -454,41 +453,17 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    protected void rollbackImpl(FileData<Resource> fileData, String rollbackTargetSnapshotNameRef)
+    protected void rollbackImpl(FileData<Resource> fileData, FileData<Snapshot> rollbackToSnapVlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         Path storageDirectory = fileData.getStorageDirectory();
-        Path snapPath = getSnapVlmPath(
-            fileData.getStorageDirectory(),
-            fileData.getRscLayerObject().getResourceName().displayValue,
-            fileData.getRscLayerObject().getResourceNameSuffix(),
-            fileData.getVlmNr().value,
-            rollbackTargetSnapshotNameRef
-        );
+        Path snapPath = asFullQualifiedPath(rollbackToSnapVlmDataRef);
         // do not use java.nio.file.Files.copy ! that seems to do something different (and does not work
         // for this method :) )
         FileCommands.copy(
             extCmdFactory.create(),
             snapPath,
             storageDirectory.resolve(fileData.getIdentifier())
-        );
-    }
-
-    private Path getSnapVlmPath(
-        Path storageDirectoryRef,
-        String rscName,
-        String rscSuffix,
-        int vlmNr,
-        String snapName
-    )
-    {
-        return storageDirectoryRef.resolve(
-            asSnapLvIdentifierRaw(
-                rscName,
-                rscSuffix,
-                vlmNr,
-                snapName
-            )
         );
     }
 
@@ -506,7 +481,6 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
 
     private String asSnapLvIdentifierRaw(String rscNameRef, String rscNameSuffixRef, int vlmNrRef, String snapNameRef)
     {
-
         return String.format(
             FORMAT_SNAP_VLM_TO_ID,
             rscNameRef,
@@ -516,18 +490,11 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         );
     }
 
-    private Path asFullQualifiedPath(FileData<Snapshot> snapVlmData)
+    private Path asFullQualifiedPath(FileData<Snapshot> snapVlmDataRef)
         throws StorageException
     {
-        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-        StorPool storPool = snapVlmData.getStorPool();
-        return getSnapVlmPath(
-            getStorageDirectory(storPool),
-            snapVlm.getResourceName().displayValue,
-            snapVlmData.getRscLayerObject().getResourceNameSuffix(),
-            snapVlmData.getVlmNr().value,
-            snapVlm.getSnapshotName().displayValue
-        );
+        Path storageDirectory = getStorageDirectory(snapVlmDataRef.getStorPool());
+        return storageDirectory.resolve(asSnapLvIdentifier(snapVlmDataRef));
     }
 
     @Override

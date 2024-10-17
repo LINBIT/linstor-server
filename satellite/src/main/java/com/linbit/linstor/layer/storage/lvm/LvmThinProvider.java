@@ -339,20 +339,16 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void rollbackImpl(LvmData<Resource> lvmVlmData, String rollbackTargetSnapshotName)
+    protected void rollbackImpl(LvmData<Resource> lvmVlmDataRef, LvmData<Snapshot> rollbackToSnapVlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
+        LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmDataRef;
 
         String volumeGroup = vlmData.getVolumeGroup();
         String thinPool = vlmData.getThinPool();
         String targetLvId = asLvIdentifier(vlmData);
-        String snapshotId = asSnapLvIdentifierRaw(
-            vlmData.getRscLayerObject().getResourceName().displayValue,
-            vlmData.getRscLayerObject().getResourceNameSuffix(),
-            vlmData.getVlmNr().value,
-            rollbackTargetSnapshotName
-        );
+        String snapshotId = asSnapLvIdentifier(rollbackToSnapVlmDataRef);
+
         LvmUtils.execWithRetry(
             extCmdFactory,
             Collections.singleton(vlmData.getVolumeGroup()),
