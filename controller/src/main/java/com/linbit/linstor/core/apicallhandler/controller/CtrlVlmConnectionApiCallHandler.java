@@ -97,7 +97,7 @@ class CtrlVlmConnectionApiCallHandler
 
             ctrlPropsHelper.fillProperties(
                 responses,
-                LinStorObject.VOLUME_CONN,
+                LinStorObject.VLM_CONN,
                 vlmConnPropsMap,
                 getProps(vlmConn),
                 ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
@@ -159,12 +159,12 @@ class CtrlVlmConnectionApiCallHandler
 
             notifyStlts = ctrlPropsHelper.fillProperties(
                 responses,
-                LinStorObject.VOLUME_CONN,
+                LinStorObject.VLM_CONN,
                 overrideProps,
                 getProps(vlmConn),
                 ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
             notifyStlts = ctrlPropsHelper.remove(
-                responses, LinStorObject.VOLUME_CONN, props, deletePropKeys, deletePropNamespaces) || notifyStlts;
+                responses, LinStorObject.VLM_CONN, props, deletePropKeys, deletePropNamespaces) || notifyStlts;
 
             ctrlTransactionHelper.commit();
 

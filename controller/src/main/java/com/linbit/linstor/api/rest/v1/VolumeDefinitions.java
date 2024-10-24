@@ -264,7 +264,7 @@ public class VolumeDefinitions
                 .entity(
                     objectMapper
                         .writeValueAsString(
-                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.VOLUME_DEFINITION)
+                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.VLM_DFN)
                         )
                 )
                 .build(),

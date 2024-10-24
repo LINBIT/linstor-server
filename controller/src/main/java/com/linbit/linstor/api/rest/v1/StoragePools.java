@@ -357,7 +357,7 @@ public class StoragePools
             () -> Response.status(Response.Status.OK)
                 .entity(
                     objectMapper
-                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.STORAGEPOOL))
+                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.STOR_POOL))
                 )
                 .build(),
             false

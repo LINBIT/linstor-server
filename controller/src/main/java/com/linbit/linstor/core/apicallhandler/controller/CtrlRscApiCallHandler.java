@@ -202,7 +202,7 @@ public class CtrlRscApiCallHandler
 
             notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
-                LinStorObject.RESOURCE,
+                LinStorObject.RSC,
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_RSC,
@@ -211,7 +211,7 @@ public class CtrlRscApiCallHandler
             ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs,
-                LinStorObject.RESOURCE,
+                LinStorObject.RSC,
                 props,
                 deletePropKeys,
                 deletePropNamespacesRef,

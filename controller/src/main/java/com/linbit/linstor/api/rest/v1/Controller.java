@@ -168,7 +168,7 @@ public class Controller
             () -> Response.status(Response.Status.OK)
                 .entity(
                     objectMapper
-                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.CONTROLLER))
+                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.CTRL))
                 )
                 .build(),
             false

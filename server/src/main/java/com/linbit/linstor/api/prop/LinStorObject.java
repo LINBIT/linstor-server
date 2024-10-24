@@ -6,25 +6,25 @@ public enum LinStorObject
 {
     // ctrl- & stlt-path do not need trailing slashes, because unlike all the others they are not prefixes
     // but the full path
-    CONTROLLER(ApiConsts.MASK_CTRL_CONF, "/CTRLCFG"),
-    SATELLITE(ApiConsts.MASK_CTRL_CONF, "STLTCFG"), // TODO: migration for adding leading slash
+    CTRL(ApiConsts.MASK_CTRL_CONF, "/CTRLCFG"),
+    STLT(ApiConsts.MASK_CTRL_CONF, "STLTCFG"), // TODO: migration for adding leading slash
 
     NODE(ApiConsts.MASK_NODE, "/NODES/"),
     NODE_CONN(ApiConsts.MASK_NODE_CONN, "/CONDFN/NODES/"),
-    RESOURCE_GROUP(ApiConsts.MASK_RSC_GRP, "/RESOURCEGROUPS/"),
-    RESOURCE_DEFINITION(ApiConsts.MASK_RSC_DFN, "/RESOURCEDEFINITIONS/"),
-    RESOURCE(ApiConsts.MASK_RSC, "/RESOURCES/"),
+    RSC_GRP(ApiConsts.MASK_RSC_GRP, "/RESOURCEGROUPS/"),
+    RSC_DFN(ApiConsts.MASK_RSC_DFN, "/RESOURCEDEFINITIONS/"),
+    RSC(ApiConsts.MASK_RSC, "/RESOURCES/"),
     RSC_CONN(ApiConsts.MASK_RSC_CONN, "/CONDFN/RESOURCES/"),
-    VOLUME_GROUP(ApiConsts.MASK_VLM_GRP, "/VOLUMEGROUPS/"),
-    VOLUME_DEFINITION(ApiConsts.MASK_VLM_DFN, "/VOLUMEDEFINITIONS/"),
-    VOLUME(ApiConsts.MASK_VLM, "/VOLUMES/"),
-    VOLUME_CONN(ApiConsts.MASK_VLM_CONN, "/CONDFN/VOLUME/"),
-    STORAGEPOOL(ApiConsts.MASK_STOR_POOL, "/STORPOOLCONF/"),
-    STORAGEPOOL_DEFINITION(ApiConsts.MASK_STOR_POOL_DFN, "/STORPOOLDFNCONF/"),
-    SNAPSHOT_DEFINITION(0, "/SNAPSHOTDEFINITIONS/"),
-    SNAPSHOT(ApiConsts.MASK_SNAPSHOT, "/SNAPSHOTS/"),
-    SNAPSHOT_VOLUME(ApiConsts.MASK_SNAPSHOT, "/SNAPSHOTS/"),
-    SNAPSHOT_VOLUME_DEFINITION(0, "/SNAPSHOTVOLUMEDEFINITIONS/"),
+    VLM_GRP(ApiConsts.MASK_VLM_GRP, "/VOLUMEGROUPS/"),
+    VLM_DFN(ApiConsts.MASK_VLM_DFN, "/VOLUMEDEFINITIONS/"),
+    VLM(ApiConsts.MASK_VLM, "/VOLUMES/"),
+    VLM_CONN(ApiConsts.MASK_VLM_CONN, "/CONDFN/VOLUME/"),
+    STOR_POOL(ApiConsts.MASK_STOR_POOL, "/STORPOOLCONF/"),
+    STOR_POOL_DFN(ApiConsts.MASK_STOR_POOL_DFN, "/STORPOOLDFNCONF/"),
+    SNAP_DFN(0, "/SNAPSHOTDEFINITIONS/"),
+    SNAP(ApiConsts.MASK_SNAPSHOT, "/SNAPSHOTS/"),
+    SNAP_VLM(ApiConsts.MASK_SNAPSHOT, "/SNAPSHOTS/"),
+    SNAP_VLM_DFN(0, "/SNAPSHOTVOLUMEDEFINITIONS/"),
     KVS(ApiConsts.MASK_KVS, "/KEYVALUESTORES/"),
 
     // the following objects do not have their own props-containers and therefore need no props-path

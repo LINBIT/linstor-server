@@ -262,7 +262,7 @@ public class Volumes
             () -> Response.status(Response.Status.OK)
                 .entity(
                     objectMapper
-                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.VOLUME))
+                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.VLM))
                 )
                 .build(),
             false

@@ -124,7 +124,7 @@ public class WhitelistProps
             "pri-on-incon-degr",
             "split-brain"
         );
-        Map<String, Property> ctrlProps = rules.get(LinStorObject.CONTROLLER);
+        Map<String, Property> ctrlProps = rules.get(LinStorObject.CTRL);
         for (String handler : handlers)
         {
             ctrlProps.put("DrbdOptions/Handlers/" + handler, createHandler(handler));

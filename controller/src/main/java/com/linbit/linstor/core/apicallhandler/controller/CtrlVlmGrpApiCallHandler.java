@@ -300,7 +300,7 @@ public class CtrlVlmGrpApiCallHandler
             Props props = vlmGrp.getProps(peerAccCtx.get());
             notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
-                LinStorObject.VOLUME_DEFINITION,
+                LinStorObject.VLM_DFN,
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_VLM_GRP,
@@ -309,7 +309,7 @@ public class CtrlVlmGrpApiCallHandler
             );
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs,
-                LinStorObject.VOLUME_DEFINITION,
+                LinStorObject.VLM_DFN,
                 props,
                 deletePropKeys,
                 deleteNamespaces,
@@ -454,7 +454,7 @@ public class CtrlVlmGrpApiCallHandler
 
             ctrlPropsHelper.fillProperties(
                 responses,
-                LinStorObject.VOLUME_DEFINITION,
+                LinStorObject.VLM_DFN,
                 vlmGrpApiRef.getProps(),
                 getVlmGrpProps(vlmGrp),
                 ApiConsts.FAIL_ACC_DENIED_VLM_GRP,

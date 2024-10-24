@@ -69,7 +69,7 @@ public class VolumeConnection extends AbsCoreObj<VolumeConnection>
                 sourceVolumeRef.getVolumeDefinition().getVolumeNumber()
             ),
             toStringImpl(),
-            LinStorObject.VOLUME_CONN
+            LinStorObject.VLM_CONN
         );
 
         transObjs = Arrays.asList(

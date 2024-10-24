@@ -108,7 +108,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         rscDfnGrpProps = propsContainerFactoryRef.getInstance(
             PropsContainer.buildPath(rscGrpNameRef),
             toStringImpl(),
-            LinStorObject.RESOURCE_GROUP
+            LinStorObject.RSC_GRP
         );
         vlmMap = transObjFactory.createTransactionMap(this, vlmGrpMapRef, null);
 

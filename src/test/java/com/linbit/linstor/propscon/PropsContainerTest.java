@@ -54,7 +54,7 @@ public class PropsContainerTest extends GenericDbBase
     {
         super.setUpAndEnterScope();
 
-        root = propsContainerFactory.getInstance(TEST_INSTANCE_NAME, null, LinStorObject.CONTROLLER);
+        root = propsContainerFactory.getInstance(TEST_INSTANCE_NAME, null, LinStorObject.CTRL);
 
         fillProps(root, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
@@ -1767,7 +1767,7 @@ public class PropsContainerTest extends GenericDbBase
         PropsContainer container = propsContainerFactory.getInstance(
             "dummyTestInstance",
             null,
-            LinStorObject.CONTROLLER
+            LinStorObject.CTRL
         );
         fillProps(container, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         assertTrue(rootMap.equals(container.map()));

@@ -313,7 +313,7 @@ class CtrlVlmDfnApiCallHandler
 
             ctrlPropsHelper.fillProperties(
                 responses,
-                LinStorObject.VOLUME_DEFINITION,
+                LinStorObject.VLM_DFN,
                 vlmDfnApiRef.getVlmDfn().getProps(),
                 vlmDfnProps,
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN,

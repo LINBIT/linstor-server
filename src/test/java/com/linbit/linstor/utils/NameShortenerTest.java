@@ -254,7 +254,7 @@ public class NameShortenerTest
         Mockito.when(mockedRscDfn.getName()).thenReturn(resName);
         String propsPath = PropsContainer.buildPath(resName);
         Mockito.when(mockedRscDfn.getProps(Mockito.any()))
-            .thenReturn(propsContainerFactory.create(propsPath, null, LinStorObject.RESOURCE_DEFINITION));
+            .thenReturn(propsContainerFactory.create(propsPath, null, LinStorObject.RSC_DFN));
         return mockedRscDfn;
     }
 
@@ -266,7 +266,7 @@ public class NameShortenerTest
         Mockito.when(mockedVlmDfn.getVolumeNumber()).thenReturn(vlmNr);
         String propsPath = PropsContainer.buildPath(rscDfnRef.getName(), vlmNr);
         Mockito.when(mockedVlmDfn.getProps(Mockito.any()))
-            .thenReturn(propsContainerFactory.create(propsPath, null, LinStorObject.VOLUME_DEFINITION));
+            .thenReturn(propsContainerFactory.create(propsPath, null, LinStorObject.VLM_DFN));
         Mockito.when(rscDfnRef.getVolumeDfnCount(Mockito.any())).thenReturn(1);
         Mockito.when(rscDfnRef.getVolumeDfn(Mockito.any(), Mockito.eq(vlmNr))).thenReturn(mockedVlmDfn);
         return mockedVlmDfn;

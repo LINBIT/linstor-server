@@ -102,7 +102,7 @@ public class Volume extends AbsVolume<Resource>
                     rscRef.getResourceDefinition().getName(),
                     vlmDfnRef.getVolumeNumber()
                 ),
-                LinStorObject.VOLUME
+                LinStorObject.VLM
             ),
             transObjFactory,
             transMgrProviderRef

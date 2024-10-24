@@ -75,7 +75,7 @@ public class VolumeGroup extends AbsCoreObj<VolumeGroup> implements ProtectedObj
         vlmGrpProps = propsContainerFactoryRef.getInstance(
             PropsContainer.buildPath(rscGrp.getName(), vlmNr),
             toStringImpl(),
-            LinStorObject.VOLUME_GROUP
+            LinStorObject.VLM_GRP
         );
 
         transObjs = Arrays.asList(

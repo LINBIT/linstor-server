@@ -184,7 +184,7 @@ public class ConfFileBuilderTest
         when(peerRscData.getAbsResource().getAbsResourceConnection(accessContext, localRscData.getAbsResource()))
             .thenReturn(rscConn);
 
-        stltProps = propsContainerFactory.getInstance("STLT_CFG", null, LinStorObject.SATELLITE);
+        stltProps = propsContainerFactory.getInstance("STLT_CFG", null, LinStorObject.STLT);
         drbdVersion = new DrbdVersion(new CoreTimerImpl(), new EmptyErrorReporter());
     }
 

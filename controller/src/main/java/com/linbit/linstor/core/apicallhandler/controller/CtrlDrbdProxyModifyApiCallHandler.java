@@ -150,7 +150,7 @@ public class CtrlDrbdProxyModifyApiCallHandler
 
                     ctrlPropsHelper.fillProperties(
                         responses,
-                        LinStorObject.RESOURCE_DEFINITION,
+                        LinStorObject.RSC_DFN,
                         Collections.singletonMap(FULL_KEY_COMPRESSION_TYPE, compressionType),
                         props,
                         ApiConsts.FAIL_ACC_DENIED_RSC_DFN

@@ -101,7 +101,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
                 vlmNrRef
             ),
             toStringImpl(),
-            LinStorObject.SNAPSHOT_VOLUME_DEFINITION
+            LinStorObject.SNAP_VLM_DFN
         );
 
         flags = transObjFactory.createStateFlagsImpl(

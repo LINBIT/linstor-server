@@ -431,7 +431,7 @@ public class CtrlRscCrtApiHelper
             Props rscProps = ctrlPropsHelper.getProps(rsc);
 
             ctrlPropsHelper.fillProperties(
-                responses, LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC
+                responses, LinStorObject.RSC, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC
             );
 
             if (ctrlVlmCrtApiHelper.isDiskless(rsc) && storPoolNameStr == null)
@@ -453,7 +453,7 @@ public class CtrlRscCrtApiHelper
                 Props vlmProps = ctrlPropsHelper.getProps(vlmData);
 
                 ctrlPropsHelper.fillProperties(
-                    responses, LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM
+                    responses, LinStorObject.VLM, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM
                 );
             }
 

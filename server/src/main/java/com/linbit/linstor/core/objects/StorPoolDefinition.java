@@ -67,7 +67,7 @@ public class StorPoolDefinition extends AbsCoreObj<StorPoolDefinition> implement
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(nameRef),
             toStringImpl(),
-            LinStorObject.STORAGEPOOL_DEFINITION
+            LinStorObject.STOR_POOL_DFN
         );
 
         transObjs = Arrays.<TransactionObject>asList(

@@ -111,9 +111,9 @@ public class CoreModule extends AbstractModule
     public Props createSatellitePropsContainer(PropsContainerFactory propsContainerFactory)
     {
         return propsContainerFactory.create(
-            LinStorObject.SATELLITE.path,
-            LinStorObject.CONTROLLER.toString(), // use ctrl because for the user there is no difference
-            LinStorObject.SATELLITE
+            LinStorObject.STLT.path,
+            LinStorObject.CTRL.toString(), // use ctrl because for the user there is no difference
+            LinStorObject.STLT
         );
     }
 

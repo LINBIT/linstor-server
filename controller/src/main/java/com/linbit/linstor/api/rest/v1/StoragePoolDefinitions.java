@@ -183,7 +183,7 @@ public class StoragePoolDefinitions
                 .entity(
                     objectMapper
                         .writeValueAsString(
-                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.STORAGEPOOL_DEFINITION)
+                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.STOR_POOL_DFN)
                         )
                 )
                 .build(),

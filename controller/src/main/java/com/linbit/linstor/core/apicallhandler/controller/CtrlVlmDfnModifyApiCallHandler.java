@@ -251,7 +251,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         notifyStlts = ctrlPropsHelper.fillProperties(
             responses,
-            LinStorObject.VOLUME_DEFINITION,
+            LinStorObject.VLM_DFN,
             overrideProps,
             vlmDfnProps,
             ApiConsts.FAIL_ACC_DENIED_VLM_DFN,
@@ -263,7 +263,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         {
             notifyStlts = ctrlPropsHelper.remove(
                 responses,
-                LinStorObject.VOLUME_DEFINITION,
+                LinStorObject.VLM_DFN,
                 vlmDfnProps,
                 deletePropKeys,
                 Collections.emptyList(),

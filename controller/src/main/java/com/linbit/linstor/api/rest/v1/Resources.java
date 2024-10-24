@@ -540,7 +540,7 @@ public class Resources
             () -> Response.status(Response.Status.OK)
                 .entity(
                     objectMapper
-                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.RESOURCE))
+                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.RSC))
                 )
                 .build(),
             false

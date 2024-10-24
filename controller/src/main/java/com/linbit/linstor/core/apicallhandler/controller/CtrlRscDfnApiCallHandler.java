@@ -292,7 +292,7 @@ public class CtrlRscDfnApiCallHandler
 
             ctrlPropsHelper.fillProperties(
                 responses,
-                LinStorObject.RESOURCE_DEFINITION,
+                LinStorObject.RSC_DFN,
                 props,
                 ctrlPropsHelper.getProps(rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN,
@@ -530,7 +530,7 @@ public class CtrlRscDfnApiCallHandler
 
                 notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
-                    LinStorObject.RESOURCE_DEFINITION,
+                    LinStorObject.RSC_DFN,
                     overrideProps,
                     rscDfnProps,
                     ApiConsts.FAIL_ACC_DENIED_RSC_DFN,
@@ -539,7 +539,7 @@ public class CtrlRscDfnApiCallHandler
                 ) || notifyStlts;
                 notifyStlts = ctrlPropsHelper.remove(
                     apiCallRcs,
-                    LinStorObject.RESOURCE_DEFINITION,
+                    LinStorObject.RSC_DFN,
                     rscDfnProps,
                     deletePropKeys,
                     deletePropNamespaces,

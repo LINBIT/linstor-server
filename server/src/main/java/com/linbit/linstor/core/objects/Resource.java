@@ -106,7 +106,7 @@ public class Resource extends AbsResource<Resource>
                     resDfnRef.getName()
                 ),
                 String.format(TO_STRING_FORMAT, nodeRef.getName(), resDfnRef.getName()),
-                LinStorObject.RESOURCE
+                LinStorObject.RSC
             ),
             transMgrProviderRef,
             transObjFactory,

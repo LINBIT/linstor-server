@@ -225,6 +225,6 @@ public class PropsConSQLDbDriverTest extends PropsConSQLDbDriverBase
 
     private PropsContainer getPropsContainer(String instanceName) throws DatabaseException
     {
-        return propsContainerFactory.getInstance(instanceName, null, LinStorObject.CONTROLLER);
+        return propsContainerFactory.getInstance(instanceName, null, LinStorObject.CTRL);
     }
 }

@@ -139,7 +139,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         rscDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(resName),
             toStringImpl(),
-            LinStorObject.RESOURCE_DEFINITION
+            LinStorObject.RSC_DFN
         );
         flags = transObjFactory.createStateFlagsImpl(
             objProt,

@@ -114,7 +114,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         snapshotDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(resourceDfn.getName(), snapshotName),
             toStringImpl(),
-            LinStorObject.SNAPSHOT_DEFINITION
+            LinStorObject.SNAP_DFN
         );
 
         flags = transObjFactory.createStateFlagsImpl(

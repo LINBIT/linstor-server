@@ -263,7 +263,7 @@ public class ResourceDefinitions
                 .entity(
                     objectMapper
                         .writeValueAsString(
-                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.RESOURCE_DEFINITION)
+                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.RSC_DFN)
                         )
                 )
                 .build(),

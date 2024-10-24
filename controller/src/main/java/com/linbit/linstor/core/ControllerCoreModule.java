@@ -39,9 +39,9 @@ public class ControllerCoreModule extends AbstractModule
     public Props createControllerPropsContainer(PropsContainerFactory propsContainerFactory)
     {
         return propsContainerFactory.create(
-            LinStorObject.CONTROLLER.path,
-            LinStorObject.CONTROLLER.toString(),
-            LinStorObject.CONTROLLER
+            LinStorObject.CTRL.path,
+            LinStorObject.CTRL.toString(),
+            LinStorObject.CTRL
         );
     }
 

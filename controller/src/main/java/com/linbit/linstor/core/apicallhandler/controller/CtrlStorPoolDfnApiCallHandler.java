@@ -120,7 +120,7 @@ class CtrlStorPoolDfnApiCallHandler
 
             StorPoolDefinition storPoolDfn = createStorPool(storPoolNameStr);
             ctrlPropsHelper.fillProperties(
-                responses, LinStorObject.STORAGEPOOL_DEFINITION, storPoolDfnProps,
+                responses, LinStorObject.STOR_POOL_DFN, storPoolDfnProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
 
             storPoolDefinitionRepository.put(apiCtx, storPoolDfn.getName(), storPoolDfn);
@@ -195,11 +195,11 @@ class CtrlStorPoolDfnApiCallHandler
             Props props = getProps(storPoolDfn);
 
             notifyStlts = ctrlPropsHelper.fillProperties(
-                apiCallRcs, LinStorObject.STORAGEPOOL_DEFINITION, overrideProps,
+                apiCallRcs, LinStorObject.STOR_POOL_DFN, overrideProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs,
-                LinStorObject.STORAGEPOOL_DEFINITION,
+                LinStorObject.STOR_POOL_DFN,
                 props,
                 deletePropKeys,
                 deletePropNamespaces) || notifyStlts;

@@ -144,7 +144,7 @@ public class WhitelistTest
 
     private void assertValid(WhitelistProps whitelistProps, String key, String value)
     {
-        assertTrue(isValid(whitelistProps, LinStorObject.CONTROLLER, key, value));
+        assertTrue(isValid(whitelistProps, LinStorObject.CTRL, key, value));
     }
 
     private boolean isValid(WhitelistProps whitelistProps, LinStorObject lsObj, String key, String value)
@@ -154,7 +154,7 @@ public class WhitelistTest
 
     private void assertInvalid(WhitelistProps whitelistProps, String key, String value)
     {
-        assertFalse(isValid(whitelistProps, LinStorObject.CONTROLLER, key, value));
+        assertFalse(isValid(whitelistProps, LinStorObject.CTRL, key, value));
     }
 
     private class PropBuilder
@@ -235,7 +235,7 @@ public class WhitelistTest
 
         public WhitelistProps build()
         {
-            return build(LinStorObject.CONTROLLER);
+            return build(LinStorObject.CTRL);
         }
 
         public WhitelistProps build(LinStorObject lsObj)

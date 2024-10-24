@@ -224,7 +224,7 @@ public class CtrlStorPoolApiCallHandler
 
             notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
-                LinStorObject.STORAGEPOOL,
+                LinStorObject.STOR_POOL,
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL,
@@ -233,7 +233,7 @@ public class CtrlStorPoolApiCallHandler
             ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs,
-                LinStorObject.STORAGEPOOL,
+                LinStorObject.STOR_POOL,
                 props,
                 deletePropKeys,
                 deletePropNamespaces,

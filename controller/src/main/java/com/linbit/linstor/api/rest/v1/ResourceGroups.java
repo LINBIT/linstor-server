@@ -425,7 +425,7 @@ public class ResourceGroups
                 .entity(
                     objectMapper
                         .writeValueAsString(
-                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.RESOURCE_DEFINITION)
+                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.RSC_DFN)
                         )
                 )
                 .build(),

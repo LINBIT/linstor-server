@@ -398,7 +398,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             ctrlPropsHelper.fillProperties(
                 responses,
-                LinStorObject.RESOURCE,
+                LinStorObject.RSC,
                 Collections.singletonMap(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr),
                 rscProps,
                 ApiConsts.FAIL_ACC_DENIED_RSC
@@ -444,7 +444,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
              */
             ctrlPropsHelper.fillProperties(
                 responses,
-                LinStorObject.RESOURCE,
+                LinStorObject.RSC,
                 Collections.singletonMap(ApiConsts.KEY_STOR_POOL_NAME, storPoolNames.iterator().next().displayValue),
                 rscProps,
                 ApiConsts.FAIL_ACC_DENIED_RSC

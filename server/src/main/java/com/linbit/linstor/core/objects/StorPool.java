@@ -117,7 +117,7 @@ public class StorPool extends AbsCoreObj<StorPool>
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(storPoolDef.getName(), node.getName()),
             toStringImpl(),
-            LinStorObject.STORAGEPOOL
+            LinStorObject.STOR_POOL
         );
         roProps = new ReadOnlyPropsImpl(props);
 

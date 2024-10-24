@@ -47,7 +47,7 @@ public class WhitelistPropsReconfigurator
         {
             reconfigurationLock.writeLock().lock();
 
-            whitelistProps.reconfigure(LinStorObject.CONTROLLER);
+            whitelistProps.reconfigure(LinStorObject.CTRL);
 
             if (drbdVersion.hasDrbd9())
             {
@@ -84,28 +84,28 @@ public class WhitelistPropsReconfigurator
             new ByteArrayInputStream(rscOptsData.stdoutData),
             ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS,
             true,
-            LinStorObject.CONTROLLER
+            LinStorObject.CTRL
         );
         whitelistProps.appendRules(
             false, // override existing property
             new ByteArrayInputStream(peerDevOptsData.stdoutData),
             ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
             true,
-            LinStorObject.CONTROLLER
+            LinStorObject.CTRL
         );
         whitelistProps.appendRules(
             false, // override existing property
             new ByteArrayInputStream(netOptsData.stdoutData),
             ApiConsts.NAMESPC_DRBD_NET_OPTIONS,
             true,
-            LinStorObject.CONTROLLER
+            LinStorObject.CTRL
         );
         whitelistProps.appendRules(
             false, // override existing property
             new ByteArrayInputStream(diskOptsData.stdoutData),
             ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
             true,
-            LinStorObject.CONTROLLER
+            LinStorObject.CTRL
         );
     }
 }

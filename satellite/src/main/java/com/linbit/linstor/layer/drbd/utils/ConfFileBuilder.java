@@ -208,7 +208,7 @@ public class ConfFileBuilder
                 try (Section optionsSection = new Section())
                 {
                     appendConflictingDrbdOptions(
-                        LinStorObject.CONTROLLER,
+                        LinStorObject.CTRL,
                         ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS,
                         localRscPrioProps,
                         localRscAutoRules,
@@ -224,7 +224,7 @@ public class ConfFileBuilder
                 try (Section optionsSection = new Section())
                 {
                     appendConflictingDrbdOptions(
-                        LinStorObject.CONTROLLER,
+                        LinStorObject.CTRL,
                         ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS,
                         localRscPrioProps,
                         localRscAutoRules,
@@ -246,7 +246,7 @@ public class ConfFileBuilder
                 }
 
                 appendConflictingDrbdOptions(
-                    LinStorObject.CONTROLLER,
+                    LinStorObject.CTRL,
                     ApiConsts.NAMESPC_DRBD_NET_OPTIONS,
                     localRscPrioProps,
                     localRscAutoRules,
@@ -261,7 +261,7 @@ public class ConfFileBuilder
                 try (Section ignore = new Section())
                 {
                     appendConflictingDrbdOptions(
-                        LinStorObject.CONTROLLER,
+                        LinStorObject.CTRL,
                         ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
                         localRscPrioProps,
                         localRscAutoRules,
@@ -376,7 +376,7 @@ public class ConfFileBuilder
                             try (Section ignore = new Section())
                             {
                                 appendConflictingDrbdOptions(
-                                    LinStorObject.CONTROLLER,
+                                    LinStorObject.CTRL,
                                     ApiConsts.NAMESPC_DRBD_NET_OPTIONS,
                                     prioPropsConn,
                                     peerRscAutoRules,
@@ -422,7 +422,7 @@ public class ConfFileBuilder
                                 try (Section ignore = new Section())
                                 {
                                     appendConflictingDrbdOptions(
-                                        LinStorObject.CONTROLLER,
+                                        LinStorObject.CTRL,
                                         ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
                                         prioRscConnProps,
                                         peerRscAutoRules,
@@ -442,7 +442,7 @@ public class ConfFileBuilder
                                 try (Section ignore = new Section())
                                 {
                                     appendConflictingDrbdOptions(
-                                        LinStorObject.CONTROLLER,
+                                        LinStorObject.CTRL,
                                         ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
                                         localRscPrioProps,
                                         peerRscAutoRules,
@@ -1002,7 +1002,7 @@ public class ConfFileBuilder
                     try (Section ignore = new Section())
                     {
                         appendConflictingDrbdOptions(
-                            LinStorObject.CONTROLLER,
+                            LinStorObject.CTRL,
                             ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
                             vlmPrioProps,
                             new ConfFileBuilderAutoRules(accCtx, vlmData),

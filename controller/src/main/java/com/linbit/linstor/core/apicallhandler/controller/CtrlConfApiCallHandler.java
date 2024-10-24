@@ -803,9 +803,9 @@ public class CtrlConfApiCallHandler
                 handleClusterRemoteNamespace(apiCallRc, fullKey, value);
             }
             else
-            if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
+            if (whitelistProps.isAllowed(LinStorObject.CTRL, ignoredKeys, fullKey, value, false))
             {
-                String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
+                String normalized = whitelistProps.normalize(LinStorObject.CTRL, fullKey, value);
 
                 PropertyChangedListener propChangedListener = propsChangedListenersRef.get(fullKey);
                 if (fullKey.startsWith(ApiConsts.NAMESPC_REST + '/') ||
@@ -948,11 +948,11 @@ public class CtrlConfApiCallHandler
             else
             {
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                if (whitelistProps.isKeyKnown(LinStorObject.CONTROLLER, fullKey))
+                if (whitelistProps.isKeyKnown(LinStorObject.CTRL, fullKey))
                 {
                     entry.setMessage("The value '" + value + "' is not valid.");
                     entry.setDetails(
-                        whitelistProps.getErrMsg(LinStorObject.CONTROLLER, fullKey)
+                        whitelistProps.getErrMsg(LinStorObject.CTRL, fullKey)
                     );
                 }
                 else
@@ -1093,7 +1093,7 @@ public class CtrlConfApiCallHandler
                 String[] splitByNamespaces = currentKey.split("/");
                 if (currentKey.startsWith(ApiConsts.NAMESPC_NETCOM) && splitByNamespaces.length == 3)
                 {
-                    String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, currentKey, currentValue);
+                    String normalized = whitelistProps.normalize(LinStorObject.CTRL, currentKey, currentValue);
                     setCtrlProp(
                         peerAccCtx.get(),
                         currentKey,
@@ -1385,7 +1385,7 @@ public class CtrlConfApiCallHandler
             ignoredKeys.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
             boolean isPropWhitelisted = whitelistProps.isAllowed(
-                LinStorObject.CONTROLLER,
+                LinStorObject.CTRL,
                 ignoredKeys,
                 fullKey,
                 null,

@@ -125,7 +125,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         vlmDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(resDfnRef.getName(), volumeNr),
             toStringImpl(),
-            LinStorObject.VOLUME_DEFINITION
+            LinStorObject.VLM_DFN
         );
 
         layerStorage = transObjFactory.createTransactionMap(this, layerDataMapRef, null);

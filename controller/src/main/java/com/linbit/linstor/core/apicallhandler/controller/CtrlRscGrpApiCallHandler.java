@@ -281,7 +281,7 @@ public class CtrlRscGrpApiCallHandler
 
             ctrlPropsHelper.fillProperties(
                 responses,
-                LinStorObject.RESOURCE_DEFINITION,
+                LinStorObject.RSC_DFN,
                 rscGrpPojoRef.getProps(),
                 rscGrp.getProps(peerAccCtx.get()),
                 ApiConsts.FAIL_ACC_DENIED_RSC_GRP,
@@ -546,7 +546,7 @@ public class CtrlRscGrpApiCallHandler
                 Props rscGrpProps = rscGrpData.getProps(peerCtx);
                 notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
-                    LinStorObject.RESOURCE_DEFINITION,
+                    LinStorObject.RSC_DFN,
                     overrideProps,
                     rscGrpProps,
                     ApiConsts.FAIL_ACC_DENIED_RSC_GRP,
@@ -555,7 +555,7 @@ public class CtrlRscGrpApiCallHandler
                 ) || notifyStlts;
                 notifyStlts = ctrlPropsHelper.remove(
                     apiCallRcs,
-                    LinStorObject.RESOURCE_DEFINITION,
+                    LinStorObject.RSC_DFN,
                     rscGrpProps,
                     deletePropKeysRef,
                     deleteNamespacesRef,

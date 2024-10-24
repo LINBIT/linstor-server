@@ -94,7 +94,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
                     snapshotDfnRef.getResourceName(),
                     snapshotDfnRef.getName()
                 ),
-                LinStorObject.SNAPSHOT
+                LinStorObject.SNAP
             ),
             transMgrProviderRef,
             transObjFactory,
