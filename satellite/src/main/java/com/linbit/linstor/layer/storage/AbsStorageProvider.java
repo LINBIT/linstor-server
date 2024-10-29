@@ -475,7 +475,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         String overrideId;
         try
         {
-            overrideId = snapVlmDfn.getProps(storDriverAccCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+            overrideId = snapVlmDfn.getVlmDfnProps(storDriverAccCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
         }
         catch (AccessDeniedException | InvalidKeyException exc)
         {
@@ -1129,7 +1129,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         LAYER_SNAP_DATA prevSnapVlmData = null;
 
-        String prevSnapName = snap.getProps(storDriverAccCtx)
+        String prevSnapName = snap.getSnapProps(storDriverAccCtx)
             .getProp(InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, ApiConsts.NAMESPC_BACKUP_SHIPPING);
         if (prevSnapName != null)
         {
@@ -1169,7 +1169,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
         ReadOnlyProps snapVlmDfnProps = snapVlm.getSnapshotVolumeDefinition()
-            .getProps(storDriverAccCtx);
+            .getSnapVlmDfnProps(storDriverAccCtx);
         String socatPort = snapVlmDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
 
         snapShipMgr.startReceiving(
@@ -1190,8 +1190,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         SnapshotDefinition snapDfn = snapSource.getSnapshotDefinition();
         SnapshotVolumeDefinition snapVlmDfn = ((SnapshotVolume) curSnapVlmData.getVolume())
             .getSnapshotVolumeDefinition();
-        ReadOnlyProps snapDfnProps = snapDfn.getProps(storDriverAccCtx);
-        ReadOnlyProps snapVlmDfnProps = snapVlmDfn.getProps(storDriverAccCtx);
+        ReadOnlyProps snapDfnProps = snapDfn.getSnapDfnProps(storDriverAccCtx);
+        ReadOnlyProps snapVlmDfnProps = snapVlmDfn.getSnapVlmDfnProps(storDriverAccCtx);
 
         String socatPort = snapVlmDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
         String snapTargetName = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_TARGET_NODE);
@@ -1240,7 +1240,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 .getResource(storDriverAccCtx, new NodeName(snapTargetName)).getNode();
 
             PriorityProps targetNodePropProps = new PriorityProps(
-                snapDfn.getProps(storDriverAccCtx),
+                snapDfn.getSnapDfnProps(storDriverAccCtx),
                 targetNode.getProps(storDriverAccCtx),
                 stltConfigAccessor.getReadonlyProps()
             );
@@ -1457,7 +1457,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         String restoreVlmName;
         try
         {
-            ReadOnlyProps props = vlmData.getVolume().getProps(storDriverAccCtx);
+            ReadOnlyProps props = ((Volume) vlmData.getVolume()).getProps(storDriverAccCtx);
             String restoreFromResourceName = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
 
             if (restoreFromResourceName != null)
@@ -1484,13 +1484,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         return restoreVlmName;
     }
 
-    private String computeRestoreFromSnapshotName(AbsVolume<Resource> vlm)
+    private String computeRestoreFromSnapshotName(AbsVolume<Resource> absVlm)
         throws AccessDeniedException
     {
         String restoreSnapshotName;
         try
         {
-            ReadOnlyProps props = vlm.getProps(storDriverAccCtx);
+            ReadOnlyProps props = ((Volume) absVlm).getProps(storDriverAccCtx);
             String restoreFromSnapshotProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
 
             restoreSnapshotName = restoreFromSnapshotProp != null ?
@@ -1812,7 +1812,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         else
         {
             SnapshotVolumeDefinition snapVlmDfn = ((SnapshotVolume) volume).getSnapshotVolumeDefinition();
-            props = snapVlmDfn.getProps(storDriverAccCtx);
+            props = snapVlmDfn.getVlmDfnProps(storDriverAccCtx);
         }
         String allocGran = props.getProp(
             InternalApiConsts.ALLOCATION_GRANULARITY,

@@ -206,7 +206,7 @@ public class CtrlBackupL2LDstApiCallHandler
                 if (incrementalBaseSnap != null)
                 {
                     String srcSnapDfnUuid = incrementalBaseSnap.getSnapshotDefinition()
-                        .getProps(apiCtx)
+                        .getSnapDfnProps(apiCtx)
                         .getProp(
                             InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID
                         );
@@ -517,7 +517,7 @@ public class CtrlBackupL2LDstApiCallHandler
         {
             dstToSrcStltRemoteNameMap.put(stltRemote.getName(), data.getSrcStltRemoteName());
         }
-        Map<String, String> snapPropsFromSource = data.getMetaData().getRsc().getProps();
+        Map<String, String> snapPropsFromSource = data.getMetaData().getRsc().getSnapProps();
         snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_UUID, data.getSrcClusterId());
         snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH, clusterHash);
         ctrlTransactionHelper.commit();

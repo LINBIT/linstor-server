@@ -31,6 +31,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -43,6 +44,7 @@ import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -237,7 +239,11 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
                 // we might have lost the volume and just found it again. make sure the property is set
                 try
                 {
-                    vlmDataRef.getVolume().getProps(storDriverAccCtx).setProp(
+                    AbsVolume<?> absVlm = vlmDataRef.getVolume();
+                    Props vlmProps = absVlm instanceof Volume ?
+                        ((Volume) absVlm).getProps(storDriverAccCtx) :
+                        ((SnapshotVolume) absVlm).getSnapVlmProps(storDriverAccCtx);
+                    vlmProps.setProp(
                         InternalApiConsts.KEY_EBS_VLM_ID + vlmDataRef.getRscLayerObject().getResourceNameSuffix(),
                         amazonVlmRef.getVolumeId(),
                         ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
@@ -314,9 +320,13 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         else
         {
             SnapshotVolume snapVlm = (SnapshotVolume) absVlm;
+            SnapshotVolumeDefinition snapVlmDfn = snapVlm.getSnapshotVolumeDefinition();
+            SnapshotDefinition snapDfn = snapVlm.getSnapshotDefinition();
             prioProps = new PriorityProps(
-                snapVlm.getSnapshotVolumeDefinition().getProps(storDriverAccCtx),
-                snapVlm.getSnapshotDefinition().getProps(storDriverAccCtx),
+                snapVlmDfn.getSnapVlmDfnProps(storDriverAccCtx),
+                snapVlmDfn.getVlmDfnProps(storDriverAccCtx),
+                snapDfn.getSnapDfnProps(storDriverAccCtx),
+                snapDfn.getRscDfnProps(storDriverAccCtx),
                 localNodeProps,
                 stltConfigAccessor.getReadonlyProps()
             );
@@ -677,9 +687,10 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     {
         AmazonEC2 client = getClient(vlmDataRef.getStorPool());
 
-        String ebsVlmId = vlmDataRef.getVolume().getProps(storDriverAccCtx).getProp(
-            InternalApiConsts.KEY_EBS_VLM_ID,
-            ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+        String ebsVlmId = ((Volume) vlmDataRef.getVolume()).getProps(storDriverAccCtx)
+            .getProp(
+                InternalApiConsts.KEY_EBS_VLM_ID,
+                ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
             );
         long newSizeInGib = SizeConv.convert(vlmDataRef.getExpectedSize(), SizeUnit.UNIT_KiB, SizeUnit.UNIT_GiB);
         if (newSizeInGib > Integer.MAX_VALUE)

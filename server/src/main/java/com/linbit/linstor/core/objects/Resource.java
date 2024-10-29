@@ -16,6 +16,8 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -60,6 +62,8 @@ public class Resource extends AbsResource<Resource>
 
     private static final String TO_STRING_FORMAT = "Node: '%s', Rsc: '%s'";
 
+    private final Props props;
+
     // Reference to the resource definition
     private final ResourceDefinition resourceDfn;
 
@@ -100,14 +104,6 @@ public class Resource extends AbsResource<Resource>
         super(
             objIdRef,
             nodeRef,
-            propsContainerFactory.getInstance(
-                PropsContainer.buildPath(
-                    nodeRef.getName(),
-                    resDfnRef.getName()
-                ),
-                String.format(TO_STRING_FORMAT, nodeRef.getName(), resDfnRef.getName()),
-                LinStorObject.RSC
-            ),
             transMgrProviderRef,
             transObjFactory,
             createTimestampRef,
@@ -117,6 +113,17 @@ public class Resource extends AbsResource<Resource>
 
         ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
         resourceDfn = resDfnRef;
+        rscKey = new ResourceKey(this);
+
+        props = propsContainerFactory.getInstance(
+            PropsContainer.buildPath(
+                nodeRef.getName(),
+                resDfnRef.getName()
+            ),
+            toStringImpl(),
+            LinStorObject.RSC
+        );
+
         resourceConnections = transObjFactory.createTransactionMap(this, rscConnMapRef, null);
         objProt = objProtRef;
         vlmMap = transObjFactory.createTransactionMap(this, vlmMapRef, null);
@@ -129,13 +136,12 @@ public class Resource extends AbsResource<Resource>
             initFlags
         );
 
-        rscKey = new ResourceKey(this);
-
         transObjs.addAll(
             Arrays.asList(
                 vlmMap,
                 resourceConnections,
                 resourceDfn,
+                props,
                 flags,
                 objProt
             )
@@ -147,6 +153,13 @@ public class Resource extends AbsResource<Resource>
     {
         checkDeleted();
         return objProt;
+    }
+
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return PropsAccess.secureGetProps(accCtx, getObjProt(), props);
     }
 
     @Override

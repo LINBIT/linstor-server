@@ -28,7 +28,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotVlmDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
@@ -55,6 +54,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final BackupInfoManager backupInfoMgr;
+    private final CtrlPropsHelper propsHelper;
 
     @Inject
     CtrlSnapshotRestoreVlmDfnApiCallHandler(
@@ -67,7 +67,8 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        BackupInfoManager backupInfoMgrRef
+        BackupInfoManager backupInfoMgrRef,
+        CtrlPropsHelper propsHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -80,6 +81,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
         backupInfoMgr = backupInfoMgrRef;
+        propsHelper = propsHelperRef;
     }
 
     public ApiCallRc restoreVlmDfn(
@@ -129,14 +131,14 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                     new VolumeDefinition.Flags[] {}
                 );
 
-                Map<String, String> snapshotVlmDfnProps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
+                Map<String, String> snapVlmDfnVlmDfnProps = propsHelper.getProps(snapshotVlmDfn, true).map();
                 Map<String, String> vlmDfnProps = getVlmDfnProps(vlmDfn).map();
 
                 boolean isEncrypted = snapshotVlmDfn.getFlags()
                     .isSet(peerAccCtx.get(), SnapshotVolumeDefinition.Flags.ENCRYPTED);
                 if (isEncrypted)
                 {
-                    String cryptPasswd = snapshotVlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+                    String cryptPasswd = snapVlmDfnVlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
                     if (cryptPasswd == null)
                     {
                         throw new ImplementationError(
@@ -150,7 +152,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                     );
                 }
 
-                copyProp(snapshotVlmDfnProps, vlmDfnProps, ApiConsts.KEY_DRBD_CURRENT_GI);
+                copyProp(snapVlmDfnVlmDfnProps, vlmDfnProps, ApiConsts.KEY_DRBD_CURRENT_GI);
 
                 Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
                 while (rscIterator.hasNext())
@@ -204,24 +206,6 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                 accDeniedExc,
                 "access the properties of " + getVlmDfnDescriptionInline(vlmDfn),
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        return props;
-    }
-
-    private Props getSnapshotVlmDfnProps(SnapshotVolumeDefinition snapshotVlmDfn)
-    {
-        Props props;
-        try
-        {
-            props = snapshotVlmDfn.getProps(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access the properties of " + getSnapshotVlmDfnDescriptionInline(snapshotVlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
             );
         }
         return props;

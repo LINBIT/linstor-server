@@ -254,7 +254,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         assertSet(usableNodes, NODE_A, NODE_B);
         singleDrbdRsc(nodeD, false);
         singleDrbdRsc(nodeE, false);
-        snapDfn.getProps(SYS_CTX)
+        snapDfn.getSnapDfnProps(SYS_CTX)
             .setProp(
                 InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + REMOTE_NAME,
                 nodeA.getName().displayValue,
@@ -321,7 +321,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             if (inputNode.selectedLast)
             {
                 inc = true;
-                snapDfn.getProps(SYS_CTX)
+                snapDfn.getSnapDfnProps(SYS_CTX)
                     .setProp(
                         InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + REMOTE_NAME,
                         inputNode.nodeName,

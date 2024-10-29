@@ -231,7 +231,7 @@ public class CtrlBackupShippingSentInternalCallHandler
                 {
                     remoteForSchedule = handleResult.objB;
                 }
-                String scheduleName = snapDfn.getProps(peerAccCtx.get())
+                String scheduleName = snapDfn.getSnapDfnProps(peerAccCtx.get())
                     .getProp(InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE, InternalApiConsts.NAMESPC_SCHEDULE);
                 // if scheduleName == null the backup did not originate from a scheduled shipping
                 ret = ret.concatWith(
@@ -297,7 +297,7 @@ public class CtrlBackupShippingSentInternalCallHandler
         AbsRemote remote;
         if (snap != null && !snap.isDeleted())
         {
-            String remoteName = snap.getProps(peerAccCtx.get())
+            String remoteName = snap.getSnapProps(peerAccCtx.get())
                 .removeProp(
                     InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -348,7 +348,7 @@ public class CtrlBackupShippingSentInternalCallHandler
         if (snap != null && !snap.isDeleted())
         {
             // no idea how snap could be null or deleted here, but keep check just in case
-            String remoteName = snap.getProps(peerAccCtx.get())
+            String remoteName = snap.getSnapProps(peerAccCtx.get())
                 .removeProp(
                     InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING

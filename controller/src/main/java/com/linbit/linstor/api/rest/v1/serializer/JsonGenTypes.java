@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.23.0";
+    public static final String REST_API_VERSION = "1.24.0";
 
     /**
      * Common api reply structure
@@ -1208,7 +1208,9 @@ public class JsonGenTypes
         public String name;
         public String resource_name;
         public List<String> nodes = Collections.emptyList();
-        public Map<String, String> props = Collections.emptyMap();
+        @Deprecated(forRemoval = true) public Map<String, String> props = Collections.emptyMap();
+        public Map<String, String> snapshot_definition_props = Collections.emptyMap();
+        public Map<String, String> resource_definition_props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
         public List<SnapshotVolumeDefinition> volume_definitions = Collections.emptyList();
         /**
@@ -1250,6 +1252,8 @@ public class JsonGenTypes
          * unique object id
          */
         public String uuid;
+        public Map<String, String> snapshot_props = Collections.emptyMap();
+        public Map<String, String> resource_props = Collections.emptyMap();
         public List<SnapshotVolumeNode> snapshot_volumes = Collections.emptyList();
     }
 
@@ -1267,7 +1271,9 @@ public class JsonGenTypes
          * Volume number of the snapshot
          */
         public Integer vlm_nr;
-        public Map<String, String> props = Collections.emptyMap();
+        @Deprecated(forRemoval = true) public Map<String, String> props = Collections.emptyMap();
+        public Map<String, String> snapshot_volume_props = Collections.emptyMap();
+        public Map<String, String> volume_props = Collections.emptyMap();
         /**
          * Optional state for the given snapshot
          */
@@ -1282,6 +1288,8 @@ public class JsonGenTypes
          * Volume size in KiB
          */
         public Long size_kib;
+        public Map<String, String> snapshot_volume_definition_props = Collections.emptyMap();
+        public Map<String, String> volume_definition_props = Collections.emptyMap();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

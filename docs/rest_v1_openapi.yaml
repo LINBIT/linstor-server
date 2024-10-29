@@ -18,7 +18,7 @@ info:
     ```
 
     After setting this properties restart the controller and the new values should be used.
-  version: 1.23.0
+  version: 1.24.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -7857,6 +7857,11 @@ components:
           items:
             type: string
         props:
+          deprecated: true
+          $ref: '#/components/schemas/Properties'
+        snapshot_definition_props:
+          $ref: '#/components/schemas/Properties'
+        resource_definition_props:
           $ref: '#/components/schemas/Properties'
         flags:
           type: array
@@ -7910,6 +7915,10 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        snapshot_props:
+          $ref: '#/components/schemas/Properties'
+        resource_props:
+          $ref: '#/components/schemas/Properties'
         snapshot_volumes:
           type: array
           items:
@@ -7927,6 +7936,11 @@ components:
           format: int32
           description: Volume number of the snapshot
         props:
+          deprecated: true
+          $ref: '#/components/schemas/Properties'
+        snapshot_volume_props:
+          $ref: '#/components/schemas/Properties'
+        volume_props:
           $ref: '#/components/schemas/Properties'
         state:
           type: string
@@ -7941,6 +7955,10 @@ components:
           type: integer
           format: int64
           description: Volume size in KiB
+        snapshot_volume_definition_props:
+          $ref: '#/components/schemas/Properties'
+        volume_definition_props:
+          $ref: '#/components/schemas/Properties'
     SnapshotRestore:
       type: object
       required:

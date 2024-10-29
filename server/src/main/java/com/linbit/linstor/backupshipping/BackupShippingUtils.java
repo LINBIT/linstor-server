@@ -91,20 +91,21 @@ public class BackupShippingUtils
 
         String clusterId = stltProps.getProp(LinStor.PROP_KEY_CLUSTER_ID);
 
-        String startTime = snapDfn.getProps(accCtx).getProp(
-            InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
-            ApiConsts.NAMESPC_BACKUP_SHIPPING
-        );
+        String startTime = snapDfn.getSnapDfnProps(accCtx)
+            .getProp(
+                InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
         long startTimestamp = Long.parseLong(startTime);
 
         PriorityProps rscDfnPrio = new PriorityProps(
-            snapDfn.getProps(accCtx),
+            snapDfn.getRscDfnProps(accCtx),
             rscGrp.getProps(accCtx),
             snap.getNode().getProps(accCtx),
             stltProps
         );
         Map<String, String> rscDfnPropsRef = rscDfnPrio.renderRelativeMap("");
-        rscDfnPropsRef = new TreeMap<>(rscDfnPropsRef);
+        rscDfnPropsRef = new HashMap<>(rscDfnPropsRef);
         long rscDfnFlagsRef = rscDfn.getFlags().getFlagsBits(accCtx);
 
         Map<Integer, VlmDfnMetaPojo> vlmDfnsRef = new TreeMap<>();
@@ -112,7 +113,7 @@ public class BackupShippingUtils
         for (SnapshotVolumeDefinition snapVlmDfn : vlmDfns)
         {
             PriorityProps vlmDfnPrio = new PriorityProps(
-                snapVlmDfn.getProps(accCtx),
+                snapVlmDfn.getVlmDfnProps(accCtx),
                 rscGrp.getVolumeGroupProps(accCtx, snapVlmDfn.getVolumeNumber())
             );
             Map<String, String> vlmDfnPropsRef = vlmDfnPrio.renderRelativeMap("");
@@ -121,26 +122,51 @@ public class BackupShippingUtils
             long vlmDfnFlagsRef = snapVlmDfn.getVolumeDefinition().getFlags().getFlagsBits(accCtx);
             long sizeRef = snapVlmDfn.getVolumeSize(accCtx);
             vlmDfnsRef
-                .put(snapVlmDfn.getVolumeNumber().value, new VlmDfnMetaPojo(vlmDfnPropsRef, vlmDfnFlagsRef, sizeRef));
+                .put(
+                    snapVlmDfn.getVolumeNumber().value,
+                    new VlmDfnMetaPojo(
+                        // wrap in new hashmap, otherwise the pojo contains the actual propsContainer
+                        new HashMap<>(snapVlmDfn.getSnapVlmDfnProps(accCtx).map()),
+                        vlmDfnPropsRef,
+                        vlmDfnFlagsRef,
+                        sizeRef
+                    )
+                );
         }
 
-        RscDfnMetaPojo rscDfnRef = new RscDfnMetaPojo(rscDfnPropsRef, rscDfnFlagsRef, vlmDfnsRef);
+        RscDfnMetaPojo rscDfnRef = new RscDfnMetaPojo(
+            // wrap in new hashmap, otherwise the pojo contains the actual propsContainer
+            new HashMap<>(snapDfn.getSnapDfnProps(accCtx).map()),
+            rscDfnPropsRef,
+            rscDfnFlagsRef,
+            vlmDfnsRef
+        );
 
-        // wrap in new hashmap, otherwise the pojo contains the actual propsContainer
-        Map<String, String> rscPropsRef = new HashMap<>(snap.getProps(accCtx).map());
         long rscFlagsRef = 0;
-
         Map<Integer, VlmMetaPojo> vlmsRef = new TreeMap<>();
         Iterator<SnapshotVolume> vlmIt = snap.iterateVolumes();
         while (vlmIt.hasNext())
         {
-            SnapshotVolume vlm = vlmIt.next();
-            Map<String, String> vlmPropsRef = vlm.getProps(accCtx).map();
+            SnapshotVolume snapVlm = vlmIt.next();
             long vlmFlagsRef = 0;
-            vlmsRef.put(vlm.getVolumeNumber().value, new VlmMetaPojo(vlmPropsRef, vlmFlagsRef));
+            vlmsRef.put(
+                snapVlm.getVolumeNumber().value,
+                new VlmMetaPojo(
+                    // wrap in new hashmap, otherwise the pojo contains the actual propsContainer
+                    new HashMap<>(snapVlm.getSnapVlmProps(accCtx).map()),
+                    new HashMap<>(snapVlm.getVlmProps(accCtx).map()),
+                    vlmFlagsRef
+                )
+            );
         }
 
-        RscMetaPojo rscRef = new RscMetaPojo(rscPropsRef, rscFlagsRef, vlmsRef);
+        RscMetaPojo rscRef = new RscMetaPojo(
+            // wrap in new hashmap, otherwise the pojo contains the actual propsContainer
+            new HashMap<>(snap.getSnapProps(accCtx).map()),
+            new HashMap<>(snap.getRscProps(accCtx).map()),
+            rscFlagsRef,
+            vlmsRef
+        );
 
         LuksLayerMetaPojo luksPojo = null;
         List<AbsRscLayerObject<Snapshot>> luksLayers = LayerUtils.getChildLayerDataByKind(

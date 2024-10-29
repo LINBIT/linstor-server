@@ -4,6 +4,17 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+  - Added dst_rsc_grp and force_mv_rsc_grp to BackupRestore, BackupShip and BackupSchedule schemas
+  - Added snapshot_definition_props and resource_definition_props to Snapshot schema
+  - Added snapshot_props and resource_props to SnapshotNode schema
+  - Added snapshot_volume_props and volume_props to SnapshotVolumeNode schema
+  - Added snapshot_volume_definition_props and volume_definition_props to SnapshotVolumeDefinition schema
+
+### Deprecated
+  - Deprecated props of Snapshot schema in favor of snapshot_definition_props and resource_definition_props
+  - Deprecated props of SnapshotVolumeNode in favor of snapshot_volume_props and volume_props
+
 ## [1.23.0]
 
 ### Added

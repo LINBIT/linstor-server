@@ -979,7 +979,10 @@ public class ConfFileBuilder
                 ResourceGroup rscGrp = rscDfn.getResourceGroup();
                 ReadOnlyProps rscDfnProps = rscDfn.getProps(accCtx);
                 PriorityProps vlmPrioProps = new PriorityProps()
-                    .addProps(vlmData.getVolume().getProps(accCtx), "V (" + rscDfn.getName() + "/" + vlmNr.value + ")")
+                    .addProps(
+                        ((Volume) vlmData.getVolume()).getProps(accCtx),
+                        "V (" + rscDfn.getName() + "/" + vlmNr.value + ")"
+                    )
                     .addProps(vlmData.getVolume().getAbsResource().getProps(accCtx), "R (" + rscDfn.getName() + ")")
                     .addProps(
                         vlmDfn.getProps(accCtx),

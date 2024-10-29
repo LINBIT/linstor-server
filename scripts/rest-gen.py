@@ -86,6 +86,8 @@ def resolve_type_str(schema_lookup: OrderedDict, field_obj: OrderedDict):
         raise RuntimeError("Unknown type for " + str(field_obj))
     return t
 
+def is_field_deprecated(schema_lookup: OrderedDict, field_obj: OrderedDict):
+    return "deprecated" in field_obj and field_obj["deprecated"]
 
 def gen_javadoc(text: str, indent: str, indent_level: int):
     out = ''
@@ -131,7 +133,9 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
             field = schema["properties"][fieldname]
             out += gen_description_javadoc(field, indent, 2)
             t = resolve_type_str(schema_lookup, field)
-            depr = "@Deprecated(forRemoval = true) " if schema.get("deprecated") else ""
+            depr = ""
+            if schema.get("deprecated") or is_field_deprecated(schema_lookup, field):
+                depr = "@Deprecated(forRemoval = true) "
             if t.startswith("Map"):
                 dval = 'null' if "default" in field and field['default'] is None else 'Collections.emptyMap()'
                 out += indent * 2 + depr + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=dval)

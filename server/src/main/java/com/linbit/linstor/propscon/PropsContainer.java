@@ -2310,9 +2310,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
     /**
      * PropsCon-path for Snapshot
      */
-    public static String buildPath(NodeName nodeName, ResourceName rscName, SnapshotName snapName)
+    public static String buildPath(NodeName nodeName, ResourceName rscName, SnapshotName snapName, boolean forRsc)
     {
-        return LinStorObject.SNAP.path + nodeName.value +
+        return (forRsc ? LinStorObject.SNAP_RSC : LinStorObject.SNAP).path + nodeName.value +
             PATH_SEPARATOR + rscName.value +
             PATH_SEPARATOR + snapName.value;
     }
@@ -2320,9 +2320,15 @@ public class PropsContainer extends AbsTransactionObject implements Props
     /**
      * PropsCon-path for SnapshotVolume
      */
-    public static String buildPath(NodeName nodeName, ResourceName rscName, SnapshotName snapName, VolumeNumber vlmNr)
+    public static String buildPath(
+        NodeName nodeName,
+        ResourceName rscName,
+        SnapshotName snapName,
+        VolumeNumber vlmNr,
+        boolean forVlm
+    )
     {
-        return LinStorObject.SNAP_VLM.path + nodeName.value +
+        return (forVlm ? LinStorObject.SNAP_VLM_VLM : LinStorObject.SNAP_VLM).path + nodeName.value +
             PATH_SEPARATOR + rscName.value +
             PATH_SEPARATOR + snapName.value +
             PATH_SEPARATOR + vlmNr.value;
@@ -2331,20 +2337,25 @@ public class PropsContainer extends AbsTransactionObject implements Props
     /**
      * PropsCon-path for SnapshotDefinition
      */
-    public static String buildPath(ResourceName resName, SnapshotName snapshotName)
+    public static String buildPath(ResourceName resName, SnapshotName snapshotName, boolean forRscDfn)
     {
-        return LinStorObject.SNAP_DFN.path + resName.value +
-                PATH_SEPARATOR + snapshotName.value;
+        return (forRscDfn ? LinStorObject.SNAP_DFN_RSC_DFN : LinStorObject.SNAP_DFN).path + resName.value +
+            PATH_SEPARATOR + snapshotName.value;
     }
 
     /**
      * PropsCon-path for SnapshotVolumeDefinition
      */
-    public static String buildPath(ResourceName resName, SnapshotName snapshotName, VolumeNumber volNr)
+    public static String buildPath(
+        ResourceName resName,
+        SnapshotName snapshotName,
+        VolumeNumber volNr,
+        boolean forVlmDfn
+    )
     {
-        return LinStorObject.SNAP_VLM_DFN.path + resName.value +
-                PATH_SEPARATOR + snapshotName.value +
-                PATH_SEPARATOR + volNr.value;
+        return (forVlmDfn ? LinStorObject.SNAP_VLM_DFN_VLM_DFN : LinStorObject.SNAP_VLM_DFN).path + resName.value +
+            PATH_SEPARATOR + snapshotName.value +
+            PATH_SEPARATOR + volNr.value;
     }
 
     public static String buildPath(KeyValueStoreName kvsName)

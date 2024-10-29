@@ -101,10 +101,11 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         throws InvalidKeyException, AccessDeniedException
     {
         Snapshot snap = snapVlmDataRef.getVolume().getAbsResource();
-        String backupId = snap.getProps(accCtx).getProp(
-            InternalApiConsts.KEY_BACKUP_TO_RESTORE,
-            ApiConsts.NAMESPC_BACKUP_SHIPPING
-        );
+        String backupId = snap.getSnapProps(accCtx)
+            .getProp(
+                InternalApiConsts.KEY_BACKUP_TO_RESTORE,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
 
         try
         {

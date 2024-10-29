@@ -21,6 +21,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
@@ -396,11 +397,12 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     {
         try
         {
-            vlmDataRef.getVolume().getProps(storDriverAccCtx).setProp(
-                InternalApiConsts.KEY_EBS_VLM_ID + vlmDataRef.getRscLayerObject().getResourceNameSuffix(),
-                ebsVlmIdRef,
-                ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
-            );
+            ((Volume) vlmDataRef.getVolume()).getProps(storDriverAccCtx)
+                .setProp(
+                    InternalApiConsts.KEY_EBS_VLM_ID + vlmDataRef.getRscLayerObject().getResourceNameSuffix(),
+                    ebsVlmIdRef,
+                    ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+                );
         }
         catch (InvalidKeyException | InvalidValueException exc)
         {
@@ -425,10 +427,11 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     {
         try
         {
-            snapVlmDataRef.getVolume().getProps(storDriverAccCtx).setProp(
-                EbsUtils.getEbsSnapIdKey(snapVlmDataRef),
-                ebsSnapIdRef
-            );
+            ((SnapshotVolume) snapVlmDataRef.getVolume()).getSnapVlmProps(storDriverAccCtx)
+                .setProp(
+                    EbsUtils.getEbsSnapIdKey(snapVlmDataRef),
+                    ebsSnapIdRef
+                );
         }
         catch (InvalidKeyException | InvalidValueException exc)
         {

@@ -8,11 +8,13 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -58,9 +60,17 @@ public class EbsUtils
 
     public static String getEbsVlmId(AccessContext accCtx, EbsData<?> vlmDataRef) throws AccessDeniedException
     {
-        return vlmDataRef.getVolume()
-            .getProps(accCtx)
-            .getProp(getEbsVlmIdKey(vlmDataRef));
+        ReadOnlyProps props;
+        AbsVolume<?> absVlm = vlmDataRef.getVolume();
+        if (absVlm instanceof Volume)
+        {
+            props = ((Volume) absVlm).getProps(accCtx);
+        }
+        else
+        {
+            props = ((SnapshotVolume) absVlm).getVlmProps(accCtx);
+        }
+        return props.getProp(getEbsVlmIdKey(vlmDataRef));
     }
 
     public static String getEbsVlmIdKey(EbsData<?> vlmDataRef)
@@ -76,8 +86,8 @@ public class EbsUtils
     public static String getEbsSnapId(AccessContext accCtx, EbsData<Snapshot> snapVlmDataRef)
         throws AccessDeniedException
     {
-        return snapVlmDataRef.getVolume()
-            .getProps(accCtx)
+        return ((SnapshotVolume) snapVlmDataRef.getVolume())
+            .getSnapVlmProps(accCtx)
             .getProp(getEbsSnapIdKey(snapVlmDataRef));
     }
 

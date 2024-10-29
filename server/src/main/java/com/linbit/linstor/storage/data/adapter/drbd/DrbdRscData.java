@@ -356,20 +356,31 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
      */
     public boolean isSkipDiskEnabled(AccessContext apiCtxRef, ReadOnlyProps stltProps) throws AccessDeniedException
     {
-        RSC rsc = getAbsResource();
-        PriorityProps prioProps = new PriorityProps(rsc.getProps(apiCtxRef));
-        for (StorPool storPool : LayerVlmUtils.getStorPools(rsc, apiCtxRef))
+        final boolean ret;
+        RSC absRsc = getAbsResource();
+        if (absRsc instanceof Resource)
         {
-            prioProps.addProps(storPool.getProps(apiCtxRef));
+            Resource rsc = (Resource) absRsc;
+            PriorityProps prioProps = new PriorityProps(rsc.getProps(apiCtxRef));
+            for (StorPool storPool : LayerVlmUtils.getStorPools(rsc, apiCtxRef))
+            {
+                prioProps.addProps(storPool.getProps(apiCtxRef));
+            }
+            prioProps.addProps(
+                rsc.getNode().getProps(apiCtxRef),
+                rsc.getResourceDefinition().getProps(apiCtxRef),
+                stltProps
+            );
+            ret = ApiConsts.VAL_TRUE.equalsIgnoreCase(
+                prioProps.getProp(ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS)
+            );
         }
-        prioProps.addProps(
-            rsc.getNode().getProps(apiCtxRef),
-            rsc.getResourceDefinition().getProps(apiCtxRef),
-            stltProps
-        );
+        else
+        {
+            // checking skip-disk does not make sense on a snapshot
+            ret = false;
+        }
 
-        return ApiConsts.VAL_TRUE.equalsIgnoreCase(
-            prioProps.getProp(ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS)
-        );
+        return ret;
     }
 }

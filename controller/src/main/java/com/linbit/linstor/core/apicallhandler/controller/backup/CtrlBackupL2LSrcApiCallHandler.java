@@ -502,9 +502,9 @@ public class CtrlBackupL2LSrcApiCallHandler
             data.setMetaDataPojo(metaDataPojo);
             data.getMetaDataPojo()
                 .getRscDfn()
-                .getProps()
+                .getSnapDfnProps()
                 .put(
-                InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID,
+                    InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID,
                     data.getSrcSnapshot().getSnapshotDefinition().getUuid().toString()
             );
             // tell target cluster "Hey! Listen!"
@@ -617,7 +617,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                     data.getLinstorRemote().getName().displayValue,
                     data.getScheduleName()
                 );
-                snap.getProps(peerAccCtx.get())
+                snap.getSnapProps(peerAccCtx.get())
                     .setProp(
                         InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                         stltRemote.getName().displayValue,

@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ProtectedObject;
@@ -27,13 +25,9 @@ public abstract class AbsVolume<RSC extends AbsResource<RSC>>
     // Reference to the resource this volume belongs to
     protected final RSC absRsc;
 
-    // Properties container for this volume
-    protected final Props props;
-
     AbsVolume(
         UUID uuid,
         RSC resRef,
-        Props propsRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
@@ -42,22 +36,12 @@ public abstract class AbsVolume<RSC extends AbsResource<RSC>>
 
         absRsc = resRef;
 
-        props = propsRef;
-
         transObjs = new ArrayList<>(
             Arrays.asList(
                 absRsc,
-                props,
                 deleted
             )
         );
-    }
-
-    public Props getProps(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        return PropsAccess.secureGetProps(accCtx, absRsc.getObjProt(), props);
     }
 
     public RSC getAbsResource()

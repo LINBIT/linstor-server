@@ -115,10 +115,8 @@ public class PreConnectInitializer implements StartupInitializer
 
                                 if (key != null)
                                 {
-                                    snap.getProps(sysCtx).removeProp(
-                                        key,
-                                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                                    );
+                                    snap.getSnapProps(sysCtx)
+                                        .removeProp(key, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                                 }
                             }
                             // no need to do something similar to the retryTask-stuff above, since full-sync will happen

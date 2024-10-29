@@ -59,9 +59,15 @@ public class SnapshotShippingListItemPojo implements SnapshotShippingListItemApi
     }
 
     @Override
-    public Map<String, String> getProps()
+    public Map<String, String> getSnapDfnProps()
     {
-        return snapDfnApi.getProps();
+        return snapDfnApi.getSnapDfnProps();
+    }
+
+    @Override
+    public Map<String, String> getRscDfnProps()
+    {
+        return snapDfnApi.getRscDfnProps();
     }
 
     @Override

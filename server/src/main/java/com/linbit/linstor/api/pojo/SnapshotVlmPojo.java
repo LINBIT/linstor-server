@@ -13,14 +13,16 @@ public class SnapshotVlmPojo implements SnapshotVolumeApi
     private final UUID snapshotVlmDfnUuid;
     private final UUID snapshotVlmUuid;
     private final int snapshotVlmNr;
-    private final Map<String, String> propsMap;
+    private final Map<String, String> snapVlmPropsMap;
+    private final Map<String, String> vlmPropsMap;
     private final String state;
 
     public SnapshotVlmPojo(
         final UUID snapshotVlmDfnUuidRef,
         final UUID snapshotVlmUuidRef,
         final int snapshotVlmNrRef,
-        Map<String, String> propsMapRef,
+        Map<String, String> snapVlmPropsMapRef,
+        Map<String, String> vlmPropsMapRef,
         @Nullable final String stateRef
     )
     {
@@ -28,7 +30,8 @@ public class SnapshotVlmPojo implements SnapshotVolumeApi
         snapshotVlmUuid = snapshotVlmUuidRef;
         snapshotVlmNr = snapshotVlmNrRef;
         state = stateRef;
-        propsMap = Collections.unmodifiableMap(propsMapRef);
+        snapVlmPropsMap = Collections.unmodifiableMap(snapVlmPropsMapRef);
+        vlmPropsMap = Collections.unmodifiableMap(vlmPropsMapRef);
     }
 
     @Override
@@ -50,9 +53,15 @@ public class SnapshotVlmPojo implements SnapshotVolumeApi
     }
 
     @Override
-    public Map<String, String> getPropsMap()
+    public Map<String, String> getSnapVlmPropsMap()
     {
-        return propsMap;
+        return snapVlmPropsMap;
+    }
+
+    @Override
+    public Map<String, String> getVlmPropsMap()
+    {
+        return vlmPropsMap;
     }
 
     @Override

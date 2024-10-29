@@ -11,7 +11,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
-import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -22,6 +21,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -285,12 +285,12 @@ public class CtrlPropsHelper
         return props;
     }
 
-    public Props getProps(AbsVolume<?> vlm)
+    public Props getProps(Volume vlm)
     {
         return getProps(peerAccCtx.get(), vlm);
     }
 
-    public Props getProps(AccessContext accCtx, AbsVolume<?> vlm)
+    public Props getProps(AccessContext accCtx, Volume vlm)
     {
         Props props;
         try
@@ -333,17 +333,24 @@ public class CtrlPropsHelper
         return props;
     }
 
-    public Props getProps(SnapshotDefinition snapDfn)
+    public Props getProps(SnapshotDefinition snapDfn, boolean rscDfnProps)
     {
-        return getProps(peerAccCtx.get(), snapDfn);
+        return getProps(peerAccCtx.get(), snapDfn, rscDfnProps);
     }
 
-    public Props getProps(AccessContext accCtx, SnapshotDefinition snapDfn)
+    public Props getProps(AccessContext accCtx, SnapshotDefinition snapDfn, boolean rscDfnProps)
     {
         Props props;
         try
         {
-            props = snapDfn.getProps(accCtx);
+            if (rscDfnProps)
+            {
+                props = snapDfn.getRscDfnPropsForChange(accCtx);
+            }
+            else
+            {
+                props = snapDfn.getSnapDfnProps(accCtx);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -358,17 +365,24 @@ public class CtrlPropsHelper
         return props;
     }
 
-    public Props getProps(SnapshotVolumeDefinition snapVlmDfn)
+    public Props getProps(SnapshotVolumeDefinition snapVlmDfn, boolean vlmDfnProps)
     {
-        return getProps(peerAccCtx.get(), snapVlmDfn);
+        return getProps(peerAccCtx.get(), snapVlmDfn, vlmDfnProps);
     }
 
-    public Props getProps(AccessContext accCtx, SnapshotVolumeDefinition snapVlmDfn)
+    public Props getProps(AccessContext accCtx, SnapshotVolumeDefinition snapVlmDfn, boolean vlmDfnProps)
     {
         Props props;
         try
         {
-            props = snapVlmDfn.getProps(accCtx);
+            if (vlmDfnProps)
+            {
+                props = snapVlmDfn.getVlmDfnPropsForChange(accCtx);
+            }
+            else
+            {
+                props = snapVlmDfn.getSnapVlmDfnProps(accCtx);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -383,17 +397,24 @@ public class CtrlPropsHelper
         return props;
     }
 
-    public Props getProps(Snapshot snap)
+    public Props getProps(Snapshot snap, boolean rscProps)
     {
-        return getProps(peerAccCtx.get(), snap);
+        return getProps(peerAccCtx.get(), snap, rscProps);
     }
 
-    public Props getProps(AccessContext accCtx, Snapshot snap)
+    public Props getProps(AccessContext accCtx, Snapshot snap, boolean rscProps)
     {
         Props props;
         try
         {
-            props = snap.getProps(accCtx);
+            if (rscProps)
+            {
+                props = snap.getRscPropsForChange(accCtx);
+            }
+            else
+            {
+                props = snap.getSnapProps(accCtx);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -408,17 +429,24 @@ public class CtrlPropsHelper
         return props;
     }
 
-    public Props getProps(SnapshotVolume snapVlm)
+    public Props getProps(SnapshotVolume snapVlm, boolean vlmProps)
     {
-        return getProps(peerAccCtx.get(), snapVlm);
+        return getProps(peerAccCtx.get(), snapVlm, vlmProps);
     }
 
-    public Props getProps(AccessContext accCtx, SnapshotVolume snapVlm)
+    public Props getProps(AccessContext accCtx, SnapshotVolume snapVlm, boolean vlmProps)
     {
         Props props;
         try
         {
-            props = snapVlm.getProps(accCtx);
+            if (vlmProps)
+            {
+                props = snapVlm.getVlmPropsForChange(accCtx);
+            }
+            else
+            {
+                props = snapVlm.getSnapVlmProps(accCtx);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {

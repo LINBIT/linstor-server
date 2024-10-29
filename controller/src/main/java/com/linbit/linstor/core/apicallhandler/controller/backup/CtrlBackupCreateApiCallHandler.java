@@ -385,7 +385,7 @@ public class CtrlBackupCreateApiCallHandler
                     .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
                 if (remote instanceof S3Remote)
                 {
-                    snapDfn.getProps(peerAccCtx.get())
+                    snapDfn.getSnapDfnProps(peerAccCtx.get())
                         .setProp(
                             InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName(),
                             node.getName().displayValue,
@@ -394,7 +394,7 @@ public class CtrlBackupCreateApiCallHandler
                 }
                 else if (remote instanceof LinstorRemote)
                 {
-                    snapDfn.getProps(peerAccCtx.get())
+                    snapDfn.getSnapDfnProps(peerAccCtx.get())
                         .setProp(
                             InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName() +
                                 "/" + snapDfn.getResourceName().displayValue,
@@ -427,7 +427,7 @@ public class CtrlBackupCreateApiCallHandler
                     snap.getFlags()
                         .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
                     snap.setTakeSnapshot(peerAccCtx.get(), true);
-                    snap.getProps(peerAccCtx.get())
+                    snap.getSnapProps(peerAccCtx.get())
                         .setProp(
                             InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                             remote.getName().displayValue,
@@ -436,7 +436,7 @@ public class CtrlBackupCreateApiCallHandler
                 }
                 if (prevSnapDfn != null)
                 {
-                    snap.getProps(peerAccCtx.get())
+                    snap.getSnapProps(peerAccCtx.get())
                         .setProp(
                             InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
                             prevSnapDfn.getName().displayValue,
@@ -656,11 +656,12 @@ public class CtrlBackupCreateApiCallHandler
     {
         if (scheduleNameRef != null)
         {
-            snapDfn.getProps(peerAccCtx.get()).setProp(
-                InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE,
-                scheduleNameRef,
-                InternalApiConsts.NAMESPC_SCHEDULE
-            );
+            snapDfn.getSnapDfnProps(peerAccCtx.get())
+                .setProp(
+                    InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE,
+                    scheduleNameRef,
+                    InternalApiConsts.NAMESPC_SCHEDULE
+                );
         }
         /*
          * This prop ensures that upon backup restore the resource does not skip the initial sync
@@ -672,13 +673,13 @@ public class CtrlBackupCreateApiCallHandler
          * The prop needs to be on the rscDfn during/after the restore. Any change to the way props get restored needs
          * to take this into consideration
          */
-        snapDfn.getProps(peerAccCtx.get())
+        snapDfn.getRscDfnPropsForChange(peerAccCtx.get())
             .setProp(
                 InternalApiConsts.KEY_FORCE_INITIAL_SYNC_PERMA,
                 ApiConsts.VAL_TRUE,
                 ApiConsts.NAMESPC_DRBD_OPTIONS
             );
-        snapDfn.getProps(peerAccCtx.get())
+        snapDfn.getSnapDfnProps(peerAccCtx.get())
             .setProp(
                 InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
                 Long.toString(TimeUtils.getEpochMillis(nowRef)),
@@ -693,7 +694,8 @@ public class CtrlBackupCreateApiCallHandler
         );
         if (s3Suffix != null)
         {
-            snapDfn.getProps(peerAccCtx.get()).setProp(
+            snapDfn.getSnapDfnProps(peerAccCtx.get())
+                .setProp(
                 ApiConsts.KEY_BACKUP_S3_SUFFIX,
                 s3Suffix,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -707,13 +709,14 @@ public class CtrlBackupCreateApiCallHandler
         List<Integer> nodeIds
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
-        snapDfn.getProps(peerAccCtx.get()).setProp(
-            InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
-            StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
-            ApiConsts.NAMESPC_BACKUP_SHIPPING
-        );
+        snapDfn.getSnapDfnProps(peerAccCtx.get())
+            .setProp(
+                InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
+                StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
         // also needed on snapDfn only for scheduled shippings
-        snapDfn.getProps(peerAccCtx.get())
+        snapDfn.getSnapDfnProps(peerAccCtx.get())
             .setProp(
                 InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                 remoteName,
@@ -1059,7 +1062,7 @@ public class CtrlBackupCreateApiCallHandler
     )
         throws InvalidValueException, AccessDeniedException, DatabaseException
     {
-        Props snapDfnProps = curSnapDfn.getProps(peerAccCtx.get());
+        Props snapDfnProps = curSnapDfn.getSnapDfnProps(peerAccCtx.get());
         Props rscDfnProps = curSnapDfn.getResourceDefinition().getProps(peerAccCtx.get());
         if (prevSnapDfn == null)
         {
@@ -1082,10 +1085,11 @@ public class CtrlBackupCreateApiCallHandler
         {
             snapDfnProps.setProp(
                 InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                prevSnapDfn.getProps(peerAccCtx.get()).getProp(
-                    InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                ),
+                prevSnapDfn.getSnapDfnProps(peerAccCtx.get())
+                    .getProp(
+                        InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    ),
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             if (scheduleName != null)

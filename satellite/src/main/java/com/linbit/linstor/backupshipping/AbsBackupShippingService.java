@@ -196,12 +196,13 @@ public abstract class AbsBackupShippingService implements SystemService
     {
         if (RscLayerSuffixes.shouldSuffixBeShipped(rscNameSuffixRef))
         {
-            String remoteName = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot().getProps(accCtx)
+            String remoteName = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot()
+                .getSnapProps(accCtx)
                 .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
             String s3Suffix = stltConfigAccessor.getReadonlyProps()
                 .getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
             String backupTimeRaw = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotDefinition()
-                .getProps(accCtx)
+                .getSnapDfnProps(accCtx)
                 .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
             LocalDateTime backupTime = TimeUtils.millisToDate(Long.parseLong(backupTimeRaw));
 
@@ -226,10 +227,13 @@ public abstract class AbsBackupShippingService implements SystemService
                         cmdRef,
                         remoteMap.get(
                             new RemoteName(
-                                snapVlmData.getRscLayerObject().getAbsResource().getProps(accCtx).getProp(
-                                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                                ),
+                                snapVlmData.getRscLayerObject()
+                                    .getAbsResource()
+                                    .getSnapProps(accCtx)
+                                    .getProp(
+                                        InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                    ),
                                 true
                             )
                         ),
@@ -262,10 +266,12 @@ public abstract class AbsBackupShippingService implements SystemService
         if (RscLayerSuffixes.shouldSuffixBeShipped(snapVlmData.getRscLayerObject().getResourceNameSuffix()))
         {
             SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-            String remoteName = snapVlm.getSnapshot().getProps(accCtx).getProp(
-                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
+            String remoteName = snapVlm.getSnapshot()
+                .getSnapProps(accCtx)
+                .getProp(
+                    InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
             AbsRemote remote = remoteMap.get(new RemoteName(remoteName, true));
 
             ensureRemoteType(remote);
@@ -331,10 +337,11 @@ public abstract class AbsBackupShippingService implements SystemService
                             {
                                 try
                                 {
-                                    remoteName = snap.getProps(accCtx).getProp(
-                                        InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                                    );
+                                    remoteName = snap.getSnapProps(accCtx)
+                                        .getProp(
+                                            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                        );
                                     if (remoteName == null || remoteName.isEmpty())
                                     {
                                         throw new ImplementationError(
@@ -434,7 +441,7 @@ public abstract class AbsBackupShippingService implements SystemService
                     String s3Suffix = stltConfigAccessor.getReadonlyProps()
                         .getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                     String backupTimeRaw = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotDefinition()
-                        .getProps(accCtx)
+                        .getSnapDfnProps(accCtx)
                         .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                     LocalDateTime backupTime = TimeUtils.millisToDate(Long.parseLong(backupTimeRaw));
 
@@ -448,8 +455,12 @@ public abstract class AbsBackupShippingService implements SystemService
                     if (basedOnSnapVlmData != null && basedOnSnapVlmData != snapVlmData)
                     {
                         Snapshot basedOnSnap = basedOnSnapVlmData.getRscLayerObject().getAbsResource();
-                        String basedOnSnapSuffix = basedOnSnap.getSnapshotDefinition().getProps(accCtx).getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                        String basedOnBackupTimeRaw = basedOnSnap.getSnapshotDefinition().getProps(accCtx).getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        String basedOnSnapSuffix = basedOnSnap.getSnapshotDefinition()
+                            .getSnapDfnProps(accCtx)
+                            .getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        String basedOnBackupTimeRaw = basedOnSnap.getSnapshotDefinition()
+                            .getSnapDfnProps(accCtx)
+                            .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                         LocalDateTime basedOnBackupTime = TimeUtils.millisToDate(Long.parseLong(basedOnBackupTimeRaw));
 
                         info.basedOnS3MetaKey = new S3MetafileNameInfo(
@@ -560,7 +571,7 @@ public abstract class AbsBackupShippingService implements SystemService
                     {
                         try
                         {
-                            String simpleBackupName = snap.getProps(accCtx)
+                            String simpleBackupName = snap.getSnapProps(accCtx)
                                 .getProp(InternalApiConsts.KEY_BACKUP_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                             if (finishedShipments.containsKey(snap))
                             {
@@ -748,7 +759,9 @@ public abstract class AbsBackupShippingService implements SystemService
         {
             List<String> list = finishedShipments.get(snapVlmDataRef.getVolume().getAbsResource());
             return list != null && list.contains(
-                snapVlmDataRef.getVolume().getAbsResource().getProps(accCtx)
+                snapVlmDataRef.getVolume()
+                    .getAbsResource()
+                    .getSnapProps(accCtx)
                     .getProp(InternalApiConsts.KEY_BACKUP_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING)
             );
         }

@@ -22,6 +22,7 @@ message IntSnapshot
     repeated SnapshotVlmDfn           snapshot_vlm_dfns = 11;
     sint64                            snapshot_dfn_flags = 12;
     map<string, string>               snapshot_dfn_props = 20;
+    map<string, string>               snapshot_rsc_dfn_props = 25;
     repeated SnapshotVlm              snapshot_vlms     = 13;
     sint64                            flags             = 14;
     bool                              suspend_resource  = 15;
@@ -30,6 +31,9 @@ message IntSnapshot
     common.RscLayerData               layer_object      = 22;
     string                            node_name         = 17;
     map<string, string>               snapshot_props    = 23;
+    map<string, string>               rsc_props         = 24;
+
+    // next id: 26
 }
 
 message SnapshotVlmDfn
@@ -39,6 +43,9 @@ message SnapshotVlmDfn
     int64 vlm_size = 3;
     sint64 flags = 4;
     map<string, string> snapshot_vlm_dfn_props = 5;
+    map<string, string> vlm_dfn_props = 6;
+
+    // next id: 7
 }
 
 message SnapshotVlm
@@ -47,5 +54,8 @@ message SnapshotVlm
     string snapshot_vlm_dfn_uuid = 2;
     sint32 vlm_nr = 3;
     map<string, string> snapshot_vlm_props = 5;
+    map<string, string> vlm_props = 7;
     string state = 6;
+
+    // next id: 8
 }

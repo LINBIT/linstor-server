@@ -13,6 +13,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
@@ -112,7 +113,7 @@ public class CtrlResyncAfterHelper
                     final StorPool sp = itStorPool.next();
                     for (final VlmProviderObject<Resource> vol : sp.getVolumes(sysCtx))
                     {
-                        Props props = vol.getVolume().getProps(sysCtx);
+                        Props props = ((Volume) vol.getVolume()).getProps(sysCtx);
                         if (props.contains(Collections.singletonList(DRBD_RESYNC_AFTER_KEY)))
                         {
                             changed.add(vol.getVolume().getAbsResource());
@@ -219,7 +220,7 @@ public class CtrlResyncAfterHelper
                         String rscNameBefore = null;
                         for (VlmProviderObject<Resource> vol : spVolsSorted.values())
                         {
-                            final Props props = vol.getVolume().getProps(sysCtx);
+                            final Props props = ((Volume) vol.getVolume()).getProps(sysCtx);
                             if (rscNameBefore == null)
                             {
                                 if (props.removeProp(DRBD_RESYNC_AFTER_KEY) != null)

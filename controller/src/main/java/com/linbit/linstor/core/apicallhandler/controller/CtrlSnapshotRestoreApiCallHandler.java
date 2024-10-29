@@ -251,7 +251,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             ctrlSnapshotHelper.ensureSnapshotSuccessful(fromSnapshotDfn);
 
             ctrlPropsHelper.copy(
-                ctrlPropsHelper.getProps(fromSnapshotDfn),
+                ctrlPropsHelper.getProps(fromSnapshotDfn, true),
                 ctrlPropsHelper.getProps(toRscDfn)
             );
 
@@ -463,7 +463,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         );
 
         ctrlPropsHelper.copy(
-            ctrlPropsHelper.getProps(snapshot),
+            ctrlPropsHelper.getProps(snapshot, true),
             ctrlPropsHelper.getProps(rsc)
         );
         StateFlags<Flags> rscFlags = rsc.getStateFlags();
@@ -489,7 +489,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             if (copyIntoVlmDfn)
             {
                 ctrlPropsHelper.copy(
-                    ctrlPropsHelper.getProps(fromSnapshotVlmDfn),
+                    ctrlPropsHelper.getProps(fromSnapshotVlmDfn, true),
                     ctrlPropsHelper.getProps(toVlmDfn)
                 );
             }
@@ -535,7 +535,7 @@ public class CtrlSnapshotRestoreApiCallHandler
 
             Props vlmProps = ctrlPropsHelper.getProps(toVlm);
             ctrlPropsHelper.copy(
-                ctrlPropsHelper.getProps(fromSnapshotVolume),
+                ctrlPropsHelper.getProps(fromSnapshotVolume, true),
                 vlmProps
             );
             vlmProps.setProp(

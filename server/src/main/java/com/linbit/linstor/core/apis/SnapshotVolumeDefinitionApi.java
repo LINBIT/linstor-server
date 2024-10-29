@@ -9,5 +9,6 @@ public interface SnapshotVolumeDefinitionApi
     Integer getVolumeNr();
     long getSize();
     long getFlags();
-    Map<String, String> getPropsMap();
+    Map<String, String> getSnapVlmDfnPropsMap();
+    Map<String, String> getVlmDfnPropsMap();
 }

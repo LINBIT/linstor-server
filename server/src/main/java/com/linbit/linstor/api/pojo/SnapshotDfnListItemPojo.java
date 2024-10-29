@@ -54,9 +54,15 @@ public class SnapshotDfnListItemPojo implements SnapshotDefinitionListItemApi
     }
 
     @Override
-    public Map<String, String> getProps()
+    public Map<String, String> getSnapDfnProps()
     {
-        return snapshotDfnApi.getProps();
+        return snapshotDfnApi.getSnapDfnProps();
+    }
+
+    @Override
+    public Map<String, String> getRscDfnProps()
+    {
+        return snapshotDfnApi.getRscDfnProps();
     }
 
     @Override

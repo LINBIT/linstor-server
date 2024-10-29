@@ -243,12 +243,12 @@ public class CtrlBackupApiHelper
                         String remoteName = "";
                         if (snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE))
                         {
-                            remoteName = snap.getProps(peerAccCtx.get())
+                            remoteName = snap.getSnapProps(peerAccCtx.get())
                                 .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                         }
                         else if (snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET))
                         {
-                            remoteName = snap.getProps(peerAccCtx.get())
+                            remoteName = snap.getSnapProps(peerAccCtx.get())
                                 .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                         }
 

@@ -11,8 +11,12 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -52,6 +56,10 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
 
     private final SnapshotDatabaseDriver dbDriver;
 
+    private final Props snapProps;
+    private final ReadOnlyProps rscRoProps;
+    private final Props rscProps;
+
     // State flags
     private final StateFlags<Flags> flags;
 
@@ -82,20 +90,6 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         super(
             objIdRef,
             nodeRef,
-            propsConFactory.getInstance(
-                PropsContainer.buildPath(
-                    nodeRef.getName(),
-                    snapshotDfnRef.getResourceName(),
-                    snapshotDfnRef.getName()
-                ),
-                String.format(
-                    TO_STRING_FORMAT,
-                    nodeRef.getName(),
-                    snapshotDfnRef.getResourceName(),
-                    snapshotDfnRef.getName()
-                ),
-                LinStorObject.SNAP
-            ),
             transMgrProviderRef,
             transObjFactory,
             createTimestampRef,
@@ -104,6 +98,30 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
 
         snapshotDfn = snapshotDfnRef;
         dbDriver = dbDriverRef;
+        snapKey = new Key(this);
+
+        snapProps = propsConFactory.getInstance(
+            PropsContainer.buildPath(
+                nodeRef.getName(),
+                snapshotDfnRef.getResourceName(),
+                snapshotDfnRef.getName(),
+                false
+            ),
+            toStringImpl() + " [Snap]",
+            LinStorObject.SNAP
+        );
+
+        rscProps = propsConFactory.getInstance(
+            PropsContainer.buildPath(
+                nodeRef.getName(),
+                snapshotDfnRef.getResourceName(),
+                snapshotDfnRef.getName(),
+                true
+            ),
+            toStringImpl() + " [Snap.Rsc]",
+            LinStorObject.RSC
+        );
+        rscRoProps = new ReadOnlyPropsImpl(rscProps);
 
         flags = transObjFactory.createStateFlagsImpl(
             snapshotDfn.getResourceDefinition().getObjProt(),
@@ -122,13 +140,14 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
                 snapshotDfn,
                 snapVlmMap,
                 node,
+                snapProps,
+                rscProps,
                 flags,
                 deleted,
                 suspendResource,
                 takeSnapshot
             )
         );
-        snapKey = new Key(this);
     }
 
     public SnapshotDefinition getSnapshotDefinition()
@@ -141,6 +160,29 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
     {
         // no check deleted
         return snapKey;
+    }
+
+    public Props getSnapProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return PropsAccess.secureGetProps(accCtx, getObjProt(), snapProps);
+    }
+
+    public ReadOnlyProps getRscProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return rscRoProps;
+    }
+
+    public Props getRscPropsForChange(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        return rscProps;
     }
 
     @Override
@@ -227,7 +269,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
                 rootLayerData.get().delete(accCtx);
             }
 
-            props.delete();
+            snapProps.delete();
+            rscProps.delete();
 
             activateTransMgr();
             dbDriver.delete(this);
@@ -352,7 +395,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
             getLayerData(accCtx).asPojo(accCtx),
             getNodeName().displayValue,
             getCreateTimestamp().orElse(null),
-            props.map()
+            snapProps.map(),
+            rscRoProps.map()
         );
     }
 

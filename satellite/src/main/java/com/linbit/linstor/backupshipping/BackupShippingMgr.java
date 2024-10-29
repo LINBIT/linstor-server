@@ -81,10 +81,11 @@ public class BackupShippingMgr
 
             if (key != null)
             {
-                String remoteNameStr = snapshotRef.getProps(accCtx).getProp(
-                    key,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
+                String remoteNameStr = snapshotRef.getSnapProps(accCtx)
+                    .getProp(
+                        key,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    );
 
                 if (remoteNameStr != null)
                 {

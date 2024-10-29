@@ -11,8 +11,12 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -35,6 +39,10 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
 
     private final SnapshotVolumeDatabaseDriver dbDriver;
 
+    private final Props snapVlmProps;
+    private final ReadOnlyProps vlmRoProps;
+    private final Props vlmProps;
+
     // deliberately not a TransactionObject to behave the same as SatelliteResourceStates
     private volatile String state;
 
@@ -54,35 +62,45 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
         super(
             objIdRef,
             snapshotRef,
-            propsConFactory.getInstance(
-                PropsContainer.buildPath(
-                    snapshotRef.getNodeName(),
-                    snapshotRef.getResourceName(),
-                    snapshotRef.getSnapshotName(),
-                    snapshotVolumeDefinitionRef.getVolumeNumber()
-                ),
-                String.format(
-                    TO_STRING_FORMAT,
-                    snapshotRef.getNodeName(),
-                    snapshotRef.getResourceName(),
-                    snapshotRef.getSnapshotName(),
-                    snapshotVolumeDefinitionRef.getVolumeNumber()
-                ),
-                LinStorObject.SNAP_VLM
-            ),
             transObjFactory,
             transMgrProviderRef
         );
 
         snapshotVolumeDefinition = snapshotVolumeDefinitionRef;
         dbDriver = dbDriverRef;
-
         snapVlmKey = new Key(this);
+
+        snapVlmProps = propsConFactory.getInstance(
+            PropsContainer.buildPath(
+                snapshotRef.getNodeName(),
+                snapshotRef.getResourceName(),
+                snapshotRef.getSnapshotName(),
+                snapshotVolumeDefinitionRef.getVolumeNumber(),
+                false
+            ),
+            toStringImpl(),
+            LinStorObject.SNAP_VLM
+        );
+
+        vlmProps = propsConFactory.getInstance(
+            PropsContainer.buildPath(
+                snapshotRef.getNodeName(),
+                snapshotRef.getResourceName(),
+                snapshotRef.getSnapshotName(),
+                snapshotVolumeDefinitionRef.getVolumeNumber(),
+                false
+            ),
+            toStringImpl(),
+            LinStorObject.VLM
+        );
+        vlmRoProps = new ReadOnlyPropsImpl(vlmProps);
 
         transObjs.addAll(
             Arrays.asList(
                 snapshotVolumeDefinition,
-                deleted
+                deleted,
+                snapVlmProps,
+                vlmProps
             )
         );
     }
@@ -107,6 +125,29 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
         state = stateRef;
     }
 
+    public Props getSnapVlmProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return PropsAccess.secureGetProps(accCtx, getObjProt(), snapVlmProps);
+    }
+
+    public ReadOnlyProps getVlmProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return vlmRoProps;
+    }
+
+    public Props getVlmPropsForChange(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        return vlmProps;
+    }
+
     @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
@@ -118,7 +159,8 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
             absRsc.removeVolume(accCtx, this);
             snapshotVolumeDefinition.removeSnapshotVolume(accCtx, this);
 
-            props.delete();
+            snapVlmProps.delete();
+            vlmProps.delete();
 
             activateTransMgr();
             dbDriver.delete(this);
@@ -188,7 +230,8 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
             getSnapshotVolumeDefinition().getUuid(),
             getUuid(),
             getVolumeNumber().value,
-            props.map(),
+            snapVlmProps.map(),
+            vlmRoProps.map(),
             state
         );
     }

@@ -1,8 +1,10 @@
 package com.linbit.linstor.utils;
 
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -101,5 +103,11 @@ public class PropsUtils
             }
         }
         return val;
+    }
+
+    public static void resetProps(Map<String, String> sourceRef, Props targetPropsRef)
+    {
+        targetPropsRef.map().putAll(sourceRef);
+        targetPropsRef.keySet().retainAll(sourceRef.keySet());
     }
 }

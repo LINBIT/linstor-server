@@ -37,6 +37,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.utils.PropsUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -58,10 +59,10 @@ class StltSnapshotApiCallHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ControllerPeerConnector controllerPeerConnector;
     private final ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
-    private final SnapshotDefinitionSatelliteFactory snapshotDefinitionFactory;
-    private final SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactory;
+    private final SnapshotDefinitionSatelliteFactory snapDfnFactory;
+    private final SnapshotVolumeDefinitionSatelliteFactory snapVlmDfnFactory;
     private final SnapshotSatelliteFactory snapshotFactory;
-    private final SnapshotVolumeSatelliteFactory snapshotVolumeFactory;
+    private final SnapshotVolumeSatelliteFactory snapVlmFactory;
     private final StltRscGrpApiCallHelper rscGrpApiCallHelper;
     private final StltLayerSnapDataMerger layerSnapDataMerger;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -93,10 +94,10 @@ class StltSnapshotApiCallHandler
         rscDfnMap = rscDfnMapRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         resourceDefinitionFactory = resourceDefinitionFactoryRef;
-        snapshotDefinitionFactory = snapshotDefinitionFactoryRef;
-        snapshotVolumeDefinitionFactory = snapshotVolumeDefinitionFactoryRef;
+        snapDfnFactory = snapshotDefinitionFactoryRef;
+        snapVlmDfnFactory = snapshotVolumeDefinitionFactoryRef;
         snapshotFactory = snapshotFactoryRef;
-        snapshotVolumeFactory = snapshotVolumeFactoryRef;
+        snapVlmFactory = snapshotVolumeFactoryRef;
         rscGrpApiCallHelper = stltGrpApiCallHelperRef;
         layerSnapDataMerger = layerSnapDataMergerRef;
         transMgrProvider = transMgrProviderRef;
@@ -171,76 +172,74 @@ class StltSnapshotApiCallHandler
         throws AccessDeniedException, DivergentUuidsException, InvalidNameException, ValueOutOfRangeException,
             DatabaseException
     {
-        SnapshotName snapshotName = new SnapshotName(snapshotDfnApi.getSnapshotName());
+        SnapshotName snapName = new SnapshotName(snapshotDfnApi.getSnapshotName());
 
-        SnapshotDefinition snapshotDfn = rscDfn.getSnapshotDfn(apiCtx, snapshotName);
-        if (snapshotDfn == null)
+        SnapshotDefinition snapDfn = rscDfn.getSnapshotDfn(apiCtx, snapName);
+        if (snapDfn == null)
         {
-            snapshotDfn = snapshotDefinitionFactory.getInstanceSatellite(
+            snapDfn = snapDfnFactory.getInstanceSatellite(
                 apiCtx,
                 snapshotDfnApi.getUuid(),
                 rscDfn,
-                snapshotName,
+                snapName,
                 new SnapshotDefinition.Flags[]{}
             );
 
-            rscDfn.addSnapshotDfn(apiCtx, snapshotDfn);
+            rscDfn.addSnapshotDfn(apiCtx, snapDfn);
         }
-        checkUuid(snapshotDfn, snapshotDfnApi);
+        checkUuid(snapDfn, snapshotDfnApi);
 
-        Props snapshotDfnProps = snapshotDfn.getProps(apiCtx);
-        snapshotDfnProps.map().putAll(snapshotDfnApi.getProps());
-        snapshotDfnProps.keySet().retainAll(snapshotDfnApi.getProps().keySet());
+        PropsUtils.resetProps(snapshotDfnApi.getSnapDfnProps(), snapDfn.getSnapDfnProps(apiCtx));
+        PropsUtils.resetProps(snapshotDfnApi.getRscDfnProps(), snapDfn.getRscDfnPropsForChange(apiCtx));
 
-        snapshotDfn.getFlags().resetFlagsTo(apiCtx, SnapshotDefinition.Flags.restoreFlags(snapshotDfnApi.getFlags()));
+        snapDfn.getFlags().resetFlagsTo(apiCtx, SnapshotDefinition.Flags.restoreFlags(snapshotDfnApi.getFlags()));
         errorReporter.logTrace(
             "resetting flags of local snapdfn (%s) to %s",
-            snapshotDfn,
+            snapDfn,
             FlagsHelper.toStringList(SnapshotDefinition.Flags.class, snapshotDfnApi.getFlags())
         );
 
         // Merge satellite volume definitions
-        Set<VolumeNumber> oldVolumeNumbers = snapshotDfn.getAllSnapshotVolumeDefinitions(apiCtx).stream()
+        Set<VolumeNumber> oldVlmNrs = snapDfn.getAllSnapshotVolumeDefinitions(apiCtx)
+            .stream()
             .map(SnapshotVolumeDefinition::getVolumeNumber)
             .collect(Collectors.toCollection(HashSet::new));
 
-        for (SnapshotVolumeDefinitionApi snapshotVlmDfnApi : snapshotDfnApi.getSnapshotVlmDfnList())
+        for (SnapshotVolumeDefinitionApi snapVlmDfnApi : snapshotDfnApi.getSnapshotVlmDfnList())
         {
-            VolumeNumber volumeNumber = new VolumeNumber(snapshotVlmDfnApi.getVolumeNr());
-            oldVolumeNumbers.remove(volumeNumber);
+            VolumeNumber vlmNr = new VolumeNumber(snapVlmDfnApi.getVolumeNr());
+            oldVlmNrs.remove(vlmNr);
 
-            SnapshotVolumeDefinition.Flags[] snapshotVlmDfnFlags = SnapshotVolumeDefinition.Flags.restoreFlags(
-                snapshotVlmDfnApi.getFlags()
+            SnapshotVolumeDefinition.Flags[] snapVlmDfnFlags = SnapshotVolumeDefinition.Flags.restoreFlags(
+                snapVlmDfnApi.getFlags()
             );
 
-            SnapshotVolumeDefinition snapshotVolumeDefinition =
-                snapshotDfn.getSnapshotVolumeDefinition(apiCtx, volumeNumber);
-            if (snapshotVolumeDefinition == null)
+            SnapshotVolumeDefinition snapVlmDfn = snapDfn.getSnapshotVolumeDefinition(apiCtx, vlmNr);
+            if (snapVlmDfn == null)
             {
-                snapshotVolumeDefinition = snapshotVolumeDefinitionFactory.getInstanceSatellite(
+                snapVlmDfn = snapVlmDfnFactory.getInstanceSatellite(
                     apiCtx,
-                    snapshotVlmDfnApi.getUuid(),
-                    snapshotDfn,
-                    rscDfn.getVolumeDfn(apiCtx, volumeNumber),
-                    volumeNumber,
-                    snapshotVlmDfnApi.getSize(),
-                    snapshotVlmDfnFlags
+                    snapVlmDfnApi.getUuid(),
+                    snapDfn,
+                    rscDfn.getVolumeDfn(apiCtx, vlmNr),
+                    vlmNr,
+                    snapVlmDfnApi.getSize(),
+                    snapVlmDfnFlags
                 );
             }
 
-            Props snapVlmDfnProps = snapshotVolumeDefinition.getProps(apiCtx);
-            snapVlmDfnProps.map().putAll(snapshotVlmDfnApi.getPropsMap());
-            snapVlmDfnProps.keySet().retainAll(snapshotVlmDfnApi.getPropsMap().keySet());
+            PropsUtils.resetProps(snapVlmDfnApi.getSnapVlmDfnPropsMap(), snapVlmDfn.getSnapVlmDfnProps(apiCtx));
+            PropsUtils.resetProps(snapVlmDfnApi.getVlmDfnPropsMap(), snapVlmDfn.getVlmDfnPropsForChange(apiCtx));
 
-            snapshotVolumeDefinition.getFlags().resetFlagsTo(apiCtx, snapshotVlmDfnFlags);
+            snapVlmDfn.getFlags().resetFlagsTo(apiCtx, snapVlmDfnFlags);
         }
 
-        for (VolumeNumber oldVolumeNumber : oldVolumeNumbers)
+        for (VolumeNumber oldVolumeNumber : oldVlmNrs)
         {
-            snapshotDfn.removeSnapshotVolumeDefinition(apiCtx, oldVolumeNumber);
+            snapDfn.removeSnapshotVolumeDefinition(apiCtx, oldVolumeNumber);
         }
 
-        return snapshotDfn;
+        return snapDfn;
     }
 
     private void mergeSnapshot(SnapshotPojo snapshotRaw, SnapshotDefinition snapshotDfn)
@@ -248,11 +247,11 @@ class StltSnapshotApiCallHandler
             DatabaseException
     {
         Node localNode = controllerPeerConnector.getLocalNode();
-        Snapshot snapshot = snapshotDfn.getSnapshot(apiCtx, localNode.getName());
+        Snapshot snap = snapshotDfn.getSnapshot(apiCtx, localNode.getName());
         Snapshot.Flags[] snapshotFlags = Snapshot.Flags.restoreFlags(snapshotRaw.getFlags());
-        if (snapshot == null)
+        if (snap == null)
         {
-            snapshot = snapshotFactory.getInstanceSatellite(
+            snap = snapshotFactory.getInstanceSatellite(
                 apiCtx,
                 snapshotRaw.getSnapshotUuid(),
                 localNode,
@@ -260,52 +259,50 @@ class StltSnapshotApiCallHandler
                 snapshotFlags
             );
         }
-        checkUuid(snapshot, snapshotRaw);
-        snapshot.getFlags().resetFlagsTo(apiCtx, snapshotFlags);
+        checkUuid(snap, snapshotRaw);
+        snap.getFlags().resetFlagsTo(apiCtx, snapshotFlags);
         errorReporter.logTrace(
             "resetting flags of local snapshot (%s) to %s, suspendIO: %b, takeSnapshot: %b",
-            snapshot,
+            snap,
             FlagsHelper.toStringList(Snapshot.Flags.class, snapshotRaw.getFlags()),
             snapshotRaw.getSuspendResource(),
             snapshotRaw.getTakeSnapshot()
         );
-        snapshot.setSuspendResource(apiCtx, snapshotRaw.getSuspendResource());
-        snapshot.setTakeSnapshot(apiCtx, snapshotRaw.getTakeSnapshot());
+        snap.setSuspendResource(apiCtx, snapshotRaw.getSuspendResource());
+        snap.setTakeSnapshot(apiCtx, snapshotRaw.getTakeSnapshot());
 
-        Props snapProps = snapshot.getProps(apiCtx);
-        snapProps.map().putAll(snapshotRaw.getPropsMap());
-        snapProps.keySet().retainAll(snapshotRaw.getPropsMap().keySet());
+        PropsUtils.resetProps(snapshotRaw.getSnapPropsMap(), snap.getSnapProps(apiCtx));
+        PropsUtils.resetProps(snapshotRaw.getRscPropsMap(), snap.getRscPropsForChange(apiCtx));
 
         for (SnapshotVolumeApi snapshotVlmApi : snapshotRaw.getSnapshotVlmList())
         {
-            mergeSnapshotVolume(snapshotVlmApi, snapshot);
+            mergeSnapVlm(snapshotVlmApi, snap);
         }
 
-        layerSnapDataMerger.mergeLayerData(snapshot, snapshotRaw.getLayerData(), false);
+        layerSnapDataMerger.mergeLayerData(snap, snapshotRaw.getLayerData(), false);
     }
 
-    private void mergeSnapshotVolume(SnapshotVolumeApi snapshotVlmApi, Snapshot snapshot)
+    private void mergeSnapVlm(SnapshotVolumeApi snapVlmApi, Snapshot snap)
         throws ValueOutOfRangeException, DivergentUuidsException, InvalidNameException, AccessDeniedException
     {
-        VolumeNumber volumeNumber = new VolumeNumber(snapshotVlmApi.getSnapshotVlmNr());
-        SnapshotVolume snapshotVolume = snapshot.getVolume(volumeNumber);
-        if (snapshotVolume == null)
+        VolumeNumber vlmNr = new VolumeNumber(snapVlmApi.getSnapshotVlmNr());
+        SnapshotVolume snapVlm = snap.getVolume(vlmNr);
+        if (snapVlm == null)
         {
-            snapshotVolume = snapshotVolumeFactory.getInstanceSatellite(
+            snapVlm = snapVlmFactory.getInstanceSatellite(
                 apiCtx,
-                snapshotVlmApi.getSnapshotVlmUuid(),
-                snapshot,
-                snapshot.getSnapshotDefinition().getSnapshotVolumeDefinition(apiCtx, volumeNumber)
+                snapVlmApi.getSnapshotVlmUuid(),
+                snap,
+                snap.getSnapshotDefinition().getSnapshotVolumeDefinition(apiCtx, vlmNr)
             );
 
-            snapshot.putVolume(apiCtx, snapshotVolume);
+            snap.putVolume(apiCtx, snapVlm);
         }
 
-        Props snapVlmProps = snapshotVolume.getProps(apiCtx);
-        snapVlmProps.map().putAll(snapshotVlmApi.getPropsMap());
-        snapVlmProps.keySet().retainAll(snapshotVlmApi.getPropsMap().keySet());
+        PropsUtils.resetProps(snapVlmApi.getSnapVlmPropsMap(), snapVlm.getSnapVlmProps(apiCtx));
+        PropsUtils.resetProps(snapVlmApi.getVlmPropsMap(), snapVlm.getVlmPropsForChange(apiCtx));
 
-        checkUuid(snapshotVolume, snapshotVlmApi);
+        checkUuid(snapVlm, snapVlmApi);
     }
 
     public void applyEndedSnapshot(String rscNameStr, String snapshotNameStr)

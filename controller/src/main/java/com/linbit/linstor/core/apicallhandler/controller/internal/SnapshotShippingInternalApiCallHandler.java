@@ -108,9 +108,8 @@ public class SnapshotShippingInternalApiCallHandler
         SnapshotDefinition snapDfn = targetSnapRef.getSnapshotDefinition();
         try
         {
-            String sourceNodeName = snapDfn.getProps(apiCtx).getProp(
-                InternalApiConsts.KEY_SNAPSHOT_SHIPPING_SOURCE_NODE
-            );
+            String sourceNodeName = snapDfn.getSnapDfnProps(apiCtx)
+                .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_SOURCE_NODE);
             Snapshot sourceSnap = snapDfn.getSnapshot(apiCtx, new NodeName(sourceNodeName));
 
             StateFlags<Snapshot.Flags> sourceSnapFlags = sourceSnap.getFlags();
@@ -206,7 +205,8 @@ public class SnapshotShippingInternalApiCallHandler
                             snapSource.getNodeName().toString(),
                             null,
                             stltPeer.getNode().getName().toString(),
-                            snapDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC),
+                            snapDfn.getSnapDfnProps(apiCtx)
+                                .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC),
                             true
                         )
                     );
@@ -305,9 +305,8 @@ public class SnapshotShippingInternalApiCallHandler
         Snapshot snapShipSource;
         try
         {
-            String sourceNodeName = snapDfnRef.getProps(apiCtx).getProp(
-                InternalApiConsts.KEY_SNAPSHOT_SHIPPING_SOURCE_NODE
-            );
+            String sourceNodeName = snapDfnRef.getSnapDfnProps(apiCtx)
+                .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_SOURCE_NODE);
             snapShipSource = snapDfnRef.getSnapshot(apiCtx, new NodeName(sourceNodeName));
         }
         catch (InvalidKeyException | AccessDeniedException | InvalidNameException exc)
@@ -445,17 +444,17 @@ public class SnapshotShippingInternalApiCallHandler
         {
             for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(apiCtx))
             {
+                Props snapVlmDfnProps = snapVlmDfn.getSnapVlmDfnProps(apiCtx);
+                int shippingPort = Integer.parseInt(
+                    snapVlmDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT)
+                );
                 if (vlmNrsWithBlockedPort.contains(snapVlmDfn.getVolumeNumber().value))
                 {
-                    blacklistPorts.add(
-                        Integer.parseInt(snapVlmDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT))
-                    );
+                    blacklistPorts.add(shippingPort);
                 }
                 else
                 {
-                    ports.add(
-                        Integer.parseInt(snapVlmDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT))
-                    );
+                    ports.add(shippingPort);
                 }
             }
         }

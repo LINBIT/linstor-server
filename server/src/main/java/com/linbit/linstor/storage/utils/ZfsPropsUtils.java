@@ -9,7 +9,9 @@ import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
@@ -40,41 +42,8 @@ public class ZfsPropsUtils
     {
         long extentSize = DEFAULT_ZFS_EXTENT_SIZE;
 
-        AbsVolume<?> absVlm = vlmDataRef.getVolume();
-        ReadOnlyProps absVlmProps;
-        ReadOnlyProps absRscProps;
-        ReadOnlyProps vlmDfnProps;
-        ReadOnlyProps rscDfnProps;
-        if (absVlm instanceof Volume)
-        {
-            Volume vlm = (Volume) vlmDataRef.getVolume();
-            Resource rsc = vlm.getAbsResource();
-            absVlmProps = vlm.getProps(sysCtx);
-            absRscProps = rsc.getProps(sysCtx);
-            vlmDfnProps = vlm.getVolumeDefinition().getProps(sysCtx);
-            rscDfnProps = rsc.getResourceDefinition().getProps(sysCtx);
-        }
-        else
-        {
-            SnapshotVolume snapVlm = (SnapshotVolume) vlmDataRef.getVolume();
-            Snapshot snap = snapVlm.getAbsResource();
-            absVlmProps = snapVlm.getProps(sysCtx);
-            absRscProps = snap.getProps(sysCtx);
-            vlmDfnProps = snapVlm.getSnapshotVolumeDefinition().getProps(sysCtx);
-            rscDfnProps = snap.getSnapshotDefinition().getProps(sysCtx);
-        }
-        ResourceGroup rscGrp = absVlm.getAbsResource().getResourceDefinition().getResourceGroup();
-        PriorityProps prioProp = new PriorityProps(
-            absVlmProps,
-            absRscProps,
-            vlmDataRef.getStorPool().getProps(sysCtx),
-            absVlm.getAbsResource().getNode().getProps(sysCtx),
-            vlmDfnProps,
-            rscDfnProps,
-            rscGrp.getVolumeGroupProps(sysCtx, absVlm.getVolumeNumber()),
-            rscGrp.getProps(sysCtx),
-            stltProps
-        );
+        PriorityProps prioProp = getPrioProps(vlmDataRef, sysCtx, stltProps);
+
         String zfsCreateProp = prioProp.getProp(
             ApiConsts.KEY_STOR_POOL_ZFS_CREATE_OPTIONS,
             ApiConsts.NAMESPC_STORAGE_DRIVER,
@@ -150,5 +119,59 @@ public class ZfsPropsUtils
             throw new StorageException("Could not parse blocksize unit ", exc);
         }
         return extentSize;
+    }
+
+    private static PriorityProps getPrioProps(
+        ZfsData<?> vlmDataRef,
+        AccessContext sysCtxRef,
+        ReadOnlyProps stltPropsRef
+    )
+        throws AccessDeniedException
+    {
+        AbsVolume<?> absVlm = vlmDataRef.getVolume();
+
+        ResourceGroup rscGrp = absVlm.getAbsResource().getResourceDefinition().getResourceGroup();
+        PriorityProps prioProp;
+        if (absVlm instanceof Volume)
+        {
+            Volume vlm = (Volume) vlmDataRef.getVolume();
+            Resource rsc = vlm.getAbsResource();
+
+            prioProp = new PriorityProps(
+                vlm.getProps(sysCtxRef),
+                rsc.getProps(sysCtxRef),
+                vlmDataRef.getStorPool().getProps(sysCtxRef),
+                absVlm.getAbsResource().getNode().getProps(sysCtxRef),
+                vlm.getVolumeDefinition().getProps(sysCtxRef),
+                rsc.getResourceDefinition().getProps(sysCtxRef),
+                rscGrp.getVolumeGroupProps(sysCtxRef, absVlm.getVolumeNumber()),
+                rscGrp.getProps(sysCtxRef),
+                stltPropsRef
+            );
+        }
+        else
+        {
+            SnapshotVolume snapVlm = (SnapshotVolume) vlmDataRef.getVolume();
+            Snapshot snap = snapVlm.getAbsResource();
+            SnapshotVolumeDefinition snapVlmDfn = snapVlm.getSnapshotVolumeDefinition();
+            SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
+
+            prioProp = new PriorityProps(
+                snapVlm.getSnapVlmProps(sysCtxRef),
+                snapVlm.getVlmProps(sysCtxRef),
+                snap.getSnapProps(sysCtxRef),
+                snap.getRscProps(sysCtxRef),
+                vlmDataRef.getStorPool().getProps(sysCtxRef),
+                absVlm.getAbsResource().getNode().getProps(sysCtxRef),
+                snapVlmDfn.getSnapVlmDfnProps(sysCtxRef),
+                snapVlmDfn.getVlmDfnProps(sysCtxRef),
+                snapDfn.getSnapDfnProps(sysCtxRef),
+                snapDfn.getRscDfnProps(sysCtxRef),
+                rscGrp.getVolumeGroupProps(sysCtxRef, absVlm.getVolumeNumber()),
+                rscGrp.getProps(sysCtxRef),
+                stltPropsRef
+            );
+        }
+        return prioProp;
     }
 }

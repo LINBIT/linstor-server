@@ -20,6 +20,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -69,7 +71,9 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     private final SnapshotDefinitionDatabaseDriver dbDriver;
 
     // Properties container for this snapshot definition
-    private final Props snapshotDfnProps;
+    private final Props snaptDfnProps;
+    private final ReadOnlyProps rscDfnRoProps;
+    private final Props rscDfnProps;
 
     // State flags
     private final StateFlags<Flags> flags;
@@ -111,11 +115,17 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
 
         snapDfnKey = new Key(this);
 
-        snapshotDfnProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(resourceDfn.getName(), snapshotName),
+        snaptDfnProps = propsContainerFactory.getInstance(
+            PropsContainer.buildPath(resourceDfn.getName(), snapshotName, false),
             toStringImpl(),
             LinStorObject.SNAP_DFN
         );
+        rscDfnProps = propsContainerFactory.getInstance(
+            PropsContainer.buildPath(resourceDfn.getName(), snapshotName, true),
+            toStringImpl(),
+            LinStorObject.RSC_DFN
+        );
+        rscDfnRoProps = new ReadOnlyPropsImpl(rscDfnProps);
 
         flags = transObjFactory.createStateFlagsImpl(
             resourceDfnRef.getObjProt(),
@@ -146,7 +156,9 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
             layerStorage,
             layerStack,
             deleted,
-            inCreation
+            inCreation,
+            snaptDfnProps,
+            rscDfnProps
         );
     }
 
@@ -264,11 +276,27 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         snapshotMap.remove(snapshotRef.getNodeName());
     }
 
-    public Props getProps(AccessContext accCtx)
+    public Props getSnapDfnProps(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
-        return PropsAccess.secureGetProps(accCtx, resourceDfn.getObjProt(), snapshotDfnProps);
+        return PropsAccess.secureGetProps(accCtx, resourceDfn.getObjProt(), snaptDfnProps);
+    }
+
+    public ReadOnlyProps getRscDfnProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        requireAccess(accCtx, AccessType.VIEW);
+        return rscDfnRoProps;
+    }
+
+    public Props getRscDfnPropsForChange(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        requireAccess(accCtx, AccessType.CHANGE);
+        return rscDfnProps;
     }
 
     public StateFlags<Flags> getFlags()
@@ -307,7 +335,8 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
                 snapshotVolumeDefinition.delete(accCtx);
             }
 
-            snapshotDfnProps.delete();
+            snaptDfnProps.delete();
+            rscDfnProps.delete();
 
             for (RscDfnLayerObject rscDfnLayerObject : layerStorage.values())
             {
@@ -491,7 +520,8 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
             snapshotName.getDisplayName(),
             snapshotVlmDfns,
             flags.getFlagsBits(accCtx),
-            new TreeMap<>(getProps(accCtx).map()),
+            snaptDfnProps.map(),
+            rscDfnProps.map(),
             layerData,
             withSnapshots ? getSnapshotApis(accCtx) : Collections.emptyList()
         );

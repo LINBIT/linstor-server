@@ -257,7 +257,8 @@ public class RscInternalCallHandler
                 Snapshot snapshot = snapDfn.getSnapshot(apiCtx, nodeName);
                 if (snapshot != null)
                 {
-                    mergeStltProps(snapPropsRef.get(snapDfn.getName().value), snapshot.getProps(apiCtx));
+                    // no need to merge snap.rsc.props. satellite should only have modified snap.props.
+                    mergeStltProps(snapPropsRef.get(snapDfn.getName().value), snapshot.getSnapProps(apiCtx));
 
                     RscLayerDataApi snapLayerDataPojo = snapLayersRef.get(snapDfn.getName().value);
                     if (snapLayerDataPojo != null)
@@ -275,7 +276,8 @@ public class RscInternalCallHandler
                             Map<String, String> snapVlmPropPojo = allSnapVlmProps.get(snapVlmNr.value);
                             if (snapVlm != null && snapVlmPropPojo != null)
                             {
-                                Props snapVlmProps = snapVlm.getProps(apiCtx);
+
+                                Props snapVlmProps = snapVlm.getSnapVlmProps(apiCtx);
 
                                 // check has to be done before merging, but adding has to be done after merge is
                                 // complete

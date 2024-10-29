@@ -949,9 +949,9 @@ public class BackupInfoManager
             int ret = 0;
             try
             {
-                String myDateStr = snapDfn.getProps(sysCtx)
+                String myDateStr = snapDfn.getSnapDfnProps(sysCtx)
                     .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                String otherDateStr = other.snapDfn.getProps(sysCtx)
+                String otherDateStr = other.snapDfn.getSnapDfnProps(sysCtx)
                     .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                 /*
                  * To prevent an ImplementationError from possibly completely stopping whatever thread is currently

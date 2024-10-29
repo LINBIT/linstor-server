@@ -21,5 +21,6 @@ public interface SnapshotApi
     Long getUpdateId();
     List<? extends SnapshotVolumeApi> getSnapshotVlmList();
     RscLayerDataApi getLayerData();
-    Map<String, String> getPropsMap();
+    Map<String, String> getSnapPropsMap();
+    Map<String, String> getRscPropsMap();
 }

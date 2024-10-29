@@ -193,7 +193,7 @@ public abstract class AbsLayerSizeCalculator
         }
         else
         {
-            absRscProps = ((Snapshot) absRsc).getProps(sysCtx);
+            absRscProps = ((Snapshot) absRsc).getRscProps(sysCtx);
         }
         Node node = absRsc.getNode();
         return new PriorityProps(

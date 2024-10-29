@@ -895,10 +895,13 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 Snapshot snap = snapDfn.getSnapshot(serializerCtx, localNodeName);
                 String snapName = snapDfn.getName().value;
+                // we are sending a message from satellite -> controller that we successfully applied a resource.
+                // the satellite might need to read snap.rsc.props but certainly not modify them.
+                // therefore, we do not need to include snap.rsc.props to the proto msg. snap.props are added here:
                 builder.putSnapProps(
                     snapName,
                     MsgIntApplyRscSuccessOuterClass.Props.newBuilder()
-                        .putAllProp(snap.getProps(serializerCtx).map())
+                        .putAllProp(snap.getSnapProps(serializerCtx).map())
                         .build()
                 );
                 builder.putSnapStorageLayerObjects(
@@ -919,7 +922,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                     allSnapVlmPropsBuilder.putSnapVlmProps(
                         vlmNr.value,
                         MsgIntApplyRscSuccessOuterClass.Props.newBuilder()
-                            .putAllProp(snapVlm.getProps(serializerCtx).map())
+                            .putAllProp(snapVlm.getSnapVlmProps(serializerCtx).map())
                             .build()
                     );
 
@@ -1748,7 +1751,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setVlmNr(snapshotVolumeDefinition.getVolumeNumber().value)
                         .setVlmSize(snapshotVolumeDefinition.getVolumeSize(serializerCtx))
                         .setFlags(snapshotVolumeDefinition.getFlags().getFlagsBits(serializerCtx))
-                        .putAllSnapshotVlmDfnProps(snapshotVolumeDefinition.getProps(serializerCtx).map())
+                        .putAllSnapshotVlmDfnProps(snapshotVolumeDefinition.getSnapVlmDfnProps(serializerCtx).map())
+                        .putAllVlmDfnProps(snapshotVolumeDefinition.getVlmDfnProps(serializerCtx).map())
                         .build()
                 );
             }
@@ -1763,7 +1767,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                     .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
                     .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
                     .setVlmNr(snapshotVolume.getVolumeNumber().value)
-                    .putAllSnapshotVlmProps(snapshotVolume.getProps(serializerCtx).map());
+                    .putAllSnapshotVlmProps(snapshotVolume.getSnapVlmProps(serializerCtx).map())
+                    .putAllVlmProps(snapshotVolume.getVlmProps(serializerCtx).map());
                 final String state = snapshotVolume.getState(serializerCtx);
                 if (state != null)
                 {
@@ -1784,8 +1789,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setSnapshotDfnUuid(snapshotDfn.getUuid().toString())
                 .addAllSnapshotVlmDfns(snapshotVlmDfns)
                 .setSnapshotDfnFlags(snapshotDfn.getFlags().getFlagsBits(serializerCtx))
-                .putAllSnapshotDfnProps(snapshotDfn.getProps(serializerCtx).map())
-                .putAllSnapshotProps(snapshot.getProps(serializerCtx).map())
+                .putAllSnapshotDfnProps(snapshotDfn.getSnapDfnProps(serializerCtx).map())
+                .putAllSnapshotRscDfnProps(snapshotDfn.getRscDfnProps(serializerCtx).map())
+                .putAllSnapshotProps(snapshot.getSnapProps(serializerCtx).map())
+                .putAllRscProps(snapshot.getRscProps(serializerCtx).map())
                 .addAllSnapshotVlms(snapshotVlms)
                 .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
                 .setSuspendResource(snapshot.getSuspendResource(serializerCtx))

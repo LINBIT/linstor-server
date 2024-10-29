@@ -14,6 +14,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -55,7 +57,10 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
     private final SnapshotVolumeDefinitionDatabaseDriver dbDriver;
 
     // Properties container for this snapshot volume definition
-    private final Props snapshotVlmDfnProps;
+    private final Props snapVlmDfnProps;
+    // Properties container for this snapshot volume definition
+    private final Props vlmDfnProps;
+    private final ReadOnlyProps vlmDfnRoProps;
 
     // State flags
     private final StateFlags<Flags> flags;
@@ -94,15 +99,27 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
         dbDriver = dbDriverRef;
         snapVlmDfnKey = new Key(this);
 
-        snapshotVlmDfnProps = propsContainerFactory.getInstance(
+        snapVlmDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 snapshotDfnRef.getResourceName(),
                 snapshotDfnRef.getName(),
-                vlmNrRef
+                vlmNrRef,
+                false
             ),
             toStringImpl(),
             LinStorObject.SNAP_VLM_DFN
         );
+        vlmDfnProps = propsContainerFactory.getInstance(
+            PropsContainer.buildPath(
+                snapshotDfnRef.getResourceName(),
+                snapshotDfnRef.getName(),
+                vlmNrRef,
+                true
+            ),
+            toStringImpl(),
+            LinStorObject.VLM_DFN
+        );
+        vlmDfnRoProps = new ReadOnlyPropsImpl(vlmDfnProps);
 
         flags = transObjFactory.createStateFlagsImpl(
             snapshotDfnRef.getResourceDefinition().getObjProt(),
@@ -126,7 +143,9 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
             layerStorage,
             snapshotDfn,
             snapshotVlmMap,
-            deleted
+            deleted,
+            snapVlmDfnProps,
+            vlmDfnProps
         );
     }
 
@@ -188,11 +207,27 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
         return volumeSize.set(newVolumeSize);
     }
 
-    public Props getProps(AccessContext accCtx)
+    public Props getSnapVlmDfnProps(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
-        return PropsAccess.secureGetProps(accCtx, getResourceDefinition().getObjProt(), snapshotVlmDfnProps);
+        return PropsAccess.secureGetProps(accCtx, getResourceDefinition().getObjProt(), snapVlmDfnProps);
+    }
+
+    public ReadOnlyProps getVlmDfnProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return vlmDfnRoProps;
+    }
+
+    public Props getVlmDfnPropsForChange(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        return vlmDfnProps;
     }
 
     public StateFlags<Flags> getFlags()
@@ -307,7 +342,8 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
 
             snapshotDfn.removeSnapshotVolumeDefinition(accCtx, vlmNr);
 
-            snapshotVlmDfnProps.delete();
+            snapVlmDfnProps.delete();
+            vlmDfnProps.delete();
 
             for (VlmDfnLayerObject vlmDfnLayerObject : layerStorage.values())
             {
@@ -336,7 +372,8 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
             getVolumeNumber().value,
             getVolumeSize(accCtx),
             flags.getFlagsBits(accCtx),
-            snapshotVlmDfnProps.map()
+            snapVlmDfnProps.map(),
+            vlmDfnProps.map()
         );
     }
 

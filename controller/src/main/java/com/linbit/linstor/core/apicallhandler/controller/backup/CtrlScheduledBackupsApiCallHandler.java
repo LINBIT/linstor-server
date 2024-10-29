@@ -131,13 +131,13 @@ public class CtrlScheduledBackupsApiCallHandler
         Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
         if (snap != null && !snap.isDeleted())
         {
-            lastBackupIncremental = snap.getProps(peerAccCtx.get())
+            lastBackupIncremental = snap.getSnapProps(peerAccCtx.get())
                 .getProp(
                     InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
                 ) != null;
         }
-        String backupTimeRaw = snapDfn.getProps(peerAccCtx.get())
+        String backupTimeRaw = snapDfn.getSnapDfnProps(peerAccCtx.get())
             .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
         scheduleService.get().addTaskAgain(
             rscDfn,
@@ -192,14 +192,14 @@ public class CtrlScheduledBackupsApiCallHandler
                 boolean success2 = false;
                 try
                 {
-                    ts1 = a.getProps(peerAccCtx.get())
+                    ts1 = a.getSnapDfnProps(peerAccCtx.get())
                         .getProp(
                             InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
                     success1 = a.getFlags()
                         .isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
-                    ts2 = b.getProps(peerAccCtx.get())
+                    ts2 = b.getSnapDfnProps(peerAccCtx.get())
                         .getProp(
                             InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -331,7 +331,7 @@ public class CtrlScheduledBackupsApiCallHandler
         TreeMap<String, SnapshotDefinition> sourceSnaps = new TreeMap<>();
         for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
         {
-            ReadOnlyProps props = snapDfn.getProps(peerAccCtx.get());
+            ReadOnlyProps props = snapDfn.getSnapDfnProps(peerAccCtx.get());
             String schedule = props.getProp(SCHEDULE_KEY);
             String remote = props.getProp(REMOTE_KEY);
             if (schedule != null && schedule.equals(scheduleName) && remote != null && remote.equals(remoteName))
@@ -346,8 +346,9 @@ public class CtrlScheduledBackupsApiCallHandler
         {
             List<SnapshotDefinition> chain = new ArrayList<>();
             SnapshotDefinition startSnap = sourceSnaps.pollFirstEntry().getValue();
-            String prevFullSnap = startSnap.getProps(peerAccCtx.get()).getProp(PREV_FULL_BACKUP_KEY);
-            String prevSnap = startSnap.getProps(peerAccCtx.get()).getProp(PREV_BACKUP_KEY);
+            Props startSnapDfnProps = startSnap.getSnapDfnProps(peerAccCtx.get());
+            String prevFullSnap = startSnapDfnProps.getProp(PREV_FULL_BACKUP_KEY);
+            String prevSnap = startSnapDfnProps.getProp(PREV_BACKUP_KEY);
             if (!prevFullSnap.equalsIgnoreCase(startSnap.getName().value))
             {
                 while (prevSnap != null)
@@ -397,8 +398,8 @@ public class CtrlScheduledBackupsApiCallHandler
                         }
                         else
                         {
-                            prevSnap = startSnap.getProps(peerAccCtx.get()).getProp(PREV_BACKUP_KEY);
-                            prevFullSnap = startSnap.getProps(peerAccCtx.get()).getProp(PREV_FULL_BACKUP_KEY);
+                            prevSnap = startSnapDfnProps.getProp(PREV_BACKUP_KEY);
+                            prevFullSnap = startSnapDfnProps.getProp(PREV_FULL_BACKUP_KEY);
                         }
                     }
                 }
@@ -425,7 +426,7 @@ public class CtrlScheduledBackupsApiCallHandler
         {
             try
             {
-                ReadOnlyProps props = snapDfn.getProps(peerAccCtx.get());
+                ReadOnlyProps props = snapDfn.getSnapDfnProps(peerAccCtx.get());
                 if (
                     isFullBackupOfSchedule(
                         props.map(), scheduleName, remoteName,
@@ -464,7 +465,10 @@ public class CtrlScheduledBackupsApiCallHandler
                     .getMetaFile(s3key, remote, peerAccCtx.get(), backupHelper.getLocalMasterKey());
                 if (
                     isFullBackupOfSchedule(
-                        s3MetaFile.getRscDfn().getProps(), scheduleName, remote.getName().displayValue, info.snapName
+                        s3MetaFile.getRscDfn().getSnapDfnProps(),
+                        scheduleName,
+                        remote.getName().displayValue,
+                        info.snapName
                     )
                 )
                 {

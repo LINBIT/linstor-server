@@ -93,6 +93,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private final LockGuardFactory lockGuardFactory;
     private final BackupInfoManager backupInfoMgr;
     private final SnapshotRollbackManager snapRollbackMgr;
+    private final CtrlPropsHelper propsHelper;
 
     @Inject
     public CtrlSnapshotRollbackApiCallHandler(
@@ -107,7 +108,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         BackupInfoManager backupInfoMgrRef,
         SnapshotRollbackManager snapRollbackMgrRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        CtrlPropsHelper propsHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -122,6 +124,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         backupInfoMgr = backupInfoMgrRef;
         snapRollbackMgr = snapRollbackMgrRef;
         errorReporter = errorReporterRef;
+        propsHelper = propsHelperRef;
     }
 
     @Override
@@ -554,7 +557,9 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         long sequenceNumber;
         try
         {
-            sequenceNumber = Long.parseLong(getProps(snapshotDfn).getProp(ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER));
+            sequenceNumber = Long.parseLong(
+                propsHelper.getProps(snapshotDfn, false).getProp(ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER)
+            );
         }
         catch (InvalidKeyException exc)
         {
@@ -680,24 +685,6 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                 accDeniedExc,
                 "get props of " + getRscDescriptionInline(rsc),
                 ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        return props;
-    }
-
-    private Props getProps(SnapshotDefinition snapshotDfn)
-    {
-        Props props;
-        try
-        {
-            props = snapshotDfn.getProps(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "get props of " + getSnapshotDfnDescriptionInline(snapshotDfn),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
             );
         }
         return props;

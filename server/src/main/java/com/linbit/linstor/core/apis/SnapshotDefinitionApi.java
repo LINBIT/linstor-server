@@ -13,7 +13,8 @@ public interface SnapshotDefinitionApi
     UUID getUuid();
     String getSnapshotName();
     long getFlags();
-    Map<String, String> getProps();
+    Map<String, String> getSnapDfnProps();
+    Map<String, String> getRscDfnProps();
     List<SnapshotVolumeDefinitionApi> getSnapshotVlmDfnList();
     List<Pair<String, RscDfnLayerDataApi>> getLayerData();
     List<SnapshotApi> getSnapshots();

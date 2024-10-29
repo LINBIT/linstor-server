@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added options dst_rsc_grp and force_rsc_grp to BackupShip, BackupRestore and BackupSchedule
 - Added timing of REST and internal API calls to prometheus /metrics
 
+### Changed
+
+- Split snapshot properties into snapshot-specific- and resource-properties
+
 ## [1.29.2] - 2024-11-05
 
 ### Changed

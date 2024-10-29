@@ -214,7 +214,7 @@ public class BackupNodeFinder
                 String remoteName = remote.getName().displayValue;
                 if (remoteType == RemoteType.S3)
                 {
-                    prevNodeStr = prevSnapDfnRef.getProps(accCtx)
+                    prevNodeStr = prevSnapDfnRef.getSnapDfnProps(accCtx)
                         .getProp(
                             InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remoteName,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -222,7 +222,7 @@ public class BackupNodeFinder
                 }
                 else if (remoteType == RemoteType.LINSTOR)
                 {
-                    prevNodeStr = prevSnapDfnRef.getProps(accCtx)
+                    prevNodeStr = prevSnapDfnRef.getSnapDfnProps(accCtx)
                         .getProp(
                             InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remoteName +
                                 "/" + rscDfn.getName().displayValue,

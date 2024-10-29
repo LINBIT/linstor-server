@@ -779,12 +779,13 @@ public class CtrlBackupApiCallHandler
                     continue;
                 }
 
-                String s3Suffix = snapDfn.getProps(peerCtx).getProp(
+                String s3Suffix = snapDfn.getSnapDfnProps(peerCtx)
+                    .getProp(
                     ApiConsts.KEY_BACKUP_S3_SUFFIX,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
                 );
 
-                String backupTimeRaw = snapDfn.getProps(peerCtx)
+                String backupTimeRaw = snapDfn.getSnapDfnProps(peerCtx)
                     .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
 
                 LocalDateTime backupTime = TimeUtils.millisToDate(Long.parseLong(backupTimeRaw));
@@ -976,7 +977,7 @@ public class CtrlBackupApiCallHandler
             // Determine backup status based on snapshot definition
             if (snapDfn != null && snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.BACKUP))
             {
-                String ts = snapDfn.getProps(peerCtx)
+                String ts = snapDfn.getSnapDfnProps(peerCtx)
                     .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                 if (ts == null || ts.isEmpty())
                 {
@@ -1106,7 +1107,7 @@ public class CtrlBackupApiCallHandler
                     boolean rst = isSnapTarget && restore;
                     if (crt)
                     {
-                        String remoteName = snap.getProps(peerAccCtx.get())
+                        String remoteName = snap.getSnapProps(peerAccCtx.get())
                             .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                         crt = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
                         if (crt)
@@ -1120,7 +1121,7 @@ public class CtrlBackupApiCallHandler
                     }
                     if (rst)
                     {
-                        String remoteName = snap.getProps(peerAccCtx.get())
+                        String remoteName = snap.getSnapProps(peerAccCtx.get())
                             .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                         rst = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
                         if (rst)

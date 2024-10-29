@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
@@ -401,13 +402,18 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         ResourceDefinition rscDfn = snapVlm.getResourceDefinition();
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
         SnapshotVolumeDefinition snapVlmDfn = snapVlm.getSnapshotVolumeDefinition();
+        SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
         return new PriorityProps(
-            snapVlm.getProps(storDriverAccCtx),
-            snap.getProps(storDriverAccCtx),
+            snapVlm.getSnapVlmProps(storDriverAccCtx),
+            snapVlm.getVlmProps(storDriverAccCtx),
+            snap.getSnapProps(storDriverAccCtx),
+            snap.getRscProps(storDriverAccCtx),
             vlmDataRef.getStorPool().getProps(storDriverAccCtx),
             snap.getNode().getProps(storDriverAccCtx),
-            snapVlmDfn.getProps(storDriverAccCtx),
-            snap.getSnapshotDefinition().getProps(storDriverAccCtx),
+            snapVlmDfn.getSnapVlmDfnProps(storDriverAccCtx),
+            snapVlmDfn.getVlmDfnProps(storDriverAccCtx),
+            snapDfn.getSnapDfnProps(storDriverAccCtx),
+            snapDfn.getRscDfnProps(storDriverAccCtx),
             // we have to skip vlmDfn (not snapVlmDfn) since vlmDfn might have been removed in the meantime
             // we can still include rscDfn, since a rscDfn cannot be removed while it has snapshots
             rscDfn.getProps(storDriverAccCtx),

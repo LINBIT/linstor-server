@@ -87,8 +87,8 @@ public class SnapshotDefinitionControllerFactory
         try
         {
             long sequenceNumber = maxSequenceNumber(accCtx, rscDfn) + 1L;
-            snapshotDfnData.getProps(accCtx).setProp(
-                ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER, Long.toString(sequenceNumber));
+            snapshotDfnData.getSnapDfnProps(accCtx)
+                .setProp(ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER, Long.toString(sequenceNumber));
         }
         catch (InvalidKeyException | InvalidValueException exc)
         {
@@ -109,8 +109,8 @@ public class SnapshotDefinitionControllerFactory
         {
             try
             {
-                String sequenceNumberProp =
-                    snapshotDfn.getProps(accCtx).getProp(ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER);
+                String sequenceNumberProp = snapshotDfn.getSnapDfnProps(accCtx)
+                    .getProp(ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER);
 
                 long sequenceNumber = Long.valueOf(sequenceNumberProp);
                 if (sequenceNumber > maxSequenceNumber)

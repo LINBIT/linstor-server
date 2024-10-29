@@ -20,6 +20,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -335,7 +336,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
 
         final List<Triple<String, String, String>> expectedMappingListOrig = Collections.unmodifiableList(
             ExosMappingManager.getCtrlnamePortLunList(
-                vlmDataRef.getVolume().getProps(storDriverAccCtx)
+                getVlmProps(vlmDataRef)
             )
         );
 
@@ -425,6 +426,21 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                 }
             }
         }
+    }
+
+    private ReadOnlyProps getVlmProps(ExosData<?> vlmDataRef) throws AccessDeniedException
+    {
+        ReadOnlyProps vlmRoProps;
+        AbsVolume<?> absVlm = vlmDataRef.getVolume();
+        if (absVlm instanceof Volume)
+        {
+            vlmRoProps = ((Volume) absVlm).getProps(storDriverAccCtx);
+        }
+        else
+        {
+            vlmRoProps = ((SnapshotVolume) absVlm).getVlmProps(storDriverAccCtx);
+        }
+        return vlmRoProps;
     }
 
 
@@ -677,7 +693,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         HashSet<String> ret = new HashSet<>();
 
         List<Triple<String, String, String>> ctrlnamePortLunList = ExosMappingManager.getCtrlnamePortLunList(
-            vlmDataRef.getVolume().getProps(storDriverAccCtx)
+            getVlmProps(vlmDataRef)
         );
 
         for (Triple<String, String, String> triple : ctrlnamePortLunList)

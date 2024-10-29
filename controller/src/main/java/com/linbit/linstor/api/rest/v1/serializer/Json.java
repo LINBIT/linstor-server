@@ -989,28 +989,32 @@ public class Json
         SnapshotVolumeDefinitionApi snapshotVlmDfnApi
     )
     {
-        JsonGenTypes.SnapshotVolumeDefinition snapshotVolumeDefinition =
+        JsonGenTypes.SnapshotVolumeDefinition jsonSnapVlmDfn =
             new JsonGenTypes.SnapshotVolumeDefinition();
 
-        snapshotVolumeDefinition.volume_number = snapshotVlmDfnApi.getVolumeNr();
-        snapshotVolumeDefinition.size_kib = snapshotVlmDfnApi.getSize();
+        jsonSnapVlmDfn.volume_number = snapshotVlmDfnApi.getVolumeNr();
+        jsonSnapVlmDfn.size_kib = snapshotVlmDfnApi.getSize();
+        jsonSnapVlmDfn.snapshot_volume_definition_props = snapshotVlmDfnApi.getSnapVlmDfnPropsMap();
+        jsonSnapVlmDfn.volume_definition_props = snapshotVlmDfnApi.getVlmDfnPropsMap();
 
-        return snapshotVolumeDefinition;
+        return jsonSnapVlmDfn;
     }
 
     public static JsonGenTypes.SnapshotNode apiToSnapshotNode(SnapshotApi snapshotApi)
     {
-        JsonGenTypes.SnapshotNode nodeSnap = new JsonGenTypes.SnapshotNode();
-        nodeSnap.node_name = snapshotApi.getNodeName();
-        nodeSnap.snapshot_name = snapshotApi.getSnaphotDfn().getSnapshotName();
-        nodeSnap.flags = FlagsHelper.toStringList(Snapshot.Flags.class, snapshotApi.getFlags());
-        nodeSnap.uuid = snapshotApi.getSnapshotUuid().toString();
-        snapshotApi.getCreateTimestamp().ifPresent(d -> nodeSnap.create_timestamp = d.getTime());
-        nodeSnap.snapshot_volumes = snapshotApi.getSnapshotVlmList()
+        JsonGenTypes.SnapshotNode jsonSnap = new JsonGenTypes.SnapshotNode();
+        jsonSnap.node_name = snapshotApi.getNodeName();
+        jsonSnap.snapshot_name = snapshotApi.getSnaphotDfn().getSnapshotName();
+        jsonSnap.flags = FlagsHelper.toStringList(Snapshot.Flags.class, snapshotApi.getFlags());
+        jsonSnap.uuid = snapshotApi.getSnapshotUuid().toString();
+        jsonSnap.snapshot_props = snapshotApi.getSnapPropsMap();
+        jsonSnap.resource_props = snapshotApi.getRscPropsMap();
+        snapshotApi.getCreateTimestamp().ifPresent(d -> jsonSnap.create_timestamp = d.getTime());
+        jsonSnap.snapshot_volumes = snapshotApi.getSnapshotVlmList()
             .stream()
             .map(Json::apiToSnapshotVolumeNode)
             .collect(Collectors.toList());
-        return nodeSnap;
+        return jsonSnap;
     }
 
     public static JsonGenTypes.SnapshotVolumeNode apiToSnapshotVolumeNode(SnapshotVolumeApi snapshotVolumeApi)
@@ -1018,8 +1022,15 @@ public class Json
         JsonGenTypes.SnapshotVolumeNode nodeSnapVlm = new JsonGenTypes.SnapshotVolumeNode();
         nodeSnapVlm.uuid = snapshotVolumeApi.getSnapshotVlmUuid().toString();
         nodeSnapVlm.vlm_nr = snapshotVolumeApi.getSnapshotVlmNr();
-        nodeSnapVlm.props = snapshotVolumeApi.getPropsMap();
         nodeSnapVlm.state = snapshotVolumeApi.getState();
+
+        nodeSnapVlm.snapshot_volume_props = snapshotVolumeApi.getSnapVlmPropsMap();
+        nodeSnapVlm.volume_props = snapshotVolumeApi.getVlmPropsMap();
+
+        // deprecated / compat
+        nodeSnapVlm.props = new TreeMap<>(nodeSnapVlm.volume_props);
+        nodeSnapVlm.props.putAll(nodeSnapVlm.snapshot_volume_props);
+
         return nodeSnapVlm;
     }
 
@@ -1031,7 +1042,8 @@ public class Json
         snapshot.name = snapshotDfnListItemApi.getSnapshotName();
         snapshot.resource_name = snapshotDfnListItemApi.getRscDfn().getResourceName();
         snapshot.nodes = snapshotDfnListItemApi.getNodeNames();
-        snapshot.props = snapshotDfnListItemApi.getProps();
+        snapshot.snapshot_definition_props = snapshotDfnListItemApi.getSnapDfnProps();
+        snapshot.resource_definition_props = snapshotDfnListItemApi.getRscDfnProps();
         snapshot.flags = FlagsHelper.toStringList(SnapshotDefinition.Flags.class, snapshotDfnListItemApi.getFlags());
         snapshot.volume_definitions = snapshotDfnListItemApi.getSnapshotVlmDfnList().stream()
             .map(Json::apiToSnapshotVolumeDefinition)
@@ -1040,6 +1052,11 @@ public class Json
         snapshot.snapshots = snapshotDfnListItemApi.getSnapshots().stream()
             .map(Json::apiToSnapshotNode)
             .collect(Collectors.toList());
+
+        // deprecated / compat
+        snapshot.props = new TreeMap<>(snapshot.resource_definition_props);
+        snapshot.props.putAll(snapshot.snapshot_definition_props);
+
         return snapshot;
     }
 

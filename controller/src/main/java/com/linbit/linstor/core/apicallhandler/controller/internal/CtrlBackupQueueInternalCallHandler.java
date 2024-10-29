@@ -890,7 +890,7 @@ public class CtrlBackupQueueInternalCallHandler
         String startTimeStr = null;
         try
         {
-            startTimeStr = item.snapDfn.getProps(peerAccCtx.get())
+            startTimeStr = item.snapDfn.getSnapDfnProps(peerAccCtx.get())
                 .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
             boolean inc = item.prevSnapDfn != null;
             ret = new BackupSnapQueuesPojo(

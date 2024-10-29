@@ -12,6 +12,8 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -57,6 +59,9 @@ public class Volume extends AbsVolume<Resource>
     // Reference to the volume definition that defines this volume
     private final VolumeDefinition volumeDfn;
 
+    // Properties container for this volume
+    private final Props props;
+
     // State flags
     private final StateFlags<Volume.Flags> flags;
 
@@ -90,20 +95,6 @@ public class Volume extends AbsVolume<Resource>
         super(
             uuid,
             rscRef,
-            propsContainerFactory.getInstance(
-                PropsContainer.buildPath(
-                    rscRef.getNode().getName(),
-                    rscRef.getResourceDefinition().getName(),
-                    vlmDfnRef.getVolumeNumber()
-                ),
-                String.format(
-                    TO_STRING_FORMAT,
-                    rscRef.getNode().getName(),
-                    rscRef.getResourceDefinition().getName(),
-                    vlmDfnRef.getVolumeNumber()
-                ),
-                LinStorObject.VLM
-            ),
             transObjFactory,
             transMgrProviderRef
         );
@@ -117,6 +108,16 @@ public class Volume extends AbsVolume<Resource>
 
         vlmKey = new Key(this);
         reports = new ApiCallRcImpl();
+
+        props = propsContainerFactory.getInstance(
+            PropsContainer.buildPath(
+                rscRef.getNode().getName(),
+                rscRef.getResourceDefinition().getName(),
+                vlmDfnRef.getVolumeNumber()
+            ),
+            toStringImpl(),
+            LinStorObject.VLM
+        );
 
         flags = transObjFactory.createStateFlagsImpl(
             rscRef.getObjProt(),
@@ -133,7 +134,8 @@ public class Volume extends AbsVolume<Resource>
                 volumeDfn,
                 volumeConnections,
                 usableSize,
-                flags
+                flags,
+                props
             )
         );
     }
@@ -201,6 +203,13 @@ public class Volume extends AbsVolume<Resource>
         {
             volumeConnections.remove(sourceVolume.getKey());
         }
+    }
+
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return PropsAccess.secureGetProps(accCtx, absRsc.getObjProt(), props);
     }
 
     public StateFlags<Volume.Flags> getFlags()

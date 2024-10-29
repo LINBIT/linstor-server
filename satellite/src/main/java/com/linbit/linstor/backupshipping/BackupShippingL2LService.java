@@ -201,10 +201,11 @@ public class BackupShippingL2LService extends AbsBackupShippingService
             {
                 if (snap.getFlags().isSet(accCtx, Snapshot.Flags.BACKUP_TARGET))
                 {
-                    remoteName = snap.getProps(accCtx).getProp(
-                        InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                    );
+                    remoteName = snap.getSnapProps(accCtx)
+                        .getProp(
+                            InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
                     if (remoteName == null || remoteName.isEmpty())
                     {
                         throw new ImplementationError(

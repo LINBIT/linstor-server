@@ -120,7 +120,7 @@ public class CtrlSnapshotCrtHelper
         );
         ctrlPropsHelper.copy(
             ctrlPropsHelper.getProps(rscDfn),
-            ctrlPropsHelper.getProps(snapshotDfn)
+            ctrlPropsHelper.getProps(snapshotDfn, true)
         );
 
         ensureSnapshotsViable(rscDfn);
@@ -138,7 +138,7 @@ public class CtrlSnapshotCrtHelper
 
             ctrlPropsHelper.copy(
                 ctrlPropsHelper.getProps(vlmDfn),
-                ctrlPropsHelper.getProps(snapshotVlmDfn)
+                ctrlPropsHelper.getProps(snapshotVlmDfn, true)
             );
         }
 
@@ -278,10 +278,12 @@ public class CtrlSnapshotCrtHelper
                     }
                 }
             }
-            snap.getSnapshotDefinition().getProps(apiCtx).setProp(
-                InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
-                StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            snap.getSnapshotDefinition()
+                .getSnapDfnProps(apiCtx)
+                .setProp(
+                    InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
+                    StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
         }
         catch (AccessDeniedException exc)
@@ -307,7 +309,7 @@ public class CtrlSnapshotCrtHelper
         Snapshot snapshot = createSnapshot(snapshotDfn, rsc);
         ctrlPropsHelper.copy(
             ctrlPropsHelper.getProps(rsc),
-            ctrlPropsHelper.getProps(snapshot)
+            ctrlPropsHelper.getProps(snapshot, true)
         );
 
         setSuspend(snapshot);
@@ -318,7 +320,7 @@ public class CtrlSnapshotCrtHelper
 
             ctrlPropsHelper.copy(
                 ctrlPropsHelper.getProps(rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber())),
-                ctrlPropsHelper.getProps(snapVlm)
+                ctrlPropsHelper.getProps(snapVlm, true)
             );
         }
         return snapshot;
