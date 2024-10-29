@@ -78,7 +78,9 @@ public class ResourceConnections
 
             List<ResourceConnectionApi> filtered = rscConns.stream()
                 .filter(rscConnApi -> nodeA == null || (rscConnApi.getSourceNodeName().equalsIgnoreCase(nodeA) &&
-                    rscConnApi.getTargetNodeName().equalsIgnoreCase(nodeB)))
+                    rscConnApi.getTargetNodeName().equalsIgnoreCase(nodeB)) ||
+                    rscConnApi.getSourceNodeName().equalsIgnoreCase(nodeB) &&
+                        rscConnApi.getTargetNodeName().equalsIgnoreCase(nodeA))
                 .collect(Collectors.toList());
 
             Response resp;
