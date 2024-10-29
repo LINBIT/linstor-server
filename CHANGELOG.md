@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SOS: use lsblk -O, also include json output
 - SOS: include /proc/sys/kernel/tainted
 - DRBD state tracking: Fixed tracking of a peer's diskless volume's client flag
+- Clone: It is now possible to clone into different storage-pools and layer-stacks.
+  This can be done by using the new resource-group and layer-stack arguments
 
 ### Fixed
 

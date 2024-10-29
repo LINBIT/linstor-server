@@ -1728,4 +1728,22 @@ public class DeviceHandlerImpl implements DeviceHandler
             nextLayer.closeDeviceForClone(vlmData, targetRscNameRef);
         }
     }
+
+    @Override
+    public void processAfterClone(VlmProviderObject<?> vlmSrcData, VlmProviderObject<?> vlmTgtData, String clonedDevPath)
+        throws StorageException
+    {
+        final AbsRscLayerObject<?> rscData = vlmTgtData.getRscLayerObject();
+        final DeviceLayer curLayer = layerFactory.getDeviceLayer(rscData.getLayerKind());
+
+        curLayer.processAfterClone(vlmSrcData, vlmTgtData, clonedDevPath);
+
+        final String rscNameSuffix = rscData.getResourceNameSuffix();
+        AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
+        if (childRscData != null)
+        {
+            VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmTgtData.getVlmNr());
+            processAfterClone(vlmSrcData, childVlmData, clonedDevPath);
+        }
+    }
 }

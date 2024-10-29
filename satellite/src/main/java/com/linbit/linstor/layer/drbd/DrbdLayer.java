@@ -63,6 +63,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.AccessUtils;
 
 import javax.inject.Inject;
@@ -1042,6 +1043,10 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
+    private boolean hasExternalMd(DrbdVlmData<Resource> drbdVlmData)
+    {
+        return drbdVlmData.getMetaDiskPath() != null;
+    }
 
     private boolean hasExternalMd(DrbdRscData<?> drbdRscDataRef)
     {
@@ -1052,7 +1057,7 @@ public class DrbdLayer implements DeviceLayer
         throws VolumeException, AccessDeniedException
     {
         String metaDiskPath = drbdVlmData.getMetaDiskPath();
-        boolean externalMd = metaDiskPath != null;
+        boolean externalMd = hasExternalMd(drbdVlmData);
         if (!externalMd)
         {
             // internal meta data
@@ -1967,5 +1972,67 @@ public class DrbdLayer implements DeviceLayer
     public void openDeviceForClone(VlmProviderObject<?> vlmRef, String targetRscNameRef) throws StorageException
     {
         throw new ImplementationError("not implemented yet");
+    }
+
+    private void cloneLastKnownBlockDeviceFile(int srcMinorNr, int tgtMinorNr) throws IOException
+    {
+        String srcPath = String.format("/var/lib/drbd/drbd-minor-%d.lkbd", srcMinorNr);
+        String tgtPath = String.format("/var/lib/drbd/drbd-minor-%d.lkbd", tgtMinorNr);
+
+        Files.copy(Path.of(srcPath), Path.of(tgtPath), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    /**
+     * If we clone from ZFS -> LVM, the LVM volume will be larger and the dd drbd metadata will not be at the device end
+     * Therefore we have to make sure the metadata gets moved to the end.
+     * DRBD keeps a .lkbd file in /var/lib/drbd that stores the last known metadata path/offset, we have to clone this
+     * file to the new resource and afterward call drbdmeta check-resize (which will move the metadata to the end).
+     * @param vlmSrc
+     * @param vlmTgt
+     * @param clonedPath
+     * @throws StorageException
+     */
+    @Override
+    public void processAfterClone(VlmProviderObject<?> vlmSrc, VlmProviderObject<?> vlmTgt, String clonedPath)
+        throws StorageException
+    {
+        DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmTgt;
+        try
+        {
+            AbsRscLayerObject<?> srcLayerData = vlmSrc.getRscLayerObject().getAbsResource().getLayerData(workerCtx);
+            var optSrcDrbdLayer = LayerRscUtils.getRscDataByLayer(srcLayerData, DeviceLayerKind.DRBD)
+                .stream().findFirst();
+            if (optSrcDrbdLayer.isPresent())
+            {
+                var srcDrbdLayer = optSrcDrbdLayer.get();
+                DrbdVlmData<Resource> drbdSrcVlmData = (DrbdVlmData<Resource>) srcDrbdLayer.getVlmProviderObject(
+                    drbdVlmData.getVlmNr());
+                if (!hasExternalMd(drbdSrcVlmData))
+                {
+                    // only internal metadata needs to be possibly moved.
+                    String metaDiskPath = drbdVlmData.getDataDevice() != null ?
+                        drbdVlmData.getDataDevice() : clonedPath;
+                    if (metaDiskPath != null)
+                    {
+                        int srcMinorNr = drbdSrcVlmData.getVlmDfnLayerObject().getMinorNr().value;
+                        int tgtMinorNr = drbdVlmData.getVlmDfnLayerObject().getMinorNr().value;
+                        cloneLastKnownBlockDeviceFile(srcMinorNr, tgtMinorNr);
+                        drbdUtils.drbdMetaCheckResize(metaDiskPath, tgtMinorNr);
+                    }
+                    else
+                    {
+                        errorReporter.logInfo("drbdmeta-check-resize: Skipping because MD device path is null.");
+                    }
+                }
+            }
+        }
+        catch (IOException ioExc)
+        {
+            throw new StorageException("clone DRBD last known block device file failed.", ioExc);
+        }
+        catch (ExtCmdFailedException|AccessDeniedException exc)
+        {
+            throw new StorageException("drbdmeta check-resize failed", exc);
+        }
     }
 }

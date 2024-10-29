@@ -17,6 +17,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMapExtName;
@@ -24,6 +25,7 @@ import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -42,6 +44,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -79,6 +82,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
@@ -155,6 +159,7 @@ public class CtrlRscDfnApiCallHandler
     private final SystemConfRepository systemConfRepository;
     private final CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelper;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
+    private final Autoplacer autoplacer;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -190,7 +195,8 @@ public class CtrlRscDfnApiCallHandler
         BackupInfoManager backupInfoMgrRef,
         SystemConfRepository systemConfRepositoryRef,
         CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelperRef,
-        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
+        Autoplacer autoplacerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -226,7 +232,7 @@ public class CtrlRscDfnApiCallHandler
         systemConfRepository = systemConfRepositoryRef;
         ctrlRscDfnApiCallHelper = ctrlRscDfnApiCallHelperRef;
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
-
+        autoplacer = autoplacerRef;
     }
 
     public ResourceDefinition createResourceDefinition(
@@ -806,7 +812,9 @@ public class CtrlRscDfnApiCallHandler
         @Nullable byte[] clonedExtName,
         Boolean useZfsClone,
         @Nullable List<String> volumePassphrases,
-        @Nullable List<String> layerList)
+        @Nullable List<String> layerList,
+        @Nullable String intoRscGrpName
+    )
     {
         ResponseContext context = makeResourceDefinitionContext(
             ApiOperation.makeCreateOperation(),
@@ -821,7 +829,7 @@ public class CtrlRscDfnApiCallHandler
                         lockGuardFactory.buildDeferred(LockGuardFactory.LockType.WRITE, NODES_MAP, RSC_DFN_MAP),
                         () -> cloneRscDfnInTransaction(
                             srcRscName, clonedRscName, clonedExtName, useZfsClone,
-                            volumePassphrases, layerList, context, thinFreeCapacities)
+                            volumePassphrases, layerList, context, thinFreeCapacities, intoRscGrpName)
                     )
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
     }
@@ -1109,6 +1117,29 @@ public class CtrlRscDfnApiCallHandler
         }
     }
 
+    private Map<NodeName, StorPool> findCloneStoragePools(ResourceDefinition srcRscDfn, ResourceDefinition clonedRscDfn)
+        throws AccessDeniedException
+    {
+        AutoSelectFilterPojo autoSelectFilterPojo = AutoSelectFilterPojo.copy(
+            clonedRscDfn.getResourceGroup().getAutoPlaceConfig().getApiData());
+        List<Resource> diskfulRscs = srcRscDfn.getDiskfulResources(peerAccCtx.get());
+        autoSelectFilterPojo.setPlaceCount(diskfulRscs.size());
+        autoSelectFilterPojo.setNodeNameList(diskfulRscs.stream()
+            .map(diskRsc -> diskRsc.getNode().getName().displayValue).collect(Collectors.toList()));
+        Set<StorPool> possibleStorPools = autoplacer.autoPlace(autoSelectFilterPojo, clonedRscDfn,
+            CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(srcRscDfn, peerAccCtx.get()));
+
+        if (possibleStorPools == null || possibleStorPools.size() != diskfulRscs.size())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_NOT_ENOUGH_NODES, "No suitable storage pools found for cloning."));
+        }
+
+        return possibleStorPools.stream().collect(
+            Collectors.toMap(storPool -> storPool.getNode().getName(), storPool -> storPool));
+    }
+
     public Flux<ApiCallRc> cloneRscDfnInTransaction(
         String srcRscName,
         String clonedRscName,
@@ -1117,7 +1148,8 @@ public class CtrlRscDfnApiCallHandler
         @Nullable List<String> volumePassphrases,
         @Nullable List<String> layerList,
         ResponseContext context,
-        Map<StorPool.Key, Long> thinFreeCapacities)
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        @Nullable String intoRscGrpName)
     {
         Flux<ApiCallRc> flux;
 
@@ -1131,12 +1163,14 @@ public class CtrlRscDfnApiCallHandler
             final LayerPayload payload = new LayerPayload();
             final List<DeviceLayerKind> layerStack = CollectionUtils.isEmpty(layerList) ?
                 srcRscDfn.getLayerStack(peerAccCtx.get()) : LinstorParsingUtils.asDeviceLayerKind(layerList);
+            final String rscGrpName = intoRscGrpName != null && !intoRscGrpName.isEmpty() ?
+                intoRscGrpName : srcRscDfn.getResourceGroup().getName().getName();
             final ResourceDefinition clonedRscDfn = createRscDfn(
                 clonedRscName,
                 clonedExtName,
                 layerStack,
                 payload,
-                srcRscDfn.getResourceGroup().getName().displayValue);
+                rscGrpName);
 
             Map<String, String> clonedRscDfnProps = clonedRscDfn.getProps(peerAccCtx.get()).map();
             clonedRscDfnProps.putAll(srcRscDfn.getProps(peerAccCtx.get()).map());
@@ -1160,6 +1194,8 @@ public class CtrlRscDfnApiCallHandler
 
             storeVolumePassphrasesToVlmDfn(clonedRscDfn, volumePassphrases);
 
+            Map<NodeName, StorPool> possibleStorPools = findCloneStoragePools(srcRscDfn, clonedRscDfn);
+
             Set<Resource> deployedResources = new TreeSet<>();
             Iterator<Resource> it = srcRscDfn.iterateResource(peerAccCtx.get());
             while (it.hasNext())
@@ -1169,7 +1205,8 @@ public class CtrlRscDfnApiCallHandler
                 setSuspendIO(rsc);
 
                 Resource newRsc;
-                if (CollectionUtils.isEmpty(layerList))
+                // TODO correctly combine .create methods
+                if (CollectionUtils.isEmpty(layerList) && false)
                 {
                     newRsc = resourceControllerFactory.create(
                         peerAccCtx.get(),
@@ -1199,6 +1236,14 @@ public class CtrlRscDfnApiCallHandler
                     ctrlPropsHelper.getProps(rsc),
                     ctrlPropsHelper.getProps(newRsc)
                 );
+                // overwrite storpool props
+                @Nullable StorPool rscStoragePool = possibleStorPools.get(rsc.getNode().getName());
+                if (rscStoragePool != null && !rsc.isDiskless(peerAccCtx.get()))
+                {
+                    // TODO get rid of this property in the future
+                    newRsc.getProps(peerAccCtx.get()).setProp(
+                        ApiConsts.KEY_STOR_POOL_NAME, rscStoragePool.getName().getDisplayName());
+                }
 
                 Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(clonedRscDfn);
                 while (toVlmDfnIter.hasNext())
@@ -1209,24 +1254,29 @@ public class CtrlRscDfnApiCallHandler
                     Volume srcVlm = rsc.getVolume(volumeNumber);
 
                     Map<String, StorPool> storPool = LayerVlmUtils.getStorPoolMap(rsc, volumeNumber, peerAccCtx.get());
-                    LayerPayload vlmDfnPayload = new LayerPayload();
+                    LayerPayload vlmPayload = new LayerPayload();
                     for (Entry<String, StorPool> entry : storPool.entrySet())
                     {
-                        payload.putStorageVlmPayload(
+                        StorPool usePool = entry.getKey().isEmpty() &&
+                            entry.getValue().getDeviceProviderKind() != DeviceProviderKind.DISKLESS &&
+                            rscStoragePool != null ?
+                                rscStoragePool : entry.getValue();
+                        vlmPayload.putStorageVlmPayload(
                             entry.getKey(),
                             toVlmDfn.getVolumeNumber().value,
-                            entry.getValue()
+                            usePool
                         );
                     }
 
                     Volume cloneVlm;
-                    if (CollectionUtils.isEmpty(layerList))
+                    // TODO correctly combine .createVolume methods
+                    if (CollectionUtils.isEmpty(layerList) && false)
                     {
                         cloneVlm = ctrlVlmCrtApiHelper
                             .createVolumeFromAbsVolume(
                                 newRsc,
                                 toVlmDfn,
-                                vlmDfnPayload,
+                                vlmPayload,
                                 thinFreeCapacities,
                                 srcVlm,
                                 Collections.emptyMap(), // storpool-rename might be useful for clone
@@ -1238,7 +1288,7 @@ public class CtrlRscDfnApiCallHandler
                         cloneVlm = ctrlVlmCrtApiHelper.createVolume(
                             newRsc,
                             toVlmDfn,
-                            vlmDfnPayload,
+                            vlmPayload,
                             thinFreeCapacities,
                             Collections.emptyMap(),
                             responses

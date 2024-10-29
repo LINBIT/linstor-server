@@ -271,4 +271,16 @@ public interface DeviceLayer
     {
         throw new StorageException("Not supported");
     }
+
+    /**
+     * Default post clone processing.
+     * @param vlmSrc
+     * @param vlmTgt
+     * @param clonedPath
+     * @throws StorageException
+     */
+    default void processAfterClone(VlmProviderObject<?> vlmSrc, VlmProviderObject<?> vlmTgt, String clonedPath)
+        throws StorageException
+    {
+    }
 }

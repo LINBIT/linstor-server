@@ -7,6 +7,7 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
@@ -21,6 +22,8 @@ import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
@@ -77,6 +80,7 @@ public class CloneService implements SystemService
     private final ThreadGroup threadGroup;
     private final ReadWriteLock reconfigurationLock;
     private final Provider<DeviceHandler> resourceProcessorProvider;
+    private final AccessContext sysCtx;
 
     private boolean serviceStarted = false;
 
@@ -88,7 +92,8 @@ public class CloneService implements SystemService
         VolumeDiskStateEvent volumeDiskStateEventRef,
         ExtCmdFactory extCmdFactoryRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
-        Provider<DeviceHandler> resourceProcessorRef
+        Provider<DeviceHandler> resourceProcessorRef,
+        @SystemContext AccessContext sysCtxRef
     )
     {
         errorReporter = errorReporterRef;
@@ -98,6 +103,7 @@ public class CloneService implements SystemService
         extCmdFactory = extCmdFactoryRef;
         reconfigurationLock = reconfigurationLockRef;
         resourceProcessorProvider = resourceProcessorRef;
+        sysCtx = sysCtxRef;
 
         try
         {
@@ -195,6 +201,12 @@ public class CloneService implements SystemService
         try
         {
             writeLock.lock();
+            resourceProcessorProvider.get().processAfterClone(
+                cloneInfo.srcVlmData,
+                // use root vlm data to traverse all rsc layers
+                cloneInfo.dstVlmData.getRscLayerObject().getAbsResource().getLayerData(sysCtx)
+                    .getVlmProviderObject(cloneInfo.dstVlmData.getVlmNr()),
+                cloneInfo.dstVlmData.getCloneDevicePath());
             resourceProcessorProvider.get().closeAfterClone(
                 cloneInfo.srcVlmData, cloneInfo.getResourceName().displayValue);
             resourceProcessorProvider.get().closeAfterClone(cloneInfo.dstVlmData, null);
@@ -249,7 +261,7 @@ public class CloneService implements SystemService
                 }
             }
         }
-        catch (StorageException exc)
+        catch (AccessDeniedException|StorageException exc)
         {
             errorReporter.reportError(exc);
         }

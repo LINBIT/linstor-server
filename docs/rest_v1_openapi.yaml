@@ -8759,6 +8759,9 @@ components:
           items:
             type: string
           description: For volumes with encryption's, you can provide your own passphrases here.
+        resource_group:
+          type: string
+          description: Place clone into the given resource group and use storage pools of this group.
     ResourceDefinitionCloneStarted:
       type: object
       description: Clone request started object

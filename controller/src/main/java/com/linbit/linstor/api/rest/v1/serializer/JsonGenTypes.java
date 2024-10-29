@@ -1900,6 +1900,10 @@ public class JsonGenTypes
          * For volumes with encryption's, you can provide your own passphrases here.
          */
         public List<String> volume_passphrases = Collections.emptyList();
+        /**
+         * Place clone into the given resource group and use storage pools of this group.
+         */
+        public String resource_group;
     }
 
     /**

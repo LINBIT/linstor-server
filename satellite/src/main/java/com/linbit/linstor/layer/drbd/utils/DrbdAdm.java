@@ -328,6 +328,36 @@ public class DrbdAdm
         );
     }
 
+    public void drbdMetaCheckResize(String blockDevPath, int minorNr) throws ExtCmdFailedException
+    {
+        String[] checkResizeCmd = new String[] {
+            DRBDMETA_UTIL,
+            Integer.toString(minorNr),
+            "v09",
+            blockDevPath,
+            "internal",
+            "check-resize"
+        };
+        ExtCmd utilsCmd = extCmdFactory.create();
+
+        try
+        {
+            OutputData outputData = utilsCmd.exec(checkResizeCmd);
+            if (outputData.exitCode != 0)
+            {
+                throw new ExtCmdFailedException(checkResizeCmd, outputData);
+            }
+        }
+        catch (ChildProcessTimeoutException timeoutExc)
+        {
+            throw new ExtCmdFailedException(checkResizeCmd, timeoutExc);
+        }
+        catch (IOException ioExc)
+        {
+            throw new ExtCmdFailedException(checkResizeCmd, ioExc);
+        }
+    }
+
     /**
      * Calls drbdmeta to determine whether DRBD meta data exists on a volume
      */

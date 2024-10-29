@@ -379,7 +379,8 @@ public class ResourceDefinitions
                         requestData.external_name.getBytes(StandardCharsets.UTF_8) : null,
                     requestData.use_zfs_clone,
                     requestData.volume_passphrases,
-                    requestData.layer_list
+                    requestData.layer_list,
+                    requestData.resource_group
                 );
 
             requestHelper.doFlux(
