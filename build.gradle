@@ -87,6 +87,9 @@ project(':server') {
             api group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
             api group: 'com.h2database', name: 'h2', version: '1.4.197'
 
+            // prometheus client
+            api group: 'io.prometheus', name: 'simpleclient_common', version: '0.16.0'
+
             api platform('com.amazonaws:aws-java-sdk-bom:1.12.496')
             api 'com.amazonaws:aws-java-sdk-s3'
             api 'com.amazonaws:aws-java-sdk-ebs'
@@ -321,7 +324,6 @@ project(':controller') {
             implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-sse', version: jerseyVersion
 
             // prometheus client library
-            implementation group: 'io.prometheus', name: 'simpleclient_common', version: '0.16.0'
             implementation group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.16.0'
 
             implementation group: 'javax.activation', name: 'activation', version: '1.1.1'

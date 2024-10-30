@@ -8,6 +8,7 @@ import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.prometheus.LinstorServerMetrics;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -42,6 +43,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
+import io.prometheus.client.Histogram;
 import org.reactivestreams.Publisher;
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
@@ -438,7 +440,7 @@ public class TcpConnectorPeer implements Peer
         boolean fullSyncAppliedRequired
     )
     {
-        return Flux
+        Flux<ByteArrayInputStream> call = Flux
             .<ByteArrayInputStream>create(fluxSink ->
                 {
                     MDC.setContextMap(MDC.getCopyOfContextMap());
@@ -465,6 +467,12 @@ public class TcpConnectorPeer implements Peer
                 }
             )
             .switchIfEmpty(Flux.error(new ApiCallNoResponseException()));
+
+        return Flux.using(
+            () -> LinstorServerMetrics.apiCallHistogram.labels(apiCallName, peerId).startTimer(),
+            (ignored) -> call,
+            Histogram.Timer::close
+        );
     }
 
     @Override
