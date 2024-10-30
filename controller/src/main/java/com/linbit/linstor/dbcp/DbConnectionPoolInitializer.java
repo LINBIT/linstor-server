@@ -82,6 +82,17 @@ public class DbConnectionPoolInitializer implements DbInitializer
         return dbConnPool.needsMigration(dbType);
     }
 
+    @Override
+    public void migrateTo(Object versionRef) throws DatabaseException, InitializationException
+    {
+        final String connectionUrl = getConnectionUrl();
+        final String dbType = getDbType(connectionUrl);
+
+        errorLog.logInfo("Migrating to version \"%s\", using JDBC: \"%s\"", versionRef, connectionUrl);
+        dbConnPool.initializeDataSource(connectionUrl);
+        dbConnPool.preImportMigrateToVersion(dbType, versionRef);
+    }
+
     private String getConnectionUrl()
     {
         String connectionUrl;

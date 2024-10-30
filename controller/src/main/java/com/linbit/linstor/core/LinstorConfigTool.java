@@ -32,6 +32,8 @@ import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CMDLINE_ERROR;
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 
+import javax.annotation.Nullable;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -324,6 +326,12 @@ public class LinstorConfigTool
     @CommandLine.Command(name = "run-migration", description = "migrate configured database to the latest version")
     private static class CmdRunMigration implements Callable<Object>
     {
+        @CommandLine.Option(
+            names = {"--to-version"},
+            description = "Specify the database version to migrate to. " +
+                "Migrates to the latest version if this option is omitted"
+        ) private @Nullable String toVersion;
+
         @CommandLine.Unmatched()
         private String[] args = new String[0];
         @Override
@@ -333,7 +341,14 @@ public class LinstorConfigTool
             ErrorReporter reporter = new StderrErrorReporter("linstor-config");
             Pair<DbInitializer, ControllerDatabase> databasePair = dbFromConfig(reporter, cfg);
 
-            databasePair.objA.initialize();
+            if (toVersion == null)
+            {
+                databasePair.objA.initialize();
+            }
+            else
+            {
+                databasePair.objA.migrateTo(toVersion);
+            }
             databasePair.objB.shutdown();
             return null;
         }
@@ -396,7 +411,7 @@ public class LinstorConfigTool
         );
         PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
 
-        GenericObjectPoolConfig<PoolableConnection> poolConfig = new GenericObjectPoolConfig<PoolableConnection>();
+        GenericObjectPoolConfig<PoolableConnection> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setBlockWhenExhausted(true);
         poolConfig.setFairness(true);
 
@@ -462,7 +477,7 @@ public class LinstorConfigTool
                 break;
             case ETCD:
                 EtcdUtils.linstorPrefix = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
-                Provider<ControllerETCDDatabase> etcdInitializerProvider = new Provider<ControllerETCDDatabase>()
+                Provider<ControllerETCDDatabase> etcdInitializerProvider = new Provider<>()
                 {
                     private final DbEtcd dbEtcd = new DbEtcd(
                         reporter,
@@ -487,7 +502,7 @@ public class LinstorConfigTool
                 );
                 break;
             case K8S_CRD:
-                Provider<ControllerK8sCrdDatabase> k8sCrdProvider = new Provider<ControllerK8sCrdDatabase>()
+                Provider<ControllerK8sCrdDatabase> k8sCrdProvider = new Provider<>()
                 {
                     private final DbK8sCrd dbK8sCrd = new DbK8sCrd(
                         reporter,

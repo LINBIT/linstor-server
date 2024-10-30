@@ -15,6 +15,7 @@ import javax.inject.Singleton;
 @Singleton
 public class DbK8sCrdInitializer implements DbInitializer
 {
+    private static final String K8S_DB_TYPE = "k8s";
     private final ErrorReporter errorLog;
     private final DbK8sCrd dbK8sCrd;
     private final CtrlConfig ctrlCfg;
@@ -52,7 +53,7 @@ public class DbK8sCrdInitializer implements DbInitializer
 
             if (enableMigrationOnInit)
             {
-                dbK8sCrd.migrate("k8s");
+                dbK8sCrd.migrate(K8S_DB_TYPE);
             }
         }
         catch (Exception | ImplementationError exc)
@@ -67,6 +68,15 @@ public class DbK8sCrdInitializer implements DbInitializer
         final String crdConnectionUrl = ctrlCfg.getDbConnectionUrl();
         errorLog.logInfo("Kubernetes-CRD connection URL is \"%s\"", crdConnectionUrl);
         dbK8sCrd.initializeDataSource(crdConnectionUrl);
-        return dbK8sCrd.needsMigration("k8s");
+        return dbK8sCrd.needsMigration(K8S_DB_TYPE);
+    }
+
+    @Override
+    public void migrateTo(Object versionRef) throws DatabaseException, InitializationException
+    {
+        final String crdConnectionUrl = ctrlCfg.getDbConnectionUrl();
+
+        dbK8sCrd.initializeDataSource(crdConnectionUrl);
+        dbK8sCrd.preImportMigrateToVersion(K8S_DB_TYPE, versionRef);
     }
 }

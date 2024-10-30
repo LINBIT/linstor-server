@@ -10,6 +10,7 @@ import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.core.ClassPathLoader;
 import com.linbit.linstor.core.cfg.CtrlConfig;
+import com.linbit.linstor.dbcp.DbUtils;
 import com.linbit.linstor.dbcp.migration.etcd.BaseEtcdMigration;
 import com.linbit.linstor.dbcp.migration.etcd.EtcdMigration;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -107,7 +108,7 @@ public class DbEtcd implements ControllerETCDDatabase
     {
         try
         {
-            migrateToVersion(dbTypeRef, (int) versionRef);
+            migrateToVersion(dbTypeRef, DbUtils.parseVersionAsInt(versionRef));
         }
         catch (InitializationException exc)
         {

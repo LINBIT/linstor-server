@@ -10,7 +10,9 @@ public interface DbInitializer extends StartupInitializer
     void setEnableMigrationOnInit(boolean enableRef);
 
     boolean needsMigration() throws DatabaseException, InitializationException;
+
+    void migrateTo(Object version) throws DatabaseException, InitializationException;
+
     @Override
-    void initialize()
-        throws InitializationException, SystemServiceStartException;
+    void initialize() throws InitializationException, SystemServiceStartException;
 }
