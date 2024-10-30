@@ -7,6 +7,7 @@ import com.linbit.utils.Pair;
 import com.linbit.utils.TimeUtils;
 
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -63,8 +64,7 @@ public class CronTests
             input.prevIncr
         );
         assertEquals(
-            "expected: " + DTF.format(TimeUtils.millisToDate(input.expectedResult.timeout)) + ", actual: " +
-                DTF.format(TimeUtils.millisToDate(res.objA)),
+            "expected: " + Duration.ofMillis(input.expectedResult.timeout) + ", actual: " + Duration.ofMillis(res.objA),
             Long.valueOf(input.expectedResult.timeout),
             res.objA
         );

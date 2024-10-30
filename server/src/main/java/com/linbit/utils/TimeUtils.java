@@ -1,7 +1,5 @@
 package com.linbit.utils;
 
-import com.linbit.linstor.core.LinStor;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -34,7 +32,7 @@ public class TimeUtils
 
     public static long getEpochMillis(LocalDateTime date)
     {
-        return date.toInstant(LinStor.LOCAL_ZONE_OFFSET).toEpochMilli();
+        return date.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     private TimeUtils()
