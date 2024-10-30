@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.drbd;
 import com.linbit.ImplementationError;
 import com.linbit.Platform;
 import com.linbit.drbd.DrbdVersion;
+import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
@@ -17,6 +18,7 @@ import com.linbit.linstor.core.SysBlockUtils;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
@@ -32,10 +34,12 @@ import com.linbit.linstor.layer.drbd.drbdstate.DiskState;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdConnection;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdResource;
+import com.linbit.linstor.layer.drbd.drbdstate.DrbdResource.Role;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateStore;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
 import com.linbit.linstor.layer.drbd.drbdstate.NoInitialStateException;
+import com.linbit.linstor.layer.drbd.drbdstate.ResourceObserver;
 import com.linbit.linstor.layer.drbd.helper.ReadyForPrimaryNotifier;
 import com.linbit.linstor.layer.drbd.resfiles.DrbdResourceFileUtils;
 import com.linbit.linstor.layer.drbd.utils.DrbdAdm;
@@ -78,6 +82,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.event.Level;
 
 @Singleton
 public class DrbdLayer implements DeviceLayer
@@ -236,7 +244,11 @@ public class DrbdLayer implements DeviceLayer
         DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscLayerData;
 
         Resource rsc = rscLayerData.getAbsResource();
-        if (rsc.getProps(workerCtx).map().containsKey(ApiConsts.KEY_RSC_ROLLBACK_TARGET))
+        final Map<String, String> rscPropsMap = rsc.getProps(workerCtx).map();
+
+        condRestartResource(rsc, drbdRscData, rscPropsMap);
+
+        if (rscPropsMap.containsKey(ApiConsts.KEY_RSC_ROLLBACK_TARGET))
         {
             /*
              *  snapshot rollback:
@@ -279,6 +291,113 @@ public class DrbdLayer implements DeviceLayer
                 }
             }
         }
+    }
+
+    private void condRestartResource(
+        final Resource rsc,
+        final DrbdRscData<Resource> drbdRscData,
+        final Map<String, String> rscPropsMap
+    )
+        throws AccessDeniedException
+    {
+        final ResourceName rscName = rsc.getKey().getResourceName();
+        final String restartReqStr = rscPropsMap.getOrDefault(
+            InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD, Boolean.FALSE.toString()
+        );
+        final boolean restartReq = Boolean.parseBoolean(restartReqStr);
+        errorReporter.logDebug(
+            "DrbdLayer processResource: DRBD resource \"%s\", restart request = %b",
+            rscName, restartReq
+        );
+
+        if (restartReq)
+        {
+            boolean performRestart = false;
+            try
+            {
+                final @Nullable DrbdResource rscState = drbdState.getDrbdResource(rscName.displayValue);
+                if (rscState != null)
+                {
+                    final boolean hasPrimary = isSomePeerPrimary(rscState);
+                    performRestart = !hasPrimary;
+                    errorReporter.logDebug(
+                        "DrbdLayer processResource: DRBD resource \"%s\", have primary peer = %b",
+                        rscName, hasPrimary
+                    );
+                }
+            }
+            catch (NoInitialStateException ignored)
+            {
+            }
+
+            if (performRestart)
+            {
+                errorReporter.logDebug(
+                    "DrbdLayer processResource: Restarting DRBD resource \"%s\"",
+                    rscName
+                );
+                final CountDownLatch syncPoint = new CountDownLatch(1);
+                final ResourceObserver rscObs = new ResourceObserver()
+                {
+                    @Override
+                    public void resourceDestroyed(DrbdResource rsc)
+                    {
+                        syncPoint.countDown();
+                    }
+                };
+
+                drbdState.addObserver(rscObs, DrbdStateTracker.OBS_RES_DSTR);
+
+                try
+                {
+                    drbdUtils.down(drbdRscData);
+                    syncPoint.await(ChildProcessHandler.dfltWaitTimeout, TimeUnit.MILLISECONDS);
+
+                    drbdResFileUtils.regenerateResFile(drbdRscData);
+
+                    drbdUtils.adjust(drbdRscData, false, false, false);
+
+                    errorReporter.logDebug(
+                        "DrbdLayer processResource: DRBD resource \"%s\", reset property, %s = %b",
+                        rscName, InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD, false
+                    );
+                    rscPropsMap.put(InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD, Boolean.FALSE.toString());
+                }
+                catch (InterruptedException ignored)
+                {
+                }
+                catch (ExtCmdFailedException | StorageException exc)
+                {
+                    errorReporter.reportError(Level.ERROR, exc);
+                }
+                finally
+                {
+                    drbdState.removeObserver(rscObs);
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks whether a peer (local or remote) is primary
+     *
+     * @return true if a peer (local or remote) is primary
+     */
+    private boolean isSomePeerPrimary(final DrbdResource rscState)
+    {
+        boolean isSomePeerPrimary = rscState.getRole() == Role.PRIMARY;
+        final Map<String, DrbdConnection> connStateMap = rscState.getConnectionsMap();
+        final Iterator<DrbdConnection> iterator = connStateMap.values().iterator();
+        while (!isSomePeerPrimary && iterator.hasNext())
+        {
+            DrbdConnection connState = iterator.next();
+            if (connState.getPeerRole() == Role.PRIMARY)
+            {
+                isSomePeerPrimary = true;
+                break;
+            }
+        }
+        return isSomePeerPrimary;
     }
 
     private boolean shouldDrbdDeviceBeDeleted(DrbdRscData<Resource> drbdRscData)
@@ -1341,13 +1460,13 @@ public class DrbdLayer implements DeviceLayer
                 drbdRscData.setExists(true);
 
                 { // check drbdRole
-                    DrbdResource.Role rscRole = drbdRscState.getRole();
-                    if (rscRole == DrbdResource.Role.UNKNOWN)
+                    Role rscRole = drbdRscState.getRole();
+                    if (rscRole == Role.UNKNOWN)
                     {
                         drbdRscData.setAdjustRequired(true);
                     }
                     else
-                    if (rscRole == DrbdResource.Role.PRIMARY)
+                    if (rscRole == Role.PRIMARY)
                     {
                         drbdRscData.setPrimary(true);
                     }
