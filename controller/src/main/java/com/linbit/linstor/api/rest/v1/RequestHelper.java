@@ -19,6 +19,7 @@ import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerREST;
+import com.linbit.linstor.prometheus.LinstorControllerMetrics;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.CtrlAuthentication;
@@ -45,6 +46,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Key;
+import io.prometheus.client.Histogram;
 import org.glassfish.grizzly.http.server.Request;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
@@ -228,7 +230,10 @@ public class RequestHelper
                 TransactionMgrUtil.seedTransactionMgr(apiCallScope, transMgr);
             }
 
-            ret = callable.call();
+            try (Histogram.Timer ignored = LinstorControllerMetrics.requestDurationHistogram.labels(apiCall).startTimer())
+            {
+                ret = callable.call();
+            }
         }
         catch (JsonMappingException | JsonParseException exc)
         {
@@ -304,7 +309,11 @@ public class RequestHelper
     {
         Context context = createContext(apiCall, request);
 
-        monoResponse
+        Mono.using(
+                () -> LinstorControllerMetrics.requestDurationHistogram.labels(apiCall).startTimer(),
+                (ignored) -> monoResponse,
+                Histogram.Timer::close
+            )
             .contextWrite(context)
             .onErrorResume(
                 ApiRcException.class,
