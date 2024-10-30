@@ -176,11 +176,14 @@ public class VolumeDefinitions
             List<VolumeDefinitionWithCreationPayload> vlmList = new ArrayList<>();
             vlmList.add(new VlmDfnCreationWithPayload(vlmDfnData));
 
-            Flux<ApiCallRc> flux = ctrlApiCallHandler.createVlmDfns(rscName, vlmList).contextWrite(
-                requestHelper.createContext(ApiConsts.API_CRT_VLM_DFN, request)
-            );
+            Flux<ApiCallRc> flux = ctrlApiCallHandler.createVlmDfns(rscName, vlmList);
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_CRT_VLM_DFN,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (IOException exc)
         {
@@ -212,10 +215,14 @@ public class VolumeDefinitions
                 vlmDfnData.override_props,
                 new HashSet<>(vlmDfnData.delete_props),
                 vlmDfnData.flags
-            )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_MOD_VLM_DFN,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (IOException exc)
         {
@@ -234,10 +241,14 @@ public class VolumeDefinitions
     {
         try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
-            Flux<ApiCallRc> flux = ctrlVlmDfnDeleteApiCallHandler.deleteVolumeDefinition(rscName, vlmNr)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_VLM_DFN, request));
+            Flux<ApiCallRc> flux = ctrlVlmDfnDeleteApiCallHandler.deleteVolumeDefinition(rscName, vlmNr);
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_DEL_VLM_DFN,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
     }
 
@@ -281,10 +292,14 @@ public class VolumeDefinitions
                     rscName,
                     vlmNr,
                     vlmDfnData.new_passphrase
-                )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN_PASS, request));
+                );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_MOD_VLM_DFN_PASS,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (IOException exc)
         {

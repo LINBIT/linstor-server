@@ -155,10 +155,11 @@ public class StoragePools
             if (nodeCheck == null)
             {
                 Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
-                    .listStorPools(nodeNames, storPoolNames, Collections.emptyList(), fromCache)
-                    .contextWrite(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
+                    .listStorPools(nodeNames, storPoolNames, Collections.emptyList(), fromCache);
 
                 requestHelper.doFlux(
+                    ApiConsts.API_LST_STOR_POOL,
+                    request,
                     asyncResponse,
                     storPoolListToResponse(flux, nodeName, storPoolName, limit, offset)
                 );
@@ -278,10 +279,11 @@ public class StoragePools
                 storPoolData.external_locking,
                 storPoolData.props,
                 Flux.empty()
-            )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_STOR_POOL, request));
+            );
 
             requestHelper.doFlux(
+                ApiConsts.API_CRT_STOR_POOL,
+                request,
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
             );
@@ -314,10 +316,14 @@ public class StoragePools
             modifyData.override_props,
             new HashSet<>(modifyData.delete_props),
             new HashSet<>(modifyData.delete_namespaces)
-        )
-        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL, request));
+        );
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(
+            ApiConsts.API_MOD_STOR_POOL,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @DELETE
@@ -329,10 +335,14 @@ public class StoragePools
         @PathParam("storPoolName") String storPoolName
     )
     {
-        Flux<ApiCallRc> flux = ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request));
+        Flux<ApiCallRc> flux = ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName);
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(
+            ApiConsts.API_DEL_STOR_POOL,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @GET

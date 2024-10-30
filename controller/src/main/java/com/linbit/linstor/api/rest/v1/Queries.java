@@ -63,7 +63,6 @@ public class Queries
         {
             MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Mono<Response> flux = ctrlRscGrpApiCallHandler.queryAllSizeInfo(Json.queryAllSizeInfoReqToPojo(qasiReq))
-                .contextWrite(requestHelper.createContext(ApiConsts.API_QRY_ALL_SIZE_INFO, request))
                 .onErrorResume(
                     ApiRcException.class,
                     apiExc -> Flux.just(
@@ -92,8 +91,12 @@ public class Queries
                     return Mono.just(resp);
                 })
                 .next();
-            requestHelper.doFlux(asyncResponse, flux);
+            requestHelper.doFlux(
+                ApiConsts.API_QRY_ALL_SIZE_INFO,
+                request,
+                asyncResponse,
+                flux
+            );
         });
     }
 }
-

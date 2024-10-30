@@ -45,6 +45,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Key;
+import org.glassfish.grizzly.http.server.Request;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Mono;
@@ -181,7 +182,7 @@ public class RequestHelper
         }
     }
 
-    public Context createContext(String apiCall, org.glassfish.grizzly.http.server.Request request)
+    public Context createContext(String apiCall, Request request)
     {
         if (MDC.get(ErrorReporter.LOGID) == null)
         {
@@ -193,7 +194,7 @@ public class RequestHelper
         checkLDAPAuth(peer, request.getAuthorization());
 
         errorReporter.logInfo("REST/API %s/%s", peer.toString(), apiCall);
-        return  Context.of(
+        return Context.of(
             ApiModule.API_CALL_NAME, apiCall,
             AccessContext.class, peer.getAccessContext(),
             Peer.class, peer,
@@ -203,7 +204,7 @@ public class RequestHelper
 
     Response doInScope(
         String apiCall,
-        org.glassfish.grizzly.http.server.Request request,
+        Request request,
         Callable<Response> callable,
         boolean transactional
     )
@@ -302,13 +303,23 @@ public class RequestHelper
         return ret;
     }
 
-    void doFlux(final AsyncResponse asyncResponse, Mono<Response> monoResponse)
+    void doFlux(
+        String apiCall,
+        Request request,
+        final AsyncResponse asyncResponse,
+        Mono<Response> monoResponse
+    )
     {
+        Context context = createContext(apiCall, request);
+
         monoResponse
-            .onErrorResume(ApiRcException.class,
+            .contextWrite(context)
+            .onErrorResume(
+                ApiRcException.class,
                 apiExc -> Mono.just(
                     ApiCallRcRestUtils.toResponse(apiExc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR)))
-            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class,
+            .onErrorResume(
+                CtrlResponseUtils.DelayedApiRcException.class,
                 delExc -> {
                     ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
                     for (var exc : delExc.getErrors())

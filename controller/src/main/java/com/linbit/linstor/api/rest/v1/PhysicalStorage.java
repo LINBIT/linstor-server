@@ -76,7 +76,6 @@ public class PhysicalStorage
         {
             MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Mono<Response> answer = physicalStorageApiCallHandler.listPhysicalStorage()
-                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
                 .map(physicalStorageMap ->
                 {
                     Response resp;
@@ -104,7 +103,12 @@ public class PhysicalStorage
                     return resp;
                 }).next();
 
-            requestHelper.doFlux(asyncResponse, answer);
+            requestHelper.doFlux(
+                ApiConsts.API_LST_PHYS_STOR,
+                request,
+                asyncResponse,
+                answer
+            );
         });
     }
 
@@ -120,7 +124,6 @@ public class PhysicalStorage
         {
             MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Mono<Response> answer = physicalStorageApiCallHandler.getPhysicalStorage(nodeName)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
                 .map(lsBlkEntries -> {
                     List<JsonGenTypes.PhysicalStorageNode> result = lsBlkEntries
                         .stream()
@@ -142,7 +145,12 @@ public class PhysicalStorage
                     }
                     return resp;
                 }).next();
-            requestHelper.doFlux(asyncResponse, answer);
+            requestHelper.doFlux(
+                ApiConsts.API_LST_PHYS_STOR,
+                request,
+                asyncResponse,
+                answer
+            );
         });
     }
 
@@ -227,7 +235,7 @@ public class PhysicalStorage
                 createData.vdo_slab_size_kib,
                 createData.sed,
                 storPoolProps
-            ).contextWrite(requestHelper.createContext(ApiConsts.API_CREATE_DEVICE_POOL, request));
+            );
 
             if (createData.with_storage_pool != null)
             {
@@ -247,11 +255,13 @@ public class PhysicalStorage
                             deviceProviderKind,
                             poolName
                         )
-                    ).contextWrite(requestHelper.createContext(ApiConsts.API_CRT_STOR_POOL, request))
+                    )
                 );
             }
 
             requestHelper.doFlux(
+                ApiConsts.API_CREATE_DEVICE_POOL,
+                request,
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
             );

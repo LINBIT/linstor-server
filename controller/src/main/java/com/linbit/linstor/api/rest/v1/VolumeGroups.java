@@ -170,10 +170,14 @@ public class VolumeGroups
             new HashSet<>(modifyData.delete_props),
             new HashSet<>(modifyData.delete_namespaces),
             modifyData.flags
-        )
-        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_VLM_GRP, request));
+        );
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(
+            ApiConsts.API_MOD_VLM_GRP,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
 

@@ -65,9 +65,14 @@ public class SnapshotRestoreResource
                 snapName,
                 snapRestore.to_resource,
                 snapRestore.stor_pool_rename == null ? Collections.emptyMap() : snapRestore.stor_pool_rename
-            ).contextWrite(requestHelper.createContext(ApiConsts.API_RESTORE_SNAPSHOT, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_RESTORE_SNAPSHOT,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (IOException ioExc)
         {

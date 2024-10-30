@@ -90,11 +90,14 @@ public class Schedules
                 scheduleJson.keep_remote,
                 scheduleJson.on_failure,
                 scheduleJson.max_retries
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_CRT_SCHEDULE, request)
             );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_CRT_SCHEDULE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -124,11 +127,14 @@ public class Schedules
                 scheduleJson.keep_remote,
                 scheduleJson.on_failure,
                 scheduleJson.max_retries
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_MOD_SCHEDULE, request)
             );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_MOD_SCHEDULE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -144,8 +150,12 @@ public class Schedules
         @PathParam("scheduleName") String scheduleName
     )
     {
-        Flux<ApiCallRc> flux = scheduleHandler.delete(scheduleName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_SCHEDULE, request));
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        Flux<ApiCallRc> flux = scheduleHandler.delete(scheduleName);
+        requestHelper.doFlux(
+            ApiConsts.API_DEL_SCHEDULE,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 }

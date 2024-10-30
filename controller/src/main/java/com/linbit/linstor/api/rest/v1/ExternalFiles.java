@@ -167,11 +167,14 @@ public class ExternalFiles
             Flux<ApiCallRc> flux = extFilesHandler.set(
                 URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName()),
                 Base64.decode(extFileJson.content)
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_SET_EXT_FILE, request)
             );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_SET_EXT_FILE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -190,9 +193,13 @@ public class ExternalFiles
         try
         {
             Flux<ApiCallRc> flux = extFilesHandler
-                .delete(URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName()))
-                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_EXT_FILE, request));
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+                .delete(URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName()));
+            requestHelper.doFlux(
+                ApiConsts.API_DEL_EXT_FILE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (UnsupportedEncodingException exc)
         {

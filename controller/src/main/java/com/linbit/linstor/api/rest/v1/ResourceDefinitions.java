@@ -219,10 +219,14 @@ public class ResourceDefinitions
                     modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue(),
                     modifyData.resource_group
                 )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request))
                 .contextWrite(reactor.util.context.Context.of(InternalApiConsts.ONLY_WARN_IF_OFFLINE, Boolean.TRUE));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_MOD_RSC_DFN,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
     }
 
@@ -235,10 +239,14 @@ public class ResourceDefinitions
     {
         try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
-            Flux<ApiCallRc> flux = ctrlRscDfnDeleteApiCallHandler.deleteResourceDefinition(rscName)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_RSC_DFN, request));
+            Flux<ApiCallRc> flux = ctrlRscDfnDeleteApiCallHandler.deleteResourceDefinition(rscName);
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_DEL_RSC_DFN,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
     }
 
@@ -277,10 +285,13 @@ public class ResourceDefinitions
                 rscName,
                 URLDecoder.decode(path, StandardCharsets.UTF_8.displayName()),
                 true
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_DEPLOY_EXT_FILE, request)
             );
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_DEPLOY_EXT_FILE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (UnsupportedEncodingException exc)
         {
@@ -303,10 +314,13 @@ public class ResourceDefinitions
                 rscName,
                 URLDecoder.decode(path, StandardCharsets.UTF_8.displayName()),
                 false
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_UNDEPLOY_EXT_FILE, request)
             );
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_UNDEPLOY_EXT_FILE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (UnsupportedEncodingException exc)
         {
@@ -363,10 +377,14 @@ public class ResourceDefinitions
                     requestData.external_name != null ? requestData.external_name.getBytes(StandardCharsets.UTF_8) : null,
                     requestData.use_zfs_clone,
                     requestData.volume_passphrases
-                )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN, request));
+                );
 
-            requestHelper.doFlux(asyncResponse, mapToCloneStarted(srcName, requestData.name, flux));
+            requestHelper.doFlux(
+                ApiConsts.API_CLONE_RSCDFN,
+                request,
+                asyncResponse,
+                mapToCloneStarted(srcName, requestData.name, flux)
+            );
         }
     }
 

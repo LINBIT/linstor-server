@@ -63,10 +63,14 @@ public class AutoPlace
             Flux<ApiCallRc> flux = ctrlRscAutoPlaceApiCallHandler.autoPlace(
                 rscName,
                 new Json.AutoSelectFilterData(autoPlaceRequest.select_filter)
-            )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_AUTO_PLACE_RSC, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(
+                ApiConsts.API_AUTO_PLACE_RSC,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED)
+            );
         }
         catch (IOException ioExc)
         {

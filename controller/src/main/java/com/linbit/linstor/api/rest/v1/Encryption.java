@@ -66,10 +66,14 @@ public class Encryption
             Flux<ApiCallRc> flux = ctrlConfApiCallHandler.setPassphrase(
                 passPhraseCreate.new_passphrase,
                 null
-            )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_CRYPT_PASS, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(
+                ApiConsts.API_CRT_CRYPT_PASS,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED)
+            );
         }
         catch (IOException ioExc)
         {
@@ -94,10 +98,14 @@ public class Encryption
             Flux<ApiCallRc> flux = ctrlConfApiCallHandler.setPassphrase(
                 passPhraseCreate.new_passphrase,
                 passPhraseCreate.old_passphrase
-            )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_CRYPT_PASS, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_MOD_CRYPT_PASS,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -117,10 +125,14 @@ public class Encryption
         try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
             String passPhrase = objectMapper.readValue(jsonData, String.class);
-            Flux<ApiCallRc> flux = ctrlConfApiCallHandler.enterPassphrase(passPhrase)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_ENTER_CRYPT_PASS, request));
+            Flux<ApiCallRc> flux = ctrlConfApiCallHandler.enterPassphrase(passPhrase);
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_ENTER_CRYPT_PASS,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {

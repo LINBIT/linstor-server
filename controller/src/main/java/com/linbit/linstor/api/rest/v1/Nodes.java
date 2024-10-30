@@ -161,10 +161,14 @@ public class Nodes
                     data.type,
                     data.net_interfaces.stream().map(Json::netInterfacetoApi).collect(Collectors.toList()),
                     data.props
-                )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_NODE, request));
+                );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(
+                ApiConsts.API_CRT_NODE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED)
+            );
         }
         catch (IOException ioExc)
         {
@@ -186,10 +190,14 @@ public class Nodes
             Flux<ApiCallRc> flux = ctrlNodeCrtApiCallHandler.createEbsNode(
                 data.name,
                 data.ebs_remote_name
-            )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_NODE, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(
+                ApiConsts.API_CRT_NODE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED)
+            );
         }
         catch (IOException ioExc)
         {
@@ -218,10 +226,14 @@ public class Nodes
                 modifyData.override_props,
                 new HashSet<>(modifyData.delete_props),
                 new HashSet<>(modifyData.delete_namespaces)
-            )
-            .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_NODE, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_MOD_NODE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -238,10 +250,14 @@ public class Nodes
     )
     {
         Flux<ApiCallRc> flux = ctrlNodeDeleteApiCallHandler
-            .deleteNode(nodeName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_NODE, request));
+            .deleteNode(nodeName);
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        requestHelper.doFlux(
+            ApiConsts.API_DEL_NODE,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux)
+        );
     }
 
     @DELETE
@@ -253,10 +269,14 @@ public class Nodes
     )
     {
         Flux<ApiCallRc> flux = ctrlNodeLostApiCallHandler
-            .lostNode(nodeName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_LOST_NODE, request));
+            .lostNode(nodeName);
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        requestHelper.doFlux(
+            ApiConsts.API_LOST_NODE,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux)
+        );
     }
 
     @PUT
@@ -269,9 +289,14 @@ public class Nodes
     {
         List<String> nodes = new ArrayList<>();
         nodes.add(nodeName);
-        Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.reconnectNode(nodes)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_NODE_RECONNECT, request));
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.reconnectNode(nodes);
+
+        requestHelper.doFlux(
+            ApiConsts.API_NODE_RECONNECT,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @PUT
@@ -300,9 +325,14 @@ public class Nodes
                     nodeName,
                     data.delete_resources != null && data.delete_resources,
                     data.delete_snapshots != null && data.delete_snapshots
-                )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_NODE_RESTORE, request));
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+                );
+
+            requestHelper.doFlux(
+                ApiConsts.API_NODE_RESTORE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -318,9 +348,13 @@ public class Nodes
         @PathParam("nodeName") String nodeName
     )
     {
-        final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.evictNode(nodeName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_NODE_EVICT, request));
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.evictNode(nodeName);
+        requestHelper.doFlux(
+            ApiConsts.API_NODE_EVICT,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @PUT
@@ -331,9 +365,13 @@ public class Nodes
         @PathParam("nodeName") String nodeName
     )
     {
-        final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.evacuateNode(nodeName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_NODE_EVACUATE, request));
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.evacuateNode(nodeName);
+        requestHelper.doFlux(
+            ApiConsts.API_NODE_EVACUATE,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @GET
@@ -598,15 +636,18 @@ public class Nodes
             JsonGenTypes.SatelliteConfig config = objectMapper
                 .readValue(jsonData, JsonGenTypes.SatelliteConfig.class);
             SatelliteConfigPojo conf = new SatelliteConfigPojo(config);
-            flux = ctrlNodeApiCallHandler.setConfig(nodeName, conf)
-                .contextWrite(requestHelper.createContext(InternalApiConsts.API_MOD_STLT_CONFIG, request));
-
+            flux = ctrlNodeApiCallHandler.setConfig(nodeName, conf);
         }
         catch (IOException ioExc)
         {
             ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(
+            InternalApiConsts.API_MOD_STLT_CONFIG,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @GET

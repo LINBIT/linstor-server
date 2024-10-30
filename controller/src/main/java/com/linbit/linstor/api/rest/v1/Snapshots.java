@@ -141,10 +141,11 @@ public class Snapshots
                     snapData.nodes,
                     rscName,
                     snapData.name
-                )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_SNAPSHOT, request));
+                );
 
             requestHelper.doFlux(
+                ApiConsts.API_CRT_SNAPSHOT,
+                request,
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
             );
@@ -167,10 +168,14 @@ public class Snapshots
     {
         try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
-            Flux<ApiCallRc> responses = ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(rscName, snapName, nodeNames)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_SNAPSHOT, request));
+            Flux<ApiCallRc> responses = ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(rscName, snapName, nodeNames);
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(responses));
+            requestHelper.doFlux(
+                ApiConsts.API_DEL_SNAPSHOT,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(responses)
+            );
         }
     }
 }

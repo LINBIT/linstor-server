@@ -144,10 +144,14 @@ public class StoragePoolDefinitions
                     data.override_props,
                     new HashSet<>(data.delete_props),
                     new HashSet<>(data.delete_namespaces)
-                )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request));
+                );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_MOD_STOR_POOL_DFN,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
     }
 

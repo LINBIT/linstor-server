@@ -130,10 +130,14 @@ public class ResourceConnections
             rscConnModify.override_props,
             new HashSet<>(rscConnModify.delete_props),
             new HashSet<>(rscConnModify.delete_namespaces)
-        )
-        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_CONN, request));
+        );
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(
+            ApiConsts.API_MOD_RSC_CONN,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @GET

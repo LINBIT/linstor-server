@@ -186,7 +186,6 @@ public class Stats
                 Collections.emptySet(),
                 1L,
                 0L)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_ERR_REPORT_STATS, request))
             .flatMap(
                 errorReportResult ->
                 {
@@ -211,6 +210,11 @@ public class Stats
             )
             .next();
 
-        requestHelper.doFlux(asyncResponse, flux);
+        requestHelper.doFlux(
+            ApiConsts.API_ERR_REPORT_STATS,
+            request,
+            asyncResponse,
+            flux
+        );
     }
 }

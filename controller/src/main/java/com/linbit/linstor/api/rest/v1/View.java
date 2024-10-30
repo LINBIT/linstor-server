@@ -98,10 +98,11 @@ public class View
         {
             MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
-                nodesFilter, storagePoolsFilter, resourcesFilter, propFilters)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
+                nodesFilter, storagePoolsFilter, resourcesFilter, propFilters);
 
             requestHelper.doFlux(
+                ApiConsts.API_LST_VLM,
+                request,
                 asyncResponse,
                 listVolumesApiCallRcWithToResponse(flux, limit, offset)
             );
@@ -166,10 +167,14 @@ public class View
         {
             MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
-                .listStorPools(nodesFilter, storagePoolsFilter, propFilters, fromCache)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
+                .listStorPools(nodesFilter, storagePoolsFilter, propFilters, fromCache);
 
-            requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, limit, offset));
+            requestHelper.doFlux(
+                ApiConsts.API_LST_STOR_POOL,
+                request,
+                asyncResponse,
+                storPoolListToResponse(flux, limit, offset)
+            );
         });
     }
 

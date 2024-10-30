@@ -106,10 +106,11 @@ public class Volumes
         {
             MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
-                    nodes, Collections.emptyList(), rscNames, Collections.emptyList())
-                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
+                    nodes, Collections.emptyList(), rscNames, Collections.emptyList());
 
             requestHelper.doFlux(
+                ApiConsts.API_LST_VLM,
+                request,
                 asyncResponse,
                 listVolumesApiCallRcWithToResponse(flux, rscName, nodeName, vlmNr, limit, offset)
             );
@@ -240,10 +241,14 @@ public class Volumes
             modifyData.override_props,
             new HashSet<>(modifyData.delete_props),
             new HashSet<>(modifyData.delete_namespaces)
-        )
-        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_VLM, request));
+        );
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(
+            ApiConsts.API_MOD_VLM,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @GET

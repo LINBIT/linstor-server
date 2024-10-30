@@ -79,9 +79,14 @@ public class DrbdProxy
                 nodeB,
                 rscName,
                 proxyEnable.port
-            ).contextWrite(requestHelper.createContext(ApiConsts.API_ENABLE_DRBD_PROXY, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_ENABLE_DRBD_PROXY,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (IOException ioExc)
         {
@@ -104,9 +109,14 @@ public class DrbdProxy
             nodeA,
             nodeB,
             rscName
-        ).contextWrite(requestHelper.createContext(ApiConsts.API_DISABLE_DRBD_PROXY, request));
+        );
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        requestHelper.doFlux(
+            ApiConsts.API_DISABLE_DRBD_PROXY,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux)
+        );
     }
 
     @PUT

@@ -122,7 +122,6 @@ public class ErrorReports
                     filterIds,
                     limit,
                     offset)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_ERROR_REPORTS, request))
                 .flatMap(errorReportResult ->
                 {
                     Stream<ErrorReport> finalStream = errorReportResult.getErrorReports().stream();
@@ -167,7 +166,12 @@ public class ErrorReports
                 })
                 .next();
 
-            requestHelper.doFlux(asyncResponse, flux);
+            requestHelper.doFlux(
+                ApiConsts.API_REQ_ERROR_REPORTS,
+                request,
+                asyncResponse,
+                flux
+            );
         }
     }
 
@@ -186,10 +190,14 @@ public class ErrorReports
             Date optSince = data.since != null ? new Date(data.since) : null;
             Date optTo = data.to != null ? new Date(data.to) : null;
             Flux<ApiCallRc> flux = ctrlErrorListApiCallHandler
-                .deleteErrorReports(optSince, optTo, data.nodes, data.exception, data.version, data.ids)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_ERROR_REPORTS, request));
+                .deleteErrorReports(optSince, optTo, data.nodes, data.exception, data.version, data.ids);
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_DEL_ERROR_REPORTS,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (IOException ioExc)
         {
@@ -205,9 +213,13 @@ public class ErrorReports
         @PathParam("reportId") String reportId)
     {
         Flux<ApiCallRc> flux = ctrlErrorListApiCallHandler.deleteErrorReports(
-                null, null, null, null, null, Collections.singletonList(reportId))
-            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_ERROR_REPORT, request));
+                null, null, null, null, null, Collections.singletonList(reportId));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        requestHelper.doFlux(
+            ApiConsts.API_DEL_ERROR_REPORT,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux)
+        );
     }
 }

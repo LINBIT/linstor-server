@@ -333,10 +333,7 @@ public class BackupShippingInternal
         try
         {
             prepareAbortRequest = objectMapper.readValue(jsonData, BackupShippingPrepareAbortRequest.class);
-            responses = backupL2LDstApiCallHandler.prepareForAbort(prepareAbortRequest)
-                .contextWrite(
-                    requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_PREPARE_ABORT, request)
-                );
+            responses = backupL2LDstApiCallHandler.prepareForAbort(prepareAbortRequest);
         }
         catch (JsonProcessingException exc)
         {
@@ -349,6 +346,8 @@ public class BackupShippingInternal
             );
         }
         requestHelper.doFlux(
+            InternalApiConsts.API_BACKUP_REST_PREPARE_ABORT,
+            request,
             asyncResponse,
             ApiCallRcRestUtils.mapToMonoResponse(
                 responses,

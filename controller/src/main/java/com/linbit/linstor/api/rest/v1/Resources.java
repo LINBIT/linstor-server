@@ -205,10 +205,14 @@ public class Resources
             Flux<ApiCallRc> flux = ctrlRscCrtApiCallHandler.createResource(
                 rscWithPayloadApiList,
                 Resource.DiskfulBy.USER
-            )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_RSC, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(
+                ApiConsts.API_CRT_RSC,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED)
+            );
         }
         catch (IOException ioExc)
         {
@@ -264,10 +268,14 @@ public class Resources
             modifyData.override_props,
             new HashSet<>(modifyData.delete_props),
             new HashSet<>(modifyData.delete_namespaces)
-        )
-        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC, request));
+        );
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(
+            ApiConsts.API_MOD_RSC,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @DELETE
@@ -282,10 +290,14 @@ public class Resources
     {
         try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
-            Flux<ApiCallRc> flux = ctrlRscDeleteApiCallHandler.deleteResource(nodeName, rscName, keepTiebreakerRef)
-                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_RSC, request));
+            Flux<ApiCallRc> flux = ctrlRscDeleteApiCallHandler.deleteResource(nodeName, rscName, keepTiebreakerRef);
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_DEL_RSC,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
     }
 
@@ -311,11 +323,15 @@ public class Resources
                     rscData.layer_list,
                     rscData.diskful
                 )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_MAKE_RSC_AVAIL, request))
                 // TODO this should be moved into a context class
                 .contextWrite(reactor.util.context.Context.of(InternalApiConsts.ONLY_WARN_IF_OFFLINE, Boolean.TRUE));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_MAKE_RSC_AVAIL,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -353,10 +369,14 @@ public class Resources
             null,
             true,
             null
-        )
-            .contextWrite(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+        );
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        requestHelper.doFlux(
+            ApiConsts.API_TOGGLE_DISK,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux)
+        );
     }
 
     @PUT
@@ -398,10 +418,14 @@ public class Resources
                 layerList,
                 false,
                 Resource.DiskfulBy.USER
-            )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_TOGGLE_DISK,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (IOException ioExc)
         {
@@ -450,10 +474,14 @@ public class Resources
                 layerList,
                 false,
                 Resource.DiskfulBy.USER
-            )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(
+                ApiConsts.API_TOGGLE_DISK,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
         }
         catch (IOException ioExc)
         {
@@ -471,12 +499,14 @@ public class Resources
     )
     {
         Flux<ApiCallRc> flux = ctrlRscActivateApiCallHandler
-            .activateRsc(nodeName, rscName)
-            .contextWrite(
-                requestHelper.createContext(ApiConsts.API_ACTIVATE_RSC, request)
-            );
+            .activateRsc(nodeName, rscName);
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        requestHelper.doFlux(
+            ApiConsts.API_ACTIVATE_RSC,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux)
+        );
     }
 
     @POST
@@ -489,12 +519,14 @@ public class Resources
         )
     {
         Flux<ApiCallRc> flux = ctrlRscActivateApiCallHandler
-            .deactivateRsc(nodeName, rscName)
-            .contextWrite(
-                requestHelper.createContext(ApiConsts.API_DEACTIVATE_RSC, request)
-            );
+            .deactivateRsc(nodeName, rscName);
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        requestHelper.doFlux(
+            ApiConsts.API_DEACTIVATE_RSC,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux)
+        );
     }
 
     @GET

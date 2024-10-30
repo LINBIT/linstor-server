@@ -78,10 +78,14 @@ public class Actions
             {
                 createSnapReqs.add(new SnapReq(snapReq.nodes, snapReq.resource_name, snapReq.name));
             }
-            Flux<ApiCallRc> flux = snapCrtHandler.createSnapshot(new CreateMultiSnapRequest(createSnapReqs))
-                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_SNAPSHOT_MULTI, request));
+            Flux<ApiCallRc> flux = snapCrtHandler.createSnapshot(new CreateMultiSnapRequest(createSnapReqs));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(
+                ApiConsts.API_CRT_SNAPSHOT_MULTI,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED)
+            );
         }
         catch (IOException ioExc)
         {

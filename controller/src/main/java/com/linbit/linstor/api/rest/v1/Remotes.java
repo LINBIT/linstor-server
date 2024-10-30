@@ -121,11 +121,14 @@ public class Remotes
                 remoteJson.access_key,
                 remoteJson.secret_key,
                 remoteJson.use_path_style
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_SET_REMOTE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -153,11 +156,14 @@ public class Remotes
                 remoteJson.region,
                 remoteJson.access_key,
                 remoteJson.secret_key
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_SET_REMOTE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -203,11 +209,14 @@ public class Remotes
                 remoteJson.url,
                 remoteJson.passphrase,
                 remoteJson.cluster_id
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_SET_REMOTE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -233,11 +242,14 @@ public class Remotes
                 remoteJson.url,
                 remoteJson.passphrase,
                 remoteJson.cluster_id
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_SET_REMOTE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -285,11 +297,14 @@ public class Remotes
                 remoteJson.availability_zone,
                 remoteJson.access_key,
                 remoteJson.secret_key
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_SET_REMOTE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -317,11 +332,14 @@ public class Remotes
                 remoteJson.availability_zone,
                 remoteJson.access_key,
                 remoteJson.secret_key
-            ).contextWrite(
-                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+            requestHelper.doFlux(
+                ApiConsts.API_SET_REMOTE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
         }
         catch (IOException ioExc)
         {
@@ -336,8 +354,12 @@ public class Remotes
         @QueryParam("remote_name") String remoteName
     )
     {
-        Flux<ApiCallRc> flux = remoteHandler.delete(remoteName)
-            .contextWrite(requestHelper.createContext(ApiConsts.API_SET_REMOTE, request));
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        Flux<ApiCallRc> flux = remoteHandler.delete(remoteName);
+        requestHelper.doFlux(
+            ApiConsts.API_SET_REMOTE,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 }

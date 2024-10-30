@@ -88,7 +88,6 @@ public class SosReport
 
             Mono<Response> flux = ctrlSosReportApiCallHandler
                 .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
-                .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
                 .flatMap(sosReport ->
                 {
                     Response resp;
@@ -117,7 +116,12 @@ public class SosReport
                 })
                 .next();
 
-            requestHelper.doFlux(asyncResponse, flux);
+            requestHelper.doFlux(
+                ApiConsts.API_REQ_SOS_REPORT,
+                request,
+                asyncResponse,
+                flux
+            );
         }
     }
 
@@ -156,7 +160,6 @@ public class SosReport
 
             Mono<Response> flux = ctrlSosReportApiCallHandler
                 .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
-                .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
                 .flatMap(sosReport ->
                 {
                     ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
@@ -168,7 +171,12 @@ public class SosReport
                 })
                 .next();
 
-            requestHelper.doFlux(asyncResponse, flux);
+            requestHelper.doFlux(
+                ApiConsts.API_REQ_SOS_REPORT,
+                request,
+                asyncResponse,
+                flux
+            );
         }
     }
 }

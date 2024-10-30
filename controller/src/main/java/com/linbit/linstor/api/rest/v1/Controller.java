@@ -123,9 +123,14 @@ public class Controller
                 properties.override_props,
                 new HashSet<>(properties.delete_props),
                 new HashSet<>(properties.delete_namespaces)
-            ).contextWrite(requestHelper.createContext(ApiConsts.API_SET_CTRL_PROP, request));
+            );
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(
+                ApiConsts.API_SET_CTRL_PROP,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED)
+            );
         }
         catch (IOException ioExc)
         {
@@ -143,8 +148,13 @@ public class Controller
     {
         Pair<String, String> keyPair = splitFullKey(key);
         Flux<ApiCallRc> flux = ctrlApiCallHandler.deleteCtrlCfgProp(keyPair.objA, keyPair.objB
-        ).contextWrite(requestHelper.createContext(ApiConsts.API_SET_CTRL_PROP, request));
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        );
+        requestHelper.doFlux(
+            ApiConsts.API_SET_CTRL_PROP,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @GET
@@ -342,9 +352,7 @@ public class Controller
             JsonGenTypes.ControllerConfig config = objectMapper
                 .readValue(jsonData, JsonGenTypes.ControllerConfig.class);
             ControllerConfigPojo conf = new ControllerConfigPojo(config);
-            flux = ctrlApiCallHandler.setConfig(conf)
-                .contextWrite(requestHelper.createContext(InternalApiConsts.API_MOD_CONFIG, request));
-
+            flux = ctrlApiCallHandler.setConfig(conf);
         }
         catch (IOException ioExc)
         {
@@ -356,10 +364,19 @@ public class Controller
                 ApiConsts.MODIFIED | ApiConsts.MASK_CTRL_CONF,
                 exc.toString()
             );
-            requestHelper
-                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(Flux.just(rc), Response.Status.UNAUTHORIZED));
+            requestHelper.doFlux(
+                InternalApiConsts.API_MOD_CONFIG,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(Flux.just(rc), Response.Status.UNAUTHORIZED)
+            );
         }
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(
+            InternalApiConsts.API_MOD_CONFIG,
+            request,
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+        );
     }
 
     @POST
