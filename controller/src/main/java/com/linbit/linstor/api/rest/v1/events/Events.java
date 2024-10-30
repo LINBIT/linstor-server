@@ -45,7 +45,8 @@ public class Events
     {
         final EventOutput eventOutput = new EventOutput();
         Response resp = requestHelper.doInScope(
-            requestHelper.createContext("Events-drbd-promotion", request),
+            "Events-drbd-promotion",
+            request,
             () ->
             {
                 eventDrbdHandlerBridge.registerResourceClient(
@@ -75,7 +76,8 @@ public class Events
     {
         final EventOutput eventOutput = new EventOutput();
         Response resp = requestHelper.doInScope(
-            requestHelper.createContext("Events-nodes", request),
+            "Events-nodes",
+            request,
             () -> {
                 eventNodeHandlerBridge.registerResourceClient(eventOutput);
                 return null;

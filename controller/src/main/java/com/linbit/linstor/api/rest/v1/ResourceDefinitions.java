@@ -120,7 +120,7 @@ public class ResourceDefinitions
         int offset
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_DFN, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_LST_RSC_DFN, request, () ->
         {
             Stream<ResourceDefinitionApi> rscDfnApiStream =
                 ctrlApiCallHandler.listResourceDefinitions(rscDfnNames, propFilters).stream();
@@ -143,7 +143,8 @@ public class ResourceDefinitions
     public Response createResourceDefinition(@Context Request request, String jsonData)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_CRT_RSC_DFN, request),
+            ApiConsts.API_CRT_RSC_DFN,
+            request,
             () ->
             {
                 JsonGenTypes.ResourceDefinitionCreate rscDfnCreate = objectMapper.readValue(
@@ -396,7 +397,7 @@ public class ResourceDefinitions
         @PathParam("cloneName") String cloneName
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN_STATUS, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_CLONE_RSCDFN_STATUS, request, () ->
             {
                 JsonGenTypes.ResourceDefinitionCloneStatus status =
                     new JsonGenTypes.ResourceDefinitionCloneStatus();
@@ -417,7 +418,7 @@ public class ResourceDefinitions
         @PathParam("resource") String rscName
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_RSCDFN_SYNC_STATUS, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_RSCDFN_SYNC_STATUS, request, () ->
         {
             JsonGenTypes.ResourceDefinitionSyncStatus status =
                 new JsonGenTypes.ResourceDefinitionSyncStatus();

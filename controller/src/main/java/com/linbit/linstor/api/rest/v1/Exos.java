@@ -109,7 +109,8 @@ public class Exos
     )
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_LST_EXOS_ENCLOSURES, request),
+            ApiConsts.API_LST_EXOS_ENCLOSURES,
+            request,
             () ->
             {
                 List<ExosEnclosureHealthPojo> exosEnclosurePojoList = ctrlExosHandler.listEnclosures(nocache);
@@ -152,7 +153,8 @@ public class Exos
     )
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_EXOS_ENCLOSURE_EVENTS, request),
+            ApiConsts.API_EXOS_ENCLOSURE_EVENTS,
+            request,
             () ->
             {
                 List<ExosEnclosureEventPojo> exosEnclosurePojoList = ctrlExosHandler

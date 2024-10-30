@@ -202,22 +202,14 @@ public class RequestHelper
         );
     }
 
-    Response doInScope(
+    public Response doInScope(
         String apiCall,
         Request request,
         Callable<Response> callable,
         boolean transactional
     )
     {
-        return doInScope(createContext(apiCall, request), callable, transactional);
-    }
-
-    public Response doInScope(
-        Context subscriberContext,
-        Callable<Response> callable,
-        boolean transactional
-    )
-    {
+        Context subscriberContext = createContext(apiCall, request);
         AccessContext accCtx = subscriberContext.get(AccessContext.class);
         Peer peer = subscriberContext.getOrDefault(Peer.class, null);
 

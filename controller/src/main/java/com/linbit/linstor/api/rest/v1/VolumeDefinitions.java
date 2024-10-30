@@ -90,7 +90,7 @@ public class VolumeDefinitions
         // TODO: use limit and offset (like ResourceDefinitions#listResourceDefinitions)
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_DFN, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_LST_RSC_DFN, request, () ->
         {
             Optional<ResourceDefinitionApi> foundRscDfn = ctrlApiCallHandler.listResourceDefinitions().stream()
                 .filter(rscDfnApi -> rscDfnApi.getResourceName().equalsIgnoreCase(rscName))

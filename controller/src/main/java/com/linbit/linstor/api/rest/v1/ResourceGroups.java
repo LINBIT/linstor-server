@@ -114,7 +114,7 @@ public class ResourceGroups
         int offset
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_GRP, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_LST_RSC_GRP, request, () ->
         {
             Stream<ResourceGroupApi> rscGrpApiStream =
                     ctrlApiCallHandler.listResourceGroups(rscGrpNames, propFilters).stream();
@@ -140,7 +140,7 @@ public class ResourceGroups
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createResourceGroup(@Context Request request, String jsonData)
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_RSC_GRP, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_CRT_RSC_GRP, request, () ->
         {
             JsonGenTypes.ResourceGroup rscGrp = objectMapper.readValue(
                 jsonData,
@@ -243,7 +243,8 @@ public class ResourceGroups
     )
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_DEL_RSC_GRP, request),
+            ApiConsts.API_DEL_RSC_GRP,
+            request,
             () -> ApiCallRcRestUtils.toResponse(
                 ctrlApiCallHandler.deleteResourceGroup(rscGrpName),
                 Response.Status.OK

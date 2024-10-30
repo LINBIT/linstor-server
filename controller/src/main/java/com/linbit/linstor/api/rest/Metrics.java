@@ -110,7 +110,7 @@ public class Metrics
         }
 
         final ErrorReportResult errorReports = errorReportsTmp;
-        return requestHelper.doInScope(requestHelper.createContext("metrics", request), () ->
+        return requestHelper.doInScope("metrics", request, () ->
             {
                 final ResourceList rl = resources ? ctrlVlmListApiCallHandler.listVlmsCached(
                     Collections.emptyList(),

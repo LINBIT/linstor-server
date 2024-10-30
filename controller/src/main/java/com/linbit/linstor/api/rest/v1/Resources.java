@@ -111,7 +111,7 @@ public class Resources
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_LST_RSC, request, () ->
         {
             ArrayList<String> nodes = new ArrayList<>();
             if (nodeName != null && !nodeName.isEmpty())

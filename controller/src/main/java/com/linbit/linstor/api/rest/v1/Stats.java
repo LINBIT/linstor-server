@@ -60,7 +60,8 @@ public class Stats
     public Response nodeStats(@Context Request request)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_NODE_STATS, request),
+            ApiConsts.API_NODE_STATS,
+            request,
             () ->
             {
                 Stream<NodeApi> nodeApiStream = ctrlApiCallHandler.listNodes(
@@ -83,7 +84,8 @@ public class Stats
     public Response resourceGroupStats(@Context Request request)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_RSC_GRP_STATS, request),
+            ApiConsts.API_RSC_GRP_STATS,
+            request,
             () ->
             {
                 Stream<ResourceGroupApi> rscGrpApiStream =
@@ -106,7 +108,8 @@ public class Stats
     public Response rscDfnStats(@Context Request request)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_RSC_DFN_STATS, request),
+            ApiConsts.API_RSC_DFN_STATS,
+            request,
             () ->
             {
                 Stream<ResourceDefinitionApi> rscDfnApiStream =
@@ -128,7 +131,8 @@ public class Stats
     public Response resourceStats(@Context Request request)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_RSC_STATS, request),
+            ApiConsts.API_RSC_STATS,
+            request,
             () ->
             {
                 ResourceList resourceList = ctrlApiCallHandler.listResource(
@@ -153,7 +157,8 @@ public class Stats
     )
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_STOR_POOL_STATS, request),
+            ApiConsts.API_STOR_POOL_STATS,
+            request,
             () ->
             {
                 final List<StorPoolApi> storagePoolList = ctrlStorPoolListApiCallHandler

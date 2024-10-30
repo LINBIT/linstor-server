@@ -55,7 +55,8 @@ public class Schedules
     public Response getSchedules(@Context Request request)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_LST_SCHEDULE, request),
+            ApiConsts.API_LST_SCHEDULE,
+            request,
             () ->
             {
                 List<SchedulePojo> schedulePojoList = scheduleHandler.listSchedule();

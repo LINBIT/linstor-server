@@ -127,7 +127,7 @@ public class Nodes
         int offset
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_NODE, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_LST_NODE, request, () ->
         {
             Stream<NodeApi> nodeApiStream = ctrlApiCallHandler.listNodes(nodeNames, propFilters).stream();
             if (limit > 0)

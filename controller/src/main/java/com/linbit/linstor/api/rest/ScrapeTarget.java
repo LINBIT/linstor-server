@@ -58,7 +58,7 @@ public class ScrapeTarget
     @Produces(MediaType.APPLICATION_JSON)
     public Response scrapeTarget(@Context Request request)
     {
-        return requestHelper.doInScope(requestHelper.createContext("scrape-target", request), () ->
+        return requestHelper.doInScope("scrape-target", request, () ->
         {
             try (LockGuard ignored = lockGuardFactory.build(
                 LockGuardFactory.LockType.READ,

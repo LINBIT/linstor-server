@@ -65,7 +65,8 @@ public class ExternalFiles
     public Response getFiles(@Context Request request, @QueryParam("content") Boolean showContent)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_LST_EXT_FILES, request),
+            ApiConsts.API_LST_EXT_FILES,
+            request,
             () ->
             {
                 List<ExternalFilePojo> extFilePojoList = extFilesHandler.listFiles(includeAll -> true);
@@ -93,7 +94,8 @@ public class ExternalFiles
             String decodedExtFileName = URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName());
 
             return requestHelper.doInScope(
-                requestHelper.createContext(ApiConsts.API_LST_EXT_FILES, request),
+                ApiConsts.API_LST_EXT_FILES,
+                request,
                 () ->
                 {
                     List<ExternalFilePojo> extFilePojoList = extFilesHandler
@@ -132,7 +134,8 @@ public class ExternalFiles
             String decodedExtFileName = URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName());
 
             return requestHelper.doInScope(
-                requestHelper.createContext(ApiConsts.API_CHECK_EXT_FILE, request),
+                ApiConsts.API_CHECK_EXT_FILE,
+                request,
                 () ->
                 {
                     boolean allowed = extFilesHandler.checkFile(decodedExtFileName, nodeName);

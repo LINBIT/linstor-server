@@ -140,7 +140,8 @@ public class StoragePools
             MDC.put(ErrorReporter.LOGID, ErrorReporter.getNewLogId());
             // check the node was accessed with the FQDN, needs context
             Response nodeCheck = requestHelper.doInScope(
-                requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request),
+                ApiConsts.API_LST_STOR_POOL,
+                request,
                 () ->
                 {
                     try (LockGuard lg = lockGuardFactory.build(READ, NODES_MAP))

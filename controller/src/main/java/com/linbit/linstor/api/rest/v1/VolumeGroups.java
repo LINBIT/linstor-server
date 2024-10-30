@@ -83,8 +83,7 @@ public class VolumeGroups
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_VLM_GRP, request),
-            () ->
+        return requestHelper.doInScope(ApiConsts.API_LST_VLM_GRP, request, () ->
         {
 
             List<VolumeGroupApi> vlmGrpList =  ctrlApiCallHandler.listVolumeGroups(rscName, vlmNr);
@@ -116,7 +115,7 @@ public class VolumeGroups
         String jsonData
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_VLM_GRP, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_CRT_VLM_GRP, request, () ->
         {
             JsonGenTypes.VolumeGroup vlmGrp;
             if (jsonData != null && !jsonData.isEmpty())
@@ -190,7 +189,8 @@ public class VolumeGroups
     )
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_DEL_VLM_GRP, request),
+            ApiConsts.API_DEL_VLM_GRP,
+            request,
             () -> ApiCallRcRestUtils.toResponse(
                 ctrlApiCallHandler.deleteVolumeGroup(rscName, volumeNumber),
                 Response.Status.OK

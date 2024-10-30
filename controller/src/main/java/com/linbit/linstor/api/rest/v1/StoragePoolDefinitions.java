@@ -80,7 +80,7 @@ public class StoragePoolDefinitions
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL_DFN, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_LST_STOR_POOL_DFN, request, () ->
         {
             Stream<StorPoolDefinitionApi> storPoolDfnStream = ctrlApiCallHandler.listStorPoolDefinition()
                 .stream()
@@ -111,7 +111,7 @@ public class StoragePoolDefinitions
         String jsonData
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_STOR_POOL_DFN, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_CRT_STOR_POOL_DFN, request, () ->
         {
             JsonGenTypes.StoragePoolDefinition data = objectMapper
                 .readValue(jsonData, JsonGenTypes.StoragePoolDefinition.class);
@@ -162,7 +162,7 @@ public class StoragePoolDefinitions
         @PathParam("storagePool") String storagePoolName
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL_DFN, request), () ->
+        return requestHelper.doInScope(ApiConsts.API_DEL_STOR_POOL_DFN, request, () ->
         {
             return ApiCallRcRestUtils.toResponse(
                 ctrlApiCallHandler.deleteStoragePoolDefinition(storagePoolName),

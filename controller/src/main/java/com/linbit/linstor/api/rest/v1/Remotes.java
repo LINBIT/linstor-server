@@ -57,7 +57,8 @@ public class Remotes
     public Response getRemotes(@Context Request request)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_LST_REMOTE, request),
+            ApiConsts.API_LST_REMOTE,
+            request,
             () ->
             {
                 JsonGenTypes.RemoteList remoteList = new JsonGenTypes.RemoteList();
@@ -85,7 +86,8 @@ public class Remotes
     public Response getS3Remotes(@Context Request request)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_LST_REMOTE, request),
+            ApiConsts.API_LST_REMOTE,
+            request,
             () ->
             {
                 List<JsonGenTypes.S3Remote> remoteList = remoteHandler.listS3().stream()
@@ -176,7 +178,8 @@ public class Remotes
     public Response getLinstorRemotes(@Context Request request)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_LST_REMOTE, request),
+            ApiConsts.API_LST_REMOTE,
+            request,
             () ->
             {
                 List<JsonGenTypes.LinstorRemote> remoteList = remoteHandler.listLinstor().stream()
@@ -262,7 +265,8 @@ public class Remotes
     public Response getEbsRemotes(@Context Request request)
     {
         return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_LST_REMOTE, request),
+            ApiConsts.API_LST_REMOTE,
+            request,
             () ->
             {
                 List<JsonGenTypes.EbsRemote> remoteList = remoteHandler.listEbs().stream()
