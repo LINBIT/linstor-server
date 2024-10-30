@@ -14,7 +14,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
@@ -59,6 +58,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
+import com.linbit.utils.TimeUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.makeVlmDfnContext;
@@ -69,7 +69,6 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -588,11 +587,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 props.setProp(
                     InternalApiConsts.KEY_EBS_COOLDOWN_UNTIL,
                     DATE_TIME_FORMATTER.format(
-                        LocalDateTime.ofEpochSecond(
-                            nowInSeconds + EBS_DFLT_COOLDOWN_PERIOD_IN_SEC,
-                            0,
-                            LinStor.LOCAL_ZONE_OFFSET
-                        )
+                        TimeUtils.toLocalZonedDateTime((nowInSeconds + EBS_DFLT_COOLDOWN_PERIOD_IN_SEC) * 1000)
                     ),
                     ApiConsts.NAMESPC_EBS
                 );
