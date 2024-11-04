@@ -1,5 +1,29 @@
-#!/bin/sh
-set -e
+#!/bin/bash
+
+set -eu
+
+LB_WAIT_FOR_BACKUP=${LB_WAIT_FOR_BACKUP:-"true"}
+
+create_backup_secret() {
+  BACKUP_NAME="$1"
+  BACKUP_FILE="$2"
+  VERSION="$3"
+
+  if ! kubectl create secret generic "${BACKUP_NAME}" --type piraeus.io/linstor-backup --from-file=backup.tar.gz="${BACKUP_FILE}"; then
+    echo "Backup ${BACKUP_FILE} may be too large to fit into a single secret, trying to split into chunks" >&2
+    split -d -b 512k "${BACKUP_FILE}" "${BACKUP_FILE}."
+    for SPLIT_FILE in "${BACKUP_FILE}".* ; do
+      kubectl create secret generic "${BACKUP_NAME}-${SPLIT_FILE##"${BACKUP_FILE}".}" --type piraeus.io/linstor-backup-part --from-file=backup.tar.gz="${SPLIT_FILE}"
+      kubectl label secret "${BACKUP_NAME}-${SPLIT_FILE##"${BACKUP_FILE}".}" piraeus.io/backup="${BACKUP_NAME}"
+    done
+
+    kubectl create secret generic "${BACKUP_NAME}" --type piraeus.io/linstor-backup
+  else
+    kubectl label secret "${BACKUP_NAME}" piraeus.io/backup="${BACKUP_NAME}"
+  fi
+
+  kubectl annotate secrets "${BACKUP_NAME}" "piraeus.io/linstor-version=${VERSION}" "piraeus.io/backup-version=2"
+}
 
 run_migration() {
   if /usr/share/linstor-server/bin/linstor-config all-migrations-applied --logs=/var/log/linstor-controller --config-directory=/etc/linstor "$@" ; then
@@ -20,8 +44,30 @@ run_migration() {
       kubectl get "${CRD}" -oyaml > "${CRD}.yaml"
     done
     tar -czvf backup.tar.gz -- *.yaml
-    kubectl create secret generic "${BACKUP_NAME}" --type linstor.io/linstor-backup --from-file=backup.tar.gz
-    kubectl annotate secrets "${BACKUP_NAME}" "linstor.io/linstor-version=${VERSION}"
+
+    if ! create_backup_secret "${BACKUP_NAME}" backup.tar.gz "${VERSION}"; then
+      cat <<EOF >&2
+===============================================================================
+Backup backup.tar.gz too large, even after chunking, to fit into secrets.
+Please manually copy it to a safe location, by running:
+
+  kubectl cp -c run-migration $(hostname):/run/migration/backup.tar.gz .
+
+EOF
+      if [ "${LB_WAIT_FOR_BACKUP}" != "true" ]; then
+        return 1
+      fi
+      cat <<EOF >&2
+This container will wait until downloading of the backup has been confirmed.
+To confirm the backup has been stored locally, create a secret using:
+
+  kubectl create secret generic ${BACKUP_NAME} --type piraeus.io/linstor-backup
+
+EOF
+      while ! kubectl get secrets "${BACKUP_NAME}" 2>/dev/null ; do
+        sleep 10
+      done
+    fi
   fi
 
   /usr/share/linstor-server/bin/linstor-config run-migration --config-directory=/etc/linstor "$@"
