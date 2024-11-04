@@ -347,7 +347,7 @@ public class StorPoolFilter
                         );
                     }
                 }
-                if (nodeMatches && filterNodePropsSame != null && !filterNodePropsSame.isEmpty())
+                if (nodeMatches && !filterNodePropsSame.isEmpty())
                 {
                     for (Entry<String, String> matchEntry : filterNodePropsSame.entrySet())
                     {
@@ -382,7 +382,7 @@ public class StorPoolFilter
                         }
                     }
                 }
-                if (nodeMatches && filterNodePropsDifferent != null && !filterNodePropsDifferent.isEmpty())
+                if (nodeMatches && !filterNodePropsDifferent.isEmpty())
                 {
                     boolean anyMatch = false;
                     for (Entry<String, Map<String, Integer>> diffPropEntry : filterNodePropsDifferent.entrySet())

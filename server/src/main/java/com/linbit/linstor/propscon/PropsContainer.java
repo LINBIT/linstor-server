@@ -2188,8 +2188,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         public int hashCode()
         {
             // copied from JavaDoc of Map.Entry#hashCode()
-            return (entryKey == null ? 0 : entryKey.hashCode()) ^
-                    (entryValue == null ? 0 : entryValue.hashCode());
+            return entryKey.hashCode() ^ entryValue.hashCode();
         }
 
         @Override

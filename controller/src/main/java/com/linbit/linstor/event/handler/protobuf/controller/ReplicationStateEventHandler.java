@@ -75,15 +75,13 @@ public class ReplicationStateEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        PairNonNull<String, ReplState> replicationState;
-
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
             EventReplicationStateOuterClass.EventReplicationState eventReplicationState =
                 EventReplicationStateOuterClass.EventReplicationState.parseDelimitedFrom(eventDataIn);
 
             NodeName mappedName = getMappedName(nodeRepo, sysCtx, eventReplicationState.getPeerName());
-            replicationState = eventReplicationState.getReplicationState().isEmpty() ?
+            PairNonNull<String, ReplState> replicationState = eventReplicationState.getReplicationState().isEmpty() ?
                 new PairNonNull<>(mappedName.displayValue, ReplState.UNKNOWN) :
                 new PairNonNull<>(
                     mappedName.displayValue,
@@ -97,6 +95,8 @@ public class ReplicationStateEventHandler implements EventHandler
                     replicationState
                 )
             );
+            replicationStateEvent.get()
+                .forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, replicationState);
         }
         else
         {
@@ -108,10 +108,8 @@ public class ReplicationStateEventHandler implements EventHandler
                     SatelliteVolumeState::setReplicationState
                 )
             );
-
-            replicationState = null;
+            replicationStateEvent.get()
+                .forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction);
         }
-
-        replicationStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, replicationState);
     }
 }

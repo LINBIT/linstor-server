@@ -272,10 +272,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
         started = false;
         shutdown = true;
         handler.stop(false);
-        if (thread != null)
-        {
-            thread.interrupt();
-        }
+        thread.interrupt();
         deque.addFirst(new PoisonEvent());
         if (timeoutInMs != null)
         {
@@ -286,10 +283,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     @Override
     public void awaitShutdown(long timeoutRef) throws InterruptedException
     {
-        if (thread != null)
-        {
-            thread.join(timeoutRef);
-        }
+        thread.join(timeoutRef);
     }
 
     @Override

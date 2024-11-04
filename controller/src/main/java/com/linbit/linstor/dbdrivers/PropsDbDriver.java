@@ -109,14 +109,8 @@ public class PropsDbDriver extends AbsProtectedDatabaseDriver<PropsDbEntry, Void
     protected String getId(PropsDbEntry dataRef) throws AccessDeniedException
     {
         StringBuilder id = new StringBuilder("(InstanceName=").append(dataRef.propsInstance);
-        if (dataRef.propKey != null)
-        {
-            id.append(" Key=").append(dataRef.propKey);
-            if (dataRef.propValue != null)
-            {
-                id.append(" Value=").append(dataRef.propValue);
-            }
-        }
+        id.append(" Key=").append(dataRef.propKey);
+        id.append(" Value=").append(dataRef.propValue); // if value does not exist, it is "" instead of null
         id.append(")");
         return id.toString();
     }

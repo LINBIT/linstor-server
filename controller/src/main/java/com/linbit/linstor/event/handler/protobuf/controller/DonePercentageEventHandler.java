@@ -52,7 +52,6 @@ public class DonePercentageEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        PairNonNull<String, Optional<Float>> donePercentage;
 
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
@@ -60,7 +59,7 @@ public class DonePercentageEventHandler implements EventHandler
                 EventDonePercentageOuterClass.EventDonePercentage.parseDelimitedFrom(eventDataIn);
 
             NodeName mappedName = getMappedName(nodeRepo, sysCtx, eventDonePercentage.getPeerName());
-            donePercentage = eventDonePercentage.hasDonePercentage() ?
+            PairNonNull<String, Optional<Float>> donePercentage = eventDonePercentage.hasDonePercentage() ?
                 new PairNonNull<>(mappedName.displayValue, Optional.of(eventDonePercentage.getDonePercentage())) :
                 new PairNonNull<>(mappedName.displayValue, Optional.empty());
             satelliteStateHelper.onSatelliteState(
@@ -72,10 +71,15 @@ public class DonePercentageEventHandler implements EventHandler
                     donePercentage
                 )
             );
+            donePercentageEvent.get()
+                .forwardEvent(
+                    eventIdentifier.getObjectIdentifier(),
+                    eventAction,
+                    donePercentage
+                );
         }
         else
         {
-            donePercentage = null;
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
                 satelliteState -> satelliteState.unsetOnVolume(
@@ -84,9 +88,12 @@ public class DonePercentageEventHandler implements EventHandler
                     SatelliteVolumeState::setDonePercentage
                 )
             );
+            donePercentageEvent.get()
+                .forwardEvent(
+                    eventIdentifier.getObjectIdentifier(),
+                    eventAction
+                );
         }
 
-        donePercentageEvent.get().forwardEvent(
-            eventIdentifier.getObjectIdentifier(), eventAction, donePercentage);
     }
 }

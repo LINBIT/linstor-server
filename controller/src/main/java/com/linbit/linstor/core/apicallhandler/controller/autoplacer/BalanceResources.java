@@ -206,7 +206,7 @@ public class BalanceResources
                 resourceStateEvent.get(),
                 ObjectIdentifier.resource(rsc.getNode().getName(), rsc.getResourceDefinition().getName())
             )
-            .skipUntil(usage -> usage.getUpToDate() != null && usage.getUpToDate())
+            .skipUntil(usage -> usage.getUpToDate())
             .next()
             .thenMany(
                 scopeRunner.fluxInTransactionalScope(
@@ -401,36 +401,37 @@ public class BalanceResources
                     continue;
                 }
 
-                Integer replicaCount = rscDfn.getResourceGroup().getAutoPlaceConfig().getReplicaCount(sysCtx);
-                if (replicaCount != null)
+                int replicaCount = rscDfn.getResourceGroup().getAutoPlaceConfig().getReplicaCount(sysCtx);
+                List<Resource> notDeletedDiskful = rscDfn.getNotDeletedDiskful(sysCtx);
+                filterDiskfull(notDeletedDiskful);
+                int notDeletedDiskfulCount = notDeletedDiskful.size();
+                if (notDeletedDiskfulCount < replicaCount)
                 {
-                    List<Resource> notDeletedDiskful = rscDfn.getNotDeletedDiskful(sysCtx);
-                    filterDiskfull(notDeletedDiskful);
-                    int notDeletedDiskfulCount = notDeletedDiskful.size();
-                    if (notDeletedDiskfulCount < replicaCount)
-                    {
-                        log.logInfo("BalanceResourcesTask/%s needs more diskful", rscDfn.getName());
-                        adjustRscDfns.add(rscDfn);
-                    }
-                    else if (notDeletedDiskfulCount > replicaCount)
-                    {
-                        var onlineNodeIds = CtrlRscCrtApiHelper.getOnlineNodeIds(rscDfn, sysCtx);
-                        var fixedResources = getFixedResources(
-                            rscDfn.streamResource(sysCtx).collect(Collectors.toList()),
-                            onlineNodeIds);
+                    log.logInfo("BalanceResourcesTask/%s needs more diskful", rscDfn.getName());
+                    adjustRscDfns.add(rscDfn);
+                }
+                else if (notDeletedDiskfulCount > replicaCount)
+                {
+                    var onlineNodeIds = CtrlRscCrtApiHelper.getOnlineNodeIds(rscDfn, sysCtx);
+                    var fixedResources = getFixedResources(
+                        rscDfn.streamResource(sysCtx).collect(Collectors.toList()),
+                        onlineNodeIds
+                    );
 
-                        // loop through rscDfn resources, until we meet replicaCount or are out of resource to delete
-                        Resource toDelete = autoUnplacer.unplace(rscDfn, fixedResources);
-                        while (toDelete != null && notDeletedDiskfulCount > replicaCount)
-                        {
-                            log.logInfo(
-                                "BalanceResourcesTask/%s going to delete: %s", rscDfn.getName(), toDelete);
-                            flux = flux.concatWith(removeExcessFlux(toDelete));
-                            notDeletedDiskfulCount--;
-                            deletedRscCount++;
-                            fixedResources.add(toDelete);
-                            toDelete = autoUnplacer.unplace(rscDfn, fixedResources);
-                        }
+                    // loop through rscDfn resources, until we meet replicaCount or are out of resource to delete
+                    Resource toDelete = autoUnplacer.unplace(rscDfn, fixedResources);
+                    while (toDelete != null && notDeletedDiskfulCount > replicaCount)
+                    {
+                        log.logInfo(
+                            "BalanceResourcesTask/%s going to delete: %s",
+                            rscDfn.getName(),
+                            toDelete
+                        );
+                        flux = flux.concatWith(removeExcessFlux(toDelete));
+                        notDeletedDiskfulCount--;
+                        deletedRscCount++;
+                        fixedResources.add(toDelete);
+                        toDelete = autoUnplacer.unplace(rscDfn, fixedResources);
                     }
                 }
             }

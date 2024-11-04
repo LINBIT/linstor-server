@@ -1646,12 +1646,9 @@ public class CtrlNodeApiCallHandler
                     if (!justDeleteRscToEvac)
                     {
                         int upToDatePeerCount = getUpToDatePeerCount(peerCtx, rscDfn);
-                        Integer expectedReplicaCount = rscDfn.getResourceGroup().getAutoPlaceConfig()
+                        int expectedReplicaCount = rscDfn.getResourceGroup()
+                            .getAutoPlaceConfig()
                             .getReplicaCount(peerCtx);
-                        if (expectedReplicaCount == null)
-                        {
-                            expectedReplicaCount = 2; // just to be sure
-                        }
                         if (upToDatePeerCount >= expectedReplicaCount)
                         {
                             justDeleteRscToEvac = true;

@@ -1,16 +1,18 @@
 package com.linbit.linstor.event;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import reactor.core.Disposable;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import reactor.core.Disposable;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 @Singleton
 public class WatchStoreImpl implements WatchStore
@@ -37,11 +39,8 @@ public class WatchStoreImpl implements WatchStore
 
         String peerId = watch.getPeerId();
         Integer peerWatchId = watch.getPeerWatchId();
-        if (peerId != null && peerWatchId != null)
-        {
-            watchesByPeer.computeIfAbsent(peerId, ignored -> new HashMap<>())
-                .put(peerWatchId, Tuples.of(watch, disposable));
-        }
+        watchesByPeer.computeIfAbsent(peerId, ignored -> new HashMap<>())
+            .put(peerWatchId, Tuples.of(watch, disposable));
     }
 
     @Override

@@ -152,7 +152,7 @@ public class Autoplacer
             long temp;
             temp = Double.doubleToLongBits(score);
             result = prime * result + (int) (temp ^ (temp >>> 32));
-            result = prime * result + ((storPool == null) ? 0 : storPool.hashCode());
+            result = prime * result + storPool.hashCode();
             return result;
         }
 
@@ -176,14 +176,7 @@ public class Autoplacer
             {
                 return false;
             }
-            if (storPool == null)
-            {
-                if (other.storPool != null)
-                {
-                    return false;
-                }
-            }
-            else if (!storPool.equals(other.storPool))
+            if (!storPool.equals(other.storPool))
             {
                 return false;
             }

@@ -287,14 +287,11 @@ public class SslTcpConnectorService extends TcpConnectorService
         synchronized (taskCompletionMap)
         {
             final String id = connPeer.getId();
-            if (id != null)
+            if (DEBUG_SSL_TASKS)
             {
-                if (DEBUG_SSL_TASKS)
-                {
-                    debugLog("taskCompleted: Peer added to taskCompletionMap, peerId=\"" + id + "\"");
-                }
-                taskCompletionMap.put(id, connPeer);
+                debugLog("taskCompleted: Peer added to taskCompletionMap, peerId=\"" + id + "\"");
             }
+            taskCompletionMap.put(id, connPeer);
         }
         wakeup();
     }

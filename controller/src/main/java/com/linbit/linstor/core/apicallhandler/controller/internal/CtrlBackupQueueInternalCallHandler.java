@@ -514,7 +514,7 @@ public class CtrlBackupQueueInternalCallHandler
                     next.preferredNode,
                     new ApiCallRcImpl(),
                     queueAnyways,
-                    next.l2lData
+                    l2lData
                 );
                 if (l2lNodeForShipping != null)
                 {
@@ -530,7 +530,7 @@ public class CtrlBackupQueueInternalCallHandler
                         l2lPrevSnapDfn,
                         new ApiCallRcImpl(),
                         next.preferredNode,
-                        next.l2lData
+                        l2lData
                     )
                         .concatWith(
                             scopeRunner.fluxInTransactionalScope(
@@ -540,13 +540,13 @@ public class CtrlBackupQueueInternalCallHandler
                                     .write(LockObj.RSC_DFN_MAP)
                                     .buildDeferred(),
                                 () -> backupL2LSrcHandler.get()
-                                    .createStltRemoteInTransaction(next.l2lData, nodeForEffectivelyFinal)
+                                    .createStltRemoteInTransaction(l2lData, nodeForEffectivelyFinal)
                             )
                         );
                 }
                 else
                 {
-                    if (resp.responses != null)
+                    if (!resp.responses.isEmpty())
                     {
                         ret = Flux.just(resp.responses);
                     }

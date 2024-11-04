@@ -399,14 +399,8 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
             threadFinished(false, false);
             running = false;
             handler.stop(false);
-            if (cmdThread != null)
-            {
-                cmdThread.interrupt();
-            }
-            if (s3Thread != null)
-            {
-                s3Thread.interrupt();
-            }
+            cmdThread.interrupt();
+            s3Thread.interrupt();
             deque.addFirst(new PoisonEvent());
         };
         if (needsExtraThread)
@@ -423,14 +417,8 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     @Override
     public void awaitShutdown(long timeoutRef) throws InterruptedException
     {
-        if (cmdThread != null)
-        {
-            cmdThread.join(timeoutRef);
-        }
-        if (s3Thread != null)
-        {
-            s3Thread.join(timeoutRef);
-        }
+        cmdThread.join(timeoutRef);
+        s3Thread.join(timeoutRef);
     }
 
     @Override

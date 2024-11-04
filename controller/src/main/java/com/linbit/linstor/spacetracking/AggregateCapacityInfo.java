@@ -1,5 +1,6 @@
 package com.linbit.linstor.spacetracking;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 
 import java.math.BigInteger;
@@ -7,14 +8,15 @@ import java.util.Objects;
 
 public class AggregateCapacityInfo implements Comparable<AggregateCapacityInfo>
 {
-    public final NodeName nodeName;
+    public final @Nullable NodeName nodeName;
 
     public BigInteger capacity = BigInteger.ZERO;
     public BigInteger allocated = BigInteger.ZERO;
     public BigInteger usable = BigInteger.ZERO;
     public boolean storPoolExcFlag;
 
-    public AggregateCapacityInfo(NodeName nodeNameRef)
+    // spacetracking calls this class at least once with null
+    public AggregateCapacityInfo(@Nullable NodeName nodeNameRef)
     {
         nodeName = nodeNameRef;
     }

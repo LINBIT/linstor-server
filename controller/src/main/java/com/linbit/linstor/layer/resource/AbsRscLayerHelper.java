@@ -680,10 +680,7 @@ public abstract class AbsRscLayerHelper<
         {
             VolumeDefinition vlmDfn = vlmDfnIt.next();
             Set<StorPool> neededStoragePools = getNeededStoragePools(rscRef, vlmDfn, payloadRef, layerListRef);
-            if (neededStoragePools != null)
-            {
-                storPools.addAll(neededStoragePools);
-            }
+            storPools.addAll(neededStoragePools);
         }
         return storPools;
     }

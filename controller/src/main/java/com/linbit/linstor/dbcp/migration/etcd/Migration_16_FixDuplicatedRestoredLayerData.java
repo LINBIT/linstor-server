@@ -204,8 +204,8 @@ public class Migration_16_FixDuplicatedRestoredLayerData extends BaseEtcdMigrati
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((nodeName == null) ? 0 : nodeName.hashCode());
-            result = prime * result + ((rscName == null) ? 0 : rscName.hashCode());
+            result = prime * result + nodeName.hashCode();
+            result = prime * result + rscName.hashCode();
             result = prime * result + ((snapName == null) ? 0 : snapName.hashCode());
             return result;
         }

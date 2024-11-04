@@ -544,7 +544,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 );
             }
         }
-        if (layerStackToUse == null || layerStackToUse.isEmpty())
+        if (layerStackToUse.isEmpty())
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_LAYER_STACK, "Could not find default layer stack")

@@ -1639,21 +1639,18 @@ public class CtrlConfApiCallHandler
             else
             {
                 byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(namespace, passphrase);
-                if (decryptedMasterKey != null)
-                {
-                    flux = encHelper.setCryptKey(decryptedMasterKey, namespace, true);
-                    // setCryptKey might have changed volatileRscData (ignoreReason, etc..)
-                    transMgrProvider.get().commit();
+                flux = encHelper.setCryptKey(decryptedMasterKey, namespace, true);
+                // setCryptKey might have changed volatileRscData (ignoreReason, etc..)
+                transMgrProvider.get().commit();
 
-                    ResponseUtils.reportSuccessStatic(
-                        "Passphrase accepted",
-                        null,
-                        ApiConsts.MASK_CTRL_CONF | ApiConsts.PASSPHRASE_ACCEPTED,
-                        apiCallRc,
-                        null,
-                        errorReporter
-                    );
-                }
+                ResponseUtils.reportSuccessStatic(
+                    "Passphrase accepted",
+                    null,
+                    ApiConsts.MASK_CTRL_CONF | ApiConsts.PASSPHRASE_ACCEPTED,
+                    apiCallRc,
+                    null,
+                    errorReporter
+                );
             }
         }
         catch (AccessDeniedException exc)
@@ -1829,18 +1826,15 @@ public class CtrlConfApiCallHandler
                         namespace,
                         oldPassphrase
                     );
-                    if (decryptedMasterKey != null)
-                    {
-                        encHelper.setPassphraseImpl(newPassphrase, decryptedMasterKey, peerAccCtx.get());
-                        ResponseUtils.reportSuccessStatic(
-                            "Crypt passphrase updated",
-                            null, // details
-                            mask | ApiConsts.MODIFIED,
-                            apiCallRc,
-                            null, // objectRefs
-                            errorReporter
-                       );
-                    }
+                    encHelper.setPassphraseImpl(newPassphrase, decryptedMasterKey, peerAccCtx.get());
+                    ResponseUtils.reportSuccessStatic(
+                        "Crypt passphrase updated",
+                        null, // details
+                        mask | ApiConsts.MODIFIED,
+                        apiCallRc,
+                        null, // objectRefs
+                        errorReporter
+                    );
                 }
             }
 

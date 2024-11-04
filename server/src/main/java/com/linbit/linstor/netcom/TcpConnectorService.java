@@ -1487,21 +1487,18 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
         private void performConnectionObserverCall(ConnectionObserverCall call, String eventDescription)
         {
-            if (connObserver != null)
+            try
             {
-                try
-                {
-                    call.run(connObserver);
-                }
-                catch (Exception exc)
-                {
-                    errorReporter.reportError(
-                        exc,
-                        null,
-                        null,
-                        "Exception thrown by connection observer when " + eventDescription
-                    );
-                }
+                call.run(connObserver);
+            }
+            catch (Exception exc)
+            {
+                errorReporter.reportError(
+                    exc,
+                    null,
+                    null,
+                    "Exception thrown by connection observer when " + eventDescription
+                );
             }
         }
 

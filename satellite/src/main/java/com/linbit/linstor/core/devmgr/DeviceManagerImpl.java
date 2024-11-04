@@ -863,21 +863,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
                 synchronized (sched)
                 {
-                    if (ctrlPeer != null)
-                    {
-                        errLog.logDebug("Notifying ctrl DeviceManager cycle ended %d", cycleNr);
-                        ctrlPeer.sendMessage(
-                            interComSerializer
-                                .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
-                                .build()
-                        );
-                    }
-                    else
-                    {
-                        errLog.logDebug(
-                            "No controller peer found. Cannot notify about DeviceManager cycle ending. Skipping."
-                        );
-                    }
+                    errLog.logDebug("Notifying ctrl DeviceManager cycle ended %d", cycleNr);
+                    ctrlPeer.sendMessage(
+                        interComSerializer
+                            .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
+                            .build()
+                    );
 
                     // ctrlPeer.sendMessage might return false if controller is offline - bad luck, but still just
                     // give up our local locks
@@ -1973,26 +1964,28 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         // Send applySuccess notification to the controller
 
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        if (ctrlPeer != null)
-        {
-            Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
-                apiCallHandlerUtils.getSpaceInfo(false);
+        Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap = apiCallHandlerUtils.getSpaceInfo(
+            false
+        );
 
-            Map<StorPoolInfo, SpaceInfo> spaceInfoMap = new TreeMap<>();
+        Map<StorPoolInfo, SpaceInfo> spaceInfoMap = new TreeMap<>();
 
-            spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
+        spaceInfoQueryMap.forEach(
+            (storPool, either) -> either.consume(
                 spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
-                apiRcException -> {} // reported while creating
-            ));
+                apiRcException ->
+                {
+                } // reported while creating
+            )
+        );
 
-            ctrlPeer.sendMessage(
-                interComSerializer
-                    .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
-                    .notifyResourceApplied(rsc, spaceInfoMap)
-                    .build(),
-                InternalApiConsts.API_NOTIFY_RSC_APPLIED
-            );
-        }
+        ctrlPeer.sendMessage(
+            interComSerializer
+                .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
+                .notifyResourceApplied(rsc, spaceInfoMap)
+                .build(),
+            InternalApiConsts.API_NOTIFY_RSC_APPLIED
+        );
     }
 
     @Override
@@ -2041,48 +2034,39 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         // Send update notification to the controller
 
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        if (ctrlPeer != null)
-        {
-            ctrlPeer.sendMessage(
-                interComSerializer
-                    .onewayBuilder(InternalApiConsts.API_UPDATE_FREE_CAPACITY)
-                    .updateFreeCapacities(spaceInfoMap)
-                    .build(),
-                InternalApiConsts.API_UPDATE_FREE_CAPACITY
-            );
-        }
+        ctrlPeer.sendMessage(
+            interComSerializer
+                .onewayBuilder(InternalApiConsts.API_UPDATE_FREE_CAPACITY)
+                .updateFreeCapacities(spaceInfoMap)
+                .build(),
+            InternalApiConsts.API_UPDATE_FREE_CAPACITY
+        );
     }
 
     @Override
     public void notifyResourceFailed(Resource rsc, ApiCallRc apiCallRc)
     {
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        if (ctrlPeer != null)
-        {
-            ctrlPeer.sendMessage(
-                interComSerializer
-                    .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_FAILED)
-                    .notifyResourceFailed(rsc, apiCallRc)
-                    .build(),
-                InternalApiConsts.API_NOTIFY_RSC_FAILED
-            );
-        }
+        ctrlPeer.sendMessage(
+            interComSerializer
+                .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_FAILED)
+                .notifyResourceFailed(rsc, apiCallRc)
+                .build(),
+            InternalApiConsts.API_NOTIFY_RSC_FAILED
+        );
     }
 
     @Override
     public void notifySnapshotRollbackResult(Resource rscRef, ApiCallRc apiCallRcRef, boolean successRef)
     {
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        if (ctrlPeer != null)
-        {
-            ctrlPeer.sendMessage(
-                interComSerializer
-                    .onewayBuilder(InternalApiConsts.API_NOTIFY_SNAPSHOT_ROLLBACK_RESULT)
-                    .notifySnapshotRollbackResult(rscRef, apiCallRcRef, successRef)
-                    .build(),
-                InternalApiConsts.API_NOTIFY_SNAPSHOT_ROLLBACK_RESULT
-            );
-        }
+        ctrlPeer.sendMessage(
+            interComSerializer
+                .onewayBuilder(InternalApiConsts.API_NOTIFY_SNAPSHOT_ROLLBACK_RESULT)
+                .notifySnapshotRollbackResult(rscRef, apiCallRcRef, successRef)
+                .build(),
+            InternalApiConsts.API_NOTIFY_SNAPSHOT_ROLLBACK_RESULT
+        );
     }
 
     static <K> Map<K, UUID> extractUuids(Map<K, UpdateNotification> map)

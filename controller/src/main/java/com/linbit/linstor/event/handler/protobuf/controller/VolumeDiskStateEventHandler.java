@@ -42,13 +42,12 @@ public class VolumeDiskStateEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        String diskState;
-
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
             EventVlmDiskStateOuterClass.EventVlmDiskState eventVlmDiskState =
                 EventVlmDiskStateOuterClass.EventVlmDiskState.parseDelimitedFrom(eventDataIn);
 
+            String diskState = eventVlmDiskState.getDiskState();
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
                 satelliteState -> satelliteState.setOnVolume(
@@ -63,7 +62,7 @@ public class VolumeDiskStateEventHandler implements EventHandler
                 )
             );
 
-            diskState = eventVlmDiskState.getDiskState();
+            volumeDiskStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, diskState);
         }
         else
         {
@@ -76,9 +75,7 @@ public class VolumeDiskStateEventHandler implements EventHandler
                 )
             );
 
-            diskState = null;
+            volumeDiskStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction);
         }
-
-        volumeDiskStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, diskState);
     }
 }

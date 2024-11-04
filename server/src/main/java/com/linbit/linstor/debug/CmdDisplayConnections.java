@@ -236,10 +236,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
                         String connector = "<unknown>";
                         {
                             ServiceName connectorInstance = curPeer.getConnectorInstanceName();
-                            if (connectorInstance != null)
-                            {
-                                connector = connectorInstance.displayValue;
-                            }
+                            connector = connectorInstance.displayValue;
                         }
 
                         boolean selected = (

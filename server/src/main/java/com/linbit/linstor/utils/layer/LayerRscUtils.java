@@ -49,10 +49,7 @@ public class LayerRscUtils
                 else
                 {
                     Set<AbsRscLayerObject<RSC>> children = rscLayerObj.getChildren();
-                    if (children != null)
-                    {
-                        nextToExpand.addAll(children);
-                    }
+                    nextToExpand.addAll(children);
                 }
             }
 

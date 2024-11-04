@@ -1760,12 +1760,9 @@ public class DrbdLayer implements DeviceLayer
                         externalMd ? "flex-external" : "internal"
                     );
                 }
-                if (allGisFromMetaData != null)
-                {
-                    String currentGiFromMetaData = allGisFromMetaData.split(":")[0];
-                    isMetadataNew = currentGiFromVlmDfn.equalsIgnoreCase(currentGiFromMetaData) ||
-                        currentGiFromMetaData.equals(DRBD_NEW_GI);
-                }
+                String currentGiFromMetaData = allGisFromMetaData.split(":")[0];
+                isMetadataNew = currentGiFromVlmDfn.equalsIgnoreCase(currentGiFromMetaData) ||
+                    currentGiFromMetaData.equals(DRBD_NEW_GI);
             }
 
             if (!isMetadataNew)

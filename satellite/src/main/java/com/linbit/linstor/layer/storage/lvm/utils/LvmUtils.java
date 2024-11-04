@@ -247,24 +247,16 @@ public class LvmUtils
     )
         throws StorageException
     {
-        @Nullable Map<String, T> ret = supplierRef.supply();
-        boolean someMissing = ret == null;
-        if (ret != null)
+        Map<String, T> ret = supplierRef.supply();
+        for (String vg : volumeGroups)
         {
-            for (String vg : volumeGroups)
+            if (!ret.containsKey(vg))
             {
-                if (!ret.containsKey(vg))
-                {
-                    someMissing = true;
-                    break;
-                }
+                recacheLvmConfig(extCmdFactory, volumeGroups);
+                recacheNext();
+                ret = supplierRef.supply();
+                break;
             }
-        }
-        if (someMissing)
-        {
-            recacheLvmConfig(extCmdFactory, volumeGroups);
-            recacheNext();
-            ret = supplierRef.supply();
         }
         return ret;
     }

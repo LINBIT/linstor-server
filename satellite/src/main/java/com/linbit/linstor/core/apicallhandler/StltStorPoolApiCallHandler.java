@@ -302,12 +302,10 @@ class StltStorPoolApiCallHandler
             SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool, true);
             DeviceProviderKind kind = storPool.getDeviceProviderKind();
             boolean isFileKind = kind.equals(DeviceProviderKind.FILE) || kind.equals(DeviceProviderKind.FILE_THIN);
-            if (spaceInfo != null && (!kind.usesThinProvisioning() || isFileKind))
+            if (!kind.usesThinProvisioning() || isFileKind)
             {
                 boolean supportsSnapshots = storPool.isSnapshotSupported(apiCtx);
 
-                Map<StorPool, SpaceInfo> tmpMap = new HashMap<>();
-                tmpMap.put(storPool, spaceInfo);
                 controllerPeerConnector.getControllerPeer().sendMessage(
                     ctrlStltSerializer
                         .onewayBuilder(InternalApiConsts.API_NOTIFY_STOR_POOL_APPLIED)

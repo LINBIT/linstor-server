@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ExternalFileMap;
 import com.linbit.linstor.core.DivergentUuidsException;
@@ -13,7 +14,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.ByteUtils;
 
-import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -62,7 +62,7 @@ public class ExternalFileSatelliteFactory
                     objectProtectionFactory.getInstance(accCtx, "", true),
                     extFileNameRef,
                     initflags,
-                    content,
+                    content == null ? new byte[0] : content,
                     content == null ? new byte[0] : ByteUtils.checksumSha256(content),
                     driver,
                     transObjFactory,

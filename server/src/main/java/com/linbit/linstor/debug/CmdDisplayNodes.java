@@ -151,14 +151,8 @@ public class CmdDisplayNodes extends BaseDebugCmd
                     try
                     {
                         LsIpAddress lsIp = netIf.getAddress(accCtx);
-                        if (lsIp != null)
-                        {
-                            String addrStr = lsIp.getAddress();
-                            if (addrStr != null)
-                            {
-                                address = addrStr;
-                            }
-                        }
+                        String addrStr = lsIp.getAddress();
+                        address = addrStr;
                     }
                     catch (AccessDeniedException ignored)
                     {

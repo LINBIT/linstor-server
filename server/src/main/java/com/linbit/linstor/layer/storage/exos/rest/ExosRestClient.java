@@ -609,10 +609,7 @@ public class ExosRestClient
         Builder builder = HttpHeader.newBuilder()
             .setJsonContentType()
             .setAcceptsJson();
-        if (currentSessionKey != null)
-        {
-            builder.put(HEADER_SESSION_KEY, currentSessionKey.get(ctrl));
-        }
+        builder.put(HEADER_SESSION_KEY, currentSessionKey.get(ctrl));
         builder.put(HEADER_DATATYPE, HEADER_DATATYPE_VAL_JSON);
         return builder.build();
     }

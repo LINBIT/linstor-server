@@ -94,7 +94,6 @@ public class ResourceStateEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        ResourceState resourceState;
 
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
@@ -167,7 +166,7 @@ public class ResourceStateEventHandler implements EventHandler
             final Boolean mayPromote = eventRscState.hasMayPromote() ?
                 eventRscState.getMayPromote() : null;
 
-            resourceState = new ResourceState(
+            ResourceState resourceState = new ResourceState(
                 eventRscState.getReady(),
                 extractConnectedPeerStates(eventRscState),
                 inUse,
@@ -178,6 +177,7 @@ public class ResourceStateEventHandler implements EventHandler
 
             processEvent(eventIdentifier, inUse);
             processEventUpdateVolatile(eventIdentifier, promotionScore, mayPromote);
+            resourceStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, resourceState);
         }
         else
         {
@@ -190,10 +190,8 @@ public class ResourceStateEventHandler implements EventHandler
             );
 
             processEventUpdateVolatile(eventIdentifier, null, null);
-            resourceState = null;
+            resourceStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction);
         }
-
-        resourceStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, resourceState);
     }
 
     private Map<VolumeNumber, Map<Integer, Boolean>> extractConnectedPeerStates(EventRscState eventRscStateRef)

@@ -1,9 +1,10 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
 import com.linbit.AutoIndent;
 import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
 import com.linbit.linstor.security.AccessContext;
+
+import javax.inject.Inject;
 
 import java.io.PrintStream;
 import java.util.Map;
@@ -53,10 +54,7 @@ public class CmdDisplayApis extends BaseDebugCmd
             debugOut.printf("\u001b[1;37m%s\u001b[0m\n", apiObjEntry.getKey());
             ApiCallDescriptor apiObj = apiObjEntry.getValue();
             String description = apiObj.getDescription();
-            if (description != null)
-            {
-                AutoIndent.printWithIndent(debugOut, AutoIndent.DEFAULT_INDENTATION, description);
-            }
+            AutoIndent.printWithIndent(debugOut, AutoIndent.DEFAULT_INDENTATION, description);
             AutoIndent.printWithIndent(
                 debugOut, AutoIndent.DEFAULT_INDENTATION,
                 "Provider: " + apiObj.getClazz().getCanonicalName() + "\n" +

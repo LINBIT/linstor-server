@@ -243,29 +243,18 @@ public class CtrlRscLayerDataFactory
                 childList,
                 currentData.ignoreReasons
             );
+            ret = result.rscObj;
 
-            if (result == null)
+            for (ChildResourceData childRsc : result.childRsc)
             {
-                ret = null;
-            }
-            else
-            {
-                ret = result.rscObj;
-
-                for (ChildResourceData childRsc : result.childRsc)
-                {
-                    AbsRscLayerObject<Resource> childRscLayerData = ensureDataRec(
-                        rscRef,
-                        payloadRef,
-                        childList,
-                        childRsc,
-                        result.rscObj
-                    );
-                    if (childRscLayerData != null)
-                    {
-                        result.rscObj.getChildren().add(childRscLayerData);
-                    }
-                }
+                AbsRscLayerObject<Resource> childRscLayerData = ensureDataRec(
+                    rscRef,
+                    payloadRef,
+                    childList,
+                    childRsc,
+                    result.rscObj
+                );
+                result.rscObj.getChildren().add(childRscLayerData);
             }
         }
         else
@@ -459,10 +448,7 @@ public class CtrlRscLayerDataFactory
         {
             AbsRscLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(kind);
             Set<StorPool> neededStoragePools = layerHelper.getNeededStoragePools(rsc, payload, layerList);
-            if (neededStoragePools != null)
-            {
-                storPools.addAll(neededStoragePools);
-            }
+            storPools.addAll(neededStoragePools);
         }
         return storPools;
     }

@@ -406,10 +406,7 @@ public class PeerREST implements Peer
     public String toString()
     {
         String str = "RestClient(" + getId();
-        if (userAgent != null)
-        {
-            str += "; '" + userAgent + "'";
-        }
+        str += "; '" + userAgent + "'";
         return str + ")";
     }
 }

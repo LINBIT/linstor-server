@@ -146,16 +146,13 @@ public class DrbdResource
             );
         }
         DrbdResource drbdResource = new DrbdResource(name);
-        if (drbdResource.resName != null)
+        ResourceDefinition rscDfn = rscDfnMap.get(drbdResource.resName);
+        if (rscDfn != null)
         {
-            ResourceDefinition rscDfn = rscDfnMap.get(drbdResource.resName);
-            if (rscDfn != null)
-            {
-                drbdResource.setKnownByLinstor(
-                    rscDfn.getName().displayValue
-                        .equals(name)
-                );
-            }
+            drbdResource.setKnownByLinstor(
+                rscDfn.getName().displayValue
+                    .equals(name)
+            );
         }
         return drbdResource;
     }

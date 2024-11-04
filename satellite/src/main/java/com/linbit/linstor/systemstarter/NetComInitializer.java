@@ -30,18 +30,12 @@ public class NetComInitializer implements StartupInitializer
     @Override
     public void shutdown()
     {
-        if (sncInitializer.netComSvc != null)
-        {
-            sncInitializer.netComSvc.shutdown();
-        }
+        sncInitializer.shutdown();
     }
 
     @Override
     public void awaitShutdown(long timeout) throws InterruptedException
     {
-        if (sncInitializer.netComSvc != null)
-        {
-            sncInitializer.netComSvc.awaitShutdown(timeout);
-        }
+        sncInitializer.awaitShutdown(timeout);
     }
 }

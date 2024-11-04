@@ -117,39 +117,14 @@ public class StltApiCallHandlerUtils
                 (storPoolFilter.isEmpty() || storPoolFilter.contains(storPoolInfo.getName())))
             {
                 DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderBy(storPoolInfo);
-                if (deviceProvider == null)
-                {
-                    ApiRcException apiRcException = new ApiRcException(
-                        ApiCallRcImpl
-                            .entryBuilder(
-                                ApiConsts.FAIL_UNKNOWN_ERROR,
-                                "Device provider for pool '" + storPoolInfo.getName() + "' not found"
-                            )
-                            .build()
-                    );
 
-                    for (ReadOnlyVlmProviderInfo readOnlyVlm : storPoolInfo.getReadOnlyVolumes())
-                    {
-                        if (resourceFilter.isEmpty() ||
-                            resourceFilter.contains(readOnlyVlm.getResourceName()))
-                        {
-                            allocatedMap.put(
-                                readOnlyVlm.getVolumeKey(),
-                                Either.right(apiRcException)
-                            );
-                        }
-                    }
-                }
-                else
+                List<StltReadOnlyInfo.ReadOnlyStorPool> list = storPoolsPerDeviceProvider.get(deviceProvider);
+                if (list == null)
                 {
-                    List<StltReadOnlyInfo.ReadOnlyStorPool> list = storPoolsPerDeviceProvider.get(deviceProvider);
-                    if (list == null)
-                    {
-                        list = new ArrayList<>();
-                        storPoolsPerDeviceProvider.put(deviceProvider, list);
-                    }
-                    list.add(storPoolInfo);
+                    list = new ArrayList<>();
+                    storPoolsPerDeviceProvider.put(deviceProvider, list);
                 }
+                list.add(storPoolInfo);
             }
         }
 

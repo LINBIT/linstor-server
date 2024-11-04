@@ -316,7 +316,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         final int prime = 31;
         int result = 1;
         result = prime * result + rscLayerId;
-        result = prime * result + ((rscSuffix == null) ? 0 : rscSuffix.hashCode());
+        result = prime * result + rscSuffix.hashCode();
         return result;
     }
 

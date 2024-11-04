@@ -203,28 +203,17 @@ public class LinstorConfigTool
         private @Nullable String dbpath;
 
         @Override
-        public Object call() throws Exception
+        public @Nullable Object call() throws Exception
         {
             OutputStream os = System.out;
 
             DatabaseDriverInfo dbInfo = DatabaseDriverInfo.createDriverInfo(dbtype);
 
-            if (dbInfo != null)
-            {
-                String ctrlToml = DEF_CTRL_TOML
-                    .replace("# user = ", "user = ")
-                    .replace("# password = ", "password = ")
-                    .replaceFirst("# connection_url = \".*\"", "connection_url = \"" + dbInfo.jdbcUrl(dbpath) + "\"");
-                os.write(ctrlToml.getBytes(StandardCharsets.UTF_8));
-            }
-            else
-            {
-                System.err.printf(
-                    "Database type '%s' not supported. Use one of: '%s'%n",
-                    dbtype,
-                    String.join("', '", supportedDbs));
-                System.exit(EXIT_CODE_CMDLINE_ERROR);
-            }
+            String ctrlToml = DEF_CTRL_TOML
+                .replace("# user = ", "user = ")
+                .replace("# password = ", "password = ")
+                .replaceFirst("# connection_url = \".*\"", "connection_url = \"" + dbInfo.jdbcUrl(dbpath) + "\"");
+            os.write(ctrlToml.getBytes(StandardCharsets.UTF_8));
             return null;
         }
     }

@@ -44,7 +44,7 @@ public abstract class SosReportType
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((fileName == null) ? 0 : fileName.hashCode());
+        result = prime * result + fileName.hashCode();
         result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
         return result;
     }
@@ -82,7 +82,7 @@ public abstract class SosReportType
         {
             final int prime = 31;
             int result = super.hashCode();
-            result = prime * result + ((info == null) ? 0 : info.hashCode());
+            result = prime * result + info.hashCode();
             return result;
         }
 
@@ -184,7 +184,7 @@ public abstract class SosReportType
         {
             final int prime = 31;
             int result = super.hashCode();
-            result = prime * result + ((path == null) ? 0 : path.hashCode());
+            result = prime * result + path.hashCode();
             return result;
         }
 

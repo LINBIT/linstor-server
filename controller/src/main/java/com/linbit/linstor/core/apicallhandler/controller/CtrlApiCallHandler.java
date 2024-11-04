@@ -1408,7 +1408,7 @@ public class CtrlApiCallHandler
                 Collections.singletonList(cloneName),
                 Collections.singletonList(InternalApiConsts.KEY_CLONED_FROM));
 
-            if (clonedResources != null && clonedResources.size() == 1)
+            if (clonedResources.size() == 1)
             {
                 final ResourceDefinitionApi cloneRscDfn = clonedResources.get(0);
                 final ResourceList rscs = this.listResource(

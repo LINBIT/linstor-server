@@ -163,7 +163,7 @@ public class RestHttpClient implements RestClient
                 }
 
                 T respObj;
-                if (jsonData.length > 0 && request.responseClass != null)
+                if (jsonData.length > 0)
                 {
                     if (request.responseClass == String.class)
                     {

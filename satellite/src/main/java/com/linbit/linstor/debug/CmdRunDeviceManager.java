@@ -1,10 +1,9 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.StltUpdateTracker;
@@ -14,7 +13,9 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.security.AccessContext;
 
+import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
@@ -23,6 +24,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import reactor.core.publisher.Flux;
 
 /**
@@ -98,11 +100,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
 
         try
         {
-            NodeName localNodeName = null;
-            if (ctrlPeerConn != null)
-            {
-                localNodeName = ctrlPeerConn.getLocalNodeName();
-            }
+            NodeName localNodeName = ctrlPeerConn.getLocalNodeName();
             if (localNodeName == null)
             {
                 throw new LinStorException(

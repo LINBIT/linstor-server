@@ -110,13 +110,10 @@ public class ConfFileBuilder
             )
         );
 
-        if (localRscData != null)
-        {
-            sb.append("\n# Name\n#   LINSTOR nodename: ")
-                .append(localRscData.getAbsResource().getNode().getName().displayValue)
-                .append("\n#   Local hostname  : ")
-                .append(localRscData.getAbsResource().getNode().getProps(accCtx).getProp(InternalApiConsts.NODE_UNAME));
-        }
+        sb.append("\n# Name\n#   LINSTOR nodename: ")
+            .append(localRscData.getAbsResource().getNode().getName().displayValue)
+            .append("\n#   Local hostname  : ")
+            .append(localRscData.getAbsResource().getNode().getProps(accCtx).getProp(InternalApiConsts.NODE_UNAME));
 
         sb.append("\n# File generated at: \n#   Local time      : ")
             .append(TimeUtils.JOURNALCTL_DF.format(LocalDateTime.now()))

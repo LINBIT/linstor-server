@@ -434,7 +434,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                     resourceStateEvent.get(),
                     ObjectIdentifier.resource(rsc.getNode().getName(), rsc.getResourceDefinition().getName())
                 )
-                    .skipUntil(usage -> usage.getUpToDate() != null && usage.getUpToDate())
+                    .skipUntil(usage -> usage.getUpToDate())
                     .next()
                     .thenMany(
                         scopeRunner.fluxInTransactionalScope(
@@ -516,8 +516,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         fixedResources.add(rscRef);
 
         ResourceDefinition rscDfn = rscRef.getResourceDefinition();
-        Integer replicaCount = rscDfn.getResourceGroup().getAutoPlaceConfig().getReplicaCount(sysCtx);
-        if (replicaCount != null && replicaCount < rscDfn.getNotDeletedDiskfulCount(sysCtx))
+        int replicaCount = rscDfn.getResourceGroup().getAutoPlaceConfig().getReplicaCount(sysCtx);
+        if (replicaCount < rscDfn.getNotDeletedDiskfulCount(sysCtx))
         {
             Iterator<Resource> rscIt = rscDfn.iterateResource(sysCtx);
             while (rscIt.hasNext())

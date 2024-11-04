@@ -251,10 +251,7 @@ public class TcpConnectorPeer implements Peer
     public ServiceName getConnectorInstanceName()
     {
         ServiceName connInstName = null;
-        if (connector != null)
-        {
-            connInstName = connector.getInstanceName();
-        }
+        connInstName = connector.getInstanceName();
         return connInstName;
     }
 

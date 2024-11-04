@@ -54,11 +54,7 @@ public interface DrbdRscDfnObject extends RscDfnLayerObject
             TransportType ret = defaultValue;
             if (string != null)
             {
-                TransportType val = valueOf(string.toUpperCase());
-                if (val != null)
-                {
-                    ret = val;
-                }
+                ret = valueOf(string.toUpperCase());
             }
             return ret;
         }

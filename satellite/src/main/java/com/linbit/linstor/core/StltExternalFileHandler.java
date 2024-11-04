@@ -224,7 +224,7 @@ public class StltExternalFileHandler
                 throw new ImplementationError("Unknown external file requested");
             }
             if (
-                !externalFile.alreadyWritten() && externalFile.getContent(wrkCtx) != null &&
+                !externalFile.alreadyWritten() &&
                 externalFile.getContent(wrkCtx).length > 0 &&
                 isWhitelisted(externalFile)
             )

@@ -36,8 +36,6 @@ public class ConnectionStateEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        String connectionState;
-
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
             EventConnStateOuterClass.EventConnState eventVlmDiskState =
@@ -53,7 +51,12 @@ public class ConnectionStateEventHandler implements EventHandler
                 )
             );
 
-            connectionState = eventVlmDiskState.getConnectionState();
+            connectionStateEvent.get()
+                .forwardEvent(
+                    eventIdentifier.getObjectIdentifier(),
+                    eventAction,
+                    eventVlmDiskState.getConnectionState()
+                );
         }
         else
         {
@@ -66,9 +69,7 @@ public class ConnectionStateEventHandler implements EventHandler
                 )
             );
 
-            connectionState = null;
+            connectionStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction);
         }
-
-        connectionStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, connectionState);
     }
 }

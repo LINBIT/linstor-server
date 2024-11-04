@@ -265,14 +265,7 @@ public class DebugConsoleImpl implements DebugConsole
             if (unknownParameters.isEmpty())
             {
                 String cmdInfo = debugCmd.getCmdInfo();
-                if (cmdInfo == null)
-                {
-                    debugOut.printf("\u001b[1;37m%-20s\u001b[0m\n", displayCmdName);
-                }
-                else
-                {
-                    debugOut.printf("\u001b[1;37m%-20s\u001b[0m %s\n", displayCmdName, cmdInfo);
-                }
+                debugOut.printf("\u001b[1;37m%-20s\u001b[0m %s%n", displayCmdName, cmdInfo);
 
                 try
                 {
@@ -460,14 +453,7 @@ public class DebugConsoleImpl implements DebugConsole
         // Output the name of the command for which help was requested
         debugOut.println("\u001b[1;37mHelp for command:\u001b[0m");
         String cmdInfo = debugCmd.getCmdInfo();
-        if (cmdInfo == null)
-        {
-            debugOut.printf("    %-20s\n", debugCmd.getDisplayName(uCaseCmdName));
-        }
-        else
-        {
-            debugOut.printf("    %-20s %s\n", debugCmd.getDisplayName(uCaseCmdName), cmdInfo);
-        }
+        debugOut.printf("    %-20s %s%n", debugCmd.getDisplayName(uCaseCmdName), cmdInfo);
         debugOut.println();
 
         // Output any additional alias names that invoke the same command
@@ -491,12 +477,9 @@ public class DebugConsoleImpl implements DebugConsole
 
         // Output the command's description
         String cmdDescr = debugCmd.getCmdDescription();
-        if (cmdDescr != null)
-        {
-            debugOut.println("\u001b[1;37mDescription:\u001b[0m");
-            AutoIndent.printWithIndent(debugOut, AutoIndent.DEFAULT_INDENTATION, cmdDescr);
-            debugOut.println();
-        }
+        debugOut.println("\u001b[1;37mDescription:\u001b[0m");
+        AutoIndent.printWithIndent(debugOut, AutoIndent.DEFAULT_INDENTATION, cmdDescr);
+        debugOut.println();
 
         // Output command parameter descriptions
         {
@@ -588,25 +571,13 @@ public class DebugConsoleImpl implements DebugConsole
                 CommonDebugCmd debugCmd = cmdEntry.getValue();
 
                 String cmdInfo = debugCmd.getCmdInfo();
-                if (cmdInfo == null)
-                {
-                    cmdNameList.append(
-                        String.format(
-                            "    %-20s\n",
-                            debugCmd.getDisplayName(cmdName)
-                        )
-                    );
-                }
-                else
-                {
-                    cmdNameList.append(
-                        String.format(
-                            "    %-20s %s\n",
-                            debugCmd.getDisplayName(cmdName),
-                            cmdInfo
-                        )
-                    );
-                }
+                cmdNameList.append(
+                    String.format(
+                        "    %-20s %s%n",
+                        debugCmd.getDisplayName(cmdName),
+                        cmdInfo
+                    )
+                );
             }
 
             // Write results

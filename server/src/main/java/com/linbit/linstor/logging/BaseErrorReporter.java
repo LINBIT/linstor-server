@@ -202,18 +202,15 @@ public abstract class BaseErrorReporter
             }
         }
 
-        if (peerId != null)
+        output.println("Connected peer information\n");
+        output.printf(ERROR_FIELD_FORMAT, "Peer ID:", peerId);
+        if (peerAddress == null)
         {
-            output.println("Connected peer information\n");
-            output.printf(ERROR_FIELD_FORMAT, "Peer ID:", peerId);
-            if (peerAddress == null)
-            {
-                output.println("The peer's network address is unknown.");
-            }
-            else
-            {
-                output.printf(ERROR_FIELD_FORMAT, "Network address:", peerAddress);
-            }
+            output.println("The peer's network address is unknown.");
+        }
+        else
+        {
+            output.printf(ERROR_FIELD_FORMAT, "Network address:", peerAddress);
         }
     }
 
@@ -360,44 +357,41 @@ public abstract class BaseErrorReporter
         try
         {
             StackTraceElement[] traceItems = errorInfo.getStackTrace();
-            if (traceItems != null)
+            if (traceItems.length >= 1)
             {
-                if (traceItems.length >= 1)
+                StackTraceElement topItem = traceItems[0];
+                if (topItem != null)
                 {
-                    StackTraceElement topItem = traceItems[0];
-                    if (topItem != null)
+                    String methodName = topItem.getMethodName();
+                    String fileName = topItem.getFileName();
+                    int lineNumber = topItem.getLineNumber();
+
+                    StringBuilder result = new StringBuilder();
+                    result.append("Method '");
+                    result.append(methodName);
+                    result.append("'");
+
+                    if (fileName != null)
                     {
-                        String methodName = topItem.getMethodName();
-                        String fileName = topItem.getFileName();
-                        int lineNumber = topItem.getLineNumber();
-
-                        StringBuilder result = new StringBuilder();
-                        result.append("Method '");
-                        result.append(methodName);
-                        result.append("'");
-
-                        if (fileName != null)
-                        {
-                            if (result.length() > 0)
-                            {
-                                result.append(", ");
-                            }
-                            result.append("Source file '");
-                            result.append(fileName);
-                            if (lineNumber >= 0)
-                            {
-                                result.append("', Line #");
-                                result.append(lineNumber);
-                            }
-                            else
-                            {
-                                result.append(", Unknown line number");
-                            }
-                        }
                         if (result.length() > 0)
                         {
-                            tGeneratedAt = result.toString();
+                            result.append(", ");
                         }
+                        result.append("Source file '");
+                        result.append(fileName);
+                        if (lineNumber >= 0)
+                        {
+                            result.append("', Line #");
+                            result.append(lineNumber);
+                        }
+                        else
+                        {
+                            result.append(", Unknown line number");
+                        }
+                    }
+                    if (result.length() > 0)
+                    {
+                        tGeneratedAt = result.toString();
                     }
                 }
             }
@@ -498,7 +492,7 @@ public abstract class BaseErrorReporter
             }
         }
 
-        if (trace == null)
+        if (trace.length == 0)
         {
             output.println("No call backtrace is available.");
         }

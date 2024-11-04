@@ -78,8 +78,8 @@ public abstract class AbsLayerRscDataDbDriver<
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((rscName == null) ? 0 : rscName.hashCode());
-            result = prime * result + ((rscNameSuffix == null) ? 0 : rscNameSuffix.hashCode());
+            result = prime * result + rscName.hashCode();
+            result = prime * result + rscNameSuffix.hashCode();
             result = prime * result + ((snapName == null) ? 0 : snapName.hashCode());
             return result;
         }

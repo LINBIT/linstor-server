@@ -12,7 +12,31 @@ public interface LinstorTriggerableEvent<T> extends LinstorEvent<T>
 
     void closeStreamNoConnection(ObjectIdentifier objectIdentifier);
 
-    default void forwardEvent(ObjectIdentifier objectIdentifier, String eventStreamAction, @Nullable T value)
+    /**
+     * This extra method is just a temporary solution. The better option would be if the nullable-annotations on generic
+     * types work correctly in spotbugs, but until then this will have to be enough.
+     *
+     * @param objectIdentifier
+     * @param eventStreamAction
+     */
+    default void forwardEvent(ObjectIdentifier objectIdentifier, String eventStreamAction)
+    {
+        switch (eventStreamAction)
+        {
+            case InternalApiConsts.EVENT_STREAM_VALUE:
+                throw new ImplementationError("Calling EVENT_STREAM_VALUE without a value");
+            case InternalApiConsts.EVENT_STREAM_CLOSE_REMOVED:
+                closeStream(objectIdentifier);
+                break;
+            case InternalApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION:
+                closeStreamNoConnection(objectIdentifier);
+                break;
+            default:
+                throw new ImplementationError("Unknown event action '" + eventStreamAction + "'");
+        }
+    }
+
+    default void forwardEvent(ObjectIdentifier objectIdentifier, String eventStreamAction, T value)
     {
         switch (eventStreamAction)
         {

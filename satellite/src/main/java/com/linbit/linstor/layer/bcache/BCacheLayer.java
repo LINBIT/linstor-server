@@ -587,7 +587,7 @@ public class BCacheLayer implements DeviceLayer
             .append(vlmData.getRscLayerObject().getResourceName().displayValue)
             .append(" Volume number: ").append(vlmData.getVlmNr().value);
         String rscNameSuffix = vlmData.getRscLayerObject().getResourceNameSuffix();
-        if (rscNameSuffix != null && !rscNameSuffix.equals(RscLayerSuffixes.SUFFIX_DATA))
+        if (!rscNameSuffix.equals(RscLayerSuffixes.SUFFIX_DATA))
         {
             sb.append(" Suffix: ").append(rscNameSuffix);
         }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -209,10 +210,15 @@ public class AutoSelectorConfig extends BaseTransactionObject
         return rscGrp;
     }
 
-    public Integer getReplicaCount(AccessContext accCtx) throws AccessDeniedException
+    public int getReplicaCount(AccessContext accCtx) throws AccessDeniedException
     {
         getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return replicaCount.get();
+        @Nullable Integer replCt = replicaCount.get();
+        if (replCt == null)
+        {
+            throw new ImplementationError("replCt should not be nullable here!");
+        }
+        return replCt;
     }
 
     public List<String> getNodeNameList(AccessContext accCtx) throws AccessDeniedException

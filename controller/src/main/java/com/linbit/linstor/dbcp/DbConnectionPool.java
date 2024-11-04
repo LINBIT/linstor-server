@@ -534,10 +534,8 @@ public class DbConnectionPool implements ControllerSQLDatabase
         }
         finally
         {
-            if (conn != null)
-            {
-                returnConnection(conn);
-            }
+            // this method also closes the connection
+            returnConnection(conn);
         }
     }
 

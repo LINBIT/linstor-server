@@ -153,18 +153,12 @@ public class SnapshotShippingDaemon implements Runnable
     {
         started = false;
         handler.stop(false);
-        if (thread != null)
-        {
-            thread.interrupt();
-        }
+        thread.interrupt();
         deque.addFirst(new PoisonEvent());
     }
 
     public void awaitShutdown(long timeoutRef) throws InterruptedException
     {
-        if (thread != null)
-        {
-            thread.join(timeoutRef);
-        }
+        thread.join(timeoutRef);
     }
 }

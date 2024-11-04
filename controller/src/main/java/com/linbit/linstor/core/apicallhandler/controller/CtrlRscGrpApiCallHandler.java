@@ -1005,7 +1005,7 @@ public class CtrlRscGrpApiCallHandler
             AutoSelectorConfig rgAutoPlaceConfig = rscGrp.getAutoPlaceConfig();
             AutoSelectFilterPojo autoPlaceConfig = AutoSelectFilterPojo.merge(
                 spawnAutoSelectFilterRef,
-                rgAutoPlaceConfig == null ? null : rgAutoPlaceConfig.getApiData()
+                rgAutoPlaceConfig.getApiData()
             );
 
             AccessContext peerCtx = peerAccCtx.get();
@@ -1237,38 +1237,10 @@ public class CtrlRscGrpApiCallHandler
     )
     {
         Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> flux;
-        try
-        {
-            ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
-            AutoSelectorConfig selectFilter = rscGrp.getAutoPlaceConfig();
+        ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
+        AutoSelectorConfig selectFilter = rscGrp.getAutoPlaceConfig();
 
-            AccessContext accCtx = peerAccCtx.get();
-
-            if (selectFilter.getReplicaCount(accCtx) == null)
-            {
-                flux = Flux.error(
-                    new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_PLACE_COUNT,
-                            "Replica count is required for this operation",
-                            true
-                        )
-                    )
-                );
-            }
-            else
-            {
-                flux = qmvsHelper.queryMaxVlmSize(selectFilter.getApiData(), null, 0, thinFreeCapacities);
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "no auto-place configured in " + getRscGrpDescriptionInline(rscGrpNameRef),
-                ApiConsts.FAIL_ACC_DENIED_RSC_GRP
-            );
-        }
+        flux = qmvsHelper.queryMaxVlmSize(selectFilter.getApiData(), null, 0, thinFreeCapacities);
         return flux;
     }
 
@@ -1342,25 +1314,10 @@ public class CtrlRscGrpApiCallHandler
             selectFilter.getApiData()
         );
 
-        AccessContext accCtx = peerAccCtx.get();
-
-        if (selectFilter.getReplicaCount(accCtx) == null)
-        {
-            result = new ApiCallRcWith<>(
-                ApiCallRcImpl.singleApiCallRc(
-                    ApiConsts.FAIL_INVLD_PLACE_COUNT,
-                    "Replica count is required for this operation"
-                ),
-                null
-            );
-        }
-        else
-        {
-            result = new ApiCallRcWith<>(
-                new ApiCallRcImpl(),
-                qsiHelper.queryMaxVlmSize(selectCfg, thinFreeCapacities)
-            );
-        }
+        result = new ApiCallRcWith<>(
+            new ApiCallRcImpl(),
+            qsiHelper.queryMaxVlmSize(selectCfg, thinFreeCapacities)
+        );
         qsiHelper.cache(rscGrp.getName().value, autoSelectFilterData, result);
         return result;
     }
@@ -1550,7 +1507,7 @@ public class CtrlRscGrpApiCallHandler
             AutoSelectorConfig rgAutoPlaceConfig = rscGrp.getAutoPlaceConfig();
             AutoSelectFilterPojo autoPlaceConfig = AutoSelectFilterPojo.merge(
                 adjustAutoSelectFilterRef,
-                rgAutoPlaceConfig == null ? null : rgAutoPlaceConfig.getApiData()
+                rgAutoPlaceConfig.getApiData()
             );
 
             for (ResourceDefinition rscDfn : rscGrp.getRscDfns(peerAccCtx.get()))

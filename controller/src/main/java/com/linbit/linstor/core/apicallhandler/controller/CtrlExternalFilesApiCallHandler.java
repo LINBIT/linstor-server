@@ -137,7 +137,7 @@ public class CtrlExternalFilesApiCallHandler
             Node node = ctrlApiDataLoader.loadNode(nodeName, false);
             ExternalFileName extFileName = LinstorParsingUtils.asExtFileName(fileName);
 
-            if (node != null && extFileName != null)
+            if (node != null)
             {
                 allowed = CtrlExternalFilesHelper.isPathWhitelisted(extFileName, node, peerAccCtx.get());
             }

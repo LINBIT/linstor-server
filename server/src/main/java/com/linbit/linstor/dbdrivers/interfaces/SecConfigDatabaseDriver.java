@@ -30,27 +30,13 @@ public interface SecConfigDatabaseDriver extends GenericDatabaseDriver<SecConfig
         public int compareTo(SecConfigDbEntry otherRef)
         {
             int cmp;
-            if (key == null)
+            if (otherRef == null)
             {
-                if (otherRef == null || otherRef.key == null)
-                {
-                    cmp = 0;
-                }
-                else
-                {
-                    cmp = -1;
-                }
+                cmp = 1;
             }
             else
             {
-                if (otherRef == null)
-                {
-                    cmp = 1;
-                }
-                else
-                {
-                    cmp = key.compareTo(otherRef.key);
-                }
+                cmp = key.compareTo(otherRef.key);
             }
             return cmp;
         }

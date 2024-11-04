@@ -653,10 +653,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 builder.putAllPeersConnected(peersConnected);
             }
             builder.setInUse(asProtoInUse(resourceState.getInUse()));
-            if (resourceState.getUpToDate() != null)
-            {
-                builder.setUpToDate(resourceState.getUpToDate());
-            }
+            builder.setUpToDate(resourceState.getUpToDate());
             Integer promotionScore = resourceState.getPromotionScore();
             if (promotionScore != null)
             {

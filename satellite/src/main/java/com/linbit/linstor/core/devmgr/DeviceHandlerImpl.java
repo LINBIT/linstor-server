@@ -1137,44 +1137,43 @@ public class DeviceHandlerImpl implements DeviceHandler
     private void notifyResourcesApplied(List<Resource> rscListNotifyApplied) throws ImplementationError
     {
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        if (ctrlPeer != null)
+        try
         {
-            try
-            {
-                Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
-                    storageLayer.getFreeSpaceOfAccessedStoagePools();
+            Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap = storageLayer
+                .getFreeSpaceOfAccessedStoagePools();
 
-                Map<StorPoolInfo, SpaceInfo> spaceInfoMap = new TreeMap<>();
+            Map<StorPoolInfo, SpaceInfo> spaceInfoMap = new TreeMap<>();
 
-                spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
+            spaceInfoQueryMap.forEach(
+                (storPool, either) -> either.consume(
                     spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
                     apiRcException -> errorReporter.reportError(apiRcException.getCause())
-                ));
+                )
+            );
 
-                // TODO: rework API answer
-                /*
-                 * Instead of sending single change, request and applied / deleted messages per
-                 * resource, the controller and satellite should use one message containing
-                 * multiple resources.
-                 * The final message regarding applied and/or deleted resource can so also contain
-                 * the new free spaces of the affected storage pools
-                 */
+            // TODO: rework API answer
+            /*
+             * Instead of sending single change, request and applied / deleted messages per
+             * resource, the controller and satellite should use one message containing
+             * multiple resources.
+             * The final message regarding applied and/or deleted resource can so also contain
+             * the new free spaces of the affected storage pools
+             */
 
-                for (Resource rsc : rscListNotifyApplied)
-                {
-                    ctrlPeer.sendMessage(
-                        interComSerializer
-                            .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
-                            .notifyResourceApplied(rsc, spaceInfoMap)
-                            .build(),
-                        InternalApiConsts.API_NOTIFY_RSC_APPLIED
-                    );
-                }
-            }
-            catch (AccessDeniedException accDeniedExc)
+            for (Resource rsc : rscListNotifyApplied)
             {
-                throw new ImplementationError(accDeniedExc);
+                ctrlPeer.sendMessage(
+                    interComSerializer
+                        .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
+                        .notifyResourceApplied(rsc, spaceInfoMap)
+                        .build(),
+                    InternalApiConsts.API_NOTIFY_RSC_APPLIED
+                );
             }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
         }
     }
 

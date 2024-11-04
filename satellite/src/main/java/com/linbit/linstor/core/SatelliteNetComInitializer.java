@@ -45,7 +45,7 @@ public final class SatelliteNetComInitializer
     private final Map<ServiceName, SystemService> systemServicesMap;
     private final StltConfig stltCfg;
 
-    public @Nullable TcpConnector netComSvc;
+    private @Nullable TcpConnector netComSvc;
 
     @Inject
     public SatelliteNetComInitializer(
@@ -296,5 +296,21 @@ public final class SatelliteNetComInitializer
             errorReporter.reportError(ioExc);
         }
         return success;
+    }
+
+    public void shutdown()
+    {
+        if (netComSvc != null)
+        {
+            netComSvc.shutdown();
+        }
+    }
+
+    public void awaitShutdown(long timeout) throws InterruptedException
+    {
+        if (netComSvc != null)
+        {
+            netComSvc.awaitShutdown(timeout);
+        }
     }
 }

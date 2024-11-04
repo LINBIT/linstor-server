@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.core.ControllerPeerConnectorImpl;
 import com.linbit.linstor.core.CoreModule;
@@ -65,25 +66,23 @@ class StltExternalFilesApiCallHandler
     {
         try
         {
+            @Nullable byte[] newContent = extFilePojo.getContent();
             ExternalFile localExtFile = extFileFactory.getInstanceSatellite(
                 apiCtx,
                 extFilePojo.getUuid(),
                 LinstorParsingUtils.asExtFileName(extFilePojo.getFileName()),
                 extFilePojo.getFlags(),
-                extFilePojo.getContent()
+                newContent
             );
 
             localExtFile.getFlags().resetFlagsTo(apiCtx, ExternalFile.Flags.restoreFlags(extFilePojo.getFlags()));
-            if (extFilePojo.getContent() != null && extFilePojo.getContent().length > 0)
+            if (newContent != null && newContent.length > 0)
             {
-                localExtFile.setContent(apiCtx, extFilePojo.getContent());
+                localExtFile.setContent(apiCtx, newContent);
                 localExtFile.setAlreadyWritten(false);
             }
 
-            if (
-                localExtFile.getContent(apiCtx) == null ||
-                !Arrays.equals(localExtFile.getContentCheckSum(apiCtx), extFilePojo.getContentChecksum())
-            )
+            if (!Arrays.equals(localExtFile.getContentCheckSum(apiCtx), extFilePojo.getContentChecksum()))
             {
                 deviceManager.getUpdateTracker().updateExternalFile(localExtFile.getUuid(), localExtFile.getName());
             }

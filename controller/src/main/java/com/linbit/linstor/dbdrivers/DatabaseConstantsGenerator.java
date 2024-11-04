@@ -2036,7 +2036,7 @@ public final class DatabaseConstantsGenerator
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((originalVersion == null) ? 0 : originalVersion.hashCode());
+            result = prime * result + originalVersion.hashCode();
             return result;
         }
 

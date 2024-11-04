@@ -692,7 +692,7 @@ public class ReconnectorTask implements Task
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((peer == null) ? 0 : peer.hashCode());
+            result = prime * result + peer.hashCode();
             return result;
         }
 

@@ -92,7 +92,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         offlineCtrlPeer = new PeerOffline(errorReporterRef, "controller", null);
         controllerPeer = offlineCtrlPeer;
 
-        // if we lose the connection to the current controller, we should set our ctrlPeer to null
+        // if we lose the connection to the current controller, we should set our ctrlPeer to offlineCtrlPeer
         // otherwise, once the controller reconnects, we send our "old" controller an "OtherController"
         // message.
         stltConnTracker.addClosingListener((peer, isCtrl) ->
@@ -139,26 +139,24 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
             // additional check for ctrlUuid in order to prevent "OtherController" response because of multiple
             // connections due to network-hicups. Unused connections will be closed soon anyways
-            if (controllerPeer != null)
+            if (!Objects.equals(ctrlUuidRef, ctrlUuid))
             {
-                if (!Objects.equals(ctrlUuidRef, ctrlUuid))
-                {
-                    controllerPeer.sendMessage(
-                        commonSerializer.onewayBuilder(InternalApiConsts.API_OTHER_CONTROLLER).build(),
-                        InternalApiConsts.API_OTHER_CONTROLLER
-                    );
-                }
-                else
-                {
-                    errorReporter.logDebug(
-                        "Not sending '%s' since the same controller connected again",
-                        InternalApiConsts.API_OTHER_CONTROLLER
-                    );
-                }
-                // If we don't actively close the connection here, it will take some time(or forever)
-                // to close it and the garbage collector starting freeing the objects
-                controllerPeer.closeConnection();
+                controllerPeer.sendMessage(
+                    commonSerializer.onewayBuilder(InternalApiConsts.API_OTHER_CONTROLLER).build(),
+                    InternalApiConsts.API_OTHER_CONTROLLER
+                );
             }
+            else
+            {
+                errorReporter.logDebug(
+                    "Not sending '%s' since the same controller connected again",
+                    InternalApiConsts.API_OTHER_CONTROLLER
+                );
+            }
+            // If we don't actively close the connection here, it will take some time(or forever)
+            // to close it and the garbage collector starting freeing the objects
+            controllerPeer.closeConnection();
+
             ctrlUuid = ctrlUuidRef;
             controllerPeer = controllerPeerRef;
 

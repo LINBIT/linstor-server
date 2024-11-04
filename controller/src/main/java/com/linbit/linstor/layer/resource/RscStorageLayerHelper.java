@@ -223,14 +223,7 @@ public class RscStorageLayerHelper extends
         for (StorageVlmPayload storageVlmPayload : payloadRef.storagePayload.values())
         {
             StorPool storPool = storageVlmPayload.storPool;
-            if (storPool != null)
-            {
-                neededStorPools.add(storPool);
-            }
-            else
-            {
-                resolveSp = true;
-            }
+            neededStorPools.add(storPool);
         }
 
         if (rscToggleDiskOrCreation || resolveSp)

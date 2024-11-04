@@ -1089,7 +1089,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     resourceStateEvent.get(),
                     ObjectIdentifier.resource(nodeName, rscName)
                 )
-                .skipUntil(usageState -> usageState.getUpToDate() != null && usageState.getUpToDate())
+                .skipUntil(usageState -> usageState.getUpToDate())
                 .next(),
             eventWaiter.waitForStream(
                     resourceStateEvent.get(),

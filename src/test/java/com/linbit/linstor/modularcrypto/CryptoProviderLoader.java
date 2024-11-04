@@ -25,11 +25,8 @@ public class CryptoProviderLoader
             try
             {
                 final Class<?> providerClass = Class.forName(providerName);
-                if (providerClass != null)
-                {
-                    Constructor<?> providerConstr = providerClass.getDeclaredConstructor();
-                    cryptoProvider = (ModularCryptoProvider) providerConstr.newInstance();
-                }
+                Constructor<?> providerConstr = providerClass.getDeclaredConstructor();
+                cryptoProvider = (ModularCryptoProvider) providerConstr.newInstance();
             }
             catch (IllegalAccessException | InstantiationException | InvocationTargetException |
                    NoSuchMethodException | ClassCastException exc)

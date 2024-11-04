@@ -527,10 +527,6 @@ public abstract class AbsBackupShippingService implements SystemService
                 shippingInfo.snapVlmDataFinishedShipping++;
                 if (portInUseRef != null)
                 {
-                    if (shippingInfo.alreadyInUse == null)
-                    {
-                        shippingInfo.alreadyInUse = new TreeSet<>();
-                    }
                     shippingInfo.alreadyInUse.add(portInUseRef);
                     shippingInfo.portsUsed.remove(portInUseRef);
                 }

@@ -1000,9 +1000,9 @@ public class ScheduleBackupService implements SystemService
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((remote == null) ? 0 : remote.getName().hashCode());
-            result = prime * result + ((rscDfn == null) ? 0 : rscDfn.getName().hashCode());
-            result = prime * result + ((schedule == null) ? 0 : schedule.getName().hashCode());
+            result = prime * result + remote.getName().hashCode();
+            result = prime * result + rscDfn.getName().hashCode();
+            result = prime * result + schedule.getName().hashCode();
             return result;
         }
 
@@ -1022,40 +1022,15 @@ public class ScheduleBackupService implements SystemService
                 return false;
             }
             ScheduledShippingConfig other = (ScheduledShippingConfig) obj;
-            if (remote == null)
-            {
-                if (other.remote != null)
-                {
-                    return false;
-                }
-            }
-            else if (other.remote == null || !remote.getName().equals(other.remote.getName()))
+            if (!remote.getName().equals(other.remote.getName()))
             {
                 return false;
             }
-            if (rscDfn == null)
-            {
-                if (other.rscDfn != null)
-                {
-                    return false;
-                }
-            }
-            else if (other.rscDfn == null || !rscDfn.getName().equals(other.rscDfn.getName()))
+            if (!rscDfn.getName().equals(other.rscDfn.getName()))
             {
                 return false;
             }
-            if (schedule == null)
-            {
-                if (other.schedule != null)
-                {
-                    return false;
-                }
-            }
-            else if (other.schedule == null || !schedule.getName().equals(other.schedule.getName()))
-            {
-                return false;
-            }
-            return true;
+            return schedule.getName().equals(other.schedule.getName());
         }
     }
 
