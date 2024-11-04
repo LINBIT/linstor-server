@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -55,13 +54,10 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
@@ -711,67 +707,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return sharedSPAlreadyInUse;
     }
 
-    private Set<AbsRscLayerObject<Resource>> getResourceLayerDataPriveleged(Resource rsc, DeviceLayerKind kind)
-    {
-        Set<AbsRscLayerObject<Resource>> rscDataSet;
-        try
-        {
-            rscDataSet = LayerRscUtils.getRscDataByLayer(rsc.getLayerData(apiCtx), kind);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return rscDataSet;
-    }
-
-    private void setStorPoolPrivileged(VlmProviderObject<Resource> vlmProviderObjectRef, StorPool storPool)
-    {
-        try
-        {
-            vlmProviderObjectRef.setStorPool(apiCtx, storPool);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
-    private void updateMetaStorPoolPrivileged(DrbdVlmData<Resource> drbdVlmDataRef)
-    {
-        try
-        {
-            drbdVlmDataRef.setExternalMetaDataStorPool(
-                ctrlDrbdLayerStackHelper.getMetaStorPool(
-                    (Volume) drbdVlmDataRef.getVolume(),
-                    apiCtx
-                )
-            );
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (InvalidNameException exc)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
-                    "The specified storage pool for external metadata '" + exc.invalidName + "' is invalid",
-                    false
-                )
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-    }
-
     // Restart from here when connection established and flag set
     private Flux<ApiCallRc> updateAndAdjustDisk(
         NodeName nodeName,
@@ -1226,40 +1161,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
     }
 
-    private void removeStorageLayerData(Resource rscRef)
-    {
-        try
-        {
-            List<AbsRscLayerObject<Resource>> storageDataList = LayerUtils.getChildLayerDataByKind(
-                rscRef.getLayerData(peerAccCtx.get()),
-                DeviceLayerKind.STORAGE
-            );
-            for (AbsRscLayerObject<Resource> rscLayerObject : storageDataList)
-            {
-                List<VlmProviderObject<Resource>> vlmDataList = new ArrayList<>(
-                    rscLayerObject.getVlmLayerObjects().values()
-                );
-                for (VlmProviderObject<Resource> vlmData : vlmDataList)
-                {
-                    rscLayerObject.remove(peerAccCtx.get(), vlmData.getVlmNr());
-                }
-            }
-
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "update the storage layer data of " + getRscDescription(rscRef),
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        catch (DatabaseException sqlExc)
-        {
-            throw new ApiDatabaseException(sqlExc);
-        }
-    }
-
     private void ensureNoSnapshots(Resource rsc)
     {
         try
@@ -1301,26 +1202,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 "set migration source for " + getRscDescription(rsc),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
-        }
-    }
-
-    private void setFlags(Resource rsc, Resource.Flags... flags)
-    {
-        try
-        {
-            rsc.getStateFlags().enableFlags(peerAccCtx.get(), flags);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "setting flags " + FlagsHelper.toStringList(Resource.Flags.class, FlagsHelper.getBits(flags)),
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
         }
     }
 

@@ -13,7 +13,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.io.Resources;
@@ -710,31 +709,5 @@ public class MigrationUtils
         }
 
         return sb.toString();
-    }
-
-    private static int[] getVersion(String str)
-    {
-        int[] ret;
-        Matcher matcher = VERSION_PATTERN.matcher(str);
-        if (matcher.find())
-        {
-            String grp1 = matcher.group(1);
-            String grp2 = matcher.group(2);
-            String grp3 = matcher.group(3);
-
-            boolean hasGrp3 = grp3 != null && !grp3.trim().isEmpty();
-            ret = new int[hasGrp3 ? 3 : 2];
-            ret[0] = Integer.parseInt(grp1);
-            ret[1] = Integer.parseInt(grp2);
-            if (hasGrp3)
-            {
-                ret[2] = Integer.parseInt(grp3);
-            }
-        }
-        else
-        {
-            throw new ImplementationError("Failed to determine version from given string: " + str);
-        }
-        return ret;
     }
 }

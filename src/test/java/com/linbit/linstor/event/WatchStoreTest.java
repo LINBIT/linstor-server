@@ -1,15 +1,15 @@
 package com.linbit.linstor.event;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import reactor.core.Disposable;
-
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 
 import java.util.UUID;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import reactor.core.Disposable;
 
 
 public class WatchStoreTest
@@ -90,10 +90,5 @@ public class WatchStoreTest
         Mockito.verify(disposable).dispose();
         Mockito.verify(otherDisposable, Mockito.never()).dispose();
         Mockito.verify(otherPeerDisposable, Mockito.never()).dispose();
-    }
-
-    private Watch makeWatch(EventIdentifier resourceEventIdentifierRef)
-    {
-        return new Watch(UUID.randomUUID(), null, 0, resourceEventIdentifierRef);
     }
 }

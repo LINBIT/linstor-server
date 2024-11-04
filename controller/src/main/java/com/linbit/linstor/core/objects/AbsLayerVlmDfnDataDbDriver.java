@@ -24,8 +24,6 @@ public abstract class AbsLayerVlmDfnDataDbDriver<
     VLM_DFN_DATA extends VlmDfnLayerObject>
     extends AbsDatabaseDriver<VLM_DFN_DATA, Void, VlmDfnParentObjects<RSC_DFN_DATA>>
 {
-    protected final AccessContext dbCtx;
-
     static class VlmDfnParentObjects<RSC_DFN_DATA_INNER extends RscDfnLayerObject>
     {
         final Map<ResourceName, ResourceDefinition> rscDfnMap;
@@ -52,7 +50,6 @@ public abstract class AbsLayerVlmDfnDataDbDriver<
     )
     {
         super(dbCtxRef, errorReporterRef, tableRef, dbEngineRef);
-        dbCtx = dbCtxRef;
     }
 
     @Override

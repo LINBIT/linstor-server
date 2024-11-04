@@ -89,14 +89,6 @@ public class CmdChangeObjProt extends BaseDebugCmd
     private static final String SO_CFGVAL           = "CFGVAL";
     private static final String SO_SHUTDOWN         = "SHUTDOWN";
 
-    private static final String LBL_NODE_DIR        = "nodes directory";
-    private static final String LBL_RSCDFN_DIR      = "resource definitions directory";
-    private static final String LBL_STORPOOLDFN_DIR = "storage pool definitions directory";
-    private static final String LBL_CFGVAL          = "application configuration values";
-    private static final String LBL_SHUTDOWN        = "application shutdown";
-
-    private static final String PFX_ARTICLE         = "the ";
-
     static
     {
         PARAMETER_DESCRIPTIONS.put(

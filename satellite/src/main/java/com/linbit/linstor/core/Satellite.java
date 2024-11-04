@@ -296,7 +296,6 @@ public final class Satellite
     {
         try
         {
-            Path varDrbdPath = Paths.get(platformStlt.sysRoot() + LinStor.CONFIG_PATH);
             Files.createDirectories(Paths.get(platformStlt.sysRoot() + LinStor.BACKUP_PATH));
 
         }

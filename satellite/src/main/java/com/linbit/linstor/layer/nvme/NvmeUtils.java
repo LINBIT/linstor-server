@@ -708,24 +708,6 @@ public class NvmeUtils
     }
 
     /**
-     * Sets the exists flag on the given {@link NvmeRscData} as well as on all its child-{@link NvmeVlmData}
-     * objects
-     *
-     * @param nvmeRscDataRef
-     * @param existsRef
-     *
-     * @throws DatabaseException
-     */
-    private void setExistsDeep(NvmeRscData<Resource> nvmeRscDataRef, boolean existsRef) throws DatabaseException
-    {
-        nvmeRscDataRef.setExists(existsRef);
-        for (NvmeVlmData<Resource> nvmeVlmData : nvmeRscDataRef.getVlmLayerObjects().values())
-        {
-            nvmeVlmData.setExists(existsRef);
-        }
-    }
-
-    /**
      * Creates a new directory for the given file path, sets the appropriate backing device and enables the namespace
      *
      * @param nvmeVlmData

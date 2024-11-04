@@ -54,7 +54,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
-import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.tasks.StltRemoteCleanupTask;
 import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
@@ -359,10 +358,6 @@ public class CtrlBackupL2LSrcApiCallHandler
         }
         else
         {
-            Map<ExtTools, Version> requiredExtTools = new HashMap<>();
-            requiredExtTools.put(ExtTools.SOCAT, null);
-            Map<ExtTools, Version> optionalExtTools = new HashMap<>();
-            optionalExtTools.put(ExtTools.ZSTD, null);
             data.setResetData(response.resetData);
             data.setDstBaseSnapName(response.dstBaseSnapName);
             data.setDstActualNodeName(response.dstActualNodeName);

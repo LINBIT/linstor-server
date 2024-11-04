@@ -69,7 +69,7 @@ public class DrbdResource
         }
     }
 
-    protected final ResourceName resName;
+    protected final @Nullable ResourceName resName;
     protected final String resNameStr;
     protected Role resRole;
     protected @Nullable Boolean suspendedUser;
@@ -102,7 +102,7 @@ public class DrbdResource
         return rscName;
     }
 
-    public ResourceName getResName()
+    public @Nullable ResourceName getResName()
     {
         return resName;
     }
@@ -146,13 +146,16 @@ public class DrbdResource
             );
         }
         DrbdResource drbdResource = new DrbdResource(name);
-        ResourceDefinition rscDfn = rscDfnMap.get(drbdResource.resName);
-        if (rscDfn != null)
+        if (drbdResource.resName != null)
         {
-            drbdResource.setKnownByLinstor(
-                rscDfn.getName().displayValue
-                    .equals(name)
-            );
+            ResourceDefinition rscDfn = rscDfnMap.get(drbdResource.resName);
+            if (rscDfn != null)
+            {
+                drbdResource.setKnownByLinstor(
+                    rscDfn.getName().displayValue
+                        .equals(name)
+                );
+            }
         }
         return drbdResource;
     }

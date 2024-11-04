@@ -166,9 +166,6 @@ public class CtrlRscLayerDataFactory
 
             AbsRscLayerObject<Resource> rootObj = null;
 
-            List<LayerResult<Resource>> currentLayerDataList = new ArrayList<>();
-            currentLayerDataList.add(new LayerResult<>(null)); // root object
-
             rootObj = ensureDataRec(rscRef, payload, layerList, new ChildResourceData(""), null);
 
             rscRef.setLayerData(apiCtx, rootObj);

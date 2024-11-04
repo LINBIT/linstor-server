@@ -22,7 +22,7 @@ import com.linbit.linstor.dbdrivers.interfaces.SecTypeCtrlDatabaseDriver.SecType
 import com.linbit.linstor.dbdrivers.interfaces.SecTypeRulesCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecTypeRulesCtrlDatabaseDriver.SecTypeRulesParent;
 import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -123,14 +123,14 @@ public class SecDatabaseLoader
         Map<ObjectProtection, SecObjProtInitObj> loadedObjProtMap = secObjProtDriver.loadAll(
             new SecObjProtParent(rolesMapByName, idsMapByName, secTypesMapByName)
         );
-        Map<String, Pair<ObjectProtection, Map<RoleName, AccessControlEntry>>> objProtMapByObjPath = new TreeMap<>();
+        Map<String, PairNonNull<ObjectProtection, Map<RoleName, AccessControlEntry>>> objProtMapByObjPath = new TreeMap<>();
         for (Map.Entry<ObjectProtection, SecObjProtInitObj> entry : loadedObjProtMap.entrySet())
         {
             ObjectProtection objProt = entry.getKey();
             SecObjProtInitObj init =  entry.getValue();
             objProtMapByObjPath.put(
                 init.getObjPath(),
-                new Pair<>(objProt, init.getAclBackingMap())
+                new PairNonNull<>(objProt, init.getAclBackingMap())
             );
         }
 

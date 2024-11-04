@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @EtcdMigration(
@@ -140,15 +139,6 @@ public class Migration_33_CleanupOrphanedAcls extends BaseEtcdMigration
             ret = ""; // so we can ignore the nullcheck when adding to the "needed objPaths" set
         }
         return ret;
-    }
-
-    private Function<String, String> getPkToObjProtFunc(BiFunction<String, String, String> funcRef)
-    {
-        return composedPk ->
-        {
-            String[] pks = composedPk.split(":");
-            return funcRef.apply(pks[0], pks[1]);
-        };
     }
 
     private Collection<String> getGenericObjProt(

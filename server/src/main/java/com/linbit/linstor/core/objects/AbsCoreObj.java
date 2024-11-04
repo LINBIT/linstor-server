@@ -84,8 +84,5 @@ public abstract class AbsCoreObj<C extends AbsCoreObj<C>> extends BaseTransactio
     @Override
     public abstract boolean equals(Object obj);
 
-    @Override
-    public abstract int compareTo(C oRef);
-
     protected abstract String toStringImpl();
 }

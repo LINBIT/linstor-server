@@ -1853,10 +1853,6 @@ public abstract class AbsStorageProvider<
         }
     }
 
-    @Override
-    public abstract LocalPropsChangePojo checkConfig(StorPoolInfo storPool)
-        throws StorageException, AccessDeniedException;
-
     protected void markAllocGranAsChangedIfNeeded(
         Long extentSizeInKibRef,
         StorPoolInfo storPoolRef,

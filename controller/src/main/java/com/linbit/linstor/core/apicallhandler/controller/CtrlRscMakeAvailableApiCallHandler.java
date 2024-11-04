@@ -530,26 +530,6 @@ public class CtrlRscMakeAvailableApiCallHandler
         }
     }
 
-    private void disableFlag(Resource rsc, Flags... flags)
-    {
-        try
-        {
-            rsc.getStateFlags().disableFlags(peerCtxProvider.get(), flags);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "disabling flags of " + CtrlRscApiCallHandler.getRscDescription(rsc),
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-    }
-
     private Flux<ApiCallRc> placeAnywhere(
         String nodeNameRef,
         ResourceDefinition rscDfnRef,

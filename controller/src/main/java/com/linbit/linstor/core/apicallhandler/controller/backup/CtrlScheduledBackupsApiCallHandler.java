@@ -272,9 +272,7 @@ public class CtrlScheduledBackupsApiCallHandler
         throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
     {
         Flux<ApiCallRc> deleteFlux = Flux.empty();
-        Map<LocalDateTime, String> backupsToCheck = new TreeMap<>();
-
-        backupsToCheck = getFullBackupS3Keys(
+        Map<LocalDateTime, String> backupsToCheck = getFullBackupS3Keys(
             rscName, remote, schedule.getName().displayValue
         );
         Integer keepRemote = schedule.getKeepRemote(peerAccCtx.get());

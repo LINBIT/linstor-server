@@ -1662,17 +1662,13 @@ public class PropsContainerTest extends GenericDbBase
     @Test(expected = IllegalArgumentException.class)
     public void testMapPutNullKey() throws Throwable
     {
-        final String insertedKey = null;
-        final String insertedValue = "new value";
-        rootMap.put(insertedKey, insertedValue);
+        rootMap.put(null, "new value");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testMapPutNullValue() throws Throwable
     {
-        final String insertedKey = "new key";
-        final String insertedValue = null;
-        rootMap.put(insertedKey, insertedValue);
+        rootMap.put("new key", null);
     }
 
     @Test

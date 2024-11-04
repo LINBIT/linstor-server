@@ -22,7 +22,6 @@ import java.util.Map;
 
 @Singleton
 public class DbEtcdPersistence extends BaseDbAccessor<ControllerETCDDatabase>
-    implements DbAccessor<ControllerETCDDatabase>
 {
     @Inject
     public DbEtcdPersistence(

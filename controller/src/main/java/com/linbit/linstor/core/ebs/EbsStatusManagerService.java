@@ -475,15 +475,6 @@ public class EbsStatusManagerService implements SystemService
             DescribeVolumesResult describeVolumesResult = client.describeVolumes(
                 new DescribeVolumesRequest().withVolumeIds(currentVlmIdList)
             );
-            List<String> vlmIdsFromAmazon = new ArrayList<>();
-            for (Volume amaVlm : describeVolumesResult.getVolumes())
-            {
-                EbsData<Resource> vlmData = vlmsMapCopy.get(amaVlm.getVolumeId());
-                if (vlmData != null)
-                {
-                    vlmIdsFromAmazon.add(amaVlm.getVolumeId());
-                }
-            }
 
             DescribeVolumesModificationsResult describeVlmMods = client.describeVolumesModifications(
                 new DescribeVolumesModificationsRequest()

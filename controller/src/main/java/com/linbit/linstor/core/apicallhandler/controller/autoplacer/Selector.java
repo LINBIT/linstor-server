@@ -152,7 +152,7 @@ class Selector
                                 Version storageVlmDrbdVersion = drbdInfo == null ? null : drbdInfo.getVersion();
                                 if (!storageVlmProviderKind.equals(DeviceProviderKind.DISKLESS))
                                 {
-                                    Set<Entry<DeviceProviderKind, List</* DrbdVersion */ Version>>> entrySet = alreadyDeployedKindsAndVersion
+                                    Set<Entry<DeviceProviderKind, List<Version>>> entrySet = alreadyDeployedKindsAndVersion
                                         .entrySet();
                                     for (Entry<DeviceProviderKind, List<Version>> entry : entrySet)
                                     {

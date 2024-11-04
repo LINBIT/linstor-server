@@ -60,7 +60,7 @@ public class DisklessProvider implements DeviceProvider
     }
 
     @Override
-    public void updateAllocatedSize(VlmProviderObject<Resource> vlmDataRef)
+    public void updateAllocatedSize(VlmProviderObject<Resource> vlmObjRef)
     {
         // no-op
     }

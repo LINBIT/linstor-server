@@ -195,9 +195,6 @@ public class CtrlVlmGrpApiCallHandler
 
     public List<VolumeGroupApi> listVolumeGroups(String rscGrpNameRef, @Nullable Integer vlmNrRef)
     {
-        Map<String, String> objRefs = new TreeMap<>();
-        objRefs.put(ApiConsts.KEY_VLM_GRP, rscGrpNameRef);
-
         List<VolumeGroupApi> ret;
         try
         {

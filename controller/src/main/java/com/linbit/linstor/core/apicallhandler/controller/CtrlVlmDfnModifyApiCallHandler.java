@@ -76,8 +76,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -312,9 +310,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             updateForResize = true;
         }
 
-        boolean sizeChanges = size != null;
         boolean shrink = false;
-        if (sizeChanges)
+        if (size != null)
         {
             long diffSize = size - getVlmDfnSize(vlmDfn);
 
@@ -345,7 +342,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         if (hasEbsResource(vlmDfn))
         {
-            ensureAllowedEbsAction(vlmDfn, sizeChanges, changedEbsPropsWithAction);
+            ensureAllowedEbsAction(vlmDfn, size != null, changedEbsPropsWithAction);
         }
 
         Flux<ApiCallRc> updateResponses = Flux.empty();
@@ -487,7 +484,10 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             }
             if (!passModified)
             {
-                responses.addEntry("No resources have any luks layer, no passphrase has been changed.", ApiConsts.WARN_NOT_FOUND);
+                responses.addEntry(
+                    "No resources have any luks layer, no passphrase has been changed.",
+                    ApiConsts.WARN_NOT_FOUND
+                );
             }
         }
         catch (LinStorException | InvalidValueException exc)
@@ -613,74 +613,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 throw new ApiDatabaseException(exc);
             }
         }
-    }
-
-    private boolean handleSpecialProps(
-        Props vlmDfnPropsRef,
-        Map<String, String> overridePropsRef,
-        Set<String> deletePropKeysRef,
-        Set<String> deleteNamespacesRef
-    )
-    {
-        boolean changed = false;
-        try
-        {
-            Iterator<Entry<String, String>> entryIt = overridePropsRef.entrySet().iterator();
-            while (entryIt.hasNext())
-            {
-                Map.Entry<String, String> entry = entryIt.next();
-                String key = entry.getKey();
-                if (key.startsWith(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS))
-                {
-                    String value = entry.getValue();
-                    changed |= !Objects.equals(vlmDfnPropsRef.setProp(key, value), value);
-                    // remove entry from map so that the normal fillProperties method does not complain
-                    entryIt.remove();
-                }
-            }
-
-            Iterator<String> delKeyIt = deletePropKeysRef.iterator();
-            while (delKeyIt.hasNext())
-            {
-                String delKey = delKeyIt.next();
-                if (delKey.startsWith(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS))
-                {
-                    changed |= vlmDfnPropsRef.removeProp(delKey) != null;
-                    // remove entry from set so that the normal fillProperties method does not complain
-                    delKeyIt.remove();
-                }
-            }
-
-            Iterator<String> delNameSpcIt = deleteNamespacesRef.iterator();
-            while (delNameSpcIt.hasNext())
-            {
-                String delNameSpc = delNameSpcIt.next();
-                if (delNameSpc.startsWith(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS))
-                {
-                    changed |= vlmDfnPropsRef.removeNamespace(delNameSpc);
-                    // remove entry from set so that the normal fillProperties method does not complain
-                    delNameSpcIt.remove();
-                }
-            }
-
-        }
-        catch (InvalidKeyException | InvalidValueException exc)
-        {
-            throw new ApiException(exc);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "Handling properties",
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-        return changed;
     }
 
     /**
@@ -1335,19 +1267,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 "check if a flag is set",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
-        }
-        return isFlagSet;
-    }
-
-    private boolean isFlagSet(Flags[] vlmDfnFlagsRef, Flags flag)
-    {
-        boolean isFlagSet = false;
-        for (Flags setFlag : vlmDfnFlagsRef)
-        {
-            if (setFlag.equals(flag))
-            {
-                isFlagSet = true;
-            }
         }
         return isFlagSet;
     }

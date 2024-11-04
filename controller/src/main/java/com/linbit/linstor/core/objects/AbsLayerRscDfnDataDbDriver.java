@@ -21,8 +21,6 @@ public abstract class AbsLayerRscDfnDataDbDriver<
     RSC_DATA extends AbsRscLayerObject<?>>
     extends AbsDatabaseDriver<RSC_DFN_DATA, List<RSC_DATA>, ParentObjects>
 {
-    protected final AccessContext dbCtx;
-
     AbsLayerRscDfnDataDbDriver(
         AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
@@ -31,7 +29,6 @@ public abstract class AbsLayerRscDfnDataDbDriver<
     )
     {
         super(dbCtxRef, errorReporterRef, tableRef, dbEngineRef);
-        dbCtx = dbCtxRef;
     }
 
     @Override

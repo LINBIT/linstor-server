@@ -1418,48 +1418,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
-    private <RSC extends AbsResource<RSC>> void phaseRequestSharedLock(
-        Set<Resource> resourcesToDispatchRef,
-        Set<Snapshot> snapshotsToDispatchRef
-    )
-        throws SvcCondException
-    {
-        boolean waitMsg = true;
-
-        try
-        {
-            errLog.logTrace(
-                "Checking shared locks required for resources: %s, snapshots: %s",
-                resourcesToDispatchRef,
-                snapshotsToDispatchRef
-            );
-            Set<StorPool> allStorPools = new TreeSet<>();
-            for (Resource rsc : resourcesToDispatchRef)
-            {
-                allStorPools.addAll(LayerVlmUtils.getStorPools(rsc, wrkCtx, true));
-            }
-            for (Snapshot snap : snapshotsToDispatchRef)
-            {
-                allStorPools.addAll(LayerVlmUtils.getStorPools(snap, wrkCtx, true));
-            }
-
-            TreeSet<SharedStorPoolName> requestingLocks = new TreeSet<>();
-            for (StorPool sp : allStorPools)
-            {
-                if (sp.isShared())
-                {
-                    requestingLocks.add(sp.getSharedStorPoolName());
-                }
-            }
-
-            phaseRequestSharedLock(requestingLocks);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
     @Override
     public void sharedStorPoolLocksGranted(List<String> sharedStorPoolLocksListRef)
     {

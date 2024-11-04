@@ -453,16 +453,13 @@ public final class DatabaseConstantsGenerator
 
         mainBuilder = new StringBuilder();
         TreeSet<GeneratorVersion> olderVersions = new TreeSet<>();
-        TreeSet<GeneratorVersion> allVersions = new TreeSet<>();
         for (String olderVersion : allVersionsRef)
         {
             GeneratorVersion version = getVersion(olderVersion);
             olderVersions.add(version);
-            allVersions.add(version);
         }
         GeneratorVersion curVer = getVersion(currentVersionStrRef);
         olderVersions.remove(curVer);
-        allVersions.add(curVer);
 
         Set<GeneratedCrdJavaClass> javaClasses = new HashSet<>();
         Set<GeneratedResources> resources = new HashSet<>();

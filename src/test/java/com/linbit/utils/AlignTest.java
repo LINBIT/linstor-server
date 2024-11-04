@@ -41,11 +41,7 @@ public class AlignTest
         test.ceiling(data.value);
     }
 
-    @SuppressWarnings(
-        {
-            "unused", "checkstyle:magicnumber"
-        }
-    )
+    @SuppressWarnings("checkstyle:magicnumber")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private Collection<AlignConfiguration> generateParamsValid()
     {
@@ -64,12 +60,16 @@ public class AlignTest
             new AlignConfiguration(3, 95367, 95367, 95367),
             new AlignConfiguration(1234, 98, 0, 1234),
             new AlignConfiguration(1234, 987654321, 987654112, 987655346),
-            new AlignConfiguration(Long.MAX_VALUE / 2, (Long.MAX_VALUE / 2) + 60, Long.MAX_VALUE / 2, Long.MAX_VALUE - 1)
+            new AlignConfiguration(
+                Long.MAX_VALUE / 2,
+                (Long.MAX_VALUE / 2) + 60,
+                Long.MAX_VALUE / 2,
+                Long.MAX_VALUE - 1
+            )
         };
         return Arrays.asList(data);
     }
 
-    @SuppressWarnings("unused")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private Collection<Long> generateParamsInvalidBasis()
     {
@@ -80,7 +80,6 @@ public class AlignTest
         return Arrays.asList(data);
     }
 
-    @SuppressWarnings("unused")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private Collection<AlignConfiguration> generateParamsInvalidArguments()
     {

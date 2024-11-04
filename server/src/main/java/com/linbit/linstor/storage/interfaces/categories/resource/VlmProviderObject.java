@@ -102,6 +102,8 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
 
     VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException;
 
+    // TODO: remove the nullable from this method and every overriding method once the sb-issue regarding nullable on
+    // generic types is solved. Issue link: https://github.com/spotbugs/spotbugs/issues/3340
     @Nullable
     StorPool getStorPool();
 

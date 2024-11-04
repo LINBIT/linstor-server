@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.ControllerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclCtrlDatabaseDriver.SecObjProtAclParent;
@@ -7,7 +8,7 @@ import com.linbit.linstor.security.AccessControlEntry;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.RoleName;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.util.Map;
 
@@ -16,11 +17,11 @@ public interface SecObjProtAclCtrlDatabaseDriver extends SecObjProtAclDatabaseDr
 {
     class SecObjProtAclParent
     {
-        private final Map<String /* ObjPath */, Pair<ObjectProtection, Map<RoleName, AccessControlEntry>>> objProtMap;
+        private final Map<String, PairNonNull<ObjectProtection, Map<RoleName, AccessControlEntry>>> objProtMap;
         private final Map<RoleName, Role> roles;
 
         public SecObjProtAclParent(
-            Map<String, Pair<ObjectProtection, Map<RoleName, AccessControlEntry>>> objProtMapRef,
+            Map<String, PairNonNull<ObjectProtection, Map<RoleName, AccessControlEntry>>> objProtMapRef,
             Map<RoleName, Role> rolesRef
         )
         {
@@ -33,9 +34,18 @@ public interface SecObjProtAclCtrlDatabaseDriver extends SecObjProtAclDatabaseDr
             return roles.get(roleNameRef);
         }
 
-        public @Nullable Map<RoleName, AccessControlEntry> getParentAcl(String objPathRef)
+        public Map<RoleName, AccessControlEntry> getParentAcl(String objPathRef)
         {
-            return objProtMap.get(objPathRef).objB;
+            @Nullable PairNonNull<ObjectProtection, Map<RoleName, AccessControlEntry>> objProtMapRef = objProtMap.get(
+                objPathRef
+            );
+            if (objProtMapRef == null)
+            {
+                throw new ImplementationError(
+                    "Object path " + objPathRef + " does not have an entry in the objProtMap"
+                );
+            }
+            return objProtMapRef.objB;
         }
     }
 }

@@ -76,19 +76,6 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
-    public void mergeLayerData(Resource rscRef, RscLayerDataApi rscLayerDataPojoRef, boolean remoteResourceRef)
-    {
-        try
-        {
-            super.mergeLayerData(rscRef, rscLayerDataPojoRef, remoteResourceRef);
-        }
-        catch (NullPointerException npe)
-        {
-            throw new ImplementationError("Received unknown object from satellite", npe);
-        }
-    }
-
-    @Override
     protected DrbdRscDfnData<Resource> mergeOrCreateDrbdRscDfnData(
         Resource rsc,
         DrbdRscDfnPojo drbdRscDfnPojo

@@ -624,11 +624,6 @@ public class ExosRestClient
         return new PriorityProps(localNodeProps, props);
     }
 
-    private String getProp(PriorityProps prioProps, String key)
-    {
-        return getProp(prioProps, key, null);
-    }
-
     private String getProp(PriorityProps prioProps, String key, String dflt)
     {
         return prioProps.getProp(key, "", dflt);

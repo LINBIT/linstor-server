@@ -85,7 +85,6 @@ import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteCtrlDatabaseDrive
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.AbsRscLayerHelper;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
-import com.linbit.linstor.layer.snapshot.CtrlSnapLayerDataFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -174,7 +173,6 @@ public class DatabaseLoader implements DatabaseDriver
     private final EbsRemoteCtrlDatabaseDriver ebsRemoteDriver;
     private final ScheduleCtrlDatabaseDriver scheduleDriver;
     private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
-    private final Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelper;
 
     private final Props ctrlConf;
     private final Props stltConf;
@@ -224,7 +222,6 @@ public class DatabaseLoader implements DatabaseDriver
         EbsRemoteCtrlDatabaseDriver ebsRemoteDriverRef,
         ScheduleCtrlDatabaseDriver scheduleDriverRef,
         Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
-        Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelperRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
         CoreModule.NodesMap nodesMapRef,
@@ -271,7 +268,6 @@ public class DatabaseLoader implements DatabaseDriver
         ebsRemoteDriver = ebsRemoteDriverRef;
         scheduleDriver = scheduleDriverRef;
         ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
-        ctrlSnapLayerDataHelper = ctrlSnapLayerDataHelperRef;
         ctrlConf = ctrlConfRef;
         stltConf = stltConfRef;
 
@@ -432,14 +428,6 @@ public class DatabaseLoader implements DatabaseDriver
             }
             // loading free space managers
             Map<SharedStorPoolName, FreeSpaceMgr> tmpFreeSpaceMgrMap = storPoolDriver.getAllLoadedFreeSpaceMgrs();
-
-            // temporary storPool map
-            Map<Pair<NodeName, StorPoolName>, StorPool> tmpStorPoolMap =
-                mapByName(loadedStorPools, storPool -> new Pair<>(
-                    storPool.getNode().getName(),
-                    storPool.getName()
-                )
-            );
 
             // loading resources
             Map<AbsResource<Resource>, Resource.InitMaps> loadedAbsResources =
@@ -790,14 +778,6 @@ public class DatabaseLoader implements DatabaseDriver
             List<DeviceLayerKind> layerStack = LayerUtils.getLayerStack(rsc, dbCtx);
             rscLayerDataHelper.ensureStackDataExists(rsc, layerStack, payload);
         }
-        // CtrlSnapLayerDataFactory snapLayerDataHelper = ctrlSnapLayerDataHelper.get();
-        // for (Snapshot snap : snapshotsWithLayerData)
-        // {
-        // LayerPayload payload = new LayerPayload();
-        // // initialize all non-persisted, but later serialized variables
-        // List<DeviceLayerKind> layerStack = LayerUtils.getLayerStack(snap, dbCtx);
-        // snapLayerDataHelper.ensureStackDataExists(snap, layerStack, payload);
-        // }
     }
 
     private ParentObjects buildLayerParentObjects(

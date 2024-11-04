@@ -1372,6 +1372,7 @@ public class BitmapPool implements NumberPool
         }
     }
 
+    // TODO: remove this warning once the spotbugs-issue https://github.com/spotbugs/spotbugs/issues/1509 is resolved
     @SuppressFBWarnings("UC_USELESS_OBJECT")
     private void poolInit()
     {

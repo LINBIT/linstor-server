@@ -524,55 +524,6 @@ public class SnapshotShippingInternalApiCallHandler
         }
     }
 
-    private <T> Flux<T> deleteSnapshot(String rscNameRef, String snapNameRef)
-    {
-        return scopeRunner
-            .fluxInTransactionalScope(
-                "Deleting received and merged snapshot",
-                lockGuardFactory.create()
-                    .read(LockObj.NODES_MAP)
-                    .write(LockObj.RSC_DFN_MAP).buildDeferred(),
-                () -> deleteSnapshotInTransaction(rscNameRef, snapNameRef)
-            );
-    }
-
-    private <T> Flux<T> deleteSnapshotInTransaction(String rscNameRef, String snapNameRef)
-    {
-        Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(
-            peerProvider.get().getNode(),
-            ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true)
-        );
-        deleteSnapshotPrivileged(snapshot);
-        ctrlTransactionHelper.commit();
-        return Flux.empty();
-    }
-
-    private void deleteSnapshotPrivileged(Snapshot snapRef)
-    {
-        try
-        {
-            snapRef.delete(apiCtx);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException exc)
-        {
-            String errorMessage = String.format(
-                "A database error occurred while trying delete snapshot after shipping shipping of " +
-                    "resource: %s",
-                snapRef.getResourceName().displayValue
-            );
-            errorReporter.reportError(
-                exc,
-                apiCtx,
-                peerProvider.get(),
-                errorMessage
-            );
-        }
-    }
-
     public void cleanBlacklistPorts()
     {
         for (Integer port : blacklistPorts)

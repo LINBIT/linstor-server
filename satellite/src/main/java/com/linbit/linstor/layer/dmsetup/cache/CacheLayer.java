@@ -43,7 +43,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 public class CacheLayer implements DeviceLayer
@@ -260,20 +259,6 @@ public class CacheLayer implements DeviceLayer
                 );
                 if (shouldVlmExist)
                 {
-                    PriorityProps prioProps;
-                    {
-                        ResourceDefinition rscDfn = vlm.getResourceDefinition();
-                        ResourceGroup rscGrp = rscDfn.getResourceGroup();
-                        prioProps = new PriorityProps(
-                            vlm.getProps(storDriverAccCtx),
-                            vlm.getVolumeDefinition().getProps(storDriverAccCtx),
-                            rscDfn.getProps(storDriverAccCtx),
-                            rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmData.getVlmNr()),
-                            rscGrp.getProps(storDriverAccCtx),
-                            localNodeProps,
-                            stltConfAccessor.getReadonlyProps()
-                        );
-                    }
                     if (!vlmData.exists())
                     {
                         VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
@@ -284,9 +269,21 @@ public class CacheLayer implements DeviceLayer
                             RscLayerSuffixes.SUFFIX_CACHE_META
                         );
 
-                        Map<String, String> dmsetupPolicyArgsMap = prioProps.renderRelativeMap(
-                            ApiConsts.NAMESPC_CACHE_POLICY_ARGS
-                        );
+                        // TODO: properly use dmsetupPolicyArgsMap
+                        // ResourceDefinition rscDfn = vlm.getResourceDefinition();
+                        // ResourceGroup rscGrp = rscDfn.getResourceGroup();
+                        // PriorityProps prioProps = new PriorityProps(
+                        // vlm.getProps(storDriverAccCtx),
+                        // vlm.getVolumeDefinition().getProps(storDriverAccCtx),
+                        // rscDfn.getProps(storDriverAccCtx),
+                        // rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmData.getVlmNr()),
+                        // rscGrp.getProps(storDriverAccCtx),
+                        // localNodeProps,
+                        // stltConfAccessor.getReadonlyProps()
+                        // );
+                        // Map<String, String> dmsetupPolicyArgsMap = prioProps.renderRelativeMap(
+                        // ApiConsts.NAMESPC_CACHE_POLICY_ARGS
+                        // );
 
                         String policyArgStr = ""; // for now
                         int policyArgsCount = MkfsUtils.shellSplit(policyArgStr).size();

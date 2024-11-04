@@ -443,15 +443,6 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         return ret;
     }
 
-    private PriorityProps getPrioProps(StorPool spRef) throws AccessDeniedException
-    {
-        return new PriorityProps(
-            spRef.getProps(storDriverAccCtx),
-            localNodeProps,
-            stltConfigAccessor.getReadonlyProps()
-        );
-    }
-
     protected PriorityProps getPrioProps(EbsData<Resource> vlmDataRef) throws AccessDeniedException
     {
         Volume vlm = (Volume) vlmDataRef.getVolume();

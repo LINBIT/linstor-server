@@ -465,7 +465,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         {
             String backingFile = entry.getKey();
             // for every resource we found via losetup, delete its entry from this map
-            FileData<Resource> fileData = backingFileToFileDataMap.remove(backingFile);
+            backingFileToFileDataMap.remove(backingFile);
 
             LOSETUP_DEVICES.put(entry.getValue().loPath.toString(), backingFile);
         }

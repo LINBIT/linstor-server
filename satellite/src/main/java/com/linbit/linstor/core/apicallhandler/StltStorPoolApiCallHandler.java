@@ -367,18 +367,6 @@ class StltStorPoolApiCallHandler
         return propsChanged;
     }
 
-    private void checkUuid(Node node, StorPoolPojo storPoolRaw)
-        throws DivergentUuidsException
-    {
-        checkUuid(
-            node.getUuid(),
-            storPoolRaw.getNodeUuid(),
-            "Node",
-            node.getName().displayValue,
-            "(unknown)"
-        );
-    }
-
     private void checkUuid(StorPool storPool, StorPoolPojo storPoolRaw)
         throws DivergentUuidsException, AccessDeniedException
     {

@@ -109,17 +109,15 @@ public class SpdkUtils
                     final String path = String.format(SPDK_PATH_PREFIX + "%s/%s", vgStr, identifier);
                     final long size = element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_NUM_BLOCKS).asLong();
                     final float dataPercent = SPDK_DEFAULT_DATA_PERCENT;
-                    final String attributes = null;
-                    final String thinPoolStr = null;
 
                     final LvsInfo state = new LvsInfo(
                         vgStr,
-                        thinPoolStr,
+                        null,
                         identifier,
                         path,
                         size,
                         dataPercent,
-                        attributes
+                        null
                     );
                     infoByIdentifier.put(vgStr + File.separator + identifier, state);
                 }

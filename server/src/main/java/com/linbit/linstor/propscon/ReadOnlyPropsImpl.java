@@ -323,14 +323,6 @@ public class ReadOnlyPropsImpl implements Props
         );
     }
 
-    private void unsupported()
-    {
-        throw new UnsupportedOperationException(
-            "Attempt to perform an unsupported operation on a read-only view " +
-            "of a properties container"
-        );
-    }
-
     public static ReadOnlyPropsImpl emptyRoProps()
     {
         return EMPTY_RO_PROP;

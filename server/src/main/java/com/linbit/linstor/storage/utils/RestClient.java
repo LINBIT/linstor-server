@@ -43,7 +43,7 @@ public interface RestClient
         final @Nullable Map<String, String> httpHeaders;
         final @Nullable String payload;
         final List<Integer> expectedRcs;
-        final Class<T> responseClass;
+        final @Nullable Class<T> responseClass;
 
         final @Nullable VlmProviderObject<Resource> vlmData;
 
@@ -54,7 +54,7 @@ public interface RestClient
             @Nullable Map<String, String> httpHeadersRef,
             @Nullable String payloadRef,
             List<Integer> expectedRcsRef,
-            Class<T> responseClassRef
+            @Nullable Class<T> responseClassRef
         )
         {
             vlmData = vlmDataRef;

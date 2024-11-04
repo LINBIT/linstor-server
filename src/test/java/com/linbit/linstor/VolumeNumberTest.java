@@ -17,9 +17,9 @@ public class VolumeNumberTest
     @SuppressWarnings("checkstyle:magicnumber")
     public static final int[] CTOR_FAIL_TESTS =
     {
-        -1,
+        VolumeNumber.VOLUME_NR_MIN - 1,
         Integer.MIN_VALUE,
-        (1 << 15),
+        VolumeNumber.VOLUME_NR_MAX + 1,
         Integer.MAX_VALUE
     };
 

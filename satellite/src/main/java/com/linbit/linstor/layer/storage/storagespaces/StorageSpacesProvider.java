@@ -338,8 +338,6 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     private void updateInfoListCache()
         throws StorageException, AccessDeniedException
     {
-        Map<String, StorageSpacesInfo> res = new HashMap<>();
-
         if (rebuildCache)
         {
             infoListCache.clear();
@@ -454,8 +452,8 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
         ReadOnlyProps props = storPoolRef.getReadOnlyProps(storDriverAccCtx);
         String poolName = props.getProp("StorPoolName", "StorDriver");
         OutputData res;
-        Long totalSize = 0L;
-        Long allocatedSize = 0L;
+        Long totalSize;
+        Long allocatedSize;
 
         res = WmiHelper.run(extCmdFactory, new String[] {
             "storage-pool",

@@ -446,30 +446,6 @@ public class LvmThinProvider extends LvmProvider
         createSnapshot(vlmDataRef, snapVlmRef, true);
     }
 
-    private String getVolumeGroupForLvs(StorPoolInfo storPool) throws StorageException
-    {
-        String volumeGroup;
-        String thinPool;
-        try
-        {
-            volumeGroup = getVolumeGroup(storPool);
-            if (volumeGroup == null)
-            {
-                throw new StorageException("Unset volume group for " + storPool);
-            }
-            thinPool = getThinPool(storPool);
-            if (thinPool == null)
-            {
-                throw new StorageException("Unset thin pool for " + storPool);
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return volumeGroup + File.separator + thinPool;
-    }
-
     private String getThinPool(StorPoolInfo storPool) throws AccessDeniedException
     {
         String thinPool;

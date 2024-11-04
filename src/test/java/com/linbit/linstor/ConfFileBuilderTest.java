@@ -491,7 +491,6 @@ public class ConfFileBuilderTest
             transMgrProvider
         );
 
-        Map<VolumeNumber, DrbdVlmDfnData<Resource>> drbdVlmDfnMap = new HashMap<>();
         DrbdRscData<Resource> rscData;
         {
             Set<AbsRscLayerObject<Resource>> drbdRscDataChildren = new HashSet<>();
@@ -546,7 +545,6 @@ public class ConfFileBuilderTest
                     LAYER_DRBD_VLM_DFN_NO_OP_DRIVER,
                     transMgrProvider
                 );
-                drbdVlmDfnMap.put(vlmNr, drbdVlmDfnData);
 
                 DrbdVlmData<Resource> drbdVlmData = new DrbdVlmData<>(
                     vlm,

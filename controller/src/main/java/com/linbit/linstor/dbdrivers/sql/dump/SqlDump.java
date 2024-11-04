@@ -33,7 +33,6 @@ public class SqlDump
                 List<DataRow> dataList = new ArrayList<>();
                 String tblName = tbl.getName();
 
-                List<String> clmNames = new ArrayList<>();
                 try (
                     PreparedStatement select = con.prepareStatement("SELECT * FROM LINSTOR." + tblName);
                     ResultSet resultSet = select.executeQuery();

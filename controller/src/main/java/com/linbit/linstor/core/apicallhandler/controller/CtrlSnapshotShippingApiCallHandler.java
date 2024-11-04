@@ -261,7 +261,7 @@ public class CtrlSnapshotShippingApiCallHandler
             toNodeNameRef,
             rscNameRef
         );
-        SnapshotDefinition snapDfn = loadInProgressShipping(rscConn, rscNameRef, fromNodeNameRef, toNodeNameRef);
+        SnapshotDefinition snapDfn = loadInProgressShipping(rscConn, rscNameRef);
         if (snapDfn != null)
         {
             throw new ApiRcException(
@@ -431,7 +431,8 @@ public class CtrlSnapshotShippingApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "setting flags " + Arrays.asList(flags) + " on " + CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline(snapDfnRef),
+                "setting flags " + Arrays.asList(flags) + " on " +
+                    CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline(snapDfnRef),
                 ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
             );
         }
@@ -443,9 +444,7 @@ public class CtrlSnapshotShippingApiCallHandler
 
     private @Nullable SnapshotDefinition loadInProgressShipping(
         ResourceConnection rscConn,
-        String rscNameRef,
-        String fromNodeNameRef,
-        String toNodeNameRef
+        String rscNameRef
     )
     {
         SnapshotName snapShipName = rscConn.getSnapshotShippingNameInProgress();

@@ -199,8 +199,6 @@ public abstract class AbsLayerRscDataDbDriver<
      */
     static final NullTableLayerRscDataColumn NULL_TABLE_LAYER_RSC_DATA_COLUMN = new NullTableLayerRscDataColumn();
 
-    protected final AccessContext dbCtx;
-
     protected final TransactionObjectFactory transObjFactory;
     protected final Provider<TransactionMgrSQL> transMgrProvider;
 
@@ -220,7 +218,6 @@ public abstract class AbsLayerRscDataDbDriver<
 
     private final Map<RSC_DFN_DATA, List<RSC_DATA>> loadedRscDfnChildRscDataMap = new HashMap<>();
 
-
     protected AbsLayerRscDataDbDriver(
         AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
@@ -236,7 +233,6 @@ public abstract class AbsLayerRscDataDbDriver<
     )
     {
         super(dbCtxRef, errorReporterRef, tableRef, dbEngineRef);
-        dbCtx = dbCtxRef;
         layerRscIdColumn = layerRscIdColumnRef;
         rscLayerIdDriver = rscLayerIdDriverRef;
         rscDfnDriver = rscDfnDriverRef;

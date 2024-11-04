@@ -1592,9 +1592,6 @@ public class CtrlNodeApiCallHandler
 
     private Flux<ApiCallRc> evacuateNodeInTrasaction(ResponseContext contextRef, String nodeNameEvacuateSourceStrRef)
     {
-        Map<String, String> objRefs = new TreeMap<>();
-        objRefs.put(ApiConsts.KEY_NODE, nodeNameEvacuateSourceStrRef);
-
         Flux<ApiCallRc> flux;
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         Node nodeToEvacuate = ctrlApiDataLoader.loadNode(nodeNameEvacuateSourceStrRef, true);

@@ -51,7 +51,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -794,44 +793,9 @@ public class ConfFileBuilder
         }
     }
 
-    private void appendDrbdOptions(
-        final LinStorObject lsObj,
-        final ReadOnlyProps props,
-        final String namespace
-    )
-    {
-        @Nullable ReadOnlyProps roNamespace = props.getNamespace(namespace);
-        Map<String, String> drbdProps;
-        if (roNamespace == null)
-        {
-            drbdProps = Collections.emptyMap();
-        }
-        else
-        {
-            drbdProps = roNamespace.map();
-        }
-        int substrFrom = namespace.length() + 1;
-
-        for (Map.Entry<String, String> entry : drbdProps.entrySet())
-        {
-            String keyWithNamespace = entry.getKey();
-            String value = entry.getValue();
-            if (checkValidDrbdOption(lsObj, keyWithNamespace, value))
-            {
-                final boolean quote = whitelistProps.needsQuoting(lsObj, keyWithNamespace);
-                String sFormat = quote ? "%s \"%s\";" : "%s %s;";
-                appendLine(
-                    sFormat,
-                    keyWithNamespace.substring(substrFrom),
-                    value
-                );
-            }
-        }
-    }
-
     private NetInterface getPreferredNetIf(DrbdRscData<Resource> peerRscDataRef)
     {
-        NetInterface preferredNetIf = null;
+        @Nullable NetInterface preferredNetIf = null;
         try
         {
             TreeMap<VolumeNumber, DrbdVlmData<Resource>> sortedVlmData = new TreeMap<>(

@@ -291,23 +291,6 @@ public class FreeCapacityAutoPoolSelectorUtils
         return ret;
     }
 
-    private static Optional<Long> getFreeSpaceLastUpdatedPrivileged(
-        AccessContext sysCtxRef,
-        StorPool storPoolRef
-    )
-    {
-        Optional<Long> freeSpaceLastUpdated;
-        try
-        {
-            freeSpaceLastUpdated = storPoolRef.getFreeSpaceTracker().getFreeCapacityLastUpdated(sysCtxRef);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return freeSpaceLastUpdated;
-    }
-
     public static double getMaxOversubscriptionRatioPrivileged(
         AccessContext sysCtxRef,
         StorPool storPoolRef,

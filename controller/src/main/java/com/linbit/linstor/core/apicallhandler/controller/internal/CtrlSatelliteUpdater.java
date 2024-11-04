@@ -151,7 +151,7 @@ public class CtrlSatelliteUpdater
                     }
                     else
                     {
-                        connected = currentPeer.sendMessage(
+                        currentPeer.sendMessage(
                             internalComSerializer
                                 .onewayBuilder(InternalApiConsts.API_CHANGED_RSC)
                                 .changedResource(
@@ -197,7 +197,7 @@ public class CtrlSatelliteUpdater
                 }
                 else
                 {
-                    connected = satellitePeer.sendMessage(
+                    satellitePeer.sendMessage(
                         internalComSerializer
                             .onewayBuilder(InternalApiConsts.API_CHANGED_STOR_POOL)
                             .changedStorPool(

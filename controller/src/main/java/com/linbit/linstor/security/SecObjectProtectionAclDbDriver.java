@@ -78,12 +78,6 @@ public final class SecObjectProtectionAclDbDriver
     {
         String objPath = rawRef.get(OBJECT_PATH);
         Map<RoleName, AccessControlEntry> parentAclsBackingMap = parentRef.getParentAcl(objPath);
-        if (parentAclsBackingMap == null)
-        {
-            throw new DatabaseException(
-                "Could not restore ACL entries for: " + rawRef.get(OBJECT_PATH) + " since its ObjProt does not exist"
-            );
-        }
         Role role = parentRef.getRole(rawRef.build(ROLE_NAME, RoleName::new));
         parentAclsBackingMap.put(
             role.name,
