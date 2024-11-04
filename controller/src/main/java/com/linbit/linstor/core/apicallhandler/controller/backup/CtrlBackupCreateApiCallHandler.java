@@ -62,7 +62,6 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
-import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
@@ -166,7 +165,7 @@ public class CtrlBackupCreateApiCallHandler
                 runInBackgroundRef,
                 null,
                 null
-            ).objA
+            ).getFlux()
         );
     }
 
@@ -187,7 +186,7 @@ public class CtrlBackupCreateApiCallHandler
      *
      * @param runInBackgroundRef
      */
-    Pair<Flux<ApiCallRc>, Snapshot> backupSnapshot(
+    BackupSnapshotObj backupSnapshot(
         String rscNameRef,
         String remoteName,
         String nodeName,
@@ -330,7 +329,7 @@ public class CtrlBackupCreateApiCallHandler
                     startShipping(snapDfn, chosenNode, remote, prevSnapDfn, responses, nodeName, l2lData)
                 );
             }
-            return new Pair<>(
+            return new BackupSnapshotObj(
                 flux,
                 chosenNode != null ? snapDfn.getSnapshot(peerAccCtx.get(), chosenNode.getName()) : null
             );
@@ -1195,6 +1194,29 @@ public class CtrlBackupCreateApiCallHandler
                 Long.toString(System.currentTimeMillis()),
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
+        }
+    }
+
+    static class BackupSnapshotObj
+    {
+        private final Flux<ApiCallRc> flux;
+        private final @Nullable Snapshot snap;
+
+        BackupSnapshotObj(Flux<ApiCallRc> fluxRef, @Nullable Snapshot snapRef)
+        {
+            flux = fluxRef;
+            snap = snapRef;
+        }
+
+        Flux<ApiCallRc> getFlux()
+        {
+            return flux;
+        }
+
+        @Nullable
+        Snapshot getSnap()
+        {
+            return snap;
         }
     }
 }

@@ -19,6 +19,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler.BackupSnapshotObj;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRestClient;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingRequestPrevSnap;
@@ -60,7 +61,6 @@ import com.linbit.linstor.tasks.TaskScheduleService.Task;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
-import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 
@@ -366,7 +366,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             data.setResetData(response.resetData);
             data.setDstBaseSnapName(response.dstBaseSnapName);
             data.setDstActualNodeName(response.dstActualNodeName);
-            Pair<Flux<ApiCallRc>, Snapshot> createSnapshot = ctrlBackupCrtApiCallHandler.backupSnapshot(
+            BackupSnapshotObj createSnapshot = ctrlBackupCrtApiCallHandler.backupSnapshot(
                 data.getSrcRscName(),
                 data.getLinstorRemote().getName().displayValue,
                 data.getSrcNodeName(),
@@ -379,12 +379,12 @@ public class CtrlBackupL2LSrcApiCallHandler
                 response.prevSnapUuid,
                 data
             );
-            @Nullable Snapshot snap = createSnapshot.objB;
+            @Nullable Snapshot snap = createSnapshot.getSnap();
             if (snap != null)
             {
                 data.setSrcSnapshot(snap);
                 data.setSrcNodeName(data.getSrcSnapshot().getNode().getName().displayValue);
-                flux = createSnapshot.objA;
+                flux = createSnapshot.getFlux();
                 Flux<ApiCallRc> waitForStartFlux = scopeRunner.fluxInTransactionalScope(
                     "Backup shipping L2L: Create Stlt-Remote",
                     lockGuardFactory.create()
@@ -411,7 +411,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             }
             else
             {
-                flux = createSnapshot.objA;
+                flux = createSnapshot.getFlux();
             }
         }
         return flux;
