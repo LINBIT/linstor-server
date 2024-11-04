@@ -7,7 +7,7 @@ import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.utils.Triple;
+import com.linbit.utils.TripleNonNull;
 
 import java.util.LinkedList;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class DrbdEventsMonitor
     private final ResourceDefinitionMap rscDfnMap;
 
     private boolean existsFinished = false;
-    private final LinkedList<Triple<String, String, Map<String, String>>> duringExistsQueue = new LinkedList<>();
+    private final LinkedList<TripleNonNull<String, String, Map<String, String>>> duringExistsQueue = new LinkedList<>();
 
     public DrbdEventsMonitor(
         DrbdStateTracker trackerRef,
@@ -94,7 +94,7 @@ public class DrbdEventsMonitor
 
                     if (!existsFinished && !action.equals(ACTION_EXISTS))
                     {
-                        duringExistsQueue.add(new Triple<>(action, objType, props));
+                        duringExistsQueue.add(new TripleNonNull<>(action, objType, props));
                     }
                     else
                     {
@@ -156,7 +156,7 @@ public class DrbdEventsMonitor
                 if (!existsFinished)
                 {
                     existsFinished = true;
-                    for (Triple<String, String, Map<String, String>> triple : duringExistsQueue)
+                    for (TripleNonNull<String, String, Map<String, String>> triple : duringExistsQueue)
                     {
                         executeAction(triple.objA, triple.objB, triple.objC);
                     }

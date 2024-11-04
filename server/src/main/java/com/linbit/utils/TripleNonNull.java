@@ -1,20 +1,14 @@
 package com.linbit.utils;
 
-import com.linbit.linstor.annotation.Nullable;
-
 import com.google.common.base.Objects;
 
-public class Triple<A, B, C> implements Comparable<Triple<A, B, C>>
+public class TripleNonNull<A, B, C> implements Comparable<TripleNonNull<A, B, C>>
 {
-    public @Nullable A objA;
-    public @Nullable B objB;
-    public @Nullable C objC;
+    public A objA;
+    public B objB;
+    public C objC;
 
-    public Triple()
-    {
-    }
-
-    public Triple(@Nullable A aRef, @Nullable B bRef, @Nullable C cRef)
+    public TripleNonNull(A aRef, B bRef, C cRef)
     {
         objA = aRef;
         objB = bRef;
@@ -24,17 +18,7 @@ public class Triple<A, B, C> implements Comparable<Triple<A, B, C>>
     @Override
     public int hashCode()
     {
-        return hashCode(objA, objB, objC);
-    }
-
-    public static int hashCode(@Nullable Object objA, @Nullable Object objB, @Nullable Object objC)
-    {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((objA == null) ? 0 : objA.hashCode());
-        result = prime * result + ((objB == null) ? 0 : objB.hashCode());
-        result = prime * result + ((objC == null) ? 0 : objC.hashCode());
-        return result;
+        return Triple.hashCode(objA, objB, objC);
     }
 
     @Override
@@ -43,7 +27,7 @@ public class Triple<A, B, C> implements Comparable<Triple<A, B, C>>
         boolean eq = this == obj;
         if (!eq && obj != null && getClass() == obj.getClass())
         {
-            Triple<?, ?, ?> other = (Triple<?, ?, ?>) obj;
+            TripleNonNull<?, ?, ?> other = (TripleNonNull<?, ?, ?>) obj;
             eq = Objects.equal(objA, other.objA) &&
                 Objects.equal(objB, other.objB) &&
                 Objects.equal(objC, other.objC);
@@ -53,7 +37,7 @@ public class Triple<A, B, C> implements Comparable<Triple<A, B, C>>
 
     @SuppressWarnings("unchecked")
     @Override
-    public int compareTo(Triple<A, B, C> other)
+    public int compareTo(TripleNonNull<A, B, C> other)
     {
         int eq = 0;
         if (objA instanceof Comparable)

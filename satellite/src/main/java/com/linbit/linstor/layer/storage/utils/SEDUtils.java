@@ -8,7 +8,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.Commands;
-import com.linbit.utils.Triple;
+import com.linbit.utils.TripleNonNull;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -31,8 +31,9 @@ public class SEDUtils
     {
         try
         {
-            List<Triple<String, String, String[]>> cmds = new ArrayList<>();
-            cmds.add(new Triple<>(
+            List<TripleNonNull<String, String, String[]>> cmds = new ArrayList<>();
+            cmds.add(
+                new TripleNonNull<>(
                 "Initialize SED " + deviceName,
                 "Failed to initialized SED encryption on drive: " + deviceName,
                 new String[] {
@@ -42,7 +43,8 @@ public class SEDUtils
                     deviceName
                 }));
 
-            cmds.add(new Triple<>(
+            cmds.add(
+                new TripleNonNull<>(
                 "SED enablelockingrange " + deviceName,
                 "Failed to enable SED lockingrange on drive: " + deviceName,
                 new String[] {
@@ -53,7 +55,8 @@ public class SEDUtils
                     deviceName
                 }));
 
-            cmds.add(new Triple<>(
+            cmds.add(
+                new TripleNonNull<>(
                 "SED setLockingRange " + deviceName,
                 "Failed to set SED lockingrange on drive: " + deviceName,
                 new String[] {
@@ -65,7 +68,8 @@ public class SEDUtils
                     deviceName
                 }));
 
-            cmds.add(new Triple<>(
+            cmds.add(
+                new TripleNonNull<>(
                 "SED setMBRDone " + deviceName,
                 "Failed to set SED MBRDone off on drive: " + deviceName,
                 new String[]{
@@ -76,7 +80,8 @@ public class SEDUtils
                     deviceName
                 }));
 
-            cmds.add(new Triple<>(
+            cmds.add(
+                new TripleNonNull<>(
                 "SED setMBREnable " + deviceName,
                 "Failed to set SED setMBREnable off on drive: " + deviceName,
                 new String[]{
@@ -87,7 +92,7 @@ public class SEDUtils
                     deviceName
                 }));
 
-            for (Triple<String, String, String[]> cmd : cmds)
+            for (TripleNonNull<String, String, String[]> cmd : cmds)
             {
                 ExtCmd extCmd = extCmdFactory.create();
                 extCmd.logExecution(LOG_SED_COMMANDS);

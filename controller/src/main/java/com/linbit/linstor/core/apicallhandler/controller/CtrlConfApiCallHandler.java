@@ -66,7 +66,7 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
-import com.linbit.utils.Triple;
+import com.linbit.utils.TripleNonNull;
 import com.linbit.utils.UuidUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
@@ -367,7 +367,7 @@ public class CtrlConfApiCallHandler
         Set<Resource> updateRscs = new HashSet<>();
         for (Entry<String, String> overrideProp : filteredOverrideProps.entrySet())
         {
-            Triple<ApiCallRc, Boolean, Set<Resource>> result = setProp(
+            TripleNonNull<ApiCallRc, Boolean, Set<Resource>> result = setProp(
                 overrideProp.getKey(),
                 null,
                 overrideProp.getValue(),
@@ -383,7 +383,7 @@ public class CtrlConfApiCallHandler
         }
         for (String deletePropKey : filteredDeletePropKeys)
         {
-            Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
+            TripleNonNull<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
                 deletePropKey,
                 null,
                 propsChangedListeners
@@ -705,7 +705,7 @@ public class CtrlConfApiCallHandler
                 Iterator<String> keysIterator = optNamespace.keysIterator();
                 while (keysIterator.hasNext())
                 {
-                    Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
+                    TripleNonNull<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
                         keysIterator.next(),
                         deleteNamespaceRef,
                         propsChangedListenersRef
@@ -830,7 +830,7 @@ public class CtrlConfApiCallHandler
         }
     }
 
-    public Triple<ApiCallRc, Boolean, Set<Resource>> setProp(
+    public TripleNonNull<ApiCallRc, Boolean, Set<Resource>> setProp(
         String key,
         @Nullable String namespace,
         String value,
@@ -1105,7 +1105,7 @@ public class CtrlConfApiCallHandler
                 );
             }
         }
-        return new Triple<>(apiCallRc, notifyStlts, changedRscs);
+        return new TripleNonNull<>(apiCallRc, notifyStlts, changedRscs);
     }
 
     private void handleClusterRemoteNamespace(ApiCallRcImpl apiCallRc, String fullKey, String value)
@@ -1409,7 +1409,7 @@ public class CtrlConfApiCallHandler
 
     public Flux<ApiCallRc> deletePropWithCommitInTransaction(String key, String namespace)
     {
-        Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
+        TripleNonNull<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
             key,
             namespace,
             new HashMap<>() // XXX is this method even called?
@@ -1441,7 +1441,7 @@ public class CtrlConfApiCallHandler
         return fluxUpdRscDfns.concatWith(Flux.just(result.objA));
     }
 
-    private Triple<ApiCallRc, Boolean, Set<Resource>> deleteProp(
+    private TripleNonNull<ApiCallRc, Boolean, Set<Resource>> deleteProp(
         String key,
         @Nullable String namespace,
         Map<String, PropertyChangedListener> propsChangedListenersRef
@@ -1574,7 +1574,7 @@ public class CtrlConfApiCallHandler
                 errorMsg
             );
         }
-        return new Triple<>(apiCallRc, notifyStlts, changedRscs);
+        return new TripleNonNull<>(apiCallRc, notifyStlts, changedRscs);
     }
 
     public LinstorEncryptionStatus masterPassphraseStatus()

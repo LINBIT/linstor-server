@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.utils.Base64;
 
 import java.sql.Connection;
@@ -58,7 +59,7 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
     @Override
     protected void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
-        Map<Tripple<String, String, String>, Integer> layerIds = new HashMap<>();
+        Map<Triple<String, String, String>, Integer> layerIds = new HashMap<>();
 
         try (PreparedStatement stmt = connection.prepareStatement(SELECT_ALL_LAYER_RESOURCE_IDS))
         {
@@ -66,7 +67,7 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
             {
                 while (resultSet.next())
                 {
-                    Tripple<String, String, String> key = new Tripple<>(
+                    Triple<String, String, String> key = new Triple<>(
                         resultSet.getString("NODE_NAME"),
                         resultSet.getString("RESOURCE_NAME"),
                         resultSet.getString("LAYER_RESOURCE_KIND")
@@ -146,13 +147,13 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
         }
     }
 
-    private static class Tripple<A, B, C>
+    private static class Triple<A, B, C>
     {
-        A objA;
-        B objB;
-        C objC;
+        @Nullable A objA;
+        @Nullable B objB;
+        @Nullable C objC;
 
-        Tripple(A objARef, B objBRef, C objCRef)
+        Triple(@Nullable A objARef, @Nullable B objBRef, @Nullable C objCRef)
         {
             objA = objARef;
             objB = objBRef;
@@ -173,10 +174,10 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
         @Override
         public boolean equals(Object obj)
         {
-            boolean eq = obj != null && obj instanceof Tripple;
+            boolean eq = obj instanceof Triple;
             if (eq)
             {
-                Tripple<?, ?, ?> other = (Tripple<?, ?, ?>) obj;
+                Triple<?, ?, ?> other = (Triple<?, ?, ?>) obj;
                 eq = Objects.equals(objA, other.objA) &&
                     Objects.equals(objB, other.objB) &&
                     Objects.equals(objC, other.objC);
