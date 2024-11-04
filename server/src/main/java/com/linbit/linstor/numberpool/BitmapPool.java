@@ -16,6 +16,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Number allocation pool based on a tree of sparse bitmap arrays
  *
@@ -1370,6 +1372,7 @@ public class BitmapPool implements NumberPool
         }
     }
 
+    @SuppressFBWarnings("UC_USELESS_OBJECT")
     private void poolInit()
     {
         if (levels > 0)

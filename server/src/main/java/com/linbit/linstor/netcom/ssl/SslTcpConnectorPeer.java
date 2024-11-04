@@ -26,6 +26,7 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.event.Level;
 
 
@@ -443,6 +444,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      *         not supposed to happen, indicates an implementation error
      * @throws IOException If the network write operation fails, or if SSL processing fails
      */
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE")
     @Override
     public WriteState write(final SocketChannel outChannel)
         throws IllegalMessageStateException, IOException

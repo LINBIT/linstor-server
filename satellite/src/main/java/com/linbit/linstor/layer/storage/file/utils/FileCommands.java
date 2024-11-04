@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import com.google.common.io.Files;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class FileCommands
 {
@@ -76,6 +77,8 @@ public class FileCommands
         }
     }
 
+    // ignoring return values because whether there actually was a file to delete is unimportant
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public static void delete(Path storageDirectoryRef, String newIdRef)
     {
         storageDirectoryRef.resolve(newIdRef).toFile().delete();

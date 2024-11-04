@@ -17,6 +17,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class DbConnectionPoolInitializer implements DbInitializer
 {
     private static final String DERBY_CONNECTION_TEST_SQL =
@@ -129,6 +131,7 @@ public class DbConnectionPoolInitializer implements DbInitializer
         return dbType;
     }
 
+    @SuppressFBWarnings("ODR_OPEN_DATABASE_RESOURCE_EXCEPTION_PATH")
     private void testDbConnection()
         throws InitializationException
     {

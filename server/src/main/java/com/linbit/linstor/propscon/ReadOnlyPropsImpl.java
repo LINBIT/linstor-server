@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Read-only access to a properties container
  *
@@ -37,6 +39,9 @@ public class ReadOnlyPropsImpl implements Props
 
     private final Props propsMap;
 
+    // spotbugs assumes that because EMPTY_RO_PROPS exists, the entire class must only be used for that const and
+    // therefore should not have a public constructor
+    @SuppressFBWarnings("SING_SINGLETON_HAS_NONPRIVATE_CONSTRUCTOR")
     public ReadOnlyPropsImpl(Props propsRef)
     {
         propsMap = propsRef;

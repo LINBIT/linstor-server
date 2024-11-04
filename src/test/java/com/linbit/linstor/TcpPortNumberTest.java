@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.types.TcpPortNumber;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Test;
 
 import static org.junit.Assert.fail;
@@ -45,6 +46,8 @@ public class TcpPortNumberTest
         testEqual = new TcpPortNumber(6799);
     }
 
+    @SuppressWarnings("unused")
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE")
     @Test
     public void ctorTests()
         throws ValueOutOfRangeException

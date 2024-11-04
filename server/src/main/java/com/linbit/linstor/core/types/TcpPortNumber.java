@@ -4,6 +4,8 @@ import com.linbit.Checks;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.Nullable;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Transmission Control Protocol port number
  *
@@ -51,6 +53,7 @@ public class TcpPortNumber implements Comparable<TcpPortNumber>
         return result;
     }
 
+    @SuppressFBWarnings("EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS")
     @Override
     public boolean equals(Object other)
     {

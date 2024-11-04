@@ -13,12 +13,16 @@ import com.linbit.linstor.security.ObjectProtection;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 @Singleton
 public class ScheduleProtectionRepository implements ScheduleRepository
 {
     private final CoreModule.ScheduleMap scheduleMap;
-    private @Nullable ObjectProtection scheduleMapObjProt;
+    private ObjectProtection scheduleMapObjProt;
 
+    // can't initialize objProt in constructor because of chicken-egg-problem
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     @Inject
     public ScheduleProtectionRepository(CoreModule.ScheduleMap scheduleMapRef)
     {
@@ -41,9 +45,11 @@ public class ScheduleProtectionRepository implements ScheduleRepository
         return scheduleMapObjProt;
     }
 
+    @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     @Override
     public void requireAccess(AccessContext accCtx, AccessType requested) throws AccessDeniedException
     {
+        // suppressed spotbugs-warning because checkProtSet() does exactly what is needed
         checkProtSet();
         scheduleMapObjProt.requireAccess(accCtx, requested);
     }

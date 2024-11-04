@@ -40,6 +40,7 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
 
+@SuppressFBWarnings
 public class GenerateSql
 {
     public static void main(String[] args) throws Exception {
@@ -235,6 +236,7 @@ public class GenerateSql
         return ret;
     }
 
+    @SuppressWarnings("unused")
     private static void printDiff(String sanitizedOldCode, String sanitizedNewCode)
     {
         String[] oldLines = sanitizedOldCode.split("\n");
@@ -329,7 +331,6 @@ public class GenerateSql
         Files.write(path, javaClazzContentRef.getBytes());
     }
 
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private static void renderResourceFile(
         String gitRoot,
         String relativePath,

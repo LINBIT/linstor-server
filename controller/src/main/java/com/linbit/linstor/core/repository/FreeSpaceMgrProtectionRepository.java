@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.repository;
 
-import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
@@ -12,6 +11,8 @@ import com.linbit.linstor.security.ObjectProtection;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Holds the singleton free space manager map protection instance, allowing it to be initialized from the database
  * after dependency injection has been performed.
@@ -20,8 +21,10 @@ import javax.inject.Singleton;
 public class FreeSpaceMgrProtectionRepository implements FreeSpaceMgrRepository
 {
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
-    private @Nullable ObjectProtection freeSpaceMgrMapObjProt;
+    private ObjectProtection freeSpaceMgrMapObjProt;
 
+    // can't initialize objProt in constructor because of chicken-egg-problem
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     @Inject
     public FreeSpaceMgrProtectionRepository(ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef)
     {

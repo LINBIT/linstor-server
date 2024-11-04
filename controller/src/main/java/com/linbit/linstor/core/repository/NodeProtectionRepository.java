@@ -15,6 +15,8 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Holds the singleton nodes map protection instance, allowing it to be initialized from the database
  * after dependency injection has been performed.
@@ -24,8 +26,10 @@ public class NodeProtectionRepository implements NodeRepository
 {
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.UnameMap uNameMap;
-    private @Nullable ObjectProtection nodesMapObjProt;
+    private ObjectProtection nodesMapObjProt;
 
+    // can't initialize objProt in constructor because of chicken-egg-problem
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     @Inject
     public NodeProtectionRepository(CoreModule.NodesMap nodesMapRef, CoreModule.UnameMap uNameMapRef)
     {

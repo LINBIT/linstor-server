@@ -13,6 +13,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import static org.junit.Assert.fail;
 
 public class TestExtCmd extends ExtCmd
@@ -120,6 +122,7 @@ public class TestExtCmd extends ExtCmd
      *
      * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
      */
+    @SuppressFBWarnings("EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS")
     public static class Command
     {
         private String[] commandParts;

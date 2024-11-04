@@ -3,6 +3,8 @@ package com.linbit.linstor.core.types;
 import com.linbit.Checks;
 import com.linbit.ValueOutOfRangeException;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Unix minor number
  *
@@ -50,6 +52,7 @@ public class MinorNumber implements Comparable<MinorNumber>
         return result;
     }
 
+    @SuppressFBWarnings("EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS")
     @Override
     public boolean equals(Object other)
     {

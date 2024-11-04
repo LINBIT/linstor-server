@@ -20,6 +20,8 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Cipher utility for simple encryption and decryption of byte arrays
  *
@@ -43,7 +45,14 @@ public final class JclSymmetricKeyCipher implements ByteArrayCipher
 
     private static final int BITS_PER_BYTE = 8;
 
-    private static CipherStrength defaultCipherStrength = CipherStrength.KEY_LENGTH_128;
+    // spotbugs does not realize that this field gets initialized in the static block due to a bug
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
+    private static CipherStrength defaultCipherStrength;
+
+    static
+    {
+        defaultCipherStrength = CipherStrength.KEY_LENGTH_128;
+    }
 
     private final Cipher crypto;
     private final SecretKey encryptionKey;

@@ -1,5 +1,7 @@
 package com.linbit;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Base class for classes keeping the name of a linstor object
  *
@@ -36,6 +38,7 @@ public abstract class GenericName implements Comparable<GenericName>
         return value.compareTo(other.value);
     }
 
+    @SuppressFBWarnings("EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS")
     @Override
     public boolean equals(Object other)
     {

@@ -1,8 +1,9 @@
 package com.linbit.linstor.storage;
 
-import org.junit.Test;
-
 import java.math.BigDecimal;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,12 +51,14 @@ public class StorageUtilsTest
         assertThat(StorageUtils.parseDecimalAsLong("123.9")).isEqualTo(123L);
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT")
     @Test(expected = NumberFormatException.class)
     public void testMultiPointFail()
     {
         StorageUtils.parseDecimal("123,456.789");
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT")
     @Test(expected = NumberFormatException.class)
     public void testPaddedFail()
     {

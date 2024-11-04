@@ -9,6 +9,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -563,6 +564,7 @@ public class SecurityModelTest
         prot.resetCreator(banditCtx);
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_INFERRED")
     @Test(expected = AccessDeniedException.class)
     public void testSecLevelMacImpersonateDeny()
         throws Throwable
@@ -570,6 +572,7 @@ public class SecurityModelTest
         publicCtx.impersonate(Identity.SYSTEM_ID, Role.SYSTEM_ROLE, userType);
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_INFERRED")
     @Test(expected = AccessDeniedException.class)
     public void testSecLevelRbacImpersonateDeny()
         throws Throwable

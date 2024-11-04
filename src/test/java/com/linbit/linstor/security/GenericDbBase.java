@@ -113,6 +113,7 @@ import com.google.inject.Module;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import com.google.inject.util.Modules;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -436,6 +437,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         errorReporter.shutdown();
     }
 
+    // ignore close not initialized, it is set in enterScope, which needs to have been called before this
+    @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     public void commitAndCleanUp(boolean inScope) throws Exception
     {
         if (inScope && transMgrProvider != null && transMgrProvider.get() != null)
@@ -521,6 +524,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         connection.commit();
     }
 
+    // ignore con not initialized, it is set in setUpWithoutEnteringScope, which needs to have been called before this
+    @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     private void truncateTables() throws SQLException
     {
         for (String sql : TRUNCATE_TABLES)

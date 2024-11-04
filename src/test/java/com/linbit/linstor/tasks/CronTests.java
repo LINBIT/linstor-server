@@ -20,6 +20,7 @@ import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
@@ -72,6 +73,7 @@ public class CronTests
     }
 
     @SuppressWarnings("unused")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private List<Input> testData() throws ParseException
     {
         return Arrays.asList(

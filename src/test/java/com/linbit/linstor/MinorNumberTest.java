@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.types.MinorNumber;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,6 +68,8 @@ public class MinorNumberTest
      *
      * @throws ValueOutOfRangeException
      */
+    @SuppressWarnings("unused")
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE")
     @Test
     public void ctorTests()
         throws ValueOutOfRangeException

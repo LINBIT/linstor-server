@@ -56,6 +56,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.moandjiezana.toml.Toml;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -284,6 +285,7 @@ public class LinstorConfigTool
         }
     }
 
+    @SuppressFBWarnings("UWF_NULL_FIELD")
     @CommandLine.Command(name = "sql-script", description = "Runs a SQL script against the Linstor DB.")
     private static class CmdSqlScript implements Callable<Object>
     {

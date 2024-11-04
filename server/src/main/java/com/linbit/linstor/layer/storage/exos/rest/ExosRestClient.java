@@ -50,7 +50,9 @@ import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.google.common.io.BaseEncoding;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings
 @Deprecated(forRemoval = true)
 public class ExosRestClient
 {

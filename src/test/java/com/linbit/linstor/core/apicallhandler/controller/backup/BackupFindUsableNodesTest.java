@@ -51,6 +51,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.inject.testing.fieldbinder.Bind;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Before;
@@ -346,6 +347,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
     }
 
     @SuppressWarnings("unused")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private List<Input> createInput()
     {
         return new InputBuilder()

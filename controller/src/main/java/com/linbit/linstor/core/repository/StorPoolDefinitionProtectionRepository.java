@@ -12,6 +12,8 @@ import com.linbit.linstor.security.ObjectProtection;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Holds the singleton stor pool definition map protection instance, allowing it to be initialized from the database
  * after dependency injection has been performed.
@@ -20,8 +22,10 @@ import javax.inject.Singleton;
 public class StorPoolDefinitionProtectionRepository implements StorPoolDefinitionRepository
 {
     private final CoreModule.StorPoolDefinitionMap storPoolDefinitionMap;
-    private @Nullable ObjectProtection storPoolDefinitionMapObjProt;
+    private ObjectProtection storPoolDefinitionMapObjProt;
 
+    // can't initialize objProt in constructor because of chicken-egg-problem
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     @Inject
     public StorPoolDefinitionProtectionRepository(CoreModule.StorPoolDefinitionMap storPoolDefinitionMapRef)
     {

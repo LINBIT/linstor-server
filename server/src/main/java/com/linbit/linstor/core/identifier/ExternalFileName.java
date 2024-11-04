@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
 import com.google.common.base.Objects;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Valid name of a linstor external file.
@@ -63,6 +64,7 @@ public class ExternalFileName implements Comparable<ExternalFileName>
         return extFileName.hashCode();
     }
 
+    @SuppressFBWarnings("EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS")
     @Override
     public boolean equals(Object obj)
     {

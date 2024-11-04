@@ -30,6 +30,7 @@ import java.util.TreeSet;
 
 import com.google.inject.Key;
 import com.google.inject.testing.fieldbinder.Bind;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -400,6 +401,8 @@ public class NodeApiTest extends ApiTestBase
         super.enterScope();
     }
 
+    // ignore close not initialized, it is set in enterScope, which needs to have been called before this
+    @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     private void commitAndLeaveScope() throws Exception
     {
         commit();

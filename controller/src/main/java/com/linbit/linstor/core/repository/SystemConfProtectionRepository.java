@@ -17,6 +17,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Holds the singleton system props protection instance, allowing it to be initialized from the database
  * after dependency injection has been performed.
@@ -26,8 +28,10 @@ public class SystemConfProtectionRepository implements SystemConfRepository
 {
     private final Props ctrlConf;
     private final Props stltConf;
-    private @Nullable ObjectProtection objectProtection;
+    private ObjectProtection objectProtection;
 
+    // can't initialize objProt in constructor because of chicken-egg-problem
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     @Inject
     public SystemConfProtectionRepository(
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,

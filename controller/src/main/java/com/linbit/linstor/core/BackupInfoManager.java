@@ -43,6 +43,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 @Singleton
 public class BackupInfoManager
 {
@@ -929,6 +931,11 @@ public class BackupInfoManager
          */
         public @Nullable Node alreadyStartedOn;
 
+        // TODO: spotbugs thinks that "remoteRef must be non-null but is marked as nullable" (non-null due to
+        // @NonNullByDefault, nullable probably due to being off by one index during analysis). Once this bug is
+        // resolved, remove the @SuppressFBWarnings annotation
+        // spotbugs-issue: https://github.com/spotbugs/spotbugs/issues/3068
+        @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
         private QueueItem(
             SnapshotDefinition snapDfnRef,
             AbsRemote remoteRef,

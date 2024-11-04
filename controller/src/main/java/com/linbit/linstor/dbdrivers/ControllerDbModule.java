@@ -174,6 +174,7 @@ import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class ControllerDbModule extends AbstractModule
 {
@@ -309,6 +310,19 @@ public class ControllerDbModule extends AbstractModule
         bind(ControllerSQLDatabase.class).to(DbConnectionPool.class);
         bind(ControllerETCDDatabase.class).to(DbEtcd.class);
         bind(ControllerK8sCrdDatabase.class).to(DbK8sCrd.class);
+        bindDbType();
+    }
+
+    /*
+     * Some static code analyzers (like SpotBugs) discourage the use of anonymous classes (mostly for good reasons).
+     * However, constructs as "new TypeLiteral<...>" are quite a special case, where introducing a new (static inner)
+     * class to properly capture the generic type often leads to even less readable code (if it is possible at all,
+     * considering wildcard-generics). Therefore we are extracting the usages / instantiations of TypeLiteral into this
+     * dedicated method so the warning-suppression is as local as possible
+     */
+    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
+    private void bindDbType()
+    {
         switch (dbType)
         {
             case SQL:

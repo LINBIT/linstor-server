@@ -56,6 +56,8 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 @Singleton
 public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource>, FileData<Snapshot>>
 {
@@ -616,6 +618,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         return null;
     }
 
+    // ignoring return values because whether or not a file already existed before the calls is unimportant
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void updateSnapshotCapabilitiesIfNeeded(StorPool storPool, ReadOnlyProps props)
         throws StorageException, ImplementationError, TransactionException, AccessDeniedException
     {

@@ -1,8 +1,10 @@
 package com.linbit.linstor;
 
-import org.junit.Test;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.junit.Test;
 
 import static org.junit.Assert.fail;
 
@@ -44,6 +46,9 @@ public class VolumeNumberTest
         testEqual = new VolumeNumber(19910);
     }
 
+    @SuppressWarnings("unused")
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE")
+    @Test
     public void ctorTests()
         throws ValueOutOfRangeException
     {

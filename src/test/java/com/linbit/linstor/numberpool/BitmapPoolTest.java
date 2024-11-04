@@ -1,15 +1,17 @@
 package com.linbit.linstor.numberpool;
 
 import com.linbit.ExhaustedPoolException;
-import junitparams.JUnitParamsRunner;
-import junitparams.Parameters;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -331,10 +333,10 @@ public class BitmapPoolTest
     }
 
     @SuppressWarnings("unused")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private List<PoolConfiguration> poolConfigurationsNonTrivial()
     {
         List<PoolConfiguration> poolConfigurations = new ArrayList<>();
-
         for (PoolConfiguration poolConfiguration : poolConfigurations())
         {
             if (poolConfiguration.getRangeEnd() != poolConfiguration.getRangeStart())
@@ -342,7 +344,6 @@ public class BitmapPoolTest
                 poolConfigurations.add(poolConfiguration);
             }
         }
-
         return poolConfigurations;
     }
 

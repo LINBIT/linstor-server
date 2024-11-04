@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -17,6 +18,8 @@ public class DBLoggingTest
 {
     private static final String TEST_LOG_DIR = "build/test-logs";
 
+    // cleanup-method, doesn't matter if the dir existed and was deleted or didn't exist in the first place
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void deleteDirectory(File directoryToBeDeleted) {
         File[] allContents = directoryToBeDeleted.listFiles();
         if (allContents != null)

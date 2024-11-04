@@ -1,14 +1,15 @@
 package com.linbit.utils;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Arrays;
 import java.util.Collection;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
 public class AlignTest
@@ -40,7 +41,12 @@ public class AlignTest
         test.ceiling(data.value);
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings(
+        {
+            "unused", "checkstyle:magicnumber"
+        }
+    )
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private Collection<AlignConfiguration> generateParamsValid()
     {
         AlignConfiguration[] data = new AlignConfiguration[]
@@ -64,6 +70,7 @@ public class AlignTest
     }
 
     @SuppressWarnings("unused")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private Collection<Long> generateParamsInvalidBasis()
     {
         Long[] data = new Long[]
@@ -74,6 +81,7 @@ public class AlignTest
     }
 
     @SuppressWarnings("unused")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private Collection<AlignConfiguration> generateParamsInvalidArguments()
     {
         AlignConfiguration[] data = new AlignConfiguration[]

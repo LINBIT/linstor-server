@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,6 +22,8 @@ public class AutoIndentTest
         clearBuffer();
     }
 
+    // baos is initialized in clearBuffer, which is called in setUp, which is @Before
+    @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     protected String getString()
     {
         return new String(baos.toByteArray(), StandardCharsets.UTF_8);

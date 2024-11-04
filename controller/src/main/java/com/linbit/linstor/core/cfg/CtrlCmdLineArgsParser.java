@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import picocli.CommandLine;
 
 class CtrlCmdLineArgsParser
@@ -70,6 +71,7 @@ class CtrlCmdLineArgsParser
     @CommandLine.Option(names = {"--webui-directory"}, description = "Path to the webui directory")
     private @Nullable String webUiDirectory;
 
+    @SuppressFBWarnings("ISC_INSTANTIATE_STATIC_CLASS")
     static void parseCommandLine(String[] args, CtrlConfig linstorCfgRef)
     {
         CtrlCmdLineArgsParser linArgParser = new CtrlCmdLineArgsParser();
