@@ -15,6 +15,7 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
+import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -24,7 +25,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class StorageLayerSizeCalculator extends AbsLayerSizeCalculator
+public class StorageLayerSizeCalculator extends AbsLayerSizeCalculator<AbsStorageVlmData<?>>
 {
     @Inject
     public StorageLayerSizeCalculator(AbsLayerSizeCalculatorInit initRef)
@@ -33,14 +34,14 @@ public class StorageLayerSizeCalculator extends AbsLayerSizeCalculator
     }
 
     @Override
-    protected void updateAllocatedSizeFromUsableSizeImpl(VlmProviderObject<?> vlmDataRef)
+    protected void updateAllocatedSizeFromUsableSizeImpl(AbsStorageVlmData<?> vlmDataRef)
         throws AccessDeniedException, DatabaseException
     {
         updateGrossSize(vlmDataRef);
     }
 
     @Override
-    protected void updateUsableSizeFromAllocatedSizeImpl(VlmProviderObject<?> vlmDataRef)
+    protected void updateUsableSizeFromAllocatedSizeImpl(AbsStorageVlmData<?> vlmDataRef)
         throws AccessDeniedException, DatabaseException
     {
         // just copy (for now) usableSize = allocateSize and let the DeviceProviders recalculate the allocatedSize
@@ -48,7 +49,7 @@ public class StorageLayerSizeCalculator extends AbsLayerSizeCalculator
         updateGrossSize(vlmDataRef);
     }
 
-    public void updateGrossSize(VlmProviderObject<?> vlmDataRef) throws AccessDeniedException
+    public void updateGrossSize(AbsStorageVlmData<?> vlmDataRef) throws AccessDeniedException
     {
         if (!vlmDataRef.getProviderKind().equals(DeviceProviderKind.DISKLESS))
         {

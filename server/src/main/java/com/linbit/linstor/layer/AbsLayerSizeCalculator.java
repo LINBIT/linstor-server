@@ -24,7 +24,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-public abstract class AbsLayerSizeCalculator
+public abstract class AbsLayerSizeCalculator<VLM_TYPE extends VlmProviderObject<?>>
 {
     /**
      * The only purpose of this class is to make it easier to later add parameters for the actual
@@ -79,12 +79,12 @@ public abstract class AbsLayerSizeCalculator
     }
 
     /**
-     * Returns the next {@link LayerSizeCalculator} depending on the {@link DeviceLayerKind} of the given
+     * Returns the next {@link AbsLayerSizeCalculator} depending on the {@link DeviceLayerKind} of the given
      * {@code vlmData}.
      *
      * @param vlmData
      */
-    public AbsLayerSizeCalculator getLayerSizeCalculator(VlmProviderObject<?> vlmData)
+    public AbsLayerSizeCalculator<VlmProviderObject<?>> getLayerSizeCalculator(VlmProviderObject<?> vlmData)
     {
         return layerSizeHelper.get().getLayerSizeCalculator(vlmData.getRscLayerObject().getLayerKind());
     }
@@ -102,7 +102,7 @@ public abstract class AbsLayerSizeCalculator
     public final void updateAllocatedSizeFromUsableSize(VlmProviderObject<?> vlmDataRef)
         throws AccessDeniedException, DatabaseException
     {
-        AbsLayerSizeCalculator sizeCalc = getLayerSizeCalculator(vlmDataRef);
+        AbsLayerSizeCalculator<VlmProviderObject<?>> sizeCalc = getLayerSizeCalculator(vlmDataRef);
         String suffixedRscName = vlmDataRef.getRscLayerObject().getSuffixedResourceName();
         errorReporter.logTrace(
             "Layer '%s' updating gross size of volume '%s/%d' (usable: %d)",
@@ -138,7 +138,7 @@ public abstract class AbsLayerSizeCalculator
     public final void updateUsableSizeFromAllocatedSize(VlmProviderObject<?> vlmDataRef)
         throws AccessDeniedException, DatabaseException
     {
-        AbsLayerSizeCalculator sizeCalc = getLayerSizeCalculator(vlmDataRef);
+        AbsLayerSizeCalculator<VlmProviderObject<?>> sizeCalc = getLayerSizeCalculator(vlmDataRef);
         String kindName = sizeCalc.kind.name();
         String suffixedRscName = vlmDataRef.getRscLayerObject().getSuffixedResourceName();
         int vlmNr = vlmDataRef.getVlmNr().value;
@@ -217,7 +217,7 @@ public abstract class AbsLayerSizeCalculator
      * @throws AccessDeniedException
      * @throws DatabaseException
      */
-    protected abstract void updateAllocatedSizeFromUsableSizeImpl(VlmProviderObject<?> vlmData)
+    protected abstract void updateAllocatedSizeFromUsableSizeImpl(VLM_TYPE vlmData)
         throws AccessDeniedException, DatabaseException;
 
     /**
@@ -231,6 +231,6 @@ public abstract class AbsLayerSizeCalculator
      * @throws AccessDeniedException
      * @throws DatabaseException
      */
-    protected abstract void updateUsableSizeFromAllocatedSizeImpl(VlmProviderObject<?> vlmData)
+    protected abstract void updateUsableSizeFromAllocatedSizeImpl(VLM_TYPE vlmData)
         throws AccessDeniedException, DatabaseException;
 }

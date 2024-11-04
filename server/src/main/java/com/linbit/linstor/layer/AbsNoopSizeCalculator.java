@@ -6,7 +6,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-public abstract class AbsNoopSizeCalculator extends AbsLayerSizeCalculator
+public abstract class AbsNoopSizeCalculator extends AbsLayerSizeCalculator<VlmProviderObject<?>>
 {
 
     protected AbsNoopSizeCalculator(AbsLayerSizeCalculatorInit initRef, DeviceLayerKind kindRef)

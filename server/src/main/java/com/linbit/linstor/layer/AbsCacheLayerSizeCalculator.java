@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer;
 
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -8,8 +9,6 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-
-import com.linbit.linstor.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +19,7 @@ import java.util.List;
  * if a meta-cache device is required or not)
  */
 public abstract class AbsCacheLayerSizeCalculator<VLM_DATA extends VlmLayerObject<?>>
-    extends AbsLayerSizeCalculator
+    extends AbsLayerSizeCalculator<VLM_DATA>
 {
     /**
      * This is more of a hack. We want to round up a double into a long. {@link Math#ceil(double)} however returns us a
@@ -107,20 +106,18 @@ public abstract class AbsCacheLayerSizeCalculator<VLM_DATA extends VlmLayerObjec
         );
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void updateAllocatedSizeFromUsableSizeImpl(VlmProviderObject<?> vlmData)
+    public void updateAllocatedSizeFromUsableSizeImpl(VLM_DATA vlmData)
         throws AccessDeniedException, DatabaseException
     {
-        updateSize((VLM_DATA) vlmData, true);
+        updateSize(vlmData, true);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void updateUsableSizeFromAllocatedSizeImpl(VlmProviderObject<?> vlmData)
+    public void updateUsableSizeFromAllocatedSizeImpl(VLM_DATA vlmData)
         throws AccessDeniedException, DatabaseException
     {
-        updateSize((VLM_DATA) vlmData, false);
+        updateSize(vlmData, false);
     }
 
     private void updateSize(

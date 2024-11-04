@@ -14,7 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class LuksLayerSizeCalculator extends AbsLayerSizeCalculator
+public class LuksLayerSizeCalculator extends AbsLayerSizeCalculator<LuksVlmData<?>>
 {
 
     // linstor calculates in KiB
@@ -29,16 +29,14 @@ public class LuksLayerSizeCalculator extends AbsLayerSizeCalculator
     }
 
     @Override
-    protected void updateAllocatedSizeFromUsableSizeImpl(VlmProviderObject<?> vlmDataRef)
+    protected void updateAllocatedSizeFromUsableSizeImpl(LuksVlmData<?> luksDataRef)
         throws AccessDeniedException, DatabaseException
     {
-        LuksVlmData<?> luksData = (LuksVlmData<?>) vlmDataRef;
+        long luksHeaderSize = getLuksHeaderSize(luksDataRef);
+        long grossSize = luksDataRef.getUsableSize() + luksHeaderSize;
+        luksDataRef.setAllocatedSize(grossSize);
 
-        long luksHeaderSize = getLuksHeaderSize(vlmDataRef);
-        long grossSize = luksData.getUsableSize() + luksHeaderSize;
-        luksData.setAllocatedSize(grossSize);
-
-        VlmProviderObject<?> childVlmData = luksData.getSingleChild();
+        VlmProviderObject<?> childVlmData = luksDataRef.getSingleChild();
         childVlmData.setUsableSize(grossSize);
         updateAllocatedSizeFromUsableSize(childVlmData);
 
@@ -47,23 +45,21 @@ public class LuksLayerSizeCalculator extends AbsLayerSizeCalculator
          * We need to take that updated size for further calculations.
          */
         long usableSizeChild = childVlmData.getUsableSize();
-        luksData.setAllocatedSize(usableSizeChild);
-        luksData.setUsableSize(usableSizeChild - luksHeaderSize);
+        luksDataRef.setAllocatedSize(usableSizeChild);
+        luksDataRef.setUsableSize(usableSizeChild - luksHeaderSize);
     }
 
     @Override
-    protected void updateUsableSizeFromAllocatedSizeImpl(VlmProviderObject<?> vlmDataRef)
+    protected void updateUsableSizeFromAllocatedSizeImpl(LuksVlmData<?> luksDataRef)
         throws AccessDeniedException, DatabaseException
     {
-        LuksVlmData<?> luksData = (LuksVlmData<?>) vlmDataRef;
-
-        long luksHeaderSize = getLuksHeaderSize(vlmDataRef);
-        long grossSize = luksData.getAllocatedSize();
+        long luksHeaderSize = getLuksHeaderSize(luksDataRef);
+        long grossSize = luksDataRef.getAllocatedSize();
         long netSize = grossSize - luksHeaderSize;
 
-        luksData.setUsableSize(netSize);
+        luksDataRef.setUsableSize(netSize);
 
-        VlmProviderObject<?> childVlmData = luksData.getSingleChild();
+        VlmProviderObject<?> childVlmData = luksDataRef.getSingleChild();
         childVlmData.setAllocatedSize(grossSize);
         updateUsableSizeFromAllocatedSize(childVlmData);
 
@@ -72,8 +68,8 @@ public class LuksLayerSizeCalculator extends AbsLayerSizeCalculator
          * We need to take that updated size for further calculations.
          */
         long usableSizeChild = childVlmData.getUsableSize();
-        luksData.setAllocatedSize(usableSizeChild);
-        luksData.setUsableSize(usableSizeChild - luksHeaderSize);
+        luksDataRef.setAllocatedSize(usableSizeChild);
+        luksDataRef.setUsableSize(usableSizeChild - luksHeaderSize);
     }
 
     private long getLuksHeaderSize(VlmProviderObject<?> vlmDataRef)

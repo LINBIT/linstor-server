@@ -27,7 +27,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator
+public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator<DrbdVlmData<?>>
 {
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -44,22 +44,21 @@ public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator
     }
 
     @Override
-    protected void updateAllocatedSizeFromUsableSizeImpl(VlmProviderObject<?> vlmDataRef)
+    protected void updateAllocatedSizeFromUsableSizeImpl(DrbdVlmData<?> drbdVlmDataRef)
         throws AccessDeniedException, DatabaseException
     {
-        DrbdVlmData<?> drbdVlmData = (DrbdVlmData<?>) vlmDataRef;
-        DrbdRscData<?> drbdRscData = drbdVlmData.getRscLayerObject();
+        DrbdRscData<?> drbdRscData = drbdVlmDataRef.getRscLayerObject();
         short peerSlots = drbdRscData.getPeerSlots();
 
         try
         {
-            boolean isDiskless = isDiskless(drbdVlmData.getRscLayerObject().getAbsResource());
+            boolean isDiskless = isDiskless(drbdVlmDataRef.getRscLayerObject().getAbsResource());
             if (!isDiskless && !drbdRscData.isSkipDiskEnabled(sysCtx, stltProps))
             {
-                long netSize = drbdVlmData.getUsableSize();
+                long netSize = drbdVlmDataRef.getUsableSize();
 
-                VlmProviderObject<?> dataChild = drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-                if (drbdVlmData.isUsingExternalMetaData())
+                VlmProviderObject<?> dataChild = drbdVlmDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+                if (drbdVlmDataRef.isUsingExternalMetaData())
                 {
                     dataChild.setUsableSize(netSize);
                     updateAllocatedSizeFromUsableSize(dataChild);
@@ -81,7 +80,7 @@ public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator
                         FIXME_AL_STRIPE_SIZE
                     );
 
-                    VlmProviderObject<?> metaChild = drbdVlmData
+                    VlmProviderObject<?> metaChild = drbdVlmDataRef
                         .getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META);
                     if (metaChild != null)
                     {
@@ -90,7 +89,7 @@ public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator
                         updateAllocatedSizeFromUsableSize(metaChild);
                     }
 
-                    drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
+                    drbdVlmDataRef.setAllocatedSize(netSize + extMdSize); // rough estimation
                 }
                 else
                 {
@@ -114,12 +113,12 @@ public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator
                         FIXME_AL_STRIPE_SIZE
                     );
 
-                    drbdVlmData.setAllocatedSize(grossSize);
+                    drbdVlmDataRef.setAllocatedSize(grossSize);
                 }
 
                 // we need to update the usable size once again since the layers below us
                 // might have given us more data than we asked for.
-                drbdVlmData.setUsableSize(netSize);
+                drbdVlmDataRef.setUsableSize(netSize);
             }
         }
         catch (
@@ -132,33 +131,32 @@ public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator
     }
 
     @Override
-    protected void updateUsableSizeFromAllocatedSizeImpl(VlmProviderObject<?> vlmDataRef)
+    protected void updateUsableSizeFromAllocatedSizeImpl(DrbdVlmData<?> drbdVlmDataRef)
         throws AccessDeniedException, DatabaseException
     {
-        DrbdVlmData<?> drbdVlmData = (DrbdVlmData<?>) vlmDataRef;
-        DrbdRscData<?> drbdRscData = drbdVlmData.getRscLayerObject();
+        DrbdRscData<?> drbdRscData = drbdVlmDataRef.getRscLayerObject();
         short peerSlots = drbdRscData.getPeerSlots();
 
         try
         {
-            boolean isDiskless = isDiskless(drbdVlmData.getRscLayerObject().getAbsResource());
+            boolean isDiskless = isDiskless(drbdVlmDataRef.getRscLayerObject().getAbsResource());
             if (!isDiskless && !drbdRscData.isSkipDiskEnabled(sysCtx, stltProps))
             {
                 // let next layer calculate
-                VlmProviderObject<?> dataChildVlmData = drbdVlmData.getChildBySuffix(
+                VlmProviderObject<?> dataChildVlmData = drbdVlmDataRef.getChildBySuffix(
                     RscLayerSuffixes.SUFFIX_DATA
                 );
-                dataChildVlmData.setAllocatedSize(drbdVlmData.getAllocatedSize());
+                dataChildVlmData.setAllocatedSize(drbdVlmDataRef.getAllocatedSize());
                 updateUsableSizeFromAllocatedSize(dataChildVlmData);
 
                 long grossSize = dataChildVlmData.getUsableSize();
 
-                if (drbdVlmData.isUsingExternalMetaData())
+                if (drbdVlmDataRef.isUsingExternalMetaData())
                 {
                     // calculate extMetaSize
                     long extMdSize;
 
-                    VlmProviderObject<?> metaChild = drbdVlmData.getChildBySuffix(
+                    VlmProviderObject<?> metaChild = drbdVlmDataRef.getChildBySuffix(
                         RscLayerSuffixes.SUFFIX_DRBD_META
                     );
                     if (metaChild != null)
@@ -179,8 +177,8 @@ public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator
                     {
                         extMdSize = 0;
                     }
-                    drbdVlmData.setUsableSize(grossSize);
-                    drbdVlmData.setAllocatedSize(grossSize + extMdSize);
+                    drbdVlmDataRef.setUsableSize(grossSize);
+                    drbdVlmDataRef.setAllocatedSize(grossSize + extMdSize);
                 }
                 else
                 {
@@ -190,8 +188,8 @@ public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator
                         FIXME_AL_STRIPES,
                         FIXME_AL_STRIPE_SIZE
                     );
-                    drbdVlmData.setUsableSize(netSize);
-                    drbdVlmData.setAllocatedSize(grossSize);
+                    drbdVlmDataRef.setUsableSize(netSize);
+                    drbdVlmDataRef.setAllocatedSize(grossSize);
                 }
             }
         }

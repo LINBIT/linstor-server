@@ -24,12 +24,12 @@ import java.util.Set;
 public class LayerSizeHelper
 {
     private final AccessContext sysCtx;
-    private final Map<DeviceLayerKind, AbsLayerSizeCalculator> kindToCalculatorMap;
+    private final Map<DeviceLayerKind, AbsLayerSizeCalculator<?>> kindToCalculatorMap;
 
     @Inject
     public LayerSizeHelper(
         @SystemContext AccessContext sysCtxRef,
-        Map<DeviceLayerKind, AbsLayerSizeCalculator> kindToCalculatorMapRef
+        Map<DeviceLayerKind, AbsLayerSizeCalculator<?>> kindToCalculatorMapRef
     )
     {
         sysCtx = sysCtxRef;
@@ -45,13 +45,13 @@ public class LayerSizeHelper
      *
      * @throws AccessDeniedException
      */
-    public <RSC extends AbsResource<RSC>> void calculateSize(
+    public <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>> void calculateSize(
         AccessContext accCtxRef,
-        VlmProviderObject<RSC> vlmDataRef
+        VLM_TYPE vlmDataRef
     )
         throws AccessDeniedException
     {
-        AbsLayerSizeCalculator sizeCalc = kindToCalculatorMap.get(vlmDataRef.getLayerKind());
+        AbsLayerSizeCalculator<VLM_TYPE> sizeCalc = getLayerSizeCalculator(vlmDataRef.getLayerKind());
         if (sizeCalc == null)
         {
             throw new ImplementationError("Unknown layerKind: " + vlmDataRef.getLayerKind());
@@ -229,8 +229,11 @@ public class LayerSizeHelper
         return ret;
     }
 
-    AbsLayerSizeCalculator getLayerSizeCalculator(DeviceLayerKind layerKindRef)
+    @SuppressWarnings("unchecked")
+    <VLM_TYPE extends VlmProviderObject<?>> AbsLayerSizeCalculator<VLM_TYPE> getLayerSizeCalculator(
+        DeviceLayerKind layerKindRef
+    )
     {
-        return kindToCalculatorMap.get(layerKindRef);
+        return (AbsLayerSizeCalculator<VLM_TYPE>) kindToCalculatorMap.get(layerKindRef);
     }
 }
