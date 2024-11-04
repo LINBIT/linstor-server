@@ -2,7 +2,6 @@ package com.linbit;
 
 import com.linbit.linstor.logging.ErrorReporter;
 
-import javax.inject.Named;
 import javax.inject.Singleton;
 
 import com.google.inject.AbstractModule;
@@ -20,8 +19,8 @@ public class SatelliteLinstorModule extends AbstractModule
 
     @Provides
     @Singleton
-    @Named(STLT_WORKER_POOL_NAME)
-    public WorkQueue initializeStltWorkerThreadPool(ErrorReporter errorLog)
+    // @Named(STLT_WORKER_POOL_NAME)
+    public WorkerPool initializeStltWorkerThreadPool(ErrorReporter errorLog)
     {
         return WorkerPoolInitializer.createDevMgrWorkerThreadPool(
             errorLog,
@@ -29,4 +28,12 @@ public class SatelliteLinstorModule extends AbstractModule
             "StltWorkerPool"
         );
     }
+
+    // @Provides
+    // @Singleton
+    // @Named(STLT_WORKER_POOL_NAME)
+    // public WorkQueue initializeStltWorkerThreadQueue(WorkerPool pool)
+    // {
+    // return pool;
+    // }
 }

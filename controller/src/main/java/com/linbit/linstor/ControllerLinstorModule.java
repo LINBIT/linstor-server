@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import com.linbit.WorkerPool;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.repository.ExternalFileProtectionRepository;
 import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.core.repository.FreeSpaceMgrProtectionRepository;
@@ -21,7 +23,10 @@ import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 
+import javax.inject.Singleton;
+
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 
 public class ControllerLinstorModule extends AbstractModule
 {
@@ -38,5 +43,12 @@ public class ControllerLinstorModule extends AbstractModule
         bind(ExternalFileRepository.class).to(ExternalFileProtectionRepository.class);
         bind(RemoteRepository.class).to(RemoteProtectionRepository.class);
         bind(ScheduleRepository.class).to(ScheduleProtectionRepository.class);
+    }
+
+    @Provides
+    @Singleton
+    public @Nullable WorkerPool initializeStltWorkerThreadPool()
+    {
+        return null;
     }
 }

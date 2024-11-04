@@ -50,15 +50,15 @@ public class ApplicationLifecycleManager
         ErrorReporter errorReporterRef,
         ShutdownProtHolder shutdownProtHolderRef,
         @Named(CoreModule.RECONFIGURATION_LOCK)
-        ReadWriteLock reconfigurationLockRef
+        ReadWriteLock reconfigurationLockRef,
+        @Nullable WorkerPool workerThrPoolRef
     )
     {
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
         shutdownProtHolder = shutdownProtHolderRef;
         reconfigurationLock = reconfigurationLockRef;
-
-        shutdownFinished = false;
+        workerThrPool = workerThrPoolRef;
     }
 
     public void installShutdownHook()

@@ -202,6 +202,10 @@ public class WorkerPoolTest
                 @Override
                 public void run()
                 {
+                    if (pool == null)
+                    {
+                        throw new ImplementationError("no pool to wait for");
+                    }
                     pool.finish();
                 }
             },
