@@ -28,6 +28,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -151,14 +152,14 @@ public class LayerDrbdVlmDbDriver
         DrbdRscData<?> drbdRscData = loadedParentObjectsRef.getRscData(lri);
         AbsResource<?> absResource = drbdRscData.getAbsResource();
 
-        Pair<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePair = AbsLayerRscDataDbDriver
+        PairNonNull<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePair = AbsLayerRscDataDbDriver
             .getNodeNameSuffixedRscNamePair(drbdRscData);
 
         StorPool extMetaDataStorPool = null;
         if (extStorPoolNodeName != null && extStorPoolName != null)
         {
             extMetaDataStorPool = loadedParentObjectsRef.storPoolWithInitMap.get(
-                new Pair<>(
+                new PairNonNull<>(
                     extStorPoolNodeName,
                     extStorPoolName
                 )

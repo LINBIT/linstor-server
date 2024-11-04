@@ -38,6 +38,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Provider;
 
@@ -86,7 +87,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     // Not persisted because we do not resume snapshot creation after a restart
     private TransactionSimpleObject<SnapshotDefinition, Boolean> inCreation;
 
-    private final TransactionMap<SnapshotDefinition, Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
+    private final TransactionMap<SnapshotDefinition, PairNonNull<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
     private final TransactionList<SnapshotDefinition, DeviceLayerKind> layerStack;
 
     private final Key snapDfnKey;
@@ -103,7 +104,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMapRef,
         Map<NodeName, Snapshot> snapshotMapRef,
-        Map<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef
+        Map<PairNonNull<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef
     )
         throws DatabaseException
     {
@@ -383,7 +384,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         checkDeleted();
         requireAccess(accCtx, AccessType.USE);
         return (T) layerStorage.put(
-            new Pair<>(
+            new PairNonNull<>(
                 rscDfnLayerData.getLayerKind(),
                 rscDfnLayerData.getRscNameSuffix()
             ),
@@ -404,7 +405,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     {
         checkDeleted();
         requireAccess(accCtx, AccessType.USE);
-        return (T) layerStorage.get(new Pair<>(kind, rscNameSuffixRef));
+        return (T) layerStorage.get(new PairNonNull<>(kind, rscNameSuffixRef));
     }
 
     /**
@@ -424,9 +425,9 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         requireAccess(accCtx, AccessType.USE);
 
         Map<String, T> ret = new TreeMap<>();
-        for (Entry<Pair<DeviceLayerKind, String>, RscDfnLayerObject> entry : layerStorage.entrySet())
+        for (Entry<PairNonNull<DeviceLayerKind, String>, RscDfnLayerObject> entry : layerStorage.entrySet())
         {
-            Pair<DeviceLayerKind, String> key = entry.getKey();
+            PairNonNull<DeviceLayerKind, String> key = entry.getKey();
             if (key.objA.equals(kind))
             {
                 ret.put(key.objB, (T) entry.getValue());
@@ -444,7 +445,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     {
         checkDeleted();
         requireAccess(accCtx, AccessType.USE);
-        layerStorage.remove(new Pair<>(kind, rscNameSuffixRef)).delete();
+        layerStorage.remove(new PairNonNull<>(kind, rscNameSuffixRef)).delete();
         for (SnapshotVolumeDefinition snapVlmDfn : snapshotVolumeDefinitionMap.values())
         {
             snapVlmDfn.removeLayerData(accCtx, kind, rscNameSuffixRef);
@@ -496,15 +497,15 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
          * This serialization is only for clients (satellite will not iterate over this set)
          * Sorting an enum by default orders by its ordinal number, not alphanumerically.
          */
-        TreeSet<Pair<DeviceLayerKind, String>> sortedLayerStack = new TreeSet<>();
+        TreeSet<PairNonNull<DeviceLayerKind, String>> sortedLayerStack = new TreeSet<>();
         for (DeviceLayerKind kind : layerStack)
         {
-            sortedLayerStack.add(new Pair<>(kind, ""));
+            sortedLayerStack.add(new PairNonNull<>(kind, ""));
         }
         sortedLayerStack.addAll(layerStorage.keySet());
 
         List<Pair<String, RscDfnLayerDataApi>> layerData = new ArrayList<>();
-        for (Pair<DeviceLayerKind, String> pair : sortedLayerStack)
+        for (PairNonNull<DeviceLayerKind, String> pair : sortedLayerStack)
         {
             RscDfnLayerObject rscDfnLayerObject = layerStorage.get(pair);
             layerData.add(

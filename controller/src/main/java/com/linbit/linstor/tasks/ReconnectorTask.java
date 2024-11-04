@@ -35,7 +35,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockType;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -260,7 +260,7 @@ public class ReconnectorTask implements Task
     @Override
     public long run(long scheduleAt)
     {
-        Pair<ArrayList<ReconnectConfig>, ArrayList<Pair<Flux<ApiCallRc>, Peer>>> pair;
+        PairNonNull<ArrayList<ReconnectConfig>, ArrayList<PairNonNull<Flux<ApiCallRc>, Peer>>> pair;
         try (LockGuard lockGuard = lockGuardFactory.build(LockType.READ, NODES_MAP))
         {
             synchronized (syncObj)
@@ -378,9 +378,9 @@ public class ReconnectorTask implements Task
         return getNextFutureReschedule(scheduleAt, RECONNECT_SLEEP);
     }
 
-    private void runEvictionFluxes(ArrayList<Pair<Flux<ApiCallRc>, Peer>> fluxList)
+    private void runEvictionFluxes(ArrayList<PairNonNull<Flux<ApiCallRc>, Peer>> fluxList)
     {
-        for (Pair<Flux<ApiCallRc>, Peer> pair : fluxList)
+        for (PairNonNull<Flux<ApiCallRc>, Peer> pair : fluxList)
         {
             Peer peer = pair.objB;
             pair.objA.contextWrite(
@@ -450,7 +450,7 @@ public class ReconnectorTask implements Task
         }
     }
 
-    public ArrayList<Pair<Flux<ApiCallRc>, Peer>> rerunConfigChecks()
+    public ArrayList<PairNonNull<Flux<ApiCallRc>, Peer>> rerunConfigChecks()
     {
         synchronized (syncObj)
         {
@@ -458,11 +458,11 @@ public class ReconnectorTask implements Task
         }
     }
 
-    private Pair<ArrayList<ReconnectConfig>, ArrayList<Pair<Flux<ApiCallRc>, Peer>>> getFailedPeers()
+    private PairNonNull<ArrayList<ReconnectConfig>, ArrayList<PairNonNull<Flux<ApiCallRc>, Peer>>> getFailedPeers()
     {
         ArrayList<ReconnectConfig> retry = new ArrayList<>();
         ArrayList<ReconnectConfig> copy = new ArrayList<>(reconnectorConfigSet);
-        ArrayList<Pair<Flux<ApiCallRc>, Peer>> fluxes = new ArrayList<>();
+        ArrayList<PairNonNull<Flux<ApiCallRc>, Peer>> fluxes = new ArrayList<>();
         for (ReconnectConfig config : copy)
         {
             try
@@ -526,7 +526,9 @@ public class ReconnectorTask implements Task
                                 errorReporter.logTrace(
                                     config.peer + " has been offline for too long, relocation of resources started."
                                 );
-                                fluxes.add(new Pair<>(ctrlNodeApiCallHandler.get().declareEvicted(node), config.peer));
+                                fluxes.add(
+                                    new PairNonNull<>(ctrlNodeApiCallHandler.get().declareEvicted(node), config.peer)
+                                );
 
                                 // evicted, stop trying reconnect
                                 retry.remove(config);
@@ -558,7 +560,7 @@ public class ReconnectorTask implements Task
                 errorReporter.reportError(exc);
             }
         }
-        return new Pair<>(retry, fluxes);
+        return new PairNonNull<>(retry, fluxes);
     }
 
     private boolean drbdConnectionsOk(Peer peer)

@@ -37,6 +37,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.ExceptionThrowingPredicate;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Provider;
 
@@ -94,7 +95,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
 
     private final ResourceDefinitionDatabaseDriver dbDriver;
 
-    private final TransactionMap<ResourceDefinition, Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
+    private final TransactionMap<ResourceDefinition, PairNonNull<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
 
     private final TransactionList<ResourceDefinition, @Nullable DeviceLayerKind> layerStack;
 
@@ -114,7 +115,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
         Map<NodeName, Resource> rscMapRef,
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef,
-        Map<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef,
+        Map<PairNonNull<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef,
         ResourceGroup rscGrpRef
     )
         throws DatabaseException
@@ -468,7 +469,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
         return (T) layerStorage.put(
-            new Pair<>(
+            new PairNonNull<>(
                 rscDfnLayerData.getLayerKind(),
                 rscDfnLayerData.getRscNameSuffix()
             ),
@@ -489,7 +490,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        return (T) layerStorage.get(new Pair<>(kind, rscNameSuffixRef));
+        return (T) layerStorage.get(new PairNonNull<>(kind, rscNameSuffixRef));
     }
 
     /**
@@ -509,9 +510,9 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         objProt.requireAccess(accCtx, AccessType.USE);
 
         Map<String, T> ret = new TreeMap<>();
-        for (Entry<Pair<DeviceLayerKind, String>, RscDfnLayerObject> entry : layerStorage.entrySet())
+        for (Entry<PairNonNull<DeviceLayerKind, String>, RscDfnLayerObject> entry : layerStorage.entrySet())
         {
-            Pair<DeviceLayerKind, String> key = entry.getKey();
+            PairNonNull<DeviceLayerKind, String> key = entry.getKey();
             if (key.objA.equals(kind))
             {
                 ret.put(key.objB, (T) entry.getValue());
@@ -529,7 +530,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        layerStorage.remove(new Pair<>(kind, rscNameSuffixRef)).delete();
+        layerStorage.remove(new PairNonNull<>(kind, rscNameSuffixRef)).delete();
         for (VolumeDefinition vlmDfn : volumeMap.values())
         {
             vlmDfn.removeLayerData(accCtx, kind, rscNameSuffixRef);
@@ -639,15 +640,15 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
          *
          * Sorting an enum by default orders by its ordinal number, not alphanumerically.
          */
-        TreeSet<Pair<DeviceLayerKind, String>> sortedLayerStack = new TreeSet<>();
+        TreeSet<PairNonNull<DeviceLayerKind, String>> sortedLayerStack = new TreeSet<>();
         for (DeviceLayerKind kind : layerStack)
         {
-            sortedLayerStack.add(new Pair<>(kind, ""));
+            sortedLayerStack.add(new PairNonNull<>(kind, ""));
         }
         sortedLayerStack.addAll(layerStorage.keySet());
 
         List<Pair<String, RscDfnLayerDataApi>> layerData = new ArrayList<>();
-        for (Pair<DeviceLayerKind, String> pair : sortedLayerStack)
+        for (PairNonNull<DeviceLayerKind, String> pair : sortedLayerStack)
         {
             RscDfnLayerObject rscDfnLayerObject = layerStorage.get(pair);
             layerData.add(

@@ -38,7 +38,7 @@ import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -440,7 +440,7 @@ public class ScheduleBackupService implements SystemService
                     );
                 }
                 ZonedDateTime now = ZonedDateTime.now();
-                Pair<Long, Boolean> infoPair = getTimeoutAndType(
+                PairNonNull<Long, Boolean> infoPair = getTimeoutAndType(
                     schedule,
                     accCtx,
                     now,
@@ -551,7 +551,11 @@ public class ScheduleBackupService implements SystemService
                     ZonedDateTime now = ZonedDateTime.now();
                     for (ScheduledShippingConfig config : configSet)
                     {
-                        Pair<Long, Boolean> infoPair = getTimeoutAndType(
+                        if (config.task == null)
+                        {
+                            throw new ImplementationError("config.task not initialized");
+                        }
+                        PairNonNull<Long, Boolean> infoPair = getTimeoutAndType(
                             scheduleRef, accCtx, now, config.task.getPreviousTaskStartTime(), true, false,
                             config.lastInc
                         );
@@ -625,7 +629,7 @@ public class ScheduleBackupService implements SystemService
         return ret;
     }
 
-    static Pair<Long, Boolean> getTimeoutAndType(
+    static PairNonNull<Long, Boolean> getTimeoutAndType(
         Schedule schedule,
         AccessContext accCtx,
         ZonedDateTime now,
@@ -663,7 +667,7 @@ public class ScheduleBackupService implements SystemService
         boolean incr;
         if (lastStartTime == NOT_STARTED_YET)
         {
-            Pair<Long, Boolean> result = earlier(nextFullFromNow, nextIncrFromNow, nowMillis);
+            PairNonNull<Long, Boolean> result = earlier(nextFullFromNow, nextIncrFromNow, nowMillis);
             timeout = result.objA;
             incr = result.objB;
         }
@@ -689,7 +693,7 @@ public class ScheduleBackupService implements SystemService
                 if (nextIncrFromNow.isEqual(nextIncrExecFromLastStart) || !incExists || (!lastBackupSucceeded && skip))
                 {
                     // we are on schedule or we do not have an incremental schedule
-                    Pair<Long, Boolean> result = earlier(nextFullFromNow, nextIncrFromNow, nowMillis);
+                    PairNonNull<Long, Boolean> result = earlier(nextFullFromNow, nextIncrFromNow, nowMillis);
                     timeout = result.objA;
                     incr = result.objB;
                 }
@@ -713,10 +717,10 @@ public class ScheduleBackupService implements SystemService
                 incr = incr && lastIncr;
             }
         }
-        return new Pair<>(timeout, incr);
+        return new PairNonNull<>(timeout, incr);
     }
 
-    private static Pair<Long, Boolean> earlier(ZonedDateTime nextFullRef, ZonedDateTime nextIncrRef, long nowRef)
+    private static PairNonNull<Long, Boolean> earlier(ZonedDateTime nextFullRef, ZonedDateTime nextIncrRef, long nowRef)
     {
         long timeout;
         boolean incr;
@@ -730,7 +734,7 @@ public class ScheduleBackupService implements SystemService
             timeout = nextFullRef.toEpochSecond() * 1000 + nextFullRef.getNano() / 1_000_000 - nowRef;
             incr = false;
         }
-        return new Pair<>(timeout, incr);
+        return new PairNonNull<>(timeout, incr);
     }
 
     public void removeTasks(ResourceDefinition rscDfnRef)
@@ -810,7 +814,17 @@ public class ScheduleBackupService implements SystemService
     public void removeSingleTask(Schedule schedule, AbsRemote remote, ResourceDefinition rscDfn)
     {
         removeSingleTask(
-            new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>(), null, null, null, false),
+            new ScheduledShippingConfig(
+                schedule,
+                remote,
+                rscDfn,
+                false,
+                new PairNonNull<>(NOT_STARTED_YET, false),
+                null,
+                null,
+                null,
+                false
+            ),
             false
         );
     }
@@ -936,7 +950,7 @@ public class ScheduleBackupService implements SystemService
         public final @Nullable String dstRscGrp;
         public final boolean forceRscGrp;
 
-        public Pair<Long, Boolean> timeoutAndType;
+        public PairNonNull<Long, Boolean> timeoutAndType;
         public @Nullable Long timeoutAndTypeCalculatedFrom;
         private @Nullable BackupShippingTask task;
         public int retryCt;
@@ -946,7 +960,7 @@ public class ScheduleBackupService implements SystemService
             AbsRemote remoteRef,
             ResourceDefinition rscDfnRef,
             boolean lastIncRef,
-            Pair<Long, Boolean> timeoutAndTypeRef,
+            PairNonNull<Long, Boolean> timeoutAndTypeRef,
             @Nullable Long timeoutAndTypeCalculatedFromRef,
             @Nullable Map<String, String> storpoolRenameMapRef,
             @Nullable String dstRscGrpRef,

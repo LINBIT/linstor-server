@@ -23,7 +23,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
@@ -148,7 +148,7 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
      * @throws ApiDatabaseException if setProp fails
      * @throws ApiAccessDeniedException if apiCtx doesn't have access to resource definition
      */
-    public Pair<ApiCallRc, Set<Resource>> updateVerifyAlgorithm(ResourceDefinition rscDfn)
+    public PairNonNull<ApiCallRc, Set<Resource>> updateVerifyAlgorithm(ResourceDefinition rscDfn)
     {
         final ApiCallRcImpl rc = new ApiCallRcImpl();
         final Set<Resource> touchedResources = new HashSet<>();
@@ -255,6 +255,6 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
             throw new ApiException(invValExc);
         }
 
-        return new Pair<>(rc, touchedResources);
+        return new PairNonNull<>(rc, touchedResources);
     }
 }

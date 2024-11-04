@@ -74,7 +74,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.AccessUtils;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
@@ -197,7 +197,7 @@ public class CtrlRscCrtApiHelper
      *
      * @return the newly created resource
      */
-    public Pair<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createResourceDb(
+    public PairNonNull<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createResourceDb(
         String nodeNameStr,
         String rscNameStr,
         long flags,
@@ -497,7 +497,7 @@ public class CtrlRscCrtApiHelper
             autoFlux.add(ctrlRscActivateApiCallHandler.deactivateRsc(nodeNameStr, rscNameStr));
         }
 
-        return new Pair<>(autoFlux, new ApiCallRcWith<>(responses, rsc));
+        return new PairNonNull<>(autoFlux, new ApiCallRcWith<>(responses, rsc));
     }
 
     static List<DeviceLayerKind> getLayerstackOrBuildDefault(

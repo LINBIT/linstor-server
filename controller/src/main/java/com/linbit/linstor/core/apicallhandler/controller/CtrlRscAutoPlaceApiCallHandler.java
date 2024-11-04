@@ -40,7 +40,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
@@ -281,7 +281,7 @@ public class CtrlRscAutoPlaceApiCallHandler
 
             if (candidate != null)
             {
-                Pair<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = createResources(
+                PairNonNull<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = createResources(
                     context,
                     responses,
                     rscNameStr,
@@ -374,7 +374,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         return autoplacer.autoPlace(autoStorConfigRef, rscDfnRef, rscSize);
     }
 
-    public Pair<List<Flux<ApiCallRc>>, Set<Resource>> createResources(
+    public PairNonNull<List<Flux<ApiCallRc>>, Set<Resource>> createResources(
         ResponseContext context,
         ApiCallRcImpl responses,
         String rscNameStr,
@@ -401,7 +401,8 @@ public class CtrlRscAutoPlaceApiCallHandler
             String storPoolDisplayName = storPool.getName().displayValue;
             rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, storPoolDisplayName);
 
-            Pair<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper.createResourceDb(
+            PairNonNull<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper
+                .createResourceDb(
                 storPool.getNode().getName().displayValue,
                 rscNameStr,
                 0L,
@@ -439,7 +440,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                                 deployedResource.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER))
                     )
                     {
-                        Pair<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper
+                        PairNonNull<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper
                             .createResourceDb(
                                 disklessNode.getName().displayValue,
                                 rscNameStr,
@@ -495,7 +496,7 @@ public class CtrlRscAutoPlaceApiCallHandler
 
         responseConverter.addWithOp(responses, context, entry);
 
-        return new Pair<>(autoFlux, deployedResources);
+        return new PairNonNull<>(autoFlux, deployedResources);
     }
 
     /**

@@ -22,6 +22,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeStorPool.DRIVER_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeStorPool.EXTERNAL_LOCKING;
@@ -43,8 +44,7 @@ public final class StorPoolDbDriver
     extends AbsProtectedDatabaseDriver<
         StorPool,
         StorPool.InitMaps,
-        Pair<
-            Map<NodeName, ? extends Node>,
+        PairNonNull<Map<NodeName, ? extends Node>,
             Map<StorPoolName, ? extends StorPoolDefinition>>>
     implements StorPoolCtrlDatabaseDriver
 {
@@ -103,7 +103,7 @@ public final class StorPoolDbDriver
     @Override
     protected Pair<StorPool, StorPool.InitMaps> load(
         RawParameters raw,
-        Pair<Map<NodeName, ? extends Node>,
+        PairNonNull<Map<NodeName, ? extends Node>,
             Map<StorPoolName, ? extends StorPoolDefinition>> parent
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException

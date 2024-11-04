@@ -94,7 +94,7 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
@@ -1094,7 +1094,7 @@ public class CtrlNodeApiCallHandler
         hasKeyInDrbdOptions |= deleteNamespaces.contains(ApiConsts.NAMESPC_DRBD_OPTIONS);
         if (hasKeyInDrbdOptions)
         {
-            for (Pair<Flux<ApiCallRc>, Peer> pair : reconnectorTask.rerunConfigChecks())
+            for (PairNonNull<Flux<ApiCallRc>, Peer> pair : reconnectorTask.rerunConfigChecks())
             {
                 retFlux = retFlux.concatWith(pair.objA);
             }

@@ -21,7 +21,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -268,11 +268,11 @@ public class CtrlQuerySizeInfoHelper
         return simulate(capacitySizes, placeCountRef);
     }
 
-    public Pair<QueryAllSizeInfoResponsePojo, Double> getQasiResponse(
+    public @Nullable PairNonNull<QueryAllSizeInfoResponsePojo, Double> getQasiResponse(
         QueryAllSizeInfoRequestPojo queryAllSizeInfoReqRef
     )
     {
-        Pair<QueryAllSizeInfoResponsePojo, Double> ret;
+        PairNonNull<QueryAllSizeInfoResponsePojo, Double> ret;
         synchronized (cachedQasiMap)
         {
             ret = getCached(
@@ -295,11 +295,11 @@ public class CtrlQuerySizeInfoHelper
         }
     }
 
-    public Pair<ApiCallRcWith<QuerySizeInfoResponsePojo>, Double> getQsiResponse(
+    public @Nullable PairNonNull<ApiCallRcWith<QuerySizeInfoResponsePojo>, Double> getQsiResponse(
         QuerySizeInfoRequestPojo querySizeInfoReqRef
     )
     {
-        Pair<ApiCallRcWith<QuerySizeInfoResponsePojo>, Double> ret;
+        PairNonNull<ApiCallRcWith<QuerySizeInfoResponsePojo>, Double> ret;
         synchronized (cachedQsiPojoMap)
         {
             ret = getCached(
@@ -328,13 +328,13 @@ public class CtrlQuerySizeInfoHelper
         }
     }
 
-    private <T> @Nullable Pair<T, Double> getCached(
+    private <T> @Nullable PairNonNull<T, Double> getCached(
         Map<AutoSelectFilterPojo, CacheEntry<T>> cachedMapRef,
         int ignoreCacheOlderThanSecRef,
         @Nullable AutoSelectFilterApi autoSelectFilterRef
     )
     {
-        Pair<T, Double> ret = null;
+        PairNonNull<T, Double> ret = null;
         if (cachedMapRef != null)
         {
             CacheEntry<T> cacheEntry = cachedMapRef.get(autoSelectFilterRef);
@@ -343,7 +343,7 @@ public class CtrlQuerySizeInfoHelper
                 long now = System.currentTimeMillis();
                 if (cacheEntry.cacheTimestampInMs + ignoreCacheOlderThanSecRef * SEC_TO_MS > now)
                 {
-                    ret = new Pair<>(cacheEntry.obj, (now - cacheEntry.cacheTimestampInMs) * 1.0 / SEC_TO_MS);
+                    ret = new PairNonNull<>(cacheEntry.obj, (now - cacheEntry.cacheTimestampInMs) * 1.0 / SEC_TO_MS);
                 }
             }
         }

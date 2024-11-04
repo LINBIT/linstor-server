@@ -25,6 +25,7 @@ import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 
@@ -342,18 +343,18 @@ public class PrometheusBuilder
         if (rl != null)
         {
             tf.startGauge("linstor_resource_state", "-1=\"unknown state\", 0=\"secondary\", 1=\"primary\"");
-            ArrayList<Pair<ResourceApi, VolumeApi>> volumeApis = new ArrayList<>();
+            ArrayList<PairNonNull<ResourceApi, VolumeApi>> volumeApis = new ArrayList<>();
             for (ResourceApi resApi : rl.getResources())
             {
                 SatelliteResourceState resState = getResourceState(rl.getSatelliteStates(), resApi);
                 tf.writeSample(resourceExport(resApi), resourceState(resState));
                 volumeApis.addAll(resApi.getVlmList().stream()
-                    .map(vlmApi -> new Pair<ResourceApi, VolumeApi>(resApi, vlmApi))
+                    .map(vlmApi -> new PairNonNull<ResourceApi, VolumeApi>(resApi, vlmApi))
                     .collect(Collectors.toList()));
             }
 
             tf.startGauge("linstor_volume_state", VOLUME_STATE_HELP);
-            for (Pair<ResourceApi, VolumeApi> pair : volumeApis)
+            for (PairNonNull<ResourceApi, VolumeApi> pair : volumeApis)
             {
                 JsonGenTypes.Volume vlm = Json.apiToVolume(pair.objB);
                 vlm.state = Json.apiToVolumeState(
@@ -363,7 +364,7 @@ public class PrometheusBuilder
             }
 
             tf.startGauge("linstor_volume_allocated_size_bytes");
-            for (Pair<ResourceApi, VolumeApi> pair : volumeApis)
+            for (PairNonNull<ResourceApi, VolumeApi> pair : volumeApis)
             {
                 double val = pair.objB.getAllocatedSize().isPresent() ?
                     pair.objB.getAllocatedSize().get() * 1024 : Double.NaN;

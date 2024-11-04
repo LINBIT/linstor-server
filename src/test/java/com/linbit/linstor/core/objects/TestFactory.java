@@ -24,7 +24,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Provider;
 
@@ -213,7 +213,7 @@ public class TestFactory
         Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
         Map<NodeName, Resource> rscMapRef,
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef,
-        Map<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef,
+        Map<PairNonNull<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef,
         ResourceGroup rscGrpRef
     )
         throws DatabaseException
@@ -381,7 +381,7 @@ public class TestFactory
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<String, Volume> vlmMapRef,
-        Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
+        Map<PairNonNull<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
     )
         throws DatabaseException, MdException
     {

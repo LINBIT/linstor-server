@@ -57,7 +57,7 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Base64;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.TimeUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
@@ -283,7 +283,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             throw new ApiDatabaseException(exc);
         }
 
-        Pair<Set<Flags>, Set<Flags>> flagPair = FlagsHelper.extractFlagsToEnableOrDisable(
+        PairNonNull<Set<Flags>, Set<Flags>> flagPair = FlagsHelper.extractFlagsToEnableOrDisable(
             VolumeDefinition.Flags.class,
             vlmDfnFlagsRef
         );

@@ -37,7 +37,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.utils.Either;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -174,7 +174,7 @@ public class StorageLayer implements DeviceLayer
     )
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        Map<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> groupedData;
+        Map<DeviceProvider, PairNonNull<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> groupedData;
         groupedData = new HashMap<>();
 
         for (AbsRscLayerObject<Resource> rscLayerObject : rscObjList)
@@ -198,26 +198,27 @@ public class StorageLayer implements DeviceLayer
                 ).objB.add(snapVlmProviderObject);
             }
         }
-        for (Entry<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> entry :
+        for (
+            Entry<DeviceProvider, PairNonNull<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> entry :
             groupedData.entrySet())
         {
             DeviceProvider deviceProvider = entry.getKey();
-            Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> pair = entry.getValue();
+            PairNonNull<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> pair = entry.getValue();
 
             deviceProvider.prepare(pair.objA, pair.objB);
         }
     }
 
-    private Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> getOrCreatePair(
-        Map<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> groupedData,
+    private PairNonNull<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> getOrCreatePair(
+        Map<DeviceProvider, PairNonNull<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> groupedData,
         DeviceProvider deviceProvider
     )
     {
-        Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> pair = groupedData
+        PairNonNull<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> pair = groupedData
             .get(deviceProvider);
         if (pair == null)
         {
-            pair = new Pair<>(new ArrayList<>(), new ArrayList<>());
+            pair = new PairNonNull<>(new ArrayList<>(), new ArrayList<>());
             groupedData.put(deviceProvider, pair);
         }
         return pair;

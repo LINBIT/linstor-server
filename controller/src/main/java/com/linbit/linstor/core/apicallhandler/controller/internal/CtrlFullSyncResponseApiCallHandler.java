@@ -27,7 +27,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -158,7 +158,7 @@ public class CtrlFullSyncResponseApiCallHandler
                 fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc, responseCtxRef));
             }
 
-            Pair<Set<SnapshotDefinition>, Set<RemoteName>> objsToDel = backupInfoMgr.removeAllRestoreEntries(
+            PairNonNull<Set<SnapshotDefinition>, Set<RemoteName>> objsToDel = backupInfoMgr.removeAllRestoreEntries(
                 apiCtx,
                 localNode
             );

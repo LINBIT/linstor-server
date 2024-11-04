@@ -9,13 +9,14 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.ControllerDatabaseDriver;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.util.Map;
 
 public interface SnapshotCtrlDatabaseDriver extends SnapshotDatabaseDriver,
     ControllerDatabaseDriver<AbsResource<Snapshot>,
         Snapshot.InitMaps,
-        Pair<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
+        PairNonNull<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
 {
 
 }

@@ -58,7 +58,7 @@ import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 import com.linbit.linstor.utils.NameShortener;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -341,7 +341,7 @@ public class RscStorageLayerHelper extends
                     );
                     break;
                 case EBS_INIT:
-                    Pair<String, Resource> unusedTargetEbsPair = findUnusedTargetEbsPair(
+                    PairNonNull<String, Resource> unusedTargetEbsPair = findUnusedTargetEbsPair(
                         apiCtx,
                         remoteMap,
                         rscData,
@@ -516,7 +516,7 @@ public class RscStorageLayerHelper extends
         return ((EbsRemote) remote).getAvailabilityZone(accCtx);
     }
 
-    private static Pair<String, Resource> findUnusedTargetEbsPair(
+    private static PairNonNull<String, Resource> findUnusedTargetEbsPair(
         AccessContext accCtxRef,
         RemoteMap remoteMap,
         StorageRscData<Resource> rscDataRef,
@@ -526,11 +526,11 @@ public class RscStorageLayerHelper extends
         throws AccessDeniedException, DatabaseException
     {
         String storedEbsVlmId = getEbsVlmId(accCtxRef, rscDataRef, vlmRef);
-        Pair<String, Resource> ret;
+        PairNonNull<String, Resource> ret;
 
         if (storedEbsVlmId != null)
         {
-            ret = new Pair<>(storedEbsVlmId, vlmRef.getAbsResource());
+            ret = new PairNonNull<>(storedEbsVlmId, vlmRef.getAbsResource());
         }
         else
         {
@@ -563,7 +563,7 @@ public class RscStorageLayerHelper extends
                 throw new ImplementationError("Target volume '" + targetVlm + "' does not have an EBSVlmId");
             }
 
-            ret = new Pair<>(targetEbsVlmId, targetRsc);
+            ret = new PairNonNull<>(targetEbsVlmId, targetRsc);
         }
         return ret;
     }

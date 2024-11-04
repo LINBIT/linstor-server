@@ -36,6 +36,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Provider;
 
@@ -86,7 +87,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
 
     private transient TransactionSimpleObject<VolumeDefinition, String> cryptKey;
 
-    private final TransactionMap<VolumeDefinition, Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
+    private final TransactionMap<VolumeDefinition, PairNonNull<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
 
     private final Key vlmDfnKey;
 
@@ -101,7 +102,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<String, Volume> vlmMapRef,
-        Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
+        Map<PairNonNull<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
     )
         throws MdException, DatabaseException
     {
@@ -165,7 +166,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
 
     static void checkVolumeSize(
         long volSize,
-        Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorageRef
+        Map<PairNonNull<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorageRef
     )
         throws MinSizeException, MaxSizeException
     {
@@ -319,7 +320,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         return (T) layerStorage.put(
-            new Pair<>(
+            new PairNonNull<>(
                 vlmDfnLayerData.getLayerKind(),
                 vlmDfnLayerData.getRscNameSuffix()
             ), vlmDfnLayerData
@@ -337,9 +338,9 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         Map<String, T> ret = new TreeMap<>();
-        for (Entry<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> entry : layerStorage.entrySet())
+        for (Entry<PairNonNull<DeviceLayerKind, String>, VlmDfnLayerObject> entry : layerStorage.entrySet())
         {
-            Pair<DeviceLayerKind, String> key = entry.getKey();
+            PairNonNull<DeviceLayerKind, String> key = entry.getKey();
             if (key.objA.equals(kind))
             {
                 ret.put(key.objB, (T) entry.getValue());
@@ -359,7 +360,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        return (T) layerStorage.get(new Pair<>(kind, rscNameSuffix));
+        return (T) layerStorage.get(new PairNonNull<>(kind, rscNameSuffix));
     }
 
     public void removeLayerData(AccessContext accCtx, DeviceLayerKind kind, String rscNameSuffix)
@@ -367,7 +368,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        layerStorage.remove(new Pair<>(kind, rscNameSuffix)).delete();
+        layerStorage.remove(new PairNonNull<>(kind, rscNameSuffix)).delete();
     }
 
     public void markDeleted(AccessContext accCtx)
@@ -423,15 +424,15 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
          * Sorting an enum by default orders by its ordinal number, not alphanumerically.
          */
 
-        TreeSet<Pair<DeviceLayerKind, String>> sortedLayerStack = new TreeSet<>();
+        TreeSet<PairNonNull<DeviceLayerKind, String>> sortedLayerStack = new TreeSet<>();
         for (DeviceLayerKind kind : resourceDfn.getLayerStack(accCtx))
         {
-            sortedLayerStack.add(new Pair<>(kind, ""));
+            sortedLayerStack.add(new PairNonNull<>(kind, ""));
         }
 
         sortedLayerStack.addAll(layerStorage.keySet());
 
-        for (Pair<DeviceLayerKind, String> pair : sortedLayerStack)
+        for (PairNonNull<DeviceLayerKind, String> pair : sortedLayerStack)
         {
             VlmDfnLayerObject vlmDfnLayerObject = layerStorage.get(pair);
             layerData.add(

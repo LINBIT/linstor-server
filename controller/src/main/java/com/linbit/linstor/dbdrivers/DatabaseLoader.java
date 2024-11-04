@@ -99,6 +99,7 @@ import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
@@ -416,7 +417,7 @@ public class DatabaseLoader implements DatabaseDriver
             // loading storage pools
             Map<StorPool, StorPool.InitMaps> loadedStorPools = Collections.unmodifiableMap(
                 storPoolDriver.loadAll(
-                    new Pair<>(
+                    new PairNonNull<>(
                         tmpNodesMap,
                         tmpStorPoolDfnMap
                     )
@@ -442,7 +443,7 @@ public class DatabaseLoader implements DatabaseDriver
 
             // loading resources
             Map<AbsResource<Resource>, Resource.InitMaps> loadedAbsResources =
-                Collections.unmodifiableMap(rscDriver.loadAll(new Pair<>(tmpNodesMap, tmpRscDfnMap)));
+                Collections.unmodifiableMap(rscDriver.loadAll(new PairNonNull<>(tmpNodesMap, tmpRscDfnMap)));
             Map<Resource, Resource.InitMaps> loadedResources = new TreeMap<>(); // casted version of loadedAbsResources
             for (Entry<AbsResource<Resource>, Resource.InitMaps> absEntry : loadedAbsResources.entrySet())
             {
@@ -494,7 +495,7 @@ public class DatabaseLoader implements DatabaseDriver
             // loading volumes
             Map<Volume, Volume.InitMaps> loadedVolumes = Collections.unmodifiableMap(
                 vlmDriver.loadAll(
-                    new Pair<>(tmpRscMap, tmpVlmDfnMap)
+                    new PairNonNull<>(tmpRscMap, tmpVlmDfnMap)
                 )
             );
 
@@ -545,7 +546,7 @@ public class DatabaseLoader implements DatabaseDriver
             // loading snapshot volume definitions
             Map<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> loadedSnapshotVolumeDefinitions =
                 snapshotVolumeDefinitionDriver.loadAll(
-                    new Pair<>(tmpSnapshotDfnMap, tmpVlmDfnMap)
+                    new PairNonNull<>(tmpSnapshotDfnMap, tmpVlmDfnMap)
                 );
             for (SnapshotVolumeDefinition snapshotVolumeDefinition : loadedSnapshotVolumeDefinitions.keySet())
             {
@@ -564,7 +565,7 @@ public class DatabaseLoader implements DatabaseDriver
 
             // loading snapshots
             Map<AbsResource<Snapshot>, Snapshot.InitMaps> loadedAbsSnapshots = snapshotDriver.loadAll(
-                new Pair<>(tmpNodesMap, tmpSnapshotDfnMap)
+                new PairNonNull<>(tmpNodesMap, tmpSnapshotDfnMap)
             );
             Map<Snapshot, Snapshot.InitMaps> loadedSnapshots = new TreeMap<>();
             for (Entry<AbsResource<Snapshot>, Snapshot.InitMaps> absEntry : loadedAbsSnapshots.entrySet())
@@ -589,7 +590,7 @@ public class DatabaseLoader implements DatabaseDriver
             // loading snapshot volumes
             List<SnapshotVolume> loadedSnapshotVolumes =
                 snapshotVolumeDriver.loadAllAsList(
-                    new Pair<>(
+                    new PairNonNull<>(
                         tmpSnapshotMap,
                         tmpSnapshotVlmDfnMap
                     )
@@ -610,17 +611,17 @@ public class DatabaseLoader implements DatabaseDriver
             keyValueStoreMap.putAll(tmpKeyValueStoreMap);
 
             // temporary storPool map
-            Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapForLayers =
+            Map<PairNonNull<NodeName, StorPoolName>, PairNonNull<StorPool, StorPool.InitMaps>> tmpStorPoolMapForLayers =
                 new TreeMap<>();
             for (Entry<StorPool, StorPool.InitMaps> entry : loadedStorPools.entrySet())
             {
                 StorPool storPool = entry.getKey();
                 tmpStorPoolMapForLayers.put(
-                    new Pair<>(
+                    new PairNonNull<>(
                         storPool.getNode().getName(),
                         storPool.getName()
                     ),
-                    new Pair<>(
+                    new PairNonNull<>(
                         storPool,
                         entry.getValue()
                     )
@@ -708,7 +709,7 @@ public class DatabaseLoader implements DatabaseDriver
         Map<Pair<NodeName, ResourceName>, Resource> tmpRscMapRef,
         Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> tmpSnapDfnMapRef,
         Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> tmpSnapMapRef,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapWithInitMapsRef
+        Map<PairNonNull<NodeName, StorPoolName>, PairNonNull<StorPool, StorPool.InitMaps>> tmpStorPoolMapWithInitMapsRef
     )
         throws DatabaseException, AccessDeniedException, ImplementationError, InvalidNameException,
         ValueOutOfRangeException, InvalidIpAddressException, MdException
@@ -804,7 +805,7 @@ public class DatabaseLoader implements DatabaseDriver
         Map<Pair<NodeName, ResourceName>, Resource> tmpRscMapRef,
         Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> tmpSnapDfnMapRef,
         Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> tmpSnapMapRef,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapWithInitMapsRef
+        Map<PairNonNull<NodeName, StorPoolName>, PairNonNull<StorPool, StorPool.InitMaps>> tmpStorPoolMapWithInitMapsRef
     )
         throws DatabaseException
     {
@@ -832,7 +833,7 @@ public class DatabaseLoader implements DatabaseDriver
 
     private <RSC extends AbsResource<RSC>> Set<RSC> loadLayerData(
         ParentObjects parentObjectsRef,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapWithInitMapsRef,
+        Map<PairNonNull<NodeName, StorPoolName>, PairNonNull<StorPool, StorPool.InitMaps>> tmpStorPoolMapWithInitMapsRef,
         ExceptionThrowingFunction<AbsRscLayerObject<?>, RSC, AccessDeniedException> getter
     )
         throws DatabaseException, AccessDeniedException, ImplementationError, InvalidNameException,

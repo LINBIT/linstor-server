@@ -14,7 +14,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 
@@ -182,7 +182,7 @@ public class StorPoolDbDriverTest extends GenericDbBase
         tmpFreeSpaceMgrMap.put(disklessFsm.getName(), disklessFsm);
 
         Map<StorPool, StorPool.InitMaps> storPools = driver.loadAll(
-            new Pair<>(
+            new PairNonNull<>(
                 tmpNodesMap,
                 tmpStorPoolDfnMap
             )

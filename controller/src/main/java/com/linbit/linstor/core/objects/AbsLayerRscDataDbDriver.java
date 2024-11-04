@@ -32,6 +32,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.Triple;
 
 import javax.inject.Provider;
@@ -143,7 +144,7 @@ public abstract class AbsLayerRscDataDbDriver<
         final Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> snapMap;
         final Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> snapDfnMap;
 
-        final Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> storPoolWithInitMap;
+        final Map<PairNonNull<NodeName, StorPoolName>, PairNonNull<StorPool, StorPool.InitMaps>> storPoolWithInitMap;
 
         public ParentObjects(
             Map<Integer, AbsRscLayerObject<?>> dummyLayerResourceObjectyByIdRef,
@@ -151,7 +152,7 @@ public abstract class AbsLayerRscDataDbDriver<
             Map<ResourceName, ResourceDefinition> rscDfnMapRef,
             Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> snapMapRef,
             Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> snapDfnMapRef,
-            Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> storPoolWithInitMapRef
+            Map<PairNonNull<NodeName, StorPoolName>, PairNonNull<StorPool, StorPool.InitMaps>> storPoolWithInitMapRef
         )
         {
             dummyLayerResourceObjectyById = dummyLayerResourceObjectyByIdRef;
@@ -385,7 +386,7 @@ public abstract class AbsLayerRscDataDbDriver<
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
         AbsRscLayerObject<?> dummyLoadingRLO = getDummyLoadingRLO(rscLayerIdRef);
-        Pair<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePair = getNodeNameSuffixedRscNamePair(
+        PairNonNull<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePair = getNodeNameSuffixedRscNamePair(
             dummyLoadingRLO
         );
 
@@ -493,7 +494,7 @@ public abstract class AbsLayerRscDataDbDriver<
         RawParameters rawRef,
         ParentObjects parentRef,
         AbsRscLayerObject<?> currentDummyLoadingRLORef,
-        Pair<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePairRef,
+        PairNonNull<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePairRef,
         @Nullable AbsRscLayerObject<?> loadedParentRscDataRef,
         RSC absRscRef
     )
@@ -505,9 +506,9 @@ public abstract class AbsLayerRscDataDbDriver<
         return rscLayerIdDriver;
     }
 
-    public static Pair<NodeName, SuffixedResourceName> getNodeNameSuffixedRscNamePair(AbsRscLayerObject<?> rlo)
+    public static PairNonNull<NodeName, SuffixedResourceName> getNodeNameSuffixedRscNamePair(AbsRscLayerObject<?> rlo)
     {
-        return new Pair<>(
+        return new PairNonNull<>(
             rlo.getNodeName(),
             new SuffixedResourceName(
                 rlo.getResourceName(),

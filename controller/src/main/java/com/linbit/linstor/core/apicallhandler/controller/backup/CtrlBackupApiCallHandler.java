@@ -65,6 +65,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.TimeUtils;
 
 import static com.linbit.linstor.backupshipping.BackupConsts.META_SUFFIX;
@@ -697,7 +698,13 @@ public class CtrlBackupApiCallHandler
                     // Doesn't match the requested snapshot name, skip it.
                     continue;
                 }
-                Pair<BackupApi, Set<String>> result = getBackupFromMetadata(peerCtx, s3key, info, remote, s3keys);
+                PairNonNull<BackupApi, Set<String>> result = getBackupFromMetadata(
+                    peerCtx,
+                    s3key,
+                    info,
+                    remote,
+                    s3keys
+                );
                 BackupApi back = result.objA;
                 retIdToBackupsApiMap.put(back.getId(), back);
                 linstorBackupsS3Keys.add(s3key);
@@ -833,7 +840,7 @@ public class CtrlBackupApiCallHandler
     /**
      * Get all information needed for listBackups from the meta-file
      */
-    private Pair<BackupApi, Set<String>> getBackupFromMetadata(
+    private PairNonNull<BackupApi, Set<String>> getBackupFromMetadata(
         AccessContext peerCtx,
         String metadataKey,
         S3MetafileNameInfo info,
@@ -901,7 +908,7 @@ public class CtrlBackupApiCallHandler
         String id = metadataKey.substring(0, metadataKey.length() - 5);
         String basedOn = s3MetaFile.getBasedOn();
 
-        return new Pair<>(
+        return new PairNonNull<>(
             new BackupPojo(
                 id,
                 info.rscName,
@@ -1091,7 +1098,7 @@ public class CtrlBackupApiCallHandler
 
             Set<SnapshotDefinition> snapDfnsToUpdateOnlyShipping = new HashSet<>();
             Set<SnapshotDefinition> snapDfnsToUpdateShippingAbort = new HashSet<>();
-            List<Pair<String, String>> stltRemoteAndSnapNamesToUpdateShippingAbort = new ArrayList<>();
+            List<PairNonNull<String, String>> stltRemoteAndSnapNamesToUpdateShippingAbort = new ArrayList<>();
             for (SnapshotDefinition snapDfn : snapDfns)
             {
                 Collection<Snapshot> snaps = snapDfn.getAllSnapshots(peerAccCtx.get());
@@ -1116,7 +1123,7 @@ public class CtrlBackupApiCallHandler
                             // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
                             // this set will not be used anyway, so no need to check for that
                             stltRemoteAndSnapNamesToUpdateShippingAbort.add(
-                                new Pair<>(remoteName, snap.getSnapshotName().displayValue)
+                                new PairNonNull<>(remoteName, snap.getSnapshotName().displayValue)
                             );
                         }
                     }
@@ -1130,7 +1137,7 @@ public class CtrlBackupApiCallHandler
                             // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
                             // this set will not be used anyway, so no need to check for that
                             stltRemoteAndSnapNamesToUpdateShippingAbort.add(
-                                new Pair<>(remoteName, snap.getSnapshotName().displayValue)
+                                new PairNonNull<>(remoteName, snap.getSnapshotName().displayValue)
                             );
                         }
                     }
@@ -1201,11 +1208,13 @@ public class CtrlBackupApiCallHandler
         return flux;
     }
 
-    private Map<String, List<String>> getOtherRscNamesFromStltRemotes(List<Pair<String, String>> remoteSnapPairList)
+    private Map<String, List<String>> getOtherRscNamesFromStltRemotes(
+        List<PairNonNull<String, String>> remoteSnapPairList
+    )
         throws InvalidNameException
     {
         Map<String, List<String>> ret = new HashMap<>();
-        for (Pair<String, String> remoteSnapPair : remoteSnapPairList)
+        for (PairNonNull<String, String> remoteSnapPair : remoteSnapPairList)
         {
             StltRemote remote = (StltRemote) ctrlApiDataLoader.loadRemote(
                 new RemoteName(remoteSnapPair.objA, true),
@@ -1439,7 +1448,7 @@ public class CtrlBackupApiCallHandler
         boolean first = true;
         for (BackupMetaDataPojo meta : data)
         {
-            Pair<Long, Long> totalSizes = new Pair<>(0L, 0L); // dlSize, allocSize
+            PairNonNull<Long, Long> totalSizes = new PairNonNull<>(0L, 0L); // dlSize, allocSize
             fillBackupInfo(first, storPoolMap, objects, meta, meta.getLayerData(), totalSizes);
             first = false;
             totalDlSizeKib += totalSizes.objA;
@@ -1530,7 +1539,7 @@ public class CtrlBackupApiCallHandler
         List<S3ObjectSummary> objects,
         BackupMetaDataPojo meta,
         RscLayerDataApi layerData,
-        Pair<Long, Long> totalSizes
+        PairNonNull<Long, Long> totalSizes
     )
     {
         for (RscLayerDataApi child : layerData.getChildren())

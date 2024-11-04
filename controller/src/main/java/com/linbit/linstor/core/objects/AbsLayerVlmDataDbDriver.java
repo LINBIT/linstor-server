@@ -21,6 +21,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.util.Map;
 import java.util.Set;
@@ -46,12 +47,12 @@ public abstract class AbsLayerVlmDataDbDriver<
     {
         final Map<Pair<SuffixedResourceName, VolumeNumber>, VLM_DFN_DATA_INNER> vlmDfnDataMap;
         final Map<Integer, RscDataLoadOutput<RSC_DATA_INNER, VLM_DATA_INNER>> rscDataMap;
-        final Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> storPoolWithInitMap;
+        final Map<PairNonNull<NodeName, StorPoolName>, PairNonNull<StorPool, StorPool.InitMaps>> storPoolWithInitMap;
 
         private VlmParentObjects(
             Map<Pair<SuffixedResourceName, VolumeNumber>, VLM_DFN_DATA_INNER> vlmDfnDataMapRef,
             Map<Integer, RscDataLoadOutput<RSC_DATA_INNER, VLM_DATA_INNER>> rscDataMapRef,
-            Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> storPoolWithInitMapRef
+            Map<PairNonNull<NodeName, StorPoolName>, PairNonNull<StorPool, StorPool.InitMaps>> storPoolWithInitMapRef
         )
         {
             vlmDfnDataMap = vlmDfnDataMapRef;

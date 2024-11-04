@@ -2,7 +2,7 @@ package com.linbit.linstor.stateflags;
 
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -86,14 +86,14 @@ public class FlagsHelper
      * Returns a pair of sets of positive and negative flags.
      * pair.a is the set of positive flags, pair.b is the set of negative flags.
      */
-    public static <E extends Enum<E> & Flags> Pair<Set<E>, Set<E>> extractFlagsToEnableOrDisable(
+    public static <E extends Enum<E> & Flags> PairNonNull<Set<E>, Set<E>> extractFlagsToEnableOrDisable(
         Class<E> classRef,
         List<String> flagsListRef
     )
     {
         Set<E> flagsToEnable = new TreeSet<>();
         Set<E> flagsToDisable = new TreeSet<>();
-        Pair<Set<E>, Set<E>> ret = new Pair<>(flagsToEnable, flagsToDisable);
+        PairNonNull<Set<E>, Set<E>> ret = new PairNonNull<>(flagsToEnable, flagsToDisable);
 
         for (String flag : flagsListRef)
         {

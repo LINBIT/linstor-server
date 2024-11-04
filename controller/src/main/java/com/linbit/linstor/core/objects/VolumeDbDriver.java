@@ -23,6 +23,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Volumes.NODE_NAME;
@@ -44,8 +45,7 @@ public final class VolumeDbDriver
     extends AbsProtectedDatabaseDriver<
         Volume,
         Volume.InitMaps,
-        Pair<
-            Map<Pair<NodeName, ResourceName>, ? extends Resource>,
+        PairNonNull<Map<Pair<NodeName, ResourceName>, ? extends Resource>,
             Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition>>>
     implements VolumeCtrlDatabaseDriver
 {
@@ -93,7 +93,7 @@ public final class VolumeDbDriver
     @Override
     protected @Nullable Pair<Volume, Volume.InitMaps> load(
         RawParameters raw,
-        Pair<Map<Pair<NodeName, ResourceName>, ? extends Resource>,
+        PairNonNull<Map<Pair<NodeName, ResourceName>, ? extends Resource>,
             Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition>> parentRef
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException

@@ -25,7 +25,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.StltRemoteCleanupTask;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.BidirectionalMultiMap;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -137,7 +137,10 @@ public class BackupInfoManager
         }
     }
 
-    public Pair<Set<SnapshotDefinition>, Set<RemoteName>> removeAllRestoreEntries(AccessContext accCtx, Node node)
+    public PairNonNull<Set<SnapshotDefinition>, Set<RemoteName>> removeAllRestoreEntries(
+        AccessContext accCtx,
+        Node node
+    )
         throws AccessDeniedException
     {
         Set<SnapshotDefinition> snapDfnsToCleanup = new HashSet<>();
@@ -166,7 +169,7 @@ public class BackupInfoManager
                 }
             }
             Set<RemoteName> remotesToCleanup = removeInProgressBackups(snapDfnsToCleanup);
-            return new Pair<>(snapDfnsToCleanup, remotesToCleanup);
+            return new PairNonNull<>(snapDfnsToCleanup, remotesToCleanup);
         }
     }
 

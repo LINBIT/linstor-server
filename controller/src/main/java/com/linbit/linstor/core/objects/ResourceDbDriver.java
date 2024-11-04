@@ -26,6 +26,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP;
@@ -46,11 +47,9 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 @Singleton
-public final class ResourceDbDriver
-    extends AbsProtectedDatabaseDriver<
-        AbsResource<Resource>,
-        Resource.InitMaps,
-        Pair<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>>>
+public final class ResourceDbDriver extends
+    AbsProtectedDatabaseDriver<AbsResource<Resource>, Resource.InitMaps, PairNonNull<Map<NodeName, Node>,
+    Map<ResourceName, ResourceDefinition>>>
     implements ResourceCtrlDatabaseDriver
 {
 
@@ -76,7 +75,8 @@ public final class ResourceDbDriver
             dbCtxRef,
             errorReporterRef,
             GeneratedDatabaseTables.RESOURCES,
-            dbEngine, objProtFactoryRef
+            dbEngine,
+            objProtFactoryRef
         );
         transMgrProvider = transMgrProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
@@ -132,7 +132,7 @@ public final class ResourceDbDriver
     @Override
     protected @Nullable Pair<AbsResource<Resource>, Resource.InitMaps> load(
         RawParameters raw,
-        Pair<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>> loadAllDataRef
+        PairNonNull<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>> loadAllDataRef
     )
         throws DatabaseException, InvalidNameException, InvalidIpAddressException, ValueOutOfRangeException
     {

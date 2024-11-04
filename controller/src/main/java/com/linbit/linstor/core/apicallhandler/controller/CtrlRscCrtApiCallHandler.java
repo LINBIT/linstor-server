@@ -25,7 +25,7 @@ import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 
@@ -150,7 +150,8 @@ public class CtrlRscCrtApiCallHandler
         {
             ResourceApi rscapi = rscWithPayloadApi.getRscApi();
 
-            Pair<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper.createResourceDb(
+            PairNonNull<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper
+                .createResourceDb(
                 rscapi.getNodeName(),
                 rscapi.getName(),
                 rscapi.getFlags(),

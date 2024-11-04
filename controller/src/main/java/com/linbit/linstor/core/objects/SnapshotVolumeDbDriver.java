@@ -25,6 +25,7 @@ import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.Triple;
 
 import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
@@ -46,7 +47,7 @@ public class SnapshotVolumeDbDriver
     extends AbsProtectedDatabaseDriver<
         SnapshotVolume,
         Void,
-        Pair<
+        PairNonNull<
             Map<Triple<NodeName, ResourceName, SnapshotName>, ? extends Snapshot>,
             Map<Triple<ResourceName, SnapshotName, VolumeNumber>, ? extends SnapshotVolumeDefinition>>>
     implements SnapshotVolumeCtrlDatabaseDriver
@@ -84,7 +85,7 @@ public class SnapshotVolumeDbDriver
     @Override
     protected @Nullable Pair<SnapshotVolume, Void> load(
         RawParameters raw,
-        Pair<Map<Triple<NodeName, ResourceName, SnapshotName>, ? extends Snapshot>, Map<Triple<ResourceName, SnapshotName, VolumeNumber>, ? extends SnapshotVolumeDefinition>> loadMaps
+        PairNonNull<Map<Triple<NodeName, ResourceName, SnapshotName>, ? extends Snapshot>, Map<Triple<ResourceName, SnapshotName, VolumeNumber>, ? extends SnapshotVolumeDefinition>> loadMaps
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {

@@ -42,7 +42,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.locks.LockGuardFactory;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler.getRscGrpDescriptionInline;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -318,10 +318,11 @@ public class CtrlVlmGrpApiCallHandler
                 propsChangedListeners
             ) || notifyStlts;
 
-            Pair<Set<VolumeGroup.Flags>, Set<VolumeGroup.Flags>> pair = FlagsHelper.extractFlagsToEnableOrDisable(
-                VolumeGroup.Flags.class,
-                flagsListRef
-            );
+            PairNonNull<Set<VolumeGroup.Flags>, Set<VolumeGroup.Flags>> pair = FlagsHelper
+                .extractFlagsToEnableOrDisable(
+                    VolumeGroup.Flags.class,
+                    flagsListRef
+                );
 
             StateFlags<Flags> vlmGrpFlags = vlmGrp.getFlags();
             for (VolumeGroup.Flags flag : pair.objA)

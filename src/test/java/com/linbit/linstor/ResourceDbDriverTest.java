@@ -18,7 +18,7 @@ import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 
@@ -219,7 +219,7 @@ public class ResourceDbDriverTest extends GenericDbBase
         nodesMap.put(nodeName, node);
         rscDfnMap.put(resName, resDfn);
 
-        Map<AbsResource<Resource>, Resource.InitMaps> resList = driver.loadAll(new Pair<>(nodesMap, rscDfnMap));
+        Map<AbsResource<Resource>, Resource.InitMaps> resList = driver.loadAll(new PairNonNull<>(nodesMap, rscDfnMap));
 
         assertNotNull(resList);
         assertEquals(1, resList.size());

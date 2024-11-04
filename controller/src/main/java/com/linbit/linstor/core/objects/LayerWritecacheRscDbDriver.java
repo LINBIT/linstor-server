@@ -23,7 +23,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -79,7 +79,7 @@ public class LayerWritecacheRscDbDriver
         RawParameters rawRef,
         ParentObjects parentRef,
         AbsRscLayerObject<?> currentDummyLoadingRLORef,
-        Pair<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePairRef,
+        PairNonNull<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePairRef,
         @Nullable AbsRscLayerObject<?> loadedParentRscDataRef,
         RSC absRscRef
     )

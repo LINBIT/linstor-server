@@ -30,7 +30,7 @@ import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Provider;
 
@@ -71,7 +71,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
     private final VolumeDefinition vlmDfn;
     private final VolumeNumber vlmNr;
 
-    private final TransactionMap<SnapshotVolumeDefinition, Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
+    private final TransactionMap<SnapshotVolumeDefinition, PairNonNull<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
 
     private final Key snapVlmDfnKey;
 
@@ -87,7 +87,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<NodeName, SnapshotVolume> snapshotVlmMapRef,
-        Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
+        Map<PairNonNull<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
     )
         throws MdException, DatabaseException
     {
@@ -244,7 +244,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
         checkDeleted();
         snapshotDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         return (T) layerStorage.put(
-            new Pair<>(
+            new PairNonNull<>(
                 vlmDfnLayerData.getLayerKind(),
                 vlmDfnLayerData.getRscNameSuffix()
             ), vlmDfnLayerData
@@ -262,9 +262,9 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
         snapshotDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         Map<String, T> ret = new TreeMap<>();
-        for (Entry<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> entry : layerStorage.entrySet())
+        for (Entry<PairNonNull<DeviceLayerKind, String>, VlmDfnLayerObject> entry : layerStorage.entrySet())
         {
-            Pair<DeviceLayerKind, String> key = entry.getKey();
+            PairNonNull<DeviceLayerKind, String> key = entry.getKey();
             if (key.objA.equals(kind))
             {
                 ret.put(key.objB, (T) entry.getValue());
@@ -284,7 +284,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
         checkDeleted();
         snapshotDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        return (T) layerStorage.get(new Pair<>(kind, rscNameSuffix));
+        return (T) layerStorage.get(new PairNonNull<>(kind, rscNameSuffix));
     }
 
     public void removeLayerData(AccessContext accCtx, DeviceLayerKind kind, String rscNameSuffix)
@@ -292,7 +292,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
     {
         checkDeleted();
         snapshotDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        layerStorage.remove(new Pair<>(kind, rscNameSuffix)).delete();
+        layerStorage.remove(new PairNonNull<>(kind, rscNameSuffix)).delete();
     }
 
     @Override

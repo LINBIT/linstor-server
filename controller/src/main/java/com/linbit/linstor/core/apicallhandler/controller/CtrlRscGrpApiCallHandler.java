@@ -82,7 +82,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Base64;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -1275,7 +1275,7 @@ public class CtrlRscGrpApiCallHandler
     public Flux<ApiCallRcWith<QuerySizeInfoResponsePojo>> querySizeInfo(QuerySizeInfoRequestPojo querySizeInfoReqRef)
     {
         Flux<ApiCallRcWith<QuerySizeInfoResponsePojo>> ret;
-        Pair<ApiCallRcWith<QuerySizeInfoResponsePojo>, Double> cachedResponsePair = qsiHelper.getQsiResponse(
+        PairNonNull<ApiCallRcWith<QuerySizeInfoResponsePojo>, Double> cachedResponsePair = qsiHelper.getQsiResponse(
             querySizeInfoReqRef
         );
         if (cachedResponsePair != null)
@@ -1368,7 +1368,7 @@ public class CtrlRscGrpApiCallHandler
     public Flux<QueryAllSizeInfoResponsePojo> queryAllSizeInfo(QueryAllSizeInfoRequestPojo queryAllSizeInfoReqRef)
     {
         Flux<QueryAllSizeInfoResponsePojo> ret;
-        Pair<QueryAllSizeInfoResponsePojo, Double> cachedResponsePair = qsiHelper.getQasiResponse(
+        PairNonNull<QueryAllSizeInfoResponsePojo, Double> cachedResponsePair = qsiHelper.getQasiResponse(
             queryAllSizeInfoReqRef
         );
         if (cachedResponsePair != null)

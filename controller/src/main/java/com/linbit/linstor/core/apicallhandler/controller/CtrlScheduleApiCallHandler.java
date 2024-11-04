@@ -46,6 +46,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
@@ -657,7 +658,7 @@ public class CtrlScheduleApiCallHandler
             boolean nextExecInc = false;
             if (currentConf != null)
             {
-                Pair<Long, Boolean> pair = currentConf.timeoutAndType;
+                PairNonNull<Long, Boolean> pair = currentConf.timeoutAndType;
                 Long pairCalculatedFrom = currentConf.timeoutAndTypeCalculatedFrom;
                 if (pair.objA != null)
                 {

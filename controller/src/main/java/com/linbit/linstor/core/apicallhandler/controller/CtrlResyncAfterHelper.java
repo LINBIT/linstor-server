@@ -33,7 +33,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -93,12 +93,12 @@ public class CtrlResyncAfterHelper
             );
     }
 
-    public Pair<ApiCallRc, Set<Resource>> manage()
+    public PairNonNull<ApiCallRc, Set<Resource>> manage()
     {
         return updateResyncAfter();
     }
 
-    public Pair<ApiCallRc, Set<Resource>> clearAllResyncAfterProps()
+    public PairNonNull<ApiCallRc, Set<Resource>> clearAllResyncAfterProps()
     {
         Set<Resource> changed = new HashSet<>();
         final ApiCallRcImpl rcs = new ApiCallRcImpl();
@@ -140,12 +140,12 @@ public class CtrlResyncAfterHelper
             throw new ApiDatabaseException(dbExc);
         }
 
-        return new Pair<>(rcs, changed);
+        return new PairNonNull<>(rcs, changed);
     }
 
     private Flux<ApiCallRc> updateResyncAfterInTx()
     {
-        Pair<ApiCallRc, Set<Resource>> result = updateResyncAfter();
+        PairNonNull<ApiCallRc, Set<Resource>> result = updateResyncAfter();
         ctrlTransactionHelper.commit();
 
         Flux<ApiCallRc> flux = Flux.just(result.objA);
@@ -167,7 +167,7 @@ public class CtrlResyncAfterHelper
      * @throws ApiAccessDeniedException if apiCtx doesn't have access to resource definition
      */
     @SuppressWarnings("checkstyle:IllegalToken")
-    private Pair<ApiCallRc, Set<Resource>> updateResyncAfter()
+    private PairNonNull<ApiCallRc, Set<Resource>> updateResyncAfter()
     {
         final ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         final HashSet<Resource> modifiedRscs = new HashSet<>();
@@ -268,6 +268,6 @@ public class CtrlResyncAfterHelper
             throw new ApiException(invValExc);
         }
 
-        return new Pair<>(apiCallRc, modifiedRscs);
+        return new PairNonNull<>(apiCallRc, modifiedRscs);
     }
 }

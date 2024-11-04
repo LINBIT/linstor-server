@@ -3,6 +3,7 @@ package com.linbit.linstor.tasks;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -23,9 +24,8 @@ import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
-import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -164,12 +164,12 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             synchronized (configSet)
             {
-                @Nullable Pair<AutoSnapshotConfig, AutoSnapshotConfig> cfgToReplace = null;
+                @Nullable PairNonNull<AutoSnapshotConfig, AutoSnapshotConfig> cfgToReplace = null;
                 for (AutoSnapshotConfig cfg : configSet)
                 {
                     if (cfg.rscName.equalsIgnoreCase(rscNameRef) && cfg.shipping == shippingRef)
                     {
-                        cfgToReplace = new Pair<>(
+                        cfgToReplace = new PairNonNull<>(
                             cfg,
                             new AutoSnapshotConfig(rscNameRef, runEveryInMinRef * MIN_TO_MS, shippingRef)
                         );
@@ -222,7 +222,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         boolean runNow = false;
         synchronized (configSet)
         {
-            @Nullable Pair<AutoSnapshotConfig, AutoSnapshotConfig> cfgToReplace = null;
+            @Nullable PairNonNull<AutoSnapshotConfig, AutoSnapshotConfig> cfgToReplace = null;
             for (AutoSnapshotConfig cfg : configSet)
             {
                 if (cfg.rscName.equalsIgnoreCase(rscNameRef))
@@ -230,7 +230,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                     ret = cfg;
                     if (cfg.nextRerunAt < System.currentTimeMillis())
                     {
-                        cfgToReplace = new Pair<>(
+                        cfgToReplace = new PairNonNull<>(
                             cfg,
                             new AutoSnapshotConfig(
                                 rscNameRef,

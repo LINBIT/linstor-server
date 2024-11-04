@@ -11,6 +11,7 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +26,7 @@ public class PriorityProps
     public static final String FALLBACKMAP_NAME = "Fallback";
     public static final String DEFAULT_DESCR = "default value";
 
-    private final List<Pair<ReadOnlyProps, String>> propList = new ArrayList<>();
+    private final List<PairNonNull<ReadOnlyProps, String>> propList = new ArrayList<>();
     private final HashMap<String, String> fallbackMap = new HashMap<>();
 
     public PriorityProps(
@@ -73,7 +74,7 @@ public class PriorityProps
     {
         if (props != null)
         {
-            propList.add(new Pair<>(props, descr));
+            propList.add(new PairNonNull<>(props, descr));
         }
         return this;
     }
@@ -82,7 +83,7 @@ public class PriorityProps
     {
         if (props != null)
         {
-            propList.add(new Pair<>(props, descr));
+            propList.add(new PairNonNull<>(props, descr));
         }
         return this;
     }
@@ -99,7 +100,7 @@ public class PriorityProps
     {
         String value = null;
         @Nullable ReadOnlyProps container = null;
-        for (Pair<ReadOnlyProps, String> pair : propList)
+        for (PairNonNull<ReadOnlyProps, String> pair : propList)
         {
             value = pair.objA.getProp(key, namespace);
             if (value != null)
@@ -127,7 +128,7 @@ public class PriorityProps
         return val == null ? defaultValue : val;
     }
 
-    public String getProp(String key) throws InvalidKeyException
+    public @Nullable String getProp(String key) throws InvalidKeyException
     {
         return getProp(key, null);
     }
@@ -168,17 +169,26 @@ public class PriorityProps
         fallbackMap.put(prepStoreKey(fullKey), value);
     }
 
-    public Map<String, String> renderRelativeMap(String namespace)
+    public Map<String, String> renderRelativeMap(@Nullable String namespace)
     {
         Map<String, String> ret = new HashMap<>();
 
-        int nsLen = namespace == null ? 0 : namespace.length();
-        if (nsLen > 0 && !namespace.endsWith(ReadOnlyProps.PATH_SEPARATOR))
+        int nsLen;
+
+        if (namespace != null)
         {
-            nsLen++; // also cut the trailing "/"
+            nsLen = namespace.length();
+            if (nsLen > 0 && !namespace.endsWith(ReadOnlyProps.PATH_SEPARATOR))
+            {
+                nsLen++; // also cut the trailing "/"
+            }
+        }
+        else
+        {
+            nsLen = 0;
         }
 
-        for (Pair<ReadOnlyProps, String> prop : propList)
+        for (PairNonNull<ReadOnlyProps, String> prop : propList)
         {
             @Nullable ReadOnlyProps optNs = prop.objA.getNamespace(namespace);
             if (optNs != null)
@@ -210,7 +220,7 @@ public class PriorityProps
     public boolean anyPropsHasNamespace(String namespcDrbdHandlerOptionsRef)
     {
         boolean ret = false;
-        for (Pair<ReadOnlyProps, String> entry : propList)
+        for (PairNonNull<ReadOnlyProps, String> entry : propList)
         {
             if (entry.objA.getNamespace(namespcDrbdHandlerOptionsRef) != null)
             {
@@ -239,7 +249,7 @@ public class PriorityProps
     {
         MultiResult ret = null;
 
-        for (Pair<ReadOnlyProps, String> pair : propList)
+        for (PairNonNull<ReadOnlyProps, String> pair : propList)
         {
             String value = pair.objA.getProp(key, namespace);
             if (value != null)
@@ -291,7 +301,7 @@ public class PriorityProps
             nsLen++; // also cut the trailing "/"
         }
 
-        for (Pair<ReadOnlyProps, String> propWithDescr : propList)
+        for (PairNonNull<ReadOnlyProps, String> propWithDescr : propList)
         {
             @Nullable ReadOnlyProps optNs = propWithDescr.objA.getNamespace(namespace);
             if (optNs != null)

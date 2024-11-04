@@ -3,7 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -78,12 +78,15 @@ public final class DatabaseConstantsGenerator
 
     public DatabaseConstantsGenerator(Connection conRef) throws SQLException
     {
-        Pair<TreeMap<String, Table>, List<String>> pair = extractTables(conRef, IGNORED_TABLES);
+        PairNonNull<TreeMap<String, Table>, List<String>> pair = extractTables(conRef, IGNORED_TABLES);
         tbls = pair.objA;
         tblsOrder = pair.objB;
     }
 
-    public static Pair<TreeMap<String, Table>, List<String>> extractTables(Connection con, Set<String> ignoredTables)
+    public static PairNonNull<TreeMap<String, Table>, List<String>> extractTables(
+        Connection con,
+        Set<String> ignoredTables
+    )
         throws SQLException
     {
         TreeMap<String, Table> tables = new TreeMap<>();
@@ -167,7 +170,7 @@ public final class DatabaseConstantsGenerator
                 new HashSet<>()
             );
         }
-        return new Pair<>(tables, crossRefOrder);
+        return new PairNonNull<>(tables, crossRefOrder);
     }
 
     private static void buildCrossRefOrderRec(

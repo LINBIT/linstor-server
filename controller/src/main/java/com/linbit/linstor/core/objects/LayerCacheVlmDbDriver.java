@@ -23,6 +23,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -140,13 +141,13 @@ public class LayerCacheVlmDbDriver
         if (storPoolNodeName != null)
         {
             cacheStorPool = parentRef.storPoolWithInitMap.get(
-                new Pair<>(
+                new PairNonNull<>(
                     storPoolNodeName,
                     rawRef.buildParsed(LayerCacheVolumes.POOL_NAME_CACHE, StorPoolName::new)
                 )
             ).objA;
             metaStorPool = parentRef.storPoolWithInitMap.get(
-                new Pair<>(
+                new PairNonNull<>(
                     storPoolNodeName,
                     rawRef.buildParsed(LayerCacheVolumes.POOL_NAME_META, StorPoolName::new)
                 )

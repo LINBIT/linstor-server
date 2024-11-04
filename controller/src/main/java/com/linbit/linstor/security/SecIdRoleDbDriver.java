@@ -16,6 +16,7 @@ import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdRoleCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdRoleMap.IDENTITY_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdRoleMap.ROLE_NAME;
@@ -24,7 +25,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class SecIdRoleDbDriver extends AbsDatabaseDriver<Pair<Identity, Role>, Void, Void>
+public class SecIdRoleDbDriver extends AbsDatabaseDriver<PairNonNull<Identity, Role>, Void, Void>
     implements SecIdRoleCtrlDatabaseDriver
 {
     @Inject
@@ -37,7 +38,7 @@ public class SecIdRoleDbDriver extends AbsDatabaseDriver<Pair<Identity, Role>, V
     }
 
     @Override
-    protected @Nullable Pair<Pair<Identity, Role>, Void> load(RawParameters rawRef, Void parent)
+    protected @Nullable Pair<PairNonNull<Identity, Role>, Void> load(RawParameters rawRef, Void parent)
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
         MdException, ExhaustedPoolException, ValueInUseException, RuntimeException, AccessDeniedException
     {
@@ -47,7 +48,7 @@ public class SecIdRoleDbDriver extends AbsDatabaseDriver<Pair<Identity, Role>, V
     }
 
     @Override
-    protected String getId(Pair<Identity, Role> dataRef) throws AccessDeniedException
+    protected String getId(PairNonNull<Identity, Role> dataRef) throws AccessDeniedException
     {
         return "Id: " + dataRef.objA.name.displayValue + ", Role: " + dataRef.objB.name.displayValue;
     }

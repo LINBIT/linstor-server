@@ -35,7 +35,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -229,7 +229,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                             Set<StorPool> candidate = autoplacer.autoPlace(selectFilter, rscDfn, size);
                             if (candidate != null)
                             {
-                                Pair<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = autoPlaceHandler
+                                PairNonNull<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = autoPlaceHandler
                                     .createResources(
                                         new ResponseContext(
                                             ApiOperation.makeDeleteOperation(),

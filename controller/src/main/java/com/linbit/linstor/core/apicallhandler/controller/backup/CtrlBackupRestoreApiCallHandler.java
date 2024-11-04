@@ -102,7 +102,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.MathUtils;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.backupshipping.BackupConsts.META_SUFFIX;
@@ -398,7 +398,7 @@ public class CtrlBackupRestoreApiCallHandler
             boolean resetData = !downloadOnly && !hasTargetRscDfnResources(targetRscName);
             S3MetafileNameInfo currentMetaFile = toRestore;
             Map<StorPoolApi, List<BackupInfoVlmPojo>> storPoolInfo = new HashMap<>();
-            List<Pair<S3MetafileNameInfo, BackupMetaDataPojo>> metadataChain = new ArrayList<>();
+            List<PairNonNull<S3MetafileNameInfo, BackupMetaDataPojo>> metadataChain = new ArrayList<>();
 
             // 3a. Follow the metadata chain, adding all to metadataChain until we reach a full backup.
             do
@@ -409,7 +409,7 @@ public class CtrlBackupRestoreApiCallHandler
                     peerAccCtx.get(),
                     targetMasterKey
                 );
-                metadataChain.add(new Pair<>(currentMetaFile, metadata));
+                metadataChain.add(new PairNonNull<>(currentMetaFile, metadata));
                 String base = metadata.getBasedOn();
                 if (base != null && !base.isEmpty())
                 {
@@ -430,7 +430,7 @@ public class CtrlBackupRestoreApiCallHandler
                 boolean stop = false;
                 // This loop finds the first snapshot that has already been downloaded during a previous restore.
                 // In case that download happened on a different node, that node will be used instead.
-                for (Pair<S3MetafileNameInfo, BackupMetaDataPojo> metadata : metadataChain)
+                for (PairNonNull<S3MetafileNameInfo, BackupMetaDataPojo> metadata : metadataChain)
                 {
                     @Nullable SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(
                         rscDfn,
@@ -472,9 +472,9 @@ public class CtrlBackupRestoreApiCallHandler
 
             // 3b. check if given storpools have enough space remaining for the restore
             boolean first = true;
-            for (Pair<S3MetafileNameInfo, BackupMetaDataPojo> meta : metadataChain)
+            for (PairNonNull<S3MetafileNameInfo, BackupMetaDataPojo> meta : metadataChain)
             {
-                Pair<Long, Long> totalSizes = new Pair<>(0L, 0L); // dlSize, allocSize
+                PairNonNull<Long, Long> totalSizes = new PairNonNull<>(0L, 0L); // dlSize, allocSize
                 backupApiCallHandler
                     .fillBackupInfo(first, storPoolInfo, objects, meta.objB, meta.objB.getLayerData(), totalSizes);
                 first = false;
@@ -508,7 +508,7 @@ public class CtrlBackupRestoreApiCallHandler
             ApiCallRcImpl responses = new ApiCallRcImpl();
             List<Snapshot> allSnaps = new ArrayList<>();
             Map<Snapshot, Snapshot> restoreOrder = new TreeMap<>();
-            for (Pair<S3MetafileNameInfo, BackupMetaDataPojo> metadata : metadataChain)
+            for (PairNonNull<S3MetafileNameInfo, BackupMetaDataPojo> metadata : metadataChain)
             {
                 Snapshot snap = createSnapshotByS3Meta(
                     metadata.objA,

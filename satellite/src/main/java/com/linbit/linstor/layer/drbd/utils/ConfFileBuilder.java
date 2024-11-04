@@ -42,7 +42,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.LayerUtils;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
@@ -338,7 +338,7 @@ public class ConfFileBuilder
                     appendLine("connection");
                     try (Section connectionSection = new Section())
                     {
-                        List<Pair<NetInterface, NetInterface>> pathsList = new ArrayList<>();
+                        List<PairNonNull<NetInterface, NetInterface>> pathsList = new ArrayList<>();
                         NodeConnection nodeConn = localRsc.getNode().getNodeConnection(accCtx, peerRsc.getNode());
                         ResourceConnection rscConn = localRsc.getAbsResourceConnection(accCtx, peerRsc);
                         @Nullable ReadOnlyProps paths = null;
@@ -521,7 +521,7 @@ public class ConfFileBuilder
                                                 "' of node '" + secondNode + "' does not exist!");
                                         }
 
-                                        pathsList.add(new Pair<>(firstNic, secondNic));
+                                        pathsList.add(new PairNonNull<>(firstNic, secondNic));
                                     }
                                     catch (InvalidKeyException exc)
                                     {
@@ -542,7 +542,7 @@ public class ConfFileBuilder
                             }
 
                             // add network connection paths...
-                            for (Pair<NetInterface, NetInterface> path : pathsList)
+                            for (PairNonNull<NetInterface, NetInterface> path : pathsList)
                             {
                                 if (path != pathsList.get(0))
                                 {

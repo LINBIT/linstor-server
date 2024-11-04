@@ -22,6 +22,11 @@ public class Pair<A, B> implements Comparable<Pair<A, B>>
     @Override
     public int hashCode()
     {
+        return hashCode(objA, objB);
+    }
+
+    static int hashCode(@Nullable Object objA, @Nullable Object objB)
+    {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((objA == null) ? 0 : objA.hashCode());
@@ -53,19 +58,11 @@ public class Pair<A, B> implements Comparable<Pair<A, B>>
         else
         if (objA instanceof Comparable)
         {
-            eq = otherPair.objA == null ? 1 : ((Comparable<A>) objA).compareTo(otherPair.objA);
+            eq = ((Comparable<A>) objA).compareTo(otherPair.objA);
         }
-        if (eq == 0)
+        if (eq == 0 && objB instanceof Comparable)
         {
-            if (objB == null)
-            {
-                eq = otherPair.objB == null ? 0 : -1;
-            }
-            else
-            if (objB instanceof Comparable)
-            {
-                eq = otherPair.objB == null ? 1 : ((Comparable<B>) objB).compareTo(otherPair.objB);
-            }
+            eq = ((Comparable<B>) objB).compareTo(otherPair.objB);
         }
         return eq;
     }

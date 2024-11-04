@@ -31,7 +31,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
@@ -380,7 +380,7 @@ public class CtrlNodeConnectionApiCallHandler
                 );
                 responseConverter.addWithDetail(responses, context, updateSatellites(nodeConn));
 
-                Pair<Node, Node> nodes = getNodes(nodeConn);
+                PairNonNull<Node, Node> nodes = getNodes(nodeConn);
 
                 flux = Flux.<ApiCallRc>just(responses)
                     .concatWith(
@@ -413,12 +413,12 @@ public class CtrlNodeConnectionApiCallHandler
         return flux;
     }
 
-    private Pair<Node, Node> getNodes(NodeConnection nodeConnRef)
+    private PairNonNull<Node, Node> getNodes(NodeConnection nodeConnRef)
     {
         AccessContext peerCtx = peerAccCtx.get();
         try
         {
-            return new Pair<>(nodeConnRef.getSourceNode(peerCtx), nodeConnRef.getTargetNode(peerCtx));
+            return new PairNonNull<>(nodeConnRef.getSourceNode(peerCtx), nodeConnRef.getTargetNode(peerCtx));
         }
         catch (AccessDeniedException exc)
         {

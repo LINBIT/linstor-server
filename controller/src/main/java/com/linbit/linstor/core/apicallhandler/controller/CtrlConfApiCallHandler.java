@@ -64,7 +64,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.Triple;
 import com.linbit.utils.UuidUtils;
@@ -400,7 +400,7 @@ public class CtrlConfApiCallHandler
         {
             // we should not simply "drop" the namespace here, as we might have special cleanup logic
             // for some of the deleted keys.
-            Pair<ApiCallRc, Boolean> result = deleteNamespace(deleteNamespace, propsChangedListeners);
+            PairNonNull<ApiCallRc, Boolean> result = deleteNamespace(deleteNamespace, propsChangedListeners);
             if (result.objA.hasErrors())
             {
                 throw new ApiRcException(result.objA);
@@ -488,8 +488,8 @@ public class CtrlConfApiCallHandler
         Flux<ApiCallRc> evictionFlux = Flux.empty();
         if (hasKeyInDrbdOptions)
         {
-            ArrayList<Pair<Flux<ApiCallRc>, Peer>> rerunConfigChecks = reconnectorTask.rerunConfigChecks();
-            for (Pair<Flux<ApiCallRc>, Peer> pair : rerunConfigChecks)
+            ArrayList<PairNonNull<Flux<ApiCallRc>, Peer>> rerunConfigChecks = reconnectorTask.rerunConfigChecks();
+            for (PairNonNull<Flux<ApiCallRc>, Peer> pair : rerunConfigChecks)
             {
                 evictionFlux = evictionFlux.concatWith(pair.objA);
             }
@@ -689,7 +689,7 @@ public class CtrlConfApiCallHandler
         );
     }
 
-    private Pair<ApiCallRc, Boolean> deleteNamespace(
+    private PairNonNull<ApiCallRc, Boolean> deleteNamespace(
         String deleteNamespaceRef,
         Map<String, PropertyChangedListener> propsChangedListenersRef
     )
@@ -717,7 +717,7 @@ public class CtrlConfApiCallHandler
                 Iterator<String> iterateNamespaces = optNamespace.iterateNamespaces();
                 while (iterateNamespaces.hasNext())
                 {
-                    Pair<ApiCallRc, Boolean> result = deleteNamespace(
+                    PairNonNull<ApiCallRc, Boolean> result = deleteNamespace(
                         deleteNamespaceRef + "/" + iterateNamespaces.next(),
                         propsChangedListenersRef
                     );
@@ -743,7 +743,7 @@ public class CtrlConfApiCallHandler
                 errorMsg
             );
         }
-        return new Pair<>(apiCallRc, notifyStlts);
+        return new PairNonNull<>(apiCallRc, notifyStlts);
     }
 
     private boolean setCtrlProp(
@@ -802,17 +802,17 @@ public class CtrlConfApiCallHandler
      * This is called on global enable/disable operations.
      * @return Pair of ApiCallRc and resources that got updated.
      */
-    private Pair<ApiCallRc, Set<Resource>> updateRscDfnsVerifyAlgo()
+    private PairNonNull<ApiCallRc, Set<Resource>> updateRscDfnsVerifyAlgo()
     {
         final Set<Resource> touchedResources = new HashSet<>();
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         for (ResourceDefinition rscDfn : rscDfnMap.values())
         {
-            Pair<ApiCallRc, Set<Resource>> result = ctrlRscDfnAutoVerifyAlgoHelper.updateVerifyAlgorithm(rscDfn);
+            PairNonNull<ApiCallRc, Set<Resource>> result = ctrlRscDfnAutoVerifyAlgoHelper.updateVerifyAlgorithm(rscDfn);
             apiCallRc.addEntries(result.objA);
             touchedResources.addAll(result.objB);
         }
-        return new Pair<>(apiCallRc, touchedResources);
+        return new PairNonNull<>(apiCallRc, touchedResources);
     }
 
     private void updateBalanceResourcesTaskSchedule(String newValue)
@@ -936,8 +936,8 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER:
                         {
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
-                            Pair<ApiCallRc, Set<Resource>> result;
-                            if (normalized != null && normalized.equalsIgnoreCase("true"))
+                            PairNonNull<ApiCallRc, Set<Resource>> result;
+                            if (normalized.equalsIgnoreCase("true"))
                             {
                                 result = ctrlResyncAfterHelper.clearAllResyncAfterProps();
                             }
@@ -955,7 +955,7 @@ public class CtrlConfApiCallHandler
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             // also set on satellite, so conffile builder can ignore if disabled
                             setStltProp(peerAccCtx.get(), fullKey, normalized, propChangedListener);
-                            Pair<ApiCallRc, Set<Resource>> result = updateRscDfnsVerifyAlgo();
+                            PairNonNull<ApiCallRc, Set<Resource>> result = updateRscDfnsVerifyAlgo();
                             apiCallRc.addEntries(result.objA);
                             // ignore touched resources, as we disable auto-verify-algo by conf file builder global prop
                             notifyStlts = true;
@@ -1503,14 +1503,14 @@ public class CtrlConfApiCallHandler
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER:
                         {
-                            Pair<ApiCallRc, Set<Resource>> result = ctrlResyncAfterHelper.manage();
+                            PairNonNull<ApiCallRc, Set<Resource>> result = ctrlResyncAfterHelper.manage();
                             apiCallRc.addEntries(result.objA);
                             changedRscs.addAll(result.objB);
                         }
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO:
                         {
-                            Pair<ApiCallRc, Set<Resource>> result = updateRscDfnsVerifyAlgo();
+                            PairNonNull<ApiCallRc, Set<Resource>> result = updateRscDfnsVerifyAlgo();
                             apiCallRc.addEntries(result.objA);
                             changedRscs.addAll(result.objB);
                         }

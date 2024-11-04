@@ -28,6 +28,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP;
@@ -48,11 +49,9 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 @Singleton
-public final class SnapshotDbDriver
-    extends AbsProtectedDatabaseDriver<
-        AbsResource<Snapshot>,
-        Snapshot.InitMaps,
-        Pair<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
+public final class SnapshotDbDriver extends
+    AbsProtectedDatabaseDriver<AbsResource<Snapshot>, Snapshot.InitMaps, PairNonNull<Map<NodeName, Node>,
+    Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
     implements SnapshotCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
@@ -143,7 +142,7 @@ public final class SnapshotDbDriver
     @Override
     protected @Nullable Pair<AbsResource<Snapshot>, Snapshot.InitMaps> load(
         RawParameters raw,
-        Pair<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>> loadMaps
+        PairNonNull<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>> loadMaps
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {

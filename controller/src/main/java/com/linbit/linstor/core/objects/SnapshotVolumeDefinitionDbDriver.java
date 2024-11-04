@@ -28,6 +28,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.RESOURCE_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.SNAPSHOT_NAME;
@@ -49,7 +50,7 @@ public final class SnapshotVolumeDefinitionDbDriver
     extends AbsProtectedDatabaseDriver<
         SnapshotVolumeDefinition,
         SnapshotVolumeDefinition.InitMaps,
-        Pair<
+        PairNonNull<
             Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>,
             Map<Pair<ResourceName, VolumeNumber>, VolumeDefinition>>>
     implements SnapshotVolumeDefinitionCtrlDatabaseDriver
@@ -109,7 +110,7 @@ public final class SnapshotVolumeDefinitionDbDriver
     @Override
     protected @Nullable Pair<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> load(
         RawParameters raw,
-        Pair<Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>,
+        PairNonNull<Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>,
             Map<Pair<ResourceName, VolumeNumber>, VolumeDefinition>> parentObjs
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException

@@ -3,7 +3,7 @@ package com.linbit.linstor.tasks;
 import com.linbit.linstor.core.objects.Schedule;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.TestAccessContextProvider;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.TimeUtils;
 
 import java.text.ParseException;
@@ -54,7 +54,7 @@ public class CronTests
         {
             Mockito.when(schedule.getOnFailure(Mockito.any())).thenReturn(Schedule.OnFailure.RETRY);
         }
-        Pair<Long, Boolean> res = ScheduleBackupService.getTimeoutAndType(
+        PairNonNull<Long, Boolean> res = ScheduleBackupService.getTimeoutAndType(
             schedule,
             TestAccessContextProvider.PUBLIC_CTX,
             ZonedDateTime.ofInstant(Instant.ofEpochMilli(input.now), ZoneId.systemDefault()),

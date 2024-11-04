@@ -22,6 +22,7 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.Transp
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 
@@ -246,7 +247,7 @@ public class VolumeDbDriverTest extends GenericDbBase
         rscMap.put(new Pair<>(nodeName, resName), res);
         vlmDfnMap.put(new Pair<>(resName, volNr), volDfn);
 
-        Map<Volume, Volume.InitMaps> vlmMap = driver.loadAll(new Pair<>(rscMap, vlmDfnMap));
+        Map<Volume, Volume.InitMaps> vlmMap = driver.loadAll(new PairNonNull<>(rscMap, vlmDfnMap));
 
         assertEquals(1, vlmMap.size());
 

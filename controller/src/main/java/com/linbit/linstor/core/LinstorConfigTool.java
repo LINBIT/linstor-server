@@ -27,7 +27,7 @@ import com.linbit.linstor.logging.StderrErrorReporter;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.transaction.ControllerETCDTransactionMgrGenerator;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CMDLINE_ERROR;
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR;
@@ -419,7 +419,7 @@ public class LinstorConfigTool
         {
             CtrlConfig cfg = new CtrlConfig(args);
             ErrorReporter reporter = new StderrErrorReporter("linstor-config");
-            Pair<DbInitializer, ControllerDatabase> databasePair = dbFromConfig(reporter, cfg);
+            PairNonNull<DbInitializer, ControllerDatabase> databasePair = dbFromConfig(reporter, cfg);
 
             if (toVersion == null)
             {
@@ -445,7 +445,7 @@ public class LinstorConfigTool
         {
             CtrlConfig cfg = new CtrlConfig(args);
             ErrorReporter reporter = new StderrErrorReporter("linstor-config");
-            Pair<DbInitializer, ControllerDatabase> databasePair = dbFromConfig(reporter, cfg);
+            PairNonNull<DbInitializer, ControllerDatabase> databasePair = dbFromConfig(reporter, cfg);
 
             int result = 0;
             if (databasePair.objA.needsMigration())
@@ -526,7 +526,8 @@ public class LinstorConfigTool
     }
 
 
-    private static Pair<DbInitializer, ControllerDatabase> dbFromConfig(ErrorReporter reporter, CtrlConfig cfg) throws Exception
+    private static PairNonNull<DbInitializer, ControllerDatabase> dbFromConfig(ErrorReporter reporter, CtrlConfig cfg)
+        throws Exception
     {
         DatabaseDriverInfo.DatabaseType dbType = Controller.checkDatabaseConfig(reporter, cfg);
         List<Module> injModList = new ArrayList<>(Arrays.asList(
@@ -603,6 +604,6 @@ public class LinstorConfigTool
             default:
                 throw new ImplementationError(String.format("Unrecognized database type '%s'", dbType));
         }
-        return new Pair<>(initializer, database);
+        return new PairNonNull<>(initializer, database);
     }
 }
