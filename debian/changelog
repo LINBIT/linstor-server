@@ -1,3 +1,26 @@
+linstor-server (1.29.2-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Changelog: Added time-based LVM cache
+  * FsWatch: Fix usage
+  * Rsc,Crt: Fix possible 'access to deleted rsc' bug
+  * GitlabCI: Let other branches run with default variable
+  * Autoplacer: Fix possible x-repl-on-diff violation
+
+  [ Rene Peinthor ]
+  * clone: Do not update disc granularity while resource is cloning
+  * clone: Drbd-layer should not try to adjust resource while still cloning
+  * gitlab: run jenkins-branch on libvirt-xl
+  * AutoPlaceAPI: remove unnecessary resource definition loading
+  * rsc-con: Fix query rsc-con if source/target reversed
+  * cryptsetup: luksChangeKey is now also memory limited to 256MB
+
+  [ Moritz Wanzenböck ]
+  * do not calculate timezone offset by hand
+  * docker: deal with large k8s db backups
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 05 Nov 2024 11:19:22 +0000
+
 linstor-server (1.29.1-1) experimental; urgency=medium
 
   [ Moritz Wanzenböck ]

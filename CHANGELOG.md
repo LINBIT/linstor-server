@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.29.2] - 2024-11-05
+
 ### Changed
 
 - luksChangeKey is now also memory limited to 256MB
