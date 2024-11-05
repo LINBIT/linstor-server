@@ -315,11 +315,25 @@ public class CryptSetupCommands implements Luks
         {
             final ExtCmd extCommand = extCmdFactory.create();
 
+            ArrayList<String> command = new ArrayList<>();
+            command.add(CRYPTSETUP);
+            command.add("luksChangeKey");
+            if (version.greaterOrEqual(V2_0_0))
+            {
+                command.add("--pbkdf-memory");
+                command.add(PBDKF_MAX_MEMORY_KIB); // in kib
+            }
+            command.add("--tries");
+            command.add("1");
+            command.add(dev);
+            command.add("-S");
+            command.add("0");
+
             // open cryptsetup
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
                 null,
-                CRYPTSETUP, "luksChangeKey", "--tries", "1", dev, "-S", "0"
+                command.toArray(new String[0])
             );
             outputStream.write(oldPassphrase);
             outputStream.write('\n');

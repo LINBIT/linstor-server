@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- luksChangeKey is now also memory limited to 256MB
+
 ### Fixed
 
 - Fixed usage of FileSystemWatch to properly trigger when devices appear
@@ -17,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AutoPlaceAPI: remove unnecessary resource definition loading
 - Fixed bug that could be lead to violation of configured --x-replicas-on-different restriction
 - Query resource-connection didn't work if source and target node are reversed.
+- Fixed unit tests relying on current timezone offset instead of current timezone
 
 ## [1.29.1] - 2024-09-24
 
