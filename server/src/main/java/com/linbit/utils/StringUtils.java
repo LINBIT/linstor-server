@@ -114,6 +114,8 @@ public class StringUtils
      */
     public static String joinShellQuote(@Nonnull String... strings)
     {
+        assert Arrays.stream(strings).noneMatch(Objects::isNull) :
+            "joinShellQuote.strings contains null: " + join(Arrays.asList(strings));
         return join(" ", Arrays.stream(strings).map(StringUtils::shellQuote).toArray());
     }
 
