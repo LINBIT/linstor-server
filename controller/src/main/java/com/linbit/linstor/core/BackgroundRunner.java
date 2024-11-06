@@ -16,6 +16,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -405,7 +406,7 @@ public class BackgroundRunner
             String descriptionRef,
             Flux<T> fluxRef,
             AccessContext accCtxRef,
-            List<NodeName> nodesToLockRef,
+            @Nullable List<NodeName> nodesToLockRef,
             boolean backgroundRef
         )
         {
@@ -420,7 +421,7 @@ public class BackgroundRunner
             String descriptionRef,
             Flux<T> fluxRef,
             AccessContext accCtxRef,
-            List<NodeName> nodesToLockRef,
+            @Nullable List<NodeName> nodesToLockRef,
             boolean backgroundRef
         )
         {
@@ -429,7 +430,7 @@ public class BackgroundRunner
             fluxSupplier = null;
             flux = fluxRef;
             background = backgroundRef;
-            nodesToLock = nodesToLockRef;
+            nodesToLock = nodesToLockRef == null ? Collections.emptyList() : nodesToLockRef;
 
             initializeSubscriberContext(descriptionRef, accCtxRef);
         }

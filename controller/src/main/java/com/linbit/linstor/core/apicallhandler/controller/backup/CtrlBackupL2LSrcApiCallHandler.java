@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.backup;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -9,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
+import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.BackupInfoManager.CleanupData;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -77,6 +79,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Creates and ships a backup to a linstor cluster, using the following steps:</br>
@@ -112,6 +115,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     private final CtrlSecurityObjects ctrlSecObjs;
     private final CtrlBackupQueueInternalCallHandler queueHandler;
     private final TaskScheduleService taskScheduleService;
+    private final BackgroundRunner backgroundRunner;
 
     @Inject
     public CtrlBackupL2LSrcApiCallHandler(
@@ -131,7 +135,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         BackupShippingRestClient restClientRef,
         CtrlBackupQueueInternalCallHandler queueHandlerRef,
         TaskScheduleService taskScheduleServiceRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        BackgroundRunner backgroundRunnerRef
     )
     {
         sysCtx = sysCtxRef;
@@ -152,6 +157,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         queueHandler = queueHandlerRef;
         taskScheduleService = taskScheduleServiceRef;
         errorReporter = errorReporterRef;
+        backgroundRunner = backgroundRunnerRef;
     }
 
     /**
@@ -368,17 +374,30 @@ public class CtrlBackupL2LSrcApiCallHandler
             {
                 data.setSrcSnapshot(createSnapshot.objB);
                 data.setSrcNodeName(data.getSrcSnapshot().getNode().getName().displayValue);
-                flux = createSnapshot.objA
-                    .concatWith(
-                        scopeRunner.fluxInTransactionalScope(
-                            "Backup shipping L2L: Create Stlt-Remote",
-                            lockGuardFactory.create()
-                                .read(LockObj.NODES_MAP)
-                                .write(LockObj.RSC_DFN_MAP)
-                                .buildDeferred(),
-                            () -> createStltRemoteInTransaction(data, createSnapshot.objB.getNode())
+                flux = createSnapshot.objA;
+                Flux<ApiCallRc> waitForStartFlux = scopeRunner.fluxInTransactionalScope(
+                    "Backup shipping L2L: Create Stlt-Remote",
+                    lockGuardFactory.create()
+                        .read(LockObj.NODES_MAP)
+                        .write(LockObj.RSC_DFN_MAP)
+                        .buildDeferred(),
+                    () -> createStltRemoteInTransaction(data, createSnapshot.objB.getNode())
+                );
+                if (isL2LSkipWaitForStartSetPrivileged(createSnapshot.objB))
+                {
+                    flux = flux.concatWith(
+                        Mono.fromRunnable(
+                            () -> backgroundRunner.runInBackground(
+                                "Starting L2L shipment in background",
+                                waitForStartFlux
+                            )
                         )
                     );
+                }
+                else
+                {
+                    flux = flux.concatWith(waitForStartFlux);
+                }
             }
             else
             {
@@ -386,6 +405,29 @@ public class CtrlBackupL2LSrcApiCallHandler
             }
         }
         return flux;
+    }
+
+    private boolean isL2LSkipWaitForStartSetPrivileged(Snapshot snapRef)
+    {
+        ResourceDefinition rscDfn = snapRef.getResourceDefinition();
+        Node node = snapRef.getNode();
+        PriorityProps prioProps;
+        try
+        {
+            prioProps = new PriorityProps(
+                node.getProps(sysCtx),
+                rscDfn.getProps(sysCtx),
+                rscDfn.getResourceGroup().getProps(sysCtx),
+                systemConfRepository.getCtrlConfForView(sysCtx)
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ApiConsts.VAL_TRUE.equalsIgnoreCase(
+            prioProps.getProp(ApiConsts.KEY_BACKUP_L2L_SKIP_WAIT_FOR_START, ApiConsts.NAMESPC_BACKUP_SHIPPING)
+        );
     }
 
     /**

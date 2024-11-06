@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added options dst_rsc_grp and force_rsc_grp to BackupShip, BackupRestore and BackupSchedule
 - Added timing of REST and internal API calls to prometheus /metrics
+- Backup,L2L: Add property to only wait with shipping until snapshot is created
 
 ### Changed
 
