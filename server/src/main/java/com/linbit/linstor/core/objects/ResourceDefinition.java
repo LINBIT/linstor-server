@@ -34,6 +34,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
+import com.linbit.utils.ExceptionThrowingPredicate;
 import com.linbit.utils.Pair;
 
 import javax.inject.Provider;
@@ -243,10 +244,13 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
 
     public List<Resource> getDiskfulResources(AccessContext accCtx) throws AccessDeniedException
     {
-        return getResourcesWithUnsetFlags(
+        return getResourcesFilteredByFlags(
             accCtx,
-            Resource.Flags.DRBD_DISKLESS,
-            Resource.Flags.NVME_INITIATOR
+            rscFlags -> rscFlags.isUnset(
+                accCtx,
+                Resource.Flags.DRBD_DISKLESS,
+                Resource.Flags.NVME_INITIATOR
+            )
         );
     }
 
@@ -257,31 +261,37 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
 
     public List<Resource> getNotDeletedDiskful(AccessContext accCtx) throws AccessDeniedException
     {
-        return getResourcesWithUnsetFlags(
+        return getResourcesFilteredByFlags(
             accCtx,
-            Resource.Flags.DELETE,
-            Resource.Flags.DRBD_DELETE,
-            Resource.Flags.DRBD_DISKLESS,
-            Resource.Flags.NVME_INITIATOR
+            rscFlags -> rscFlags.isUnset(
+                accCtx,
+                Resource.Flags.DELETE,
+                Resource.Flags.DRBD_DELETE,
+                Resource.Flags.DRBD_DISKLESS,
+                Resource.Flags.NVME_INITIATOR
+            )
         );
     }
 
-    private List<Resource> getResourcesWithUnsetFlags(AccessContext accCtx, Resource.Flags... unsetFlags)
+    private List<Resource> getResourcesFilteredByFlags(
+        AccessContext accCtxRef,
+        ExceptionThrowingPredicate<StateFlags<Resource.Flags>, AccessDeniedException> flagFilter
+    )
         throws AccessDeniedException
     {
         checkDeleted();
-        var dfResources = new ArrayList<Resource>();
-        Iterator<Resource> rscIt = iterateResource(accCtx);
+        var resources = new ArrayList<Resource>();
+        Iterator<Resource> rscIt = iterateResource(accCtxRef);
         while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
             StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
-            if (stateFlags.isUnset(accCtx, unsetFlags))
+            if (flagFilter.test(stateFlags))
             {
-                dfResources.add(rsc);
+                resources.add(rsc);
             }
         }
-        return dfResources;
+        return resources;
     }
 
     public Iterator<Resource> iterateResource(AccessContext accCtx)
