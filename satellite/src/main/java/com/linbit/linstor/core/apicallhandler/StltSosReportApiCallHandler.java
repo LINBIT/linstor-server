@@ -428,7 +428,8 @@ public class StltSosReportApiCallHandler
         );
         reportTypes.add(new SosCommandType("daemon.log", now, "cat", "/var/log/daemon.log"));
         reportTypes.add(new SosCommandType("uptime", now, "uptime"));
-        reportTypes.add(new SosCommandType("lsblk", now, "lsblk"));
+        reportTypes.add(new SosCommandType("lsblk", now, "lsblk", "-O"));
+        reportTypes.add(new SosCommandType("lsblk.json", now, "lsblk", "-O", "--json"));
         reportTypes.add(new SosCommandType("lvs", now, "lvs"));
         reportTypes.add(new SosCommandType("vgs", now, "vgs"));
         reportTypes.add(new SosCommandType("pvs", now, "pvs"));
