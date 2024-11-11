@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Split snapshot properties into snapshot-specific- and resource-properties
 - SOS: use local timestamp as well as relative delta for dmesg output
+- SOS: use lvmconfig to show full lvm.conf
 
 ## [1.29.2] - 2024-11-05
 
