@@ -388,7 +388,7 @@ public class StltSosReportApiCallHandler
                 stltCfg.getConfigDir() + LinstorConfig.LINSTOR_STLT_CONFIG
             )
         );
-        reportTypes.add(new SosCommandType("dmesg", now, "dmesg", "-H"));
+        reportTypes.add(new SosCommandType("dmesg", now, "dmesg", "-T", "-d"));
         reportTypes.add(
             new SosCommandType(
                 "journalctl",

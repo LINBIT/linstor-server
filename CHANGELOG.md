@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Split snapshot properties into snapshot-specific- and resource-properties
+- SOS: use local timestamp as well as relative delta for dmesg output
 
 ## [1.29.2] - 2024-11-05
 
