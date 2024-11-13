@@ -379,6 +379,7 @@ public class StltSosReportApiCallHandler
         reportTypes.add(new SosCommandType("drbd-events2", now,  "drbdsetup", "events2", "all", "--now"));
         reportTypes.add(new SosCommandType("modinfo", now,  "modinfo", "drbd"));
         reportTypes.add(new SosCommandType("proc-drbd", now, "cat", "/proc/drbd"));
+        reportTypes.add(new SosCommandType("proc-sys-kernel-tainted", now, "cat", "/proc/sys/kernel/tainted"));
         reportTypes.add(new SosCommandType("lvm.conf",  now, "lvmconfig", "--type", "full"));
         reportTypes.add(
             new SosCommandType(
