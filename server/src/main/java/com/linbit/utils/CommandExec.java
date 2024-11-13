@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.concurrent.TimeUnit;
 
 public class CommandExec
@@ -46,7 +47,10 @@ public class CommandExec
             Files.write(
                 errFileRef.toPath(),
                 ("\n\nCommand did not terminate within " + ChildProcessHandler.dfltWaitTimeout + "ms. Command was: " +
-                    StringUtils.joinShellQuote(commandRef)).getBytes()
+                    StringUtils.joinShellQuote(commandRef)).getBytes(),
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND,
+                StandardOpenOption.WRITE
             );
         }
 
