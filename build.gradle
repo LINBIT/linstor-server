@@ -663,6 +663,11 @@ tasks.register('copyToLibs') {
             ['compileClasspath', 'runtimeClasspath'].each { scope ->
                 mkdir "${prj.name}/libs/${scope}"
                 prj.configurations.getByName(scope).files.each { f ->
+                    if (f.getName().equals("j2objc-annotations-2.8.jar")) {
+                        // for some reason j2objc gets included as runtime dep, which it isn't
+                        // neither do we need it for compile time
+                        return
+                    }
                     if (file("libs/" + f.getName()).exists()) {
                         ant.symlink(resource: "../../../libs/" + f.getName(), link: "${prj.name}/libs/${scope}/${f.getName()}")
                     } else {
