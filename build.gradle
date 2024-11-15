@@ -101,7 +101,7 @@ project(':server') {
             api group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
 
             // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
-            api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.22'
+            api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.24'
 
             api group: 'io.fabric8', name: 'kubernetes-client', version: '6.7.2'
             constraints {
