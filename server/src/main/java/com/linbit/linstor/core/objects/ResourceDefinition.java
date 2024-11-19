@@ -254,6 +254,18 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         );
     }
 
+    public List<Resource> getDisklessResources(AccessContext accCtx) throws AccessDeniedException
+    {
+        return getResourcesFilteredByFlags(
+            accCtx,
+            rscFlags -> rscFlags.isSomeSet(
+                accCtx,
+                Resource.Flags.DRBD_DISKLESS,
+                Resource.Flags.NVME_INITIATOR
+            )
+        );
+    }
+
     public int getNotDeletedDiskfulCount(AccessContext accCtx) throws AccessDeniedException
     {
         return getNotDeletedDiskful(accCtx).size();
