@@ -124,7 +124,10 @@ public class SnapshotDefinitionDbDriver
             final long flags;
 
             final ResourceName rscName = raw.build(RESOURCE_NAME, ResourceName::new);
-            final SnapshotName snapName = raw.build(SNAPSHOT_DSP_NAME, SnapshotName::new);
+            final SnapshotName snapName = raw.<String, SnapshotName, InvalidNameException>build(
+                SNAPSHOT_DSP_NAME,
+                SnapshotName::new
+            );
 
             switch (getDbType())
             {

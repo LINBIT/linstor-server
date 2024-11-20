@@ -22,17 +22,12 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -50,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -184,8 +178,6 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             );
         }
 
-        failIfDependentSnapshot(vlmDfn);
-
         // mark volumes to delete or check if all a 'CLEAN'
         Iterator<Volume> itVolumes = getVolumeIteratorPrivileged(vlmDfn);
         while (itVolumes.hasNext())
@@ -303,48 +295,6 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             throw new ImplementationError(exc);
         }
         return rscInUse;
-    }
-
-    private void failIfDependentSnapshot(VolumeDefinition vlmDfn)
-    {
-        try
-        {
-            ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
-            for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
-            {
-                for (Snapshot snapshot : snapshotDfn.getAllSnapshots(peerAccCtx.get()))
-                {
-                    SnapshotVolume snapshotVlm = snapshot.getVolume(vlmDfn.getVolumeNumber());
-                    if (snapshotVlm != null)
-                    {
-                        Map<String, StorPool> storPoolMap = LayerVlmUtils.getStorPoolMap(snapshotVlm, peerAccCtx.get());
-                        for (StorPool storPool : storPoolMap.values())
-                        {
-                            if (storPool.getDeviceProviderKind().isSnapshotDependent())
-                            {
-                                throw new ApiRcException(
-                                    ApiCallRcImpl.simpleEntry(
-                                        ApiConsts.FAIL_EXISTS_SNAPSHOT,
-                                        "Volume definition " + vlmDfn.getVolumeNumber() + " of '" + rscDfn.getName() +
-                                            "' cannot be deleted because dependent snapshot '" +
-                                            snapshot.getSnapshotName() +
-                                            "' is present on node '" + snapshot.getNodeName() + "'"
-                                    )
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "check for dependent snapshots of " + getVlmDfnDescriptionInline(vlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
-            );
-        }
     }
 
     private Iterator<Volume> getVolumeIteratorPrivileged(VolumeDefinition vlmDfn)

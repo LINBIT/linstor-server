@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AutoDiskfulTask: Improved selection when deleting excess resource
 - Tiebreaker: Improved decision making if a deleting resource should be kept as tiebreaker
 - Write a full documented linstor.toml and remove the linstor.toml-example
+- Snapshot rollback now does internally a resource delete + snapshot restore
 
 ### Fixed
 

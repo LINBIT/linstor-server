@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -21,6 +23,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -32,8 +35,10 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -45,14 +50,17 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiC
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -64,23 +72,40 @@ import reactor.util.function.Tuple2;
 /**
  * Rolls a resource back to a snapshot state.
  * <p>
- * Rollback proceeds as follows:
- * <ol>
- *     <li>The resource definition is marked as down with a transient flag. If any satellites fail to apply this
- *         update, the flag is unset and the rollback is aborted without taking effect.</li>
- *     <li>Once all the resources are down, all the resources are marked for rollback to the given snapshot.
- *         These flags are persistent and will prevent the resource from being brought up until the rollback is
- *         successful.</li>
- *     <li>For each resource that successfully applies the rollback, the flags are removed, so that it can be
- *         brought up. For resources that fail to apply the rollback, the flags remain, so that the resource
- *         remains down.</li>
- *     <li>Once all the satellites have responded to the rollback request, they are updated. This causes the
- *         resource to be brought up on all nodes where the rollback succeeded.</li>
- * </ol>
+ *      Rollback proceeds as follows:
+ *      <ol>
+ *          <li>Create a SAFETY_SNAP snapshot on all nodes with a diskful resource.
+ *              <p>If this step fails, the SAFETY_SNAP is removed again.</p>
+ *          </li>
+ *          <li>All resources will be deleted (via {@link CtrlRscDfnTruncateApiCallHandler}, i.e. diskless first)
+ *              <p>If this step fails, SAFTEY_SNAP will be restored on the diskful nodes that were successfully deleted.
+ *                  Other resources are undeleted.</p>
+ *          </li>
+ *          <li>The given snapshot will be restored on the nodes that have the snapshot (which might be different nodes
+ *              then we just deleted the resources from)
+ *              <p>If this step fails, all existing resources (i.e. those which successfully performed a resource, if
+ *                  any) will be deleted an all nodes will restore back to SAFETY_SNAP.</p>
+ *          <li>SAFETY_SNAP will be deleted</li>
+ *      </ol>
+ * </p>
  */
 @Singleton
 public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnectionListener
 {
+    private static final SnapshotName SAFETY_SNAP_NAME;
+
+    static
+    {
+        try
+        {
+            SAFETY_SNAP_NAME = new SnapshotName(".safety-snap", true);
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
@@ -94,6 +119,12 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private final BackupInfoManager backupInfoMgr;
     private final SnapshotRollbackManager snapRollbackMgr;
     private final CtrlPropsHelper propsHelper;
+    private final CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtHandler;
+    private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDelHandler;
+    private final CtrlRscDfnTruncateApiCallHandler ctrlRscDfnTruncateApiCallHandler;
+    private final ScheduleBackupService scheduleService;
+    private final CtrlSnapshotRestoreApiCallHandler ctrlSnapRstApiCallHandler;
+    private final CtrlSnapshotCrtHelper ctrlSnapCrtHelper;
 
     @Inject
     public CtrlSnapshotRollbackApiCallHandler(
@@ -109,7 +140,13 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         BackupInfoManager backupInfoMgrRef,
         SnapshotRollbackManager snapRollbackMgrRef,
         ErrorReporter errorReporterRef,
-        CtrlPropsHelper propsHelperRef
+        CtrlPropsHelper propsHelperRef,
+        CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtHandlerRef,
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapDelHandlerRef,
+        CtrlRscDfnTruncateApiCallHandler ctrlRscDfnTruncateApiCallHandlerRef,
+        ScheduleBackupService scheduleServiceRef,
+        CtrlSnapshotRestoreApiCallHandler ctrlSnapRstApiCallHandlerRef,
+        CtrlSnapshotCrtHelper ctrlSnapCrtHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -125,6 +162,12 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         snapRollbackMgr = snapRollbackMgrRef;
         errorReporter = errorReporterRef;
         propsHelper = propsHelperRef;
+        ctrlSnapshotCrtHandler = ctrlSnapshotCrtHandlerRef;
+        ctrlSnapDelHandler = ctrlSnapDelHandlerRef;
+        ctrlRscDfnTruncateApiCallHandler = ctrlRscDfnTruncateApiCallHandlerRef;
+        scheduleService = scheduleServiceRef;
+        ctrlSnapRstApiCallHandler = ctrlSnapRstApiCallHandlerRef;
+        ctrlSnapCrtHelper = ctrlSnapCrtHelperRef;
     }
 
     @Override
@@ -159,14 +202,195 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
         return scopeRunner
             .fluxInTransactionalScope(
-                "Rollback to snapshot",
+                "prepare rollback",
                 lockGuardFactory.create()
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> rollbackSnapshotInTransaction(rscNameStr, snapshotNameStr)
+                () -> prepareRollbackInTransaction(rscNameStr, snapshotNameStr)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> prepareRollbackInTransaction(String rscNameStr, String snapshotNameStr)
+    {
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameStr, snapshotNameStr, true);
+        ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
+
+        ResourceName rscName = rscDfn.getName();
+        SnapshotName snapName = snapshotDfn.getName();
+        ensureNoBackupRestoreRunning(rscDfn);
+        ensureNoScheduleActive(rscNameStr);
+        ctrlSnapshotHelper.ensureSnapshotSuccessful(snapshotDfn);
+        ensureSnapshotsForAllVolumes(rscDfn, snapshotDfn);
+        ensureAllSatellitesConnected(rscDfn);
+        ensureNoResourcesInUse(rscDfn);
+
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        SnapshotDefinition safetySnapDfn = ctrlSnapCrtHelper.createSnapshots(
+            Collections.emptyList(),
+            rscName,
+            SAFETY_SNAP_NAME,
+            responses
+        );
+        ctrlTransactionHelper.commit();
+        return ctrlSnapshotCrtHandler.postCreateSnapshot(safetySnapDfn, false)
+            .concatWith(Flux.<ApiCallRc>just(responses))
+            .concatWith(
+                // TODO: try to re-create diskless resources (note: do not try to de/-activate the diskless resources
+                // since that could lead to conflicts with node-ids with the restored resources)
+                deleteRscs(rscDfn.getName())
+                    .onErrorResume(
+                    exc -> rollbackToSafetySnap(snapshotDfn, false).concatWith(Flux.error(exc))
+                )
+            )
+            .concatWith(
+                restoreSnap(rscName, snapName)
+                    .onErrorResume(
+                    exc -> rollbackToSafetySnap(snapshotDfn, true).concatWith(Flux.error(exc))
+                )
+            )
+            .concatWith(deleteSafetySnap(null, rscNameStr))
+            .onErrorResume(exc -> deleteSafetySnap(exc, rscNameStr));
+    }
+
+    private void ensureNoScheduleActive(String rscNameStr)
+    {
+        if (!scheduleService.getAllFilteredActiveShippings(rscNameStr, null, null).isEmpty())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE,
+                    rscNameStr + " has an active schedule. " +
+                        "Please deactivate the schedule first before trying again."
+                )
+            );
+        }
+    }
+
+    private Flux<ApiCallRc> deleteRscs(ResourceName rscName)
+    {
+        return ctrlRscDfnTruncateApiCallHandler.truncateRscDfnInTransaction(rscName, false);
+    }
+
+    private Flux<ApiCallRc> restoreSnap(ResourceName rscNameStr, SnapshotName snapNameStr)
+    {
+        return ctrlSnapRstApiCallHandler.restoreSnapshot(
+            Collections.emptyList(),
+            rscNameStr,
+            snapNameStr,
+            rscNameStr,
+            Collections.emptyMap()
+        );
+    }
+
+    private Flux<ApiCallRc> rollbackToSafetySnap(SnapshotDefinition snapDfn, boolean restoreStarted)
+    {
+        ResponseContext context = makeSnapshotContext(
+            ApiOperation.makeModifyOperation(),
+            Collections.emptyList(),
+            snapDfn.getResourceName().displayValue,
+            snapDfn.getName().displayValue
+        );
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "rollback rollback",
+                lockGuardFactory.create()
+                    .read(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> rollbackToSafetySnapInTransaction(snapDfn, restoreStarted)
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    /**
+     * Performs a rollback to {@link #SAFETY_SNAP_NAME}.
+     *
+     * @param snapDfn The target snapshot definition that should have been rolled back to (*not* the SAFETY_SNAP!)
+     * @param restoreStarted Indicates whether or not the restore to the given target snapDfn was already attempted.
+     *      If false, the resource could not be deleted on some nodes. On those nodes, we simply restore to
+     *      SAFETY_SNAP.<br>
+     *      If true, we already tried to restore to {@code snapDfn} but some nodes failed to restore. In this case we
+     *      will delete all successfully restored resources and perform a restore snapshot to SAFTEY_SNAP on all
+     *      participating nodes.
+     * @return
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     */
+    private Flux<ApiCallRc> rollbackToSafetySnapInTransaction(SnapshotDefinition snapDfn, boolean restoreStarted)
+        throws AccessDeniedException, DatabaseException
+    {
+        ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
+        ResourceName rscName = rscDfn.getName();
+        Flux<ApiCallRc> flux;
+        if (restoreStarted)
+        {
+            flux = deleteRscs(rscDfn.getName())
+                .concatWith(restoreSnap(rscName, SAFETY_SNAP_NAME));
+        }
+        else
+        {
+            List<String> nodeNamesNoRsc = new ArrayList<>();
+            boolean updateRscDfn = false;
+            SnapshotDefinition safetySnapDfn = rscDfn.getSnapshotDfn(apiCtx, SAFETY_SNAP_NAME);
+            for (Snapshot snap : safetySnapDfn.getAllSnapshots(peerAccCtx.get()))
+            {
+                NodeName nodeName = snap.getNodeName();
+                @Nullable Resource stillExistingRsc = rscDfn.getResource(peerAccCtx.get(), nodeName);
+                if (stillExistingRsc == null)
+                {
+                    nodeNamesNoRsc.add(nodeName.displayValue);
+                }
+                else
+                {
+                    StateFlags<Flags> rscFlags = stillExistingRsc.getStateFlags();
+                    if (rscFlags.isSomeSet(peerAccCtx.get(), Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE))
+                    {
+                        rscFlags.disableFlags(peerAccCtx.get(), Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE);
+                        updateRscDfn = true;
+                    }
+                }
+            }
+            Flux<ApiCallRc> restoreSafetySnapFlux = ctrlSnapRstApiCallHandler.restoreSnapshot(
+                nodeNamesNoRsc,
+                rscName,
+                SAFETY_SNAP_NAME,
+                rscName,
+                Collections.emptyMap()
+            );
+            if (updateRscDfn)
+            {
+                flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, restoreSafetySnapFlux)
+                    .transform(
+                        updateResponses -> CtrlResponseUtils.combineResponses(
+                            errorReporter,
+                            updateResponses,
+                            rscName,
+                            "Deactivated resource {1} on {0} for rollback"
+                        )
+                    )
+                    .concatWith(restoreSafetySnapFlux);
+            }
+            else
+            {
+                flux = restoreSafetySnapFlux;
+            }
+        }
+        return flux;
+    }
+
+    private Flux<ApiCallRc> deleteSafetySnap(@Nullable Throwable excRef, String rscNameStr)
+    {
+        Flux<ApiCallRc> ret = ctrlSnapDelHandler.deleteSnapshot(
+            LinstorParsingUtils.asRscName(rscNameStr),
+            SAFETY_SNAP_NAME,
+            null
+        );
+        if (excRef != null)
+        {
+            ret = ret.concatWith(Flux.error(excRef));
+        }
+        return ret;
     }
 
     private Flux<ApiCallRc> rollbackSnapshotInTransaction(String rscNameStr, String snapshotNameStr)

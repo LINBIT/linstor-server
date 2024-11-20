@@ -54,7 +54,7 @@ public class ChangedSnapshot implements ApiCallReactive
         try
         {
             rscName = new ResourceName(rscNameStr);
-            snapshotName = new SnapshotName(snapshotNameStr);
+            snapshotName = new SnapshotName(snapshotNameStr, true);
         }
         catch (InvalidNameException invalidNameExc)
         {

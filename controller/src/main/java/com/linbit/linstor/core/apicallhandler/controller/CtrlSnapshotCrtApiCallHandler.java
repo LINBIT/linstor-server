@@ -136,8 +136,30 @@ public class CtrlSnapshotCrtApiCallHandler
         String snapshotNameStr
     )
     {
+        return createSnapshot(nodeNameStrs, rscNameStr, snapshotNameStr, true);
+    }
+
+    /**
+     * Create a snapshot of a resource.
+     * <p>
+     * Snapshots are created in a multi-stage process:
+     * <ol>
+     * <li>Add the snapshot objects (definition and instances), marked with the suspend flag</li>
+     * <li>When all resources are suspended, send out a snapshot request</li>
+     * <li>When all snapshots have been created, mark the resource as resuming by removing the suspend flag</li>
+     * <li>When all resources have been resumed, remove the in-progress snapshots</li>
+     * </ol>
+     */
+    public Flux<ApiCallRc> createSnapshot(
+        List<String> nodeNameStrs,
+        String rscNameStr,
+        String snapshotNameStr,
+        boolean handleErrors
+    )
+    {
         return createSnapshot(
-            singleSnapReq(nodeNameStrs, rscNameStr, snapshotNameStr)
+            singleSnapReq(nodeNameStrs, rscNameStr, snapshotNameStr),
+            handleErrors
         );
     }
 
@@ -152,9 +174,13 @@ public class CtrlSnapshotCrtApiCallHandler
         );
     }
 
-    public Flux<ApiCallRc> createSnapshot(CreateMultiSnapRequest req)
+    public Flux<ApiCallRc> createSnapshot(CreateMultiSnapRequest req){
+        return createSnapshot(req, true);
+    }
+
+    public Flux<ApiCallRc> createSnapshot(CreateMultiSnapRequest req, boolean handleErrors)
     {
-        return scopeRunner
+        Flux<ApiCallRc> fluxInTransactionalScope = scopeRunner
             .fluxInTransactionalScope(
                 "Create (multi) snapshot",
                 lockGuardFactory.create()
@@ -162,8 +188,14 @@ public class CtrlSnapshotCrtApiCallHandler
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
                 () -> createSnapshotInTransaction(req)
-            )
-            .transform(responses -> responseConverter.reportingExceptions(req.makeSnapshotContext(), responses));
+            );
+        if (handleErrors)
+        {
+            fluxInTransactionalScope = fluxInTransactionalScope.transform(
+                responses -> responseConverter.reportingExceptions(req.makeSnapshotContext(), responses)
+            );
+        }
+        return fluxInTransactionalScope;
 
     }
 

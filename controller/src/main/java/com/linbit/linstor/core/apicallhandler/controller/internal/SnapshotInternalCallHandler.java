@@ -78,7 +78,7 @@ public class SnapshotInternalCallHandler
         )
         {
             ResourceName resourceName = new ResourceName(resourceNameStr);
-            SnapshotName snapshotName = new SnapshotName(snapshotNameStr);
+            SnapshotName snapshotName = new SnapshotName(snapshotNameStr, true);
 
             Peer currentPeer = peer.get();
 
