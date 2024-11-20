@@ -190,19 +190,6 @@ public class ZfsCommands
     public static OutputData restoreSnapshot(
         ExtCmd extCmd,
         String zPool,
-        String sourceLvName,
-        String sourceSnapName,
-        String targetLvName
-    )
-        throws StorageException
-    {
-        String sourceSnapId = sourceLvName + "@" + sourceSnapName;
-        return restoreSnapshotFullName(extCmd, zPool, sourceSnapId, targetLvName);
-    }
-
-    public static OutputData restoreSnapshotFullName(
-        ExtCmd extCmd,
-        String zPool,
         String sourceSnapshotName,
         String targetLvName
     )

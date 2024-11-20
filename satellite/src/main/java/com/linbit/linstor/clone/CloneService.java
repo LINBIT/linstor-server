@@ -474,7 +474,7 @@ public class CloneService implements SystemService
     private @Nullable String[] doZFSClone(String zpoolName, String srcIdentifier, String dstIdentifier)
         throws StorageException
     {
-        ZfsCommands.restoreSnapshotFullName(
+        ZfsCommands.restoreSnapshot(
             extCmdFactory.create(),
             zpoolName,
             srcIdentifier,

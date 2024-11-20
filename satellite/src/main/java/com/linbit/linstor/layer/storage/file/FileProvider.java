@@ -406,28 +406,18 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    protected void restoreSnapshot(String sourceLvIdRef, String sourceSnapNameRef, FileData<Resource> fileData)
+    protected void restoreSnapshot(FileData<Snapshot> sourceSnapVlmDataRef, FileData<Resource> fileDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        // sourceLvIdRef is something like "rsc_00000.img"
-        // sourceSnapNameRef is something like "snap"
-        // we need to concatenate sourceLvIdRef and sourceSnapNameRef with the result of
-        // something like "rsc_00000_snap.img"
 
-        String snapId = sourceLvIdRef
-            .substring(0, sourceLvIdRef.length() - 4) + // cuts the trailing ".img"
-            "_" + sourceSnapNameRef + ".img";
-
-        Path storageDirectory = fileData.getStorageDirectory();
-        Path devPath = storageDirectory.resolve(fileData.getIdentifier());
+        Path storageDirectory = fileDataRef.getStorageDirectory();
+        Path devPath = storageDirectory.resolve(fileDataRef.getIdentifier());
         FileCommands.copy(
             extCmdFactory.create(),
-            storageDirectory.resolve(
-               snapId
-            ),
+            asFullQualifiedPath(sourceSnapVlmDataRef),
             devPath
         );
-        createLoopDevice(fileData, devPath);
+        createLoopDevice(fileDataRef, devPath);
     }
 
     @Override
@@ -446,7 +436,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    protected boolean snapshotExists(FileData<Snapshot> snapVlmRef)
+    protected boolean snapshotExists(FileData<Snapshot> snapVlmRef, boolean ignoredForTakeSnapshorRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         return Files.exists(asFullQualifiedPath(snapVlmRef));

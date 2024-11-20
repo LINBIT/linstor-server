@@ -219,16 +219,37 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected String asSnapLvIdentifier(ZfsData<Snapshot> snapVlmDataRef) throws AccessDeniedException
+    protected String asSnapLvIdentifier(ZfsData<Snapshot> snapVlmDataRef)
+        throws AccessDeniedException
+    {
+        return asSnapLvIdentifier(snapVlmDataRef, false);
+    }
+
+    private String asSnapLvIdentifier(ZfsData<Snapshot> snapVlmDataRef, boolean forTakeSnapshotRef)
+        throws AccessDeniedException
     {
         StorageRscData<Snapshot> snapData = snapVlmDataRef.getRscLayerObject();
+        @Nullable String rscNameFormatSuffix;
+        /**
+         * If we need the snapLvId for creating a snapshot, the snapshot must not contain the rscNameFormatSuffix.
+         * Otherwise the "snapshotExists" method might return false if a "rsc_00000_1@snap" does not exist, but
+         * "rsc_00000@snap" already exists.
+         */
+        if (!forTakeSnapshotRef)
+        {
+            rscNameFormatSuffix = snapData.getAbsResource()
+                .getSnapProps(storDriverAccCtx)
+                .getProp(InternalApiConsts.KEY_ZFS_RENAME_SUFFIX, STORAGE_NAMESPACE);
+        }
+        else
+        {
+            rscNameFormatSuffix = null;
+        }
         return asSnapLvIdentifierRaw(
             snapData.getResourceName().displayValue,
             snapData.getResourceNameSuffix(),
             snapVlmDataRef.getVlmNr().value,
-            snapData.getAbsResource()
-                .getSnapProps(storDriverAccCtx)
-                .getProp(InternalApiConsts.KEY_ZFS_RENAME_SUFFIX, STORAGE_NAMESPACE),
+            rscNameFormatSuffix,
             snapData.getAbsResource().getSnapshotName().displayValue
         );
     }
@@ -283,11 +304,11 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return identifier;
     }
 
-    private String asFullQualifiedLvIdentifier(ZfsData<?> zfsData)
+    private String asFullQualifiedSnapIdentifier(ZfsData<Snapshot> zfsData, boolean forTakeSnapshotRef)
         throws AccessDeniedException
     {
         return getZPool(zfsData.getStorPool()) + File.separator +
-            asIdentifierRaw(zfsData);
+            asSnapLvIdentifier(zfsData, forTakeSnapshotRef);
     }
 
     private String asFullQualifiedLvIdentifier(ReadOnlyVlmProviderInfo readOnlyVlmProvInfo)
@@ -539,10 +560,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    public boolean snapshotExists(ZfsData<Snapshot> snapVlm)
+    public boolean snapshotExists(ZfsData<Snapshot> snapVlm, boolean forTakeSnapshotRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        ZfsInfo zfsInfo = infoListCache.get(asFullQualifiedLvIdentifier(snapVlm));
+        ZfsInfo zfsInfo = infoListCache.get(asFullQualifiedSnapIdentifier(snapVlm, forTakeSnapshotRef));
         return zfsInfo != null;
     }
 
@@ -565,15 +586,14 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected void restoreSnapshot(String sourceLvId, String sourceSnapName, ZfsData<Resource> targetVlmData)
+    protected void restoreSnapshot(ZfsData<Snapshot> sourceSnapVlmDataRef, ZfsData<Resource> targetVlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.restoreSnapshot(
             extCmdFactory.create(),
-            targetVlmData.getZPool(),
-            sourceLvId,
-            sourceSnapName,
-            asLvIdentifier(targetVlmData)
+            targetVlmDataRef.getZPool(),
+            asSnapLvIdentifier(sourceSnapVlmDataRef),
+            asLvIdentifier(targetVlmDataRef)
         );
     }
 

@@ -593,75 +593,45 @@ public abstract class AbsStorageProvider<
         for (LAYER_DATA vlmData : vlmsToCreate)
         {
             final boolean cloneVolume = isCloneVolume(vlmData);
-            String sourceLvId = computeRestoreFromResourceName(vlmData);
-            // sourceLvId ends with "_00000"
+            @Nullable LAYER_SNAP_DATA sourceSnapVlm = getSourceSnapVlmDataForRestore(vlmData);
 
-            String sourceSnapshotName = computeRestoreFromSnapshotName(vlmData.getVolume());
-
-            boolean snapRestore = sourceLvId != null && sourceSnapshotName != null;
-            if (snapRestore)
+            if (sourceSnapVlm != null)
             {
-                errorReporter.logDebug("Restoring from lv: %s, snapshot: %s", sourceLvId, sourceSnapshotName);
-
-                SnapshotName snapshotName;
-                try
-                {
-                    snapshotName = new SnapshotName(sourceSnapshotName);
-                }
-                catch (InvalidNameException exc)
-                {
-                    throw new ImplementationError(exc);
-                }
-
-                AbsRscLayerObject<Resource> rscData = vlmData.getRscLayerObject();
-                SnapshotDefinition snapshotDfn = rscData.getAbsResource().getResourceDefinition()
-                    .getSnapshotDfn(storDriverAccCtx, snapshotName);
+                errorReporter.logDebug("Restoring from snapshot: %s", asSnapLvIdentifier(sourceSnapVlm));
 
                 boolean localRestore = false;
-                if (snapshotDfn != null)
-                {
-                    // snapDfn might be null if we are restoring from a different resource
-                    // that use case is local only and has nothing to do with backup shipping
-                    Snapshot snap = snapshotDfn.getSnapshot(
-                        storDriverAccCtx,
-                        rscData.getAbsResource().getNode().getName()
-                    );
 
+                StorageRscData<Snapshot> sourceSnap = sourceSnapVlm.getRscLayerObject();
+                ResourceName sourceRscName = sourceSnap.getResourceName();
+
+                StorageRscData<Resource> targetRscData = vlmData.getRscLayerObject();
+                ResourceName targetRscName = targetRscData.getResourceName();
+                /*
+                 * With "snapshot restore" it is possible that the source and target resource names are different.
+                 * With "backup restore" the resource names must be the same by design.
+                 */
+                if (targetRscName.equals(sourceRscName))
+                {
+                    Snapshot snap = sourceSnap.getAbsResource();
                     if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                        !RscLayerSuffixes.shouldSuffixBeShipped(rscData.getResourceNameSuffix()))
+                        !RscLayerSuffixes.shouldSuffixBeShipped(targetRscData.getResourceNameSuffix()))
                     {
                         /*
-                         * Backup did purposely not contain this device, so we have to assume that we simply need to
-                         * create an empty volume instead
+                         * Backup did purposely not contain this device, which means that we will not be able to
+                         * "restore from snapshot", since we do not have a snapshot of this special device.
+                         * Therefore we simply need to create an empty volume instead...
                          */
                         createLvImpl(vlmData);
 
                         /*
-                         * and make a snapshot from it to behave similarly as usually creating a snapshot of a volume
+                         * ... and make a snapshot from it to behave similarly as usually creating a snapshot of a
+                         * volume
                          */
-                        AbsRscLayerObject<Snapshot> snapLayerData = snap.getLayerData(storDriverAccCtx);
-                        Set<AbsRscLayerObject<Snapshot>> storSnapLayerDataSet = LayerRscUtils.getRscDataByLayer(
-                            snapLayerData,
-                            DeviceLayerKind.STORAGE,
-                            rscData.getResourceNameSuffix()::equals
-                        );
-
-                        if (storSnapLayerDataSet.size() > 1)
+                        if (!snapshotExists(sourceSnapVlm, true))
                         {
-                            throw new ImplementationError(
-                                "Unexpected count: " + storSnapLayerDataSet.size() + ". " + snap
-                            );
+                            createSnapshot(vlmData, sourceSnapVlm);
                         }
-                        if (!storSnapLayerDataSet.isEmpty())
-                        {
-                            AbsRscLayerObject<Snapshot> storSnapLayerData = storSnapLayerDataSet.iterator().next();
-                            LAYER_SNAP_DATA snapVlmData = storSnapLayerData.getVlmProviderObject(vlmData.getVlmNr());
-                            if (!snapshotExists(snapVlmData))
-                            {
-                                createSnapshot(vlmData, snapVlmData);
-                            }
-                            copySizes(vlmData, snapVlmData);
-                        }
+                        copySizes(vlmData, sourceSnapVlm);
                     }
                     else
                     {
@@ -674,7 +644,7 @@ public abstract class AbsStorageProvider<
                 }
                 if (localRestore)
                 {
-                    restoreSnapshot(sourceLvId, sourceSnapshotName, vlmData);
+                    restoreSnapshot(sourceSnapVlm, vlmData);
                 }
             }
             else
@@ -719,7 +689,7 @@ public abstract class AbsStorageProvider<
             }
             else
             {
-                postCreate(vlmData, !snapRestore && kind.hasBackingDevice());
+                postCreate(vlmData, !(sourceSnapVlm != null) && kind.hasBackingDevice());
             }
 
             addCreatedMsg(vlmData, apiCallRc);
@@ -895,7 +865,7 @@ public abstract class AbsStorageProvider<
             }
 
             errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
-            if (snapshotExists(snapVlm))
+            if (snapshotExists(snapVlm, false))
             {
                 deleteSnapshotImpl(snapVlm);
             }
@@ -937,7 +907,7 @@ public abstract class AbsStorageProvider<
                 );
             }
 
-            if (!snapshotExists(snapVlm))
+            if (!snapshotExists(snapVlm, true))
             {
                 errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
                 if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
@@ -1023,7 +993,21 @@ public abstract class AbsStorageProvider<
             {
                 backupShippingService.abort(snapVlm, true);
             }
-            if (snapshotExists(snapVlm) &&
+
+            /*
+             * The following if case exists for the use-case where the backup-restore was already attempted but
+             * failed for some reason (maybe the port was blocked / already in use). In case of LVM we already
+             * have created the snapshot, so while "takeSnapshot" is set, "snapshotExists" will also return true.
+             * The "takeSnapshot == true" case however only deals with "!snapshotExists" scenarios.
+             * So we will have to wait (i.e. "waste" a few devMgr cycles) so that "takeSnapshot" is unset by the
+             * controller so we can (re-) try starting the backup restore.
+             *
+             * ZFS behaves differently since ZFS does not work if the snapshot already exists. Therefore the ZfsProvider
+             * does not create a dummy-snapshot, which means that while "takeSnapshot" is true, "snapshotExists" will
+             * return false in case of ZFS. So if the backup-restore attempt fails in case of ZFS, the next devMgr cycle
+             * will retry the backup-restore from the "takeSnapshot && !snapshotExists" case above.
+             */
+            if (snapshotExists(snapVlm, false) &&
                 snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
                 snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
             {
@@ -1566,57 +1550,23 @@ public abstract class AbsStorageProvider<
         errorReporter.logInfo(msg);
     }
 
-    private String computeRestoreFromResourceName(LAYER_DATA vlmData)
-        throws AccessDeniedException
+    private @Nullable LAYER_SNAP_DATA getSourceSnapVlmDataForRestore(LAYER_DATA vlmDataRef)
+        throws AccessDeniedException, StorageException
     {
-        String restoreVlmName;
-        try
+        final @Nullable LAYER_SNAP_DATA ret;
+        final ReadOnlyProps props = ((Volume) vlmDataRef.getVolume()).getProps(storDriverAccCtx);
+        final @Nullable String restoreFromResourceName = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
+        final @Nullable String restoreFromSnapshotProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
+        if (restoreFromResourceName != null && restoreFromSnapshotProp != null)
         {
-            ReadOnlyProps props = ((Volume) vlmData.getVolume()).getProps(storDriverAccCtx);
-            String restoreFromResourceName = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
-
-            if (restoreFromResourceName != null)
-            {
-                restoreVlmName =
-                    getMigrationId(vlmData.getVolume().getVolumeDefinition())
-                    .orElse(asLvIdentifier(
-                        vlmData.getStorPool().getName(),
-                        new ResourceName(restoreFromResourceName),
-                        vlmData.getRscLayerObject().getResourceNameSuffix(),
-                        vlmData.getVlmNr())
-                    );
-            }
-            else
-            {
-                restoreVlmName = null;
-            }
+            LAYER_DATA fromVlmData = getVlmDataFromOtherResource(vlmDataRef, restoreFromResourceName);
+            ret = getSnapVlmData(fromVlmData, restoreFromSnapshotProp);
         }
-        catch (InvalidKeyException | InvalidNameException exc)
+        else
         {
-            throw new ImplementationError(exc);
+            ret = null;
         }
-
-        return restoreVlmName;
-    }
-
-    private String computeRestoreFromSnapshotName(AbsVolume<Resource> absVlm)
-        throws AccessDeniedException
-    {
-        String restoreSnapshotName;
-        try
-        {
-            ReadOnlyProps props = ((Volume) absVlm).getProps(storDriverAccCtx);
-            String restoreFromSnapshotProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
-
-            restoreSnapshotName = restoreFromSnapshotProp != null ?
-                // Parse into 'Name' objects in order to validate the property contents
-                new SnapshotName(restoreFromSnapshotProp).displayValue : null;
-        }
-        catch (InvalidNameException | InvalidKeyException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return restoreSnapshotName;
+        return ret;
     }
 
     private void startBackupRestore(LAYER_SNAP_DATA snapVlmData)
@@ -1838,7 +1788,7 @@ public abstract class AbsStorageProvider<
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
-    protected void restoreSnapshot(String sourceLvId, String sourceSnapName, LAYER_DATA vlmData)
+    protected void restoreSnapshot(LAYER_SNAP_DATA sourceSnapVlmData, LAYER_DATA vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
@@ -1850,7 +1800,7 @@ public abstract class AbsStorageProvider<
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
-    protected boolean snapshotExists(LAYER_SNAP_DATA snapVlm)
+    protected boolean snapshotExists(LAYER_SNAP_DATA snapVlm, boolean forTakeSnapshotRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());

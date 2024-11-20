@@ -527,7 +527,7 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
      * Snapshots
      */
     @Override
-    protected boolean snapshotExists(SpdkData<Snapshot> snapVlmRef)
+    protected boolean snapshotExists(SpdkData<Snapshot> snapVlmRef, boolean ignoredForTakeSnapshorRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         String identifier = getFullQualifiedIdentifier(snapVlmRef);
@@ -546,12 +546,10 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     }
 
     @Override
-    protected void restoreSnapshot(String sourceLvIdRef, String sourceSnapNameRef, SpdkData<Resource> vlmDataRef)
+    protected void restoreSnapshot(SpdkData<Snapshot> sourceSnapVlmDataRef, SpdkData<Resource> vlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        // DO NOT use asSnapLvIdentifier here as sourceLvIdRef already contains the rscName + rscNameSuffix + vlmNr.
-        // just appending the snapname should be sufficient
-        String fullQualifiedSnapName = vlmDataRef.getVolumeGroup() + "/" + sourceLvIdRef + "_" + sourceSnapNameRef;
+        String fullQualifiedSnapName = vlmDataRef.getVolumeGroup() + "/" + asSnapLvIdentifier(sourceSnapVlmDataRef);
 
         spdkCommands.restoreSnapshot(
             fullQualifiedSnapName,

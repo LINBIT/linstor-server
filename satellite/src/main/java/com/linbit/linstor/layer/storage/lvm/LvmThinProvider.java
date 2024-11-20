@@ -204,7 +204,7 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected boolean snapshotExists(LvmData<Snapshot> snapVlmRef)
+    protected boolean snapshotExists(LvmData<Snapshot> snapVlmRef, boolean ignoredForTakeSnapshorRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         String identifier = getFullQualifiedIdentifier(snapVlmRef);
@@ -309,17 +309,17 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void restoreSnapshot(String sourceLvId, String sourceSnapName, LvmData<Resource> vlmData)
+    protected void restoreSnapshot(LvmData<Snapshot> sourceSnapVlmDataRef, LvmData<Resource> vlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        String storageName = vlmData.getVolumeGroup();
-        String targetId = asLvIdentifier(vlmData);
+        String storageName = vlmDataRef.getVolumeGroup();
+        String targetId = asLvIdentifier(vlmDataRef);
         LvmUtils.execWithRetry(
             extCmdFactory,
-            Collections.singleton(vlmData.getVolumeGroup()),
+            Collections.singleton(vlmDataRef.getVolumeGroup()),
             config -> LvmCommands.restoreFromSnapshot(
                 extCmdFactory.create(),
-                sourceLvId + "_" + sourceSnapName,
+                asSnapLvIdentifier(sourceSnapVlmDataRef),
                 storageName,
                 targetId,
                 config
@@ -327,7 +327,7 @@ public class LvmThinProvider extends LvmProvider
         );
         LvmUtils.execWithRetry(
             extCmdFactory,
-            Collections.singleton(vlmData.getVolumeGroup()),
+            Collections.singleton(vlmDataRef.getVolumeGroup()),
             config -> LvmCommands.activateVolume(
                 extCmdFactory.create(),
                 storageName,

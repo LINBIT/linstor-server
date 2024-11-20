@@ -417,7 +417,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     }
 
     @Override
-    protected boolean snapshotExists(EbsData<Snapshot> snapVlmRef)
+    protected boolean snapshotExists(EbsData<Snapshot> snapVlmRef, boolean ignoredForTakeSnapshorRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         boolean snapshotExists = false;
@@ -478,22 +478,10 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     }
 
     @Override
-    protected void restoreSnapshot(String sourceLvIdRef, String sourceSnapNameRef, EbsData<Resource> vlmDataRef)
+    protected void restoreSnapshot(EbsData<Snapshot> sourceSnapVlmDataRef, EbsData<Resource> vlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        EbsData<Snapshot> srcEbsData = findSourceEbsData(
-            sourceLvIdRef,
-            sourceSnapNameRef,
-            vlmDataRef.getRscLayerObject().getAbsResource().getNode().getName()
-        );
-        if (srcEbsData == null)
-        {
-            throw new StorageException(
-                "Failed to find source snapshot by LV ID: " + sourceLvIdRef + " and snapshot name: " + sourceSnapNameRef
-            );
-        }
-
-        createEbsVolume(vlmDataRef, getEbsSnapId(srcEbsData));
+        createEbsVolume(vlmDataRef, getEbsSnapId(sourceSnapVlmDataRef));
     }
 
     @Override
