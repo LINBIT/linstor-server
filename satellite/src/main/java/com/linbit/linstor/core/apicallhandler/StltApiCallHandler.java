@@ -34,6 +34,8 @@ import com.linbit.linstor.core.apicallhandler.StltStorPoolApiCallHandler.Changed
 import com.linbit.linstor.core.apicallhandler.satellite.authentication.AuthenticationResult;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.migration.StltMigrationHandler;
+import com.linbit.linstor.core.migration.StltMigrationHandler.StltMigrationResult;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
@@ -79,6 +81,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -143,6 +147,7 @@ public class StltApiCallHandler
     private DrbdEventPublisher drbdEventPublisher;
     private final BackupShippingMgr backupShippingMgr;
     private final StltApiCallHandlerUtils stltApiCallHandlerUtils;
+    private final StltMigrationHandler stltMigrationHandler;
 
     private final PlatformStlt platformStlt;
 
@@ -185,7 +190,8 @@ public class StltApiCallHandler
         DeviceProviderMapper deviceProviderMapperRef,
         BackupShippingMgr backupShippingMgrRef,
         StltApiCallHandlerUtils stltApiCallHandlerUtilsRef,
-        PlatformStlt platformStltRef
+        PlatformStlt platformStltRef,
+        StltMigrationHandler stltMigrationHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -226,6 +232,7 @@ public class StltApiCallHandler
         backupShippingMgr = backupShippingMgrRef;
         stltApiCallHandlerUtils = stltApiCallHandlerUtilsRef;
         platformStlt = platformStltRef;
+        stltMigrationHandler = stltMigrationHandlerRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -302,7 +309,7 @@ public class StltApiCallHandler
         return authResult;
     }
 
-    public FullSyncResult applyFullSync(
+    public FullSync.FullSyncResult applyFullSync(
         Map<String, String> satelliteProps,
         Set<NodePojo> nodes,
         Set<StorPoolPojo> storPools,
@@ -318,7 +325,11 @@ public class StltApiCallHandler
         byte[] encCryptKey
     )
     {
-        FullSync.FullSyncResult success;
+        FullSync.FullSyncStatus success;
+        Map<String, String> stltPropsToAdd = new HashMap<>();
+        Set<String> stltPropKeysToDelete = new HashSet<>();
+        Set<String> stltPropNamespacesToDelete = new HashSet<>();
+
         try (
             LockGuard ls = LockGuard.createLocked(
                 reconfigurationLock.writeLock(),
@@ -471,6 +482,9 @@ public class StltApiCallHandler
                     checkForAlreadyKnownResources(rsc);
                 }
 
+                StltMigrationResult migrationResult = stltMigrationHandler.migrate();
+                success = migrationResult.status;
+                migrationResult.copyInto(stltPropsToAdd, stltPropKeysToDelete, stltPropNamespacesToDelete);
             }
             else
             {
@@ -479,18 +493,18 @@ public class StltApiCallHandler
                     fullSyncId,
                     updateMonitor.getCurrentFullSyncId()
                 );
+                success = FullSync.FullSyncStatus.SUCCESS;
             }
-            success = FullSync.FullSyncResult.SUCCESS;
         }
         catch (Exception | ImplementationError exc)
         {
             if (exc instanceof MissingRequiredExtToolsStorageException)
             {
-                success = FullSync.FullSyncResult.FAIL_MISSING_REQUIRED_EXT_TOOLS;
+                success = FullSync.FullSyncStatus.FAIL_MISSING_REQUIRED_EXT_TOOLS;
             }
             else
             {
-                success = FullSync.FullSyncResult.FAIL_UNKNOWN;
+                success = FullSync.FullSyncStatus.FAIL_UNKNOWN;
             }
             errorReporter.reportError(exc);
 
@@ -511,7 +525,7 @@ public class StltApiCallHandler
             // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
             updateMonitor.getNextFullSyncId();
         }
-        return success;
+        return new FullSyncResult(success, stltPropsToAdd, stltPropKeysToDelete, stltPropNamespacesToDelete);
     }
 
     private void checkForAlreadyKnownResources(RscPojo rsc)

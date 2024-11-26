@@ -42,6 +42,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -111,7 +112,7 @@ public class FullSync implements ApiCall
             asEbsRemote(applyFullSync.getEbsRemotesList(), fullSyncId, updateId)
         );
 
-        FullSyncResult success = apiCallHandler.applyFullSync(
+        FullSyncResult fullSyncResult = apiCallHandler.applyFullSync(
             msgIntControllerData.getPropsMap(),
             nodes,
             storPools,
@@ -127,12 +128,12 @@ public class FullSync implements ApiCall
             applyFullSync.getEncCryptKey().toByteArray()
         );
 
-        MsgIntFullSyncResponse.Builder builder = MsgIntFullSyncResponse.newBuilder();
-        if (success == null)
-        {
-            success = FullSyncResult.FAIL_UNKNOWN;
-        }
-        switch (success)
+        MsgIntFullSyncResponse.Builder builder = MsgIntFullSyncResponse.newBuilder()
+            .putAllNodePropsToSet(fullSyncResult.stltPropsToAdd)
+            .addAllNodePropKeysToDelete(fullSyncResult.stltPropKeysToDelete)
+            .addAllNodePropNamespacesToDelete(fullSyncResult.stltPropNamespacesToDelete);
+
+        switch (fullSyncResult.status)
         {
             case FAIL_MISSING_REQUIRED_EXT_TOOLS:
                 errorReporter.logError("FullSync error: missing required ext tools %d", fullSyncId);
@@ -149,12 +150,11 @@ public class FullSync implements ApiCall
                 builder.setFullSyncResult(MsgIntFullSyncResponseOuterClass.FullSyncResult.SUCCESS);
                 break;
             default:
-                errorReporter.logError("FullSync error: unknown case %s/%d" , success, fullSyncId);
+                errorReporter.logError("FullSync error: unknown case %s/%d", fullSyncResult, fullSyncId);
                 builder.setFullSyncResult(MsgIntFullSyncResponseOuterClass.FullSyncResult.FAIL_UNKNOWN);
                 break;
-
         }
-        if (success == FullSyncResult.SUCCESS)
+        if (fullSyncResult.status == FullSyncStatus.SUCCESS)
         {
             List<ProcCryptoEntry> cryptoEntries = ProcCryptoUtils.parseProcCrypto(errorReporter);
             for (ProcCryptoEntry procCryptoEntry : cryptoEntries)
@@ -282,10 +282,41 @@ public class FullSync implements ApiCall
         return ret;
     }
 
-    public enum FullSyncResult
+    public enum FullSyncStatus
     {
         SUCCESS,
         FAIL_MISSING_REQUIRED_EXT_TOOLS,
         FAIL_UNKNOWN;
+    }
+
+    public static class FullSyncResult
+    {
+        private final FullSyncStatus status;
+        private final Map<String, String> stltPropsToAdd;
+        private final Set<String> stltPropKeysToDelete;
+        private final Set<String> stltPropNamespacesToDelete;
+
+        public FullSyncResult(
+            FullSyncStatus statusRef,
+            Map<String, String> stltPropsToAddRef,
+            Set<String> stltPropKeysToDeleteRef,
+            Set<String> stltPropNamespacesToDeleteRef
+        )
+        {
+            status = statusRef;
+            stltPropsToAdd = stltPropsToAddRef;
+            stltPropKeysToDelete = stltPropKeysToDeleteRef;
+            stltPropNamespacesToDelete = stltPropNamespacesToDeleteRef;
+        }
+
+        public static FullSyncResult createFailedResult(FullSyncStatus statusRef)
+        {
+            return new FullSyncResult(
+                statusRef,
+                Collections.emptyMap(),
+                Collections.emptySet(),
+                Collections.emptySet()
+            );
+        }
     }
 }

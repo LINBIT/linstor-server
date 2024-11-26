@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -11,13 +12,17 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandle
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSatelliteConnectionNotifier;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -25,12 +30,13 @@ import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -40,16 +46,38 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlFullSyncResponseApiCallHandler
 {
+    private static final String PROP_NAMESPACE_STLT = "Satellite/";
+
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifier;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
-    private final Provider<Peer> satelliteProvider;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDelApiCallHandler;
     private final BackupInfoManager backupInfoMgr;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlRemoteApiCallHandler ctrlRemoteApiCallHandler;
+
+    public static class FullSyncSuccessContext
+    {
+        private final Peer peer;
+        private final Map<String, String> stltPropsToSet;
+        private final Collection<String> stltPropKeysToDelete;
+        private final Collection<String> stltPropNamespacesToDelete;
+
+        public FullSyncSuccessContext(
+            Peer peerRef,
+            Map<String, String> stltPropsToSetRef,
+            Collection<String> stltPropKeysToDeleteRef,
+            Collection<String> stltPropNamespacesToDeleteRef
+        )
+        {
+            peer = peerRef;
+            stltPropsToSet = stltPropsToSetRef;
+            stltPropKeysToDelete = stltPropKeysToDeleteRef;
+            stltPropNamespacesToDelete = stltPropNamespacesToDeleteRef;
+        }
+    }
 
     @Inject
     public CtrlFullSyncResponseApiCallHandler(
@@ -58,7 +86,6 @@ public class CtrlFullSyncResponseApiCallHandler
         CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifierRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        Provider<Peer> satelliteProviderRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDelApiCallHandlerRef,
         BackupInfoManager backupInfoMgrRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
@@ -70,31 +97,39 @@ public class CtrlFullSyncResponseApiCallHandler
         ctrlSatelliteConnectionNotifier = ctrlSatelliteConnectionNotifierRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
-        satelliteProvider = satelliteProviderRef;
         ctrlSnapDelApiCallHandler = ctrlSnapDelApiCallHandlerRef;
         backupInfoMgr = backupInfoMgrRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlRemoteApiCallHandler = ctrlRemoteApiCallHandlerRef;
     }
 
-    public Flux<?> fullSyncSuccess()
+    /**
+     * This method should be called when the satellite successfully applied its FullSync.
+     *
+     * <ul>
+     * <li>Calls {@link CtrlSatelliteConnectionNotifier#resourceConnected(Resource, ResponseContext)} for every
+     *     resource of the given node</li>
+     * <li>Cleans up all snapshots and (temporary) remotes from failed backups of the given node</li>
+     * <li>Merges node properties within the "Satellite/" namespace that the satellite told us in its
+     *     FullSyncResponse</li>
+     * <li>Sets the node to {@link com.linbit.linstor.api.ApiConsts.ConnectionStatus#ONLINE}</li>
+     * </ul>
+     *
+     * @return A merged Flux<?> continuing the "resource connected", "cleanup backups" and "cleanup remotes".
+     */
+    public Flux<?> fullSyncSuccess(FullSyncSuccessContext fullSyncSuccessCtx, ResponseContext context)
     {
-        return fullSyncSuccess(satelliteProvider.get(), null);
-    }
-
-    public Flux<?> fullSyncSuccess(Peer satellitePeerRef, ResponseContext context)
-    {
-        final ResponseContext ctx;
+        final ResponseContext responseCtx;
         if (context == null)
         {
-            ctx = CtrlNodeApiCallHandler.makeNodeContext(
+            responseCtx = CtrlNodeApiCallHandler.makeNodeContext(
                 ApiOperation.makeCreateOperation(),
-                satellitePeerRef.getNode().getName().displayValue
+                fullSyncSuccessCtx.peer.getNode().getName().displayValue
             );
         }
         else
         {
-            ctx = context;
+            responseCtx = context;
         }
         return scopeRunner.fluxInTransactionalScope(
             "Handle full sync success",
@@ -102,16 +137,14 @@ public class CtrlFullSyncResponseApiCallHandler
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.readLock()
             ),
-            () -> fullSyncSuccessInScope(satellitePeerRef, ctx)
+            () -> fullSyncSuccessInScope(fullSyncSuccessCtx, responseCtx)
         );
     }
 
-    private Flux<?> fullSyncSuccessInScope(Peer satellitePeerRef, ResponseContext context)
+    private Flux<?> fullSyncSuccessInScope(FullSyncSuccessContext fullSyncSuccessCtxRef, ResponseContext responseCtxRef)
     {
-        satellitePeerRef.setConnectionStatus(ApiConsts.ConnectionStatus.ONLINE);
-        satellitePeerRef.fullSyncApplied();
-
-        Node localNode = satellitePeerRef.getNode();
+        final Peer satellitePeer = fullSyncSuccessCtxRef.peer;
+        final Node localNode = satellitePeer.getNode();
 
         List<Flux<?>> fluxes = new ArrayList<>();
 
@@ -121,7 +154,7 @@ public class CtrlFullSyncResponseApiCallHandler
             while (localRscIter.hasNext())
             {
                 Resource localRsc = localRscIter.next();
-                fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc, context));
+                fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc, responseCtxRef));
             }
 
             Pair<Set<SnapshotDefinition>, Set<RemoteName>> objsToDel = backupInfoMgr.removeAllRestoreEntries(
@@ -138,10 +171,23 @@ public class CtrlFullSyncResponseApiCallHandler
                     )
                 );
             }
+
+            mergeNodeProps(fullSyncSuccessCtxRef);
+
             fluxes.add(ctrlRemoteApiCallHandler.cleanupRemotesIfNeeded(objsToDel.objB));
             ctrlTransactionHelper.commit();
+
+            satellitePeer.setConnectionStatus(ApiConsts.ConnectionStatus.ONLINE);
+            satellitePeer.fullSyncApplied();
         }
-        catch (AccessDeniedException exc)
+        catch (DatabaseException dbExc)
+        {
+            satellitePeer.setConnectionStatus(ApiConsts.ConnectionStatus.FULL_SYNC_FAILED);
+            satellitePeer.fullSyncFailed();
+
+            throw new ApiDatabaseException(dbExc);
+        }
+        catch (AccessDeniedException | InvalidValueException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -149,6 +195,42 @@ public class CtrlFullSyncResponseApiCallHandler
         return Flux.merge(fluxes);
     }
 
+    private void mergeNodeProps(FullSyncSuccessContext ctxRef)
+        throws AccessDeniedException, InvalidValueException, DatabaseException
+    {
+        Props nodeProps = ctxRef.peer.getNode().getProps(apiCtx);
+        for (Map.Entry<String, String> entry : ctxRef.stltPropsToSet.entrySet())
+        {
+            String key = entry.getKey();
+            if (key.startsWith(PROP_NAMESPACE_STLT))
+            {
+                nodeProps.setProp(key, entry.getValue());
+            }
+        }
+        for (String propKeyToDelete : ctxRef.stltPropKeysToDelete)
+        {
+            if (propKeyToDelete.startsWith(PROP_NAMESPACE_STLT))
+            {
+                nodeProps.removeProp(propKeyToDelete);
+            }
+        }
+        for (String propNamespaceToDelete : ctxRef.stltPropNamespacesToDelete)
+        {
+            if (propNamespaceToDelete.startsWith(PROP_NAMESPACE_STLT))
+            {
+                nodeProps.removeNamespace(propNamespaceToDelete);
+            }
+        }
+    }
+
+    /**
+     * This method should be called when the satellite could not properly apply its FullSync.
+     *
+     * <ul>
+     * <li>Calls {@link Peer#fullSyncFailed(com.linbit.linstor.api.ApiConsts.ConnectionStatus)} with
+     *     the given {@link ConnectionStatus}</li>
+     * </ul>
+     */
     public Flux<?> fullSyncFailed(Peer satellitePeerRef, ApiConsts.ConnectionStatus connectionStatusRef)
     {
         return scopeRunner.fluxInTransactionlessScope(

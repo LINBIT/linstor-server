@@ -11,6 +11,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlFullSyncResponseApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlFullSyncResponseApiCallHandler.FullSyncSuccessContext;
 import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -131,7 +132,16 @@ public class IntFullSyncResponse implements ApiCallReactive
                     LockGuard.createDeferred(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()),
                     () -> updateCapacities(satellitePeerRef, capacityInfoPojoList)
                 )
-                .thenMany(ctrlFullSyncApiCallHandler.fullSyncSuccess(satellitePeerRef, ctx)
+                .thenMany(
+                    ctrlFullSyncApiCallHandler.fullSyncSuccess(
+                        new FullSyncSuccessContext(
+                            satellitePeerRef,
+                            msgIntFullSyncResponse.getNodePropsToSetMap(),
+                            msgIntFullSyncResponse.getNodePropKeysToDeleteList(),
+                            msgIntFullSyncResponse.getNodePropNamespacesToDeleteList()
+                        ),
+                        ctx
+                    )
                     .thenMany(Flux.empty())
                 );
         }

@@ -14,6 +14,14 @@ message MsgIntFullSyncResponse
     repeated common.StorPoolFreeSpace free_space = 2;
 
     repeated common.CryptoEntry crypto_entries = 3;
+
+    // currently properties only change due to satellite migrations, which is the reason we do not include (yet) prop-changes
+    // for other linstor-objects like resources, snapshots, etc...
+    map<string, string> node_props_to_set = 4;
+    repeated string node_prop_keys_to_delete = 5;
+    repeated string node_prop_namespaces_to_delete = 6;
+
+    // next id: 7
 }
 
 enum FullSyncResult

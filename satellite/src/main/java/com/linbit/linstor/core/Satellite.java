@@ -23,6 +23,7 @@ import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.devmgr.DevMgrModule;
+import com.linbit.linstor.core.migration.SatelliteMigrationsModule;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -472,7 +473,8 @@ public final class Satellite
                     new SatelliteDebugModule(),
                     new SatelliteTransactionMgrModule(),
                     new SatelliteNumberPoolModule(),
-                    new LayerSizeCalculatorModule()
+                    new LayerSizeCalculatorModule(),
+                    new SatelliteMigrationsModule()
                 )
             );
             LinStor.loadModularCrypto(injModList, errorLog, haveFipsInit);
