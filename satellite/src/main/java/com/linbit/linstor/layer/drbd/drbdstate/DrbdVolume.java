@@ -20,6 +20,7 @@ public class DrbdVolume
     public static final String PROP_KEY_PEER_DISK    = "peer-disk";
     public static final String PROP_KEY_REPLICATION  = "replication";
     public static final String PROP_KEY_CLIENT       = "client";
+    public static final String PROP_KEY_PEER_CLIENT  = "peer-client";
     public static final String PROP_KEY_DONE         = "done";
 
     protected final VolumeNumber volId;
@@ -143,6 +144,10 @@ public class DrbdVolume
         String doneLabel = props.get(PROP_KEY_DONE);
         String diskLabel = props.get(PROP_KEY_DISK);
         String clientLabel = props.get(PROP_KEY_CLIENT);
+        if (clientLabel == null)
+        {
+            clientLabel = props.get(PROP_KEY_PEER_CLIENT);
+        }
 
         if (diskLabel == null)
         {

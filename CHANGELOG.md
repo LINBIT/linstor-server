@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SOS: use lvmconfig to show full lvm.conf
 - SOS: use lsblk -O, also include json output
 - SOS: include /proc/sys/kernel/tainted
+- DRBD state tracking: Fixed tracking of a peer's diskless volume's client flag
 
 ## [1.29.2] - 2024-11-05
 
