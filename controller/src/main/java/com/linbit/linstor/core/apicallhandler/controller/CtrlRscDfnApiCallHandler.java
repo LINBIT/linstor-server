@@ -78,8 +78,11 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -1099,13 +1102,29 @@ public class CtrlRscDfnApiCallHandler
         }
     }
 
+    private LayerPayload createRscDfnPayload(ResourceDefinition srcRscDfn) throws AccessDeniedException
+    {
+        LayerPayload payload = new LayerPayload();
+        Map<String, RscDfnLayerObject> drbd = srcRscDfn.getLayerData(peerAccCtx.get(), DeviceLayerKind.DRBD);
+        for (RscDfnLayerObject obj : drbd.values())
+        {
+            DrbdRscDfnData<Resource> drbdRscDfnData = (DrbdRscDfnData<Resource>) obj;
+            payload.drbdRscDfn.peerSlotsNewResource = drbdRscDfnData.getPeerSlots();
+            payload.drbdRscDfn.transportType = drbdRscDfnData.getTransportType();
+            payload.drbdRscDfn.alStripes = drbdRscDfnData.getAlStripes();
+            payload.drbdRscDfn.alStripeSize = drbdRscDfnData.getAlStripeSize();
+        }
+        return payload;
+    }
+
     /**
      * Override resource layer data, that has to be the same as in the original resource.
      * @param origRsc
      * @param newPayload
      * @throws AccessDeniedException
      */
-    private void overrideRscLayerData(Resource origRsc, LayerPayload newPayload) throws AccessDeniedException {
+    private void overrideRscLayerData(Resource origRsc, LayerPayload newPayload) throws AccessDeniedException
+    {
         // set same node ids as before
         Set<AbsRscLayerObject<Resource>> rscLayerSet = LayerRscUtils.getRscDataByLayer(
             origRsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
@@ -1114,7 +1133,29 @@ public class CtrlRscDfnApiCallHandler
             DrbdRscData<Resource> drbdRscData = ((DrbdRscData<Resource>) rscLayer);
             NodeId oldNodeId = drbdRscData.getNodeId();
             newPayload.drbdRsc.nodeId = oldNodeId.value;
+            newPayload.drbdRsc.peerSlots = drbdRscData.getPeerSlots();
+            newPayload.drbdRsc.alStripes = drbdRscData.getAlStripes();
+            newPayload.drbdRsc.alStripeSize = drbdRscData.getAlStripeSize();
         }
+    }
+
+    private static LayerPayload createVlmLayerPayload(
+        Map<String, StorPool> storPool, @Nullable StorPool rscStoragePool, VolumeDefinition toVlmDfn)
+    {
+        LayerPayload vlmPayload = new LayerPayload();
+        for (Entry<String, StorPool> entry : storPool.entrySet())
+        {
+            StorPool usePool = entry.getKey().equals(RscLayerSuffixes.SUFFIX_DATA) &&
+                entry.getValue().getDeviceProviderKind() != DeviceProviderKind.DISKLESS &&
+                rscStoragePool != null ?
+                rscStoragePool : entry.getValue();
+            vlmPayload.putStorageVlmPayload(
+                entry.getKey(),
+                toVlmDfn.getVolumeNumber().value,
+                usePool
+            );
+        }
+        return vlmPayload;
     }
 
     private Map<NodeName, StorPool> findCloneStoragePools(ResourceDefinition srcRscDfn, ResourceDefinition clonedRscDfn)
@@ -1160,7 +1201,7 @@ public class CtrlRscDfnApiCallHandler
 
             final ResourceDefinition srcRscDfn = ctrlApiDataLoader.loadRscDfn(srcRscName, true);
 
-            final LayerPayload payload = new LayerPayload();
+            final LayerPayload payload = createRscDfnPayload(srcRscDfn);
             final List<DeviceLayerKind> layerStack = CollectionUtils.isEmpty(layerList) ?
                 srcRscDfn.getLayerStack(peerAccCtx.get()) : LinstorParsingUtils.asDeviceLayerKind(layerList);
             final String rscGrpName = intoRscGrpName != null && !intoRscGrpName.isEmpty() ?
@@ -1204,33 +1245,15 @@ public class CtrlRscDfnApiCallHandler
 
                 setSuspendIO(rsc);
 
-                Resource newRsc;
-                // TODO correctly combine .create methods
-                if (CollectionUtils.isEmpty(layerList) && false)
-                {
-                    newRsc = resourceControllerFactory.create(
-                        peerAccCtx.get(),
-                        clonedRscDfn,
-                        rsc.getNode(),
-                        rsc.getLayerData(peerAccCtx.get()),
-                        Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())),
-                        false,
-                        Collections.emptyMap(), // storpool-rename might be useful for clone
-                        responses
-                    );
-                }
-                else
-                {
-                    overrideRscLayerData(rsc, payload);
-                    newRsc = resourceControllerFactory.create(
-                        peerAccCtx.get(),
-                        clonedRscDfn,
-                        rsc.getNode(),
-                        payload,
-                        Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())),
-                        layerStack
-                    );
-                }
+                overrideRscLayerData(rsc, payload);
+                Resource newRsc = resourceControllerFactory.create(
+                    peerAccCtx.get(),
+                    clonedRscDfn,
+                    rsc.getNode(),
+                    payload,
+                    Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())),
+                    layerStack
+                );
 
                 ctrlPropsHelper.copy(
                     ctrlPropsHelper.getProps(rsc),
@@ -1254,38 +1277,9 @@ public class CtrlRscDfnApiCallHandler
                     Volume srcVlm = rsc.getVolume(volumeNumber);
 
                     Map<String, StorPool> storPool = LayerVlmUtils.getStorPoolMap(rsc, volumeNumber, peerAccCtx.get());
-                    LayerPayload vlmPayload = new LayerPayload();
-                    for (Entry<String, StorPool> entry : storPool.entrySet())
-                    {
-                        StorPool usePool = entry.getKey().isEmpty() &&
-                            entry.getValue().getDeviceProviderKind() != DeviceProviderKind.DISKLESS &&
-                            rscStoragePool != null ?
-                                rscStoragePool : entry.getValue();
-                        vlmPayload.putStorageVlmPayload(
-                            entry.getKey(),
-                            toVlmDfn.getVolumeNumber().value,
-                            usePool
-                        );
-                    }
+                    LayerPayload vlmPayload = createVlmLayerPayload(storPool, rscStoragePool, toVlmDfn);
 
-                    Volume cloneVlm;
-                    // TODO correctly combine .createVolume methods
-                    if (CollectionUtils.isEmpty(layerList) && false)
-                    {
-                        cloneVlm = ctrlVlmCrtApiHelper
-                            .createVolumeFromAbsVolume(
-                                newRsc,
-                                toVlmDfn,
-                                vlmPayload,
-                                thinFreeCapacities,
-                                srcVlm,
-                                Collections.emptyMap(), // storpool-rename might be useful for clone
-                                responses
-                            );
-                    }
-                    else
-                    {
-                        cloneVlm = ctrlVlmCrtApiHelper.createVolume(
+                    Volume cloneVlm = ctrlVlmCrtApiHelper.createVolume(
                             newRsc,
                             toVlmDfn,
                             vlmPayload,
@@ -1293,7 +1287,6 @@ public class CtrlRscDfnApiCallHandler
                             Collections.emptyMap(),
                             responses
                         );
-                    }
 
                     ctrlPropsHelper.copy(
                         ctrlPropsHelper.getProps(srcVlm),
