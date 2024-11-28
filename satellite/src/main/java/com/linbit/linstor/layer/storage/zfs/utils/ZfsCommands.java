@@ -9,6 +9,8 @@ import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.storage.utils.Commands.genericExecutor;
 
+import javax.annotation.Nullable;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +20,8 @@ import java.util.Set;
 
 public class ZfsCommands
 {
+    private static final String ZFS_USER_PROP_LINSTOR_PREFIX = "linstor:";
+
     public static OutputData list(ExtCmd extCmd, Collection<String> datasets) throws StorageException
     {
         return genericExecutor(
@@ -29,8 +33,8 @@ public class ZfsCommands
                     "-r",   // recursive
                     "-H",   // no headers, single tab instead of spaces
                     "-p",   // sizes in bytes
-                    // columns: name, referred space, available space, type, extent size
-                    "-o", "name,refer,volsize,type,volblocksize",
+                    // columns: name, referred space, available space, type, extent size, origin, clones
+                    "-o", "name,refer,volsize,type,volblocksize,origin,clones",
                     "-t", "volume,snapshot"
                 },
                 datasets
@@ -100,16 +104,21 @@ public class ZfsCommands
     public static OutputData delete(ExtCmd extCmd, String zpool, String identifier, ZfsVolumeType type)
         throws StorageException
     {
-        String fullQualifiedId = zpool + File.separator + identifier;
+        return delete(extCmd, zpool + File.separator + identifier, type);
+    }
+
+    public static OutputData delete(ExtCmd extCmd, String fullQualifiedIdentifier, ZfsVolumeType type)
+        throws StorageException
+    {
         return genericExecutor(
             extCmd,
             new String[] {
                 "zfs",
                 "destroy",
-                fullQualifiedId
+                fullQualifiedIdentifier
             },
             "Failed to delete zfs " + type.descr,
-            "Failed to delete zfs " + type.descr + " '" + fullQualifiedId + "'",
+            "Failed to delete zfs " + type.descr + " '" + fullQualifiedIdentifier + "'",
             new RetryIfDeviceBusy()
         );
     }
@@ -398,12 +407,12 @@ public class ZfsCommands
         return genericExecutor(
             extCmd,
             new String[]
-                {
-                    "zfs",
-                    "set",
-                    "linstor:" + name + "=" + value,
-                    zPool + "/" + zfsId
-                },
+            {
+                "zfs",
+                "set",
+                ZFS_USER_PROP_LINSTOR_PREFIX + name + "=" + value,
+                zPool + "/" + zfsId
+            },
             "Failed to set user property",
             "Failed to set user property"
         );
@@ -432,15 +441,70 @@ public class ZfsCommands
         );
     }
 
+    public static OutputData getUserProperty(ExtCmd extCmdRef, String zfsProp, Collection<String> dataSets)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmdRef,
+            StringUtils.concat(
+                new String[]
+                {
+                    "zfs",
+                    "get",
+                    "-r", // not just the prop from the datasets, but all of their volumes. automatically includes
+                    // snapshots
+                    "-o", "name,value",
+                    "-H", // no heading
+                    "-p", // parsable (exact) numbers
+                    "-s", "local", // ZFS also has some property-inheritance. we only want to know if the property is
+                    // set directly on the ZFS snapshot/volume, not if a snapshot inherits the property from its volume
+                    ZFS_USER_PROP_LINSTOR_PREFIX + zfsProp
+                },
+                dataSets
+            ),
+            "Failed to get user property '" + ZFS_USER_PROP_LINSTOR_PREFIX + zfsProp + "'",
+            "Failed to get user property '" + ZFS_USER_PROP_LINSTOR_PREFIX + zfsProp + "'"
+        );
+    }
+
     public enum ZfsVolumeType
     {
-        VOLUME("volume"), SNAPSHOT("snapshot");
+        VOLUME("volume"), SNAPSHOT("snapshot"), FILESYSTEM("filesystem");
 
         private final String descr;
 
         ZfsVolumeType(String descrRef)
         {
             descr = descrRef;
+        }
+
+        public String getDescr()
+        {
+            return descr;
+        }
+
+        public static @Nullable ZfsVolumeType parseNullable(String strRef)
+        {
+            @Nullable ZfsVolumeType ret = null;
+            for (ZfsVolumeType type : values())
+            {
+                if (type.descr.equalsIgnoreCase(strRef))
+                {
+                    ret = type;
+                    break;
+                }
+            }
+            return ret;
+        }
+
+        public static ZfsVolumeType parseOrThrow(String strRef) throws StorageException
+        {
+            @Nullable ZfsVolumeType ret = parseNullable(strRef);
+            if (ret == null)
+            {
+                throw new StorageException("Failed to parse '" + strRef + "'");
+            }
+            return ret;
         }
     }
 

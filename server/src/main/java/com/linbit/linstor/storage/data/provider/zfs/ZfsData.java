@@ -40,6 +40,7 @@ public class ZfsData<RSC extends AbsResource<RSC>>
     private transient String zpool = null;
     private transient boolean shippingInProgress;
     private boolean initialShipment;
+    private boolean markedForDeletion = false;
 
     public ZfsData(
         AbsVolume<RSC> vlmRef,
@@ -117,6 +118,15 @@ public class ZfsData<RSC extends AbsResource<RSC>>
         return extentSize;
     }
 
+    public void setMarkedForDeletion(boolean markedForDeletionRef)
+    {
+        markedForDeletion = markedForDeletionRef;
+    }
+
+    public boolean isMarkedForDeletion()
+    {
+        return markedForDeletion;
+    }
     @Override
     public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {

@@ -4,7 +4,9 @@ import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.layer.storage.utils.ParseUtils;
+import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands.ZfsVolumeType;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -24,6 +26,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,10 +40,15 @@ public class ZfsUtils
     private static final int ZFS_LIST_COL_VOLSIZE           = 2; // -o "volsize"
     private static final int ZFS_LIST_COL_TYPE              = 3; // -o "type"
     private static final int ZFS_LIST_COL_VOL_BLOCK_SIZE    = 4; // -o "volblocksize"
+    private static final int ZFS_LIST_COL_ORIGIN            = 5; // -o "origin"
+    private static final int ZFS_LIST_COL_CLONES            = 6; // -o "clones"
 
     private static final int ZFS_LIST_FILESYSTEMS_COL_IDENTIFIER = 0;
     private static final int ZFS_LIST_FILESYSTEMS_COL_AVAILABLE_SIZE = 1;
     private static final int ZFS_LIST_FILESYSTEMS_COL_TYPE = 2;
+
+    private static final int ZFS_GET_COL_NAME = 0;
+    private static final int ZFS_GET_COL_VALUE = 1;
 
     private static final String ZFS_TYPE_VOLUME = "volume";
     private static final String ZFS_TYPE_SNAPSHOT = "snapshot";
@@ -55,12 +64,22 @@ public class ZfsUtils
     {
         public final String poolName;
         public final String identifier;
-        public final String type;
+        public final String typeStr;
+        public final ZfsVolumeType type;
         public final String path;
         public final long allocatedSize;
         public final long usableSize;
         // Snapshots do not report volBlockSize
         public final @Nullable Long volBlockSize;
+        public final @Nullable String originStr;
+        public final @Nullable String[] clonesStrArr;
+
+        // will be filled in updateStates method
+        public final List<ZfsInfo> snapshots = new ArrayList<>();
+        public final List<ZfsInfo> clones = new ArrayList<>();
+
+        // properties, will be filled after object is initialized
+        public boolean markedForDeletion = false;
 
         ZfsInfo(
             String poolNameRef,
@@ -69,16 +88,22 @@ public class ZfsUtils
             String pathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            Long volBlockSizeRef
+            Long volBlockSizeRef,
+            String originStrRef,
+            String[] clonesArrRef
         )
+            throws StorageException
         {
             poolName = poolNameRef;
             identifier = identifierRef;
-            type = typeRef;
+            typeStr = typeRef;
+            type = ZfsVolumeType.parseOrThrow(typeRef);
             path = pathRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             volBlockSize = volBlockSizeRef;
+            originStr = originStrRef;
+            clonesStrArr = clonesArrRef;
         }
     }
 
@@ -122,7 +147,9 @@ public class ZfsUtils
                             buildZfsPath(identifier),
                             -1,
                             usableSize,
-                            null
+                            null,
+                            null,
+                            new String[0]
                         );
                         infoByIdentifier.put(identifier, state);
                     }
@@ -138,6 +165,37 @@ public class ZfsUtils
     }
 
     public static HashMap<String, ZfsInfo> getZfsList(
+        final ExtCmdFactory extCmdFactoryRef,
+        Collection<String> datasets,
+        DeviceProviderKind kindRef,
+        Map<String, BiConsumer<ZfsInfo, String>> zfsPropertiesWithSetters
+    )
+        throws StorageException
+    {
+        final HashMap<String, ZfsInfo> infoByIdentifier = buildZfsInfoMap(extCmdFactoryRef.create(), datasets, kindRef);
+        for (Entry<String, BiConsumer<ZfsInfo, String>> entry : zfsPropertiesWithSetters.entrySet())
+        {
+            Map<String, String> properties = getZfsLocalProperty(
+                extCmdFactoryRef.create(),
+                entry.getKey(),
+                datasets,
+                Function.identity()
+            );
+
+            BiConsumer<ZfsInfo, String> setter = entry.getValue();
+            for (Map.Entry<String, String> propEntry : properties.entrySet())
+            {
+                @Nullable ZfsInfo zfsInfo = infoByIdentifier.get(propEntry.getKey());
+                if (zfsInfo != null)
+                {
+                    setter.accept(zfsInfo, propEntry.getValue());
+                }
+            }
+        }
+        return infoByIdentifier;
+    }
+
+    private static HashMap<String, ZfsInfo> buildZfsInfoMap(
         final ExtCmd extCmd,
         Collection<String> datasets,
         DeviceProviderKind kindRef
@@ -148,9 +206,11 @@ public class ZfsUtils
         final String stdOut = new String(output.stdoutData);
 
         final HashMap<String, ZfsInfo> infoByIdentifier = new HashMap<>();
+        final HashMap<String, ArrayList<ZfsInfo>> unprocessedSnapshots = new HashMap<>();
+        final HashMap<String, ArrayList<ZfsInfo>> unprocessedZvols = new HashMap<>();
 
         final String[] lines = stdOut.split("\n");
-        final int expectedColCount = 5;
+        final int expectedColCount = 7;
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
@@ -162,6 +222,8 @@ public class ZfsUtils
                     final String usableSizeStr = data[ZFS_LIST_COL_VOLSIZE];
                     final String type = data[ZFS_LIST_COL_TYPE];
                     final String volBlockSizeStr = data[ZFS_LIST_COL_VOL_BLOCK_SIZE];
+                    final String originStr = data[ZFS_LIST_COL_ORIGIN];
+                    final String clonesStr = data[ZFS_LIST_COL_CLONES];
 
                     final String allocatedSizeStr;
                     if (kindRef == DeviceProviderKind.ZFS_THIN || type.equals(ZFS_TYPE_SNAPSHOT))
@@ -223,15 +285,117 @@ public class ZfsUtils
                             buildZfsPath(identifier),
                             allocatedSize,
                             usableSize,
-                            volBlockSize
+                            volBlockSize,
+                            originStr.equals("-") ? null : originStr,
+                            clonesStr.equals("-") ? new String[0] : clonesStr.split(",")
                         );
                         infoByIdentifier.put(identifier, state);
+
+                        if (type.equals(ZFS_TYPE_SNAPSHOT))
+                        {
+                            String baseZvolIdentifier = identifier.substring(0, identifier.indexOf("@"));
+                            @Nullable ZfsInfo baseZvolInfo = infoByIdentifier.get(baseZvolIdentifier);
+                            if (baseZvolInfo == null)
+                            {
+                                unprocessedSnapshots.computeIfAbsent(baseZvolIdentifier, ignored -> new ArrayList<>())
+                                    .add(state);
+                            }
+                            else
+                            {
+                                // technically we are only storing "<baseZvol> has snapshot <state>" but not
+                                // "<state> is snapshot of <baseZvol>"
+                                baseZvolInfo.snapshots.add(state);
+                            }
+                        }
+                        else
+                        {
+                            if (state.originStr != null)
+                            {
+                                @Nullable ZfsInfo baseSnapInfo = infoByIdentifier.get(state.originStr);
+                                if (baseSnapInfo == null)
+                                {
+                                    unprocessedZvols.computeIfAbsent(state.originStr, ignored -> new ArrayList<>())
+                                        .add(state);
+                                }
+                                else
+                                {
+                                    // technically we are only storing "<baseSnap> has clone <state>" but not
+                                    // "<clone> is clone of <baseSnap>"
+                                    baseSnapInfo.clones.add(state);
+                                }
+                            }
+                        }
                     }
                 }
             }
             catch (NumberFormatException ignored)
             {
                 // we could not parse a number so we ignore the whole line
+            }
+        }
+        for (Map.Entry<String, ArrayList<ZfsInfo>> unprocessedSnapshot : unprocessedSnapshots.entrySet())
+        {
+            String baseZvolIdentifier = unprocessedSnapshot.getKey();
+            ArrayList<ZfsInfo> snapshots = unprocessedSnapshot.getValue();
+            @Nullable ZfsInfo baseZvolInfo = infoByIdentifier.get(baseZvolIdentifier);
+            if (baseZvolInfo == null)
+            {
+                StringBuilder errorMsgBuilder = new StringBuilder(baseZvolIdentifier)
+                    .append(" not found, but has ");
+                if (snapshots.size() == 1)
+                {
+                    errorMsgBuilder.append("a snapshot");
+                }
+                else
+                {
+                    errorMsgBuilder.append("snapshots");
+                }
+                errorMsgBuilder.append(":");
+                for (ZfsInfo snap : snapshots)
+                {
+                    errorMsgBuilder.append("\n * ")
+                        .append(snap.poolName)
+                        .append(File.separator)
+                        .append(snap.identifier);
+                }
+                throw new StorageException(errorMsgBuilder.toString());
+            }
+            else
+            {
+                baseZvolInfo.snapshots.addAll(snapshots);
+            }
+        }
+        for (Map.Entry<String, ArrayList<ZfsInfo>> unprocessedZvol : unprocessedZvols.entrySet())
+        {
+            String baseSnapIdentifier = unprocessedZvol.getKey();
+            ArrayList<ZfsInfo> zvols = unprocessedZvol.getValue();
+            @Nullable ZfsInfo baseSnapInfo = infoByIdentifier.get(baseSnapIdentifier);
+            if (baseSnapInfo == null)
+            {
+                StringBuilder errorMsgBuilder = new StringBuilder(baseSnapIdentifier).append(
+                    " not found, but has "
+                );
+                if (zvols.size() == 1)
+                {
+                    errorMsgBuilder.append("a clone");
+                }
+                else
+                {
+                    errorMsgBuilder.append("clones");
+                }
+                errorMsgBuilder.append(":");
+                for (ZfsInfo zvol : zvols)
+                {
+                    errorMsgBuilder.append("\n * ")
+                        .append(zvol.poolName)
+                        .append(File.separator)
+                        .append(zvol.identifier);
+                }
+                throw new StorageException(errorMsgBuilder.toString());
+            }
+            else
+            {
+                baseSnapInfo.clones.addAll(zvols);
             }
         }
         return infoByIdentifier;
@@ -245,6 +409,34 @@ public class ZfsUtils
         return new TreeSet<>(Arrays.asList(stdOut.split("\n")));
     }
 
+
+    public static <T> Map<String, T> getZfsLocalProperty(
+        ExtCmd extCmdRef,
+        String zfsPropRef,
+        Collection<String> dataSetsRef,
+        Function<String, T> mappingFunctionRef
+    )
+        throws StorageException
+    {
+        final OutputData output = ZfsCommands.getUserProperty(extCmdRef, zfsPropRef, dataSetsRef);
+        final HashMap<String, T> ret = new HashMap<>();
+
+        final String[] lines = new String(output.stdoutData).split("\n");
+        final int expectedColCount = 2;
+        for (final String line : lines)
+        {
+            final String[] data = line.trim().split(DELIMITER);
+            if (data.length == expectedColCount)
+            {
+                final String identifier = data[ZFS_GET_COL_NAME];
+                final String value = data[ZFS_GET_COL_VALUE];
+
+                ret.put(identifier, mappingFunctionRef.apply(value));
+            }
+        }
+
+        return ret;
+    }
 
     private static String buildZfsPath(String identifier)
     {

@@ -17,12 +17,10 @@ import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -48,17 +46,15 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
-import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.ZfsPropsUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -75,7 +71,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.function.BiConsumer;
 
 @Singleton
 public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, ZfsData<Snapshot>>
@@ -100,7 +96,25 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     private static final long ZFS_DFLT_EXTENT_SIZE_IN_KIB = 8L;
     private static final ExtToolsInfo.Version VERSION_2_0_0 = new ExtToolsInfo.Version(2, 0, 0);
 
-    private  Map<StorPool, Long> extentSizes = new TreeMap<>();
+    private static final String ZFS_DELETED_PREFIX = "_deleted_";
+
+    /** This property will be stored in ZFS itself, NOT in a LINSTOR PropsContainer!
+     *  Property key will be automatically prefixed with "linstor:" */
+    private static final String ZFS_PROP_KEY_MARKED_FOR_DELETION = "marked_for_deletion";
+    private static final String ZSF_PROP_VAL_TRUE = "true";
+
+    private static final Map<String, BiConsumer<ZfsInfo, String>> DFLT_ZFS_LIST_WITH_PROPS_SETTER;
+
+    static
+    {
+        DFLT_ZFS_LIST_WITH_PROPS_SETTER = new HashMap<>();
+        DFLT_ZFS_LIST_WITH_PROPS_SETTER.put(
+            ZFS_PROP_KEY_MARKED_FOR_DELETION,
+            (zfsInfo, prop) -> zfsInfo.markedForDeletion = Boolean.parseBoolean(prop)
+        );
+    }
+
+    private Map<StorPool, Long> extentSizes = new TreeMap<>();
 
     protected ZfsProvider(
         ErrorReporter errorReporter,
@@ -197,10 +211,12 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     )
         throws StorageException
     {
+        Set<String> dataSets = getDataSets(vlmDataListRef, snapVlmsRef);
         return ZfsUtils.getZfsList(
-            extCmdFactory.create(),
-            getDataSets(vlmDataListRef, snapVlmsRef),
-            kind
+            extCmdFactory,
+            dataSets,
+            kind,
+            DFLT_ZFS_LIST_WITH_PROPS_SETTER
         );
     }
 
@@ -232,7 +248,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         @Nullable String rscNameFormatSuffix;
         /**
          * If we need the snapLvId for creating a snapshot, the snapshot must not contain the rscNameFormatSuffix.
-         * Otherwise the "snapshotExists" method might return false if a "rsc_00000_1@snap" does not exist, but
+         * Otherwise the "snapshotExists" method might return false if a "_deleted_rsc_00000_1@snap" does not exist, but
          * "rsc_00000@snap" already exists.
          */
         if (!forTakeSnapshotRef)
@@ -245,7 +261,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         {
             rscNameFormatSuffix = null;
         }
-        return asSnapLvIdentifierRaw(
+        return (rscNameFormatSuffix == null ? "" : ZFS_DELETED_PREFIX) + asSnapLvIdentifierRaw(
             snapData.getResourceName().displayValue,
             snapData.getResourceNameSuffix(),
             snapVlmDataRef.getVlmNr().value,
@@ -289,17 +305,20 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @SuppressWarnings("unchecked")
-    private String asIdentifierRaw(ZfsData<?> zfsData) throws AccessDeniedException
+    private String asIdentifierRaw(ZfsData<?> zfsData, ZfsVolumeType zfsTypeRef) throws AccessDeniedException
     {
-        AbsVolume<?> volume = zfsData.getVolume();
         String identifier;
-        if (volume instanceof Volume)
+        switch (zfsTypeRef)
         {
-            identifier = asLvIdentifier((ZfsData<Resource>) zfsData);
-        }
-        else
-        {
-            identifier = asSnapLvIdentifier((ZfsData<Snapshot>) zfsData);
+            case VOLUME:
+                identifier = asLvIdentifier((ZfsData<Resource>) zfsData);
+                break;
+            case SNAPSHOT:
+                identifier = asSnapLvIdentifier((ZfsData<Snapshot>) zfsData);
+                break;
+            case FILESYSTEM: // fall-through
+            default:
+                throw new ImplementationError("Unexpected type: " + zfsTypeRef);
         }
         return identifier;
     }
@@ -443,101 +462,170 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected void deleteLvImpl(ZfsData<Resource> vlmData, String lvId)
+    protected void deleteLvImpl(ZfsData<Resource> vlmData, String ignored)
         throws StorageException, DatabaseException, AccessDeniedException
     {
-        List<ZfsData<Snapshot>> snapshots = getSnapshots(vlmData);
-        if (!snapshots.isEmpty())
+        delete(vlmData, ZfsVolumeType.VOLUME);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void delete(ZfsData<?> vlmDataRef, ZfsVolumeType zfsTypeRef)
+        throws StorageException, InvalidKeyException, AccessDeniedException, DatabaseException
+    {
+        ZfsInfo zfsInfo = infoListCache.get(vlmDataRef.getFullQualifiedLvIdentifier());
+        if (canDelete(zfsInfo))
         {
-            String renameSuffix = getNextRenameSuffix(vlmData);
-            ZfsCommands.rename(extCmdFactory.create(), vlmData.getZPool(), lvId, lvId + renameSuffix);
+            deleteCascading(vlmDataRef.getFullQualifiedLvIdentifier(), zfsTypeRef, true);
         }
         else
         {
-            ZfsCommands.delete(
-                extCmdFactory.create(),
-                vlmData.getZPool(),
-                lvId,
-                ZfsVolumeType.VOLUME
+            String newId;
+            String oldId = vlmDataRef.getIdentifier();
+            switch (zfsTypeRef)
+            {
+                case SNAPSHOT:
+                    String[] split = oldId.split("@");
+                    newId = split[0] + "@" + ZFS_DELETED_PREFIX + split[1] + "_" + TimeUtils.getZfsRenameTime();
+                    break;
+                case VOLUME:
+                    newId = ZFS_DELETED_PREFIX + oldId +
+                        getNextRenameSuffix((ZfsData<Resource>) vlmDataRef);
+                    break;
+                case FILESYSTEM: // fall-through
+                default:
+                    throw new ImplementationError("Unexpected type: " + zfsTypeRef);
+            }
+            markForDeletionAndRename(vlmDataRef, zfsTypeRef, newId);
+        }
+        vlmDataRef.setExists(false);
+    }
+
+    /**
+     * Checks whether or not the given ZFS volume/snapshot can be deleted.
+     * <p>A ZFS volume cannot be deleted if it still has ZFS snapshots</p>
+     * <p>A ZFS snapshot cannot be deleted if it still has ZFS clones</p>
+     *
+     * @param zfsInfoRef
+     * @param zfsTypeRef
+     * @return
+     */
+    private boolean canDelete(ZfsInfo zfsInfoRef)
+    {
+        boolean ret;
+        switch (zfsInfoRef.type)
+        {
+            case SNAPSHOT:
+                ret = zfsInfoRef.clones.isEmpty();
+                break;
+            case VOLUME:
+                ret = zfsInfoRef.snapshots.isEmpty();
+                break;
+            case FILESYSTEM: // fall-through
+            default:
+                throw new ImplementationError("Unexpected type: " + zfsInfoRef.type);
+        }
+        return ret;
+    }
+
+    private void deleteCascading(String fullQualIdentifierRef, ZfsVolumeType zfsTypeRef, boolean deleteUnconditionalRef)
+        throws StorageException
+    {
+        @Nullable ZfsInfo zfsInfo = infoListCache.get(fullQualIdentifierRef);
+        if (zfsInfo == null)
+        {
+            errorReporter.logWarning(
+                "Should delete ZFS %s %s, but it was not found. noop",
+                zfsTypeRef.getDescr(),
+                fullQualIdentifierRef
             );
         }
-        vlmData.setExists(false);
-
-        // TODO: the next block is broken. currently we do not track ZFS snapshots from "rd clone" events
-
-        // This block will delete the clone snapshot on the base resource if `zfs clone` was used
-        // if deleting fails we should just ignore it as it doesn't have any impact on the
-        // deletion of the child resource
-        try
+        else
         {
-            String useZfsClone = vlmData.getRscLayerObject().getAbsResource()
-                .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
-            if (useZfsClone != null)
+            final boolean delete = deleteUnconditionalRef || zfsInfo.markedForDeletion;
+            if (delete)
             {
-                final Resource rsc = vlmData.getRscLayerObject().getAbsResource();
-                String clonedFromRsc = rsc.getResourceDefinition().getProps(storDriverAccCtx)
-                    .getProp(InternalApiConsts.KEY_CLONED_FROM);
-                String srcFullSnapshotName = asSnapLvIdentifierRaw(
-                    vlmData.getStorPool().getName().displayValue,
-                    clonedFromRsc,
-                    vlmData.getVlmNr().value,
-                    getCloneSnapshotName(rsc.getResourceDefinition().getName().displayValue, vlmData.getVlmNr().value),
-                    vlmData.getRscLayerObject().getResourceNameSuffix()
-                );
                 ZfsCommands.delete(
                     extCmdFactory.create(),
-                    getZPool(vlmData.getStorPool()),
-                    srcFullSnapshotName,
-                    ZfsVolumeType.SNAPSHOT
+                    fullQualIdentifierRef,
+                    zfsTypeRef
                 );
+
+                deleteCascade(zfsInfo, zfsTypeRef);
             }
-        }
-        catch (AccessDeniedException | StorageException exc)
-        {
-            // just report that we couldn't delete, it isn't a fatal error,
-            // and it is possible that a toggled disk doesn't have any base snapshot
-            errorReporter.logWarning("Unable to remove base snapshot of resource %s",
-                vlmData.getRscLayerObject().getResourceName());
         }
     }
 
-    private List<ZfsData<Snapshot>> getSnapshots(ZfsData<Resource> vlmDataRef) throws AccessDeniedException
+    private void deleteCascade(ZfsInfo zfsInfoRef, ZfsVolumeType zfsTypeRef) throws StorageException
     {
-        List<ZfsData<Snapshot>> ret = new ArrayList<>();
-        VolumeNumber localVlmNr = vlmDataRef.getVlmNr();
-        StorageRscData<Resource> localRscData = vlmDataRef.getRscLayerObject();
-        String localRscSuffix = localRscData.getResourceNameSuffix();
-        Resource localRsc = localRscData.getAbsResource();
-        ResourceDefinition rscDfn = localRsc.getResourceDefinition();
-        for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(storDriverAccCtx))
+        final @Nullable String originOrBaseVolume;
+        final ZfsVolumeType originOrBaseType;
+        if (zfsTypeRef.equals(ZfsVolumeType.VOLUME))
         {
-            @Nullable Snapshot localSnap = snapDfn.getSnapshot(storDriverAccCtx, localRsc.getNode().getName());
-            // localSnap could be null if while snapDfn was created the localRsc did not exist, or was diskless, etc...
-            if (localSnap != null)
+            originOrBaseVolume = zfsInfoRef.originStr;
+            originOrBaseType = ZfsVolumeType.SNAPSHOT;
+        }
+        else
+        {
+            originOrBaseVolume = zfsInfoRef.poolName + File.separator + getBaseLvIdentifier(zfsInfoRef.identifier);
+            originOrBaseType = ZfsVolumeType.VOLUME;
+        }
+        if (originOrBaseVolume != null)
+        {
+            // tell our parent ZFS zvol/snapshot that we got deleted, so that cascading can properly work
+            @Nullable ZfsInfo originZfsInfo = loadZfsInfo(originOrBaseVolume);
+            if (originZfsInfo == null)
             {
-                AbsRscLayerObject<Snapshot> snapLayerData = localSnap.getLayerData(storDriverAccCtx);
-                Set<AbsRscLayerObject<Snapshot>> storSnapSet = LayerRscUtils.getRscDataByLayer(
-                    snapLayerData,
-                    DeviceLayerKind.STORAGE,
-                    localRscSuffix::equals
-                );
+                StringBuilder sb = new StringBuilder("Failed to find ")
+                    .append(zfsTypeRef.getDescr())
+                    .append(" ")
+                    .append(zfsInfoRef.poolName)
+                    .append(File.separator)
+                    .append(zfsInfoRef.identifier)
+                    .append("'s ");
+                if (zfsTypeRef == ZfsVolumeType.SNAPSHOT)
+                {
+                    sb.append("base volume '");
+                }
+                else
+                {
+                    sb.append("origin snapshot '");
+                }
+                sb.append(originOrBaseVolume)
+                    .append("'. Cascading deletion failed. Manual cleanup might be necessary");
+                throw new StorageException(sb.toString());
+            }
 
-                if (storSnapSet.size() > 1)
-                {
-                    StringBuilder sb = new StringBuilder();
-                    for (AbsRscLayerObject<Snapshot> storSnap : storSnapSet)
-                    {
-                        sb.append(storSnap.getSuffixedResourceName()).append("\n");
-                    }
-                    throw new ImplementationError(
-                        "Unexectedly many storage snapshot layer data found: " + storSnapSet.size() + "\n" +
-                            sb.toString()
-                    );
-                }
-                if (!storSnapSet.isEmpty())
-                {
-                    ret.add(storSnapSet.iterator().next().getVlmProviderObject(localVlmNr));
-                }
+            if (zfsTypeRef.equals(ZfsVolumeType.SNAPSHOT))
+            {
+                originZfsInfo.snapshots.remove(zfsInfoRef); // just in case we loaded this from cache
+            }
+            else
+            {
+                originZfsInfo.clones.remove(zfsInfoRef);
+            }
+
+            if (originZfsInfo.markedForDeletion && canDelete(originZfsInfo))
+            {
+                deleteCascading(originOrBaseVolume, originOrBaseType, false);
+            }
+        }
+    }
+
+    private @Nullable ZfsInfo loadZfsInfo(String fullQualifiedIdentifierRef) throws StorageException
+    {
+        @Nullable ZfsInfo ret = infoListCache.get(fullQualifiedIdentifierRef);
+        if (ret == null)
+        {
+            HashMap<String, ZfsInfo> zfsList = ZfsUtils.getZfsList(
+                extCmdFactory,
+                Collections.singleton(fullQualifiedIdentifierRef),
+                kind,
+                DFLT_ZFS_LIST_WITH_PROPS_SETTER
+            );
+            ret = zfsList.get(fullQualifiedIdentifierRef);
+            if (ret != null)
+            {
+                infoListCache.put(fullQualifiedIdentifierRef, ret);
             }
         }
         return ret;
@@ -601,11 +689,31 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected void deleteSnapshotImpl(ZfsData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        ZfsCommands.delete(
+        delete(snapVlmRef, ZfsVolumeType.SNAPSHOT);
+    }
+
+    private void markForDeletionAndRename(ZfsData<?> zfsDataRef, ZfsVolumeType zfsVlmTypeRef, String newId)
+        throws StorageException, AccessDeniedException
+    {
+        final String zPool = getZPool(zfsDataRef.getStorPool());
+        final String rawCurrentLvId = asIdentifierRaw(zfsDataRef, zfsVlmTypeRef);
+        markForDeletion(zPool, rawCurrentLvId);
+        ZfsCommands.rename(
             extCmdFactory.create(),
-            getZPool(snapVlmRef.getStorPool()),
-            asSnapLvIdentifier(snapVlmRef),
-            ZfsVolumeType.SNAPSHOT
+            zPool,
+            rawCurrentLvId,
+            newId
+        );
+    }
+
+    private void markForDeletion(final String zPoolRef, final String zfsIdRef) throws StorageException
+    {
+        ZfsCommands.setUserProperty(
+            extCmdFactory.create(),
+            zPoolRef,
+            zfsIdRef,
+            ZFS_PROP_KEY_MARKED_FOR_DELETION,
+            ZSF_PROP_VAL_TRUE
         );
     }
 
@@ -843,63 +951,72 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected void updateStates(List<ZfsData<Resource>> vlmDataList, List<ZfsData<Snapshot>> snapVlms)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        Set<StorPool> storPools = new TreeSet<>();
-
-        List<ZfsData<?>> combinedList = new ArrayList<>();
-        combinedList.addAll(vlmDataList);
-        combinedList.addAll(snapVlms);
-
         /*
          *  updating volume states
          */
-        for (ZfsData<?> vlmData : combinedList)
+        for (ZfsData<Resource> vlmData : vlmDataList)
         {
-            storPools.add(vlmData.getStorPool());
+            updateState(vlmData, ZfsVolumeType.VOLUME);
+        }
+        for (ZfsData<Snapshot> snapVlmData : snapVlms)
+        {
+            updateState(snapVlmData, ZfsVolumeType.SNAPSHOT);
+        }
+    }
 
-            vlmData.setZPool(getZPool(vlmData.getStorPool()));
-            vlmData.setIdentifier(asIdentifierRaw(vlmData));
-            ZfsInfo info = infoListCache.get(vlmData.getFullQualifiedLvIdentifier());
+    private void updateState(ZfsData<?> vlmData, ZfsVolumeType zfsTypeRef)
+        throws AccessDeniedException, DatabaseException, StorageException
+    {
+        vlmData.setZPool(getZPool(vlmData.getStorPool()));
 
-            if (info != null)
+        vlmData.setIdentifier(asIdentifierRaw(vlmData, zfsTypeRef));
+        String fullQualifiedLvIdentifier = vlmData.getFullQualifiedLvIdentifier();
+        @Nullable ZfsInfo info = infoListCache.get(fullQualifiedLvIdentifier);
+
+        vlmData.setMarkedForDeletion(false);
+        if (info != null)
+        {
+            updateInfo(vlmData, info);
+
+            final long expectedSize = vlmData.getExpectedSize();
+            final long actualSize = info.usableSize;
+            if (actualSize != expectedSize && zfsTypeRef.equals(ZfsVolumeType.VOLUME))
             {
-                updateInfo(vlmData, info);
-
-                final long expectedSize = vlmData.getExpectedSize();
-                final long actualSize = info.usableSize;
-                if (actualSize != expectedSize && vlmData.getRscLayerObject().getAbsResource() instanceof Resource)
+                if (actualSize < expectedSize)
                 {
-                    if (actualSize < expectedSize)
-                    {
-                        vlmData.setSizeState(Size.TOO_SMALL);
-                    }
-                    else
-                    {
-                        long extentSize = ZfsUtils.getZfsExtentSize(
-                            extCmdFactory.create(),
-                            info.poolName,
-                            info.identifier
-                        );
-                        vlmData.setSizeState(Size.TOO_LARGE);
-                        final long toleratedSize =
-                            expectedSize + extentSize * TOLERANCE_FACTOR;
-                        if (actualSize < toleratedSize)
-                        {
-                            vlmData.setSizeState(Size.TOO_LARGE_WITHIN_TOLERANCE);
-                        }
-                    }
+                    vlmData.setSizeState(Size.TOO_SMALL);
                 }
                 else
                 {
-                    vlmData.setSizeState(Size.AS_EXPECTED);
+                    long extentSize = ZfsUtils.getZfsExtentSize(
+                        extCmdFactory.create(),
+                        info.poolName,
+                        info.identifier
+                    );
+                    vlmData.setSizeState(Size.TOO_LARGE);
+                    final long toleratedSize = expectedSize + extentSize * TOLERANCE_FACTOR;
+                    if (actualSize < toleratedSize)
+                    {
+                        vlmData.setSizeState(Size.TOO_LARGE_WITHIN_TOLERANCE);
+                    }
                 }
             }
             else
             {
-                vlmData.setExists(false);
-                vlmData.setDevicePath(null);
-                vlmData.setAllocatedSize(-1);
+                vlmData.setSizeState(Size.AS_EXPECTED);
             }
         }
+        else
+        {
+            vlmData.setExists(false);
+            vlmData.setDevicePath(null);
+            vlmData.setAllocatedSize(-1);
+        }
+    }
+
+    private String getBaseLvIdentifier(String identifier)
+    {
+        return identifier.substring(0, identifier.indexOf("@"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1005,6 +1122,9 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 "clone_for",
                 cloneRscName
             );
+
+            // mark to be deleted
+            markForDeletion(vlmData.getZPool(), srcFullSnapshotName);
         }
         else
         {
@@ -1026,7 +1146,12 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             zfsDatasets.add(zpool);
         }
 
-        HashMap<String, ZfsInfo> zfsListMap = ZfsUtils.getZfsList(extCmdFactory.create(), zfsDatasets, kind);
+        HashMap<String, ZfsInfo> zfsListMap = ZfsUtils.getZfsList(
+            extCmdFactory,
+            zfsDatasets,
+            kind,
+            Collections.emptyMap()
+        );
 
         for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
         {
