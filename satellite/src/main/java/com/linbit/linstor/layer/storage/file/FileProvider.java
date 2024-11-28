@@ -3,15 +3,8 @@ package com.linbit.linstor.layer.storage.file;
 import com.linbit.ImplementationError;
 import com.linbit.PlatformStlt;
 import com.linbit.extproc.ExtCmd;
-import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.backupshipping.BackupShippingMgr;
-import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -23,10 +16,8 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
-import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
-import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.file.utils.FileCommands;
 import com.linbit.linstor.layer.storage.file.utils.FileProviderUtils;
 import com.linbit.linstor.layer.storage.file.utils.FileProviderUtils.FileInfo;
@@ -34,12 +25,9 @@ import com.linbit.linstor.layer.storage.file.utils.LosetupCommands;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.utils.StltProviderUtils;
 import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
@@ -48,11 +36,9 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionException;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.File;
@@ -90,75 +76,23 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     private final PlatformStlt platformStlt;
 
     protected FileProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
+        AbsStorageProviderInit superInitRef,
         String subTypeDescr,
         DeviceProviderKind subTypeKind,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        PlatformStlt platformStltRef,
-        FileSystemWatch fileSystemWatchRef
+        PlatformStlt platformStltRef
     )
     {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            subTypeDescr,
-            subTypeKind,
-            snapShipMrgRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            fileSystemWatchRef
-        );
+        super(superInitRef, subTypeDescr, subTypeKind);
         platformStlt = platformStltRef;
     }
 
     @Inject
     public FileProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        @DeviceManagerContext AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        PlatformStlt platformStltRef,
-        FileSystemWatch fileSystemWatchRef
+        AbsStorageProviderInit superInitRef,
+        PlatformStlt platformStltRef
     )
     {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            "FILE",
-            DeviceProviderKind.FILE,
-            snapShipMrgRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            fileSystemWatchRef
-        );
+        super(superInitRef, "FILE", DeviceProviderKind.FILE);
         platformStlt = platformStltRef;
     }
 

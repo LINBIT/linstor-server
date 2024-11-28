@@ -2,14 +2,7 @@ package com.linbit.linstor.layer.storage.storagespaces;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.backupshipping.BackupShippingMgr;
-import com.linbit.linstor.clone.CloneService;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -20,17 +13,12 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
-import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
-import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.utils.WmiHelper;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageSpacesInfo;
@@ -39,11 +27,9 @@ import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.storagespaces.StorageSpacesData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.File;
@@ -68,37 +54,9 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     private Set<String> dirtyVolumes;
 
     @Inject
-    public StorageSpacesProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        @DeviceManagerContext AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        FileSystemWatch fileSystemWatchRef
-    )
+    public StorageSpacesProvider(AbsStorageProviderInit superInitRef)
     {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            "STORAGE_SPACES",
-            DeviceProviderKind.STORAGE_SPACES,
-            snapShipMrgRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            fileSystemWatchRef
-        );
+        super(superInitRef, "STORAGE_SPACES", DeviceProviderKind.STORAGE_SPACES);
 
         rebuildCache = true;
         dirtyVolumes = new HashSet<>();
@@ -107,38 +65,12 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     }
 
     public StorageSpacesProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        @DeviceManagerContext AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
+        AbsStorageProviderInit superInitRef,
         String typeDescrRef,
-        DeviceProviderKind kindRef,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        FileSystemWatch fileSystemWatchRef
+        DeviceProviderKind kindRef
     )
     {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            typeDescrRef,
-            kindRef,
-            snapShipMrgRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            fileSystemWatchRef
-        );
+        super(superInitRef, typeDescrRef, kindRef);
 
         rebuildCache = true;
         dirtyVolumes = new HashSet<>();

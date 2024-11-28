@@ -3,15 +3,9 @@ package com.linbit.linstor.layer.storage.spdk;
 import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
-import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.backupshipping.BackupShippingMgr;
-import com.linbit.linstor.clone.CloneService;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -27,20 +21,15 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
-import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.nvme.NvmeUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
-import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkConfigReader;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.LvsInfo;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
@@ -48,12 +37,10 @@ import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import javax.annotation.Nullable;
-import javax.inject.Provider;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -76,39 +63,13 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     protected final SpdkCommands<T> spdkCommands;
 
     protected AbsSpdkProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
+        AbsStorageProviderInit superInitRef,
         String subTypeDescr,
         DeviceProviderKind subTypeKind,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        SpdkCommands<T> spdkCommandsRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        FileSystemWatch fileSystemWatchRef
+        SpdkCommands<T> spdkCommandsRef
     )
     {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            subTypeDescr,
-            subTypeKind,
-            snapShipMrgRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            fileSystemWatchRef
-        );
+        super(superInitRef, subTypeDescr, subTypeKind);
         spdkCommands = spdkCommandsRef;
         isDevPathExpectedToBeNull = true;
     }

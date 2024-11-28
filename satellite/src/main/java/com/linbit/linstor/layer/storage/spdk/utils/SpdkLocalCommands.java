@@ -15,6 +15,9 @@ import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.storage.utils.Commands.genericExecutor;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
@@ -23,6 +26,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@Singleton
 public class SpdkLocalCommands implements SpdkCommands<OutputData>
 {
     // requires "/usr/bin/rpc.py" symlink to "spdk/scripts/rpc.py" script in host OS
@@ -32,6 +36,7 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
 
     private final ObjectMapper objectMapper;
 
+    @Inject
     public SpdkLocalCommands(ExtCmdFactory extCmdFactoryRef)
     {
         extCmdFactory = extCmdFactoryRef;

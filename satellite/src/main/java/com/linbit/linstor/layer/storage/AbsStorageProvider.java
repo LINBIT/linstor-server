@@ -7,6 +7,7 @@ import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
@@ -67,7 +68,9 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,6 +90,59 @@ public abstract class AbsStorageProvider<
     LAYER_SNAP_DATA extends AbsStorageVlmData<Snapshot>>
     implements DeviceProvider
 {
+
+    /**
+     * This class is just a simple holder class so that every class extending {@link AbsStorageProvider} can only inject
+     * and forward an instance of this {@link AbsStorageProviderInit} to the abstract base class instead of having to
+     * forward many other instances.
+     */
+    @Singleton
+    public static class AbsStorageProviderInit
+    {
+        private final ErrorReporter errorReporter;
+        private final ExtCmdFactoryStlt extCmdFactory;
+        private final AccessContext storDriverAccCtx;
+        private final StltConfigAccessor stltConfigAccessor;
+        private final WipeHandler wipeHandler;
+        private final Provider<NotificationListener> notificationListenerProvider;
+        private final Provider<TransactionMgr> transMgrProvider;
+        @Deprecated private final SnapshotShippingService snapshotShippingService;
+        private final StltExtToolsChecker stltExtToolsChecker;
+        private final CloneService cloneService;
+        private final BackupShippingMgr backupShippingMgr;
+        private final FileSystemWatch fileSystemWatch;
+
+        @Inject
+        public AbsStorageProviderInit(
+            ErrorReporter errorReporterRef,
+            ExtCmdFactoryStlt extCmdFactoryRef,
+            @DeviceManagerContext AccessContext storDriverAccCtxRef,
+            StltConfigAccessor stltConfigAccessorRef,
+            WipeHandler wipeHandlerRef,
+            Provider<NotificationListener> notificationListenerProviderRef,
+            Provider<TransactionMgr> transMgrProviderRef,
+            SnapshotShippingService snapshotShippingServiceRef,
+            StltExtToolsChecker stltExtToolsCheckerRef,
+            CloneService cloneServiceRef,
+            BackupShippingMgr backupShippingMgrRef,
+            FileSystemWatch fileSystemWatchRef
+        )
+        {
+            errorReporter = errorReporterRef;
+            extCmdFactory = extCmdFactoryRef;
+            storDriverAccCtx = storDriverAccCtxRef;
+            stltConfigAccessor = stltConfigAccessorRef;
+            wipeHandler = wipeHandlerRef;
+            notificationListenerProvider = notificationListenerProviderRef;
+            transMgrProvider = transMgrProviderRef;
+            snapshotShippingService = snapshotShippingServiceRef;
+            stltExtToolsChecker = stltExtToolsCheckerRef;
+            cloneService = cloneServiceRef;
+            backupShippingMgr = backupShippingMgrRef;
+            fileSystemWatch = fileSystemWatchRef;
+        }
+    }
+
     private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 5000;
     protected static final int DFLT_STRIPES = 1;
     public static final long SIZE_OF_NOT_FOUND_STOR_POOL = ApiConsts.VAL_STOR_POOL_SPACE_NOT_FOUND;
@@ -117,37 +173,27 @@ public abstract class AbsStorageProvider<
     private boolean prepared;
     protected boolean isDevPathExpectedToBeNull = false;
 
-    public AbsStorageProvider(
-        ErrorReporter errorReporterRef,
-        ExtCmdFactoryStlt extCmdFactoryRef,
-        AccessContext storDriverAccCtxRef,
-        StltConfigAccessor stltConfigAccessorRef,
-        WipeHandler wipeHandlerRef,
-        Provider<NotificationListener> notificationListenerProviderRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+    protected AbsStorageProvider(
+        AbsStorageProviderInit initRef,
         String typeDescrRef,
-        DeviceProviderKind kindRef,
-        SnapshotShippingService snapShipMgrRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        FileSystemWatch fsWatchRef
+        DeviceProviderKind kindRef
     )
     {
-        errorReporter = errorReporterRef;
-        extCmdFactory = extCmdFactoryRef;
-        storDriverAccCtx = storDriverAccCtxRef;
-        wipeHandler = wipeHandlerRef;
-        notificationListenerProvider = notificationListenerProviderRef;
-        stltConfigAccessor = stltConfigAccessorRef;
-        transMgrProvider = transMgrProviderRef;
+        errorReporter = initRef.errorReporter;
+        extCmdFactory = initRef.extCmdFactory;
+        storDriverAccCtx = initRef.storDriverAccCtx;
+        wipeHandler = initRef.wipeHandler;
+        notificationListenerProvider = initRef.notificationListenerProvider;
+        stltConfigAccessor = initRef.stltConfigAccessor;
+        transMgrProvider = initRef.transMgrProvider;
+        snapShipMgr = initRef.snapshotShippingService;
+        extToolsChecker = initRef.stltExtToolsChecker;
+        cloneService = initRef.cloneService;
+        backupShipMapper = initRef.backupShippingMgr;
+        fsWatch = initRef.fileSystemWatch;
+
         typeDescr = typeDescrRef;
         kind = kindRef;
-        snapShipMgr = snapShipMgrRef;
-        extToolsChecker = extToolsCheckerRef;
-        cloneService = cloneServiceRef;
-        backupShipMapper = backupShipMgrRef;
-        fsWatch = fsWatchRef;
 
         subclassMaintainsInfoListCache = false;
         infoListCache = new HashMap<>();

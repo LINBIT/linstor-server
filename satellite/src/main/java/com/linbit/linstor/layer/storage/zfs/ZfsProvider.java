@@ -1,17 +1,10 @@
 package com.linbit.linstor.layer.storage.zfs;
 
 import com.linbit.ImplementationError;
-import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
-import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.backupshipping.BackupShippingMgr;
-import com.linbit.linstor.clone.CloneService;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -27,20 +20,15 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
-import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
-import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands.ZfsVolumeType;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils.ZfsInfo;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
@@ -53,12 +41,10 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.ZfsPropsUtils;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.File;
@@ -117,72 +103,18 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     private Map<StorPool, Long> extentSizes = new TreeMap<>();
 
     protected ZfsProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
+        AbsStorageProviderInit superInitRef,
         String subTypeDescr,
-        DeviceProviderKind kind,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        FileSystemWatch fileSystemWatchRef
+        DeviceProviderKind kind
     )
     {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            subTypeDescr,
-            kind,
-            snapShipMrgRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            fileSystemWatchRef
-        );
+        super(superInitRef, subTypeDescr, kind);
     }
 
     @Inject
-    public ZfsProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        @DeviceManagerContext AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        FileSystemWatch fileSystemWatchRef
-    )
+    public ZfsProvider(AbsStorageProviderInit superInitRef)
     {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            "ZFS",
-            DeviceProviderKind.ZFS,
-            snapShipMrgRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            fileSystemWatchRef
-        );
+        super(superInitRef, "ZFS", DeviceProviderKind.ZFS);
     }
 
     @Override

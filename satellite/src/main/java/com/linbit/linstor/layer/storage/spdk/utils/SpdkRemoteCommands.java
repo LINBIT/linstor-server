@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
@@ -20,6 +21,9 @@ import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.utils.PropsUtils;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -31,6 +35,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@Singleton
 public class SpdkRemoteCommands implements SpdkCommands<JsonNode>
 {
     private static final String KEY_HOST = StorageConstants.CONFIG_REMOTE_SPDK_API_HOST_KEY;
@@ -49,8 +54,9 @@ public class SpdkRemoteCommands implements SpdkCommands<JsonNode>
     private final RestHttpClient restClient;
     private ReadOnlyProps localNodeProps;
 
+    @Inject
     public SpdkRemoteCommands(
-        AccessContext sysCtxRef,
+        @DeviceManagerContext AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
         StltConfigAccessor stltConfigAccessorRef
     )

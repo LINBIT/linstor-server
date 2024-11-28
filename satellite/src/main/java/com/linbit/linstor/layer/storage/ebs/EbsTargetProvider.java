@@ -5,20 +5,11 @@ import com.linbit.InvalidNameException;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
-import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.DecryptionHelper;
-import com.linbit.linstor.backupshipping.BackupShippingMgr;
-import com.linbit.linstor.clone.CloneService;
-import com.linbit.linstor.core.CoreModule.RemoteMap;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.StltSecurityObjects;
-import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -39,15 +30,10 @@ import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
-import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.layer.storage.WipeHandler;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
@@ -56,12 +42,10 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
@@ -96,44 +80,9 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     private final ResourceDefinitionMap rscDfnMap;
 
     @Inject
-    public EbsTargetProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        @DeviceManagerContext AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        RemoteMap remoteMapRef,
-        DecryptionHelper decHelperRef,
-        StltSecurityObjects stltSecObjRef,
-        ResourceDefinitionMap rscDfnMapRef,
-        FileSystemWatch fileSystemWatchRef
-    )
+    public EbsTargetProvider(AbsEbsProviderIniit superInitRef, CoreModule.ResourceDefinitionMap rscDfnMapRef)
     {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            "EBS-Target",
-            DeviceProviderKind.EBS_TARGET,
-            snapShipMrgRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            remoteMapRef,
-            decHelperRef,
-            stltSecObjRef,
-            fileSystemWatchRef
-        );
+        super(superInitRef, "EBS-Target", DeviceProviderKind.EBS_TARGET);
         rscDfnMap = rscDfnMapRef;
 
         isDevPathExpectedToBeNull = true;

@@ -1,16 +1,9 @@
 package com.linbit.linstor.layer.storage.exos;
 
 import com.linbit.ImplementationError;
-import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.PriorityProps;
-import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.backupshipping.BackupShippingMgr;
-import com.linbit.linstor.clone.CloneService;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -27,10 +20,8 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
-import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
-import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.exos.rest.ExosRestClient;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers.ExosRestPort;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestInitiators;
@@ -47,12 +38,9 @@ import com.linbit.linstor.layer.storage.utils.LsscsiUtils.LsscsiRow;
 import com.linbit.linstor.layer.storage.utils.MultipathUtils;
 import com.linbit.linstor.layer.storage.utils.MultipathUtils.MultipathRow;
 import com.linbit.linstor.layer.storage.utils.SysClassUtils;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -62,13 +50,11 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.storage.utils.MkfsUtils;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Align;
 import com.linbit.utils.Triple;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
@@ -124,37 +110,9 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     private final Map<StorPool, String> exosPoolNameMap = new HashMap<>();
 
     @Inject
-    public ExosProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        @DeviceManagerContext AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        FileSystemWatch fileSystemWatchRef
-    )
+    public ExosProvider(AbsStorageProviderInit superInitRef)
     {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            "EXOS",
-            DeviceProviderKind.EXOS,
-            snapShipMrgRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            fileSystemWatchRef
-        );
+        super(superInitRef, "EXOS", DeviceProviderKind.EXOS);
         restClientMap = new HashMap<>();
 
         exosInitiatorIds = new HashSet<>();

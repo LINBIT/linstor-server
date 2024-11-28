@@ -3,19 +3,14 @@ package com.linbit.linstor.layer.storage.ebs;
 import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
-import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.backupshipping.BackupShippingMgr;
-import com.linbit.linstor.clone.CloneService;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
-import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
-import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -27,25 +22,20 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
-import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
-import com.linbit.linstor.layer.storage.WipeHandler;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nullable;
-import javax.inject.Provider;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +58,29 @@ import com.amazonaws.services.ec2.model.Tag;
 
 public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsData<Resource>, EbsData<Snapshot>>
 {
+    @Singleton
+    public static class AbsEbsProviderIniit
+    {
+        private final AbsStorageProviderInit superInit;
+        private final CoreModule.RemoteMap remoteMap;
+        private final DecryptionHelper decryptionHelper;
+        private final StltSecurityObjects stltSecObjs;
+
+        @Inject
+        public AbsEbsProviderIniit(
+            AbsStorageProviderInit superInitRef,
+            RemoteMap remoteMapRef,
+            DecryptionHelper decryptionHelperRef,
+            StltSecurityObjects stltSecObjsRef
+        )
+        {
+            superInit = superInitRef;
+            remoteMap = remoteMapRef;
+            decryptionHelper = decryptionHelperRef;
+            stltSecObjs = stltSecObjsRef;
+        }
+    }
+
     /** <code>"${spName}/${rscName}${rscSuffix}_${vlmNr}"</code> */
     public static final String FORMAT_RSC_TO_LVM_ID = "%s/%s%s_%05d";
     /** <code>"${spName}/${rscName}${rscSuffix}_${vlmNr}_${snapName}"</code> */
@@ -114,44 +127,15 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     private final StltSecurityObjects stltSecObj;
 
     AbsEbsProvider(
-        ErrorReporter errorReporterRef,
-        ExtCmdFactoryStlt extCmdFactoryRef,
-        AccessContext storDriverAccCtxRef,
-        StltConfigAccessor stltConfigAccessorRef,
-        WipeHandler wipeHandlerRef,
-        Provider<NotificationListener> notificationListenerProviderRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        AbsEbsProviderIniit initRef,
         String typeDescrRef,
-        DeviceProviderKind kindRef,
-        SnapshotShippingService snapShipMgrRef,
-        StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef,
-        RemoteMap remoteMapRef,
-        DecryptionHelper decHelperRef,
-        StltSecurityObjects stltSecObjRef,
-        FileSystemWatch fileSystemWatchRef
+        DeviceProviderKind kindRef
     )
     {
-        super(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            wipeHandlerRef,
-            notificationListenerProviderRef,
-            transMgrProviderRef,
-            typeDescrRef,
-            kindRef,
-            snapShipMgrRef,
-            extToolsCheckerRef,
-            cloneServiceRef,
-            backupShipMgrRef,
-            fileSystemWatchRef
-        );
-        remoteMap = remoteMapRef;
-        decHelper = decHelperRef;
-        stltSecObj = stltSecObjRef;
+        super(initRef.superInit, typeDescrRef, kindRef);
+        remoteMap = initRef.remoteMap;
+        decHelper = initRef.decryptionHelper;
+        stltSecObj = initRef.stltSecObjs;
 
         amazonEc2ClientLUT = new HashMap<>();
     }
