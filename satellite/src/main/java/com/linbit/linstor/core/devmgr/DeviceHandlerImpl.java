@@ -64,6 +64,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.utils.SetUtils;
 import com.linbit.utils.Either;
+import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -73,6 +74,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1027,6 +1029,47 @@ public class DeviceHandlerImpl implements DeviceHandler
         return ret;
     }
 
+    private Set<CloneStrategy> fixupCloneStrategyQuirks(
+            VlmProviderObject<Resource> sourceVlmData,
+            VlmProviderObject<Resource> targetVlmData,
+            Set<CloneStrategy> srcStrat,
+            Set<CloneStrategy> tgtStrat
+        ) throws AccessDeniedException
+    {
+        if (srcStrat.contains(CloneStrategy.ZFS_COPY) && tgtStrat.contains(CloneStrategy.ZFS_COPY))
+        {
+            String useZfsClone = targetVlmData.getRscLayerObject().getAbsResource().getResourceDefinition()
+                .getProps(wrkCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
+            // zfs clone only works if on the same storage pool
+            if (StringUtils.propTrueOrYes(useZfsClone) &&
+                sourceVlmData.getStorPool().equals(targetVlmData.getStorPool()))
+            {
+                srcStrat.add(CloneStrategy.ZFS_CLONE);
+                tgtStrat.add(CloneStrategy.ZFS_CLONE);
+            }
+        }
+
+        // if src and target volume not on the same pool, we can't use LVM_THIN_CLONE
+        if (srcStrat.contains(CloneStrategy.LVM_THIN_CLONE) &&
+            tgtStrat.contains(CloneStrategy.LVM_THIN_CLONE))
+        {
+            if (!sourceVlmData.getStorPool().equals(targetVlmData.getStorPool()))
+            {
+                srcStrat.remove(CloneStrategy.LVM_THIN_CLONE);
+                tgtStrat.remove(CloneStrategy.LVM_THIN_CLONE);
+            }
+        }
+
+        // lowest prio-number first (DD strategy has highest number)
+        Set<DeviceHandler.CloneStrategy> resultStrat = new TreeSet<>(
+            Comparator.comparingInt(CloneStrategy::getPriority)
+        );
+        resultStrat.addAll(srcStrat);
+        resultStrat.retainAll(tgtStrat);
+
+        return resultStrat;
+    }
+
     private void startClone(Map<VlmProviderObject<Resource>, VlmProviderObject<Resource>> devicesToCloneRef)
         throws AccessDeniedException
     {
@@ -1050,24 +1093,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                     Set<DeviceHandler.CloneStrategy> srcStrat = getCloneStrategy(sourceVlmData);
                     Set<DeviceHandler.CloneStrategy> tgtStrat = getCloneStrategy(targetVlmData);
 
-                    if (srcStrat.contains(CloneStrategy.ZFS_COPY) && tgtStrat.contains(CloneStrategy.ZFS_COPY))
-                    {
-                        String useZfsClone = targetVlmData.getRscLayerObject().getAbsResource().getResourceDefinition()
-                            .getProps(wrkCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
-                        // TODO also check if on the same storage pool
-                        if (useZfsClone != null)
-                        {
-                            srcStrat.add(CloneStrategy.ZFS_CLONE);
-                            tgtStrat.add(CloneStrategy.ZFS_CLONE);
-                        }
-                    }
-
-                    // lowest prio-number first (DD strategy has highest number)
-                    Set<DeviceHandler.CloneStrategy> resultStrat = new TreeSet<>(
-                        (strat1, strat2) -> Integer.compare(strat1.getPriority(), strat2.getPriority())
-                    );
-                    resultStrat.addAll(srcStrat);
-                    resultStrat.retainAll(tgtStrat);
+                    Set<DeviceHandler.CloneStrategy> resultStrat = fixupCloneStrategyQuirks(
+                        sourceVlmData, targetVlmData, srcStrat, tgtStrat);
 
                     if (resultStrat.isEmpty())
                     {
