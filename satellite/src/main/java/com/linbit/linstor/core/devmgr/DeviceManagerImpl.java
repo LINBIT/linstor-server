@@ -30,6 +30,7 @@ import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateNotification;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.apicallhandler.StltNodeApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.StltSnapshotApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
@@ -76,6 +77,7 @@ import com.linbit.utils.Either;
 
 import static com.linbit.linstor.api.ApiConsts.MODIFIED;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -1631,20 +1633,22 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             {
                 for (SnapshotDefinition.Key snapshotKey : localDelSnapshotSet)
                 {
-                    ResourceDefinition resourceDefinition = rscDfnMap.get(snapshotKey.getResourceName());
+                    @Nullable ResourceDefinition resourceDefinition = rscDfnMap.get(snapshotKey.getResourceName());
                     if (resourceDefinition != null)
                     {
-                        SnapshotDefinition snapshotDefinition =
-                            resourceDefinition.getSnapshotDfn(wrkCtx, snapshotKey.getSnapshotName());
-
-                        for (Snapshot snapshot : snapshotDefinition.getAllSnapshots(wrkCtx))
-                        {
-                            snapshipService.snapshotDeleted(snapshot);
-                            backupServiceMgr.snapshotDeleted(snapshot);
-                            snapshot.delete(wrkCtx);
-                        }
-
-                        snapshotDefinition.delete(wrkCtx);
+                        SnapshotDefinition snapshotDefinition = resourceDefinition.getSnapshotDfn(
+                            wrkCtx,
+                            snapshotKey.getSnapshotName()
+                        );
+                        StltSnapshotApiCallHandler.deleteSnapshotsAndCleanup(
+                            rscDfnMap,
+                            rscGrpMap,
+                            snapshotDefinition,
+                            wrkCtx,
+                            errLog,
+                            snapshipService,
+                            backupServiceMgr
+                        );
                     }
                 }
 

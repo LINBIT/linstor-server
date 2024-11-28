@@ -245,9 +245,9 @@ class StltRscApiCallHandler
                     rscDfnFlags
                 );
 
-                checkUuid(rscDfn, rscRawData);
                 rscDfnToRegister = rscDfn;
             }
+            checkUuid(rscDfn, rscRawData);
 
             ResourceGroup oldRscGrp = rscDfn.getResourceGroup();
             if (!oldRscGrp.equals(rscGrp))

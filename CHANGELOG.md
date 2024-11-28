@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Reconnect: Fixed rare race condition in DRBD version check
+- Resource delete: Fixed rare race condition where a delayed DRBD event causes "resource not found" ErrorReports
+- Fixed possible UUID mismatch after deletion of last snapshot failed to properly clean up satellite
 
 ## [1.30.4] - 2025-02-03
 

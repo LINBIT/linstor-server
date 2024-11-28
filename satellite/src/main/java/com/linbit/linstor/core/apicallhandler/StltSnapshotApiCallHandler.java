@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -35,10 +36,12 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.PropsUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -50,7 +53,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Singleton
-class StltSnapshotApiCallHandler
+public class StltSnapshotApiCallHandler
 {
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
@@ -67,6 +70,7 @@ class StltSnapshotApiCallHandler
     private final StltLayerSnapDataMerger layerSnapDataMerger;
     private final Provider<TransactionMgr> transMgrProvider;
     private final BackupShippingMgr backupShippingMgr;
+    private final SnapshotShippingService snapShipService;
 
     @Inject
     StltSnapshotApiCallHandler(
@@ -84,7 +88,8 @@ class StltSnapshotApiCallHandler
         StltRscGrpApiCallHelper stltGrpApiCallHelperRef,
         StltLayerSnapDataMerger layerSnapDataMergerRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        BackupShippingMgr backupShippingMgrRef
+        BackupShippingMgr backupShippingMgrRef,
+        SnapshotShippingService snapShipServiceRef
     )
     {
         errorReporter = errorReporterRef;
@@ -102,6 +107,7 @@ class StltSnapshotApiCallHandler
         layerSnapDataMerger = layerSnapDataMergerRef;
         transMgrProvider = transMgrProviderRef;
         backupShippingMgr = backupShippingMgrRef;
+        snapShipService = snapShipServiceRef;
     }
 
     public void applyChanges(SnapshotPojo snapshotRaw)
@@ -318,35 +324,18 @@ class StltSnapshotApiCallHandler
                 SnapshotDefinition snapDfn = rscDfn.getSnapshotDfn(apiCtx, snapshotName);
                 if (snapDfn != null)
                 {
-                    for (Snapshot snap : snapDfn.getAllSnapshots(apiCtx))
-                    {
-                        backupShippingMgr.snapshotDeleted(snap);
-                        snap.delete(apiCtx);
-                    }
-                    snapDfn.delete(apiCtx);
-
-                    if (rscDfn.getResourceCount() == 0 && rscDfn.getSnapshotDfns(apiCtx).isEmpty())
-                    {
-                        ResourceDefinition removedRscDfn = rscDfnMap.remove(rscName);
-                        if (removedRscDfn != null)
-                        {
-                            ResourceGroup rscGrp = removedRscDfn.getResourceGroup();
-                            removedRscDfn.delete(apiCtx);
-                            if (!rscGrp.hasResourceDefinitions(apiCtx))
-                            {
-                                rscGrpMap.remove(rscGrp.getName());
-                                rscGrp.delete(apiCtx);
-                            }
-                        }
-                    }
+                    deleteSnapshotsAndCleanup(
+                        rscDfnMap,
+                        rscGrpMap,
+                        snapDfn,
+                        apiCtx,
+                        errorReporter,
+                        snapShipService,
+                        backupShippingMgr
+                    );
                 }
                 transMgrProvider.get().commit();
             }
-
-            errorReporter.logInfo(
-                "Snapshot '%s' ended.",
-                snapshotName
-            );
 
             deviceManager.snapshotUpdateApplied(
                 Collections.singleton(new SnapshotDefinition.Key(rscName, snapshotName))
@@ -355,6 +344,57 @@ class StltSnapshotApiCallHandler
         catch (Exception | ImplementationError exc)
         {
             errorReporter.reportError(exc);
+        }
+    }
+
+    public static void deleteSnapshotsAndCleanup(
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CoreModule.ResourceGroupMap rscGrpMapRef,
+        SnapshotDefinition snapDfn,
+        AccessContext accCtx,
+        ErrorReporter errorReporterRef,
+        SnapshotShippingService snapshipServiceRef,
+        BackupShippingMgr backupShippingMgrRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
+        SnapshotName snapName = snapDfn.getName();
+        for (Snapshot snap : snapDfn.getAllSnapshots(accCtx))
+        {
+            snapshipServiceRef.snapshotDeleted(snap);
+            backupShippingMgrRef.snapshotDeleted(snap);
+            snap.delete(accCtx);
+        }
+        snapDfn.delete(accCtx);
+
+        errorReporterRef.logInfo("Snapshot '%s' deleted.", snapName);
+
+        if (rscDfn.getResourceCount() == 0 && rscDfn.getSnapshotDfns(accCtx).isEmpty())
+        {
+            ResourceName rscName = rscDfn.getName();
+            @Nullable ResourceDefinition removedRscDfn = rscDfnMapRef.remove(rscName);
+            if (removedRscDfn != null)
+            {
+                ResourceGroup rscGrp = removedRscDfn.getResourceGroup();
+                removedRscDfn.delete(accCtx);
+                errorReporterRef.logInfo(
+                    "Resource definition '%s' deleted (triggered by deletion of snapshot '%s')",
+                    rscName,
+                    snapName
+                );
+                if (!rscGrp.hasResourceDefinitions(accCtx))
+                {
+                    ResourceGroupName rscGrpName = rscGrp.getName();
+                    errorReporterRef.logInfo(
+                        "Resource group '%s' deleted (triggered by deletion of resource definition '%s')",
+                        rscGrpName,
+                        rscName
+                    );
+                    rscGrpMapRef.remove(rscGrpName);
+                    rscGrp.delete(accCtx);
+                }
+            }
         }
     }
 
