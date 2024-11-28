@@ -14,6 +14,7 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.backupshipping.AbsBackupShippingService;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
@@ -111,6 +112,7 @@ public abstract class AbsStorageProvider<
         private final CloneService cloneService;
         private final BackupShippingMgr backupShippingMgr;
         private final FileSystemWatch fileSystemWatch;
+        private final CoreModule.ResourceDefinitionMap rscDfnMap;
 
         @Inject
         public AbsStorageProviderInit(
@@ -125,7 +127,8 @@ public abstract class AbsStorageProvider<
             StltExtToolsChecker stltExtToolsCheckerRef,
             CloneService cloneServiceRef,
             BackupShippingMgr backupShippingMgrRef,
-            FileSystemWatch fileSystemWatchRef
+            FileSystemWatch fileSystemWatchRef,
+            CoreModule.ResourceDefinitionMap rscDfnMapRef
         )
         {
             errorReporter = errorReporterRef;
@@ -140,6 +143,7 @@ public abstract class AbsStorageProvider<
             cloneService = cloneServiceRef;
             backupShippingMgr = backupShippingMgrRef;
             fileSystemWatch = fileSystemWatchRef;
+            rscDfnMap = rscDfnMapRef;
         }
     }
 
@@ -154,6 +158,7 @@ public abstract class AbsStorageProvider<
     protected final Provider<TransactionMgr> transMgrProvider;
     protected final WipeHandler wipeHandler;
     protected final StltConfigAccessor stltConfigAccessor;
+    protected final CoreModule.ResourceDefinitionMap rscDfnMap;
     protected ReadOnlyProps localNodeProps;
     private final SnapshotShippingService snapShipMgr;
     protected final CloneService cloneService;
@@ -185,6 +190,7 @@ public abstract class AbsStorageProvider<
         wipeHandler = initRef.wipeHandler;
         notificationListenerProvider = initRef.notificationListenerProvider;
         stltConfigAccessor = initRef.stltConfigAccessor;
+        rscDfnMap = initRef.rscDfnMap;
         transMgrProvider = initRef.transMgrProvider;
         snapShipMgr = initRef.snapshotShippingService;
         extToolsChecker = initRef.stltExtToolsChecker;
@@ -1136,7 +1142,17 @@ public abstract class AbsStorageProvider<
     {
         try
         {
-            return getSnapVlmData(vlmDataRef, new SnapshotName(snapNameStrRef, true));
+            final SnapshotName snapName = new SnapshotName(snapNameStrRef, true);
+            final StorageRscData<Resource> rscData = vlmDataRef.getRscLayerObject();
+            final Resource rsc = rscData.getAbsResource();
+            final @Nullable SnapshotDefinition snapDfn = rsc.getResourceDefinition()
+                .getSnapshotDfn(storDriverAccCtx, snapName);
+            @Nullable Snapshot snap = null;
+            if (snapDfn != null)
+            {
+                snap = snapDfn.getSnapshot(storDriverAccCtx, rsc.getNode().getName());
+            }
+            return getSnapVlmData(vlmDataRef, snap);
         }
         catch (InvalidNameException exc)
         {
@@ -1145,28 +1161,18 @@ public abstract class AbsStorageProvider<
     }
 
     @SuppressWarnings("unchecked")
-    protected @Nullable LAYER_SNAP_DATA getSnapVlmData(LAYER_DATA vlmDataRef, SnapshotName snapNameRef)
+    protected @Nullable LAYER_SNAP_DATA getSnapVlmData(LAYER_DATA vlmDataRef, @Nullable Snapshot snapRef)
         throws AccessDeniedException
     {
         final @Nullable LAYER_SNAP_DATA ret;
-
-        final StorageRscData<Resource> rscData = vlmDataRef.getRscLayerObject();
-        final Resource rsc = rscData.getAbsResource();
-        final @Nullable SnapshotDefinition snapDfn = rsc.getResourceDefinition()
-            .getSnapshotDfn(storDriverAccCtx, snapNameRef);
-        @Nullable Snapshot snap = null;
-        if (snapDfn != null)
-        {
-            snap = snapDfn.getSnapshot(storDriverAccCtx, rsc.getNode().getName());
-        }
-
-        if (snap == null)
+        if (snapRef == null)
         {
             ret = null;
         }
         else
         {
-            AbsRscLayerObject<Snapshot> snapLayerData = snap.getLayerData(storDriverAccCtx);
+            final StorageRscData<Resource> rscData = vlmDataRef.getRscLayerObject();
+            AbsRscLayerObject<Snapshot> snapLayerData = snapRef.getLayerData(storDriverAccCtx);
             // since we are in the STORAGE layer...
             Set<AbsRscLayerObject<Snapshot>> storageSnapLayerDataSet = LayerRscUtils.getRscDataByLayer(
                 snapLayerData,
@@ -1183,7 +1189,7 @@ public abstract class AbsStorageProvider<
                 throw new ImplementationError(
                     "Unexpected number of storage data for: " + rscData
                         .getSuffixedResourceName() + "/" + vlmDataRef.getVlmNr() + ", snapshot: " +
-                        snapNameRef.displayValue
+                        snapRef.getSnapshotName().displayValue
                 );
             }
             else
@@ -1605,8 +1611,48 @@ public abstract class AbsStorageProvider<
         final @Nullable String restoreFromSnapshotProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
         if (restoreFromResourceName != null && restoreFromSnapshotProp != null)
         {
-            LAYER_DATA fromVlmData = getVlmDataFromOtherResource(vlmDataRef, restoreFromResourceName);
-            ret = getSnapVlmData(fromVlmData, restoreFromSnapshotProp);
+            ResourceName rscName;
+            SnapshotName snapName;
+            try
+            {
+                rscName = new ResourceName(restoreFromResourceName);
+                snapName = new SnapshotName(restoreFromSnapshotProp);
+            }
+            catch (InvalidNameException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            @Nullable ResourceDefinition restoreFromRscDfn = rscDfnMap.get(rscName);
+            if (restoreFromRscDfn != null)
+            {
+                @Nullable SnapshotDefinition restoreFromSnapDfn = restoreFromRscDfn.getSnapshotDfn(
+                    storDriverAccCtx,
+                    snapName
+                );
+                if (restoreFromSnapDfn != null)
+                {
+                    @Nullable Snapshot restoreFromSnap = restoreFromSnapDfn.getSnapshot(
+                        storDriverAccCtx,
+                        vlmDataRef.getVolume().getAbsResource().getNode().getName()
+                    );
+                    if (restoreFromSnap != null)
+                    {
+                        ret = getSnapVlmData(vlmDataRef, restoreFromSnap);
+                    }
+                    else
+                    {
+                        ret = null;
+                    }
+                }
+                else
+                {
+                    ret = null;
+                }
+            }
+            else
+            {
+                ret = null;
+            }
         }
         else
         {

@@ -8,8 +8,6 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -77,14 +75,10 @@ import com.amazonaws.services.ec2.model.TagSpecification;
 @Singleton
 public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2.model.Volume>
 {
-    private final ResourceDefinitionMap rscDfnMap;
-
     @Inject
-    public EbsTargetProvider(AbsEbsProviderIniit superInitRef, CoreModule.ResourceDefinitionMap rscDfnMapRef)
+    public EbsTargetProvider(AbsEbsProviderIniit superInitRef)
     {
         super(superInitRef, "EBS-Target", DeviceProviderKind.EBS_TARGET);
-        rscDfnMap = rscDfnMapRef;
-
         isDevPathExpectedToBeNull = true;
     }
 
