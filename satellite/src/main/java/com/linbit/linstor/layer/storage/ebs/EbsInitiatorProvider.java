@@ -1,7 +1,10 @@
 package com.linbit.linstor.layer.storage.ebs;
 
+import com.linbit.ChildProcessTimeoutException;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
+import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.LinStorException;
@@ -28,7 +31,6 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.storage.WipeHandler;
-import com.linbit.linstor.layer.storage.ebs.rest.AwsRestClient;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -47,6 +49,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,6 +67,8 @@ import com.amazonaws.services.ec2.model.Tag;
 @Singleton
 public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 {
+    public static final String EC2_INSTANCE_ID_PATH = "/sys/devices/virtual/dmi/id/board_asset_tag";
+
     private static final int WAIT_NEW_DEV_APPEAR_MS = 500;
     private static final int WAIT_NEW_DEV_APPEAR_COUNT = 30_000 / WAIT_NEW_DEV_APPEAR_MS;
     private static final int WAIT_NEW_DEV_RECONNECT_COUNT = 5;
@@ -79,8 +84,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     /** Map<StorageName + "/" + LvId, Pair<EBS-vol-id, devicePath>> */
     private final Map<String, Pair<String, String>> lookupTable = new HashMap<>();
 
-    private final String ec2InstanceId;
-    private final AwsRestClient awsRestClient;
+    private final @Nullable String ec2InstanceId;
 
     static
     {
@@ -133,7 +137,6 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         StltSecurityObjects stltSecObjRef,
         FileSystemWatch fileSystemWatchRef
     )
-        throws StorageException
     {
         super(
             errorReporter,
@@ -155,26 +158,36 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
             fileSystemWatchRef
         );
 
-        awsRestClient = new AwsRestClient(storDriverAccCtx, errorReporter);
-        if (isSupported(errorReporter))
+        ec2InstanceId = getEc2InstanceId(errorReporter, extCmdFactory);
+    }
+
+    public static @Nullable String getEc2InstanceId(ErrorReporter errorReporterRef, ExtCmdFactory extCmdFactoryRef)
+    {
+        @Nullable String ret;
+        try
         {
-            ec2InstanceId = awsRestClient.getLocalEc2InstanceId();
+            OutputData outputData = extCmdFactoryRef.create().exec("cat", EC2_INSTANCE_ID_PATH);
+            if (outputData.exitCode != 0)
+            {
+                ret = null;
+            }
+            else
+            {
+                ret = new String(outputData.stdoutData).trim();
+            }
         }
-        else
+        catch (ChildProcessTimeoutException | IOException exc)
         {
-            ec2InstanceId = null;
+            errorReporterRef.reportError(exc);
+            ret = null;
         }
+        return ret;
     }
 
     @Override
     public DeviceProviderKind getDeviceProviderKind()
     {
         return DeviceProviderKind.EBS_INIT;
-    }
-
-    public static boolean isSupported(ErrorReporter errorReporterRef)
-    {
-        return AwsRestClient.isRunningInEc2(errorReporterRef);
     }
 
     @Override
@@ -191,8 +204,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     protected void updateStates(List<EbsData<Resource>> vlmDataListRef, List<EbsData<Snapshot>> snapVlmsRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        final List<EbsData<?>> combinedList = new ArrayList<>();
-        combinedList.addAll(vlmDataListRef);
+        final List<EbsData<?>> combinedList = new ArrayList<>(vlmDataListRef);
         // no snapshots (for now)
 
         Map<String, com.amazonaws.services.ec2.model.Volume> amaVlmLut = getTargetInfoListImpl(
@@ -535,7 +547,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
             List<LsBlkEntry> lsblkPostResize = LsBlkUtils.lsblk(extCmdFactory.create());
             for (LsBlkEntry entry : lsblkPostResize)
             {
-                if (devicePath.equals(entry.getKernelName()))
+                if (entry.getKernelName().equals(devicePath))
                 {
                     entrySizeInKib = SizeConv.convert(
                         entry.getSize(),

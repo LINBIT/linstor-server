@@ -536,12 +536,15 @@ public class StltExtToolsChecker
 
     private ExtToolsInfo getEbsInitInfo()
     {
-        final boolean isSupported = EbsInitiatorProvider.isSupported(errorReporter);
+        final @Nullable String ec2InstanceId = EbsInitiatorProvider.getEc2InstanceId(errorReporter, extCmdFactory);
+        boolean isSupported = ec2InstanceId != null;
         return new ExtToolsInfo(
             ExtTools.EBS_INIT,
             isSupported,
             new Version(),
-            isSupported ? Collections.emptyList() : Arrays.asList("Satellite could not contact internal AWS endpoint.")
+            isSupported ?
+                Collections.emptyList() :
+                Arrays.asList("Failed to retrieve instance-id from " + EbsInitiatorProvider.EC2_INSTANCE_ID_PATH)
         );
     }
 

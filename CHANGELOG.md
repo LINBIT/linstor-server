@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SOS: include /proc/sys/kernel/tainted
 - DRBD state tracking: Fixed tracking of a peer's diskless volume's client flag
 
+### Fixed
+
+- EBS: Fixed retrieving EC2 instance-id
+
 ## [1.29.2] - 2024-11-05
 
 ### Changed
