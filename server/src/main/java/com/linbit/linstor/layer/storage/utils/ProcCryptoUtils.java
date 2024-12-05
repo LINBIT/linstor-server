@@ -1,9 +1,11 @@
 package com.linbit.linstor.layer.storage.utils;
 
-import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.Platform;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.storage.ProcCryptoEntry;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,7 +23,7 @@ public class ProcCryptoUtils
 
     private static final Pattern PROC_CRYPTO_PATTERN = Pattern.compile("(\\w+)\\s+:\\s+([a-zA-Z_0-9\\-(),]+)");
 
-    static List<ProcCryptoEntry> parseProcCryptoString(String cryptoOutput)
+    static List<ProcCryptoEntry> parseProcCryptoString(ErrorReporter errorReporterRef, String cryptoOutput)
     {
         ArrayList<ProcCryptoEntry> entries = new ArrayList<>();
 
@@ -44,15 +46,32 @@ public class ProcCryptoUtils
                         case "name":
                             if (name != null)
                             {
-                                // start new crypto entry
-                                entries.add(
-                                    new ProcCryptoEntry(
-                                        name,
-                                        driver,
-                                        ProcCryptoEntry.CryptoType.fromString(type),
-                                        priority
-                                    )
-                                );
+                                if (driver == null)
+                                {
+                                    errorReporterRef.logWarning(
+                                        "Ignoring /proc/crypto entry since it is missing a driver: %s",
+                                        name
+                                    );
+                                }
+                                else if (type.isEmpty())
+                                {
+                                    errorReporterRef.logWarning(
+                                        "Ignoring /proc/crypto entry since it is missing a type: %s",
+                                        name
+                                    );
+                                }
+                                else
+                                {
+                                    // start new crypto entry
+                                    entries.add(
+                                        new ProcCryptoEntry(
+                                            name,
+                                            driver,
+                                            ProcCryptoEntry.CryptoType.fromString(type),
+                                            priority
+                                        )
+                                    );
+                                }
                             }
                             name = fieldValue;
                             driver = null;
@@ -92,14 +111,14 @@ public class ProcCryptoUtils
         return entries;
     }
 
-    public static List<ProcCryptoEntry> parseProcCrypto() throws IOException
+    public static List<ProcCryptoEntry> parseProcCrypto(ErrorReporter errorReporterRef) throws IOException
     {
-        List<ProcCryptoEntry> cryptoEntries = new ArrayList<ProcCryptoEntry>();
+        List<ProcCryptoEntry> cryptoEntries = new ArrayList<>();
 
         if (Platform.isLinux())
         {
             final String procCryptoContent = new String(Files.readAllBytes(Paths.get("/proc/crypto")));
-            cryptoEntries = parseProcCryptoString(procCryptoContent);
+            cryptoEntries = parseProcCryptoString(errorReporterRef, procCryptoContent);
         }
         if (Platform.isWindows())
         {

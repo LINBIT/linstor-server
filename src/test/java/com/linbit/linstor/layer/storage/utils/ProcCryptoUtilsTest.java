@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer.storage.utils;
 
+import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.storage.ProcCryptoEntry;
 
 import java.io.IOException;
@@ -18,6 +19,15 @@ import junit.framework.TestCase;
 
 public class ProcCryptoUtilsTest extends TestCase
 {
+    protected static StdErrorReporter errorReporter = new StdErrorReporter(
+        "TESTS",
+        Paths.get("build/test-logs"),
+        true,
+        "",
+        "INFO",
+        "TRACE",
+        () -> null
+    );
 
     private static String PROC_CRYPTO_OUTPUT = null;
 
@@ -31,7 +41,7 @@ public class ProcCryptoUtilsTest extends TestCase
 
     public void testParsing()
     {
-        List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCryptoString(PROC_CRYPTO_OUTPUT);
+        List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCryptoString(errorReporter, PROC_CRYPTO_OUTPUT);
         assertEquals(77, cryptos.size());
         final ProcCryptoEntry last = cryptos.get(cryptos.size()-1);
         assertEquals("dh", last.getName());
@@ -42,19 +52,19 @@ public class ProcCryptoUtilsTest extends TestCase
 
     public void testEmptyParsing()
     {
-        List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCryptoString("");
+        List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCryptoString(errorReporter, "");
         assertEquals(0, cryptos.size());
     }
 
     public void testLocalProcCrypto() throws IOException
     {
-        List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCrypto();
+        List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCrypto(errorReporter);
         assertTrue(cryptos.size() > 0);
     }
 
     public void testSortAndFilter()
     {
-        List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCryptoString(PROC_CRYPTO_OUTPUT);
+        List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCryptoString(errorReporter, PROC_CRYPTO_OUTPUT);
         List<ProcCryptoEntry> hashes = ProcCryptoUtils.getHashByPriority(cryptos);
         assertEquals(21, hashes.size());
         assertTrue(hashes.stream().allMatch(e -> e.getType() == ProcCryptoEntry.CryptoType.SHASH));

@@ -7,6 +7,17 @@ selftest     : passed
 internal     : no
 type         : kpp
 
+name         : missing_driver
+priority     : 200
+type         : skcipher
+
+name         : missing_type
+driver       : missing_type_driver
+priority     : 200
+
+name         : missing_type_and_driver
+priority     : 200
+
 name         : xchacha12
 driver       : xchacha12-simd
 module       : chacha_x86_64

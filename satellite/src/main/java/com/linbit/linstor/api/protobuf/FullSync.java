@@ -156,7 +156,7 @@ public class FullSync implements ApiCall
         }
         if (success == FullSyncResult.SUCCESS)
         {
-            List<ProcCryptoEntry> cryptoEntries = ProcCryptoUtils.parseProcCrypto();
+            List<ProcCryptoEntry> cryptoEntries = ProcCryptoUtils.parseProcCrypto(errorReporter);
             for (ProcCryptoEntry procCryptoEntry : cryptoEntries)
             {
                 builder.addCryptoEntries(ProtoCtrlStltSerializerBuilder.buildCryptoEntry(procCryptoEntry));
