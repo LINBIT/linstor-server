@@ -354,7 +354,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     "Backupshipping L2L start receive",
                     lockGuardFactory.create()
                         .read(LockObj.NODES_MAP)
-                        .write(LockObj.RSC_DFN_MAP)
+                        .write(LockObj.RSC_DFN_MAP, LockObj.REMOTE_MAP)
                         .buildDeferred(),
                     () -> startReceivingInTransaction(data, srcRemote)
                 ).map(this::snapshotToResponse);
