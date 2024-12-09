@@ -2,7 +2,6 @@ package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
@@ -13,6 +12,7 @@ import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlMinIoSizeHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlFullSyncResponseApiCallHandler;
@@ -28,11 +28,9 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -40,7 +38,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass.MsgIntFullSyncResponse;
@@ -50,6 +47,7 @@ import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.utils.layer.LayerKindUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
@@ -88,7 +86,7 @@ public class IntFullSyncResponse implements ApiCallReactive
     private final CtrlFullSyncResponseApiCallHandler ctrlFullSyncApiCallHandler;
     private final Provider<Peer> satelliteProvider;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final SystemConfRepository sysConfRepo;
+    private final CtrlMinIoSizeHelper minIoSizeHelper;
 
     @Inject
     public IntFullSyncResponse(
@@ -101,7 +99,7 @@ public class IntFullSyncResponse implements ApiCallReactive
         CtrlFullSyncResponseApiCallHandler ctrlFullSyncApiCallHandlerRef,
         Provider<Peer> satelliteProviderRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        SystemConfRepository sysConfRepoRef
+        CtrlMinIoSizeHelper minIoSizeHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -113,7 +111,7 @@ public class IntFullSyncResponse implements ApiCallReactive
         ctrlFullSyncApiCallHandler = ctrlFullSyncApiCallHandlerRef;
         satelliteProvider = satelliteProviderRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        sysConfRepo = sysConfRepoRef;
+        minIoSizeHelper = minIoSizeHelperRef;
     }
 
     @Override
@@ -244,15 +242,12 @@ public class IntFullSyncResponse implements ApiCallReactive
             errorReporter.logDebug("updateVolumeMinIoSize: Peer \"%s\"", satelliteName.displayValue);
             try
             {
-                final ReadOnlyProps ctrlProps = sysConfRepo.getCtrlConfForView(apiCtx);
                 final Iterator<Resource> localRscIter = satellite.iterateResources(apiCtx);
                 final Set<ResourceDefinition> rscDfnsToUpdate = new HashSet<>();
                 while (localRscIter.hasNext())
                 {
                     final Resource localRsc = localRscIter.next();
                     final ResourceDefinition rscDfn = localRsc.getResourceDefinition();
-                    final ResourceGroup rscGrp = rscDfn.getResourceGroup();
-                    final Props rscDfnProps = rscDfn.getProps(apiCtx);
                     final ResourceName rscName = rscDfn.getName();
 
                     final Iterator<VolumeDefinition> vlmDfnIter = rscDfn.iterateVolumeDfn(apiCtx);
@@ -261,19 +256,7 @@ public class IntFullSyncResponse implements ApiCallReactive
                         final VolumeDefinition vlmDfn = vlmDfnIter.next();
                         final Props vlmDfnProps = vlmDfn.getProps(apiCtx);
 
-                        PriorityProps prioProps = new PriorityProps(
-                            vlmDfnProps,
-                            rscDfnProps,
-                            rscGrp.getProps(apiCtx),
-                            rscGrp.getVolumeGroupProps(apiCtx, vlmDfn.getVolumeNumber()),
-                            ctrlProps
-                        );
-                        final String minIoSizeAutoStr = prioProps.getProp(
-                            StorageConstants.BLK_DEV_MIN_IO_SIZE_AUTO,
-                            ApiConsts.NAMESPC_LINSTOR_DRBD,
-                            Boolean.TRUE.toString()
-                        );
-                        final boolean minIoSizeAuto = Boolean.parseBoolean(minIoSizeAutoStr);
+                        final boolean minIoSizeAuto = minIoSizeHelper.isAutoMinIoSize(vlmDfn, apiCtx);
                         if (minIoSizeAuto)
                         {
                             final VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
@@ -435,22 +418,8 @@ public class IntFullSyncResponse implements ApiCallReactive
     private boolean isResourceWithSpecialLayers(final Resource rsc)
         throws AccessDeniedException
     {
-        boolean specialShit = false;
         List<DeviceLayerKind> layerStack = LayerRscUtils.getLayerStack(rsc, apiCtx);
-        for (DeviceLayerKind layerKind : layerStack)
-        {
-            if (layerKind != DeviceLayerKind.STORAGE && layerKind != DeviceLayerKind.DRBD)
-            {
-                specialShit = true;
-            }
-            {
-                // DEBUG
-                final ResourceDefinition rscDfn = rsc.getResourceDefinition();
-                final ResourceName rscName = rscDfn.getName();
-                errorReporter.logDebug("Resource \"%s\" Layer: %s", rscName.displayValue, layerKind.toString());
-            }
-        }
-        return specialShit;
+        return LayerKindUtils.hasSpecialLayers(layerStack);
     }
 
     private long getMinIoSizeForStorPool(final StorPool storPoolObj) throws AccessDeniedException

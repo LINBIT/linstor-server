@@ -50,7 +50,11 @@ class Selector
     private final SystemConfRepository sysCfgRepo;
 
     @Inject
-    Selector(@SystemContext AccessContext apiCtxRef, ErrorReporter errorReporterRef, SystemConfRepository sysCfgRepoRef)
+    Selector(
+        @SystemContext AccessContext apiCtxRef,
+        ErrorReporter errorReporterRef,
+        SystemConfRepository sysCfgRepoRef
+    )
     {
         apiCtx = apiCtxRef;
         errorReporter = errorReporterRef;
@@ -60,7 +64,9 @@ class Selector
     public @Nullable Set<StorPoolWithScore> select(
         AutoSelectFilterApi selectFilterRef,
         @Nullable ResourceDefinition rscDfnRef,
-        Collection<StorPoolWithScore> storPoolWithScores
+        Collection<StorPoolWithScore> storPoolWithScores,
+        final boolean canChangeMinIoSize,
+        final long minIoSize
     )
         throws AccessDeniedException
     {
@@ -222,7 +228,9 @@ class Selector
             alreadyDeployedInSharedSPNames,
             alreadyDeployedKindsAndVersion,
             sortedStorPoolByScoreArr,
-            allowMixing
+            allowMixing,
+            canChangeMinIoSize,
+            minIoSize
         );
         final int additionalReplicaCount = selectionManager.getAdditionalRscCountToSelect();
         errorReporter.logTrace(

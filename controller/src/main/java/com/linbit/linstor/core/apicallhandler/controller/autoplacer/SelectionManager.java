@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
@@ -19,6 +20,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.utils.CollectionUtils;
+import com.linbit.utils.MathUtils;
 import com.linbit.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -59,9 +61,12 @@ public class SelectionManager
 
     private final Autoplacer.StorPoolWithScore[] sortedStorPoolByScoreArr;
     private final boolean allowStorPoolMixing;
+    private final boolean canChangeMinIoSize;
 
     private final LinkedList<State> selectionStack = new LinkedList<>();
     private final HashMap<String, Integer> xReplicasOnDiffCount = new HashMap<>();
+
+    private final long minIoSize;
 
     public SelectionManager(
         AccessContext accessContextRef,
@@ -73,7 +78,9 @@ public class SelectionManager
         List<SharedStorPoolName> alreadyDeployedInSharedSPNamesRef,
         Map<DeviceProviderKind, List</* DrbdVersion */Version>> alreadyDeployedProviderKindsRef,
         Autoplacer.StorPoolWithScore[] sortedStorPoolByScoreArrRef,
-        boolean allowStorPoolMixingRef
+        boolean allowStorPoolMixingRef,
+        boolean canChangeMinIoSizePrm,
+        long minIoSizePrm
     )
         throws AccessDeniedException
     {
@@ -91,6 +98,9 @@ public class SelectionManager
             }
         }
         allowStorPoolMixing = tmpAllowMixing;
+
+        canChangeMinIoSize = canChangeMinIoSizePrm;
+        minIoSize = MathUtils.bounds(BlockSizeConsts.MIN_IO_SIZE, minIoSizePrm, BlockSizeConsts.MAX_IO_SIZE);
 
         final Map<DeviceProviderKind, List<Version>> initDeployedProviderKindsToDrbdVersionsRef;
         if (selectFilterRef.getDisklessType() == null)
@@ -446,6 +456,15 @@ public class SelectionManager
             }
         }
 
+        if (!canChangeMinIoSize && isValid)
+        {
+            final long stateMinIoSize = state.getMinIoSize(accessContext);
+            if (stateMinIoSize > minIoSize)
+            {
+                isValid = false;
+            }
+        }
+
         return isValid;
     }
 
@@ -725,6 +744,7 @@ public class SelectionManager
         private final int remainingRscCountToSelect;
 
         private final HashMap<String, String> sameProps;
+
         /**
          * <p>
          * Outer key is the PropKey itself.
@@ -760,6 +780,37 @@ public class SelectionManager
 
             sameProps = new HashMap<>(samePropsRef);
             diffProps = new HashMap<>(diffPropsRef);
+        }
+
+        /**
+         * Returns the greatest minimum-io-size of any of the storage pools listed in this state object
+         *
+         * @param accCtx Access context for accessing the properties of storage pools
+         * @return Greatest minimum-io-size of any of the storage pools listed in this state object
+         */
+        long getMinIoSize(AccessContext accCtx)
+        {
+            long minIoSize = BlockSizeConsts.DFLT_IO_SIZE;
+            try
+            {
+                for (StorPoolWithScore spEntry : selectedStorPoolWithScoreSet)
+                {
+                    final StorPool pool = spEntry.storPool;
+                    final long poolBlockSize = pool.getMinIoSize(accCtx);
+                    if (poolBlockSize > minIoSize)
+                    {
+                        minIoSize = poolBlockSize;
+                    }
+                }
+            }
+            catch (AccessDeniedException accExc)
+            {
+                throw new ImplementationError(
+                    "Failed to access storage pool properties in " + SelectionManager.class.getSimpleName(),
+                    accExc
+                );
+            }
+            return minIoSize;
         }
 
         boolean containsNode(Node nodeRef)

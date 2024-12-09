@@ -17,6 +17,7 @@ import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.Key;
 import com.linbit.linstor.core.repository.SystemConfRepository;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
@@ -100,7 +101,9 @@ public class CtrlQuerySizeInfoHelper
             storPoolFilter.listAvailableStorPools(true),
             null,
             0,
-            null
+            null,
+            true,
+            BlockSizeConsts.DFLT_IO_SIZE
         );
 
         long maxVlmSize = getMaxVlmSize(selectedStorPoolSet, thinFreeCapacitiesRef);

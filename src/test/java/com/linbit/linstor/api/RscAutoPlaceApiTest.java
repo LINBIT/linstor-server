@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -3213,6 +3214,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             Mockito.when(mockedPeer.isOnline()).thenReturn(true);
             Mockito.when(mockedPeer.getConnectionStatus()).thenReturn(ConnectionStatus.ONLINE);
             Mockito.when(mockedPeer.getExtToolsManager()).thenReturn(mockedExtToolsMgr);
+
+            Mockito.when(mockedPeer.getSatelliteStateLock()).thenReturn(new ReentrantReadWriteLock());
+            Mockito.when(mockedPeer.getSatelliteState()).thenReturn(null);
 
             try
             {

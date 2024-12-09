@@ -14,6 +14,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -34,8 +35,10 @@ import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.utils.layer.LayerKindUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.ExceptionThrowingPredicate;
+import com.linbit.utils.MathUtils;
 import com.linbit.utils.Pair;
 import com.linbit.utils.PairNonNull;
 
@@ -186,6 +189,24 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         return PropsAccess.secureGetProps(accCtx, objProt, rscDfnProps);
     }
 
+    /**
+     * Sets a property for the device manager to restart the DRBD resource on each resource of this resource definition
+     *
+     * @param accCtx Access context for accessing each resource's properties
+     * @throws AccessDeniedException if access to a resource's properties is denied
+     * @throws DatabaseException if a database operation fails
+     */
+    public void requireDrbdRestart(final AccessContext accCtx)
+        throws AccessDeniedException, DatabaseException
+    {
+        final Iterator<Resource> rscIter = iterateResource(accCtx);
+        while (rscIter.hasNext())
+        {
+            final Resource rsc = rscIter.next();
+            rsc.requireDrbdRestart(accCtx);
+        }
+    }
+
     public synchronized void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn)
         throws AccessDeniedException
     {
@@ -231,6 +252,39 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return volumeMap.values().stream();
+    }
+
+    /**
+     * Returns the smallest min-io-size used by any of the volume definitions of this resource definition.
+     *
+     * If the resource definition's layer stack lists any special layers, the result is
+     * BlockSizeConsts.DFLT_SPECIAL_IO_SIZE. Otherwise, the result is the smallest minimum I/O size currently
+     * set on any of the volume definitions of this resource definition.
+     *
+     * @param accCtx AccessContext for accessing resource definition, volume definition and layer information
+     * @return Floor value minimum-io-size of all volume definitions
+     * @throws AccessDeniedException If access to required information is denied
+     */
+    public long getFloorVolumesMinIoSize(final AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        long floorMinIoSize = BlockSizeConsts.DFLT_SPECIAL_IO_SIZE;
+        final boolean hasSpecialLayers = LayerKindUtils.hasSpecialLayers(this, accCtx);
+        if (!hasSpecialLayers)
+        {
+            floorMinIoSize = BlockSizeConsts.MAX_IO_SIZE;
+            final Iterator<VolumeDefinition> vlmIter = iterateVolumeDfn(accCtx);
+            while (vlmIter.hasNext())
+            {
+                final VolumeDefinition vlmDfn = vlmIter.next();
+                final long vlmMinIoSize = vlmDfn.getMinIoSize(accCtx);
+                if (vlmMinIoSize < floorMinIoSize)
+                {
+                    floorMinIoSize = vlmMinIoSize;
+                }
+            }
+        }
+        return MathUtils.bounds(BlockSizeConsts.MIN_IO_SIZE, floorMinIoSize, BlockSizeConsts.MAX_IO_SIZE);
     }
 
     public int getResourceCount()

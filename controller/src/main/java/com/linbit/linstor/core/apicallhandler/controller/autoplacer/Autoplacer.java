@@ -4,9 +4,11 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscStateHelper;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -27,6 +29,7 @@ public class Autoplacer
     private final StrategyHandler strategyHandler;
     private final Selector selector;
     private final ErrorReporter errorReporter;
+    private final CtrlRscStateHelper rscStateHelper;
 
     @Inject
     public Autoplacer(
@@ -34,7 +37,8 @@ public class Autoplacer
         StorPoolFilter filterRef,
         StrategyHandler strategyHandlerRef,
         Selector selectorRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        CtrlRscStateHelper rscStateHelperRef
     )
     {
         apiAccCtx = apiAccCtxRef;
@@ -42,6 +46,7 @@ public class Autoplacer
         strategyHandler = strategyHandlerRef;
         selector = selectorRef;
         errorReporter = errorReporterRef;
+        rscStateHelper = rscStateHelperRef;
     }
 
     /**
@@ -64,6 +69,11 @@ public class Autoplacer
             long start = System.currentTimeMillis();
             ArrayList<StorPool> availableStorPools = filter.listAvailableStorPools(disklessType == null);
 
+            // Can change minIoSize if a new resource definition is being created
+            final boolean canChangeMinIoSize = rscStateHelper.canChangeMinIoSize(rscDfnRef);
+            final long minIoSize = rscDfnRef == null ?
+                BlockSizeConsts.DFLT_IO_SIZE : rscDfnRef.getFloorVolumesMinIoSize(apiAccCtx);
+
             // 1: filter storage pools
             long startFilter = System.currentTimeMillis();
             ArrayList<StorPool> filteredStorPools = filter.filter(
@@ -71,7 +81,9 @@ public class Autoplacer
                 availableStorPools,
                 rscDfnRef,
                 rscSize,
-                disklessType
+                disklessType,
+                canChangeMinIoSize,
+                minIoSize
             );
             errorReporter.logTrace(
                 "Autoplacer.Filter: Finished in %dms. %s StorPools remaining",
@@ -92,7 +104,9 @@ public class Autoplacer
             @Nullable Set<StorPoolWithScore> selectionWithScores = selector.select(
                 selectFilter,
                 rscDfnRef,
-                storPoolsWithScoreList
+                storPoolsWithScoreList,
+                canChangeMinIoSize,
+                minIoSize
             );
             errorReporter.logTrace(
                 "Autoplacer.Selection: Finished in %dms.",

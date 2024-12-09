@@ -31,6 +31,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -540,7 +541,9 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
             Collections.emptyList(),
             Collections.emptyMap(),
             NO_SORTED_SPS,
-            false // not that it matters for tiebreaker selection
+            false, // not that it matters for tiebreaker selection
+            true,
+            BlockSizeConsts.DFLT_IO_SIZE
         );
 
         return storPool -> {

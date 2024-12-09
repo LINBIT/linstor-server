@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -152,7 +153,9 @@ public class StorPoolFilter
         List<StorPool> availableStorPoolsRef,
         @Nullable ResourceDefinition rscDfnRef,
         long sizeInKib,
-        @Nullable Resource.Flags disklessTypeRef
+        @Nullable Resource.Flags disklessTypeRef,
+        final boolean canChangeMinIoSize,
+        final long minIoSize
     )
         throws AccessDeniedException
     {
@@ -165,6 +168,32 @@ public class StorPoolFilter
             selectFilter.skipAlreadyPlacedOnAllNodeCheck(),
             false
         );
+
+        List<StorPool> availableStorPools = availableStorPoolsRef;
+        if (!canChangeMinIoSize)
+        {
+            List<StorPool> filteredStorPools = new LinkedList<>();
+            for (StorPool entry : availableStorPools)
+            {
+                final long poolMinIoSize = entry.getMinIoSize(apiAccCtx);
+                if (poolMinIoSize <= minIoSize)
+                {
+                    filteredStorPools.add(entry);
+                }
+                else
+                {
+                    errorReporter.logTrace(
+                        "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as it has a larger " +
+                            "min-IO size (%d) than allowed (%d)",
+                        entry.getName().displayValue,
+                        entry.getNode().getName().displayValue,
+                        poolMinIoSize,
+                        minIoSize
+                    );
+                }
+            }
+            availableStorPools = filteredStorPools;
+        }
 
         ArrayList<ReadOnlyProps> alreadyDeployedNodesProps = new ArrayList<>();
         if (rscDfnRef != null && !skipAlreadyPlacedOnAllNodesCheck)
@@ -296,7 +325,7 @@ public class StorPoolFilter
 
         ArrayList<StorPool> filteredList = new ArrayList<>();
         Map<Node, Boolean> nodeMatchesMap = new HashMap<>();
-        for (StorPool sp : availableStorPoolsRef)
+        for (StorPool sp : availableStorPools)
         {
             boolean storPoolMatches = true;
 

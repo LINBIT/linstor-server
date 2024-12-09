@@ -2,12 +2,15 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -16,6 +19,8 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -35,6 +40,7 @@ import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.utils.MathUtils;
 import com.linbit.utils.Pair;
 import com.linbit.utils.PairNonNull;
 
@@ -221,6 +227,72 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtx, resourceDfn.getObjProt(), vlmDfnProps);
+    }
+
+    /**
+     * Returns the minimum I/O size currently set as DRBD option for {@value InternalApiConsts#KEY_DRBD_BLOCK_SIZE}.
+     *
+     * If the DRBD option property is absent or invalid, the default block size is returned
+     * (BlockSizeConsts.DFLT_IO_SIZE).
+     *
+     * @param accCtx Access context for accessing the volume definition's properties
+     * @return Value of the DRBD option for {@value InternalApiConsts#KEY_DRBD_BLOCK_SIZE}
+     * @throws AccessDeniedException If access to the volume definition's properties is denied
+     */
+    public long getMinIoSize(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        long minIoSize = BlockSizeConsts.DFLT_IO_SIZE;
+        final Props localProps = getProps(accCtx);
+        final String valueStr = localProps.getProp(
+            InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
+            ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+        );
+        try
+        {
+            minIoSize = Long.parseLong(valueStr);
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+        return minIoSize;
+    }
+
+    /**
+     * Sets the minimum I/O size for the {@value InternalApiConsts#KEY_DRBD_BLOCK_SIZE} DRBD option.
+     *
+     * The specified minIoSize value is adjusted to the range
+     * [BlockSizeConsts.MIN_IO_SIZE, BlockSizeConsts.MAX_IO_SIZE]
+     *
+     * @param minIoSize the block-size value to set
+     * @param accCtx Access context for accessing the volume definition's properties
+     * @throws AccessDeniedException If access to the volume definition's properties is denied
+     * @throws DatabaseException if a database operation fails
+     */
+    public void setMinIoSize(final long minIoSize, AccessContext accCtx)
+        throws AccessDeniedException, DatabaseException
+    {
+        final Props localProps = getProps(accCtx);
+        final long safeMinIoSize = MathUtils.bounds(
+            BlockSizeConsts.MIN_IO_SIZE,
+            minIoSize,
+            BlockSizeConsts.MAX_IO_SIZE
+        );
+        try
+        {
+            localProps.setProp(
+                InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
+                Long.toString(safeMinIoSize),
+                ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+            );
+        }
+        catch (InvalidValueException valueExc)
+        {
+            throw new ImplementationError(
+                "Invalid property value in " + VolumeDefinition.class.getSimpleName() + "::setMinIoSize",
+                valueExc
+            );
+        }
     }
 
     public ResourceDefinition getResourceDefinition()

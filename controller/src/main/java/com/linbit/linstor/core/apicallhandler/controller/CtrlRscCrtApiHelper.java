@@ -43,6 +43,8 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.repository.NodeRepository;
+import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -50,6 +52,7 @@ import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -59,6 +62,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -69,11 +73,14 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
+import com.linbit.linstor.utils.layer.LayerKindUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.AccessUtils;
+import com.linbit.utils.MathUtils;
 import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
@@ -133,6 +140,10 @@ public class CtrlRscCrtApiHelper
     private final LockGuardFactory lockGuardFactory;
     private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
     private final AllocationGranularityHelper allocationGranularityHelper;
+    private final NodeRepository nodeRepository;
+    private final CtrlRscStateHelper rscStateHelper;
+    private final CtrlMinIoSizeHelper minIoSizeHelper;
+    private final ResourceDefinitionRepository rscDfnRepo;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -159,7 +170,11 @@ public class CtrlRscCrtApiHelper
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef,
-        AllocationGranularityHelper allocationGranularityHelperRef
+        AllocationGranularityHelper allocationGranularityHelperRef,
+        NodeRepository nodeRepositoryRef,
+        CtrlRscStateHelper rscStateHelperRef,
+        CtrlMinIoSizeHelper minIoSizeHelperRef,
+        ResourceDefinitionRepository rscDfnRepoRef
     )
     {
         apiCtx = apiCtxRef;
@@ -186,6 +201,10 @@ public class CtrlRscCrtApiHelper
         lockGuardFactory = lockGuardFactoryRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
         allocationGranularityHelper = allocationGranularityHelperRef;
+        nodeRepository = nodeRepositoryRef;
+        rscStateHelper = rscStateHelperRef;
+        rscDfnRepo = rscDfnRepoRef;
+        minIoSizeHelper = minIoSizeHelperRef;
     }
 
     /**
@@ -212,6 +231,42 @@ public class CtrlRscCrtApiHelper
         @Nullable Resource.DiskfulBy diskfulByRef
     )
     {
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+
+        boolean canChangeMinIo = false;
+        try
+        {
+            if (rscDfn != null)
+            {
+                if (rscDfn.getResourceCount() >= 1)
+                {
+                    canChangeMinIo = rscStateHelper.canChangeMinIoSize(rscDfn);
+                }
+                else
+                {
+                    // No currently deployed resources
+                    canChangeMinIo = minIoSizeHelper.isAutoMinIoSize(rscDfn, apiCtx);
+                }
+            }
+            else
+            {
+                throw new ImplementationError(
+                    "createResourceDb with rscDfn == null in " +
+                    CtrlRscCrtApiHelper.class.getSimpleName()
+                );
+            }
+        }
+        catch (AccessDeniedException accExc)
+        {
+            // FIXME: ImplementationError rather?
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN,
+                    "Cannot access the resource definition of the resource to deploy"
+                )
+            );
+        }
+
         long adjustedFlags = flags;
         List<Flux<ApiCallRc>> autoFlux = new ArrayList<>();
         Resource rsc;
@@ -219,7 +274,6 @@ public class CtrlRscCrtApiHelper
 
         AccessContext peerCtx = peerAccCtx.get();
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
         if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
         {
             throw new ApiRcException(
@@ -480,6 +534,7 @@ public class CtrlRscCrtApiHelper
                 }
             }
 
+            rscMinIoSizeCheck(rsc, layerStack, responses, canChangeMinIo);
             resourceCreateCheck.checkCreatedResource(rsc);
         }
 
@@ -500,6 +555,134 @@ public class CtrlRscCrtApiHelper
         }
 
         return new PairNonNull<>(autoFlux, new ApiCallRcWith<>(responses, rsc));
+    }
+
+    private void rscMinIoSizeCheck(
+        final Resource rsc,
+        final List<DeviceLayerKind> layerStack,
+        final ApiCallRcImpl responses,
+        final boolean canChangeMinIo
+    )
+    {
+        final Iterator<VolumeDefinition> vlmDfnIter;
+        try
+        {
+            final ResourceDefinition rscDfn = rsc.getResourceDefinition();
+            vlmDfnIter = rscDfn.iterateVolumeDfn(apiCtx);
+
+            boolean hasSpecialLayers = LayerKindUtils.hasSpecialLayers(layerStack);
+            boolean haveChangedMinIo = false;
+            while (vlmDfnIter.hasNext())
+            {
+                final VolumeDefinition vlmDfn = vlmDfnIter.next();
+                final Props vlmDfnProps = vlmDfn.getProps(apiCtx);
+                final @Nullable String vlmBlockSizeStr = vlmDfnProps.getProp(
+                    InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
+                    ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                );
+                long vlmBlockSize = BlockSizeConsts.DFLT_IO_SIZE;
+                if (vlmBlockSizeStr != null)
+                {
+                    try
+                    {
+                        final long value = Long.parseLong(vlmBlockSizeStr);
+                        vlmBlockSize = MathUtils.bounds(
+                            BlockSizeConsts.MIN_IO_SIZE,
+                            value,
+                            BlockSizeConsts.MAX_IO_SIZE
+                        );
+                    }
+                    catch (NumberFormatException ignored)
+                    {
+                        errorReporter.logWarning(
+                            "Could not parse minIoSize '%s' of '%s', defaulting to %d", vlmBlockSizeStr,
+                            vlmDfn.toStringImpl(), vlmBlockSize
+                        );
+                    }
+                }
+
+                long poolBlockSize = hasSpecialLayers ?
+                    BlockSizeConsts.DFLT_SPECIAL_IO_SIZE : BlockSizeConsts.DFLT_IO_SIZE;
+
+                if (!hasSpecialLayers)
+                {
+                    Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, apiCtx, false);
+                    for (StorPool storPool : storPools)
+                    {
+                        final Props poolProps;
+                        try
+                        {
+                            poolProps = storPool.getProps(apiCtx);
+                        }
+                        catch (AccessDeniedException accExc)
+                        {
+                            throw new ApiRcException(
+                                ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_ACC_DENIED_STOR_POOL, accExc)
+                            );
+                        }
+                        final String poolBlockSizeStr = poolProps.getProp(
+                            StorageConstants.BLK_DEV_MIN_IO_SIZE,
+                            StorageConstants.NAMESPACE_INTERNAL
+                        );
+                        if (poolBlockSizeStr != null)
+                        {
+                            try
+                            {
+                                final long value = Long.parseLong(poolBlockSizeStr);
+                                poolBlockSize = MathUtils.bounds(
+                                    BlockSizeConsts.MIN_IO_SIZE,
+                                    value,
+                                    BlockSizeConsts.MAX_IO_SIZE
+                                );
+                            }
+                            catch (NumberFormatException ignored)
+                            {
+                                errorReporter.logWarning(
+                                    "Could not parse minIoSize '%s' of '%s', defaulting to %d",
+                                    poolBlockSizeStr, storPool.toStringImpl(), poolBlockSize
+                                );
+                            }
+                        }
+                    }
+                }
+
+                if (poolBlockSize > vlmBlockSize)
+                {
+                    if (canChangeMinIo)
+                    {
+                        // Set the changed minIoSize
+                        vlmDfn.setMinIoSize(poolBlockSize, apiCtx);
+                        haveChangedMinIo = true;
+                    }
+                    else
+                    {
+                        // Cannot deploy if the target storage pool of any of the volumes has a larger
+                        // minimum I/O size than what's currently set in the volume definition
+                        throw new ApiRcException(
+                            ApiCallRcImpl.entryBuilder(
+                                ApiConsts.FAIL_INVLD_BLK_SIZE,
+                                "Cannot create resource \"" + rscDfn.getName().displayValue + "\" on node \"" +
+                                    rsc.getNode().getName().displayValue + "\", " +
+                                    "storage pool has an incompatible minimum I/O size"
+                            ).build()
+                        );
+                    }
+                }
+            }
+            if (haveChangedMinIo)
+            {
+                // Restart all DRBD resources if the minimum I/O size was changed
+                rscDfn.requireDrbdRestart(apiCtx);
+            }
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ImplementationError(accExc);
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
+        }
     }
 
     static List<DeviceLayerKind> getLayerstackOrBuildDefault(

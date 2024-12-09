@@ -76,6 +76,15 @@ public class CtrlVlmCrtApiHelper
         sysCfgRepo = sysCfgRepoRef;
     }
 
+    public ApiCallRcWith<StorPool> resolveStorPool(
+        final Resource rsc,
+        final VolumeDefinition vlmDfn
+    )
+    {
+        final boolean disklessFlag = isDiskless(rsc);
+        return storPoolResolveHelper.resolveStorPool(rsc, vlmDfn, disklessFlag);
+    }
+
     public ApiCallRcWith<Volume> createVolumeResolvingStorPool(
         Resource rsc,
         VolumeDefinition vlmDfn,

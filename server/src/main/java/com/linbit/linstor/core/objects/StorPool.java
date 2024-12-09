@@ -18,6 +18,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.interfaces.NodeInfo;
 import com.linbit.linstor.interfaces.StorPoolInfo;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -29,6 +30,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
+import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -36,6 +38,7 @@ import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.utils.MathUtils;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 
@@ -181,6 +184,29 @@ public class StorPool extends AbsCoreObj<StorPool>
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtx, node.getObjProt(), storPoolDef.getObjProt(), props);
+    }
+
+    public long getMinIoSize(AccessContext accCtx) throws AccessDeniedException
+    {
+        final Props poolProps = getProps(accCtx);
+        final String poolBlockSizeStr = poolProps.getProp(
+            StorageConstants.BLK_DEV_MIN_IO_SIZE,
+            StorageConstants.NAMESPACE_INTERNAL
+        );
+        long poolBlockSize = BlockSizeConsts.DFLT_IO_SIZE;
+        try
+        {
+            final long value = Long.parseLong(poolBlockSizeStr);
+            poolBlockSize = MathUtils.bounds(
+                BlockSizeConsts.MIN_IO_SIZE,
+                value,
+                BlockSizeConsts.MAX_IO_SIZE
+            );
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+        return poolBlockSize;
     }
 
     @Override

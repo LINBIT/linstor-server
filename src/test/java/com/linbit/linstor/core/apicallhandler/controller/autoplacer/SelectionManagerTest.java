@@ -7,6 +7,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.GenericDbBase;
@@ -118,7 +119,9 @@ public class SelectionManagerTest extends GenericDbBase
             Collections.emptyList(),
             Collections.emptyMap(),
             storPoolWithScores,
-            false
+            false,
+            true,
+            BlockSizeConsts.DFLT_IO_SIZE
         );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
@@ -149,7 +152,9 @@ public class SelectionManagerTest extends GenericDbBase
             Collections.emptyList(),
             Collections.emptyMap(),
             storPoolWithScores,
-            false
+            false,
+            true,
+            BlockSizeConsts.DFLT_IO_SIZE
         );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
@@ -184,7 +189,9 @@ public class SelectionManagerTest extends GenericDbBase
             Collections.emptyList(),
             Collections.emptyMap(),
             storPoolWithScores,
-            false
+            false,
+            true,
+            BlockSizeConsts.DFLT_IO_SIZE
         );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
@@ -209,7 +216,9 @@ public class SelectionManagerTest extends GenericDbBase
             Collections.emptyList(),
             Collections.emptyMap(),
             storPoolWithScores,
-            false
+            false,
+            true,
+            BlockSizeConsts.DFLT_IO_SIZE
         );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
@@ -238,7 +247,9 @@ public class SelectionManagerTest extends GenericDbBase
             Collections.emptyList(),
             Collections.emptyMap(),
             storPoolWithScores,
-            false
+            false,
+            true,
+            BlockSizeConsts.DFLT_IO_SIZE
         );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
@@ -270,7 +281,9 @@ public class SelectionManagerTest extends GenericDbBase
             Collections.emptyList(),
             Collections.emptyMap(),
             storPoolWithScores,
-            false
+            false,
+            true,
+            BlockSizeConsts.DFLT_IO_SIZE
         );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
@@ -311,7 +324,9 @@ public class SelectionManagerTest extends GenericDbBase
             Collections.emptyList(),
             Collections.emptyMap(),
             storPoolWithScores,
-            false
+            false,
+            true,
+            BlockSizeConsts.DFLT_IO_SIZE
         );
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
         Assert.assertEquals(0, actual.size());

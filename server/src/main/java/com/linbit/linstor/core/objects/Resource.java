@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.PriorityProps.MultiResult;
 import com.linbit.linstor.annotation.Nullable;
@@ -17,6 +18,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -161,6 +163,30 @@ public class Resource extends AbsResource<Resource>
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtx, getObjProt(), props);
+    }
+
+    /**
+     * Sets a property for the device manager to restart this DRBD resource
+     *
+     * @param accCtx Access context for accessing the resource's properties
+     * @throws AccessDeniedException if access to the resource's properties is denied
+     * @throws DatabaseException if a database operation fails
+     */
+    public void requireDrbdRestart(final AccessContext accCtx)
+        throws AccessDeniedException, DatabaseException
+    {
+        final Props rscProps = getProps(accCtx);
+        try
+        {
+            rscProps.setProp(
+                InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD,
+                Boolean.TRUE.toString()
+            );
+        }
+        catch (InvalidValueException valueExc)
+        {
+            throw new ImplementationError(valueExc);
+        }
     }
 
     @Override
