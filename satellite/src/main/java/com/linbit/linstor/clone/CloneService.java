@@ -519,6 +519,23 @@ public class CloneService implements SystemService
             .collect(Collectors.toSet());
     }
 
+    public void notifyCloneStatus(ResourceName rscName, VolumeNumber vlmNr, boolean anyFailed)
+    {
+        volumeDiskStateEvent.get().triggerEvent(
+            ObjectIdentifier.volumeDefinition(rscName, vlmNr),
+            anyFailed ? "CloningFailed" : "CloningDone");
+
+        controllerPeerConnector.getControllerPeer().sendMessage(
+            ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_NOTIFY_CLONE_UPDATE)
+                .notifyCloneUpdate(
+                    rscName.getDisplayName(),
+                    vlmNr.value,
+                    !anyFailed)
+                .build(),
+            InternalApiConsts.API_NOTIFY_CLONE_UPDATE
+        );
+    }
+
     private void postClone(
         boolean successRef,
         CloneInfo cloneInfo
@@ -537,19 +554,7 @@ public class CloneService implements SystemService
             {
                 boolean anyFailed = volClones.stream().anyMatch(ci -> ci.getStatus() == CloneInfo.CloneStatus.FAILED);
 
-                volumeDiskStateEvent.get().triggerEvent(
-                    ObjectIdentifier.volumeDefinition(cloneInfo.getResourceName(), cloneInfo.getVlmNr()),
-                    anyFailed ? "CloningFailed" : "CloningDone");
-
-                controllerPeerConnector.getControllerPeer().sendMessage(
-                    ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_NOTIFY_CLONE_UPDATE)
-                        .notifyCloneUpdate(
-                            cloneInfo.getResourceName().getDisplayName(),
-                            cloneInfo.getVlmNr().value,
-                            !anyFailed)
-                        .build(),
-                    InternalApiConsts.API_NOTIFY_CLONE_UPDATE
-                );
+                notifyCloneStatus(cloneInfo.rscName, cloneInfo.getVlmNr(), anyFailed);
 
                 // remove from activeClones once CLONE_FINISHED is set.
             }

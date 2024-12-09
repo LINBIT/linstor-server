@@ -1126,6 +1126,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                     targetVlmData.getRscLayerObject().getResourceName(),
                     targetVlmData.getVlmNr(),
                     targetRscData.getResourceNameSuffix());
+                cloneService.notifyCloneStatus(
+                    targetVlmData.getRscLayerObject().getResourceName(), targetVlmData.getVlmNr(), true);
                 handleException(targetVlmData.getRscLayerObject().getAbsResource(), exc);
             }
         }
