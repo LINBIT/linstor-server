@@ -19,6 +19,7 @@ variables:
     value: "1"
     description: How often to repeat each run
   RUNNER_TAG_LIBVIRT: "libvirt"
+  DISTRIBUTIONS: ubuntu-bionic,ubuntu-focal,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,debian-bookworm
 
 cache:
   paths:
@@ -88,7 +89,24 @@ workflow:
       -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER
       -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD
       -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL
-      -d ubuntu-bionic,ubuntu-focal,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,debian-bookworm
+      -d $DISTRIBUTIONS
+    - |
+      IFS="," read -ra ALL_DISTS <<< ${DISTRIBUTIONS}
+      echo "distributions:"
+      for dist in "${ALL_DISTS[@]}"; do
+        echo "  ${dist}:"
+        if [[ ${dist} == rhel* ]] ; then
+          for linstor_comp in linstor-controller linstor-satellite linstor-common; do
+            echo "    ${linstor_comp}: \"https://nexus.at.linbit.com/repository/ci-yum/${dist:0:5}/x86_64/${linstor_comp}-${LINSTOR_VERSION}-1.noarch.rpm\""
+          done
+        elif [[ ${dist} == ubuntu* || ${dist} == debian* ]] ; then
+          for linstor_comp in linstor-controller linstor-satellite linstor-common; do
+            echo "    ${linstor_comp}: \"https://nexus.at.linbit.com/repository/${dist}/pool/l/${linstor_comp}/${linstor_comp}_${LINSTOR_VERSION}-1_all.deb\""
+          done
+        else
+          echo "unknown distribution: ${dist}"
+        fi
+      done
     - rm linstor-server-$LINSTOR_VERSION.tar.gz
 
 .common_e2e:
@@ -194,7 +212,7 @@ deploy-nexus-master:
     - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
     - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
     - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
-    - lbbuildctl build linstor-server --arch amd64 --ci -v "$LINSTOR_VERSION" -l -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL -d ubuntu-bionic,ubuntu-focal,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0
+    - lbbuildctl build linstor-server --arch amd64 --ci -v "$LINSTOR_VERSION" -l -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL -d $DISTRIBUTIONS
 
 deploy-nexus:
   stage: deploy
