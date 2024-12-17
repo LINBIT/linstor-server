@@ -31,6 +31,7 @@ import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
+import com.linbit.linstor.layer.storage.StorageLayerSizeCalculator;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
@@ -42,6 +43,8 @@ import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -243,6 +246,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         throws DatabaseException, AccessDeniedException, StorageException
     {
         boolean setDevicePath;
+        String lvcreateOptions;
         if (vlmDataRef.getVolume() instanceof Volume)
         {
             LvmData<Resource> vlmData = (LvmData<Resource>) vlmDataRef;
@@ -254,11 +258,15 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
              * access it
              */
             setDevicePath &= !isCloning(vlmData);
+
+            lvcreateOptions = getLvcreateOptions(vlmData);
         }
         else
         {
             vlmDataRef.setIdentifier(asSnapLvIdentifier((LvmData<Snapshot>) vlmDataRef));
             setDevicePath = true; // TODO: not sure about this default...
+
+            lvcreateOptions = getLvcreateSnapshotOptions(vlmDataRef);
         }
 
         if (info == null)
@@ -269,6 +277,11 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             vlmDataRef.setAllocatedSize(-1);
             // vlmData.setUsableSize(-1);
             vlmDataRef.setAttributes(null);
+
+            List<String> additionalOptions = MkfsUtils.shellSplit(lvcreateOptions);
+            String[] additionalOptionsArr = new String[additionalOptions.size()];
+            additionalOptions.toArray(additionalOptionsArr);
+            updateStripesPropIfNeeded(vlmDataRef, findStripesInAdditionalArgs(additionalOptionsArr));
         }
         else
         {
@@ -303,6 +316,32 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             }
             // deactivating a volume MUST NOT happen within the prepare step
             // as other layers might still hold the device open
+
+            updateStripesPropIfNeeded(vlmDataRef, info.stripes);
+        }
+    }
+
+    private void updateStripesPropIfNeeded(LvmData<?> vlmDataRef, @Nullable Integer stripesRef)
+        throws AccessDeniedException, DatabaseException
+    {
+        if (stripesRef != null && stripesRef > 1)
+        {
+            // only update if non-default
+            Props props = StorageLayerSizeCalculator.getProps(storDriverAccCtx, vlmDataRef);
+            String propKey = StorageLayerSizeCalculator.getStripesPropKey(vlmDataRef);
+            @Nullable String propValue = props.getProp(propKey);
+            String currentStripesStr = Integer.toString(stripesRef);
+            if (propValue == null || !propValue.equals(currentStripesStr))
+            {
+                try
+                {
+                    props.setProp(propKey, currentStripesStr);
+                }
+                catch (InvalidKeyException | InvalidValueException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+            }
         }
     }
 
@@ -313,7 +352,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
 
     @Override
     protected void createLvImpl(LvmData<Resource> vlmData)
-        throws StorageException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateOptions(vlmData));
         String[] additionalOptionsArr = new String[additionalOptions.size()];
@@ -347,6 +386,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             );
         }
         LvmUtils.recacheNext();
+
+        updateStripesPropIfNeeded(vlmData, findStripesInAdditionalArgs(additionalOptionsArr));
     }
 
     protected String getLvCreateType(LvmData<Resource> vlmDataRef)
@@ -822,7 +863,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected void createSnapshotForCloneImpl(
         LvmData<Resource> vlmData,
         String cloneRscName)
-        throws StorageException, AccessDeniedException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         final String srcId = asLvIdentifier(vlmData);
         final String srcFullSnapshotName = getCloneSnapshotNameFull(vlmData, cloneRscName, "_");
@@ -908,6 +949,61 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
+    protected int getExtentSizeMulFactor(VlmProviderObject<?> vlmDataRef)
+    {
+        return getStripeCount(vlmDataRef);
+    }
+
+    private int getStripeCount(VlmProviderObject<?> vlmDataRef)
+    {
+        @Nullable Integer stripeCount = null;
+        @SuppressWarnings("unchecked")
+        LvmData<Resource> lvmData = (LvmData<Resource>) vlmDataRef;
+        if (vlmDataRef.exists())
+        {
+            @Nullable LvsInfo lvsInfo = infoListCache.get(getFullQualifiedIdentifier(lvmData));
+            if (lvsInfo != null)
+            {
+                stripeCount = lvsInfo.stripes;
+            }
+        }
+        if (stripeCount == null)
+        {
+            List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateOptions(lvmData));
+            String[] additionalOptionsArr = new String[additionalOptions.size()];
+            additionalOptions.toArray(additionalOptionsArr);
+            stripeCount = findStripesInAdditionalArgs(additionalOptionsArr);
+        }
+        if (stripeCount == null)
+        {
+            stripeCount = DFLT_STRIPES;
+        }
+        return stripeCount;
+    }
+
+    private @Nullable Integer findStripesInAdditionalArgs(String[] additionalOptionsArr)
+    {
+        @Nullable Integer stripeCount = null;
+        try
+        {
+            for (int idx = 0; idx < additionalOptionsArr.length; idx++)
+            {
+                String arg = additionalOptionsArr[idx];
+                if (arg.equals("-i") || arg.equals("--stripes"))
+                {
+                    stripeCount = Integer.parseInt(additionalOptionsArr[idx + 1]);
+                    break;
+                }
+            }
+        }
+        catch (NumberFormatException nfe)
+        {
+            errorReporter.reportError(nfe);
+        }
+        return stripeCount;
+    }
+
+    @Override
     public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
         throws StorageException, AccessDeniedException
     {
@@ -916,7 +1012,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
 
     @Override
     public void openForClone(VlmProviderObject<?> vlm, @Nullable String cloneName, boolean readOnly)
-        throws StorageException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         LvmData<Resource> srcData = (LvmData<Resource>) vlm;
         if (cloneName != null)

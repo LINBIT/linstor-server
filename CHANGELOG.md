@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - metrics: don't create error-report on closing connection nodes
+- LVM: Correctly calculate extents with more than one stripes
 
 ## [1.30.2] - 2024-12-18
 

@@ -260,8 +260,11 @@ public interface DeviceLayer
      *     null, <code>vlm</code> is the target volume.
      *
      * @throws StorageException
+     * @throws DatabaseException
+     * @throws AccessDeniedException
      */
-    default void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
+    default void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef)
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Not supported");
     }

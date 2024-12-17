@@ -39,6 +39,7 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.layer.storage.lvm.LvmProvider;
 import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.layer.storage.utils.DmStatCommands;
 import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
@@ -83,6 +84,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     implements DeviceProvider
 {
     private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 5000;
+    protected static final int DFLT_STRIPES = 1;
     public static final long SIZE_OF_NOT_FOUND_STOR_POOL = ApiConsts.VAL_STOR_POOL_SPACE_NOT_FOUND;
 
     protected final ErrorReporter errorReporter;
@@ -542,7 +544,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void createSnapshotForClone(LAYER_DATA vlmData, String cloneRscName)
-        throws AccessDeniedException, StorageException
+        throws AccessDeniedException, StorageException, DatabaseException
     {
         createSnapshotForCloneImpl(vlmData, cloneRscName);
         errorReporter.logInfo("Lv snapshot created %s/%s", vlmData.getIdentifier(), cloneRscName);
@@ -1634,9 +1636,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             extentSizeFromSp = getExtentSize((LAYER_DATA) vlmData);
             extentSizeFromSpCache.put(sp, extentSizeFromSp);
         }
+        int extentSizeMulFactor = getExtentSizeMulFactor(vlmData);
         long extentSizeFromVlmDfn = getExtentSizeFromVlmDfn(vlmData);
 
-        long extentSize = Math.max(extentSizeFromVlmDfn, extentSizeFromSp);
+        long extentSize = Math.max(extentSizeFromVlmDfn, extentSizeFromSp * extentSizeMulFactor);
 
         long volumeSize = vlmData.getUsableSize();
 
@@ -1664,6 +1667,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         // update it again with the actual usable size when we are finished
         setExpectedUsableSize((LAYER_DATA) vlmData, volumeSize);
         setUsableSize((LAYER_DATA) vlmData, volumeSize);
+    }
+
+    /**
+     * Returns the factor by which the extent size (which is StorPool based) should be multiplied. This is necessary
+     * for striped LVM for example. Returns {@value AbsStorageProvider#DFLT_STRIPES} by default (unless overridden)
+     *
+     * @param vlmDataRef
+     *      unused in the default implementation but might be used in an extending class (like
+     *      {@link LvmProvider#getExtentSizeMulFactor(VlmProviderObject)})
+     */
+    protected int getExtentSizeMulFactor(VlmProviderObject<?> vlmDataRef)
+    {
+        return DFLT_STRIPES; // by default all volumes have 1 stripes (unless this method is overridden)
     }
 
     @SuppressWarnings("unchecked")
@@ -1803,7 +1819,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         throws StorageException, AccessDeniedException, DatabaseException;
 
     protected void createSnapshotForCloneImpl(LAYER_DATA vlmData, String cloneRscName)
-        throws StorageException, AccessDeniedException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Clone volume is not supported by " + getClass().getSimpleName());
     }

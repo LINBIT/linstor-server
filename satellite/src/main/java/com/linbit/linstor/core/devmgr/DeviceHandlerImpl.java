@@ -876,9 +876,9 @@ public class DeviceHandlerImpl implements DeviceHandler
             {
                 handleException(rsc, exc);
             }
-            catch (AccessDeniedException accExc)
+            catch (AccessDeniedException | DatabaseException exc)
             {
-                throw new ImplementationError(accExc);
+                throw new ImplementationError(exc);
             }
         }
     }
@@ -1071,7 +1071,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     private void startClone(Map<VlmProviderObject<Resource>, VlmProviderObject<Resource>> devicesToCloneRef)
-        throws AccessDeniedException
+        throws AccessDeniedException, DatabaseException
     {
         for (var cloneEntry : devicesToCloneRef.entrySet())
         {
@@ -1718,7 +1718,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         VlmProviderObject<?> vlmData,
         @Nullable String targetRscNameRef
     )
-        throws StorageException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         final AbsRscLayerObject<?> rscData = vlmData.getRscLayerObject();
         final DeviceLayer curLayer = layerFactory.getDeviceLayer(rscData.getLayerKind());

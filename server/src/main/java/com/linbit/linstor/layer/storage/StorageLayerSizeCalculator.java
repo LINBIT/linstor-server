@@ -2,16 +2,24 @@ package com.linbit.linstor.layer.storage;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.objects.AbsVolume;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.AbsLayerSizeCalculator;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
+import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -57,6 +65,8 @@ public class StorageLayerSizeCalculator extends AbsLayerSizeCalculator
              * We need to take the higher allocation granularity here - by VALUE not by PRIORIRTY
              */
             long spAllocGran = getAllocationGranularity(sp.getProps(sysCtx));
+            int stripes = getStripes(vlmDataRef);
+            spAllocGran *= stripes;
             long vlmDfnAllocGran = getAllocationGranularity(
                 vlmDataRef.getVolume().getVolumeDefinition().getProps(sysCtx)
             );
@@ -98,6 +108,29 @@ public class StorageLayerSizeCalculator extends AbsLayerSizeCalculator
         }
     }
 
+    private int getStripes(VlmProviderObject<?> vlmDataRef) throws AccessDeniedException
+    {
+        int stripes = 1; // by default
+        if (vlmDataRef instanceof LvmData)
+        {
+            LvmData<?> lvmData = (LvmData<?>) vlmDataRef;
+            @Nullable String stripesStr = getProps(sysCtx, lvmData)
+                .getProp(getStripesPropKey(lvmData));
+            if (stripesStr != null)
+            {
+                try
+                {
+                    stripes = Integer.parseInt(stripesStr);
+                }
+                catch (NumberFormatException nfe)
+                {
+                    errorReporter.reportError(nfe);
+                }
+            }
+        }
+        return stripes;
+    }
+
     private long getAllocationGranularity(ReadOnlyProps propsRef)
     {
         String allocGran = propsRef.getProp(
@@ -114,5 +147,34 @@ public class StorageLayerSizeCalculator extends AbsLayerSizeCalculator
             ret = Long.parseLong(allocGran);
         }
         return ret;
+    }
+
+    public static String getStripesPropKey(LvmData<?> vlmDataRef)
+    {
+        String suffix = vlmDataRef.getRscLayerObject().getResourceNameSuffix();
+        if (suffix.isBlank())
+        {
+            suffix = ".data";
+        }
+        return ApiConsts.NAMESPC_STLT + "/" +
+            InternalApiConsts.NAMESPC_STORAGE + "/" +
+            InternalApiConsts.NAMESPC_LVM + "/" +
+            InternalApiConsts.KEY_LVM_STRIPES + "/" +
+            suffix;
+    }
+
+    public static Props getProps(AccessContext accCtxRef, LvmData<?> vlmDataRef) throws AccessDeniedException
+    {
+        AbsVolume<?> absVlm = vlmDataRef.getVolume();
+        Props props;
+        if (absVlm instanceof Volume)
+        {
+            props = ((Volume) absVlm).getProps(accCtxRef);
+        }
+        else
+        {
+            props = ((SnapshotVolume) absVlm).getSnapVlmProps(accCtxRef);
+        }
+        return props;
     }
 }

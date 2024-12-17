@@ -439,7 +439,8 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
+    public void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef)
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         LuksVlmData<Resource> luksVlmData = (LuksVlmData<Resource>) vlm;
         String vlmIdentifier = getIdentifier(luksVlmData);

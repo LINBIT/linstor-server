@@ -20,6 +20,7 @@ import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_MET
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_PATH;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_POOL_LV;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_SIZE;
+import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_STRIPES;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_VG;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.VGS_COL_VG_NAME;
 
@@ -92,6 +93,7 @@ public class LvmUtils
         public final String attributes;
         public final String metaDataPercentStr;
         public final long chunkSizeInKib;
+        public final int stripes;
 
         LvsInfo(
             String volumeGroupRef,
@@ -102,7 +104,8 @@ public class LvmUtils
             float dataPercentRef,
             String attributesRef,
             String metaDataPercentStrRef,
-            long chunkSizeInKibRef
+            long chunkSizeInKibRef,
+            int stripesRef
         )
         {
             volumeGroup = volumeGroupRef;
@@ -114,6 +117,7 @@ public class LvmUtils
             attributes = attributesRef;
             metaDataPercentStr = metaDataPercentStrRef;
             chunkSizeInKib = chunkSizeInKibRef;
+            stripes = stripesRef;
         }
     }
 
@@ -447,6 +451,25 @@ public class LvmUtils
                     );
                 }
 
+                String stripesStr = data[LVS_COL_STRIPES];
+                int stripes;
+                try
+                {
+                    stripes = StorageUtils.parseDecimalAsInt(stripesStr);
+                }
+                catch (NumberFormatException nfExc)
+                {
+                    throw new StorageException(
+                        "Unable to parse stripes",
+                        "Number to parse: '" + stripesStr + "'",
+                        null,
+                        null,
+                        "External command used to query logical volume info: " +
+                            StringUtils.joinShellQuote(output.executedCommand),
+                        nfExc
+                    );
+                }
+
                 final LvsInfo state = new LvsInfo(
                     vgStr,
                     thinPoolStr,
@@ -456,7 +479,8 @@ public class LvmUtils
                     dataPercent,
                     attributes,
                     metaDataPercentStr,
-                    chunkSizeInKib
+                    chunkSizeInKib,
+                    stripes
                 );
                 ret.computeIfAbsent(vgStr, ignored -> new HashMap<>())
                     .put(identifier, state);

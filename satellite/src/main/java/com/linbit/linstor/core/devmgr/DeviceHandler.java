@@ -97,7 +97,7 @@ public interface DeviceHandler
     }
 
     void openForClone(VlmProviderObject<?> sourceVlmData, @Nullable String targetRscNameRef)
-        throws StorageException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     void closeAfterClone(VlmProviderObject<?> vlmDataRef, @Nullable String targetRscNameRef) throws StorageException;
 

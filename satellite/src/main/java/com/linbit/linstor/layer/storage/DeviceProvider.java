@@ -106,7 +106,7 @@ public interface DeviceProvider
     }
 
     default void openForClone(VlmProviderObject<?> vlm, @Nullable String clonename, boolean readOnly)
-        throws StorageException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("openForClone not suppported.");
     }

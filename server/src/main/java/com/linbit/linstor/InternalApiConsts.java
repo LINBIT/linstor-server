@@ -253,7 +253,12 @@ public class InternalApiConsts
     public static final String KEY_EBS_COOLDOWN_UNTIL_TIMESTAMP = "CooldownUntilTimestamp";
 
     // storage
+    public static final String NAMESPC_STORAGE = "Storage";
     public static final String ALLOCATION_GRANULARITY = "AllocationGranularity";
+
+    // lvm
+    public static final String NAMESPC_LVM = "Lvm";
+    public static final String KEY_LVM_STRIPES = "Stripes";
 
     // temporary context key
     public static final String ONLY_WARN_IF_OFFLINE = "onlyWarnIfOffline";
