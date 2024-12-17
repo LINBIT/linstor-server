@@ -1181,6 +1181,30 @@ public class CtrlRscDfnApiCallHandler
             Collectors.toMap(storPool -> storPool.getNode().getName(), storPool -> storPool));
     }
 
+    private void failIfDrbdMetadataConversion(Resource srcRsc, Resource cloneRsc) throws AccessDeniedException
+    {
+        Set<AbsRscLayerObject<Resource>> srcDrbdRscSet = LayerRscUtils
+            .getRscDataByLayer(srcRsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
+        Set<AbsRscLayerObject<Resource>> cloneDrbdRscSet = LayerRscUtils
+            .getRscDataByLayer(cloneRsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
+        var itSrcSet = srcDrbdRscSet.iterator();
+        var itCloneSet = cloneDrbdRscSet.iterator();
+        if (itSrcSet.hasNext() && itCloneSet.hasNext())
+        {
+            var srcDrbdLayer = itSrcSet.next();
+            var cloneDrbdLayer = itCloneSet.next();
+            if (srcDrbdLayer.getChildren().size() != cloneDrbdLayer.getChildren().size())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_LAYER_STACK,
+                        "Internal <> external metadata conversion not supported yet.",
+                        true
+                    ));
+            }
+        }
+    }
+
     public Flux<ApiCallRc> cloneRscDfnInTransaction(
         String srcRscName,
         String clonedRscName,
@@ -1293,6 +1317,8 @@ public class CtrlRscDfnApiCallHandler
                         ctrlPropsHelper.getProps(cloneVlm)
                     );
                 }
+
+                failIfDrbdMetadataConversion(rsc, newRsc);
 
                 Set<AbsRscLayerObject<Resource>> rscLayerSet = LayerRscUtils.getRscDataByLayer(
                     newRsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
