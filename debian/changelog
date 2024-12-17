@@ -1,3 +1,49 @@
+linstor-server (1.30.0-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Backup,ship,restore,schedule enable: Make target resource group configurable
+  * Autoplacer: Fix possible x-repl-on-diff violation
+  * Db: Add --to-version option to "linstor-config run-migration"
+  * LinStorObject: Renamed enum-values to be more uniform with other usages
+  * Props: Split Snap- from Resource-properties
+  * Backup,L2L: Added BackupShipping/L2LSkipWaitForStart
+  * EBS_INIT: Changed fetching instance-id
+  * GitLab-CI: Generate nexus links
+
+  [ Rene Peinthor ]
+  * rsc-con: Fix query rsc-con if source/target reversed
+  * cryptsetup: luksChangeKey is now also memory limited to 256MB
+  * merge v1.29.2 changelog and version updates
+  * gradle: update etcd-java to 0.0.24
+  * gitlab: fix including a compile dep as runtime dep
+  * clone: open/close interface, find common clone-strat
+  * clone: support cloning into different layer stacks
+  * StringUtils: assert if joinShellQuote contains null
+  * clone: Add resource-group param and clone to other pool
+  * clone: copy rscdfn peer slots
+  * clone: fix different storage pool same storage pool type
+  * clone: notify controller about failed clone mode find
+  * clone: fail early on int <> ext metadata conversion clone
+
+  [ Moritz Wanzenböck ]
+  * rest/reqhelper: set request context in doFlux
+  * rest/reqhelper: set request context in doInScope
+  * rest/reqhelper: add timing metrics to rest calls
+  * tcpconnector: collect apicall duration metrics
+  * do not calculate timezone offset by hand
+  * changelog: add metrics and fixed timezone unit tests
+  * docker: deal with large k8s db backups
+  * SOS: dmesg: show relative timestamps and human timestamps
+  * SOS: lvm.conf: use lvmconfig --type full command
+  * SOS: lsblk: use -O, also formatted as json
+  * SOS: include /proc/sys/kernel/tainted
+  * SOS: do not truncate stderr on timeout
+
+  [ Robert Altnoeder ]
+  * Fix for failed tracking of the diskless client state
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 17 Dec 2024 09:51:11 +0000
+
 linstor-server (1.29.2-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]

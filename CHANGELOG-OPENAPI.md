@@ -2,7 +2,7 @@
 
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
-## [Unreleased]
+## [1.24.0]
 
 ### Added
   - Added dst_rsc_grp and force_mv_rsc_grp to BackupRestore, BackupShip and BackupSchedule schemas

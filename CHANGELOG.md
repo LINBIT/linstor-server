@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.30.0] - 2024-12-17
+
 ### Added
 
 - Added options dst_rsc_grp and force_rsc_grp to BackupShip, BackupRestore and BackupSchedule
