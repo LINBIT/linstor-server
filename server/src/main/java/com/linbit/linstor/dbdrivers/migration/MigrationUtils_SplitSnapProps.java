@@ -34,7 +34,9 @@ public class MigrationUtils_SplitSnapProps
         SNAP("/SNAPSHOTS/", "/SNAPS_RSC/", "/SNAPS/"),
         SNAP_DFN("/SNAPSHOTDEFINITIONS/", "/SNAP_DFNS_RSC_DFN/", "/SNAP_DFNS/"),
         SNAP_VLM("/SNAPSHOTS/", "/SNAP_VLMS_VLM/", "/SNAP_VLMS/"),
-        SNAP_VLM_DFN("/SNAPSHOTVOLUMEDEFINITIONS/", "/SNAP_VLM_DFNS_VLM_DFN/", "/SNAP_VLM_DFNS/");
+        SNAP_VLM_DFN("/SNAPSHOTVOLUMEDEFINITIONS/", "/SNAP_VLM_DFNS_VLM_DFN/", "/SNAP_VLM_DFNS/"),
+
+        KVS("/KEYVALUESTORES/", "/KVS/", "/KVS/");
 
         private final String origPrefix;
         private final String newDfltPrefix;

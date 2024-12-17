@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Migration: Fixed splitSnapProps bug not properly handling KVS properties
+
 ## [1.30.0] - 2024-12-17
 
 ### Added
