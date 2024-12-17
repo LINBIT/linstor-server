@@ -20,14 +20,20 @@ Source0: http://pkg.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.
 
 %if 0%{?suse_version} >= 1500
 BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python
-%define GRADLE_J11_PATH -Pjava11=lib64
+%define GRADLE_JAVA_HOME -PjavaHome=/usr/lib64/jvm/jre-11
 %else
-%define GRADLE_J11_PATH -Pjava11=lib
-    %if 0%{?rhel} > 7
+%if 0%{?rhel} > 9
+BuildRequires: java-21-openjdk-headless java-21-openjdk-devel python3
+%define GRADLE_JAVA_HOME -PjavaHome=/usr/lib/jvm/jre-21
+%else
+%if 0%{?rhel} > 7
 BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python3
-    %else
+%define GRADLE_JAVA_HOME -PjavaHome=/usr/lib/jvm/jre-11
+%else
 BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python2
-    %endif
+%define GRADLE_JAVA_HOME -PjavaHome=/usr/lib/jvm/jre-11
+%endif
+%endif
 %endif
 
 %description
@@ -40,7 +46,7 @@ TODO.
 
 %build
 rm -rf ./build/install
-gradle %{GRADLE_TASKS} %{GRADLE_FLAGS} %{GRADLE_J11_PATH}
+gradle %{GRADLE_TASKS} %{GRADLE_FLAGS} %{?GRADLE_JAVA_HOME}
 for p in server satellite controller jclcrypto; do echo "%{LS_PREFIX}/.$p" >> "%{_builddir}/%{NAME_VERS}/$p/jar.deps"; done
 
 %install
@@ -74,7 +80,11 @@ cp %{_builddir}/%{NAME_VERS}/docs/linstor.toml-example %{buildroot}/%{_sysconfdi
 ### common
 %package common
 Summary: Common files shared between controller and satellite
+%if 0%{?rhel} > 9
+Requires: java-21-openjdk-headless
+%else
 Requires: jre-11-headless
+%endif
 ## This should really be included in the jre-headless dependencies, but it isn't.
 Requires: tzdata-java
 
@@ -94,7 +104,11 @@ Linstor shared components between linstor-controller and linstor-satellite
 %package controller
 Summary: Linstor controller specific files
 Requires: linstor-common = %{version}
+%if 0%{?rhel} > 9
+Requires(post): java-21-openjdk-headless
+%else
 Requires(post): jre-11-headless
+%endif
 
 %description controller
 Linstor controller manages linstor satellites and persistant data storage.

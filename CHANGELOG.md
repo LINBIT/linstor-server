@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- gradle: support different java home in wrapper scripts
+
 ## [1.30.2] - 2024-12-18
 
 ### Fixed

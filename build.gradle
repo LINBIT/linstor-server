@@ -14,7 +14,7 @@ def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc
 def logbackConfig = "logback.xml"
 def jvmOpts = ["-Xms32M"]
 def cronVersion = '9.1.6'
-def java11LibDir = project(':server').hasProperty("java11") ? project(':server').property("java11") : null
+def javaHome = providers.gradleProperty("javaHome")
 
 // workaround to force gradle to download not just the dependencies for --offline use
 // but also the plugins
@@ -256,8 +256,8 @@ project(':satellite') {
         defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
-            if (project(':server').hasProperty("java11")) {
-                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=/usr/${java11LibDir}/jvm/jre-11/bin/java")
+            if (javaHome.present) {
+                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=${javaHome.get()}/bin/java")
             }
         }
     }
@@ -365,8 +365,8 @@ project(':controller') {
         defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
-            if (project(':server').hasProperty("java11")) {
-                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=/usr/${java11LibDir}/jvm/jre-11/bin/java")
+            if (javaHome.present) {
+                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=${javaHome.get()}/bin/java")
             }
         }
     }
@@ -379,8 +379,8 @@ project(':controller') {
         defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
-            if (project(':server').hasProperty("java11")) {
-                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=/usr/${java11LibDir}/jvm/jre-11/bin/java")
+            if (javaHome.present) {
+                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=${javaHome.get()}/bin/java")
             }
         }
     }
@@ -393,8 +393,8 @@ project(':controller') {
         defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
-            if (project(':server').hasProperty("java11")) {
-                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=/usr/${java11LibDir}/jvm/jre-11/bin/java")
+            if (javaHome.present) {
+                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=${javaHome.get()}/bin/java")
             }
         }
     }
