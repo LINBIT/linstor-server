@@ -23,6 +23,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -166,6 +167,14 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             else
             {
                 highestKey = targetVersionRef;
+
+                @Nullable BaseK8sCrdMigration targetMigration = migrations.get(highestKey);
+                if (targetMigration == null)
+                {
+                    throw new InitializationException(
+                        "Target migration version '" + targetVersionRef + "' does not exist"
+                    );
+                }
             }
 
             while (dbVersion <= highestKey)

@@ -20,6 +20,7 @@ import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
 import com.linbit.linstor.transaction.ControllerETCDTransactionMgrGenerator;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -141,6 +142,14 @@ public class DbEtcd implements ControllerETCDDatabase
             else
             {
                 highestKey = targetVersionRef;
+
+                @Nullable BaseEtcdMigration targetMigration = migrations.get(highestKey);
+                if (targetMigration == null)
+                {
+                    throw new InitializationException(
+                        "Target migration version '" + targetVersionRef + "' does not exist"
+                    );
+                }
             }
 
             while (dbVersion <= highestKey)

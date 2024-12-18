@@ -78,11 +78,34 @@ public class MigrationUtils_SplitSnapProps
         add(InstanceType.SNAP_DFN, "^BackupShipping/.*");
         add(InstanceType.SNAP_DFN, "^Schedule/BackupShippedBySchedule$");
 
-        add(InstanceType.SNAP, "^Backup/SourceSnapDfnUUID$");
+        add(InstanceType.SNAP, "^Backup/SourceSnapDfnUUID$"); // this entry is wrong, but should not hurt
         add(InstanceType.SNAP, "^BackupShipping/.*");
-        add(InstanceType.SNAP, "^Shipping/.*");
-        add(InstanceType.SNAP, "^SnapshotShippingNamePrev$");
-        add(InstanceType.SNAP, "^Satellite/EBS/EbsSnapId.*");
+        add(InstanceType.SNAP, "^Shipping/.*"); // this entry is wrong, but should not hurt
+        add(InstanceType.SNAP, "^SnapshotShippingNamePrev$"); // this entry is wrong, but should not hurt
+        add(InstanceType.SNAP, "^Satellite/EBS/EbsSnapId.*"); // this entry is wrong, but should not hurt
+
+        // missing entries that were fixed in Migration*SplitSnapProps_FixSequenceNumber
+        /*
+         * SnapshotDefinition:
+         *
+         * "^SequenceNumber$"
+         * "^Backup/SourceSnapDfnUUID$" // was wrongfully looked for in snap-props instead of snapDfn props
+         * "^SnapshotShippingNamePrev$" // was wrongfully looked for in snap-props instead of snapDfn props
+         * "^Shipping/.*" // was wrongfully looked for in snap-props instead of snapDfn props
+         * "^Schedule/BackupStartTimestamp$"
+         */
+
+        /*
+         * SnapshotVolumeDefinition
+         *
+         * "^Shipping/.*"
+         */
+
+        /*
+         * SnapshotVolume
+         *
+         * "^Satellite/EBS/EbsSnapId.*" // was wrongfully looked for in snap-props instead of snapVlm props
+         */
     }
 
     private static void add(InstanceType instanceTypeRef, String regexRef)
