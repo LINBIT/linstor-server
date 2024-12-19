@@ -19,7 +19,7 @@ variables:
     value: "1"
     description: How often to repeat each run
   RUNNER_TAG_LIBVIRT: "libvirt"
-  DISTRIBUTIONS: ubuntu-bionic,ubuntu-focal,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,debian-bookworm
+  DISTRIBUTIONS: ubuntu-focal,ubuntu-jammy,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,debian-bookworm
 
 cache:
   paths:
