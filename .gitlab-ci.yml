@@ -94,14 +94,15 @@ workflow:
       IFS="," read -ra ALL_DISTS <<< ${DISTRIBUTIONS}
       echo "distributions:"
       for dist in "${ALL_DISTS[@]}"; do
-        echo "  ${dist}:"
         if [[ ${dist} == rhel* ]] ; then
+          echo "  ${dist:0:5}:"
           for linstor_comp in linstor-controller linstor-satellite linstor-common; do
-            echo "    ${linstor_comp}: \"https://nexus.at.linbit.com/repository/ci-yum/${dist:0:5}/x86_64/${linstor_comp}-${LINSTOR_VERSION}-1.noarch.rpm\""
+            echo "    ${linstor_comp/-/_}: \"https://nexus.at.linbit.com/repository/ci-yum/${dist:0:5}/x86_64/${linstor_comp}-${LINSTOR_VERSION}-1.noarch.rpm\""
           done
         elif [[ ${dist} == ubuntu* || ${dist} == debian* ]] ; then
+        echo "  ${dist/-/_}:"
           for linstor_comp in linstor-controller linstor-satellite linstor-common; do
-            echo "    ${linstor_comp}: \"https://nexus.at.linbit.com/repository/${dist}/pool/l/${linstor_comp}/${linstor_comp}_${LINSTOR_VERSION}-1_all.deb\""
+            echo "    ${linstor_comp/-/_}: \"https://nexus.at.linbit.com/repository/${dist}/pool/l/${linstor_comp}/${linstor_comp}_${LINSTOR_VERSION}-1_all.deb\""
           done
         else
           echo "unknown distribution: ${dist}"
