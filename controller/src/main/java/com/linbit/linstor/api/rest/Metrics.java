@@ -11,6 +11,8 @@ import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.PeerClosingConnectionException;
+import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.prometheus.PrometheusBuilder;
 
 import javax.inject.Inject;
@@ -84,6 +86,14 @@ public class Metrics
         {
             Flux<ErrorReportResult> fluxErrorReports = ctrlErrorListApiCallHandler.listErrorReports(
                 Collections.emptySet(), false, null, null, Collections.emptySet(), 1L, 0L)
+                .onErrorResume(
+                    PeerNotConnectedException.class,
+                    ignored -> Flux.empty()
+                )
+                .onErrorResume(
+                    PeerClosingConnectionException.class,
+                    ignored -> Flux.empty()
+                )
                 .contextWrite(requestHelper.createContext("metrics", request));
 
             try
