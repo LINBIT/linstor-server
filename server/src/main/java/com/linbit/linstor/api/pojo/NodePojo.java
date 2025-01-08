@@ -30,6 +30,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final Map<String, List<String>> unsupportedLayersWithReasons;
     private final Map<String, List<String>> unsupportedProvidersWithReasons;
     private final Long evictionTimestamp;
+    private final long reconnectAttemptCount;
 
     public NodePojo(
         final UUID nodeUuidRef,
@@ -47,7 +48,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         final List<String> deviceProviderKindNamesRef,
         final Map<String, List<String>> unsupportedLayersWithReasonsRef,
         final Map<String, List<String>> unsupportedProvidersWithReasonsRef,
-        final Long evictionTimestampRef
+        final Long evictionTimestampRef,
+        final long reconnectAttemptCountRef
     )
     {
         nodeUuid = nodeUuidRef;
@@ -66,6 +68,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         unsupportedLayersWithReasons = unsupportedLayersWithReasonsRef;
         unsupportedProvidersWithReasons = unsupportedProvidersWithReasonsRef;
         evictionTimestamp = evictionTimestampRef;
+        reconnectAttemptCount = reconnectAttemptCountRef;
     }
 
     @Override
@@ -95,6 +98,12 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     public ApiConsts.ConnectionStatus connectionStatus()
     {
         return connectionStatus;
+    }
+
+    @Override
+    public long getReconnectAttemptCount()
+    {
+        return reconnectAttemptCount;
     }
 
     @Override

@@ -357,21 +357,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             }
         }
 
-        Peer newPeer = this.connect(address, peer.getNode());
-        try
-        {
-            peer.getNode().setPeer(privilegedAccCtx, newPeer);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(
-                "TcpConnectorService privileged access context not authorized for node.setPeer() " +
-                "called from reconnect()",
-                accDeniedExc
-            );
-        }
-
-        return newPeer;
+        return this.connect(address, peer.getNode());
     }
 
     private InetSocketAddress getInetSockAddress(Peer peer) throws ImplementationError

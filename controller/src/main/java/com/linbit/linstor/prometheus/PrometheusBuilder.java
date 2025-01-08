@@ -46,6 +46,7 @@ public class PrometheusBuilder
 
     private static final String VOLUME_STATE_HELP;
     private static final String NODE_STATE_HELP;
+    private static final String NODE_RECONNECT_ATTEMPT_COUNT_HELP = "Number of node reconnection attempts";
 
     private static final int RSC_STATE_UNKNOWN = -1;
     private static final int RSC_STATE_UN_USED = 0;
@@ -297,6 +298,15 @@ public class PrometheusBuilder
                 tf.writeSample(
                     nodeExport(node),
                     node.connectionStatus().getValue()
+                );
+            }
+
+            tf.startGauge("linstor_node_reconnect_attempt_count", NODE_RECONNECT_ATTEMPT_COUNT_HELP);
+            for (NodeApi node : nodeApiList)
+            {
+                tf.writeSample(
+                    nodeExport(node),
+                    node.getReconnectAttemptCount()
                 );
             }
         }

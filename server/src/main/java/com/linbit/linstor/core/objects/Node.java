@@ -123,6 +123,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
     private final ArrayList<ProcCryptoEntry> supportedCryptos;
 
     private Long evictionTimstamp;
+    private long reconnectAttemptCount = 0;
 
     Node(
         UUID uuidRef,
@@ -661,8 +662,13 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         peer = peerRef;
+        reconnectAttemptCount += 1;
     }
 
+    public long getReconnectAttemptCount()
+    {
+        return reconnectAttemptCount;
+    }
 
     public NetInterface getActiveStltConn(AccessContext accCtx) throws AccessDeniedException
     {
@@ -860,7 +866,8 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
                 .map(deviceProviderKind -> deviceProviderKind.name()).collect(toList()),
             extToolsManager.getUnsupportedLayersWithReasonsAsString(),
             extToolsManager.getUnsupportedProvidersWithReasonsAsString(),
-            evictionTimstamp
+            evictionTimstamp,
+            reconnectAttemptCount
         );
     }
 

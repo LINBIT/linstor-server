@@ -12,6 +12,7 @@ public interface NodeApi
     String getType();
     UUID getUuid();
     ApiConsts.ConnectionStatus connectionStatus();
+    long getReconnectAttemptCount();
     Map<String, String> getProps();
     long getFlags();
     List<NetInterfaceApi> getNetInterfaces();

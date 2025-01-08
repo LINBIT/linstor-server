@@ -62,7 +62,8 @@ public class PrometheusBuilderTest
                 Collections.emptyList(),
                 Collections.emptyMap(),
                 Collections.emptyMap(),
-                null
+                null,
+                3
             )
         );
 
@@ -101,5 +102,6 @@ public class PrometheusBuilderTest
         Assert.assertTrue(promText.contains("linstor_scrape_requests_count"));
         Assert.assertTrue(promText.contains("linstor_node_state"));
         Assert.assertTrue(promText.contains("linstor_resource_definition_count 1.0"));
+        Assert.assertTrue(promText.contains("linstor_node_reconnect_attempt_count"));
     }
 }
