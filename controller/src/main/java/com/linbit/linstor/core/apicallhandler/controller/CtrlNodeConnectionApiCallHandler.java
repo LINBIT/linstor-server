@@ -240,7 +240,7 @@ public class CtrlNodeConnectionApiCallHandler
         return scopeRunner.fluxInTransactionalScope(
             "Modify node-connection",
             lockGuardFactory.buildDeferred(WRITE, NODES_MAP),
-            () -> modifyNodeConnectionInTrnasaction(
+            () -> modifyNodeConnectionInTransaction(
                 nodeConnUuid,
                 nodeName1,
                 nodeName2,
@@ -252,7 +252,7 @@ public class CtrlNodeConnectionApiCallHandler
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    public Flux<ApiCallRc> modifyNodeConnectionInTrnasaction(
+    public Flux<ApiCallRc> modifyNodeConnectionInTransaction(
         UUID nodeConnUuidRef,
         String nodeName1,
         String nodeName2,

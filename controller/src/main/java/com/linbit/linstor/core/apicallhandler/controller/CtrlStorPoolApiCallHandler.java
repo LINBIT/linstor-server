@@ -525,11 +525,15 @@ public class CtrlStorPoolApiCallHandler
 
     private StorPool loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
     {
-        return ctrlApiDataLoader.loadStorPool(
-            ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true),
-            ctrlApiDataLoader.loadNode(nodeNameStr, true),
-            failIfNull
-        );
+        StorPool result = null;
+        Node node = ctrlApiDataLoader.loadNode(nodeNameStr, failIfNull);
+        StorPoolDefinition storPoolDfn = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, failIfNull);
+        if (node != null && storPoolDfn != null)
+        {
+            result = ctrlApiDataLoader.loadStorPool(storPoolDfn, node, failIfNull);
+        }
+
+        return result;
     }
 
     public static ResponseContext makeStorPoolContext(

@@ -447,14 +447,17 @@ class CtrlNetIfApiCallHandler
 
     private NetInterface loadNetIf(String nodeNameStr, String netIfNameStr, boolean failIfNull)
     {
-        Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-        NetInterface netIf;
+        Node node = ctrlApiDataLoader.loadNode(nodeNameStr, failIfNull);
+        NetInterface netIf = null;
         try
         {
-            netIf = node.getNetInterface(
-                peerAccCtx.get(),
-                LinstorParsingUtils.asNetInterfaceName(netIfNameStr)
-            );
+            if (node != null)
+            {
+                netIf = node.getNetInterface(
+                    peerAccCtx.get(),
+                    LinstorParsingUtils.asNetInterfaceName(netIfNameStr)
+                );
+            }
 
             if (failIfNull && netIf == null)
             {

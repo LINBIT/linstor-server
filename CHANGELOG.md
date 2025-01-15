@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - gradle: support different java home in wrapper scripts
 - sos-report: add more controller json(resource-definitions, snapshots) and zfs list snapshots
 - /proc/crypto: Ignore invalid entries (i.e. entries with missing driver or type)
+- API: do not generate error reports if parent resources are not found
 
 ## [1.30.2] - 2024-12-18
 

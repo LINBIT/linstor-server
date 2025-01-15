@@ -215,11 +215,14 @@ public class CtrlApiDataLoader
 
     public VolumeDefinition loadVlmDfn(ResourceName rscName, VolumeNumber vlmNr, boolean failIfNull)
     {
-        ResourceDefinition rscDfn = loadRscDfn(rscName, true);
-        VolumeDefinition vlmDfn;
+        ResourceDefinition rscDfn = loadRscDfn(rscName, failIfNull);
+        VolumeDefinition vlmDfn = null;
         try
         {
-            vlmDfn = rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
+            if (rscDfn != null)
+            {
+                vlmDfn = rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
+            }
 
             if (failIfNull && vlmDfn == null)
             {
@@ -253,15 +256,25 @@ public class CtrlApiDataLoader
 
     public Resource loadRsc(NodeName nodeName, ResourceName rscName, boolean failIfNull)
     {
-        Node node = loadNode(nodeName, true);
-        ResourceDefinition rscDfn = loadRscDfn(rscName, true);
-        return loadRsc(rscDfn, node, failIfNull);
+        Resource result = null;
+        Node node = loadNode(nodeName, failIfNull);
+        ResourceDefinition rscDfn = loadRscDfn(rscName, failIfNull);
+        if (node != null && rscDfn != null)
+        {
+            result = loadRsc(rscDfn, node, failIfNull);
+        }
+        return result;
     }
 
     public Resource loadRsc(ResourceDefinition rscDfn, String nodeNameStr, boolean failIfNull)
     {
-        Node node = loadNode(nodeNameStr, true);
-        return loadRsc(rscDfn, node, failIfNull);
+        Resource result = null;
+        Node node = loadNode(nodeNameStr, failIfNull);
+        if (node != null)
+        {
+            result = loadRsc(rscDfn, node, failIfNull);
+        }
+        return result;
     }
 
     public Resource loadRsc(ResourceDefinition rscDfn, Node node, boolean failIfNull)
@@ -296,15 +309,6 @@ public class CtrlApiDataLoader
             );
         }
         return rsc;
-    }
-
-    public ResourceConnection loadRscConn(String rscNameRef, String nodeANameRef, String nodeBNameRef)
-    {
-        ResourceName rscName = LinstorParsingUtils.asRscName(rscNameRef);
-        NodeName nodeAName = LinstorParsingUtils.asNodeName(nodeANameRef);
-        NodeName nodeBName = LinstorParsingUtils.asNodeName(nodeBNameRef);
-
-        return loadRscConn(rscName, nodeAName, nodeBName);
     }
 
     public ResourceConnection loadRscConn(ResourceName rscNameRef, NodeName nodeANameRef, NodeName nodeBNameRef)
@@ -347,7 +351,13 @@ public class CtrlApiDataLoader
         boolean failIfNull
     )
     {
-        return loadSnapshotDfn(loadRscDfn(rscName, true), snapshotName, failIfNull);
+        SnapshotDefinition result = null;
+        ResourceDefinition rscDfn = loadRscDfn(rscName, failIfNull);
+        if (rscDfn != null)
+        {
+            result = loadSnapshotDfn(rscDfn, snapshotName, failIfNull);
+        }
+        return result;
     }
 
     public final SnapshotDefinition loadSnapshotDfn(

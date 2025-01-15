@@ -144,13 +144,16 @@ class CtrlRscConnectionHelper
         NodeName nodeName1 = LinstorParsingUtils.asNodeName(nodeName1Str);
         NodeName nodeName2 = LinstorParsingUtils.asNodeName(nodeName2Str);
 
-        Resource rsc1 = ctrlApiDataLoader.loadRsc(nodeName1, rscName, true);
-        Resource rsc2 = ctrlApiDataLoader.loadRsc(nodeName2, rscName, true);
+        Resource rsc1 = ctrlApiDataLoader.loadRsc(nodeName1, rscName, failIfNull);
+        Resource rsc2 = ctrlApiDataLoader.loadRsc(nodeName2, rscName, failIfNull);
 
-        ResourceConnection rscConn;
+        ResourceConnection rscConn = null;
         try
         {
-            rscConn = rsc1.getAbsResourceConnection(peerAccCtx.get(), rsc2);
+            if (rsc1 != null && rsc2 != null)
+            {
+                rscConn = rsc1.getAbsResourceConnection(peerAccCtx.get(), rsc2);
+            }
 
             if (failIfNull && rscConn == null)
             {

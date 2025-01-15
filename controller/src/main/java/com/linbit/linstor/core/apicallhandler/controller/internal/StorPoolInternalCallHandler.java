@@ -138,15 +138,6 @@ public class StorPoolInternalCallHandler
         }
     }
 
-    private StorPool loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
-    {
-        return ctrlApiDataLoader.loadStorPool(
-            ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true),
-            ctrlApiDataLoader.loadNode(nodeNameStr, true),
-            failIfNull
-        );
-    }
-
     private void setCapacityInfo(StorPool storPool, long freeCapacity, long totalCapacity)
     {
         try
@@ -191,7 +182,7 @@ public class StorPoolInternalCallHandler
 
                         try
                         {
-                            StorPool storPool = loadStorPool(nodeName, capacityInfoPojo.getStorPoolName(), true);
+                            StorPool storPool = ctrlApiDataLoader.loadStorPool(capacityInfoPojo.getStorPoolName(), node, true);
                             if (storPool.getUuid().equals(capacityInfoPojo.getStorPoolUuid()))
                             {
                                 storPool.clearReports();

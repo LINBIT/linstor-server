@@ -44,17 +44,21 @@ public class CtrlNodeConnectionHelper
         boolean createIfNotExists
     )
     {
-        Node node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
-        Node node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
+        Node node1 = ctrlApiDataLoader.loadNode(nodeName1, failIfNull);
+        Node node2 = ctrlApiDataLoader.loadNode(nodeName2, failIfNull);
 
-        NodeConnection nodeConn;
+        NodeConnection nodeConn = null;
         try
         {
-            nodeConn = NodeConnection.get(
-                peerAccCtx.get(),
-                node1,
-                node2
-            );
+            if (node1 != null && node2 != null)
+            {
+                nodeConn = NodeConnection.get(
+                    peerAccCtx.get(),
+                    node1,
+                    node2
+                );
+            }
+
             if (nodeConn == null)
             {
                 if (failIfNull)
