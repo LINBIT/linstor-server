@@ -32,6 +32,7 @@ import com.linbit.linstor.debug.SatelliteDebugModule;
 import com.linbit.linstor.event.EventModule;
 import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ConnectionStateEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.ReplicationStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
 import com.linbit.linstor.layer.LayerSizeCalculatorModule;
@@ -433,6 +434,7 @@ public final class Satellite
             List<Class<? extends EventSerializer>> eventSerializers = Arrays.asList(
                 ResourceStateEventSerializer.class,
                 VolumeDiskStateEventSerializer.class,
+                ReplicationStateEventSerializer.class,
                 ConnectionStateEventSerializer.class
             );
 

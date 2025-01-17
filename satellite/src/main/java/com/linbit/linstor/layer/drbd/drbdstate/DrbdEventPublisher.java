@@ -8,6 +8,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ConnectionStateEvent;
+import com.linbit.linstor.event.common.ReplicationStateEvent;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
@@ -34,6 +35,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     private final DrbdEventService drbdEventService;
     private final ResourceStateEvent resourceStateEvent;
     private final VolumeDiskStateEvent volumeDiskStateEvent;
+    private final ReplicationStateEvent replicationStateEvent;
     private final ConnectionStateEvent connectionStateEvent;
 
     private ServiceName instanceName;
@@ -56,12 +58,14 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         DrbdEventService drbdEventServiceRef,
         ResourceStateEvent resourceStateEventRef,
         VolumeDiskStateEvent volumeDiskStateEventRef,
+        ReplicationStateEvent replicationStateEventRef,
         ConnectionStateEvent connectionStateEventRef
     )
     {
         drbdEventService = drbdEventServiceRef;
         resourceStateEvent = resourceStateEventRef;
         volumeDiskStateEvent = volumeDiskStateEventRef;
+        replicationStateEvent = replicationStateEventRef;
         connectionStateEvent = connectionStateEventRef;
 
         try
@@ -180,6 +184,8 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     {
         if (connection == null && resource.isKnownByLinstor())
         {
+            replicationStateEvent.get().closeStream(
+                ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()));
             volumeDiskStateEvent.get().closeStream(
                 ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()));
         }
@@ -215,6 +221,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     {
         if (resource.isKnownByLinstor())
         {
+            triggerReplicationStateEvent(resource, volume);
             triggerResourceStateEvent(resource);
         }
     }
@@ -233,6 +240,14 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         resourceStateEvent.get().triggerEvent(
             ObjectIdentifier.resourceDefinition(resource.getResName()),
             determineResourceState(resource)
+        );
+    }
+
+    private void triggerReplicationStateEvent(DrbdResource resource, DrbdVolume volume)
+    {
+        replicationStateEvent.get().triggerEvent(
+            ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
+            volume.replicationStateInfo()
         );
     }
 

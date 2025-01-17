@@ -2,6 +2,11 @@
 
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
+## [1.25.0]
+
+### Added
+  - Added VolumeState.replication_state
+
 ## [1.24.0]
 
 ### Added

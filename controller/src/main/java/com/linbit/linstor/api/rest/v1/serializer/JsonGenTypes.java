@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.24.0";
+    public static final String REST_API_VERSION = "1.25.0";
 
     /**
      * Common api reply structure
@@ -684,6 +684,7 @@ public class JsonGenTypes
     public static class VolumeState
     {
         public String disk_state;
+        public String replication_state;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

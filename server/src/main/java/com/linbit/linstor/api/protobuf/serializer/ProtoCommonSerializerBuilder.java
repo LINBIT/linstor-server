@@ -126,6 +126,7 @@ import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheRsc;
 import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheVlm;
 import com.linbit.linstor.proto.eventdata.EventConnStateOuterClass;
+import com.linbit.linstor.proto.eventdata.EventReplicationStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.PeerState;
@@ -574,6 +575,23 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         {
             EventVlmDiskStateOuterClass.EventVlmDiskState.newBuilder()
                 .setDiskState(diskState)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder replicationState(String replicationState)
+    {
+        try
+        {
+            EventReplicationStateOuterClass.EventReplicationState.newBuilder()
+                .setReplicationState(replicationState)
                 .build()
                 .writeDelimitedTo(baos);
         }

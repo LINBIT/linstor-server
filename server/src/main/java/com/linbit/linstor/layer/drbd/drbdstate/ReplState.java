@@ -21,7 +21,7 @@ public enum ReplState
     BEHIND(Consts.RS_LABEL_BEHIND),
     UNKNOWN(Consts.RS_LABEL_UNKNOWN);
 
-    private String replLabel;
+    private final String replLabel;
 
     ReplState(String label)
     {

@@ -36,10 +36,12 @@ import com.linbit.linstor.debug.DebugModule;
 import com.linbit.linstor.event.EventModule;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.ConnectionStateEventHandler;
+import com.linbit.linstor.event.handler.protobuf.controller.ReplicationStateEventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.ResourceStateEventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.VolumeDiskStateEventHandler;
 import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ConnectionStateEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.ReplicationStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
 import com.linbit.linstor.layer.LayerSizeCalculatorModule;
@@ -557,12 +559,14 @@ public final class Controller
             List<Class<? extends EventSerializer>> eventSerializers = Arrays.asList(
                 ResourceStateEventSerializer.class,
                 VolumeDiskStateEventSerializer.class,
+                ReplicationStateEventSerializer.class,
                 ConnectionStateEventSerializer.class
             );
 
             List<Class<? extends EventHandler>> eventHandlers = Arrays.asList(
                 ResourceStateEventHandler.class,
                 VolumeDiskStateEventHandler.class,
+                ReplicationStateEventHandler.class,
                 ConnectionStateEventHandler.class
             );
             errorLog.logInfo(

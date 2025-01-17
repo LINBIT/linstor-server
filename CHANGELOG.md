@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Notify controller about replication state changes in DRBD
+
 ## [1.30.4] - 2025-02-03
 
 ### Changed

@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.eventdata;
+
+message EventReplicationState
+{
+    optional string replication_state = 1;
+}

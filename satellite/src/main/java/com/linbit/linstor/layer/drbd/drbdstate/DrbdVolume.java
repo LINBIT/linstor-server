@@ -245,4 +245,9 @@ public class DrbdVolume
         }
         return info;
     }
+
+    public ReplState replicationStateInfo()
+    {
+        return volReplState;
+    }
 }

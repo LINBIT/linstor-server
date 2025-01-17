@@ -18,7 +18,7 @@ info:
     ```
 
     After setting this properties restart the controller and the new values should be used.
-  version: 1.24.0
+  version: 1.25.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -7137,6 +7137,8 @@ components:
       type: object
       properties:
         disk_state:
+          type: string
+        replication_state:
           type: string
     ResourceGroup:
       type: object

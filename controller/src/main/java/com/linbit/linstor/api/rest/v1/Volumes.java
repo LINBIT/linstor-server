@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -141,6 +142,7 @@ public class Volumes
                     vlmState = new JsonGenTypes.VolumeState();
                     SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
                     vlmState.disk_state = satVlmState.getDiskState();
+                    vlmState.replication_state = Objects.toString(satVlmState.getReplicationState(), null);
                 }
             }
         }
