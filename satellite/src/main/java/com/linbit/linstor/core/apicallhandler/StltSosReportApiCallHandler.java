@@ -434,7 +434,7 @@ public class StltSosReportApiCallHandler
         reportTypes.add(new SosCommandType("lvs", now, "lvs"));
         reportTypes.add(new SosCommandType("vgs", now, "vgs"));
         reportTypes.add(new SosCommandType("pvs", now, "pvs"));
-        reportTypes.add(new SosCommandType("zfs-list", now, "zfs", "list"));
+        reportTypes.add(new SosCommandType("zfs-list", now, "zfs", "list", "-t", "snapshot,volume"));
         reportTypes.add(new SosCommandType("zpool-list", now, "zpool", "list"));
         reportTypes.add(new SosCommandType("zpool-status", now, "zpool", "status"));
 

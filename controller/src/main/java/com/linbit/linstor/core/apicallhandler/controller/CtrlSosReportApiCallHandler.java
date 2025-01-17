@@ -633,6 +633,8 @@ public class CtrlSosReportApiCallHandler
                 () -> {
                     nodeListJson(sosDir);
                     resourceGroupListJson(sosDir);
+                    resourceDefinitionListJson(sosDir);
+                    snapshotListJson(sosDir);
                     spaceReportingQuery(sosDir);
                     return Flux.empty();
                 }, MDC.getCopyOfContextMap()));
@@ -690,6 +692,23 @@ public class CtrlSosReportApiCallHandler
             .collect(Collectors.toList());
 
         appendJSON(sosDir.resolve("resource-group-list.json"), resGrpList);
+    }
+
+    private void resourceDefinitionListJson(Path sosDir)
+    {
+        var rscDfnDataList = ctrlApiCallHandler.listResourceDefinitions().stream()
+            .map(rscDfn -> Json.apiToResourceDefinition(rscDfn, true))
+            .collect(Collectors.toList());
+        appendJSON(sosDir.resolve("resource-definition-list.json"), rscDfnDataList);
+    }
+
+    private void snapshotListJson(Path sosDir)
+    {
+        var snapshotDataList = ctrlApiCallHandler.listSnapshotDefinition(
+            Collections.emptyList(), Collections.emptyList()).stream()
+                .map(Json::apiToSnapshot)
+                .collect(Collectors.toList());
+        appendJSON(sosDir.resolve("snapshot-list.json"), snapshotDataList);
     }
 
     private Flux<String> viewResourcesJson(Path sosDir)
