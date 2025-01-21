@@ -325,15 +325,23 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 ensureShrinkingIsSupported(vlmDfn);
                 setFlag(vlmDfn, VolumeDefinition.Flags.RESIZE_SHRINK);
             }
+            else if (diffSize == 0)
+            {
+                responses.add(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.WARN_VLMDFN_RESIZE_SAME_SIZE,
+                        "VolumeDefinition already has the expected size, no satellite update will be triggered."));
+            }
             else
             {
                 ensureAllStorPoolsHaveEnoughFreeSpace(vlmDfn, diffSize);
-            }
-            ensureExactSizeIsUnset(vlmDfn);
 
-            updateForResize = true;
-            notifyStlts = true;
-            setVlmDfnSize(vlmDfn, size);
+                ensureExactSizeIsUnset(vlmDfn);
+
+                updateForResize = true;
+                notifyStlts = true;
+                setVlmDfnSize(vlmDfn, size);
+            }
         }
 
         if (hasEbsResource(vlmDfn))

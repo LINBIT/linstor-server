@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sos-report: add more controller json(resource-definitions, snapshots) and zfs list snapshots
 - /proc/crypto: Ignore invalid entries (i.e. entries with missing driver or type)
 - API: do not generate error reports if parent resources are not found
+- volume-definition resize: if current size is set, no satellite/data updates will be triggered
 
 ### Fixed
 
