@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - metrics: don't create error-report on closing connection nodes
 - LVM: Correctly calculate extents with more than one stripes
 - RscDfn and SnapDfn: Properly restore layerStack (!= layerData) from backup and snapshot restore
+- BalanceResources: Only adjust selected rscDfn instead of entire rscGrp
 
 ## [1.30.2] - 2024-12-18
 

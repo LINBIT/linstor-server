@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
@@ -67,6 +68,7 @@ public class BalanceResources
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscDeleteApiCallHandler rscDeleteApiCallHandler;
     private final CtrlRscGrpApiCallHandler rscGrpApiCallHandler;
+    private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
 
     private static final long DEFAULT_GRACE_PERIOD_SECS = 3600;
 
@@ -82,7 +84,9 @@ public class BalanceResources
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlRscDeleteApiCallHandler rscDeleteApiCallHandlerRef,
-        CtrlRscGrpApiCallHandler rscGrpApiCallHandlerRef
+        CtrlRscGrpApiCallHandler rscGrpApiCallHandlerRef,
+        CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef
+
     )
     {
         sysCtx = sysCtxRef;
@@ -96,6 +100,7 @@ public class BalanceResources
         lockGuardFactory = lockGuardFactoryRef;
         rscDeleteApiCallHandler = rscDeleteApiCallHandlerRef;
         rscGrpApiCallHandler = rscGrpApiCallHandlerRef;
+        ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
     }
 
     private boolean hasAtLeastOneUpToDate(ResourceDefinition rscDfn) throws AccessDeniedException
@@ -385,7 +390,12 @@ public class BalanceResources
         // adjust rsc dfns to meet rscgrp replica count
         for (var rscDfn : adjustRscDfns)
         {
-            flux = flux.concatWith(rscGrpApiCallHandler.adjust(rscDfn.getResourceGroup().getName().displayValue, null));
+            flux = flux.concatWith(
+                ctrlRscAutoPlaceApiCallHandler.autoPlace(
+                    rscDfn.getName().displayValue,
+                    rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+                )
+            );
         }
 
         flux
