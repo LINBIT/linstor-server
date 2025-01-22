@@ -1058,6 +1058,7 @@ public class CtrlBackupRestoreApiCallHandler
             );
         }
         PropsUtils.resetProps(metadata.getRscDfn().getSnapDfnProps(), snapDfn.getSnapDfnProps(accCtx));
+        snapDfn.setLayerStack(accCtx, restoreLayerStack(metadata));
         Props snapRscDfnProps = snapDfn.getRscDfnPropsForChange(accCtx);
         PropsUtils.resetProps(metadata.getRscDfn().getRscDfnProps(), snapRscDfnProps);
         // force the node to become primary afterwards in case we needed to recreate
@@ -1096,6 +1097,30 @@ public class CtrlBackupRestoreApiCallHandler
         }
 
         return snapDfn;
+    }
+
+    private List<DeviceLayerKind> restoreLayerStack(BackupMetaDataPojo metadataRef)
+    {
+        List<DeviceLayerKind> ret = new ArrayList<>();
+        restoreLayerStackRec(ret, metadataRef.getLayerData());
+        return ret;
+    }
+
+    private void restoreLayerStackRec(List<DeviceLayerKind> retRef, @Nullable RscLayerDataApi layerDataRef)
+    {
+        if (layerDataRef != null)
+        {
+            retRef.add(layerDataRef.getLayerKind());
+
+            for (RscLayerDataApi childLayerData : layerDataRef.getChildren())
+            {
+                if (childLayerData.getRscNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
+                {
+                    restoreLayerStackRec(retRef, childLayerData);
+                    break;
+                }
+            }
+        }
     }
 
     /**

@@ -14,6 +14,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -506,8 +507,7 @@ public abstract class AbsRscLayerHelper<
         ResourceDefinition rscDfn,
         AbsRscLayerObject<RSC> fromAbsRscData
     )
-        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException, LinStorException
+        throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException, LinStorException
     {
         RSC_DFN_LO rscDfnData = rscDfn.getLayerData(apiCtx, kind, fromAbsRscData.getResourceNameSuffix());
         if (rscDfnData == null)
@@ -517,8 +517,31 @@ public abstract class AbsRscLayerHelper<
             {
                 rscDfn.setLayerData(apiCtx, rscDfnData);
             }
+            @Nullable List<DeviceLayerKind> layerStack = getLayerStack(fromAbsRscData);
+            if (layerStack != null)
+            {
+                rscDfn.setLayerStack(apiCtx, layerStack);
+            }
         }
         return rscDfnData;
+    }
+
+    private @Nullable <RSC extends AbsResource<RSC>> List<DeviceLayerKind> getLayerStack(
+        AbsRscLayerObject<RSC> fromAbsRscData
+    )
+        throws AccessDeniedException
+    {
+        @Nullable List<DeviceLayerKind> layerStack = null;
+        RSC absRsc = fromAbsRscData.getAbsResource();
+        if (absRsc instanceof Resource)
+        {
+            layerStack = absRsc.getResourceDefinition().getLayerStack(apiCtx);
+        }
+        else if (absRsc instanceof Snapshot)
+        {
+            layerStack = ((Snapshot) absRsc).getSnapshotDefinition().getLayerStack(apiCtx);
+        }
+        return layerStack;
     }
 
     private <RSC extends AbsResource<RSC>> VLM_DFN_LO ensureVolumeDefinitonDataCopiedFromAbsRsc(
