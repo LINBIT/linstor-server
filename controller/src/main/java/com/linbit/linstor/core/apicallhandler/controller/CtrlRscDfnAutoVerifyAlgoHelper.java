@@ -106,7 +106,7 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
             final String verifyAlgo = prioProps.getProp(
                 InternalApiConsts.DRBD_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
 
-            if (verifyAlgo != null && rscDfn.getLayerStack(peerCtxProvider.get()).contains(DeviceLayerKind.DRBD))
+            if (verifyAlgo != null && rscDfn.usesLayer(peerCtxProvider.get(), DeviceLayerKind.DRBD))
             {
                 final Map<String, List<ProcCryptoEntry>> nodeCryptos = getCryptoEntryMap(rscDfn);
 
@@ -159,7 +159,7 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
             final String disableAuto = prioProps.getProp(ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO,
                 ApiConsts.NAMESPC_DRBD_OPTIONS);
             if (StringUtils.propFalseOrNull(disableAuto) &&
-                rscDfn.getLayerStack(peerCtx).contains(DeviceLayerKind.DRBD))
+                rscDfn.usesLayer(peerCtx, DeviceLayerKind.DRBD))
             {
                 final Map<String, List<ProcCryptoEntry>> nodeCryptos = getCryptoEntryMap(rscDfn);
 

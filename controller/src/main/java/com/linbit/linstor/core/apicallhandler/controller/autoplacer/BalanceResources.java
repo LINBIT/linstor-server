@@ -248,7 +248,7 @@ public class BalanceResources
             return true;
         }
 
-        if (!rscDfn.getLayerStack(sysCtx).contains(DeviceLayerKind.DRBD))
+        if (!rscDfn.usesLayer(sysCtx, DeviceLayerKind.DRBD))
         {
             log.logDebug("BalanceResourcesTask/%s: Ignore because no DRBD", rscDfn.getName());
             return true;

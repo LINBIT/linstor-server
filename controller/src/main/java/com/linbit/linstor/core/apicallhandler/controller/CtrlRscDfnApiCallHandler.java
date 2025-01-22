@@ -1060,7 +1060,7 @@ public class CtrlRscDfnApiCallHandler
         List<String> volumePassphrases = volumePassphrasesRef != null ?
             new ArrayList<>(volumePassphrasesRef) : new ArrayList<>();
 
-        boolean hasLuks = rscDfn.getLayerStack(peerAccCtx.get()).contains(DeviceLayerKind.LUKS);
+        boolean hasLuks = rscDfn.usesLayer(peerAccCtx.get(), DeviceLayerKind.LUKS);
         if (volumePassphrases.isEmpty() && hasLuks)
         {
             // generate new passwords anyway

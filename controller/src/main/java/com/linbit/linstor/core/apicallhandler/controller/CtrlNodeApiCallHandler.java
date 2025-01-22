@@ -1617,7 +1617,7 @@ public class CtrlNodeApiCallHandler
             for (ResourceDefinition rscDfn : affectedRscDfnList)
             {
                 ResourceName rscName = rscDfn.getName();
-                if (!rscDfn.getLayerStack(peerCtx).contains(DeviceLayerKind.DRBD))
+                if (!rscDfn.usesLayer(peerCtx, DeviceLayerKind.DRBD))
                 {
                     apiCallRc.addEntry(
                         ApiCallRcImpl.simpleEntry(

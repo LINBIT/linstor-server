@@ -522,6 +522,13 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         return layerStack;
     }
 
+    public boolean usesLayer(AccessContext accCtxRef, DeviceLayerKind kindRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtxRef, AccessType.VIEW);
+        return !getLayerData(accCtxRef, kindRef).isEmpty();
+    }
+
     public void setResourceGroup(AccessContext accCtx, ResourceGroup rscGrpRef)
         throws AccessDeniedException, DatabaseException
     {
