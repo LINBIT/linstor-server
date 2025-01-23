@@ -1,3 +1,27 @@
+linstor-server (1.30.3-1) experimental; urgency=medium
+
+  [ Moritz Wanzenböck ]
+  * build: add prop to set java home for dist scripts
+  * skip more error reports for missing objects
+
+  [ Gabor Hernadi ]
+  * GitLab-CI: Fixed generated output to be yaml format
+  * GitLab-CI: Swap test-built from bionic to jammy
+  * Crypto: Ignore entries that missing type and/or driver
+  * Backup,ship: Attempt to fix possible concurrentModificationException
+  * Lvm: Correctly calculate extent size with stripes
+  * SnapDfn,Restore: Restore LayerStack in SnapDfns
+  * Introduce rscDfn.usesLayer(accCtx, DevLayerKind)
+  * BalanceRsc: Only adjust rscDfn instead of entire rscGrp
+
+  [ Rene Peinthor ]
+  * sos-report: add more api json logs and zfs list snapshot and volume
+  * metrics: added linstor_node_reconnect_count
+  * metrics: do not create errors on node connection problems
+  * vlmdfn-resize: trigger no satellite/data updates on same size
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 23 Jan 2025 07:08:17 +0000
+
 linstor-server (1.30.2-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
