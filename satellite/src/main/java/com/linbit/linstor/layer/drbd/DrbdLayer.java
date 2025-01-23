@@ -73,6 +73,7 @@ import javax.inject.Singleton;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -1510,6 +1511,11 @@ public class DrbdLayer implements DeviceLayer
             try
             {
                 onDiskContent = readResFile(resFile);
+            }
+            catch (NoSuchFileException nsfe)
+            {
+                errorReporter.logWarning("Expected resource file %s did not exist. Rewriting...", resFile.toString());
+                drbdRscData.setResFileExists(false);
             }
             catch (IOException exc)
             {

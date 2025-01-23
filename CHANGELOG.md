@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Reconnect: Fixed rare NoSuchFileException triggered by multiple reconnects in quick succession
+
 ## [1.30.3] - 2025-01-23
 
 ### Added

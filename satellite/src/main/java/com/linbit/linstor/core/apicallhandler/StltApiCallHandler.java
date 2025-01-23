@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
+import com.linbit.PlatformStlt;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
@@ -72,6 +73,10 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -83,6 +88,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.slf4j.event.Level;
 
@@ -136,6 +144,8 @@ public class StltApiCallHandler
     private final BackupShippingMgr backupShippingMgr;
     private final StltApiCallHandlerUtils stltApiCallHandlerUtils;
 
+    private final PlatformStlt platformStlt;
+
     @Inject
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
@@ -174,7 +184,8 @@ public class StltApiCallHandler
         DrbdEventPublisher drbdEventPublisherRef,
         DeviceProviderMapper deviceProviderMapperRef,
         BackupShippingMgr backupShippingMgrRef,
-        StltApiCallHandlerUtils stltApiCallHandlerUtilsRef
+        StltApiCallHandlerUtils stltApiCallHandlerUtilsRef,
+        PlatformStlt platformStltRef
     )
     {
         errorReporter = errorReporterRef;
@@ -214,6 +225,7 @@ public class StltApiCallHandler
         deviceProviderMapper = deviceProviderMapperRef;
         backupShippingMgr = backupShippingMgrRef;
         stltApiCallHandlerUtils = stltApiCallHandlerUtilsRef;
+        platformStlt = platformStltRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -321,9 +333,12 @@ public class StltApiCallHandler
             {
                 // only apply this fullSync if it is newer than the last one
 
+                // first delete all kind of stuff
                 stltApiCallHandlerUtils.clearCoreMaps();
                 stltApiCallHandlerUtils.clearCaches();
+                deleteOldResFiles(); // new res files should be (re-)generated in the next devMgrCycle
 
+                // now start to (re-) create linstor objects received from controller
                 for (NodePojo node : nodes)
                 {
                     Node curNode = nodeHandler.applyChanges(node);
@@ -910,6 +925,60 @@ public class StltApiCallHandler
         return successFlag;
     }
 
+
+    private void deleteOldResFiles()
+    {
+        try
+        {
+            Path varDrbdPath = Paths.get(platformStlt.sysRoot() + LinStor.CONFIG_PATH);
+
+            final Pattern keepResPattern = stltCfg.getDrbdKeepResPattern();
+            Function<Path, Boolean> keepFunc;
+            if (keepResPattern != null)
+            {
+                errorReporter.logInfo(
+                    "Removing res files from " + varDrbdPath + ", keeping files matching regex: " +
+                        keepResPattern.pattern()
+                );
+                keepFunc = (path) -> keepResPattern.matcher(path.getFileName().toString()).find();
+            }
+            else
+            {
+                errorReporter.logInfo("Removing all res files from " + varDrbdPath);
+                keepFunc = (path) -> false;
+            }
+            try (Stream<Path> files = Files.list(varDrbdPath))
+            {
+                files.filter(path -> path.toString().endsWith(".res"))
+                    .forEach(
+                        filteredPathName ->
+                        {
+                            try
+                            {
+                                if (!keepFunc.apply(filteredPathName))
+                                {
+                                    Files.delete(filteredPathName);
+                                }
+                            }
+                            catch (IOException ioExc)
+                            {
+                                throw new ImplementationError(
+                                    "Unable to delete drbd resource file: " + filteredPathName,
+                                    ioExc
+                                );
+                            }
+                        }
+                    );
+            }
+        }
+        catch (IOException ioExc)
+        {
+            throw new ImplementationError(
+                "Unable to list content of: " + platformStlt.sysRoot() + LinStor.CONFIG_PATH,
+                ioExc
+            );
+        }
+    }
 
     private interface ApplyData
     {
