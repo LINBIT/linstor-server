@@ -168,6 +168,10 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
             {
                 localNodeName = new NodeName(nodeName);
 
+                StltApiCallHandlerUtils stltUtils = stltApiCallHandlerUtils.get();
+                stltUtils.clearCoreMaps();
+                stltUtils.clearCaches();
+
                 localNode = nodeFactory.getInstanceSatellite(
                     sysCtx,
                     nodeUuid,
@@ -175,10 +179,6 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                     Node.Type.SATELLITE,
                     new Node.Flags[] {}
                 );
-
-                StltApiCallHandlerUtils stltUtils = stltApiCallHandlerUtils.get();
-                stltUtils.clearCoreMaps();
-                stltUtils.clearCaches();
 
                 nodesMap.put(localNode.getName(), localNode);
                 setControllerPeerToCurrentLocalNode();
