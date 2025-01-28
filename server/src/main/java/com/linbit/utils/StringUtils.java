@@ -223,6 +223,16 @@ public class StringUtils
         return cmp;
     }
 
+    public static List<String> toUpperList(List<String> listRef)
+    {
+        List<String> ret = new ArrayList<>();
+        for (String str : listRef)
+        {
+            ret.add(str.toUpperCase());
+        }
+        return ret;
+    }
+
     public static class ConditionalStringJoiner
     {
         private final StringJoiner stringJoiner;

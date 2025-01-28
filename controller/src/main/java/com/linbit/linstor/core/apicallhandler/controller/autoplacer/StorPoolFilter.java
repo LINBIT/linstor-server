@@ -16,6 +16,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.utils.NullableUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
@@ -27,6 +28,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -154,15 +156,26 @@ public class StorPoolFilter
     )
         throws AccessDeniedException
     {
+        List<String> skipAlreadyPlacedOnNodeNamesCheck = NullableUtils.mapNullable(
+            selectFilter.skipAlreadyPlacedOnNodeNamesCheck(),
+            () -> new ArrayList<>(),
+            StringUtils::toUpperList
+        );
+        boolean skipAlreadyPlacedOnAllNodesCheck = NullableUtils.orElse(
+            selectFilter.skipAlreadyPlacedOnAllNodeCheck(),
+            false
+        );
+
         ArrayList<ReadOnlyProps> alreadyDeployedNodesProps = new ArrayList<>();
-        if (rscDfnRef != null)
+        if (rscDfnRef != null && !skipAlreadyPlacedOnAllNodesCheck)
         {
             Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiAccCtx);
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
                 Node node = rsc.getNode();
-                if (rsc.getStateFlags().isUnset(apiAccCtx, Resource.Flags.EVACUATE, Resource.Flags.EVICTED) &&
+                if (!skipAlreadyPlacedOnNodeNamesCheck.contains(node.getName().value) &&
+                    rsc.getStateFlags().isUnset(apiAccCtx, Resource.Flags.EVACUATE, Resource.Flags.EVICTED) &&
                     node.getFlags().isUnset(apiAccCtx, Node.Flags.EVACUATE, Node.Flags.EVICTED))
                 {
                     alreadyDeployedNodesProps.add(node.getProps(apiAccCtx));
@@ -194,8 +207,6 @@ public class StorPoolFilter
         );
         List<DeviceLayerKind> filterLayerList = selectFilter.getLayerStackList();
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
-        List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilter.skipAlreadyPlacedOnNodeNamesCheck();
-        Boolean skipAlreadyPlacedOnAllNodesCheck = selectFilter.skipAlreadyPlacedOnAllNodeCheck();
         Map<ExtTools, ExtToolsInfo.Version> requiredVersion = selectFilter.getRequiredExtTools();
 
         logIfNotEmpty("filtering mode: %s", diskful ? "diskful" : disklessTypeRef.name());
@@ -284,16 +295,6 @@ public class StorPoolFilter
                     )
                 );
             }
-        }
-
-        if (skipAlreadyPlacedOnNodeNamesCheck == null)
-        {
-            // just to prevent NPE
-            skipAlreadyPlacedOnNodeNamesCheck = new ArrayList<>();
-        }
-        if (skipAlreadyPlacedOnAllNodesCheck == null)
-        {
-            skipAlreadyPlacedOnAllNodesCheck = false;
         }
 
         ArrayList<StorPool> filteredList = new ArrayList<>();
@@ -636,7 +637,7 @@ public class StorPoolFilter
         }
 
         if (skipAlreadyPlacedOnAllNodesCheck ||
-            !skipAlreadyPlacedOnNodeNamesCheck.contains(nodeDisplayValue))
+            !skipAlreadyPlacedOnNodeNamesCheck.contains(nodeDisplayValue.toUpperCase()))
         {
             Iterator<Resource> iterateResources = node.iterateResources(apiAccCtx);
             while (ret && iterateResources.hasNext())
