@@ -3,7 +3,6 @@ package com.linbit.linstor.prometheus;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.rest.v1.Volumes;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.LinStor;
@@ -354,8 +353,8 @@ public class PrometheusBuilder
             for (Pair<ResourceApi, VolumeApi> pair : volumeApis)
             {
                 JsonGenTypes.Volume vlm = Json.apiToVolume(pair.objB);
-                vlm.state = Volumes.getVolumeState(
-                    rl, pair.objA.getNodeName(), pair.objA.getName(), vlm.volume_number
+                vlm.state = Json.apiToVolumeState(
+                    rl.getSatelliteStates(), pair.objA.getNodeName(), pair.objA.getName(), vlm.volume_number
                 );
                 tf.writeSample(volumeExport(pair.objA, pair.objB), volumeState(pair.objA, vlm));
             }

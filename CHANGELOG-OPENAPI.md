@@ -6,6 +6,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
 ### Added
   - Added VolumeState.replication_state
+  - Added VolumeState.done_percentage
 
 ## [1.24.0]
 

@@ -36,11 +36,13 @@ import com.linbit.linstor.debug.DebugModule;
 import com.linbit.linstor.event.EventModule;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.ConnectionStateEventHandler;
+import com.linbit.linstor.event.handler.protobuf.controller.DonePercentageEventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.ReplicationStateEventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.ResourceStateEventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.VolumeDiskStateEventHandler;
 import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ConnectionStateEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.DonePercentageEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ReplicationStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
@@ -560,6 +562,7 @@ public final class Controller
                 ResourceStateEventSerializer.class,
                 VolumeDiskStateEventSerializer.class,
                 ReplicationStateEventSerializer.class,
+                DonePercentageEventSerializer.class,
                 ConnectionStateEventSerializer.class
             );
 
@@ -567,6 +570,7 @@ public final class Controller
                 ResourceStateEventHandler.class,
                 VolumeDiskStateEventHandler.class,
                 ReplicationStateEventHandler.class,
+                DonePercentageEventHandler.class,
                 ConnectionStateEventHandler.class
             );
             errorLog.logInfo(

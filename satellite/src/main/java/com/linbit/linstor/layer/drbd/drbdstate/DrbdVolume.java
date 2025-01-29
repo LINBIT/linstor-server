@@ -6,6 +6,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.types.MinorNumber;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Tracks the state of a kernel DRBD volume or peer volume
@@ -208,11 +209,22 @@ public class DrbdVolume
 
         if (doneLabel != null)
         {
+            Float prevPercentage = donePercentage;
             donePercentage = ReplState.parseDone(doneLabel);
+            if (!Objects.equals(prevPercentage, donePercentage))
+            {
+                obs.donePercentageChanged(resRef, null, this, prevPercentage, donePercentage);
+            }
+
             if (volReplState == ReplState.SYNC_TARGET)
             {
                 obs.diskStateChanged(resRef, null, this, volDiskState, volDiskState);
             }
+        }
+        else
+        {
+            obs.donePercentageChanged(resRef, null, this, donePercentage, null);
+            donePercentage = null;
         }
 
         if (replLabel != null)

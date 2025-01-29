@@ -32,6 +32,7 @@ import com.linbit.linstor.debug.SatelliteDebugModule;
 import com.linbit.linstor.event.EventModule;
 import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ConnectionStateEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.DonePercentageEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ReplicationStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
@@ -435,6 +436,7 @@ public final class Satellite
                 ResourceStateEventSerializer.class,
                 VolumeDiskStateEventSerializer.class,
                 ReplicationStateEventSerializer.class,
+                DonePercentageEventSerializer.class,
                 ConnectionStateEventSerializer.class
             );
 

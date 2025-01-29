@@ -126,6 +126,7 @@ import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheRsc;
 import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheVlm;
 import com.linbit.linstor.proto.eventdata.EventConnStateOuterClass;
+import com.linbit.linstor.proto.eventdata.EventDonePercentageOuterClass;
 import com.linbit.linstor.proto.eventdata.EventReplicationStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
@@ -594,6 +595,25 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setReplicationState(replicationState)
                 .build()
                 .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder donePercentageEvent(Float donePercentage)
+    {
+        try
+        {
+            var edp = EventDonePercentageOuterClass.EventDonePercentage.newBuilder();
+            if (donePercentage != null)
+            {
+                edp.setDonePercentage(donePercentage);
+            }
+            edp.build().writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

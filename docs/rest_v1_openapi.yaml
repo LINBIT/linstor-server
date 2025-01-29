@@ -7140,6 +7140,9 @@ components:
           type: string
         replication_state:
           type: string
+        done_percentage:
+          type: number
+          format: double
     ResourceGroup:
       type: object
       properties:

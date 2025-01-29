@@ -685,6 +685,7 @@ public class JsonGenTypes
     {
         public String disk_state;
         public String replication_state;
+        public Double done_percentage;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

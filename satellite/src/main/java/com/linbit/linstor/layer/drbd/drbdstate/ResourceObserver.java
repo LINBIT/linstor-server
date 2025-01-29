@@ -155,6 +155,27 @@ public interface ResourceObserver
     }
 
     /**
+     * Called when the done percentage changes
+     *
+     * @param resource Representation of the DRBD resource that owns
+     *     the volume affected by the event
+     * @param connection If the volume is a peer volume, representation of the
+     *     DRBD connection that owns the peer volume; if the volume is a
+     *     local volume, this argument is set to null
+     * @param volume Representation of the volume affected by the event
+     * @param prevPercentage previous done percentage
+     * @param current Current done percentage
+     */
+    default void donePercentageChanged(
+        DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
+        Float prevPercentage,
+        Float current
+    )
+    {
+        // Do nothing
+    }
+
+    /**
      * Called when a DRBD resource's volume or peer volume has been destroyed
      * and is no longer known to the DRBD kernel module
      *  @param resource Representation of the DRBD resource that owned the volume

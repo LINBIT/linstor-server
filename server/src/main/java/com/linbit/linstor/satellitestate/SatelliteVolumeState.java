@@ -6,6 +6,7 @@ public class SatelliteVolumeState
 {
     private String diskState;
     private ReplState replicationState;
+    private Float donePercentage;
 
     public SatelliteVolumeState()
     {
@@ -15,6 +16,7 @@ public class SatelliteVolumeState
     {
         diskState = other.diskState;
         replicationState = other.replicationState;
+        donePercentage = other.donePercentage;
     }
 
     public String getDiskState()
@@ -37,8 +39,18 @@ public class SatelliteVolumeState
         this.replicationState = replicationStateRef;
     }
 
+    public Float getDonePercentage()
+    {
+        return donePercentage;
+    }
+
+    public void setDonePercentage(Float donePercentageRef)
+    {
+        donePercentage = donePercentageRef;
+    }
+
     public boolean isEmpty()
     {
-        return diskState == null && replicationState == null;
+        return diskState == null && replicationState == null && donePercentage == null;
     }
 }

@@ -80,6 +80,7 @@ public interface CommonSerializer
 
         CommonSerializerBuilder volumeDiskState(String diskState);
         CommonSerializerBuilder replicationState(String replicationState);
+        CommonSerializerBuilder donePercentageEvent(Float donePercentage);
 
         CommonSerializerBuilder resourceStateEvent(ResourceState resourceState);
 

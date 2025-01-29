@@ -8,6 +8,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ConnectionStateEvent;
+import com.linbit.linstor.event.common.DonePercentageEvent;
 import com.linbit.linstor.event.common.ReplicationStateEvent;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -19,6 +20,7 @@ import javax.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -36,6 +38,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     private final ResourceStateEvent resourceStateEvent;
     private final VolumeDiskStateEvent volumeDiskStateEvent;
     private final ReplicationStateEvent replicationStateEvent;
+    private final DonePercentageEvent donePercentageEvent;
     private final ConnectionStateEvent connectionStateEvent;
 
     private ServiceName instanceName;
@@ -59,6 +62,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         ResourceStateEvent resourceStateEventRef,
         VolumeDiskStateEvent volumeDiskStateEventRef,
         ReplicationStateEvent replicationStateEventRef,
+        DonePercentageEvent donePercentageEventRef,
         ConnectionStateEvent connectionStateEventRef
     )
     {
@@ -66,6 +70,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         resourceStateEvent = resourceStateEventRef;
         volumeDiskStateEvent = volumeDiskStateEventRef;
         replicationStateEvent = replicationStateEventRef;
+        donePercentageEvent = donePercentageEventRef;
         connectionStateEvent = connectionStateEventRef;
 
         try
@@ -227,6 +232,21 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     }
 
     @Override
+    public void donePercentageChanged(
+        DrbdResource resource,
+        DrbdConnection connection,
+        DrbdVolume volume,
+        Float previous,
+        Float current
+    )
+    {
+        if (resource.isKnownByLinstor())
+        {
+            triggerDonePercentageEvent(resource, volume);
+        }
+    }
+
+    @Override
     public void roleChanged(DrbdResource resource, DrbdResource.Role previous, DrbdResource.Role current)
     {
         if (resource.isKnownByLinstor())
@@ -248,6 +268,14 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         replicationStateEvent.get().triggerEvent(
             ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
             volume.replicationStateInfo()
+        );
+    }
+
+    private void triggerDonePercentageEvent(DrbdResource resource, DrbdVolume volume)
+    {
+        donePercentageEvent.get().triggerEvent(
+            ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
+            Optional.ofNullable(volume.donePercentage)
         );
     }
 

@@ -66,6 +66,9 @@ public class DrbdStateTracker
     // Observe may promote change
     public static final long OBS_PROMO_MAY   = 0x2000;
 
+    // Observe may promote change
+    public static final long OBS_DONE_PERC   = 0x4000;
+
     // Observe everything
     public static final long OBS_ALL        = 0xFFFFFFFFFFFFFFFFL;
 
@@ -84,6 +87,7 @@ public class DrbdStateTracker
     private static final int OBS_CONN_SLOT;
     private static final int OBS_PROMO_SCORE_SLOT;
     private static final int OBS_PROMO_MAY_SLOT;
+    private static final int OBS_DONE_PERC_SLOT;
 
     private static int obsSlotCount;
     private final Set<ResourceObserver>[] observers;
@@ -118,6 +122,7 @@ public class DrbdStateTracker
         OBS_CONN_SLOT        = initBitToSlot(OBS_CONN);
         OBS_PROMO_SCORE_SLOT = initBitToSlot(OBS_PROMO_SCORE);
         OBS_PROMO_MAY_SLOT   = initBitToSlot(OBS_PROMO_MAY);
+        OBS_DONE_PERC_SLOT   = initBitToSlot(OBS_DONE_PERC);
     }
 
     @SuppressWarnings("unchecked")
@@ -390,6 +395,16 @@ public class DrbdStateTracker
             for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_REPL_SLOT))
             {
                 obs.replicationStateChanged(resource, connection, volume, previous, current);
+            }
+        }
+
+        @Override
+        public void donePercentageChanged(
+            DrbdResource resource, DrbdConnection connection, DrbdVolume volume, Float prevPercentage, Float current)
+        {
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_DONE_PERC_SLOT))
+            {
+                obs.donePercentageChanged(resource, connection, volume, prevPercentage, current);
             }
         }
 

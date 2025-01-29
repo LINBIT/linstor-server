@@ -101,6 +101,7 @@ public class InternalApiConsts
      */
     public static final String EVENT_VOLUME_DISK_STATE = "VlmDiskState";
     public static final String EVENT_REPLICATION_STATE = "ReplicationState";
+    public static final String EVENT_DONE_PERCENTAGE = "DonePercentageEvent";
     // State of resource based on DRBD status (or other underlying system)
     public static final String EVENT_RESOURCE_STATE = "ResourceState";
     public static final String EVENT_CONNECTION_STATE = "ConnectionState";

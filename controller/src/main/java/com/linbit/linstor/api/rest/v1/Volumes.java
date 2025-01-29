@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.rest.v1;
 
-import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -13,12 +11,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHan
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.VolumeApi;
-import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.satellitestate.SatelliteResourceState;
-import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -38,7 +31,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -118,40 +110,6 @@ public class Volumes
         });
     }
 
-    public static JsonGenTypes.VolumeState getVolumeState(
-        final ResourceList resourceList, final String nodeName, final String rscName, int vlmNr)
-    {
-        JsonGenTypes.VolumeState vlmState = null;
-        try
-        {
-            final ResourceName rscNameRes = new ResourceName(rscName);
-            final NodeName linNodeName = new NodeName(nodeName);
-            if (resourceList.getSatelliteStates().containsKey(linNodeName) &&
-                resourceList.getSatelliteStates().get(linNodeName)
-                    .getResourceStates().containsKey(rscNameRes))
-            {
-                SatelliteResourceState satResState = resourceList
-                    .getSatelliteStates()
-                    .get(linNodeName)
-                    .getResourceStates()
-                    .get(rscNameRes);
-
-                VolumeNumber vlmNumber = new VolumeNumber(vlmNr);
-                if (satResState.getVolumeStates().containsKey(vlmNumber))
-                {
-                    vlmState = new JsonGenTypes.VolumeState();
-                    SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
-                    vlmState.disk_state = satVlmState.getDiskState();
-                    vlmState.replication_state = Objects.toString(satVlmState.getReplicationState(), null);
-                }
-            }
-        }
-        catch (InvalidNameException | ValueOutOfRangeException ignored)
-        {
-        }
-        return vlmState;
-    }
-
     private Mono<Response> listVolumesApiCallRcWithToResponse(
         Flux<ResourceList> resourceListFlux,
         final String rscName,
@@ -186,7 +144,8 @@ public class Volumes
                 final List<JsonGenTypes.Volume> vlms = vlmApiStream.map(vlmApi ->
                 {
                     JsonGenTypes.Volume vlmData = Json.apiToVolume(vlmApi);
-                    vlmData.state = getVolumeState(resourceList, nodeName, rscName, vlmApi.getVlmNr());
+                    vlmData.state = Json.apiToVolumeState(
+                        resourceList.getSatelliteStates(), nodeName, rscName, vlmApi.getVlmNr());
                     return vlmData;
                 })
                     .collect(Collectors.toList());
