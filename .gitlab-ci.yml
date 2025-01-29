@@ -19,7 +19,7 @@ variables:
     value: "1"
     description: How often to repeat each run
   RUNNER_TAG_LIBVIRT: "libvirt"
-  DISTRIBUTIONS: ubuntu-focal,ubuntu-jammy,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,debian-bookworm
+  DISTRIBUTIONS: ubuntu-focal,ubuntu-jammy,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,rhel10.0,debian-bookworm
 
 cache:
   paths:
@@ -76,6 +76,9 @@ workflow:
     - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
     - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
 # workaround a nexus bug not regenerating metadata
+    - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel10/x86_64/linstor-controller-$LINSTOR_VERSION-1.noarch.rpm
+    - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel10/x86_64/linstor-common-$LINSTOR_VERSION-1.noarch.rpm
+    - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel10/x86_64/linstor-satellite-$LINSTOR_VERSION-1.noarch.rpm
     - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel9/x86_64/linstor-controller-$LINSTOR_VERSION-1.noarch.rpm
     - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel9/x86_64/linstor-common-$LINSTOR_VERSION-1.noarch.rpm
     - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel9/x86_64/linstor-satellite-$LINSTOR_VERSION-1.noarch.rpm
@@ -95,9 +98,9 @@ workflow:
       echo "distributions:"
       for dist in "${ALL_DISTS[@]}"; do
         if [[ ${dist} == rhel* ]] ; then
-          echo "  ${dist:0:5}:"
+          echo "  ${dist%%.*}:"
           for linstor_comp in linstor-controller linstor-satellite linstor-common; do
-            echo "    ${linstor_comp/-/_}: \"https://nexus.at.linbit.com/repository/ci-yum/${dist:0:5}/x86_64/${linstor_comp}-${LINSTOR_VERSION}-1.noarch.rpm\""
+            echo "    ${linstor_comp/-/_}: \"https://nexus.at.linbit.com/repository/ci-yum/${dist%%.*}/x86_64/${linstor_comp}-${LINSTOR_VERSION}-1.noarch.rpm\""
           done
         elif [[ ${dist} == ubuntu* || ${dist} == debian* ]] ; then
         echo "  ${dist/-/_}:"
