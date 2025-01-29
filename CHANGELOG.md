@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reconnect: Fixed rare NoSuchFileException triggered by multiple reconnects in quick succession
 - BackupShip: Fixed bug where shipment was not executed when previous shipping node was unavailable
 - Migration: Fixed incorrect usage of rscGrp's instanceName
+- VlmDfn,Resize: Only allow resize if all peers are online and UpToDate
 
 ## [1.30.3] - 2025-01-23
 

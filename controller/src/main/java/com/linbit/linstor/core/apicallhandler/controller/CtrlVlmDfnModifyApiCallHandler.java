@@ -359,12 +359,17 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 {
                     final Resource rsc = itRsc.next();
                     if (!rsc.isDiskless(apiCtx) &&
-                        !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(apiCtx, rsc))
+                        hasDrbd(rsc) &&
+                        !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(apiCtx, rsc, false))
                     {
-                        throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
-                            ApiConsts.FAIL_NOT_ALL_UPTODATE,
-                            "Cannot resize volume, because we have a non-UpToDate DRBD device."
-                        ));
+                        throw new ApiRcException(
+                            ApiCallRcImpl.entryBuilder(
+                                ApiConsts.FAIL_NOT_ALL_UPTODATE,
+                                "Cannot resize volume, because we have a non-UpToDate DRBD device."
+                            )
+                                .setSkipErrorReport(true)
+                                .build()
+                        );
                     }
                 }
             }
@@ -955,6 +960,22 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             throw new ImplementationError(exc);
         }
         return hasDrbdLayer;
+    }
+
+    private boolean hasDrbd(Resource rsc)
+    {
+        Iterator<Volume> vlmsIt = rsc.iterateVolumes();
+        boolean ret = false;
+        while (vlmsIt.hasNext())
+        {
+            Volume vlm = vlmsIt.next();
+            if (hasDrbd(vlm))
+            {
+                ret = true;
+                break;
+            }
+        }
+        return ret;
     }
 
     private Flux<ApiCallRc> resizeDrbd(ResourceName rscName, VolumeNumber vlmNr)
