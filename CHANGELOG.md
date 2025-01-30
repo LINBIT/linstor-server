@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Changed ext-tool-check command for "drbd-proxy" from "-v" to "--version" to support v3 and v4
+
 ### Fixed
 
 - Reconnect: Fixed rare NoSuchFileException triggered by multiple reconnects in quick succession

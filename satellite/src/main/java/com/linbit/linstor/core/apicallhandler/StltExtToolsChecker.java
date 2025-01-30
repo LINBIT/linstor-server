@@ -52,7 +52,7 @@ public class StltExtToolsChecker
     private static final Pattern PROC_MODULES_NAME_PATTERN = Pattern.compile("^([^ ]+)", Pattern.MULTILINE);
 
     private static final Pattern DRBD_PROXY_VERSION_PATTERN = Pattern
-        .compile("(?:Drbd-proxy )?(\\d+)\\.(\\d+)\\.(\\d+)");
+        .compile("(?:[Dd]rbd-proxy(?:-rs)? )?(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern CRYPTSETUP_VERSION_PATTERN = Pattern
         .compile("(?:cryptsetup )?(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern LVM_VERSION_PATTERN = Pattern
@@ -392,7 +392,7 @@ public class StltExtToolsChecker
 
     private ExtToolsInfo getDrbdProxyInfo()
     {
-        return infoBy3MatchGroupPattern(DRBD_PROXY_VERSION_PATTERN, ExtTools.DRBD_PROXY, "drbd-proxy", "-v");
+        return infoBy3MatchGroupPattern(DRBD_PROXY_VERSION_PATTERN, ExtTools.DRBD_PROXY, "drbd-proxy", "--version");
     }
 
     private ExtToolsInfo getCryptSetupInfo()
