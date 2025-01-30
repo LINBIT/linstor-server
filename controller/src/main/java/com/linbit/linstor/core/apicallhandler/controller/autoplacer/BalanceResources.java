@@ -11,7 +11,6 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -21,6 +20,7 @@ import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
+import com.linbit.linstor.layer.drbd.drbdstate.ReplState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -67,7 +67,6 @@ public class BalanceResources
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscDeleteApiCallHandler rscDeleteApiCallHandler;
-    private final CtrlRscGrpApiCallHandler rscGrpApiCallHandler;
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
 
     private static final long DEFAULT_GRACE_PERIOD_SECS = 3600;
@@ -84,7 +83,6 @@ public class BalanceResources
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlRscDeleteApiCallHandler rscDeleteApiCallHandlerRef,
-        CtrlRscGrpApiCallHandler rscGrpApiCallHandlerRef,
         CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef
 
     )
@@ -99,7 +97,6 @@ public class BalanceResources
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         rscDeleteApiCallHandler = rscDeleteApiCallHandlerRef;
-        rscGrpApiCallHandler = rscGrpApiCallHandlerRef;
         ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
     }
 
@@ -277,6 +274,15 @@ public class BalanceResources
             return true;
         }
 
+        if (!areAllVolumesInGoodReplicationState(rscDfn))
+        {
+            log.logDebug(
+                "BalanceResourcesTask/%s: Ignore because some volumes do not have an established replication",
+                rscDfn.getName()
+            );
+            return true;
+        }
+
         return false;
     }
 
@@ -298,9 +304,40 @@ public class BalanceResources
     }
 
     /**
+     * Checks if all volumes of the given resource definition are in a "good" replication state.
+     * This is to prevent resources getting removed that are e.g. currently SyncSource.
+     * @param rscDfn resource definition to check
+     * @return true if all volumes are established, else false.
+     * @throws AccessDeniedException should not happen as we use sysCtx
+     */
+    @SuppressWarnings({"checkstyle:DescendantToken", "checkstyle:returnCount"})
+    private boolean areAllVolumesInGoodReplicationState(ResourceDefinition rscDfn) throws AccessDeniedException
+    {
+        for (Resource rsc : rscDfn.streamResource(sysCtx).collect(Collectors.toList()))
+        {
+            var rscStates = rsc.getNode().getPeer(sysCtx).getSatelliteState().getResourceStates();
+            var satRscStates = rscStates.get(rscDfn.getName());
+            if (satRscStates != null)
+            {
+                for (var volEntry : satRscStates.getVolumeStates().entrySet())
+                {
+                    ReplState replicationState = volEntry.getValue().getReplicationState();
+                    if (!(replicationState == null ||
+                        ReplState.ESTABLISHED.equals(replicationState) ||
+                        ReplState.OFF.equals(replicationState)))
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
      * Filter resources that should really considered as UpToDate diskfull resources.
      *
-     * @param resources
+     * @param resources Resource to filter
      * @throws AccessDeniedException should not we use sysctx
      */
     private void filterDiskfull(List<Resource> resources) throws AccessDeniedException
