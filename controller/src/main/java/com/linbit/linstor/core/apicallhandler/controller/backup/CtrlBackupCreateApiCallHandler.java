@@ -28,6 +28,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -240,7 +241,13 @@ public class CtrlBackupCreateApiCallHandler
             else if (remoteTypeRef.equals(RemoteType.LINSTOR))
             {
                 remote = backupHelper.getL2LRemote(remoteName);
-                prevSnapDfn = getIncrementalBaseL2L(rscDfn, prevSnapDfnUuid, allowIncremental);
+                prevSnapDfn = getIncrementalBaseL2L(
+                    rscDfn,
+                    prevSnapDfnUuid,
+                    remote.getName(),
+                    allowIncremental,
+                    responses
+                );
             }
             else
             {
@@ -643,6 +650,10 @@ public class CtrlBackupCreateApiCallHandler
         }
         if (chosenNode == null)
         {
+            responses.addEntry(
+                "Maximum amount of shippings met on all nodes, adding to queue instead",
+                ApiConsts.MASK_WARN
+            );
             // the remote needs to be the LinstorRemote in L2L-cases, since the target node is not yet decided
             // on.
             // usableNodes might be empty, in that case the snapDfn is added to the prevNodeUndecidedQueue
@@ -904,29 +915,100 @@ public class CtrlBackupCreateApiCallHandler
     public SnapshotDefinition getIncrementalBaseL2L(
         ResourceDefinition rscDfn,
         String prevSnapDfnUuid,
-        boolean allowIncremental
+        RemoteName remoteName,
+        boolean allowIncremental,
+        ApiCallRcImpl responses
     ) throws AccessDeniedException
     {
         SnapshotDefinition prevSnapDfn = null;
         if (allowIncremental)
         {
+            boolean respMsgSet = false;
             if (prevSnapDfnUuid != null)
             {
                 for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(sysCtx))
                 {
                     if (snapDfn.getUuid().toString().equals(prevSnapDfnUuid))
                     {
-                        prevSnapDfn = snapDfn;
+                        String prevNodeStr = snapDfn.getSnapDfnProps(sysCtx)
+                            .getProp(
+                                InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remoteName +
+                                    "/" + rscDfn.getName().displayValue,
+                                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                            );
+                        if (prevNodeStr != null)
+                        {
+                            Node prevNode = ctrlApiDataLoader.loadNode(prevNodeStr, false);
+                            if (prevNode != null)
+                            {
+                                boolean isNodeAvailable = !prevNode.getFlags()
+                                    .isSomeSet(
+                                        sysCtx,
+                                        Node.Flags.DELETE,
+                                        Node.Flags.EVACUATE,
+                                        Node.Flags.EVICTED
+                                    ) && prevNode.getPeer(sysCtx).isOnline();
+                                if (isNodeAvailable)
+                                {
+                                    prevSnapDfn = snapDfn;
+                                }
+                                else
+                                {
+                                    respMsgSet = true;
+                                    responses.addEntry(
+                                        ApiCallRcImpl.simpleEntry(
+                                            ApiConsts.MASK_WARN,
+                                            "Node " + prevNode +
+                                                " is needed for an incremental backup, " +
+                                                "but is offline or otherwise unavailable (deleting, evicted, etc)"
+                                        )
+                                    );
+                                }
+                            }
+                            else
+                            {
+                                respMsgSet = true;
+                                responses.addEntry(
+                                    ApiCallRcImpl.simpleEntry(
+                                        ApiConsts.MASK_WARN,
+                                        "Node " + prevNodeStr +
+                                            " is needed for an incremental backup, " +
+                                            "but seems to have already been deleted"
+                                    )
+                                );
+                            }
+                        }
+                        else
+                        {
+                            respMsgSet = true;
+                            responses.addEntry(
+                                ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.MASK_INFO,
+                                    "Unable to discern which node shipped the last incremental backup"
+                                )
+                            );
+                        }
                         break;
                     }
                 }
             }
             if (prevSnapDfn == null)
             {
-                errorReporter.logWarning(
-                    "Could not create an incremental backup for resource %s as the remote cluster did not have any " +
-                        "matching snapshots. Creating a full backup instead.",
-                    rscDfn.getName()
+                if (!respMsgSet)
+                {
+                    responses.addEntry(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.MASK_INFO,
+                            "No common snapshot found"
+                        )
+                    );
+                }
+                responses.addEntry(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.MASK_WARN,
+                        "Could not create an incremental backup for resource " + rscDfn +
+                            ", creating full backup instead"
+                    )
                 );
             }
         }
@@ -995,13 +1077,6 @@ public class CtrlBackupCreateApiCallHandler
                         ApiConsts.MASK_WARN
                     );
                 }
-            }
-            else
-            {
-                responses.addEntry(
-                    "Maximum amount of shippings met on all nodes, adding to queue instead",
-                    ApiConsts.MASK_WARN
-                );
             }
         }
         return ret;

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Reconnect: Fixed rare NoSuchFileException triggered by multiple reconnects in quick succession
+- BackupShip: Fixed bug where shipment was not executed when previous shipping node was unavailable
 
 ## [1.30.3] - 2025-01-23
 

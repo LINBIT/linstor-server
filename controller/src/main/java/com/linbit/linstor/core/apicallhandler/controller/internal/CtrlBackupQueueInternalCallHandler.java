@@ -475,7 +475,9 @@ public class CtrlBackupQueueInternalCallHandler
                 SnapshotDefinition l2lPrevSnapDfn = backupCrtHandler.getIncrementalBaseL2L(
                     next.snapDfn.getResourceDefinition(),
                     resp.prevSnapUuid,
-                    next.prevSnapDfn != null
+                    next.remote.getName(),
+                    next.prevSnapDfn != null,
+                    resp.responses
                 );
                 boolean queueAnyways = l2lPrevSnapDfn != null && l2lPrevSnapDfn.getFlags()
                     .isUnset(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
