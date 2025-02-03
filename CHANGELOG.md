@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.30.4] - 2025-02-03
+
 ### Changed
 
 - Changed ext-tool-check command for "drbd-proxy" from "-v" to "--version" to support v3 and v4
