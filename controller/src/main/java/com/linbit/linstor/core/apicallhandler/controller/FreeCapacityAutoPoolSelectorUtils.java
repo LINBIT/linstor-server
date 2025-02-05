@@ -16,8 +16,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
-import javax.annotation.Nonnull;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -59,9 +57,9 @@ public class FreeCapacityAutoPoolSelectorUtils
     }
 
     private static StorPool getStorPoolPrivileged(
-        @Nonnull AccessContext sysCtxRef,
-        @Nonnull Node nodeRef,
-        @Nonnull StorPoolName storPoolNameRef
+        AccessContext sysCtxRef,
+        Node nodeRef,
+        StorPoolName storPoolNameRef
     )
     {
         StorPool storPool;
@@ -186,9 +184,9 @@ public class FreeCapacityAutoPoolSelectorUtils
      * @return
      */
     private static @Nullable Long getFreeSpacePrivileged(
-        @Nonnull AccessContext sysCtxRef,
+        AccessContext sysCtxRef,
         @Nullable Map<StorPool.Key, Long> thinFreeCapacitiesRef,
-        @Nonnull StorPool storPoolRef
+        StorPool storPoolRef
     )
     {
         Long ret = null;
@@ -210,7 +208,7 @@ public class FreeCapacityAutoPoolSelectorUtils
         return ret;
     }
 
-    private static @Nullable Long getCapacityPrivilged(@Nonnull AccessContext sysCtxRef, @Nonnull StorPool storPoolRef)
+    private static @Nullable Long getCapacityPrivilged(AccessContext sysCtxRef, StorPool storPoolRef)
     {
         try
         {

@@ -28,7 +28,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -173,7 +172,7 @@ public class CtrlRscAutoHelper
         return Flux.merge(fluxList);
     }
 
-    public Flux<ApiCallRc> manageInOwnTransaction(@Nonnull AutoHelperContext autoCtx)
+    public Flux<ApiCallRc> manageInOwnTransaction(AutoHelperContext autoCtx)
     {
         return scopeRunner.fluxInTransactionalScope(
             "Create storage pool",
@@ -182,7 +181,7 @@ public class CtrlRscAutoHelper
         );
     }
 
-    public AutoHelperResult manage(@Nonnull AutoHelperContext ctx)
+    public AutoHelperResult manage(AutoHelperContext ctx)
     {
         return manage(ctx, Collections.singleton(AutoHelperType.All));
     }
@@ -318,7 +317,7 @@ public class CtrlRscAutoHelper
             rscDfn = definitionRef;
         }
 
-        public @Nonnull AutoHelperContext withSelectFilter(AutoSelectFilterApi selectFilterRef)
+        public AutoHelperContext withSelectFilter(AutoSelectFilterApi selectFilterRef)
         {
             selectFilter = selectFilterRef;
             return this;

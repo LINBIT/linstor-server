@@ -7,8 +7,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.utils.StringUtils;
 
-import javax.annotation.Nonnull;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -106,7 +104,7 @@ public class LsBlkUtils
         return parseLsblkOutput(new String(outputData.stdoutData, StandardCharsets.UTF_8));
     }
 
-    public static boolean parentIsVDO(ExtCmd extCmd, @Nonnull List<String> devicePathList)
+    public static boolean parentIsVDO(ExtCmd extCmd, List<String> devicePathList)
         throws StorageException
     {
         // TODO: If possible, it would make sense time-complexity-wise to call the lsblk method
@@ -160,7 +158,7 @@ public class LsBlkUtils
      * @return
      * @throws StorageException
      */
-    public static String blkid(@Nonnull ExtCmd extCmd, @Nonnull String device)
+    public static String blkid(ExtCmd extCmd, String device)
         throws StorageException
     {
         ExtCmd.OutputData outputData = Commands.genericExecutor(

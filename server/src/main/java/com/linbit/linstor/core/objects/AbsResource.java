@@ -14,7 +14,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -33,7 +32,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
     public static final int CREATE_DATE_INIT_VALUE = 1000;
 
     // Reference to the node this resource is assigned to
-    protected final @Nonnull Node node;
+    protected final Node node;
 
     protected final TransactionSimpleObject<AbsResource<RSC>, @Nullable Date> createTimestamp;
 
@@ -41,7 +40,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
 
     protected AbsResource(
         UUID objIdRef,
-        @Nonnull Node nodeRef,
+        Node nodeRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
         TransactionObjectFactory transObjFactory,
         @Nullable Date createTimestampRef,
@@ -65,7 +64,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
     }
 
 
-    public @Nonnull Node getNode()
+    public Node getNode()
     {
         checkDeleted();
         return node;

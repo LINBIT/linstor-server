@@ -2,8 +2,6 @@ package com.linbit.linstor.logging;
 
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nonnull;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,13 +10,13 @@ import java.util.List;
 public class ErrorReportResult
 {
     private long totalCount;
-    private final @Nonnull ArrayList<ErrorReport> errorReports = new ArrayList<>();
+    private final ArrayList<ErrorReport> errorReports = new ArrayList<>();
     /**
      * The key of this map is a Pair<NodeName,Module>.
      */
-    private final @Nonnull HashMap<Pair<String, String>, Long> nodeCounts = new HashMap<>();
+    private final HashMap<Pair<String, String>, Long> nodeCounts = new HashMap<>();
 
-    public ErrorReportResult(long totalCountRef, @Nonnull Collection<ErrorReport> errorReportsRef)
+    public ErrorReportResult(long totalCountRef, Collection<ErrorReport> errorReportsRef)
     {
         totalCount = totalCountRef;
         errorReports.addAll(errorReportsRef);
@@ -31,10 +29,10 @@ public class ErrorReportResult
      * @param other ErrorReportResult to add.
      * @return This ErrorReportResult instance
      */
-    public @Nonnull ErrorReportResult addErrorReportResult(
-        @Nonnull String nodeName,
-        @Nonnull String module,
-        @Nonnull ErrorReportResult other
+    public ErrorReportResult addErrorReportResult(
+        String nodeName,
+        String module,
+        ErrorReportResult other
     )
     {
         totalCount += other.totalCount;
@@ -47,7 +45,7 @@ public class ErrorReportResult
      * Inplace sorts the error reports by the LinstorFile::compareTo method.
      * @return This ErrorReportResult instance
      */
-    public @Nonnull ErrorReportResult sort()
+    public ErrorReportResult sort()
     {
         errorReports.sort(LinstorFile::compareTo);
         return this;
@@ -62,7 +60,7 @@ public class ErrorReportResult
         return totalCount;
     }
 
-    public @Nonnull HashMap<Pair<String, String>, Long> getNodeCounts()
+    public HashMap<Pair<String, String>, Long> getNodeCounts()
     {
         return nodeCounts;
     }
@@ -71,7 +69,7 @@ public class ErrorReportResult
      * List of ErrorReport data.
      * @return ErrorReport list.
      */
-    public @Nonnull List<ErrorReport> getErrorReports()
+    public List<ErrorReport> getErrorReports()
     {
         return errorReports;
     }

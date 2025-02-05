@@ -2,10 +2,9 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo.DbProduct;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.migration.MigrationUtils_SplitSnapProps;
 import com.linbit.linstor.dbdrivers.migration.MigrationUtils_SplitSnapProps.InstanceType;
-
-import javax.annotation.Nullable;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

@@ -8,9 +8,8 @@ import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.Arrays;

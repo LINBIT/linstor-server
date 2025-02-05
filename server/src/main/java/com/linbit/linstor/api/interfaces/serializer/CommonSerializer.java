@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.FileInfoPojo;
@@ -13,9 +14,6 @@ import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
-
-import javax.annotation.Nonnull;
-import com.linbit.linstor.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -43,28 +41,27 @@ public interface CommonSerializer
 
         CommonSerializerBuilder authError(ApiCallRcImpl apiCallRcRef);
 
-        @Nonnull
         CommonSerializerBuilder authSuccess(
             long expectedFullSyncId,
-            @Nonnull int[] stltVersion,
-            @Nonnull String nodeUname,
-            @Nonnull Collection<ExtToolsInfo> layerInfoListRef,
-            @Nonnull ApiCallRc responses,
-            @Nonnull String configDir,
+            int[] stltVersion,
+            String nodeUname,
+            Collection<ExtToolsInfo> layerInfoListRef,
+            ApiCallRc responses,
+            String configDir,
             boolean debugConsoleEnabled,
             boolean logPrintStackTrace,
-            @Nonnull String logDirectory,
-            @Nonnull String logLevel,
+            String logDirectory,
+            String logLevel,
             @Nullable String logLevelLinstor,
             @Nullable String stltOverrideNodeName,
             boolean remoteSpdk,
             boolean ebs,
             @Nullable Pattern drbdKeepResPattern,
-            @Nonnull String netBindAddress,
-            @Nonnull Integer netPort,
-            @Nonnull String netType,
-            @Nonnull Set<String> extFileWhitelist,
-            @Nonnull WhitelistProps whitelistProps
+            String netBindAddress,
+            Integer netPort,
+            String netType,
+            Set<String> extFileWhitelist,
+            WhitelistProps whitelistProps
         );
 
         CommonSerializerBuilder bytes(byte[] bytes);
@@ -91,7 +88,7 @@ public interface CommonSerializer
             boolean withContent,
             Date since,
             Date to,
-            @Nonnull Set<String> ids,
+            Set<String> ids,
             Long limit,
             Long offset
         );
@@ -111,7 +108,7 @@ public interface CommonSerializer
             ArrayList<RequestFilePojo> nextBatchToRequestRef
         );
 
-        CommonSerializerBuilder errorReports(@Nonnull ErrorReportResult errorReportResult);
+        CommonSerializerBuilder errorReports(ErrorReportResult errorReportResult);
 
         CommonSerializerBuilder sosReportFileInfoList(
             String nodeNameRef,

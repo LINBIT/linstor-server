@@ -24,7 +24,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.ComparatorUtils;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -62,7 +61,7 @@ public class CtrlQueryMaxVlmSizeHelper
     }
 
     public Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> queryMaxVlmSize(
-        @Nonnull AutoSelectFilterApi selectFilter,
+        AutoSelectFilterApi selectFilter,
         @Nullable ResourceDefinition rscDfnRef,
         int size,
         @Nullable Map<StorPool.Key, Long> thinFreeCapacities
@@ -157,7 +156,7 @@ public class CtrlQueryMaxVlmSizeHelper
         return Flux.just(makeResponse(candidatesWithCapacity));
     }
 
-    private @Nonnull List<String> getStorPoolNamesAsStringPrivileged()
+    private List<String> getStorPoolNamesAsStringPrivileged()
     {
         List<String> storPoolNamesStr = new ArrayList<>();
         try
@@ -175,7 +174,7 @@ public class CtrlQueryMaxVlmSizeHelper
         return storPoolNamesStr;
     }
 
-    private @Nonnull StorPoolDefinition getStorPoolDfnPrivileged(@Nonnull StorPool storPool)
+    private StorPoolDefinition getStorPoolDfnPrivileged(StorPool storPool)
     {
         StorPoolDefinition storPoolDfn;
         try
@@ -189,7 +188,7 @@ public class CtrlQueryMaxVlmSizeHelper
         return storPoolDfn;
     }
 
-    private @Nonnull StorPoolDefinitionApi getStorPoolDfnApiDataPrivileged(@Nonnull StorPoolDefinition storPoolDfn)
+    private StorPoolDefinitionApi getStorPoolDfnApiDataPrivileged(StorPoolDefinition storPoolDfn)
     {
         StorPoolDefinitionApi apiData;
         try

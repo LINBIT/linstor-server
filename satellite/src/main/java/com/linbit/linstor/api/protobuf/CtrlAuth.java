@@ -15,7 +15,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass.MsgIntAuth;
 import com.linbit.linstor.utils.SetUtils;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -67,7 +66,7 @@ public class CtrlAuth implements ApiCall
     }
 
     @Override
-    public void execute(@Nonnull InputStream msgDataIn)
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         // get the host uname for the drbd config

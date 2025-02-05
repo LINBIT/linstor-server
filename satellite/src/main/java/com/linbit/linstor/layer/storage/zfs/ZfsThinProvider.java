@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.storage.zfs;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
@@ -17,7 +18,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

@@ -8,8 +8,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import javax.annotation.Nonnull;
-
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
@@ -56,7 +54,7 @@ public interface ErrorReporter
      * @throws AccessDeniedException
      *     if the access context is not authorized to perform the change.
      */
-    void setLogLevel(@Nonnull AccessContext accCtx, @Nullable Level level, @Nullable Level linstorLevel)
+    void setLogLevel(AccessContext accCtx, @Nullable Level level, @Nullable Level linstorLevel)
         throws AccessDeniedException;
 
     void logTrace(String format, Object... args);
@@ -189,11 +187,11 @@ public interface ErrorReporter
 
     Path getLogDirectory();
 
-    default @Nonnull ErrorReportResult listReports(
+    default ErrorReportResult listReports(
         boolean withText,
         @Nullable final Date since,
         @Nullable final Date to,
-        @Nonnull final Set<String> ids,
+        final Set<String> ids,
         @Nullable final Long limit,
         @Nullable final Long offset
     )

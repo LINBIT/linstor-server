@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.interfaces;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
@@ -18,8 +19,6 @@ import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;

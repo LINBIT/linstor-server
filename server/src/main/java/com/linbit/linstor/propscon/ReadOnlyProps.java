@@ -1,8 +1,7 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.prop.LinStorObject;
-
-import javax.annotation.Nullable;
 
 import java.util.Collection;
 import java.util.Iterator;

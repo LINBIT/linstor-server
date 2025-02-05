@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.exos;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
@@ -53,7 +54,6 @@ import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.utils.Align;
 import com.linbit.utils.Triple;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

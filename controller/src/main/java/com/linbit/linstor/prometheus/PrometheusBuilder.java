@@ -24,7 +24,6 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
 import java.io.IOException;
@@ -126,7 +125,6 @@ public class PrometheusBuilder
         DefaultExports.initialize();
     }
 
-    @Nonnull
     public static Map<String, String> nodeExport(final NodeApi nodeApi)
     {
         final HashMap<String, String> map = new HashMap<>();
@@ -141,9 +139,9 @@ public class PrometheusBuilder
         return map;
     }
 
-    @Nonnull
     public static Map<String, String> resourceDfnLabels(
-        @Nonnull final ResourceDefinitionApi rscDfnApi)
+        final ResourceDefinitionApi rscDfnApi
+    )
     {
         final HashMap<String, String> map = new HashMap<>();
         map.put("name", rscDfnApi.getResourceName());
@@ -151,9 +149,10 @@ public class PrometheusBuilder
         return map;
     }
 
-    @Nonnull
     public static Map<String, String> volumeDfnLabels(
-        @Nonnull final ResourceDefinitionApi rscDfnApi, @Nonnull final VolumeDefinitionApi vlmDfnApi)
+        final ResourceDefinitionApi rscDfnApi,
+        final VolumeDefinitionApi vlmDfnApi
+    )
     {
         final HashMap<String, String> map = new HashMap<>();
         map.put("name", rscDfnApi.getResourceName());
@@ -162,7 +161,6 @@ public class PrometheusBuilder
         return map;
     }
 
-    @Nonnull
     public static Map<String, String> resourceExport(final ResourceApi resourceApi)
     {
         final HashMap<String, String> map = new HashMap<>();
@@ -204,7 +202,6 @@ public class PrometheusBuilder
         return state;
     }
 
-    @Nonnull
     private static Map<String, String> volumeExport(
         final ResourceApi resourceApi,
         final VolumeApi vlmApi

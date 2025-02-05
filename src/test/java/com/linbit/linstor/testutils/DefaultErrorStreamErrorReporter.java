@@ -1,11 +1,10 @@
 package com.linbit.linstor.testutils;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-
-import javax.annotation.Nullable;
 
 import java.nio.file.Path;
 

@@ -65,7 +65,6 @@ import com.linbit.utils.FileCollector;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -1153,7 +1152,7 @@ public class CtrlSosReportApiCallHandler
      * @throws ExtCmdFailedException If the tar command returns a non-zero exit code.
      * @throws ChildProcessTimeoutException If the tar command does not return after 4 minutes.
      */
-    private void createTar(@Nonnull Path source, @Nonnull String fileName, @Nonnull List<String> directories)
+    private void createTar(Path source, String fileName, List<String> directories)
         throws IOException, ExtCmdFailedException, ChildProcessTimeoutException
     {
         ExtCmd extCommand = extCmdFactory.create();

@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.kinds;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;

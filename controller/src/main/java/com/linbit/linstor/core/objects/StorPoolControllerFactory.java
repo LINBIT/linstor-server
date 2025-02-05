@@ -20,7 +20,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -65,7 +64,7 @@ public class StorPoolControllerFactory
         AccessContext accCtx,
         Node node,
         StorPoolDefinition storPoolDef,
-        @Nonnull DeviceProviderKind deviceProviderKindRef,
+        DeviceProviderKind deviceProviderKindRef,
         FreeSpaceTracker freeSpaceTrackerRef,
         boolean externalLockingRef
     )

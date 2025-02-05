@@ -1,5 +1,6 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.dbdrivers.SatellitePropDriver;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -18,8 +19,6 @@ import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateEntries;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateKeys;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateValues;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.glue;
-
-import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;

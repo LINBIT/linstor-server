@@ -1,6 +1,5 @@
 package com.linbit.utils;
 
-import javax.annotation.Nonnull;
 import com.linbit.linstor.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -87,7 +86,7 @@ public class StringUtils
      * @param string The string to escape.
      * @return The escaped string.
      */
-    public static String shellQuote(@Nonnull String string)
+    public static String shellQuote(String string)
     {
         String result;
         Matcher matcher = unsafeForShell.matcher(string);
@@ -112,7 +111,7 @@ public class StringUtils
      * @param strings The strings to escape.
      * @return The escaped string, joined together.
      */
-    public static String joinShellQuote(@Nonnull String... strings)
+    public static String joinShellQuote(String... strings)
     {
         assert Arrays.stream(strings).noneMatch(Objects::isNull) :
             "joinShellQuote.strings contains null: " + join(Arrays.asList(strings));

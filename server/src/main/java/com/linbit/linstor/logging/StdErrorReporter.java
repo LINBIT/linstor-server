@@ -13,7 +13,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.utils.TimeUtils;
 
-import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.io.File;
@@ -185,7 +184,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public void setLogLevel(@Nonnull AccessContext accCtx, @Nullable Level level, @Nullable Level linstorLevel)
+    public void setLogLevel(AccessContext accCtx, @Nullable Level level, @Nullable Level linstorLevel)
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
@@ -428,11 +427,11 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public @Nonnull ErrorReportResult listReports(
+    public ErrorReportResult listReports(
         boolean withText,
         @Nullable final Date since,
         @Nullable final Date to,
-        @Nonnull final Set<String> ids,
+        final Set<String> ids,
         @Nullable final Long limit,
         @Nullable final Long offset
     )

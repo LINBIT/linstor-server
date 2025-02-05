@@ -1,6 +1,7 @@
 package com.linbit.linstor.logging;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -8,9 +9,6 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.TimeUtils;
-
-import javax.annotation.Nonnull;
-import com.linbit.linstor.annotation.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -159,11 +157,11 @@ public class H2ErrorReporter
         }
     }
 
-    public @Nonnull ErrorReportResult listReports(
+    public ErrorReportResult listReports(
         boolean withText,
         @Nullable final Date since,
         @Nullable final Date to,
-        @Nonnull final Set<String> ids,
+        final Set<String> ids,
         @Nullable final Long limit,
         @Nullable final Long offset
     )

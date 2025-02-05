@@ -6,8 +6,6 @@ import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.annotation.Nonnull;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -70,7 +68,6 @@ public interface StorPoolApi
     Boolean isVDO();
     Boolean isExternalLocking();
 
-    @Nonnull
     @JsonIgnore
     default String getBackingPoolName()
     {

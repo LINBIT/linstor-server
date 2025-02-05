@@ -25,7 +25,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -56,7 +55,7 @@ public class StorPoolHelper
     public StorPool createStorPool(
         String nodeNameStr,
         String storPoolNameStr,
-        @Nonnull DeviceProviderKind deviceProviderKindRef,
+        DeviceProviderKind deviceProviderKindRef,
         @Nullable String sharedStorPoolNameStr,
         boolean externalLockingRef
     )

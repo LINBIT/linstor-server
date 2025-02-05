@@ -1,6 +1,5 @@
 package com.linbit.linstor.utils;
 
-import javax.annotation.Nonnull;
 
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -34,7 +33,7 @@ public class SetUtils
         return targetSet;
     }
 
-    public static @Nonnull Set<String> convertPathsToStrings(@Nonnull Set<Path> orig)
+    public static Set<String> convertPathsToStrings(Set<Path> orig)
     {
         Set<String> ret = new HashSet<>();
         for (Path path : orig)

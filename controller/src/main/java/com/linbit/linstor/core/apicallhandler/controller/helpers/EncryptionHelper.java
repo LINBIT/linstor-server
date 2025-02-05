@@ -7,6 +7,7 @@ import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -44,7 +45,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Base64;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;

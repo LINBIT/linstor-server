@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -47,7 +48,6 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroup
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.UUID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.X_REPLICAS_ON_DIFFERENT;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;

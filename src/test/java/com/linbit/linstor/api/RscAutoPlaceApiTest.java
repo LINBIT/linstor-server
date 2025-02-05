@@ -2,6 +2,7 @@ package com.linbit.linstor.api;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
@@ -46,7 +47,6 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import java.util.ArrayList;

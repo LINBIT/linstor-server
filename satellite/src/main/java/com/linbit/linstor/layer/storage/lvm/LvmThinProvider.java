@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.lvm;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
@@ -27,7 +28,6 @@ import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

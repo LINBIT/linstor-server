@@ -1,5 +1,6 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
@@ -10,7 +11,6 @@ import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;

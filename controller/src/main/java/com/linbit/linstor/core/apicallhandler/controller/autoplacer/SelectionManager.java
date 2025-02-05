@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -19,8 +20,6 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.utils.CollectionUtils;
 import com.linbit.utils.StringUtils;
-
-import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -12,8 +12,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import javax.annotation.Nonnull;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -50,9 +48,9 @@ public class CtrlExternalFilesHelper
     }
 
     public static boolean isPathWhitelisted(
-        @Nonnull ExternalFileName extFileName,
-        @Nonnull Node node,
-        @Nonnull AccessContext accCtx
+        ExternalFileName extFileName,
+        Node node,
+        AccessContext accCtx
     )
         throws AccessDeniedException
     {

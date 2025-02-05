@@ -25,7 +25,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -55,7 +54,7 @@ public class CtrlErrorListApiCallHandler
     private final CtrlStltSerializer stltComSerializer;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
-    private final @Nonnull String nodeNameForErrorReports;
+    private final String nodeNameForErrorReports;
 
     @Inject
     public CtrlErrorListApiCallHandler(
@@ -192,7 +191,7 @@ public class CtrlErrorListApiCallHandler
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        @Nonnull final Set<String> ids,
+        final Set<String> ids,
         @Nullable final Long limit,
         @Nullable final Long offset
     )
@@ -218,7 +217,7 @@ public class CtrlErrorListApiCallHandler
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        @Nonnull final Set<String> ids,
+        final Set<String> ids,
         @Nullable final Long limit,
         @Nullable final Long offset)
         throws AccessDeniedException
@@ -243,7 +242,7 @@ public class CtrlErrorListApiCallHandler
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        @Nonnull final Set<String> ids,
+        final Set<String> ids,
         @Nullable final Long limit,
         @Nullable final Long offset)
     {
@@ -296,7 +295,7 @@ public class CtrlErrorListApiCallHandler
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        @Nonnull final Set<String> ids,
+        final Set<String> ids,
         @Nullable final Long limit,
         @Nullable final Long offset,
         List<Tuple2<NodeName, ByteArrayInputStream>> errorReportsAnswers)
@@ -338,7 +337,7 @@ public class CtrlErrorListApiCallHandler
     }
 
     // TODO? hide deserialization in interface?
-    private static @Nonnull ErrorReportResult deserializeErrorReports(InputStream msgDataIn)
+    private static ErrorReportResult deserializeErrorReports(InputStream msgDataIn)
         throws IOException
     {
         List<ErrorReport> errorReports = new ArrayList<>();

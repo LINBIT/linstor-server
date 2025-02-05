@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.storagespaces;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -28,7 +29,6 @@ import com.linbit.linstor.storage.data.provider.storagespaces.StorageSpacesData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

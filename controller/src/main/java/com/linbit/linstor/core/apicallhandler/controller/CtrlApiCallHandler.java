@@ -57,7 +57,6 @@ import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -1443,7 +1442,7 @@ public class CtrlApiCallHandler
         return status;
     }
 
-    public ApiCallRc backupDb(@Nonnull String backupPath)
+    public ApiCallRc backupDb(String backupPath)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 

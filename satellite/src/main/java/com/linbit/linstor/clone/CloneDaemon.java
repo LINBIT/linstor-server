@@ -5,9 +5,8 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.DaemonHandler;
 import com.linbit.extproc.OutputProxy;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.Arrays;

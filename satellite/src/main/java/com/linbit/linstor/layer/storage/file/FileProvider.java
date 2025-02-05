@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.file;
 import com.linbit.ImplementationError;
 import com.linbit.PlatformStlt;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
@@ -37,7 +38,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionException;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

@@ -1,9 +1,8 @@
 package com.linbit.linstor.logging;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.Node;
 
-import javax.annotation.Nonnull;
-import com.linbit.linstor.annotation.Nullable;
 import java.util.Date;
 import java.util.Optional;
 
@@ -19,7 +18,7 @@ public class ErrorReport extends LinstorFile
     private Node.Type module;
 
     public ErrorReport(
-        @Nonnull final String nodeNameRef,
+        final String nodeNameRef,
         Node.Type moduleRef,
         final String fileNameRef,
         @Nullable final String versionRef,
@@ -29,7 +28,7 @@ public class ErrorReport extends LinstorFile
         @Nullable final String originFileRef,
         @Nullable final String originMethodRef,
         @Nullable final Integer originLineRef,
-        @Nonnull final Date dateRef,
+        final Date dateRef,
         @Nullable final String textRef)
     {
         super(nodeNameRef, fileNameRef, dateRef, textRef);
@@ -47,16 +46,19 @@ public class ErrorReport extends LinstorFile
         text = textRef;
     }
 
+    @Override
     public Date getDateTime()
     {
         return dateTime;
     }
 
+    @Override
     public String getFileName()
     {
         return fileName;
     }
 
+    @Override
     public String getNodeName()
     {
         return nodeName;

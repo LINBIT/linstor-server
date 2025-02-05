@@ -1,12 +1,11 @@
 package com.linbit.linstor.api.pojo.builder;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
-
-import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;

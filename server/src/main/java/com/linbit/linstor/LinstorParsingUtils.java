@@ -27,8 +27,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 
-import javax.annotation.Nonnull;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -382,7 +380,7 @@ public class LinstorParsingUtils
         return ret;
     }
 
-    public static @Nonnull DeviceProviderKind asProviderKind(String stringRef)
+    public static DeviceProviderKind asProviderKind(String stringRef)
     {
         DeviceProviderKind kind;
 

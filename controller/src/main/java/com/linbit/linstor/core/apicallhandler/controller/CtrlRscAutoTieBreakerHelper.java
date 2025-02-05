@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -49,8 +50,6 @@ import static com.linbit.linstor.api.ApiConsts.VAL_TRUE;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -125,7 +124,7 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     }
 
     @Override
-    public void manage(@Nonnull AutoHelperContext ctx)
+    public void manage(AutoHelperContext ctx)
     {
         try
         {
@@ -726,7 +725,7 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         return isFlagSet;
     }
 
-    private boolean isSomeFlagSet(@Nonnull Node node, @Nonnull Node.Flags... flags)
+    private boolean isSomeFlagSet(Node node, Node.Flags... flags)
     {
         boolean isFlagSet;
         try

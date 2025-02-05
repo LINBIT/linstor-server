@@ -110,8 +110,6 @@ import com.linbit.linstor.utils.SetUtils;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
 
-import javax.annotation.Nonnull;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -192,7 +190,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public @Nonnull CtrlStltSerializerBuilder changedConfig(@Nonnull com.linbit.linstor.core.cfg.StltConfig stltConfig)
+    public CtrlStltSerializerBuilder changedConfig(com.linbit.linstor.core.cfg.StltConfig stltConfig)
         throws IOException
     {
         StltConfigOuterClass.StltConfig.Builder bld = stltConfig(

@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.file;
 
 import com.linbit.PlatformStlt;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -13,7 +14,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

@@ -69,7 +69,6 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -102,7 +101,7 @@ import org.slf4j.event.Level;
 public class StltApiCallHandler
 {
     private final ErrorReporter errorReporter;
-    private final @Nonnull AccessContext apiCtx;
+    private final AccessContext apiCtx;
     private final StltConfig stltCfg;
 
     private final ControllerPeerConnector controllerPeerConnector;
@@ -154,7 +153,7 @@ public class StltApiCallHandler
     @Inject
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
-        @Nonnull @ApiContext AccessContext apiCtxRef,
+        @ApiContext AccessContext apiCtxRef,
         StltConfig stltCfgRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         UpdateMonitor updateMonitorRef,
@@ -238,9 +237,9 @@ public class StltApiCallHandler
     }
 
     public AuthenticationResult authenticate(
-        @Nonnull UUID nodeUuid,
-        @Nonnull String nodeName,
-        @Nonnull Peer controllerPeer,
+        UUID nodeUuid,
+        String nodeName,
+        Peer controllerPeer,
         @Nullable UUID ctrlUuid
     )
     {
@@ -906,7 +905,7 @@ public class StltApiCallHandler
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        @Nonnull final Set<String> ids,
+        final Set<String> ids,
         @Nullable final Long limit,
         @Nullable final Long offset
     )

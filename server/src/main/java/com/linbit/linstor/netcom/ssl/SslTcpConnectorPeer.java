@@ -11,7 +11,6 @@ import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
 import com.linbit.linstor.security.AccessContext;
 
-import javax.annotation.Nonnull;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -275,7 +274,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      * @throws IOException If the network read operation fails, or if SSL processing fails
      */
     @Override
-    public ReadState read(@Nonnull final SocketChannel inChannel)
+    public ReadState read(final SocketChannel inChannel)
         throws IllegalMessageStateException, IOException
     {
         rdState = ReadState.UNFINISHED;
@@ -445,7 +444,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      * @throws IOException If the network write operation fails, or if SSL processing fails
      */
     @Override
-    public WriteState write(@Nonnull final SocketChannel outChannel)
+    public WriteState write(final SocketChannel outChannel)
         throws IllegalMessageStateException, IOException
     {
         WriteState state = WriteState.UNFINISHED;
@@ -784,7 +783,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      * @throws IOException If network I/O operations or SSL processing operations fail
      */
     private @Nullable SSLEngineResult.Status sslHandshake(
-        @Nonnull SSLEngineResult.HandshakeStatus hsStatus,
+        SSLEngineResult.HandshakeStatus hsStatus,
         final boolean writeReady
     )
         throws SSLException, IllegalMessageStateException, IOException
@@ -937,7 +936,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      * @param srcBuffer Source buffer, the buffer to copy data from
      * @param dstBuffer Destination buffer, the buffer to copy data into
      */
-    private void transferBufferData(@Nonnull final ByteBuffer srcBuffer, @Nonnull final ByteBuffer dstBuffer)
+    private void transferBufferData(final ByteBuffer srcBuffer, final ByteBuffer dstBuffer)
     {
         final int srcOffset = srcBuffer.position();
         final int srcRemain = srcBuffer.remaining();

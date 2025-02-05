@@ -6,6 +6,7 @@ import com.linbit.Platform;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventService;
 import com.linbit.linstor.layer.storage.ebs.EbsInitiatorProvider;
@@ -21,7 +22,6 @@ import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

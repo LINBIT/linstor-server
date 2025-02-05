@@ -1,11 +1,10 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-
-import javax.annotation.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;

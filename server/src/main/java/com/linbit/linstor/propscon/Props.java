@@ -1,10 +1,9 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionObject;
-
-import javax.annotation.Nullable;
 
 /**
  * Common interface for Containers that hold linstor property maps

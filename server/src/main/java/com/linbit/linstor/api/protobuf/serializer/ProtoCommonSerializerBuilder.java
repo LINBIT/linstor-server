@@ -158,8 +158,6 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.Pair;
 import com.linbit.utils.TimeUtils;
 
-import javax.annotation.Nonnull;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -314,27 +312,27 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public @Nonnull CommonSerializerBuilder authSuccess(
+    public CommonSerializerBuilder authSuccess(
         long expectedFullSyncIdRef,
-        @Nonnull int[] stltVersionRef,
-        @Nonnull String uname,
-        @Nonnull Collection<ExtToolsInfo> extToolsList,
-        @Nonnull ApiCallRc responses,
-        @Nonnull String configDir,
+        int[] stltVersionRef,
+        String uname,
+        Collection<ExtToolsInfo> extToolsList,
+        ApiCallRc responses,
+        String configDir,
         boolean debugConsoleEnabled,
         boolean logPrintStackTrace,
-        @Nonnull String logDirectory,
-        @Nonnull String logLevel,
+        String logDirectory,
+        String logLevel,
         @Nullable String logLevelLinstorPrm,
         @Nullable String stltOverrideNodeNamePrm,
         boolean remoteSpdk,
         boolean ebs,
         @Nullable Pattern drbdKeepResPatternPrm,
-        @Nonnull String netBindAddress,
-        @Nonnull Integer netPort,
-        @Nonnull String netType,
-        @Nonnull Set<String> extFileWhitelist,
-        @Nonnull WhitelistProps whitelistProps
+        String netBindAddress,
+        Integer netPort,
+        String netType,
+        Set<String> extFileWhitelist,
+        WhitelistProps whitelistProps
     )
     {
         try
@@ -718,7 +716,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         boolean withContent,
         @Nullable Date since,
         @Nullable Date to,
-        @Nonnull Set<String> ids,
+        Set<String> ids,
         @Nullable final Long limit,
         @Nullable final Long offset
     )
@@ -752,7 +750,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder errorReports(@Nonnull ErrorReportResult errorReportResult)
+    public CommonSerializer.CommonSerializerBuilder errorReports(ErrorReportResult errorReportResult)
     {
         try
         {
@@ -830,21 +828,21 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return this;
     }
 
-    public @Nonnull StltConfig.Builder stltConfig(
-        @Nonnull String configDir,
+    public StltConfig.Builder stltConfig(
+        String configDir,
         boolean debugConsoleEnabled,
         boolean logPrintStackTrace,
-        @Nonnull String logDirectory,
-        @Nonnull String logLevel,
-        @Nonnull String logLevelLinstor,
-        @Nonnull String stltOverrideNodeName,
+        String logDirectory,
+        String logLevel,
+        String logLevelLinstor,
+        String stltOverrideNodeName,
         boolean remoteSpdk,
         boolean ebs,
-        @Nonnull Pattern drbdKeepResPattern,
-        @Nonnull String netBindAddress,
-        @Nonnull Integer netPort,
-        @Nonnull String netType,
-        @Nonnull Set<String> extFileWhitelist
+        Pattern drbdKeepResPattern,
+        String netBindAddress,
+        Integer netPort,
+        String netType,
+        Set<String> extFileWhitelist
     )
     {
         StltConfigOuterClass.StltConfig.Builder bld = StltConfigOuterClass.StltConfig.newBuilder();

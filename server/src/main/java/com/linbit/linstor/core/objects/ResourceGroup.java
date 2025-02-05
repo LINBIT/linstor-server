@@ -29,7 +29,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -285,14 +284,14 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         return Collections.unmodifiableCollection(rscDfnMap.values());
     }
 
-    public @Nullable Short getPeerSlots(@Nonnull AccessContext accCtx) throws AccessDeniedException
+    public @Nullable Short getPeerSlots(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return peerSlots.get();
     }
 
-    public void setPeerSlots(@Nonnull AccessContext accCtx, @Nullable Short peerSlotsRef)
+    public void setPeerSlots(AccessContext accCtx, @Nullable Short peerSlotsRef)
         throws AccessDeniedException, DatabaseException
     {
         checkDeleted();

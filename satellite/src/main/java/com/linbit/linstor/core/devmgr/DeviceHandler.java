@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.devmgr;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
@@ -15,8 +16,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-
-import javax.annotation.Nullable;
 
 import java.util.Collection;
 

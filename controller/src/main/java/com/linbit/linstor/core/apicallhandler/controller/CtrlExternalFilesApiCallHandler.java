@@ -37,7 +37,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -130,7 +129,7 @@ public class CtrlExternalFilesApiCallHandler
      * {@code false} if it can't be written, the node doesn't exist, the nodeName or fileName is invalid, or there is an
      * exception
      */
-    public boolean checkFile(@Nonnull String fileName, @Nonnull String nodeName)
+    public boolean checkFile(String fileName, String nodeName)
     {
         boolean allowed = false;
         try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.EXT_FILE_MAP, LockObj.NODES_MAP))

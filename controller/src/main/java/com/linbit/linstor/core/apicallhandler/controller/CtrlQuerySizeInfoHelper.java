@@ -23,7 +23,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -187,7 +186,7 @@ public class CtrlQuerySizeInfoHelper
     private long getAvailable(
         int placeCountRef,
         @Nullable Set<StorPool> selectedStorPoolSetRef,
-        @Nonnull List<StorPool> availableStorPoolListRef,
+        List<StorPool> availableStorPoolListRef,
         @Nullable Map<Key, Long> thinFreeCapacitiesRef
     )
     {

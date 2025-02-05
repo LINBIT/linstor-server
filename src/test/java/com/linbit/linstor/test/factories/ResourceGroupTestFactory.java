@@ -3,6 +3,7 @@ package com.linbit.linstor.test.factories;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
@@ -18,7 +19,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import static com.linbit.linstor.test.factories.TestFactoryUtils.copyOrNull;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

@@ -4,8 +4,6 @@ import com.linbit.Platform;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.InjectorLoader;
 
-import javax.annotation.Nonnull;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -148,7 +146,7 @@ public abstract class LinStor
      *
      * @return Hostname by 'uname -n'.
      */
-    public static @Nonnull String getHostName()
+    public static String getHostName()
     {
         String hostname = "";
 

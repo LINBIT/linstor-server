@@ -15,7 +15,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnectorService;
 import com.linbit.linstor.security.AccessContext;
 
-import javax.annotation.Nonnull;
 import javax.net.ssl.SSLContext;
 
 import java.io.IOException;
@@ -90,20 +89,20 @@ public class SslTcpConnectorService extends TcpConnectorService
      *                              use outside of the period of validity, a certificate being revoked, etc.
      */
     public SslTcpConnectorService(
-        @Nonnull final ErrorReporter            errorReporter,
-        @Nonnull final CommonSerializer         commonSerializer,
-        @Nonnull final MessageProcessor         msgProcessorRef,
-        @Nonnull final SocketAddress            bindAddress,
-        @Nonnull final AccessContext            peerAccCtxRef,
-        @Nonnull final AccessContext            privAccCtxRef,
-        @Nonnull final ConnectionObserver       connObserverRef,
-        @Nonnull final ModularCryptoProvider    cryptoProviderRef,
-        @Nonnull final String                   sslProtocol,
-        @Nonnull final String                   keyStoreFile,
-        @Nonnull final char[]                   keyStorePasswd,
-        @Nonnull final char[]                   keyPasswd,
-        @Nonnull final String                   trustStoreFile,
-        @Nonnull final char[]                   trustStorePasswd
+        final ErrorReporter errorReporter,
+        final CommonSerializer commonSerializer,
+        final MessageProcessor msgProcessorRef,
+        final SocketAddress bindAddress,
+        final AccessContext peerAccCtxRef,
+        final AccessContext privAccCtxRef,
+        final ConnectionObserver connObserverRef,
+        final ModularCryptoProvider cryptoProviderRef,
+        final String sslProtocol,
+        final String keyStoreFile,
+        final char[] keyStorePasswd,
+        final char[] keyPasswd,
+        final String trustStoreFile,
+        final char[] trustStorePasswd
     )
         throws IOException, NoSuchAlgorithmException, KeyManagementException,
         UnrecoverableKeyException, KeyStoreException, CertificateException
@@ -170,11 +169,11 @@ public class SslTcpConnectorService extends TcpConnectorService
      * @throws UnrecoverableKeyException Indicates that a key cannot be recovered from the key store file
      */
     private void initialize(
-        @Nonnull final String   keyStoreFile,
-        @Nonnull final char[]   keyStorePasswd,
-        @Nonnull final char[]   keyPasswd,
-        @Nonnull final String   trustStoreFile,
-        @Nonnull final char[]   trustStorePasswd
+        final String keyStoreFile,
+        final char[] keyStorePasswd,
+        final char[] keyPasswd,
+        final String trustStoreFile,
+        final char[] trustStorePasswd
     )
         throws NoSuchAlgorithmException, KeyManagementException,
         KeyStoreException, IOException, CertificateException, UnrecoverableKeyException
@@ -279,7 +278,7 @@ public class SslTcpConnectorService extends TcpConnectorService
      *
      * @param connPeer The peer object associated with the task completion
      */
-    protected void taskCompleted(@Nonnull final SslTcpConnectorPeer connPeer)
+    protected void taskCompleted(final SslTcpConnectorPeer connPeer)
     {
         if (DEBUG_SSL_TASKS)
         {
@@ -342,7 +341,7 @@ public class SslTcpConnectorService extends TcpConnectorService
      * @param currentKey SelectionKey associated with the connection to the peer
      */
     @Override
-    protected void onConnectionClosed(@Nonnull final SelectionKey currentKey)
+    protected void onConnectionClosed(final SelectionKey currentKey)
     {
         final Peer connPeer = (Peer) currentKey.attachment();
         if (connPeer instanceof SslTcpConnectorPeer)

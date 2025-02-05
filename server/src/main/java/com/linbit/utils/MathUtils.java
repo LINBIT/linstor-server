@@ -1,6 +1,5 @@
 package com.linbit.utils;
 
-import javax.annotation.Nonnull;
 import com.linbit.linstor.annotation.Nullable;
 
 import java.util.Iterator;
@@ -235,9 +234,9 @@ public class MathUtils
      * @param primeFactors Map of calculated base / exponent entries
      */
     public static void fastPower2MinFactorize(
-        @Nonnull final Set<Long>            numbers,
+        final Set<Long> numbers,
         @Nullable final Set<Long>           remaining,
-        @Nonnull final Map<Long, Integer>   primeFactors
+        final Map<Long, Integer> primeFactors
     )
     {
         fastPower2GenericFactorize(numbers, remaining, primeFactors, minSelector);
@@ -260,9 +259,9 @@ public class MathUtils
      * @param primeFactors Map of calculated base / exponent entries
      */
     public static void fastPower2MaxFactorize(
-        @Nonnull final Set<Long>            numbers,
+        final Set<Long> numbers,
         @Nullable final Set<Long>           remaining,
-        @Nonnull final Map<Long, Integer>   primeFactors
+        final Map<Long, Integer> primeFactors
     )
     {
         fastPower2GenericFactorize(numbers, remaining, primeFactors, maxSelector);
@@ -285,9 +284,9 @@ public class MathUtils
      * @param valueSelector Selector that decides whether a number is greater or smaller than another number
      */
     private static void fastPower2GenericFactorize(
-        @Nonnull final Set<Long>            numbers,
+        final Set<Long> numbers,
         @Nullable final Set<Long>           remaining,
-        @Nonnull final Map<Long, Integer>   primeFactors,
+        final Map<Long, Integer> primeFactors,
         Selector<Long>                      valueSelector
     )
     {
@@ -329,8 +328,8 @@ public class MathUtils
      * @return true if <code>number</code> is a power of 2
      */
     public boolean fastPower2MinFactorize(
-        final long                          number,
-        @Nonnull final Map<Long, Integer>   primeFactors
+        final long number,
+        final Map<Long, Integer> primeFactors
     )
     {
         return fastPower2GenericFactorize(number, primeFactors, minSelector);
@@ -353,8 +352,8 @@ public class MathUtils
      * @return true if <code>number</code> is a power of 2
      */
     public boolean fastPower2MaxFactorize(
-        final long                          number,
-        @Nonnull final Map<Long, Integer>   primeFactors
+        final long number,
+        final Map<Long, Integer> primeFactors
     )
     {
         return fastPower2GenericFactorize(number, primeFactors, maxSelector);
@@ -369,9 +368,9 @@ public class MathUtils
      * @return true if <code>number</code> is a power of 2
      */
     private static boolean fastPower2GenericFactorize(
-        final long                          number,
-        @Nonnull final Map<Long, Integer>   primeFactors,
-        Selector<Long>                      valueSelector
+        final long number,
+        final Map<Long, Integer> primeFactors,
+        Selector<Long> valueSelector
     )
     {
         final boolean isPower2 = number > 1 && Long.bitCount(number) == 1;
@@ -393,9 +392,9 @@ public class MathUtils
      * @param valueSelector Selector that decides whether a number is greater or smaller than another number
      */
     private static void uncheckedFastPower2GenericFactorize(
-        final long                          number,
-        @Nonnull final Map<Long, Integer>   primeFactors,
-        Selector<Long>                      valueSelector
+        final long number,
+        final Map<Long, Integer> primeFactors,
+        Selector<Long> valueSelector
     )
     {
         long remainder = number;
@@ -423,8 +422,8 @@ public class MathUtils
      * @param primeFactors Map of calculated base / exponent entries
      */
     public static void factorize(
-        @Nonnull final Set<Long>            numbers,
-        @Nonnull final Map<Long, Integer>   primeFactors
+        final Set<Long> numbers,
+        final Map<Long, Integer> primeFactors
     )
         throws InterruptedException
     {
@@ -447,8 +446,8 @@ public class MathUtils
      * @param primeFactors Map of calculated base / exponent entries
      */
     public static void factorize(
-        final long                          number,
-        @Nonnull final Map<Long, Integer>   primeFactors
+        final long number,
+        final Map<Long, Integer> primeFactors
     )
         throws InterruptedException
     {
@@ -464,8 +463,8 @@ public class MathUtils
      * @param valueSelector Selector that decides whether a number is greater or smaller than another number
      */
     private static void baseFactorize(
-        final long                          nr,
-        @Nonnull final Map<Long,Integer>    primeFactors
+        final long nr,
+        final Map<Long, Integer> primeFactors
     )
         throws InterruptedException
     {
@@ -516,8 +515,8 @@ public class MathUtils
      * @param valueSelector Selector that decides whether a number is greater or smaller than another number
      */
     private static void extendedSimpleFactorize(
-        final long                          nr,
-        @Nonnull final Map<Long, Integer>   primeFactors
+        final long nr,
+        final Map<Long, Integer> primeFactors
     )
         throws InterruptedException
     {
@@ -568,7 +567,7 @@ public class MathUtils
      * @param numbers Set of numbers for LCM calculation
      * @return Least common multiple of the specified set of numbers
      */
-    public static Long leastCommonMultiple(@Nonnull final Set<Long> numbers)
+    public static Long leastCommonMultiple(final Set<Long> numbers)
         throws InterruptedException
     {
         Long result = 0L;
@@ -612,7 +611,7 @@ public class MathUtils
      * @param numbers Set of numbers for GCD calculation
      * @return Least common multiple of the specified set of numbers
      */
-    public static Long greatestCommonDivisor(@Nonnull final Set<Long> numbers)
+    public static Long greatestCommonDivisor(final Set<Long> numbers)
         throws InterruptedException
     {
         Long result = Long.MAX_VALUE;
@@ -689,7 +688,7 @@ public class MathUtils
      * @param primeFactors Map of base / exponent entries
      * @return Product of all <code>base</code> to the power of <code>exponent</code> values
      */
-    private static long productOfFactors(@Nonnull final Map<Long, Integer> primeFactors)
+    private static long productOfFactors(final Map<Long, Integer> primeFactors)
     {
         long result = 0;
         long product = 1;
@@ -753,10 +752,10 @@ public class MathUtils
      * @param valueSelector Selector that decides whether a number is greater or smaller than another number
      */
     private static void storeSelectedExponent(
-        @Nonnull final Map<Long, Integer>   primeFactors,
-        @Nonnull final Long                 base,
-        @Nonnull final Integer              exponent,
-        @Nonnull Selector<Long>             valueSelector
+        final Map<Long, Integer> primeFactors,
+        final Long base,
+        final Integer exponent,
+        Selector<Long> valueSelector
     )
     {
         final Integer storedExponent = primeFactors.get(base);
@@ -779,9 +778,9 @@ public class MathUtils
      * @return value in range [<code>lowerBound</code>, <code>upperBound</code>]
      */
     public static <T extends Comparable<T>> T bounds(
-        @Nonnull final T    lowerBound,
-        @Nonnull final T    value,
-        @Nonnull final T    upperBound
+        final T lowerBound,
+        final T value,
+        final T upperBound
     )
     {
         T result = value;
@@ -803,6 +802,6 @@ public class MathUtils
 
     private interface Selector<T>
     {
-        boolean select(@Nonnull final T value, @Nonnull final T other);
+        boolean select(final T value, final T other);
     }
 }

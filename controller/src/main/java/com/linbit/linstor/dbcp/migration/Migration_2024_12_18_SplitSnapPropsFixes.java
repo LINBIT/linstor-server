@@ -1,8 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo.DbProduct;
-
-import javax.annotation.Nullable;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

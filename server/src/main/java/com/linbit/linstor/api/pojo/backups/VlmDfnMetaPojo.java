@@ -1,9 +1,8 @@
 package com.linbit.linstor.api.pojo.backups;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.migration.MigrationUtils_SplitSnapProps;
 import com.linbit.linstor.dbdrivers.migration.MigrationUtils_SplitSnapProps.InstanceType;
-
-import javax.annotation.Nullable;
 
 import java.util.Map;
 import java.util.TreeMap;

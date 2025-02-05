@@ -3,12 +3,12 @@ package com.linbit.linstor.transaction;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
