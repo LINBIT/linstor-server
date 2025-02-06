@@ -35,7 +35,7 @@ public class SelectionManagerTest extends GenericDbBase
     private AccessContext accessContext;
 
     @Before
-    public void setUp() throws Exception
+    public void setup() throws Exception
     {
         super.setUpAndEnterScope();
         accessContext = DummySecurityInitializer.getSystemAccessContext();
@@ -121,7 +121,7 @@ public class SelectionManagerTest extends GenericDbBase
             false
         );
 
-        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
         Assert.assertEquals(3, actual.size());
         // In this case (no constraints), the selection should just take the first 3 pools.
         Assert.assertTrue(actual.containsAll(Arrays.asList(
@@ -152,7 +152,7 @@ public class SelectionManagerTest extends GenericDbBase
             false
         );
 
-        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
         Assert.assertEquals(3, actual.size());
 
         String expectedKey = storPoolWithScores[0].storPool.getNode().getProps(accessContext).getProp(RACK_KEY);
@@ -187,7 +187,7 @@ public class SelectionManagerTest extends GenericDbBase
             false
         );
 
-        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
         Assert.assertEquals(0, actual.size());
     }
 
@@ -212,7 +212,7 @@ public class SelectionManagerTest extends GenericDbBase
             false
         );
 
-        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
         Assert.assertEquals(1, actual.size());
         for (Autoplacer.StorPoolWithScore selected : actual)
         {
@@ -241,7 +241,7 @@ public class SelectionManagerTest extends GenericDbBase
             false
         );
 
-        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
         Assert.assertEquals(1, actual.size());
         for (Autoplacer.StorPoolWithScore selected : actual)
         {
@@ -273,7 +273,7 @@ public class SelectionManagerTest extends GenericDbBase
             false
         );
 
-        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
         Assert.assertEquals(3, actual.size());
 
         Set<String> seenZones = new HashSet<>();
@@ -313,7 +313,7 @@ public class SelectionManagerTest extends GenericDbBase
             storPoolWithScores,
             false
         );
-        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection();
         Assert.assertEquals(0, actual.size());
     }
 }

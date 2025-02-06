@@ -332,7 +332,12 @@ public class SelectionManager
         return ret;
     }
 
-    public HashSet<Autoplacer.StorPoolWithScore> findSelection(int startIdxRef) throws AccessDeniedException
+    public HashSet<Autoplacer.StorPoolWithScore> findSelection() throws AccessDeniedException
+    {
+        return findSelection(0);
+    }
+
+    HashSet<Autoplacer.StorPoolWithScore> findSelection(int startIdxRef) throws AccessDeniedException
     {
         findSelectionImpl(startIdxRef);
         return new HashSet<>(getCurrentState().selectedStorPoolWithScoreSet);
