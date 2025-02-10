@@ -390,7 +390,7 @@ public class Resource extends AbsResource<Resource>
     public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        return isDrbdDiskless(accCtx) || isNvmeInitiator(accCtx);
+        return isDrbdDiskless(accCtx) || isNvmeInitiator(accCtx) || isEbsInitiator(accCtx);
     }
 
     public boolean hasDrbd(AccessContext accCtx)

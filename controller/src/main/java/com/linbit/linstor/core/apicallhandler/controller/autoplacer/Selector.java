@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -344,30 +345,41 @@ class Selector
     public @Nullable Node unselect(
         ResourceDefinition rscDfn,
         List<Node> fixedNodes,
-        StorPoolWithScore[] sortedStorPoolByScoreArr
+        StorPoolWithScore[] sortedStorPoolByScoreArr,
+        boolean selectDiskfulNodeRef
     )
         throws AccessDeniedException
     {
-        // Selector.SelectionManger selMgr = new SelectionManger(
-        // rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),
-        // fixedNodes,
-        // null,
-        // sortedStorPoolByScoreArr
-        // );
-        /*
-         * TODO: implement a more clever unselection-strategy, which also considers auto-place config
-         * as --replicas-on-same, --replicas-on-different etc..
-         */
-
-        // default: no node to unselect
         @Nullable Node ret = null;
-        if (sortedStorPoolByScoreArr.length > 0)
-        {
-            // sorts highest to lowest as defined in StorPoolWithScore' Comparator
-            Arrays.sort(sortedStorPoolByScoreArr);
 
-            // return node of storage pool with lowest score
-            ret = sortedStorPoolByScoreArr[sortedStorPoolByScoreArr.length - 1].storPool.getNode();
+        Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+        Set<Resource> candidatesToUnselect = new HashSet<>();
+        while (rscIt.hasNext())
+        {
+            Resource rsc = rscIt.next();
+            Node node = rsc.getNode();
+
+            if (!fixedNodes.contains(node))
+            {
+                boolean isDiskless = rsc.isDiskless(apiCtx);
+                if (isDiskless && !selectDiskfulNodeRef || !isDiskless && selectDiskfulNodeRef)
+                {
+                    candidatesToUnselect.add(rsc);
+                }
+            }
+        }
+
+
+        if (ret == null)
+        {
+            if (sortedStorPoolByScoreArr.length > 0)
+            {
+                // sorts highest to lowest as defined in StorPoolWithScore' Comparator
+                Arrays.sort(sortedStorPoolByScoreArr);
+
+                // return node of storage pool with lowest score
+                ret = sortedStorPoolByScoreArr[sortedStorPoolByScoreArr.length - 1].storPool.getNode();
+            }
         }
         return ret;
     }

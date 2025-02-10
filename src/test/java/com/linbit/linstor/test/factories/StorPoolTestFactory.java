@@ -149,6 +149,12 @@ public class StorPoolTestFactory
             return this;
         }
 
+        public StorPoolBuilder setDriverKind(DeviceProviderKind driverKindRef)
+        {
+            driverKind = driverKindRef;
+            return this;
+        }
+
         public StorPoolBuilder setAccCtx(AccessContext accCtxRef)
         {
             accCtx = accCtxRef;

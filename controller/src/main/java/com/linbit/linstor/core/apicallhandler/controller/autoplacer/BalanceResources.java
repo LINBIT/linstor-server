@@ -60,6 +60,7 @@ public class BalanceResources
     private final AccessContext sysCtx;
     private final ErrorReporter log;
     private final Autoplacer autoplacer;
+    private final AutoUnplacer autoUnplacer;
     private final SystemConfRepository systemConfRepository;
     private final ResourceDefinitionRepository rscDfnRepo;
     private final ResourceStateEvent resourceStateEvent;
@@ -78,6 +79,7 @@ public class BalanceResources
         SystemConfRepository systemConfRepositoryRef,
         ResourceDefinitionRepository rscDfnRepoRef,
         Autoplacer autoplacerRef,
+        AutoUnplacer autoUnplacerRef,
         ResourceStateEvent resourceStateEventRef,
         EventWaiter eventWaiterRef,
         ScopeRunner scopeRunnerRef,
@@ -92,6 +94,7 @@ public class BalanceResources
         systemConfRepository = systemConfRepositoryRef;
         rscDfnRepo = rscDfnRepoRef;
         autoplacer = autoplacerRef;
+        autoUnplacer = autoUnplacerRef;
         resourceStateEvent = resourceStateEventRef;
         eventWaiter = eventWaiterRef;
         scopeRunner = scopeRunnerRef;
@@ -404,7 +407,7 @@ public class BalanceResources
                             onlineNodeIds);
 
                         // loop through rscDfn resources, until we meet replicaCount or are out of resource to delete
-                        Resource toDelete = autoplacer.autoUnplace(rscDfn, fixedResources);
+                        Resource toDelete = autoUnplacer.unplace(rscDfn, fixedResources);
                         while (toDelete != null && notDeletedDiskfulCount > replicaCount)
                         {
                             log.logInfo(
@@ -413,7 +416,7 @@ public class BalanceResources
                             notDeletedDiskfulCount--;
                             deletedRscCount++;
                             fixedResources.add(toDelete);
-                            toDelete = autoplacer.autoUnplace(rscDfn, fixedResources);
+                            toDelete = autoUnplacer.unplace(rscDfn, fixedResources);
                         }
                     }
                 }

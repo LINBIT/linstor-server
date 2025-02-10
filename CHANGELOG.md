@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JVM: will now crash on OutOfMemoryError
 - Limit reactor worker threads to 16
 - DRBD .res file now contains the time the file was generated
+- BalanceResource: Improved selection when deleting excess resource
+- AutoDiskfulTask: Improved selection when deleting excess resource
 
 ### Fixed
 

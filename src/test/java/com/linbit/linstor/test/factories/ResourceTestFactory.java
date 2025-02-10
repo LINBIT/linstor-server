@@ -129,6 +129,12 @@ public class ResourceTestFactory
             layerStack = copyOrNull(dfltLayerStack);
         }
 
+        public ResourceBuilder setFlags(Flags[] flagsRef)
+        {
+            flags = flagsRef;
+            return this;
+        }
+
         public Resource build()
             throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException,
             ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException, InvalidNameException,

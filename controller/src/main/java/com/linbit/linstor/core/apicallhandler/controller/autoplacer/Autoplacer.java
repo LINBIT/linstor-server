@@ -3,14 +3,12 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -18,9 +16,6 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -127,60 +122,6 @@ public class Autoplacer
         return selection;
     }
 
-    /**
-     * Returns a resource (except the fixedResources) which can be deleted.
-     * <p>
-     * While under all circumstances all fixedResources are ignored, the selection prioritizes
-     * resources that are already violating the resource-group's autoplace-config.
-     * If there are no violations, the selection will choose the resource with the lowest
-     * score for the data-storagePool
-     *
-     * @param rscDfnRef
-     * @param fixedResources
-     * @return
-     */
-    public @Nullable Resource autoUnplace(ResourceDefinition rscDfnRef, Collection<Resource> fixedResources)
-    {
-        @Nullable Resource ret = null;
-        try
-        {
-            List<Node> fixedNodes = new ArrayList<>();
-            List<Resource> candidatesToRemove = new ArrayList<>();
-            Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiAccCtx);
-            Set<StorPool> storPoolList = new HashSet<>();
-            while (rscIt.hasNext())
-            {
-                Resource rsc = rscIt.next();
-                if (fixedResources.contains(rsc))
-                {
-                    fixedNodes.add(rsc.getNode());
-                }
-                else
-                {
-                    candidatesToRemove.add(rsc);
-                    storPoolList.addAll(LayerVlmUtils.getStorPools(rsc, apiAccCtx, false));
-                }
-            }
-
-            Collection<StorPoolWithScore> sortedStorPoolByScore = strategyHandler.rate(storPoolList);
-
-            @Nullable Node unselectedNode = selector.unselect(
-                rscDfnRef,
-                fixedNodes,
-                sortedStorPoolByScore.toArray(new StorPoolWithScore[0])
-            );
-            if (unselectedNode != null)
-            {
-                ret = rscDfnRef.getResource(apiAccCtx, unselectedNode.getName());
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return ret;
-    }
-
     static class StorPoolWithScore implements Comparable<StorPoolWithScore>
     {
         StorPool storPool;
@@ -188,7 +129,6 @@ public class Autoplacer
 
         StorPoolWithScore(StorPool storPoolRef, double scoreRef)
         {
-            super();
             storPool = storPoolRef;
             score = scoreRef;
         }

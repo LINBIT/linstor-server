@@ -17,6 +17,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
+import com.linbit.utils.CollectionUtils;
 import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
@@ -215,22 +216,43 @@ public class SelectionManager
 
     private HashMap<String, Map<String, Integer>> initializeDiffProps(
         AutoSelectFilterApi selectFilterRef,
-        List<Node> areadyDeployedNode
+        List<Node> alreadyDeployedNode
     )
         throws InvalidKeyException, AccessDeniedException
     {
+        return calcCurrentXReplicasOnDiffMap(
+            accessContext,
+            selectFilterRef.getXReplicasOnDifferentMap(),
+            selectFilterRef.getReplicasOnDifferentList(),
+            alreadyDeployedNode,
+            xReplicasOnDiffCount,
+            false
+        );
+    }
+
+    /*
+     * Method is also used by AutoUnplacer
+     */
+    public static HashMap<String, Map<String, Integer>> calcCurrentXReplicasOnDiffMap(
+        AccessContext accCtxRef,
+        Map<String, Integer> xReplicasOnDifferentInputMapRef,
+        List<String> replicasOnDifferentListRef,
+        List<Node> alreadyDeployedNodeRef,
+        @Nullable Map<String, Integer> xReplicasOnDiffCountOutputRef,
+        boolean allowNegativePlacementCountsRef
+    ) throws InvalidKeyException, AccessDeniedException
+    {
         final HashMap<String, Map<String, Integer>> initDiffProps = new HashMap<>();
         final Map</* PropKey */ String, /* maxCount */Integer> xReplicasOnDifferentMap;
-        xReplicasOnDifferentMap = selectFilterRef.getXReplicasOnDifferentMap() == null ?
-            new HashMap<>() : // do not use Collections.emptyMap since we might modify this map later
-            new HashMap<>(selectFilterRef.getXReplicasOnDifferentMap());
+        xReplicasOnDifferentMap = CollectionUtils.createOrWrap(
+            xReplicasOnDifferentInputMapRef,
+            HashMap::new, // do not use Collections.emptyMap since we might modify this map later
+            HashMap::new
+        );
 
         // replicasOnDifferentList can contain elements that are either a single "$key", or "$key=$value"
         // (currently multiple values like "$key=$value1,$value2,..." is not supported)
-        final List<String> replicasOnDifferentList = selectFilterRef.getReplicasOnDifferentList() == null ?
-            Collections.emptyList() :
-            selectFilterRef.getReplicasOnDifferentList();
-
+        final List<String> replicasOnDifferentList = CollectionUtils.nonNullOrEmptyList(replicasOnDifferentListRef);
 
         // xReplicasOnDifferent might contain property keys that are not contained in replicasOnDifferentList (neither
         // entirely as in "$key" nor partially as in "$key=$value").
@@ -261,13 +283,13 @@ public class SelectionManager
                 key = keyAndMaybeValue;
             }
             maxCount = xReplicasOnDifferentMap.computeIfAbsent(key, ignored -> X_REPLICAS_DFLT_COUNT);
-            for (Node node : areadyDeployedNode)
+            for (Node node : alreadyDeployedNodeRef)
             {
-                @Nullable String nodeVal = node.getProps(accessContext).getProp(key);
+                @Nullable String nodeVal = node.getProps(accCtxRef).getProp(key);
                 if (nodeVal != null)
                 {
                     final int oldRemainingCount = valueToRemainingCount.getOrDefault(nodeVal, maxCount);
-                    if (oldRemainingCount > 0)
+                    if (oldRemainingCount > 0 || allowNegativePlacementCountsRef)
                     {
                         // if oldRemainingCount is already 0, we do not want to go to -1, since that is a special
                         // case using X_REPLICAS_USAGE_NOT_ALLOWED
@@ -276,7 +298,10 @@ public class SelectionManager
                     }
                 }
             }
-            xReplicasOnDiffCount.put(key, maxCount);
+            if (xReplicasOnDiffCountOutputRef != null)
+            {
+                xReplicasOnDiffCountOutputRef.put(key, maxCount);
+            }
 
             initDiffProps.put(key, Collections.unmodifiableMap(valueToRemainingCount));
         }

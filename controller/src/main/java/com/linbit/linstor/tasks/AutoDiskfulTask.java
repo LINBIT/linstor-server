@@ -15,6 +15,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoUnplacer;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -75,6 +76,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
     private final ErrorReporter errorReporter;
     private final CtrlRscToggleDiskApiCallHandler toggleDisklHandler;
     private final Autoplacer autoplacer;
+    private final AutoUnplacer autoUnplacer;
     private final SystemConfRepository systemConfRepository;
     private final ResourceDefinitionRepository rscDfnRepo;
 
@@ -105,6 +107,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         SystemConfRepository systemConfRepositoryRef,
         ResourceDefinitionRepository rscDfnRepoRef,
         Autoplacer autoplacerRef,
+        AutoUnplacer autoUnplacerRef,
         LinStorScope linstorScopeRef,
         BackgroundRunner backgroundRunnerRef,
         ResourceStateEvent resourceStateEventRef,
@@ -120,6 +123,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         systemConfRepository = systemConfRepositoryRef;
         rscDfnRepo = rscDfnRepoRef;
         autoplacer = autoplacerRef;
+        autoUnplacer = autoUnplacerRef;
         linstorScope = linstorScopeRef;
         backgroundRunner = backgroundRunnerRef;
         resourceStateEvent = resourceStateEventRef;
@@ -480,14 +484,36 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         return retFlux;
     }
 
+    /**
+     * This method returns a single resource (or null) that can be deleted after the given <code>rscRef</code> fully
+     * synced up.
+     *
+     * Null is returned in the following cases:
+     * <ul>
+     * <li>The current diskful count of the rscDfn does not exceed the rscGrp's place-count</li>
+     * <li>
+     *  No resources is allowed to be cleaned up <br />
+     *  A resource is allowed to be cleaned up if:
+     *  <ul>
+     *   <li>It became diskful via previous auto-diskful or make-availeble</li>
+     *   <li>The resource is explicitly marked to be allowed to be cleaned up (via property
+     *       {@value ApiConsts#NAMESPC_DRBD_OPTIONS}/{@value ApiConsts#KEY_DRBD_AUTO_DISKFUL_ALLOW_CLEANUP})</li>
+     *  </ul>
+     *  The given resource <code>rscRef</code> will never be returned.
+     * </li>
+     * </ul>
+     *
+     * @param rscRef
+     * @return
+     * @throws InvalidKeyException
+     * @throws AccessDeniedException
+     */
     private @Nullable Resource getExcessRsc(Resource rscRef) throws InvalidKeyException, AccessDeniedException
     {
-        Resource excessRsc = null;
-        /*
-         * Instead of asking the not yet implemented auto-unplacer, we simply create the following unplacement rule:
-         * * only unplace if we have already >= replica-count diskful resources
-         * * only unplace resources that became diskful via previous auto-diskful or make-available events
-         */
+        @Nullable Resource excessRsc = null;
+
+        Set<Resource> fixedResources = new HashSet<>();
+        fixedResources.add(rscRef);
 
         ResourceDefinition rscDfn = rscRef.getResourceDefinition();
         Integer replicaCount = rscDfn.getResourceGroup().getAutoPlaceConfig().getReplicaCount(sysCtx);
@@ -506,14 +532,15 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                             ApiConsts.NAMESPC_DRBD_OPTIONS
                         )
                     );
-                    if ((createdBy != null && !DO_NOT_CLEANUP_TYPES.contains(createdBy)) || explicitlyAllowed)
+                    if ((createdBy == null || DO_NOT_CLEANUP_TYPES.contains(createdBy)) && !explicitlyAllowed)
                     {
-                        excessRsc = rsc;
-                        break;
+                        fixedResources.add(rsc);
                     }
                 }
             }
         }
+
+        excessRsc = autoUnplacer.unplace(rscDfn, fixedResources);
 
         return excessRsc;
     }

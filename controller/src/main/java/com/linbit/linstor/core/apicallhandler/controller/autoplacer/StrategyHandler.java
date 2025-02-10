@@ -67,14 +67,20 @@ class StrategyHandler
         }
     }
 
+    public Collection<StorPoolWithScore> rate(Collection<StorPool> storPoolListRef) throws AccessDeniedException
+    {
+        return rate(storPoolListRef, "Autoplacer");
+    }
+
     public Collection<StorPoolWithScore> rate(
-        Collection<StorPool> storPoolListRef
+        Collection<StorPool> storPoolListRef,
+        String logDescriptorRef
     )
         throws AccessDeniedException
     {
         RatingAdditionalInfo additionalInfo = new RatingAdditionalInfo();
 
-        Map<AutoplaceStrategy, Double> strategyWeights = getWeights();
+        Map<AutoplaceStrategy, Double> strategyWeights = getWeights(logDescriptorRef);
 
         Map<StorPool, StorPoolWithScore> lut = new HashMap<>();
         for (AutoplaceStrategy strat : strategies)
@@ -96,8 +102,9 @@ class StrategyHandler
             if (!stratRate.isEmpty())
             {
                 errorReporter.logTrace(
-                    "Autoplacer.Strategy: Scores of strategy '%s', weight: %f: " +
+                    "%s.Strategy: Scores of strategy '%s', weight: %f: " +
                         "(raw score, normalized score, weighted final score)",
+                    logDescriptorRef,
                     stratName,
                     weight
                 );
@@ -126,7 +133,8 @@ class StrategyHandler
                 double normalizdWeightedVal = normalizedVal * weight;
                 prevRating.score += normalizdWeightedVal;
                 errorReporter.logTrace(
-                    "Autoplacer.Strategy: Updated score of StorPool '%s' on Node '%s' to %f (%f, %f, %f)",
+                    "%s.Strategy: Updated score of StorPool '%s' on Node '%s' to %f (%f, %f, %f)",
+                    logDescriptorRef,
                     sp.getName().displayValue,
                     sp.getNode().getName().displayValue,
                     prevRating.score,
@@ -140,7 +148,8 @@ class StrategyHandler
         return lut.values();
     }
 
-    private Map<AutoplaceStrategy, Double> getWeights() throws AccessDeniedException
+    private Map<AutoplaceStrategy, Double> getWeights(String logDescriptorRef)
+        throws AccessDeniedException
     {
         Map<AutoplaceStrategy, Double> weights = new HashMap<>(dfltWeights);
 
@@ -159,7 +168,8 @@ class StrategyHandler
                     {
                         valDouble = Double.parseDouble(valStr);
                         errorReporter.logTrace(
-                            "Autoplacer.Strategy: Strategy '%s' with weight: %f",
+                            "%s.Strategy: Strategy '%s' with weight: %f",
+                            logDescriptorRef,
                             stratName,
                             valDouble
                         );
