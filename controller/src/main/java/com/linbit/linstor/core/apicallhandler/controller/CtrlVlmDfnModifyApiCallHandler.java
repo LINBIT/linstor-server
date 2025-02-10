@@ -52,7 +52,6 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
@@ -359,7 +358,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 {
                     final Resource rsc = itRsc.next();
                     if (!rsc.isDiskless(apiCtx) &&
-                        hasDrbd(rsc) &&
+                        rsc.hasDrbd(apiCtx) &&
                         !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(apiCtx, rsc, false))
                     {
                         throw new ApiRcException(
@@ -936,46 +935,14 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         boolean anyResourceHasDrbdLayer;
         try
         {
-            anyResourceHasDrbdLayer = vlmDfnRef.streamVolumes(apiCtx).anyMatch(this::hasDrbd);
+            anyResourceHasDrbdLayer = vlmDfnRef.getResourceDefinition().streamResource(apiCtx)
+                .anyMatch(rsc -> rsc.hasDrbd(apiCtx));
         }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
         return anyResourceHasDrbdLayer;
-    }
-
-    private boolean hasDrbd(Volume vlm)
-    {
-        boolean hasDrbdLayer;
-        try
-        {
-            hasDrbdLayer = !LayerUtils.getChildLayerDataByKind(
-                vlm.getAbsResource().getLayerData(apiCtx),
-                DeviceLayerKind.DRBD
-            ).isEmpty();
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return hasDrbdLayer;
-    }
-
-    private boolean hasDrbd(Resource rsc)
-    {
-        Iterator<Volume> vlmsIt = rsc.iterateVolumes();
-        boolean ret = false;
-        while (vlmsIt.hasNext())
-        {
-            Volume vlm = vlmsIt.next();
-            if (hasDrbd(vlm))
-            {
-                ret = true;
-                break;
-            }
-        }
-        return ret;
     }
 
     private Flux<ApiCallRc> resizeDrbd(ResourceName rscName, VolumeNumber vlmNr)

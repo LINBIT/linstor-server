@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sos-report: include backup ship queue
 - sos-report: syslog will only be gathered if messages was not available
 - Clone: check that a resource name for the cloned resource is set
+- Clone: fail clone if the source resource isn't UpToDate or has skip-disk
 
 ## [1.30.4] - 2025-02-03
 

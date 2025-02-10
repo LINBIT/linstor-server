@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.PriorityProps.MultiResult;
 import com.linbit.linstor.api.ApiConsts;
@@ -26,6 +27,8 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -388,6 +391,18 @@ public class Resource extends AbsResource<Resource>
     {
         checkDeleted();
         return isDrbdDiskless(accCtx) || isNvmeInitiator(accCtx);
+    }
+
+    public boolean hasDrbd(AccessContext accCtx)
+    {
+        try
+        {
+            return !LayerUtils.getChildLayerDataByKind(getLayerData(accCtx), DeviceLayerKind.DRBD).isEmpty();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     public ResourceApi getApiData(

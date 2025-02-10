@@ -1219,6 +1219,38 @@ public class CtrlRscDfnApiCallHandler
         }
     }
 
+    /**
+     * Check if the resource has skip disk set or if has DRBD all are upToDate.
+     * @param rsc resource to check.
+     * @throws AccessDeniedException
+     */
+    private void failIfWrongRscState(Resource rsc) throws AccessDeniedException
+    {
+        Props props = rsc.getProps(peerAccCtx.get());
+        if (ApiConsts.VAL_TRUE.equalsIgnoreCase(
+            props.getProp(ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS)))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_RSC_STATE,
+                    String.format("Resource %s has skip-disk set, unable to clone.", rsc),
+                    true
+                ));
+        }
+
+        if (!rsc.isDiskless(apiCtx) &&
+            rsc.hasDrbd(apiCtx) &&
+            !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(apiCtx, rsc, false))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_ALL_UPTODATE,
+                    "Cannot clone resource-definition, because we have a non-UpToDate DRBD device.",
+                    true
+                ));
+        }
+    }
+
     public Flux<ApiCallRc> cloneRscDfnInTransaction(
         String srcRscName,
         String clonedRscName,
@@ -1281,6 +1313,8 @@ public class CtrlRscDfnApiCallHandler
             while (it.hasNext())
             {
                 Resource rsc = it.next();
+
+                failIfWrongRscState(rsc);
 
                 setSuspendIO(rsc);
 
