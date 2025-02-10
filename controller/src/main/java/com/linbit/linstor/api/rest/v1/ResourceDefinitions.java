@@ -18,6 +18,7 @@ import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -340,11 +341,12 @@ public class ResourceDefinitions
                     ApiCallRcImpl flatApiCallRc = new ApiCallRcImpl(
                         apiCallRcList.stream().flatMap(Collection::stream).collect(Collectors.toList())
                     );
+                    String reportedCloneName = StringUtils.isEmpty(clonedName) ? "__invalid_name__" : clonedName;
                     try
                     {
                         builder.entity(
                             objectMapper.writeValueAsString(
-                                Json.resourceDefCloneStarted(srcName, clonedName, flatApiCallRc)
+                                Json.resourceDefCloneStarted(srcName, reportedCloneName, flatApiCallRc)
                             )
                         );
                     }

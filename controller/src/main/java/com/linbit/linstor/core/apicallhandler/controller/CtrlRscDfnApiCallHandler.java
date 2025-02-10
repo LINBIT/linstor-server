@@ -1205,6 +1205,20 @@ public class CtrlRscDfnApiCallHandler
         }
     }
 
+    private void failIfNoName(@Nullable String clonedRscName, @Nullable byte[] clonedExtName)
+    {
+        if (StringUtils.isEmpty(clonedRscName) &&
+            (clonedExtName == null || StringUtils.isEmpty(new String(clonedExtName))))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_RSC_NAME,
+                    "No name for the cloned resource was specified.",
+                    true
+                ));
+        }
+    }
+
     public Flux<ApiCallRc> cloneRscDfnInTransaction(
         String srcRscName,
         String clonedRscName,
@@ -1220,6 +1234,7 @@ public class CtrlRscDfnApiCallHandler
 
         try
         {
+            failIfNoName(clonedRscName, clonedExtName);
             ApiCallRcImpl responses = new ApiCallRcImpl();
             requireRscDfnMapChangeAccess();
 
