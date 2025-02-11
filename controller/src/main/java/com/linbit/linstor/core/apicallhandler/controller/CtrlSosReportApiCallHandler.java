@@ -22,12 +22,14 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.RequestFilePojo;
+import com.linbit.linstor.api.pojo.backups.BackupNodeQueuesPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonSpaceTracking;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -118,6 +120,7 @@ public class CtrlSosReportApiCallHandler
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandler;
     private final CtrlVlmListApiCallHandler ctrlVlmListApiCallHandler;
+    private final CtrlBackupQueueInternalCallHandler ctrlBackupQueueInternalCallHandler;
     private final Provider<SpaceTrackingService> spaceTrackingServiceProvider;
     private final CtrlStltSerializer stltComSerializer;
     private final ErrorReporter errorReporter;
@@ -137,6 +140,7 @@ public class CtrlSosReportApiCallHandler
         CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef,
         CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef,
+        CtrlBackupQueueInternalCallHandler ctrlBackupQueueInternalCallHandlerRef,
         Provider<SpaceTrackingService> spaceTrackingServiceProviderRef,
         CtrlStltSerializer clientComSerializerRef,
         ExtCmdFactory extCmdFactoryRef,
@@ -153,6 +157,7 @@ public class CtrlSosReportApiCallHandler
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
         ctrlVlmListApiCallHandler = ctrlVlmListApiCallHandlerRef;
+        ctrlBackupQueueInternalCallHandler = ctrlBackupQueueInternalCallHandlerRef;
         spaceTrackingServiceProvider = spaceTrackingServiceProviderRef;
         stltComSerializer = clientComSerializerRef;
         extCmdFactory = extCmdFactoryRef;
@@ -635,6 +640,7 @@ public class CtrlSosReportApiCallHandler
                     resourceGroupListJson(sosDir);
                     resourceDefinitionListJson(sosDir);
                     snapshotListJson(sosDir);
+                    backupQueueJson(sosDir);
                     spaceReportingQuery(sosDir);
                     return Flux.empty();
                 }, MDC.getCopyOfContextMap()));
@@ -709,6 +715,23 @@ public class CtrlSosReportApiCallHandler
                 .map(Json::apiToSnapshot)
                 .collect(Collectors.toList());
         appendJSON(sosDir.resolve("snapshot-list.json"), snapshotDataList);
+    }
+
+    private void backupQueueJson(Path sosDir)
+    {
+        JsonGenTypes.BackupQueues json = new JsonGenTypes.BackupQueues();
+        List<BackupNodeQueuesPojo> queues = ctrlBackupQueueInternalCallHandler.listNodeQueues(
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Collections.emptyList()
+        );
+        json.node_queues = new ArrayList<>();
+        for (BackupNodeQueuesPojo queue : queues)
+        {
+            json.node_queues.add(Json.apiToNodeQueues(queue));
+        }
+        appendJSON(sosDir.resolve("backup-queue-list.json"), json);
     }
 
     private Flux<String> viewResourcesJson(Path sosDir)

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - BalanceResource: Ignore resources which are in a non-valid replication state
+- sos-report: include backup ship queue
 
 ## [1.30.4] - 2025-02-03
 
