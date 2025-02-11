@@ -4,9 +4,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public abstract class SosReportType
 {
+    protected boolean success;
     protected final String fileName;
     protected final long timestamp;
 
@@ -14,6 +16,7 @@ public abstract class SosReportType
     {
         fileName = fileNameRef;
         timestamp = timestampRef;
+        success = false;
     }
 
     public String getFileName()
@@ -24,6 +27,16 @@ public abstract class SosReportType
     public long getTimestamp()
     {
         return timestamp;
+    }
+
+    public void setSuccess()
+    {
+        success = true;
+    }
+
+    public boolean hasFailed()
+    {
+        return !success;
     }
 
     @Override
@@ -89,10 +102,22 @@ public abstract class SosReportType
     public static class SosCommandType extends SosReportType
     {
         private final String[] command;
+        private final Supplier<Boolean> shouldExec;
 
         public SosCommandType(String fileNameRef, long timestampRef, String... commandRef)
         {
+            this(fileNameRef, timestampRef, () -> true, commandRef);
+        }
+
+        public SosCommandType(
+            String fileNameRef,
+            long timestampRef,
+            Supplier<Boolean> shouldExecRef,
+            String... commandRef
+        )
+        {
             super(fileNameRef, timestampRef);
+            shouldExec = shouldExecRef;
             command = commandRef;
         }
 
@@ -120,6 +145,11 @@ public abstract class SosReportType
                 eq = super.equals(obj) && Arrays.equals(command, other.command);
             }
             return eq;
+        }
+
+        public boolean shouldExecute()
+        {
+            return shouldExec.get();
         }
     }
 

@@ -123,6 +123,7 @@ public class StltSosReportApiCallHandler
             fileListRef.add(
                 new FileInfoPojo(targetPath.toString(), targetPath.toFile().length(), reportRef.getTimestamp())
             );
+            reportRef.setSuccess();
         }
         catch (IOException exc)
         {
@@ -176,6 +177,7 @@ public class StltSosReportApiCallHandler
                         timestamp
                     )
                 );
+                reportRef.setSuccess();
             }
             else
             {
@@ -230,17 +232,24 @@ public class StltSosReportApiCallHandler
             String errFileName = fileName + SUFFIX_CMD_STDERR;
             File errFile = sosReportDirRef.resolve(errFileName).toFile();
 
-            boolean hasErrFile = CommandExec.executeCmd(
-                reportRef.getCommand(),
-                outFile,
-                errFile,
-                timestamp
-            );
-            fileListRef.add(new FileInfoPojo(outFile.toString(), outFile.length(), timestamp));
-
-            if (hasErrFile)
+            if (reportRef.shouldExecute())
             {
-                fileListRef.add(new FileInfoPojo(errFile.toString(), errFile.length(), timestamp));
+                boolean hasErrFile = CommandExec.executeCmd(
+                    reportRef.getCommand(),
+                    outFile,
+                    errFile,
+                    timestamp
+                );
+                fileListRef.add(new FileInfoPojo(outFile.toString(), outFile.length(), timestamp));
+
+                if (hasErrFile)
+                {
+                    fileListRef.add(new FileInfoPojo(errFile.toString(), errFile.length(), timestamp));
+                }
+                else
+                {
+                    reportRef.setSuccess();
+                }
             }
         }
         catch (IOException | InterruptedException exc)
@@ -414,9 +423,10 @@ public class StltSosReportApiCallHandler
         );
         reportTypes.add(new SosCommandType("ip-a", now, "ip", "a"));
         reportTypes.add(new SosCommandType("drbdadm-version", now, "drbdadm", "--version"));
-        reportTypes.add(new SosCommandType("log-syslog", now, "cat", "/var/log/syslog"));
+        SosCommandType messageLog = new SosCommandType("log-messages", now, "cat", "/var/log/messages");
+        reportTypes.add(messageLog);
+        reportTypes.add(new SosCommandType("log-syslog", now, messageLog::hasFailed, "cat", "/var/log/syslog"));
         reportTypes.add(new SosCommandType("log-kern.log", now, "cat", "/var/log/kern.log"));
-        reportTypes.add(new SosCommandType("log-messages", now, "cat", "/var/log/messages"));
         reportTypes.add(
             new SosCommandType(
                 "release",
