@@ -373,7 +373,7 @@ public class CtrlRscApiCallHandler
                 // Collect resource connection from all resources, avoiding duplicates
                 for (Resource rsc : rscList)
                 {
-                    List<ResourceConnection> rscConList = rsc.streamAbsResourceConnections(apiCtx).collect(toList());
+                    List<ResourceConnection> rscConList = rsc.getAbsResourceConnections(apiCtx);
                     for (ResourceConnection rscCon : rscConList)
                     {
                         ResourceConnectionKey rscConKey = new ResourceConnectionKey(

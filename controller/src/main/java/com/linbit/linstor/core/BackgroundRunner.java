@@ -194,25 +194,21 @@ public class BackgroundRunner
      */
     private <T> Flux<T> prepareFlux(RunConfig<T> runCfgRef)
     {
-
         final Flux<T> localFlux = runCfgRef.flux;
-        if (localFlux != null)
-        {
-            return localFlux
-                .doOnSubscribe(
-                    ignored -> errorReporter.logDebug("Background operation " + runCfgRef.description + " start")
-                )
-                .doOnTerminate(() ->
-                {
-                    errorReporter.logDebug("Background operation " + runCfgRef.description + " end");
-                    finished(runCfgRef);
-                })
-                .contextWrite(Context.of(runCfgRef.subscriberContext));
-        }
-        else
+        if (localFlux == null)
         {
             throw new ImplementationError("runCfg was initialized with the wrong constructor");
         }
+        return localFlux
+            .doOnSubscribe(
+                ignored -> errorReporter.logDebug("Background operation " + runCfgRef.description + " start")
+            )
+            .doOnTerminate(() ->
+            {
+                errorReporter.logDebug("Background operation " + runCfgRef.description + " end");
+                finished(runCfgRef);
+            })
+            .contextWrite(Context.of(runCfgRef.subscriberContext));
     }
 
     /**

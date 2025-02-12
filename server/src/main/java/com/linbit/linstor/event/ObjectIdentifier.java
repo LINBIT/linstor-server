@@ -24,7 +24,7 @@ public class ObjectIdentifier
         return new ObjectIdentifier(null, null, null, null, null);
     }
 
-    public static ObjectIdentifier node(@Nullable NodeName nodeName)
+    public static ObjectIdentifier node(NodeName nodeName)
     {
         return new ObjectIdentifier(nodeName, null, null, null, null);
     }
@@ -32,7 +32,7 @@ public class ObjectIdentifier
     /**
      * When used on a satellite, the node name is implicit, so this represents a resource.
      */
-    public static ObjectIdentifier resourceDefinition(@Nullable ResourceName resourceName)
+    public static ObjectIdentifier resourceDefinition(ResourceName resourceName)
     {
         return new ObjectIdentifier(null, resourceName, null, null, null);
     }
@@ -41,22 +41,22 @@ public class ObjectIdentifier
      * When used on a satellite, the node name is implicit, so this represents a volume.
      */
     public static ObjectIdentifier volumeDefinition(
-        @Nullable ResourceName resourceName,
-        @Nullable VolumeNumber volumeNumber
+        ResourceName resourceName,
+        VolumeNumber volumeNumber
     )
     {
         return new ObjectIdentifier(null, resourceName, volumeNumber, null, null);
     }
 
-    public static ObjectIdentifier resource(@Nullable NodeName nodeName, @Nullable ResourceName resourceName)
+    public static ObjectIdentifier resource(NodeName nodeName, ResourceName resourceName)
     {
         return new ObjectIdentifier(nodeName, resourceName, null, null, null);
     }
 
     public static ObjectIdentifier volume(
-        @Nullable NodeName nodeName,
-        @Nullable ResourceName resourceName,
-        @Nullable VolumeNumber volumeNumber
+        NodeName nodeName,
+        ResourceName resourceName,
+        VolumeNumber volumeNumber
     )
     {
         return new ObjectIdentifier(nodeName, resourceName, volumeNumber, null, null);
@@ -66,29 +66,28 @@ public class ObjectIdentifier
      * When used on a satellite, the node name is implicit, so this represents a snapshot.
      */
     public static ObjectIdentifier snapshotDefinition(
-        @Nullable ResourceName resourceName,
-        @Nullable SnapshotName snapshotName
+        ResourceName resourceName,
+        SnapshotName snapshotName
     )
     {
         return new ObjectIdentifier(null, resourceName, null, snapshotName, null);
     }
 
     public static ObjectIdentifier snapshot(
-        @Nullable NodeName nodeName,
-        @Nullable ResourceName resourceName,
-        @Nullable SnapshotName snapshotName
+        NodeName nodeName,
+        ResourceName resourceName,
+        SnapshotName snapshotName
     )
     {
         return new ObjectIdentifier(nodeName, resourceName, null, snapshotName, null);
     }
 
     public static ObjectIdentifier connection(
-        @Nullable NodeName localNode,
-        @Nullable NodeName remoteNode,
-        @Nullable ResourceName resourceName
+        NodeName remoteNode,
+        ResourceName resourceName
     )
     {
-        return new ObjectIdentifier(localNode, resourceName, null, null, remoteNode);
+        return new ObjectIdentifier(null, resourceName, null, null, remoteNode);
     }
 
     public ObjectIdentifier(

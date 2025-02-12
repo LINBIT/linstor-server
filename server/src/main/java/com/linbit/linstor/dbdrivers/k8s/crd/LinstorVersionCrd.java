@@ -59,8 +59,9 @@ public class LinstorVersionCrd
 
     @Override
     @JsonIgnore
-    public @Nullable String getK8sKey()
+    public String getK8sKey()
     {
+        assert k8sKey != null;
         return k8sKey;
     }
 

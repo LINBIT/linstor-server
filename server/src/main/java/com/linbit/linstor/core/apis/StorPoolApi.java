@@ -61,12 +61,11 @@ public interface StorPoolApi
     @JsonIgnore
     ApiCallRc getReports();
     @JsonIgnore
-    Boolean supportsSnapshots();
-    @JsonIgnore
     Boolean isPmem();
     @JsonIgnore
     Boolean isVDO();
-    Boolean isExternalLocking();
+
+    boolean isExternalLocking();
 
     @JsonIgnore
     default String getBackingPoolName()

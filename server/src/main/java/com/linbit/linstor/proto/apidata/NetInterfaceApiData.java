@@ -45,21 +45,12 @@ public class NetInterfaceApiData implements NetInterfaceApi
     }
 
     @Override
-    public String getSatelliteConnectionEncryptionType()
+    public @Nullable StltConn getStltConn()
     {
-        return netInterface.getStltEncryptionType();
-    }
-
-    @Override
-    public Integer getSatelliteConnectionPort()
-    {
-        return netInterface.getStltPort();
-    }
-
-    @Override
-    public boolean isUsableAsSatelliteConnection()
-    {
-        return netInterface.hasStltEncryptionType() && netInterface.hasStltPort();
+        return netInterface.hasStltConn() ? new StltConn(
+            netInterface.getStltConn().getStltPort(),
+            netInterface.getStltConn().getStltEncryptionType()
+        ) : null;
     }
 
     public static List<NetInterfaceOuterClass.NetInterface> toNetInterfaceProtoList(
@@ -80,10 +71,13 @@ public class NetInterfaceApiData implements NetInterfaceApi
         bld.setUuid(netInterApi.getUuid().toString());
         bld.setName(netInterApi.getName());
         bld.setAddress(netInterApi.getAddress());
-        if (netInterApi.isUsableAsSatelliteConnection())
+        @Nullable StltConn stltConn = netInterApi.getStltConn();
+        if (stltConn != null)
         {
-            bld.setStltPort(netInterApi.getSatelliteConnectionPort());
-            bld.setStltEncryptionType(netInterApi.getSatelliteConnectionEncryptionType());
+            NetInterfaceOuterClass.StltConn.Builder connBld = NetInterfaceOuterClass.StltConn.newBuilder();
+            connBld.setStltPort(stltConn.getSatelliteConnectionPort());
+            connBld.setStltEncryptionType(stltConn.getSatelliteConnectionEncryptionType());
+            bld.setStltConn(connBld.build());
         }
         return bld.build();
     }

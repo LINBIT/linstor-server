@@ -59,9 +59,9 @@ public class RscDfnApiData implements ResourceDefinitionApi
     }
 
     @Override
-    public byte[] getExternalName()
+    public @Nullable byte[] getExternalName()
     {
-        return rscDfn.getExternalName().toByteArray();
+        return rscDfn.hasExternalName() ? rscDfn.getExternalName().toByteArray() : null;
     }
 
     @Override

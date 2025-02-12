@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class RscPojo implements Comparable<RscPojo>, ResourceApi
 {
     private final String rscName;
@@ -30,7 +32,9 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     private final @Nullable List<ResourceConnectionApi> rscConnections;
     private final @Nullable Long fullSyncId;
     private final @Nullable Long updateId;
-    private final @Nullable RscLayerDataApi rscLayerDataPojo;
+    // in the second ctor this gets filled with null, this should be fixed through gitlab-issue #1207
+    @SuppressFBWarnings("NP_STORE_INTO_NONNULL_FIELD")
+    private final RscLayerDataApi rscLayerDataPojo;
     private final @Nullable Date createTimestamp;
     private final @Nullable EffectivePropertiesPojo propsPojo;
 
@@ -47,7 +51,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         final @Nullable List<ResourceConnectionApi> rscConnectionsRef,
         final @Nullable Long fullSyncIdRef,
         final @Nullable Long updateIdRef,
-        final @Nullable RscLayerDataApi rscLayerDataPojoRef,
+        final RscLayerDataApi rscLayerDataPojoRef,
         final @Nullable Date createTimestampRef,
         @Nullable EffectivePropertiesPojo propsPojoRef
     )
@@ -155,35 +159,15 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         return rscDefinition == null ? null : rscDefinition.getResourceName();
     }
 
-    public @Nullable UUID getLocalRscUuid()
-    {
-        return localRscUuid;
-    }
-
-    public long getLocalRscFlags()
-    {
-        return localRscFlags;
-    }
-
     @Override
     public long getFlags()
     {
         return localRscFlags;
     }
 
-    public Map<String, String> getLocalRscProps()
-    {
-        return localRscProps;
-    }
-
     public @Nullable List<VolumeDefinitionApi> getVlmDfns()
     {
         return rscDefinition == null ? null : rscDefinition.getVlmDfnList();
-    }
-
-    public List<VolumeApi> getLocalVlms()
-    {
-        return localVlms;
     }
 
     @Override
@@ -225,7 +209,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     }
 
     @Override
-    public @Nullable RscLayerDataApi getLayerData()
+    public RscLayerDataApi getLayerData()
     {
         return rscLayerDataPojo;
     }

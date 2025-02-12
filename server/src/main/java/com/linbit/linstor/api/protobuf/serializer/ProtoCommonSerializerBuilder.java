@@ -49,6 +49,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceTracker;
 import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
@@ -168,7 +169,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -771,11 +771,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 errReport.getExceptionMessage().ifPresent(protoErrorReport::setExceptionMessage);
                 errReport.getOriginFile().ifPresent(protoErrorReport::setOriginFile);
                 errReport.getOriginMethod().ifPresent(protoErrorReport::setOriginMethod);
-                Optional<Integer> originLine = errReport.getOriginLine();
-                if (originLine.isPresent())
-                {
-                    protoErrorReport.setOriginLine(originLine.get());
-                }
+                errReport.getOriginLine().ifPresent(protoErrorReport::setOriginLine);
                 errReport.getText().ifPresent(protoErrorReport::setText);
                 msgErrorReport.addErrorReports(protoErrorReport);
             }
@@ -1095,13 +1091,16 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setUuid(netIf.getUuid().toString())
             .setName(netIf.getName().displayValue)
             .setAddress(netIf.getAddress(accCtx).getAddress());
-        if (netIf.getStltConnPort(accCtx) != null)
+        @Nullable TcpPortNumber stltConnPort = netIf.getStltConnPort(accCtx);
+        @Nullable EncryptionType stltConnEncryptionType = netIf.getStltConnEncryptionType(accCtx);
+        if (stltConnPort != null && stltConnEncryptionType != null)
         {
-            builder.setStltPort(netIf.getStltConnPort(accCtx).value);
-        }
-        if (netIf.getStltConnEncryptionType(accCtx) != null)
-        {
-            builder.setStltEncryptionType(netIf.getStltConnEncryptionType(accCtx).name());
+            builder.setStltConn(
+                NetInterfaceOuterClass.StltConn.newBuilder()
+                    .setStltPort(stltConnPort.value)
+                    .setStltEncryptionType(stltConnEncryptionType.name())
+                    .build()
+            );
         }
         return builder.build();
     }
@@ -1515,16 +1514,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setDevicePath(vlmApi.getDevicePath());
             }
-            Optional<Long> allocatedSize = vlmApi.getAllocatedSize();
-            if (allocatedSize.isPresent())
-            {
-                builder.setAllocatedSize(allocatedSize.get());
-            }
-            Optional<Long> usableSize = vlmApi.getUsableSize();
-            if (usableSize.isPresent())
-            {
-                builder.setUsableSize(usableSize.get());
-            }
+            vlmApi.getAllocatedSize().ifPresent(builder::setAllocatedSize);
+            vlmApi.getUsableSize().ifPresent(builder::setUsableSize);
 
             protoVlmList.add(builder.build());
         }

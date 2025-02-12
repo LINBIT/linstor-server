@@ -47,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -266,14 +265,14 @@ public class Resource extends AbsResource<Resource>
         }
     }
 
-    public Stream<ResourceConnection> streamAbsResourceConnections(AccessContext accCtx)
+    public List<ResourceConnection> getAbsResourceConnections(AccessContext accCtx)
         throws AccessDeniedException
     {
         synchronized (resourceConnections)
         {
             checkDeleted();
             objProt.requireAccess(accCtx, AccessType.VIEW);
-            return resourceConnections.values().stream();
+            return new ArrayList<>(resourceConnections.values());
         }
     }
 
@@ -433,7 +432,7 @@ public class Resource extends AbsResource<Resource>
             volumes.add(itVolumes.next().getApiData(null, accCtx));
         }
         List<ResourceConnectionApi> rscConns = new ArrayList<>();
-        for (ResourceConnection rscConn : streamAbsResourceConnections(accCtx).collect(Collectors.toList()))
+        for (ResourceConnection rscConn : getAbsResourceConnections(accCtx))
         {
             rscConns.add(rscConn.getApiData(accCtx));
         }

@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.utils;
 
-import javax.annotation.Nullable;
+
+import com.linbit.linstor.annotation.Nonnull;
+import com.linbit.linstor.annotation.Nullable;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -15,7 +17,7 @@ public class NullableUtils
     public static <T, R> R mapNullable(
         @Nullable T elementRef,
         Supplier<R> supplierIfElementNullRef,
-        Function</* @Nonnull */ T, R> mapperFunctionIfNonNullRef
+        Function<@Nonnull T, R> mapperFunctionIfNonNullRef
     )
     {
         return elementRef == null ? supplierIfElementNullRef.get() : mapperFunctionIfNonNullRef.apply(elementRef);

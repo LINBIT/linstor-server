@@ -1,15 +1,17 @@
 package com.linbit.linstor.api.prop;
 
-public class StringProperty extends GenericProperty implements Property
+import com.linbit.linstor.annotation.Nullable;
+
+public class StringProperty extends GenericProperty
 {
 
     public StringProperty(
         String nameRef,
         String keyRef,
         boolean internalRef,
-        String infoRef,
-        String unitRef,
-        String dfltRef
+        @Nullable String infoRef,
+        @Nullable String unitRef,
+        @Nullable String dfltRef
     )
     {
         super(nameRef, keyRef, internalRef, infoRef, unitRef, dfltRef);
@@ -25,6 +27,12 @@ public class StringProperty extends GenericProperty implements Property
     public PropertyType getType()
     {
         return Property.PropertyType.STRING;
+    }
+
+    @Override
+    public String getValue()
+    {
+        return "Arbitrary string";
     }
 
     @Override

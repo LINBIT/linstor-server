@@ -116,32 +116,20 @@ public class ProtoDeserializationUtils
         return arr;
     }
 
-    public static List<DeviceProviderKind> parseDeviceProviderKind(List<ProviderType> providerTypeList)
-    {
-        return parseDeviceProviderKind(providerTypeList, true);
-    }
-
     public static List<DeviceProviderKind> parseDeviceProviderKind(
-        List<ProviderType> providerTypeList,
-        boolean throwIfUnknown
+        List<ProviderType> providerTypeList
     )
     {
         List<DeviceProviderKind> providerKindList = new ArrayList<>();
         for (ProviderType providerType : providerTypeList)
         {
-            providerKindList.add(parseDeviceProviderKind(providerType, throwIfUnknown));
+            providerKindList.add(parseDeviceProviderKind(providerType));
         }
         return providerKindList;
     }
 
-    public static @Nullable DeviceProviderKind parseDeviceProviderKind(ProviderType providerKindRef)
-    {
-        return parseDeviceProviderKind(providerKindRef, true);
-    }
-
-    public static @Nullable DeviceProviderKind parseDeviceProviderKind(
-        ProviderType providerKindRef,
-        boolean throwIfUnknown
+    public static DeviceProviderKind parseDeviceProviderKind(
+        ProviderType providerKindRef
     )
     {
         DeviceProviderKind kind = null;
@@ -194,11 +182,7 @@ public class ProtoDeserializationUtils
                 case UNKNOWN_PROVIDER: // fall-through
                 case UNRECOGNIZED: // fall-through
                 default:
-                    if (throwIfUnknown)
-                    {
-                        throw new ImplementationError("Unknown (proto) ProviderType: " + providerKindRef);
-                    }
-                    break;
+                    throw new ImplementationError("Unknown (proto) ProviderType: " + providerKindRef);
             }
         }
         return kind;
@@ -337,7 +321,6 @@ public class ProtoDeserializationUtils
             // for user / plugins
             null, // same as above
             null,
-            storPoolProto.getSnapshotSupported(),
             storPoolProto.getIsPmem(),
             storPoolProto.getIsVdo(),
             storPoolProto.getIsExternalLocking()

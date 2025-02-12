@@ -20,8 +20,6 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * Cipher utility for simple encryption and decryption of byte arrays
  *
@@ -189,7 +187,6 @@ public final class JclSymmetricKeyCipher implements ByteArrayCipher
     }
 
 
-    @SuppressFBWarnings
     private JclSymmetricKeyCipher(final SecretKey key)
         throws LinStorException
     {

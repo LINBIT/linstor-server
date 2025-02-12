@@ -246,8 +246,8 @@ public class CtrlRscAutoHelper
 
     public @Nullable Resource getTiebreakerResource(String nodeNameRef, String nameRef)
     {
-        Resource ret = null;
-        Resource rsc = dataLoader.loadRsc(nodeNameRef, nameRef, false);
+        @Nullable Resource ret = null;
+        @Nullable Resource rsc = dataLoader.loadRsc(nodeNameRef, nameRef, false);
         try
         {
             if (rsc != null && rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.TIE_BREAKER))

@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.interfaces.categories.resource;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -16,8 +17,6 @@ import com.linbit.linstor.storage.interfaces.categories.LayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.ExceptionThrowingSupplier;
-
-import com.linbit.linstor.annotation.Nullable;
 
 import java.util.List;
 
@@ -103,6 +102,7 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
 
     VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException;
 
+    @Nullable
     StorPool getStorPool();
 
     void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws DatabaseException, AccessDeniedException;

@@ -1,8 +1,10 @@
 package com.linbit.linstor.api.prop;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.regex.Pattern;
 
-public class NumericOrSymbolProperty extends GenericProperty implements Property
+public class NumericOrSymbolProperty extends GenericProperty
 {
     private final long min;
     private final long max;
@@ -15,9 +17,9 @@ public class NumericOrSymbolProperty extends GenericProperty implements Property
         long maxRef,
         String buildValuesEnumRegexRef,
         boolean internalRef,
-        String infoRef,
-        String unitRef,
-        String dfltRef
+        @Nullable String infoRef,
+        @Nullable String unitRef,
+        @Nullable String dfltRef
     )
     {
         super(nameRef, keyRef, internalRef, infoRef, unitRef, dfltRef);

@@ -70,7 +70,7 @@ public class ConfFileBuilder
     private final ErrorReporter errorReporter;
     private final AccessContext accCtx;
     private final DrbdRscData<Resource> localRscData;
-    private final @Nullable Collection<DrbdRscData<Resource>> remoteResourceData;
+    private final Collection<DrbdRscData<Resource>> remoteResourceData;
     private final WhitelistProps whitelistProps;
     private final ReadOnlyProps stltProps;
     private final DrbdVersion drbdVersion;
@@ -82,7 +82,7 @@ public class ConfFileBuilder
         final ErrorReporter errorReporterRef,
         final AccessContext accCtxRef,
         final DrbdRscData<Resource> localRscRef,
-        final @Nullable Collection<DrbdRscData<Resource>> remoteResourcesRef,
+        final Collection<DrbdRscData<Resource>> remoteResourcesRef,
         final WhitelistProps whitelistPropsRef,
         final ReadOnlyProps stltPropsRef,
         final DrbdVersion drbdVersionRef
@@ -131,10 +131,6 @@ public class ConfFileBuilder
     {
         Set<DrbdRscData<Resource>> peerRscSet = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
         DrbdRscDfnData<Resource> rscDfnData = localRscData.getRscDfnLayerObject();
-        if (remoteResourceData == null)
-        {
-            throw new ImplementationError("No remote resources found for " + localRscData.getAbsResource() + "!");
-        }
         peerRscSet.addAll(remoteResourceData); // node-alphabetically sorted
 
         Resource localRsc = localRscData.getAbsResource();

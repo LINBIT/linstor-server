@@ -173,7 +173,7 @@ public class PingTask implements Task
      * @param peersRef
      * @return
      */
-    private HashMap<Peer, /* @Nullable */ Peer> getCurrentPeers(List<Peer> peersRef)
+    private HashMap<Peer, @Nullable Peer> getCurrentPeers(List<Peer> peersRef)
     {
         HashMap<Peer, Peer> ret = new HashMap<>();
         try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.NODES_MAP))

@@ -1,11 +1,10 @@
 package com.linbit.linstor.core.objects;
 
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.ExceptionThrowingBiFunction;
-
-import javax.annotation.Nullable;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,12 +19,12 @@ public class AutoUnselectorConfig
     private final ResourceDefinition rscDfn;
     private final Map<Resource, AutoUnselectRscConfig> unplaceSettingMap;
     private final ExceptionThrowingBiFunction<
-        AccessContext, Resource, /* @Nullable */ String, AccessDeniedException> filter;
+        AccessContext, Resource, @Nullable String, AccessDeniedException> filter;
 
     public AutoUnselectorConfig(
         ResourceDefinition rscDfnRef,
         Map<Resource, AutoUnselectRscConfig> unplaceSettingMapRef,
-        ExceptionThrowingBiFunction<AccessContext, Resource, /* @Nullable */ String, AccessDeniedException> filterRef
+        ExceptionThrowingBiFunction<AccessContext, Resource, @Nullable String, AccessDeniedException> filterRef
     )
     {
         rscDfn = rscDfnRef;
@@ -77,7 +76,7 @@ public class AutoUnselectorConfig
         private final ResourceDefinition rscDfn;
         private final Map<Resource, RscConfigBuilder> rscCfgMap = new HashMap<>();
 
-        private ExceptionThrowingBiFunction<AccessContext, Resource, /* @Nullable */ String, AccessDeniedException> filter;
+        private ExceptionThrowingBiFunction<AccessContext, Resource, @Nullable String, AccessDeniedException> filter;
 
         public CfgBuilder(ResourceDefinition rscDfnRef)
         {

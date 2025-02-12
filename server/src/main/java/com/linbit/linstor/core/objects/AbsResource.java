@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public abstract class AbsResource<RSC extends AbsResource<RSC>>
     extends AbsCoreObj<AbsResource<RSC>>
     implements ProtectedObject
@@ -84,7 +86,11 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
         createTimestamp.set(creationDate);
     }
 
-    public @Nullable AbsRscLayerObject<RSC> getLayerData(AccessContext accCtx)
+    // two options to remove this suppress:
+    // either have the rscDataFactory call createRscData instead of ensureRscDataExists
+    // or supply the Resource-ctor with a rscFactory so it can create its own rscData
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    public AbsRscLayerObject<RSC> getLayerData(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -92,7 +98,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
         return rootLayerData.get();
     }
 
-    public void setLayerData(AccessContext accCtx, @Nullable AbsRscLayerObject<RSC> layerData)
+    public void setLayerData(AccessContext accCtx, AbsRscLayerObject<RSC> layerData)
         throws AccessDeniedException, DatabaseException
     {
         checkDeleted();

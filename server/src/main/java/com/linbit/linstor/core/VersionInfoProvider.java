@@ -15,7 +15,6 @@ public interface VersionInfoProvider
 
     boolean equalsVersion(int major, int minor, int patch);
 
-
     static int[] parseVersion(String sVersion)
     {
         int[] ret = new int[3];

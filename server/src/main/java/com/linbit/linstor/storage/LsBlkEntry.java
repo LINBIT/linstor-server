@@ -1,26 +1,26 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.linstor.annotation.Nullable;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class LsBlkEntry
 {
-    private @Nullable String name;
+    // all fields are present as at least "" in the lsblk-output, so to prevent sb from complaining set that as default
+    // value
+    private String name = "";
     private long size;
     private boolean rotational;
-    private @Nullable String parentName;
-    private @Nullable String kernelName;
-    private @Nullable String fsType;
+    private String parentName = "";
+    private String kernelName = "";
+    private String fsType = "";
     private int major;
     private int minor;
-    private @Nullable String model;
-    private @Nullable String serial;
-    private @Nullable String wwn;
-    private @Nullable String state;
-    private @Nullable String type;
+    private String model = "";
+    private String serial = "";
+    private String wwn = "";
+    private String state = "";
+    private String type = "";
     private long discGran;
 
     public enum LsBlkFields {
@@ -164,7 +164,7 @@ public class LsBlkEntry
         }
     }
 
-    public @Nullable String getName()
+    public String getName()
     {
         return name;
     }
@@ -179,17 +179,17 @@ public class LsBlkEntry
         return rotational;
     }
 
-    public @Nullable String getParentName()
+    public String getParentName()
     {
         return parentName;
     }
 
-    public @Nullable String getFsType()
+    public String getFsType()
     {
         return fsType;
     }
 
-    public @Nullable String getKernelName()
+    public String getKernelName()
     {
         return kernelName;
     }
@@ -204,27 +204,27 @@ public class LsBlkEntry
         return minor;
     }
 
-    public @Nullable String getModel()
+    public String getModel()
     {
         return model;
     }
 
-    public @Nullable String getSerial()
+    public String getSerial()
     {
         return serial;
     }
 
-    public @Nullable String getWwn()
+    public String getWwn()
     {
         return wwn;
     }
 
-    public @Nullable String getState()
+    public String getState()
     {
         return state;
     }
 
-    public @Nullable String getType()
+    public String getType()
     {
         return type;
     }

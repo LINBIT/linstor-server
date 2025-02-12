@@ -1,15 +1,17 @@
 package com.linbit.linstor.api.prop;
 
-public class LongProperty extends GenericProperty implements Property
+import com.linbit.linstor.annotation.Nullable;
+
+public class LongProperty extends GenericProperty
 {
 
     public LongProperty(
         String nameRef,
         String keyRef,
         boolean internalRef,
-        String infoRef,
-        String unitRef,
-        String dfltRef
+        @Nullable String infoRef,
+        @Nullable String unitRef,
+        @Nullable String dfltRef
     )
     {
         super(nameRef, keyRef, internalRef, infoRef, unitRef, dfltRef);
@@ -34,6 +36,12 @@ public class LongProperty extends GenericProperty implements Property
     public PropertyType getType()
     {
         return Property.PropertyType.LONG;
+    }
+
+    @Override
+    public String getValue()
+    {
+        return "Any signed 64 bit integer";
     }
 
     @Override

@@ -139,6 +139,10 @@ public class SpecialSatelliteProcessManager
                 {
                     satellitePath = parent.resolve("../bin/Satellite").normalize();
                 }
+                else
+                {
+                    errorReporter.logWarning("source path %s has no parent.", sourcePath);
+                }
             }
             else
             {
@@ -242,6 +246,10 @@ public class SpecialSatelliteProcessManager
                     // /etc/linstor/specialStlt_<port>/linstor_satellite.toml
                     Files.copy(dfltSpecialStltConfPath, confPath.resolve(LinstorConfig.LINSTOR_STLT_CONFIG));
                 }
+            }
+            else
+            {
+                errorReporter.logWarning("conf path %s has no parent.", confPath);
             }
         }
 

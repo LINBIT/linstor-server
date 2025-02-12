@@ -12,7 +12,7 @@ public interface LinstorSpec<CRD extends LinstorCrd<SPEC>, SPEC extends LinstorS
 
     Map<String, Object> asRawParameters();
 
-    default Object getByColumn(DatabaseTable.Column clm)
+    default @Nullable Object getByColumn(DatabaseTable.Column clm)
     {
         return getByColumn(clm.getName());
     }

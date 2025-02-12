@@ -8,6 +8,8 @@ import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
+import com.linbit.linstor.core.apis.NetInterfaceApi.StltConn;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
@@ -128,11 +130,16 @@ public class PrometheusBuilder
     public static Map<String, String> nodeExport(final NodeApi nodeApi)
     {
         final HashMap<String, String> map = new HashMap<>();
-        if (nodeApi.getActiveStltConn() != null)
+        @Nullable NetInterfaceApi activeStltConn = nodeApi.getActiveStltConn();
+        if (activeStltConn != null)
         {
-            map.put("address", nodeApi.getActiveStltConn().getAddress());
-            map.put("encryption", nodeApi.getActiveStltConn().getSatelliteConnectionEncryptionType());
-            map.put("port", nodeApi.getActiveStltConn().getSatelliteConnectionPort() + "");
+            @Nullable StltConn stltConnInfo = activeStltConn.getStltConn();
+            if (stltConnInfo != null)
+            {
+                map.put("address", activeStltConn.getAddress());
+                map.put("encryption", stltConnInfo.getSatelliteConnectionEncryptionType());
+                map.put("port", stltConnInfo.getSatelliteConnectionPort() + "");
+            }
         }
         map.put("node", nodeApi.getName());
         map.put("nodetype", nodeApi.getType());

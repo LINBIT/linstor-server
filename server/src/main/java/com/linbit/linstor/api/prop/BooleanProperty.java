@@ -1,8 +1,10 @@
 package com.linbit.linstor.api.prop;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.regex.Pattern;
 
-public class BooleanProperty extends GenericProperty implements Property
+public class BooleanProperty extends GenericProperty
 {
     private static final Pattern PATTERN = Pattern.compile("(?i)(?:yes|no)");
 
@@ -10,9 +12,9 @@ public class BooleanProperty extends GenericProperty implements Property
         String nameRef,
         String keyRef,
         boolean internalRef,
-        String infoRef,
-        String unitRef,
-        String dfltRef
+        @Nullable String infoRef,
+        @Nullable String unitRef,
+        @Nullable String dfltRef
     )
     {
         super(nameRef, keyRef, internalRef, infoRef, unitRef, dfltRef);

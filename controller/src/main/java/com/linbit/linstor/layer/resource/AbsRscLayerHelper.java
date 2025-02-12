@@ -48,6 +48,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public abstract class AbsRscLayerHelper<
     RSC_LO extends AbsRscLayerObject<Resource>,
     VLM_LO extends VlmProviderObject<Resource>,
@@ -176,6 +178,7 @@ public abstract class AbsRscLayerHelper<
      * @throws InvalidNameException
      */
     @SuppressWarnings("unchecked")
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     public LayerResult<Resource> ensureRscDataCreated(
         Resource rscRef,
         LayerPayload payloadRef,
@@ -190,11 +193,13 @@ public abstract class AbsRscLayerHelper<
         RSC_LO rscData = null;
         if (parentObjectRef == null)
         {
+            // rootData is able to be null at this point, but should never be null later on which is why it is not
+            // marked as nullable
             AbsRscLayerObject<?> rootData = rscRef.getLayerData(apiCtx);
             if (rootData != null && !rootData.getClass().equals(rscClass))
             {
                 throw new ImplementationError(
-                    "Expected null or instance of " + rscClass.getSimpleName() + ", but got instance of " +
+                    "Expected instance of " + rscClass.getSimpleName() + ", but got instance of " +
                         rootData.getClass().getSimpleName()
                 );
             }

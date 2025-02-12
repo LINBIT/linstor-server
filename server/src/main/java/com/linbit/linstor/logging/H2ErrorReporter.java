@@ -218,7 +218,7 @@ public class H2ErrorReporter
                     // this is how you get the whole string back from a CLOB
                     text = clob.getSubString(1, (int) clob.length());
                 }
-                String nodeName = rslt.getString("NODE");
+                @Nullable String nodeName = rslt.getString("NODE");
                 if (nodeName == null)
                 {
                     throw new ImplementationError("nodeName must not be null");

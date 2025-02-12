@@ -4,12 +4,11 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.protobuf.FullSync.FullSyncStatus;
 import com.linbit.linstor.core.migration.StltMigrationHandler.StltMigrationResult;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.utils.StringUtils;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.Collections;

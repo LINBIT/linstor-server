@@ -239,9 +239,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
      * every device-manager-run. It is HIGHLY RECOMMENDED to make a local variable referencing this read-only
      * datastructure since the next access to it might already contain different data!
      */
+    // this is initialized in the method clearReadOnlyStltInfo(), which sb does not realize
+    @SuppressFBWarnings(
+        "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"
+    )
     private volatile StltReadOnlyInfo stltReadOnlyInfo;
 
-    @SuppressFBWarnings
     @Inject
     DeviceManagerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,

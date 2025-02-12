@@ -466,10 +466,10 @@ public class BackupNodeFinder
         ExtToolsManager extToolsManagerRef,
         ExtTools extTool,
         String toolDescr,
-        ExtToolsInfo.Version version
+        @Nullable ExtToolsInfo.Version version
     )
     {
-        ApiCallRcEntry errorRc;
+        @Nullable ApiCallRcEntry errorRc;
         ExtToolsInfo info = extToolsManagerRef.getExtToolInfo(extTool);
         if (info == null || !info.isSupported())
         {

@@ -28,7 +28,7 @@ public class FileProviderUtils
 
     public static class FileInfo
     {
-        public final Path directory;
+        public final @Nullable Path directory;
         public final String identifier;
         public final @Nullable Path loPath; // null for snapshots
         public final long size;
@@ -38,10 +38,13 @@ public class FileProviderUtils
             loPath = loPathRef;
 
             directory = backingPathRef.getParent();
-            Path fileName = backingPathRef.getFileName();
+            @Nullable Path fileName = backingPathRef.getFileName();
             if (fileName == null)
             {
-                throw new ImplementationError("FileInfo.identifier cannot be null");
+                throw new ImplementationError(
+                    "FileInfo.identifier cannot be null, but backing path " + backingPathRef +
+                        " does not have a file name"
+                );
             }
             identifier = fileName.toString();
 
@@ -65,7 +68,10 @@ public class FileProviderUtils
             Path fileName = backingPathRef.getFileName();
             if (fileName == null)
             {
-                throw new ImplementationError("FileInfo.identifier cannot be null");
+                throw new ImplementationError(
+                    "FileInfo.identifier cannot be null, but backing path " + backingPathRef +
+                        " does not have a file name"
+                );
             }
             identifier = fileName.toString();
 

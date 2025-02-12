@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.data.provider.storagespaces;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.StorageSpacesThinVlmPojo;
@@ -65,7 +66,7 @@ public class StorageSpacesData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public @Nullable VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         if (providerKind.equals(DeviceProviderKind.STORAGE_SPACES))
         {
@@ -95,6 +96,6 @@ public class StorageSpacesData<RSC extends AbsResource<RSC>>
                 exists.get()
             );
         }
-        return null;
+        throw new ImplementationError("providerKind " + providerKind + " is not a known storage spaces provider");
     }
 }

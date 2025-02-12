@@ -7,6 +7,12 @@ message NetInterface
     optional string uuid = 1;
     required string name = 2;
     required string address = 3;
-    optional sint32 stlt_port = 4;
-    optional string stlt_encryption_type = 5;
+    // 4 & 5 - port & encryption type, moved into StltConn
+    optional StltConn stlt_conn = 6;
+}
+
+message StltConn
+{
+    required sint32 stlt_port = 1;
+    required string stlt_encryption_type = 2;
 }

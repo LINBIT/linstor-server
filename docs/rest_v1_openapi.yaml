@@ -6256,7 +6256,7 @@ components:
             type: string
         obj_refs:
           type: object
-          description: Map of objection that have been involved by the operation.
+          description: Map of objects that have been involved in the operation.
           additionalProperties:
             type: string
         created_at:

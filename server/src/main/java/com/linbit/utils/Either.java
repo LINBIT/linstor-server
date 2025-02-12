@@ -1,7 +1,5 @@
 package com.linbit.utils;
 
-import com.linbit.linstor.annotation.Nullable;
-
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -17,7 +15,7 @@ public interface Either<L, R>
         return new Right<>(right);
     }
 
-    <T> T map(Function<L, T> leftFunction, @Nullable Function<R, T> rightFunction);
+    <T> T map(Function<L, T> leftFunction, Function<R, T> rightFunction);
 
     void consume(Consumer<L> leftConsumer, Consumer<R> rightConsumer);
 
@@ -28,6 +26,11 @@ public interface Either<L, R>
         public Left(L leftRef)
         {
             left = leftRef;
+        }
+
+        public L get()
+        {
+            return left;
         }
 
         @Override
@@ -50,6 +53,11 @@ public interface Either<L, R>
         public Right(R rightRef)
         {
             right = rightRef;
+        }
+
+        public R get()
+        {
+            return right;
         }
 
         @Override

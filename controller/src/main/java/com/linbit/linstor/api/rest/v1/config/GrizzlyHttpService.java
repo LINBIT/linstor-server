@@ -44,6 +44,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.glassfish.grizzly.http.CompressionConfig;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -437,6 +438,9 @@ class LinstorMapper implements ExceptionMapper<Exception>
     @Context private UriInfo uriInfo;
     @Context private javax.ws.rs.core.Request request;
 
+    // uriInfo and request are @Context variables which are filled automatically, since sb does not realize this we
+    // ignore the warning
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     LinstorMapper(
         ErrorReporter errorReporterRef
     )

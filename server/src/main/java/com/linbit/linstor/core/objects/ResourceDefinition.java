@@ -106,7 +106,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         ResourceName resName,
         @Nullable byte[] extName,
         long initialFlags,
-        @Nullable List<DeviceLayerKind> layerStackRef,
+        List<DeviceLayerKind> layerStackRef,
         ResourceDefinitionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -133,7 +133,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         snapshotDfnMap = transObjFactory.createTransactionMap(this, snapshotDfnMapRef, null);
         layerStack = transObjFactory.createTransactionPrimitiveList(
             this,
-            layerStackRef == null ? new ArrayList<>() : layerStackRef,
+            layerStackRef,
             dbDriver.getLayerStackDriver()
         );
         rscGrp = transObjFactory.createTransactionSimpleObject(this, rscGrpRef, dbDriver.getRscGrpDriver());

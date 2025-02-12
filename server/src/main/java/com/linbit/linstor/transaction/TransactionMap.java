@@ -20,7 +20,7 @@ import java.util.Set;
 public class TransactionMap<PARENT, KEY, VALUE>
     extends AbsTransactionObject implements Map<KEY, VALUE>
 {
-    private final @Nullable PARENT parent;
+    private final PARENT parent;
     private final MapDatabaseDriver<PARENT, KEY, VALUE> dbDriver;
     private final Map<KEY, VALUE> backingMap;
     private final Map<KEY, VALUE> oldValues;
@@ -143,7 +143,7 @@ public class TransactionMap<PARENT, KEY, VALUE>
     @SuppressWarnings("unchecked")
     public @Nullable VALUE remove(Object key)
     {
-        VALUE oldValue = backingMap.remove(key);
+        @Nullable VALUE oldValue = backingMap.remove(key);
         // value must be removed from the backing map before (possibly) calling the DB driver
         cache((KEY) key, null, oldValue);
         return oldValue;
@@ -188,7 +188,7 @@ public class TransactionMap<PARENT, KEY, VALUE>
         return Collections.unmodifiableSet(backingMap.entrySet());
     }
 
-    private void cache(KEY key, @Nullable VALUE value, VALUE oldValue)
+    private void cache(KEY key, @Nullable VALUE value, @Nullable VALUE oldValue)
     {
         if (!hasTransMgr())
         {

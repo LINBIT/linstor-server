@@ -115,7 +115,7 @@ public class Volumes
         Flux<ResourceList> resourceListFlux,
         final String rscName,
         final String nodeName,
-        final Integer vlmNr,
+        final @Nullable Integer vlmNr,
         int limit,
         int offset
     )

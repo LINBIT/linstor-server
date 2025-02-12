@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
@@ -464,7 +463,6 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         return basicFileAttributes;
     }
 
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     @Override
     public void archiveLogDirectory()
     {
@@ -487,7 +485,20 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM"); // grouping format
 
             Map<String, List<Path>> monthGroup = files
-                .filter(file -> file.getFileName().toString().startsWith("ErrorReport"))
+                .filter(file ->
+                {
+                    boolean ret;
+                    @Nullable Path fileName = file.getFileName();
+                    if (fileName == null)
+                    {
+                        ret = false;
+                    }
+                    else
+                    {
+                        ret = fileName.toString().startsWith("ErrorReport");
+                    }
+                    return ret;
+                })
                 .filter(file ->
                 {
                     // only archive files older 2 months (at month starting)
@@ -518,8 +529,14 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 for (Path logFile : monthGroup.get(month))
                 {
                     archiveCount++;
-                    fos.write(logFile.getFileName().toString().getBytes());
-                    fos.write("\n".getBytes());
+                    @Nullable Path fileName = logFile.getFileName();
+                    // fileName should not be able to be null here, since the file would not have been added to
+                    // monthGroup in that case, but sb complains anyways...
+                    if (fileName != null)
+                    {
+                        fos.write(fileName.toString().getBytes());
+                        fos.write("\n".getBytes());
+                    }
                 }
                 fos.close();
 

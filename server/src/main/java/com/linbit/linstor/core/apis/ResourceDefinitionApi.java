@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apis;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.utils.Pair;
 
@@ -12,7 +13,7 @@ public interface ResourceDefinitionApi
     UUID getUuid();
     ResourceGroupApi getResourceGroup();
     String getResourceName();
-    byte[] getExternalName();
+    @Nullable byte[] getExternalName();
     long getFlags();
     Map<String, String> getProps();
     List<VolumeDefinitionApi> getVlmDfnList();

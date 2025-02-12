@@ -1700,7 +1700,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllRscConnections(
                     ProtoCommonSerializerBuilder.serializeResourceConnections(
                         serializerCtx,
-                        localResource.streamAbsResourceConnections(serializerCtx).collect(Collectors.toList())
+                        localResource.getAbsResourceConnections(serializerCtx)
                     )
                 )
                 .build();

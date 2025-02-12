@@ -49,6 +49,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
+import com.linbit.linstor.core.apis.NetInterfaceApi.StltConn;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.SatelliteConfigApi;
 import com.linbit.linstor.core.cfg.StltConfig;
@@ -287,10 +288,11 @@ public class CtrlNodeApiCallHandler
             {
                 TcpPortNumber port = null;
                 EncryptionType encrType = null;
-                if (netIfApi.isUsableAsSatelliteConnection())
+                StltConn stltConn = netIfApi.getStltConn();
+                if (stltConn != null)
                 {
-                    port = LinstorParsingUtils.asTcpPortNumber(netIfApi.getSatelliteConnectionPort());
-                    encrType = LinstorParsingUtils.asEncryptionType(netIfApi.getSatelliteConnectionEncryptionType());
+                    port = LinstorParsingUtils.asTcpPortNumber(stltConn.getSatelliteConnectionPort());
+                    encrType = LinstorParsingUtils.asEncryptionType(stltConn.getSatelliteConnectionEncryptionType());
                 }
 
                 NetInterface netIf = createNetInterface(
@@ -301,9 +303,7 @@ public class CtrlNodeApiCallHandler
                     encrType
                 );
 
-                if (netIfApi.isUsableAsSatelliteConnection() &&
-                    getActiveStltConn(node) == null
-                )
+                if (stltConn != null && getActiveStltConn(node) == null)
                 {
                     setActiveStltConn(node, netIf);
                 }

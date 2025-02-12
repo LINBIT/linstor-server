@@ -1,8 +1,10 @@
 package com.linbit.linstor.api.prop;
 
+import com.linbit.linstor.annotation.Nullable;
+
 import java.util.regex.Pattern;
 
-public class RegexProperty extends GenericProperty implements Property
+public class RegexProperty extends GenericProperty
 {
     private final Pattern pattern;
 
@@ -11,9 +13,9 @@ public class RegexProperty extends GenericProperty implements Property
         String keyRef,
         String value,
         boolean internalRef,
-        String infoRef,
-        String unitRef,
-        String dfltRef
+        @Nullable String infoRef,
+        @Nullable String unitRef,
+        @Nullable String dfltRef
     )
     {
         super(nameRef, keyRef, internalRef, infoRef, unitRef, dfltRef);

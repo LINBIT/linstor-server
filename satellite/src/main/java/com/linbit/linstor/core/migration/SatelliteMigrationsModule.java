@@ -1,10 +1,10 @@
 package com.linbit.linstor.core.migration;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.ClassPathLoader;
 import com.linbit.linstor.logging.ErrorReporter;
 
-import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;

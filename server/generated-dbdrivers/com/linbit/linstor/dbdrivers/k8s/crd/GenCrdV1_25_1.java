@@ -1344,7 +1344,7 @@ public class GenCrdV1_25_1
 
         @JsonIgnore
         @Override
-        public Object getByColumn(String clmNameStr)
+        public @Nullable Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
             {

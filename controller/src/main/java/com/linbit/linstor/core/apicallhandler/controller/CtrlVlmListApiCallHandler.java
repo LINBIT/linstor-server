@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.pojo.EffectivePropertiesPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -36,7 +37,6 @@ import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 
-import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -198,8 +198,7 @@ public class CtrlVlmListApiCallHandler
                                 }
 
                                 List<ResourceConnectionApi> rscConns = new ArrayList<>();
-                                for (ResourceConnection rscConn : rsc.streamAbsResourceConnections(peerAccCtx.get())
-                                        .collect(toList()))
+                                for (ResourceConnection rscConn : rsc.getAbsResourceConnections(peerAccCtx.get()))
                                 {
                                     rscConns.add(rscConn.getApiData(peerAccCtx.get()));
                                 }

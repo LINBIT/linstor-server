@@ -372,7 +372,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         try
         {
             connectionStateEvent.get().triggerEvent(
-                ObjectIdentifier.connection(null, new NodeName(connection.getConnectionName()), resource.getResName()),
+                ObjectIdentifier.connection(new NodeName(connection.getConnectionName()), resource.getResName()),
                 current.toString());
         }
         catch (InvalidNameException ignored)
@@ -386,7 +386,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         try
         {
             connectionStateEvent.get().closeStream(
-                ObjectIdentifier.connection(null, new NodeName(connection.getConnectionName()), resource.getResName())
+                ObjectIdentifier.connection(new NodeName(connection.getConnectionName()), resource.getResName())
             );
         }
         catch (InvalidNameException ignored)

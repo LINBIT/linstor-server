@@ -369,7 +369,7 @@ public class SslTcpConnectorService extends TcpConnectorService
      */
     private @Nullable SslTcpConnectorPeer nextTaskCompletionEntry()
     {
-        SslTcpConnectorPeer connPeer;
+        @Nullable SslTcpConnectorPeer connPeer;
         synchronized (taskCompletionMap)
         {
             final Entry<String, SslTcpConnectorPeer> entry = taskCompletionMap.pollFirstEntry();

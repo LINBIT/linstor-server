@@ -114,6 +114,10 @@ def value_to_string(val):
     return str(val)
 
 
+def to_camel_case(snake_str):
+    return ''.join(x.title() if i > 0 else x for i,x in enumerate(snake_str.split('_')))
+
+
 def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: OrderedDict):
     if "allOf" in schema or (schema["type"] == "object" and "properties" in schema):
         indent = "    "
@@ -167,7 +171,7 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
                     elif t == "Integer":
                         out += indent * 2 + depr + "public int {n};\n".format(n=fieldname)
                     elif t == "String":
-                        out += indent * 2 + depr + "public @Nullable String {n};\n".format(n=fieldname)
+                        out += indent * 2 + depr + "public String {n};\n".format(n=fieldname)
                     else:
                         out += indent * 2 + depr + "public {t} {n};\n".format(t=t.lower(), n=fieldname)
                 else:

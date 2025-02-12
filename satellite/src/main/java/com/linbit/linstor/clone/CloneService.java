@@ -304,7 +304,11 @@ public class CloneService implements SystemService
                 cloneInfo.getSuffix().equals(suffix));
     }
 
-    @SuppressFBWarnings
+    @SuppressFBWarnings(
+        {
+            "JLM_JSR166_UTILCONCURRENT_MONITORENTER", "BC_UNCONFIRMED_CAST"
+        }
+    )
     public void startClone(
         VlmProviderObject<Resource> srcVlmData,
         VlmProviderObject<Resource> dstVlmData,
@@ -318,6 +322,7 @@ public class CloneService implements SystemService
         );
         if (isStarted())
         {
+            // suppress the warning that the syncObject is a concurrent object and therefore has its own sync-methods
             synchronized (activeClones)
             {
                 if (!activeClones.contains(cloneInfo))
@@ -539,7 +544,7 @@ public class CloneService implements SystemService
         );
     }
 
-    @SuppressFBWarnings
+    @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
     private void postClone(
         boolean successRef,
         CloneInfo cloneInfo
@@ -547,6 +552,7 @@ public class CloneService implements SystemService
     {
         cleanupDevices(cloneInfo);
 
+        // suppress the warning that the syncObject is a concurrent object and therefore has its own sync-methods
         synchronized (activeClones)
         {
             cloneInfo.setCloneStatus(successRef); // do not move this out of the synchronized block

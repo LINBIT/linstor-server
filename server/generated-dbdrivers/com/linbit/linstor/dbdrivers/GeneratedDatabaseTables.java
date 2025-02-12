@@ -2216,7 +2216,7 @@ public class GeneratedDatabaseTables
         }
 
         @Override
-        public @Nullable DatabaseTable getTable()
+        public DatabaseTable getTable()
         {
             return table;
         }

@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.prop;
 
-public class RangeFloatProperty extends GenericProperty implements Property
+import com.linbit.linstor.annotation.Nullable;
+
+public class RangeFloatProperty extends GenericProperty
 {
     private final double min;
     private final double max;
@@ -11,9 +13,9 @@ public class RangeFloatProperty extends GenericProperty implements Property
         double minRef,
         double maxRef,
         boolean internalRef,
-        String infoRef,
-        String unitRef,
-        String dfltRef
+        @Nullable String infoRef,
+        @Nullable String unitRef,
+        @Nullable String dfltRef
     )
     {
         super(nameRef, keyRef, internalRef, infoRef, unitRef, dfltRef);

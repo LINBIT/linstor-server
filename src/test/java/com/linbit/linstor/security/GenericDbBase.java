@@ -113,7 +113,6 @@ import com.google.inject.Module;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import com.google.inject.util.Modules;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -311,26 +310,30 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject
     protected ResourceGroupDatabaseDriver rscGrpDbDriver;
 
-    @SuppressFBWarnings
+    private static final Object SYNC_OBJ = new Object();
+
     @BeforeClass
     public static void setUpBeforeClass()
         throws DatabaseException, SQLException, InvalidNameException, InitializationException, AccessDeniedException,
         ClassNotFoundException
     {
-        if (dbConnPool == null)
+        synchronized (SYNC_OBJ)
         {
-            errorReporter.logTrace("Performing DB initialization");
+            if (dbConnPool == null)
+            {
+                errorReporter.logTrace("Performing DB initialization");
 
-            AbsMigration.setModularCryptoProvider(CryptoProviderLoader.loadCryptoProvider());
+                AbsMigration.setModularCryptoProvider(CryptoProviderLoader.loadCryptoProvider());
 
-            TestDbConnectionPoolLoader dbConnectionPoolLoader = new TestDbConnectionPoolLoader();
-            dbConnPool = dbConnectionPoolLoader.loadDbConnectionPool();
+                TestDbConnectionPoolLoader dbConnectionPoolLoader = new TestDbConnectionPoolLoader();
+                dbConnPool = dbConnectionPoolLoader.loadDbConnectionPool();
 
-            dbConnPool.migrate(dbConnectionPoolLoader.getDbType());
+                dbConnPool.migrate(dbConnectionPoolLoader.getDbType());
 
-            Identity.ensureDefaultsExist();
-            SecurityType.ensureDefaultsExist();
-            Role.ensureDefaultsExist();
+                Identity.ensureDefaultsExist();
+                SecurityType.ensureDefaultsExist();
+                Role.ensureDefaultsExist();
+            }
         }
 
         // every test class must explicitly enable security if they want to test.

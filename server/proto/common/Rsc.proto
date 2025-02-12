@@ -16,5 +16,5 @@ message Rsc
     map<string, string> props = 6;
     repeated string rsc_flags = 7;
     repeated Vlm vlms = 8;
-    optional RscLayerData layer_object = 11;
+    required RscLayerData layer_object = 11;
 }

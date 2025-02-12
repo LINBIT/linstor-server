@@ -162,7 +162,7 @@ public class CtrlAuthResponseApiCallHandler
 
     private Flux<ApiCallRc> authResponseInTransaction(
         Peer peer,
-        boolean success,
+        boolean successRef,
         ApiCallRcImpl apiCallResponse,
         @Nullable Long expectedFullSyncId,
         @Nullable String nodeUname,
@@ -176,16 +176,33 @@ public class CtrlAuthResponseApiCallHandler
     )
     {
         Flux<ApiCallRc> flux;
+        boolean success = successRef;
+        boolean matchVersion;
+        if (linstorVersionMajor == null || linstorVersionMinor == null || linstorVersionPatch == null)
+        {
+            success = false;
+            matchVersion = false;
+            errorReporter.logError(
+                "Peer %s responded with a broken version number: %s.%s.%s",
+                peer.getNode(),
+                linstorVersionMajor,
+                linstorVersionMinor,
+                linstorVersionPatch
+            );
+        }
+        else
+        {
+            matchVersion = LinStor.VERSION_INFO_PROVIDER.equalsVersion(
+                linstorVersionMajor,
+                linstorVersionMinor,
+                linstorVersionPatch
+            );
+        }
 
         if (success)
         {
             Node node = peer.getNode();
-            if (LinStor.VERSION_INFO_PROVIDER.equalsVersion(
-                    linstorVersionMajor,
-                    linstorVersionMinor,
-                    linstorVersionPatch
-                )
-            )
+            if (matchVersion)
             {
                 peer.setAuthenticated(true);
                 peer.setConnectionStatus(ApiConsts.ConnectionStatus.CONNECTED);

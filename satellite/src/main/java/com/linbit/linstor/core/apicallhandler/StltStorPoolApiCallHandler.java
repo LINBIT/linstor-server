@@ -253,10 +253,6 @@ class StltStorPoolApiCallHandler
                 }
 
                 DeviceProviderKind deviceProviderKind = storPoolRaw.getDeviceProviderKind();
-                if (deviceProviderKind == null)
-                {
-                    throw new ImplementationError("deviceProviderKind must not be null");
-                }
                 storPool = storPoolFactory.getInstanceSatellite(
                     apiCtx,
                     storPoolRaw.getStorPoolUuid(),

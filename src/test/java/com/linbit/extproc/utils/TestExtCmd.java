@@ -3,7 +3,6 @@ package com.linbit.extproc.utils;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.timer.Action;
 import com.linbit.timer.GenericTimer;
 
 import java.io.IOException;

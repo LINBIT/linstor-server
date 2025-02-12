@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.prop;
 
-public class RangeProperty extends GenericProperty implements Property
+import com.linbit.linstor.annotation.Nullable;
+
+public class RangeProperty extends GenericProperty
 {
     private final long min;
     private final long max;
@@ -11,9 +13,9 @@ public class RangeProperty extends GenericProperty implements Property
         long minRef,
         long maxRef,
         boolean internalRef,
-        String infoRef,
-        String unitRef,
-        String dfltRef
+        @Nullable String infoRef,
+        @Nullable String unitRef,
+        @Nullable String dfltRef
     )
     {
         super(nameRef, keyRef, internalRef, infoRef, unitRef, dfltRef);

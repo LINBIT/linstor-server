@@ -1,8 +1,7 @@
 package com.linbit.linstor.core.migration;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.propscon.ReadOnlyProps;
-
-import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -64,7 +64,7 @@ import java.util.UUID;
 
 public class ProtoLayerUtils
 {
-    public static @Nullable RscLayerDataApi extractRscLayerData(
+    public static RscLayerDataApi extractRscLayerData(
         RscLayerData protoRscData,
         long fullSyncId,
         long updateId
@@ -108,7 +108,7 @@ public class ProtoLayerUtils
                     }
                     else
                     {
-                        ret = null;
+                        throw new ImplementationError("rscLayerType is DRBD, but no drbd layer data was found");
                     }
                 }
                 break;
@@ -133,7 +133,7 @@ public class ProtoLayerUtils
                     }
                     else
                     {
-                        ret = null;
+                        throw new ImplementationError("rscLayerType is LUKS, but no luks layer data was found");
                     }
                 }
                 break;
@@ -164,7 +164,7 @@ public class ProtoLayerUtils
                     }
                     else
                     {
-                        ret = null;
+                        throw new ImplementationError("rscLayerType is STORAGE, but no storage layer data was found");
                     }
                 }
                 break;
@@ -189,7 +189,7 @@ public class ProtoLayerUtils
                 }
                 else
                 {
-                    ret = null;
+                    throw new ImplementationError("rscLayerType is NVME, but no nvme layer data was found");
                 }
             }
             break;
@@ -214,7 +214,7 @@ public class ProtoLayerUtils
                 }
                 else
                 {
-                    ret = null;
+                    throw new ImplementationError("rscLayerType is WRITECACHE, but no writecache layer data was found");
                 }
             }
             break;
@@ -239,7 +239,7 @@ public class ProtoLayerUtils
                 }
                 else
                 {
-                    ret = null;
+                    throw new ImplementationError("rscLayerType is CACHE, but no cache layer data was found");
                 }
             }
             break;
@@ -264,7 +264,7 @@ public class ProtoLayerUtils
             }
             else
             {
-                ret = null;
+                throw new ImplementationError("rscLayerType is BCACHE, but no bcache layer data was found");
             }
         }
             break;
@@ -278,12 +278,9 @@ public class ProtoLayerUtils
                 );
         }
 
-        if (ret != null)
+        for (RscLayerData childrenProto : protoRscData.getChildrenList())
         {
-            for (RscLayerData childrenProto : protoRscData.getChildrenList())
-            {
-                ret.getChildren().add(extractRscLayerData(childrenProto, fullSyncId, updateId));
-            }
+            ret.getChildren().add(extractRscLayerData(childrenProto, fullSyncId, updateId));
         }
 
         return ret;

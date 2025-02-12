@@ -51,13 +51,11 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     @JsonIgnore
     private final @Nullable ApiCallRc reports;
     @JsonIgnore
-    private final @Nullable Boolean supportsSnapshots;
-    @JsonIgnore
     private final @Nullable Boolean isPmem;
     @JsonIgnore
     private final @Nullable Boolean isVDO;
     @JsonIgnore
-    private final @Nullable Boolean externalLocking;
+    private final @Nullable boolean externalLocking;
 
     public StorPoolPojo(
         final @Nullable UUID storPoolUuidRef,
@@ -78,10 +76,9 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         final @Nullable Double maxFreeCapacityOversubscriptionRatioRef,
         final @Nullable Double maxTotalCapacityOversubscriptionRatioRef,
         final @Nullable ApiCallRc reportsRef,
-        final @Nullable Boolean supportsSnapshotsRef,
         final @Nullable Boolean isPmemRef,
         final @Nullable Boolean isVDORef,
-        final @Nullable Boolean isExternalLockingRef
+        final boolean isExternalLockingRef
     )
     {
         storPoolUuid = storPoolUuidRef;
@@ -102,7 +99,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         maxFreeCapacityOversubscriptionRatio = maxFreeCapacityOversubscriptionRatioRef;
         maxTotalCapacityOversubscriptionRatio = maxTotalCapacityOversubscriptionRatioRef;
         reports = reportsRef;
-        supportsSnapshots = supportsSnapshotsRef;
         isPmem = isPmemRef;
         isVDO = isVDORef;
         externalLocking = isExternalLockingRef;
@@ -132,10 +128,10 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         maxFreeCapacityOversubscriptionRatio = null;
         maxTotalCapacityOversubscriptionRatio = null;
         reports = null;
-        supportsSnapshots = null;
         isPmem = null;
         isVDO = null;
-        externalLocking = null;
+
+        externalLocking = false;
     }
 
     @Override
@@ -245,12 +241,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     }
 
     @Override
-    public @Nullable Boolean supportsSnapshots()
-    {
-        return supportsSnapshots;
-    }
-
-    @Override
     public @Nullable Boolean isPmem()
     {
         return isPmem;
@@ -263,7 +253,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     }
 
     @Override
-    public @Nullable Boolean isExternalLocking()
+    public @Nullable boolean isExternalLocking()
     {
         return externalLocking;
     }

@@ -329,7 +329,7 @@ public class GenerateSql
         Files.write(path, javaClazzContentRef.getBytes());
     }
 
-    @SuppressFBWarnings
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private static void renderResourceFile(
         String gitRoot,
         String relativePath,
@@ -339,6 +339,8 @@ public class GenerateSql
     {
         Path path = Paths.get(gitRoot).resolve("controller/generated-resources").resolve(Paths.get(".", relativePath))
             .normalize();
+        // getParent can return null, but since we got the path by resolving it just previously the sb-warning is
+        // unnecessary
         Files.createDirectories(path.getParent()); // ensure parent folder exists
         Files.write(path, content.getBytes());
     }

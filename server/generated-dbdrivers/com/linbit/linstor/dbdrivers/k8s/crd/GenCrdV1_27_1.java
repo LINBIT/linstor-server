@@ -149,8 +149,7 @@ public class GenCrdV1_27_1
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
-    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<CRD> databaseTableToCustomResourceClass(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> @Nullable Class<CRD> databaseTableToCustomResourceClass(
         DatabaseTable table
     )
     {
@@ -249,8 +248,7 @@ public class GenCrdV1_27_1
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
-    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> CRD specToCrd(SPEC spec)
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> @Nullable CRD specToCrd(SPEC spec)
     {
         switch (spec.getDatabaseTable().getName())
         {
@@ -347,8 +345,7 @@ public class GenCrdV1_27_1
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
-    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<SPEC> databaseTableToSpecClass(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> @Nullable Class<SPEC> databaseTableToSpecClass(
         DatabaseTable table
     )
     {
@@ -447,8 +444,7 @@ public class GenCrdV1_27_1
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
-    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> SPEC rawParamToSpec(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> @Nullable SPEC rawParamToSpec(
         DatabaseTable tableRef,
         RawParameters rawDataMapRef
     )
@@ -548,7 +544,7 @@ public class GenCrdV1_27_1
     }
 
     @SuppressWarnings("unchecked")
-    public static <DATA, CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> CRD dataToCrd(
+    public static <DATA, CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> @Nullable CRD dataToCrd(
         DatabaseTable table,
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         DATA data
@@ -1345,6 +1341,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -1532,6 +1529,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -1697,6 +1695,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -1873,6 +1872,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -2053,6 +2053,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -2239,6 +2240,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -2450,6 +2452,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -2631,6 +2634,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -2811,6 +2815,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -2977,6 +2982,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -3173,6 +3179,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -3359,6 +3366,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -3532,6 +3540,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -3723,6 +3732,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -3906,6 +3916,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -4072,6 +4083,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -4262,6 +4274,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -4460,6 +4473,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -4630,6 +4644,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -4814,6 +4829,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -5012,6 +5028,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -5231,6 +5248,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -5504,6 +5522,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -5735,6 +5754,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -5922,6 +5942,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -6136,6 +6157,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -6304,6 +6326,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -6464,6 +6487,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -6625,6 +6649,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -6779,6 +6804,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -6959,6 +6985,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -7120,6 +7147,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -7286,6 +7314,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -7463,6 +7492,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -7628,6 +7658,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -7790,6 +7821,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -7944,6 +7976,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -8103,6 +8136,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -8251,6 +8285,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -8432,6 +8467,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -8624,6 +8660,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -8814,6 +8851,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)
@@ -8989,6 +9027,7 @@ public class GenCrdV1_27_1
 
         @JsonIgnore
         @Override
+        @Nullable
         public Object getByColumn(String clmNameStr)
         {
             switch (clmNameStr)

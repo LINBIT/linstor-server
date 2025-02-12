@@ -13,6 +13,5 @@ public interface ControllerSQLDatabase extends ControllerDatabase
 
     Connection getConnection() throws SQLException;
 
-    // Must be able to handle dbConn == null as a valid input
     void returnConnection(@Nullable Connection dbConn);
 }

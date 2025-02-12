@@ -13,6 +13,7 @@ import java.sql.JDBCType;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -48,7 +49,7 @@ public class RawParameters
      */
     public <T> @Nullable T getParsed(Column col)
     {
-        T ret;
+        @Nullable T ret;
         switch (dbType)
         {
             case SQL:
@@ -79,8 +80,8 @@ public class RawParameters
     )
         throws EXC
     {
-        T data = getParsed(col);
-        R ret = null;
+        @Nullable T data = getParsed(col);
+        @Nullable R ret = null;
         if (data != null)
         {
             ret = func.accept(data);
@@ -91,8 +92,8 @@ public class RawParameters
     @SuppressWarnings("unchecked")
     private <T> @Nullable T getValueFromEtcd(Column col) throws ImplementationError
     {
-        T ret;
-        String etcdVal = (String) rawDataMap.get(col.getName());
+        @Nullable T ret;
+        @Nullable String etcdVal = (String) rawDataMap.get(col.getName());
         if (etcdVal == null)
         {
             ret = null;
@@ -150,14 +151,19 @@ public class RawParameters
         return (T) rawDataMap.get(col.getName());
     }
 
+    /*
+     * yes, these annotations look weird, but they are correct:
+     * T can be null whithin this method, but before it is passed to func a null-check is performed, so that func can
+     * expect a @Nonnull T
+     */
     public <T, @Nullable R, EXC extends Exception> @Nullable R build(
         Column col,
         ExceptionThrowingFunction<@Nonnull T, R, EXC> func
     )
         throws EXC
     {
-        T data = get(col);
-        R ret = null;
+        @Nullable T data = get(col);
+        @Nullable R ret = null;
         if (data != null)
         {
             ret = func.accept(data);
@@ -168,8 +174,8 @@ public class RawParameters
     public <@Nullable R extends Enum<R>> @Nullable R build(Column col, Class<R> eType)
         throws IllegalArgumentException
     {
-        String data = get(col);
-        R ret = null;
+        @Nullable String data = get(col);
+        @Nullable R ret = null;
         if (data != null)
         {
             ret = Enum.valueOf(eType, data);
@@ -191,6 +197,16 @@ public class RawParameters
         }, ArrayList::new);
     }
 
+    public List<String> getAsStringListNonNull(Column col) throws DatabaseException
+    {
+        @Nullable List<String> ret = getAsStringList(col);
+        if (ret == null)
+        {
+            ret = new ArrayList<>();
+        }
+        return ret;
+    }
+
     public @Nullable Map<String, Integer> getAsStringIntegerMap(Column col) throws DatabaseException
     {
         // Make sure to actually use generic types instead of just "new TypeReference<>()" to ensure type-safety.
@@ -198,6 +214,16 @@ public class RawParameters
         return getFromJson(col, new TypeReference<Map<String, Integer>>()
         {
         }, TreeMap::new);
+    }
+
+    public Map<String, Integer> getAsStringIntegerMapNonNull(Column col) throws DatabaseException
+    {
+        @Nullable Map<String, Integer> ret = getAsStringIntegerMap(col);
+        if (ret == null)
+        {
+            ret = new HashMap<>();
+        }
+        return ret;
     }
 
     /**
@@ -242,6 +268,7 @@ public class RawParameters
         throws DatabaseException
     {
         @Nullable T ret;
+        String tableName = table == null ? "<null table>" : table.getName();
         try
         {
             Object value = get(col);
@@ -265,7 +292,7 @@ public class RawParameters
                     throw new DatabaseException(
                         "Failed to deserialize json array. No handler found for sql type: " +
                             JDBCType.valueOf(colSqlType) +
-                            " in table " + table.getName() + ", column " + col.getName()
+                            " in table " + tableName + ", column " + col.getName()
                     );
                 }
             }
@@ -273,7 +300,7 @@ public class RawParameters
         catch (IOException exc)
         {
             throw new DatabaseException(
-                "Failed to deserialize json array. Table: " + table.getName() + ", column: " + col.getName(),
+                "Failed to deserialize json array. Table: " + tableName + ", column: " + col.getName(),
                 exc
             );
         }
@@ -286,22 +313,22 @@ public class RawParameters
         return ret;
     }
 
-    public Short etcdGetShort(Column column)
+    public @Nullable Short etcdGetShort(Column column)
     {
         return this.<String, @Nullable Short, RuntimeException>build(column, Short::parseShort);
     }
 
-    public Integer etcdGetInt(Column column)
+    public @Nullable Integer etcdGetInt(Column column)
     {
         return this.<String, @Nullable Integer, RuntimeException>build(column, Integer::parseInt);
     }
 
-    public Long etcdGetLong(Column column)
+    public @Nullable Long etcdGetLong(Column column)
     {
         return this.<String, @Nullable Long, RuntimeException>build(column, Long::parseLong);
     }
 
-    public Boolean etcdGetBoolean(Column column)
+    public @Nullable Boolean etcdGetBoolean(Column column)
     {
         return this.<String, @Nullable Boolean, RuntimeException>build(column, Boolean::parseBoolean);
     }

@@ -3,7 +3,6 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.annotation.Nonnull;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -810,7 +809,7 @@ public class BackupInfoManager
             for (QueueItem item : prevNodeUndecidedQueue)
             {
                 // this list SHOULD NOT contain items where prevSnapDfn == null
-                final SnapshotDefinition prevSnap = item.prevSnapDfn;
+                final @Nullable SnapshotDefinition prevSnap = item.prevSnapDfn;
                 if (prevSnap != null)
                 {
                     if (!prevSnap.isDeleted() && prevSnap.equals(snapDfn) && item.remote.equals(remote))
@@ -916,7 +915,7 @@ public class BackupInfoManager
     public class QueueItem implements Comparable<QueueItem>
     {
         public final SnapshotDefinition snapDfn;
-        public final @Nonnull AbsRemote remote;
+        public final AbsRemote remote;
         /* if prevSnapDfn is null, it means a full backup should be made */
         public @Nullable SnapshotDefinition prevSnapDfn;
         public final @Nullable String preferredNode;
@@ -929,7 +928,7 @@ public class BackupInfoManager
 
         private QueueItem(
             SnapshotDefinition snapDfnRef,
-            @Nonnull AbsRemote remoteRef,
+            AbsRemote remoteRef,
             @Nullable SnapshotDefinition prevSnapDfnRef,
             @Nullable String preferredNodeRef,
             @Nullable BackupShippingSrcData l2lDataRef

@@ -53,7 +53,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
 
     private final ResourceGroupName name;
 
-    private final TransactionSimpleObject<ResourceGroup, String> description;
+    private final TransactionSimpleObject<ResourceGroup, @Nullable String> description;
 
     private final Props rscDfnGrpProps;
 
@@ -70,18 +70,18 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         UUID uuidRef,
         ObjectProtection objProtRef,
         ResourceGroupName rscGrpNameRef,
-        String descriptionRef,
-        List<DeviceLayerKind> autoPlaceLayerStackRef,
+        @Nullable String descriptionRef,
+        @Nullable List<DeviceLayerKind> autoPlaceLayerStackRef,
         @Nullable Integer autoPlaceReplicaCountRef,
-        List<String> autoPlaceNodeNameListRef,
-        List<String> autoPlaceStorPoolNameListRef,
-        List<String> autoPlaceStorPoolDisklessNameListRef,
-        List<String> autoPlaceDoNotPlaceWithRscListRef,
-        String autoPlaceDoNotPlaceWithRscRegexRef,
-        List<String> autoPlaceReplicasOnSameListRef,
-        List<String> autoPlaceReplicasOnDifferentListRef,
-        Map<String, Integer> autoPlaceXReplicasOnDifferentMapRef,
-        List<DeviceProviderKind> autoPlaceAllowedProviderListRef,
+        @Nullable List<String> autoPlaceNodeNameListRef,
+        @Nullable List<String> autoPlaceStorPoolNameListRef,
+        @Nullable List<String> autoPlaceStorPoolDisklessNameListRef,
+        @Nullable List<String> autoPlaceDoNotPlaceWithRscListRef,
+        @Nullable String autoPlaceDoNotPlaceWithRscRegexRef,
+        @Nullable List<String> autoPlaceReplicasOnSameListRef,
+        @Nullable List<String> autoPlaceReplicasOnDifferentListRef,
+        @Nullable Map<String, Integer> autoPlaceXReplicasOnDifferentMapRef,
+        @Nullable List<DeviceProviderKind> autoPlaceAllowedProviderListRef,
         @Nullable Boolean autoPlaceDisklessOnRemainingRef,
         Map<VolumeNumber, VolumeGroup> vlmGrpMapRef,
         Map<ResourceName, ResourceDefinition> rscDfnMapRef,
@@ -157,7 +157,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         return name;
     }
 
-    public String getDescription(AccessContext accCtx)
+    public @Nullable String getDescription(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -165,7 +165,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         return description.get();
     }
 
-    public String setDescription(AccessContext accCtx, String descriptionRef)
+    public @Nullable String setDescription(AccessContext accCtx, @Nullable String descriptionRef)
         throws AccessDeniedException, DatabaseException
     {
         checkDeleted();

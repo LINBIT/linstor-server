@@ -339,12 +339,12 @@ class StltRscApiCallHandler
                 Node localNode = controllerPeerConnector.getLocalNode();
 
                 localRsc = createRsc(
-                    rscRawData.getLocalRscUuid(),
+                    rscRawData.getUuid(),
                     localNode,
                     rscDfn,
-                    Resource.Flags.restoreFlags(rscRawData.getLocalRscFlags()),
-                    rscRawData.getLocalRscProps(),
-                    rscRawData.getLocalVlms(),
+                    Resource.Flags.restoreFlags(rscRawData.getFlags()),
+                    rscRawData.getProps(),
+                    (List<VolumeApi>) rscRawData.getVlmList(),
                     false,
                     rscRawData.getLayerData()
                 );
@@ -352,7 +352,7 @@ class StltRscApiCallHandler
                 errorReporter.logTrace(
                     "%s created with flags %s",
                     localRsc,
-                    FlagsHelper.toStringList(Resource.Flags.class, rscRawData.getLocalRscFlags())
+                    FlagsHelper.toStringList(Resource.Flags.class, rscRawData.getFlags())
                 );
 
                 createdRscSet.add(new Resource.ResourceKey(localRsc));
@@ -412,7 +412,7 @@ class StltRscApiCallHandler
                 while (rscIterator.hasNext())
                 {
                     Resource rsc = rscIterator.next();
-                    if (rsc.getUuid().equals(rscRawData.getLocalRscUuid()))
+                    if (rsc.getUuid().equals(rscRawData.getUuid()))
                     {
                         localRsc = rsc;
                     }
@@ -431,7 +431,7 @@ class StltRscApiCallHandler
                         String.format(
                             "The local resource with the UUID '%s' was not found in the stored " +
                                 "resource definition '%s'.",
-                            rscRawData.getLocalRscUuid().toString(),
+                            rscRawData.getUuid().toString(),
                             rscName
                         )
                     );
@@ -442,7 +442,7 @@ class StltRscApiCallHandler
 
                     // we do not have to care about deletion, as the merge of vlmDfns should have already marked
                     // all the corresponding volumes for deletion
-                    for (VolumeApi vlmApi : rscRawData.getLocalVlms())
+                    for (VolumeApi vlmApi : rscRawData.getVlmList())
                     {
                         Volume localVlm = localRsc.getVolume(new VolumeNumber(vlmApi.getVlmNr()));
 
@@ -460,19 +460,19 @@ class StltRscApiCallHandler
                 // update props
                 {
                     Props localRscProps = localRsc.getProps(apiCtx);
-                    localRscProps.map().putAll(rscRawData.getLocalRscProps());
-                    localRscProps.keySet().retainAll(rscRawData.getLocalRscProps().keySet());
+                    localRscProps.map().putAll(rscRawData.getProps());
+                    localRscProps.keySet().retainAll(rscRawData.getProps().keySet());
                 }
 
                 // update flags
                 errorReporter.logTrace(
                     "resetting flags of local rsc (%s) to %s",
                     localRsc,
-                    FlagsHelper.toStringList(Resource.Flags.class, rscRawData.getLocalRscFlags())
+                    FlagsHelper.toStringList(Resource.Flags.class, rscRawData.getFlags())
                 );
                 localRsc.getStateFlags().resetFlagsTo(
                     apiCtx,
-                    Resource.Flags.restoreFlags(rscRawData.getLocalRscFlags())
+                    Resource.Flags.restoreFlags(rscRawData.getFlags())
                 );
 
                 updatedRscSet.add(new Resource.ResourceKey(localRsc));
@@ -844,10 +844,6 @@ class StltRscApiCallHandler
                         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                     }
                     DeviceProviderKind deviceProviderKind = storPoolApi.getDeviceProviderKind();
-                    if (deviceProviderKind == null)
-                    {
-                        throw new ImplementationError("deviceProviderKind must not be null");
-                    }
                     storPool = storPoolFactory.getInstanceSatellite(
                         apiCtx,
                         storPoolApi.getStorPoolUuid(),

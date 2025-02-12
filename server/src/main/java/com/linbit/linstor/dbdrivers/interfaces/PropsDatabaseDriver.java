@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver.PropsDbEntry;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
@@ -66,7 +65,7 @@ public interface PropsDatabaseDriver extends GenericDatabaseDriver<PropsDbEntry>
     /**
      * Loads all key/value pairs for a given instance
      */
-    Map<String, String> loadCachedInstance(@Nullable String propsInstanceRef);
+    Map<String, String> loadCachedInstance(String propsInstanceRef);
 
     /**
      * A special sub-driver to update the persisted value of a given instance/key pair

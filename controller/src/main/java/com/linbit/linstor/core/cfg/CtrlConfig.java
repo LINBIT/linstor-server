@@ -54,14 +54,14 @@ public class CtrlConfig extends LinstorConfig
      */
     private boolean restEnabled;
     private @Nullable String restBindAddress;
-    private int restBindPort;
+    private @Nullable Integer restBindPort;
 
     /*
      * REST.secure
      */
     private boolean restSecureEnabled;
     private @Nullable String restSecureBindAddress;
-    private int restSecureBindPort;
+    private @Nullable Integer restSecureBindPort;
     private @Nullable String restSecureKeystore;
     private @Nullable String restSecureKeystorePassword;
     private @Nullable String restSecureTruststore;
@@ -500,8 +500,14 @@ public class CtrlConfig extends LinstorConfig
         return restEnabled;
     }
 
-    public String getRestBindAddressWithPort()
+    public String getRestBindAddressWithPort() throws NullPointerException
     {
+        if (restBindAddress == null || restBindPort == null)
+        {
+            throw new NullPointerException(
+                "unable to get address: address is " + restBindAddress + ", port is " + restBindPort
+            );
+        }
         String addr = restBindAddress;
         if (addr.contains(":"))
         {
@@ -515,7 +521,7 @@ public class CtrlConfig extends LinstorConfig
         return restBindAddress;
     }
 
-    public int getRestBindPort()
+    public @Nullable Integer getRestBindPort()
     {
         return restBindPort;
     }
@@ -527,6 +533,12 @@ public class CtrlConfig extends LinstorConfig
 
     public String getRestSecureBindAddressWithPort()
     {
+        if (restSecureBindAddress == null || restSecureBindPort == null)
+        {
+            throw new NullPointerException(
+                "unable to get secure address: address is " + restSecureBindAddress + ", port is " + restSecureBindPort
+            );
+        }
         String addr = restSecureBindAddress;
         if (addr.contains(":"))
         {
@@ -540,7 +552,7 @@ public class CtrlConfig extends LinstorConfig
         return restSecureBindAddress;
     }
 
-    public int getRestSecureBindPort()
+    public @Nullable Integer getRestSecureBindPort()
     {
         return restSecureBindPort;
     }

@@ -57,6 +57,7 @@ import com.linbit.linstor.core.apis.BackupApi.BackupS3Api;
 import com.linbit.linstor.core.apis.BackupApi.BackupVlmApi;
 import com.linbit.linstor.core.apis.BackupApi.BackupVlmS3Api;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
+import com.linbit.linstor.core.apis.NetInterfaceApi.StltConn;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.NodeConnectionApi;
 import com.linbit.linstor.core.apis.ResourceApi;
@@ -163,10 +164,11 @@ public class Json
         JsonGenTypes.NetInterface netif = new JsonGenTypes.NetInterface();
         netif.name = netIfApi.getName();
         netif.address = netIfApi.getAddress();
-        if (netIfApi.isUsableAsSatelliteConnection())
+        @Nullable StltConn stltConn = netIfApi.getStltConn();
+        if (stltConn != null)
         {
-            netif.satellite_encryption_type = netIfApi.getSatelliteConnectionEncryptionType();
-            netif.satellite_port = netIfApi.getSatelliteConnectionPort();
+            netif.satellite_encryption_type = stltConn.getSatelliteConnectionEncryptionType();
+            netif.satellite_port = stltConn.getSatelliteConnectionPort();
         }
         netif.is_active = Boolean.FALSE; // default value
         netif.uuid = netIfApi.getUuid().toString();
@@ -269,7 +271,7 @@ public class Json
         storPoolData.free_space_mgr_name = storPoolApi.getFreeSpaceManagerName();
         storPoolData.uuid = storPoolApi.getStorPoolUuid().toString();
         storPoolData.reports = apiCallRcToJson(storPoolApi.getReports());
-        storPoolData.supports_snapshots = storPoolApi.supportsSnapshots();
+        storPoolData.supports_snapshots = storPoolApi.getDeviceProviderKind().isSnapshotSupported();
         storPoolData.external_locking = storPoolApi.isExternalLocking();
 
         return storPoolData;

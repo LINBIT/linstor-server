@@ -84,7 +84,6 @@ public class ApplyStorPool implements ApiCall
             null, // not needed by the satellite
             null, // not needed by the satellite
             null,
-            protoStorPool.getSnapshotSupported(),
             protoStorPool.getIsPmem(),
             protoStorPool.getIsVdo(),
             protoStorPool.getIsExternalLocking()

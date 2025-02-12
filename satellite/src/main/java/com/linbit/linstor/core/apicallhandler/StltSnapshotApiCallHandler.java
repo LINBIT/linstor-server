@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.core.ControllerPeerConnector;
@@ -41,7 +42,6 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.PropsUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;

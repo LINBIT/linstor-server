@@ -699,6 +699,7 @@ public class TcpConnectorPeer implements Peer
         authenticated = authenticatedFlag;
     }
 
+    // it does not really matter which value the threads read, as long as they read a value
     @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
     protected void nextInMessage()
     {
@@ -716,6 +717,7 @@ public class TcpConnectorPeer implements Peer
         selKey = selKeyRef;
     }
 
+    // it does not really matter which value the threads read, as long as they read a value
     @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
     protected void nextOutMessage()
     {

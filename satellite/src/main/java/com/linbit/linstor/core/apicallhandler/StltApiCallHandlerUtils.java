@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class StltApiCallHandlerUtils
@@ -195,7 +194,7 @@ public class StltApiCallHandlerUtils
                         {
                             if (valueFromOtherRscSuffixes instanceof Either.Left)
                             {
-                                Long oldValue = valueFromOtherRscSuffixes.map(Function.identity(), null);
+                                Long oldValue = ((Either.Left<Long, ApiRcException>) valueFromOtherRscSuffixes).get();
 
                                 allocatedMap.put(
                                     allocatedSizeEntry.getKey().getVolumeKey(),

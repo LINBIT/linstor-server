@@ -1291,6 +1291,7 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@JsonIgnore");
             appendLine("@Override");
+            appendLine("@Nullable");
             appendLine("public Object getByColumn(String clmNameStr)");
             try (IndentLevel getByColumnMethodIndent = new IndentLevel())
             {

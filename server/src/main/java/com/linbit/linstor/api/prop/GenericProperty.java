@@ -2,22 +2,22 @@ package com.linbit.linstor.api.prop;
 
 import com.linbit.linstor.annotation.Nullable;
 
-public class GenericProperty implements Property
+public abstract class GenericProperty implements Property
 {
     private final String name;
     private final String key;
     private final boolean internal;
-    private final String info;
-    private final String unit;
-    private final String dflt;
+    private final @Nullable String info;
+    private final @Nullable String unit;
+    private final @Nullable String dflt;
 
     public GenericProperty(
         String nameRef,
         String keyRef,
         boolean internalRef,
-        String infoRef,
-        String unitRef,
-        String dfltRef
+        @Nullable String infoRef,
+        @Nullable String unitRef,
+        @Nullable String dfltRef
     )
     {
         name = nameRef;
@@ -53,7 +53,7 @@ public class GenericProperty implements Property
     }
 
     @Override
-    public String getInfo()
+    public @Nullable String getInfo()
     {
         return info;
     }
@@ -65,21 +65,15 @@ public class GenericProperty implements Property
     }
 
     @Override
-    public String getUnit()
+    public @Nullable String getUnit()
     {
         return unit;
     }
 
     @Override
-    public String getDflt()
+    public @Nullable String getDflt()
     {
         return dflt;
-    }
-
-    @Override
-    public @Nullable PropertyType getType()
-    {
-        return null;
     }
 
     @Override

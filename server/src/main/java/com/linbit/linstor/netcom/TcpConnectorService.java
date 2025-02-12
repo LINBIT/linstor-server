@@ -1357,6 +1357,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
     /**
      * This method is synchronized because <code>this</code> should not be changed while we are re-initializing
+     * Callers of this method will have to wait for a bit until reinitialization is finished
      */
     @SuppressFBWarnings("SWL_SLEEP_WITH_LOCK_HELD")
     private synchronized void reinitialize()

@@ -741,7 +741,8 @@ public class DatabaseLoader implements DatabaseDriver
             }
         );
 
-        // this needs to be called to load the snapshot-layerdata and save it into the respective snapshot
+        // this needs to be called to load the snapshot-layerdata and save it into the respective snapshot. The return
+        // value can be safely ignored
         loadLayerData(
             parentObjects,
             tmpStorPoolMapWithInitMapsRef,

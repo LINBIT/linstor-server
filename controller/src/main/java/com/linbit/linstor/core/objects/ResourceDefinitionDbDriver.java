@@ -194,7 +194,7 @@ public class ResourceDefinitionDbDriver
                     rscName,
                     extName,
                     flags,
-                    DatabaseLoader.asDevLayerKindList(raw.getAsStringList(LAYER_STACK)),
+                    DatabaseLoader.asDevLayerKindList(raw.getAsStringListNonNull(LAYER_STACK)),
                     this,
                     propsContainerFactory,
                     transObjFactory,

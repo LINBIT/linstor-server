@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.cache;
 
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.AbsCacheLayerSizeCalculator;
@@ -11,7 +12,6 @@ import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

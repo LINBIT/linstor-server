@@ -44,7 +44,7 @@ public class VlmApiData implements VolumeApi
     }
 
     @Override
-    public String getDevicePath()
+    public @Nullable String getDevicePath()
     {
         return vlm.getDevicePath();
     }
@@ -107,11 +107,7 @@ public class VlmApiData implements VolumeApi
         }
         builder.addAllVlmFlags(Volume.Flags.toStringList(vlmApi.getFlags()));
         builder.putAllVlmProps(vlmApi.getVlmProps());
-        Optional<Long> allocatedSize = vlmApi.getAllocatedSize();
-        if (allocatedSize.isPresent())
-        {
-            builder.setAllocatedSize(allocatedSize.get());
-        }
+        vlmApi.getAllocatedSize().ifPresent(builder::setAllocatedSize);
 
         return builder.build();
     }

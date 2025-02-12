@@ -344,7 +344,7 @@ public class RandomizedBitmapPoolTest
             {
                 System.err.println(
                     "Cannot write test log to file \"" + param.logFile.getPath() + "\"" +
-                    message == null ? "(No I/O error message from the Java runtime)" : message
+                        (message == null ? "(No I/O error message from the Java runtime)" : message)
                 );
             }
         }

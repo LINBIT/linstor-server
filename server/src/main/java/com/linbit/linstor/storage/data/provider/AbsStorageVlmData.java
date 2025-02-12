@@ -130,7 +130,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public StorPool getStorPool()
+    public @Nullable StorPool getStorPool()
     {
         return storPool.get();
     }

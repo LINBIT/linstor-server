@@ -237,7 +237,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
     public void awaitShutdown(long timeout)
         throws InterruptedException
     {
-        Thread joinThr = null;
+        @Nullable Thread joinThr = null;
         synchronized (this)
         {
             joinThr = sched;

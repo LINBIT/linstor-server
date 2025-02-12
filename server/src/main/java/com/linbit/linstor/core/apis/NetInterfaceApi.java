@@ -10,11 +10,28 @@ public interface NetInterfaceApi
     String getName();
     String getAddress();
 
-    boolean isUsableAsSatelliteConnection();
-
     @Nullable
-    Integer getSatelliteConnectionPort();
+    StltConn getStltConn();
 
-    @Nullable
-    String getSatelliteConnectionEncryptionType();
+    class StltConn
+    {
+        private final int port;
+        private final String encrType;
+
+        public StltConn(int portRef, String encrTypeRef)
+        {
+            port = portRef;
+            encrType = encrTypeRef;
+        }
+
+        public int getSatelliteConnectionPort()
+        {
+            return port;
+        }
+
+        public String getSatelliteConnectionEncryptionType()
+        {
+            return encrType;
+        }
+    }
 }

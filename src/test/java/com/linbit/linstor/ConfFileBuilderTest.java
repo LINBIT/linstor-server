@@ -203,22 +203,6 @@ public class ConfFileBuilderTest
         nodeConnProps.setProp("2/" + nodeNames[1], nicNames[3], "Paths");
     }
 
-    @Test(expected = ImplementationError.class)
-    public void testPeerRscsNull() throws Exception
-    {
-        confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                null,
-            whitelistProps,
-            stltProps,
-            drbdVersion
-        );
-
-        confFileBuilder.build();
-    }
-
     @Test
     public void testPeerRscsEmpty() throws Exception
     {

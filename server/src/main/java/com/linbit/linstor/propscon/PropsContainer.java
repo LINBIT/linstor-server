@@ -424,6 +424,13 @@ public class PropsContainer extends AbsTransactionObject implements Props
     {
         try
         {
+            if (instanceName == null)
+            {
+                throw new DatabaseException(
+                    "tried to load props of a prop container without instance name. Root container: " +
+                        rootContainer.instanceName
+                );
+            }
             Map<String, String> loadedProps = dbDriver.loadCachedInstance(instanceName);
             for (Map.Entry<String, String> entry : loadedProps.entrySet())
             {

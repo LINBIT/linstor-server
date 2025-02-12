@@ -14,8 +14,7 @@ public class NetInterfacePojo implements NetInterfaceApi
     private final @Nullable UUID uuid;
     private final String name;
     private final String address;
-    private final @Nullable Integer port;
-    private final @Nullable String encrType;
+    private final @Nullable StltConn stltConn;
 
     public NetInterfacePojo(
         final @Nullable UUID uuidRef,
@@ -28,8 +27,14 @@ public class NetInterfacePojo implements NetInterfaceApi
         uuid = uuidRef;
         name = nameRef;
         address = addressRef;
-        port = portRef;
-        encrType = encrTypeRef;
+        if (portRef != null && encrTypeRef != null)
+        {
+            stltConn = new StltConn(portRef, encrTypeRef);
+        }
+        else
+        {
+            stltConn = null;
+        }
     }
 
     @Override
@@ -51,20 +56,8 @@ public class NetInterfacePojo implements NetInterfaceApi
     }
 
     @Override
-    public boolean isUsableAsSatelliteConnection()
+    public @Nullable StltConn getStltConn()
     {
-        return port != null && encrType != null;
-    }
-
-    @Override
-    public @Nullable Integer getSatelliteConnectionPort()
-    {
-        return port;
-    }
-
-    @Override
-    public @Nullable String getSatelliteConnectionEncryptionType()
-    {
-        return encrType;
+        return stltConn;
     }
 }

@@ -87,8 +87,6 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 @Singleton
 public class DeviceHandlerImpl implements DeviceHandler
 {
@@ -1218,7 +1216,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
     }
 
-    @SuppressFBWarnings
     private boolean prepare(
         DeviceLayer layer,
         Set<AbsRscLayerObject<Resource>> rscSet,

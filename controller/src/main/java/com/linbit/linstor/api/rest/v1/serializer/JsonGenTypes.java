@@ -26,7 +26,7 @@ public class JsonGenTypes
          * A masked error number
          */
         public long ret_code;
-        public @Nullable String message;
+        public String message;
         /**
          * Cause of the error
          */
@@ -44,7 +44,7 @@ public class JsonGenTypes
          */
         public List<String> error_report_ids = Collections.emptyList();
         /**
-         * Map of objection that have been involved by the operation.
+         * Map of objects that have been involved in the operation.
          */
         public Map<String, String> obj_refs = Collections.emptyMap();
         public @Nullable String created_at;
@@ -58,8 +58,8 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class Node
     {
-        public @Nullable String name;
-        public @Nullable String type;
+        public String name;
+        public String type;
         public List<String> flags = Collections.emptyList();
         public Map<String, String> props = Collections.emptyMap();
         public List<NetInterface> net_interfaces = Collections.emptyList();
@@ -84,8 +84,8 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class NodeCreateEbs
     {
-        public @Nullable String name;
-        public @Nullable String ebs_remote_name;
+        public String name;
+        public String ebs_remote_name;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -107,8 +107,8 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class NetInterface
     {
-        public @Nullable String name;
-        public @Nullable String address;
+        public String name;
+        public String address;
         public @Nullable Integer satellite_port;
         public @Nullable String satellite_encryption_type;
         /**
@@ -132,8 +132,8 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PropertyWithDescription
     {
-        public @Nullable String type;
-        public @Nullable String value;
+        public String type;
+        public String value;
         public @Nullable String descr;
     }
 
@@ -164,9 +164,9 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class StoragePool
     {
-        public @Nullable String storage_pool_name;
+        public String storage_pool_name;
         public @Nullable String node_name;
-        public @Nullable String provider_kind;
+        public String provider_kind;
         public Map<String, String> props = Collections.emptyMap();
         /**
          * read only map of static storage pool traits
@@ -307,7 +307,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class VolumeDefinitionLayer
     {
-        public @Nullable String type;
+        public String type;
         public @Nullable Object data;
     }
 
@@ -358,7 +358,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class VolumeDefinitionModifyPassphrase
     {
-        public @Nullable String new_passphrase;
+        public String new_passphrase;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -902,8 +902,8 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class QuerySizeInfoSpawnResult
     {
-        public @Nullable String node_name;
-        public @Nullable String stor_pool_name;
+        public String node_name;
+        public String stor_pool_name;
         public @Nullable Double stor_pool_oversubscription_ratio;
         public @Nullable Double stor_pool_free_capacity_oversubscription_ratio;
         public @Nullable Double stor_pool_total_capacity_oversubscription_ratio;
@@ -1313,7 +1313,7 @@ public class JsonGenTypes
         /**
          * Resource where to restore the snapshot
          */
-        public @Nullable String to_resource;
+        public String to_resource;
         /**
          * List of nodes where to place the restored snapshot
          */
@@ -1327,7 +1327,7 @@ public class JsonGenTypes
         /**
          * Node where to ship the snapshot from
          */
-        public @Nullable String from_node;
+        public String from_node;
         /**
          * NetInterface of the source node
          */
@@ -1335,7 +1335,7 @@ public class JsonGenTypes
         /**
          * Node where to ship the snapshot
          */
-        public @Nullable String to_node;
+        public String to_node;
         /**
          * NetInterface of the destination node
          */
@@ -1355,12 +1355,12 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class Backup
     {
-        public @Nullable String id;
+        public String id;
         public @Nullable String start_time;
         public @Nullable Long start_timestamp;
         public @Nullable String finished_time;
         public @Nullable Long finished_timestamp;
-        public @Nullable String origin_rsc;
+        public String origin_rsc;
         public @Nullable String origin_snap;
         public @Nullable String origin_node;
         public @Nullable String fail_messages;
@@ -1409,9 +1409,9 @@ public class JsonGenTypes
         public @Nullable String src_snap_name;
         public @Nullable String last_backup;
         public Map<String, String> stor_pool_map = Collections.emptyMap();
-        public @Nullable String target_rsc_name;
+        public String target_rsc_name;
         public @Nullable String passphrase;
-        public @Nullable String node_name;
+        public String node_name;
         public boolean download_only = false;
         public boolean force_restore = false;
         public @Nullable String dst_rsc_grp;
@@ -1426,7 +1426,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class BackupCreate
     {
-        public @Nullable String rsc_name;
+        public String rsc_name;
         public @Nullable String node_name;
         public @Nullable String snap_name;
         public @Nullable Boolean incremental;
@@ -1435,7 +1435,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class BackupAbort
     {
-        public @Nullable String rsc_name;
+        public String rsc_name;
         public @Nullable Boolean restore;
         public @Nullable Boolean create;
     }
@@ -1444,8 +1444,8 @@ public class JsonGenTypes
     public static class BackupShip
     {
         public @Nullable String src_node_name;
-        public @Nullable String src_rsc_name;
-        public @Nullable String dst_rsc_name;
+        public String src_rsc_name;
+        public String dst_rsc_name;
         public @Nullable String dst_node_name;
         public @Nullable String dst_net_if_name;
         public @Nullable String dst_stor_pool;
@@ -1465,10 +1465,10 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class BackupInfo
     {
-        public @Nullable String rsc;
-        public @Nullable String full;
+        public String rsc;
+        public String full;
         public @Nullable String snap;
-        public @Nullable String latest;
+        public String latest;
         public @Nullable Integer count;
         public long dl_size_kib;
         public long alloc_size_kib;
@@ -1488,7 +1488,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class BackupInfoStorPool
     {
-        public @Nullable String name;
+        public String name;
         public @Nullable String provider_kind;
         public @Nullable String target_name;
         public @Nullable Long remaining_space_kib;
@@ -1499,7 +1499,7 @@ public class JsonGenTypes
     public static class BackupInfoVolume
     {
         public @Nullable String name;
-        public @Nullable String layer_type;
+        public String layer_type;
         public @Nullable Long dl_size_kib;
         public @Nullable Long alloc_size_kib;
         public @Nullable Long usable_size_kib;
@@ -1532,8 +1532,8 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ScheduleDetails
     {
-        public @Nullable String remote_name;
-        public @Nullable String schedule_name;
+        public String remote_name;
+        public String schedule_name;
         public @Nullable Boolean ctrl;
         public @Nullable Boolean rsc_grp;
         public @Nullable Boolean rsc_dfn;
@@ -1548,9 +1548,9 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ScheduledRscs
     {
-        public @Nullable String rsc_name;
-        public @Nullable String remote_name;
-        public @Nullable String schedule_name;
+        public String rsc_name;
+        public String remote_name;
+        public String schedule_name;
         /**
          * The reason for why this rscDfn has no active schedules.
          * If this is set, ignore all long and boolean parameters.
@@ -1607,7 +1607,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class NodeQueue
     {
-        public @Nullable String node_name;
+        public String node_name;
         /**
          * The list of queued snapshots. Will be empty if this is an item of
          * SnapQueue.queue
@@ -1618,13 +1618,13 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class SnapQueue
     {
-        public @Nullable String resource_name;
-        public @Nullable String snapshot_name;
-        public @Nullable String remote_name;
+        public String resource_name;
+        public String snapshot_name;
+        public String remote_name;
         public boolean incremental;
         public @Nullable String based_on;
         public long start_timestamp;
-        public @Nullable String pref_node;
+        public String pref_node;
         /**
          * The list of nodes this snapshot is queued on. Will be empty if this
          * is an item of NodeQueue.queue
@@ -1635,7 +1635,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PassphraseStatus
     {
-        public @Nullable String status;
+        public String status;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1741,7 +1741,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PhysicalStorageCreate
     {
-        public @Nullable String provider_kind;
+        public String provider_kind;
         public List<String> device_paths = Collections.emptyList();
         /**
          * RAID level to use for pool.
@@ -1936,15 +1936,15 @@ public class JsonGenTypes
         /**
          * Path for clone status
          */
-        public @Nullable String location;
+        public String location;
         /**
          * name of the source resource
          */
-        public @Nullable String source_name;
+        public String source_name;
         /**
          * name of the clone resource
          */
-        public @Nullable String clone_name;
+        public String clone_name;
         public List<ApiCallRc> messages = Collections.emptyList();
     }
 
@@ -1959,7 +1959,7 @@ public class JsonGenTypes
          * FAILED -> error occured while cloning, resource not usable
          * COMPLETE -> resource is ready to use
          */
-        public @Nullable String status;
+        public String status;
     }
 
     /**
@@ -2020,8 +2020,8 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class Schedule
     {
-        public @Nullable String schedule_name;
-        public @Nullable String full_cron;
+        public String schedule_name;
+        public String full_cron;
         public @Nullable String inc_cron;
         /**
          * the number of snapshots that are basis for a full backup to keep locally
