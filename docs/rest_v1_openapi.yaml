@@ -4337,6 +4337,23 @@ paths:
           $ref: '#/components/responses/OperationFailed'
 
   /v1/encryption/passphrase:
+    get:
+      tags:
+        - developers
+      operationId: passphraseStatus
+      summary: Check if master passphrase is set and/or unlocked
+      description: Check if master passphrase is set and/or unlocked
+      responses:
+        '200':
+          description: status object
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PassphraseStatus'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
     post:
       tags:
         - developers
@@ -8443,6 +8460,17 @@ components:
           description: |
             The list of nodes this snapshot is queued on. Will be empty if this 
             is an item of NodeQueue.queue
+    PassphraseStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - unset
+            - locked
+            - unlocked
     PassPhraseCreate:
       type: object
       properties:

@@ -422,4 +422,9 @@ public class EncryptionHelper
         byte[] encodedData = cryptoLenPad.conceal(toEncrypt);
         return cipher.encrypt(encodedData);
     }
+
+    public boolean isMasterKeyUnlocked()
+    {
+        return ctrlSecObj.areAllSet();
+    }
 }

@@ -4,12 +4,12 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlConfApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -32,21 +32,41 @@ public class Encryption
 {
     private final ObjectMapper objectMapper;
     private final RequestHelper requestHelper;
-    private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
 
     @Inject
     public Encryption(
         RequestHelper requestHelperRef,
-        CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlConfApiCallHandler ctrlConfApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
-        ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
+    }
+
+    @GET
+    @Path("passphrase")
+    public Response passphraseStatus(
+        @Context Request request
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_STATUS_CRYPT_PASS,
+            request,
+            () ->
+            {
+                JsonGenTypes.PassphraseStatus passStatus = new JsonGenTypes.PassphraseStatus();
+                passStatus.status = ctrlConfApiCallHandler.masterPassphraseStatus().toString().toLowerCase();
+
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(passStatus))
+                    .build();
+            },
+            false
+        );
     }
 
     @POST

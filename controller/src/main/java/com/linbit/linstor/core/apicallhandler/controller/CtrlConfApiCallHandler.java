@@ -135,6 +135,13 @@ public class CtrlConfApiCallHandler
     private final TaskScheduleService taskScheduleService;
     private final BalanceResourcesTask balanceResourcesTask;
 
+    public enum LinstorEncryptionStatus
+    {
+        UNSET,
+        LOCKED,
+        UNLOCKED,
+    }
+
     @FunctionalInterface
     private interface SpecialPropHandler
     {
@@ -1483,6 +1490,28 @@ public class CtrlConfApiCallHandler
             );
         }
         return new Triple<>(apiCallRc, notifyStlts, changedRscs);
+    }
+
+    public LinstorEncryptionStatus masterPassphraseStatus()
+    {
+        LinstorEncryptionStatus status = LinstorEncryptionStatus.UNSET;
+        try
+        {
+            ReadOnlyProps namespace = encHelper.getEncryptedNamespace(peerAccCtx.get());
+            if (!(namespace == null || namespace.isEmpty()))
+            {
+                status = encHelper.isMasterKeyUnlocked() ?
+                    LinstorEncryptionStatus.UNLOCKED : LinstorEncryptionStatus.LOCKED;
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
+                ResponseUtils.getAccDeniedMsg(peerAccCtx.get(), "view the controller properties")
+            ));
+        }
+        return status;
     }
 
     public Flux<ApiCallRc> enterPassphrase(String passphrase)

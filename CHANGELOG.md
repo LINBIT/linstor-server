@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Notify controller about replication state changes in DRBD
 - Notify controller about done percentage changes in DRBD
+- Encrytion-API: added a GET endpoint to ask for the master passphrase status
 
 ### Changed
 
