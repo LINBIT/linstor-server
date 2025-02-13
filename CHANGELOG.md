@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sos-report: syslog will only be gathered if messages was not available
 - Clone: check that a resource name for the cloned resource is set
 - Clone: fail clone if the source resource isn't UpToDate or has skip-disk
+- Memory: Limit satellite to 2G max memory (-Xmx2G) and controller to 8G
 
 ### Fixed
 
