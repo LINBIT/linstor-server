@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clone: check that a resource name for the cloned resource is set
 - Clone: fail clone if the source resource isn't UpToDate or has skip-disk
 
+### Fixed
+
+- Reconnect: Fixed rare race condition in DRBD version check
+
 ## [1.30.4] - 2025-02-03
 
 ### Changed

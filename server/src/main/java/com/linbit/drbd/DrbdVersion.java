@@ -201,7 +201,10 @@ public class DrbdVersion
      */
     public int getKModMajorVsn()
     {
-        return drbdVsn.getMajor();
+        synchronized (SYNC_OBJ)
+        {
+            return drbdVsn.getMajor();
+        }
     }
 
     /**
@@ -216,7 +219,10 @@ public class DrbdVersion
      */
     public int getUtilsMajorVsn()
     {
-        return utilsVsn.getMajor();
+        synchronized (SYNC_OBJ)
+        {
+            return utilsVsn.getMajor();
+        }
     }
 
     /**
@@ -231,7 +237,10 @@ public class DrbdVersion
      */
     public int getKModMinorVsn()
     {
-        return drbdVsn.getMinor();
+        synchronized (SYNC_OBJ)
+        {
+            return drbdVsn.getMinor();
+        }
     }
 
     /**
@@ -246,7 +255,10 @@ public class DrbdVersion
      */
     public int getUtilsMinorVsn()
     {
-        return utilsVsn.getMinor();
+        synchronized (SYNC_OBJ)
+        {
+            return utilsVsn.getMinor();
+        }
     }
 
     /**
@@ -261,7 +273,10 @@ public class DrbdVersion
      */
     public int getKModPatchLvl()
     {
-        return drbdVsn.getPatch();
+        synchronized (SYNC_OBJ)
+        {
+            return drbdVsn.getPatch();
+        }
     }
 
     /**
@@ -276,7 +291,10 @@ public class DrbdVersion
      */
     public int getUtilsPatchLvl()
     {
-        return utilsVsn.getPatch();
+        synchronized (SYNC_OBJ)
+        {
+            return utilsVsn.getPatch();
+        }
     }
 
     /**
@@ -289,7 +307,10 @@ public class DrbdVersion
      */
     public Version getKModVsn()
     {
-        return drbdVsn;
+        synchronized (SYNC_OBJ)
+        {
+            return drbdVsn;
+        }
     }
 
     /**
@@ -302,7 +323,10 @@ public class DrbdVersion
      */
     public Version getUtilsVsn()
     {
-        return utilsVsn;
+        synchronized (SYNC_OBJ)
+        {
+            return utilsVsn;
+        }
     }
 
     /**
@@ -316,7 +340,10 @@ public class DrbdVersion
      */
     public String getWindrbdVsn()
     {
-        return windrbdVsn;
+        synchronized (SYNC_OBJ)
+        {
+            return windrbdVsn;
+        }
     }
 
     /**
@@ -328,7 +355,10 @@ public class DrbdVersion
      */
     public boolean hasDrbd9()
     {
-        return drbdVsn.greaterOrEqual(DRBD9_VSN);
+        synchronized (SYNC_OBJ)
+        {
+            return drbdVsn.greaterOrEqual(DRBD9_VSN);
+        }
     }
 
     /**
@@ -340,7 +370,10 @@ public class DrbdVersion
      */
     public boolean hasUtils()
     {
-        return utilsVsn.greaterOrEqual(DRBD_UTILS_VSN);
+        synchronized (SYNC_OBJ)
+        {
+            return utilsVsn.greaterOrEqual(DRBD_UTILS_VSN);
+        }
     }
 
     /**
@@ -373,11 +406,17 @@ public class DrbdVersion
 
     public List<String> getKernelNotSupportedReasons()
     {
-        return Collections.unmodifiableList(drbdNotSupportedReasons);
+        synchronized (SYNC_OBJ)
+        {
+            return Collections.unmodifiableList(drbdNotSupportedReasons);
+        }
     }
 
     public List<String> getUtilsNotSupportedReasons()
     {
-        return Collections.unmodifiableList(utilsNotSupportedReasons);
+        synchronized (SYNC_OBJ)
+        {
+            return Collections.unmodifiableList(utilsNotSupportedReasons);
+        }
     }
 }
