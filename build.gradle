@@ -13,8 +13,8 @@ def protobufVersion = '23.3'
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
 def logbackConfig = "logback.xml"
 def jvmOpts = ["-Xms32M"]
-def jvmSatelliteOpts = ["-Xms32M", "-Xmx1G"]
-def jvmControllerOpts = ["-Xms256M", "-Xmx8G"]
+def jvmSatelliteOpts = ["-Xms32M", "-Xmx2G", "-XX:+CrashOnOutOfMemoryError"]
+def jvmControllerOpts = ["-Xms256M", "-Xmx8G", "-XX:+CrashOnOutOfMemoryError"]
 def cronVersion = '9.1.6'
 def javaHome = providers.gradleProperty("javaHome")
 
