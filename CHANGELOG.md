@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DRBD .res file now contains the time the file was generated
 - BalanceResource: Improved selection when deleting excess resource
 - AutoDiskfulTask: Improved selection when deleting excess resource
+- Tiebreaker: Improved decision making if a deleting resource should be kept as tiebreaker
 
 ### Fixed
 

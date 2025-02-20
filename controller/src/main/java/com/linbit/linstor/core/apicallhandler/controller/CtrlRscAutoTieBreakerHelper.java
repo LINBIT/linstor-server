@@ -59,6 +59,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -147,7 +148,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                     {
                         Resource rsc = rscIt.next();
                         if (isSomeFlagSet(rsc, Resource.Flags.DRBD_DELETE, Resource.Flags.DELETE) &&
-                            !isSomeFlagSet(rsc.getNode(), Node.Flags.EVICTED, Node.Flags.EVACUATE))
+                            !isSomeFlagSet(rsc.getNode(), Node.Flags.EVICTED, Node.Flags.EVACUATE) &&
+                            couldTakeover(rsc, ctx))
                         {
                             if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
                             {
@@ -167,7 +169,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                     }
                     else
                     {
-                        StorPool storPool = getStorPoolForTieBreaker(ctx);
+                        StorPool storPool = getStorPoolForTieBreaker(ctx, null);
                         if (storPool == null)
                         {
                             ctx.responses.addEntries(
@@ -206,7 +208,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                     String.format(
                                         "Tie breaker resource '%s' created on %s",
                                         ctx.rscDfn.getName().displayValue,
-                                        storPool.getName().displayValue
+                                        storPool.getNode().getName().displayValue
                                     )
                                 )
                             );
@@ -282,6 +284,32 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private boolean couldTakeover(Resource rscRef, AutoHelperContext ctxRef) throws AccessDeniedException
+    {
+        boolean couldTakeover = false;
+        final AccessContext peerAccCtx = peerCtx.get();
+
+        if (rscRef.getStateFlags().isSet(peerAccCtx, Resource.Flags.DRBD_DISKLESS))
+        {
+            final ResourceDefinition rscDfn = ctxRef.rscDfn;
+            final Predicate<StorPool> isEligibleTieBreakerStorPool = getEligibleTieBreakerStorPoolPredicate(rscDfn);
+            couldTakeover = LayerVlmUtils.getStorPools(rscRef, peerAccCtx)
+                .stream()
+                .allMatch(isEligibleTieBreakerStorPool);
+        }
+        else
+        {
+            // will be null if rscRef already violates some RG settings. This rsc should not be taken over, but rather
+            // find a new node for the tiebreaker
+            @Nullable StorPool storPoolForTieBreaker = getStorPoolForTieBreaker(
+                ctxRef,
+                Collections.singleton(rscRef.getNode())
+            );
+            couldTakeover = storPoolForTieBreaker != null;
+        }
+        return couldTakeover;
     }
 
     private void takeover(
@@ -548,7 +576,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         );
     }
 
-    private StorPool getStorPoolForTieBreaker(AutoHelperContext ctx)
+    private StorPool getStorPoolForTieBreaker(AutoHelperContext ctx, @Nullable Collection<Node> nodesToChooseFromRef)
     {
         StorPool storPool = null;
 
@@ -557,9 +585,13 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
             AccessContext peerAccCtx = peerCtx.get();
 
             List<String> filterNodeNamesList = new ArrayList<>();
-            for (Node node : this.nodeRepo.getMapForView(peerAccCtx).values())
+            if (nodesToChooseFromRef != null)
             {
-                filterNodeNamesList.add(node.getName().displayValue);
+                for (Node node : nodesToChooseFromRef)
+                {
+                    filterNodeNamesList.add(node.getName().displayValue);
+                }
+
             }
 
             while (storPool == null)
@@ -586,6 +618,9 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         .setPlaceCount(0)
                         .setAdditionalPlaceCount(1)
                         .setNodeNameList(filterNodeNamesList)
+                        .setSkipAlreadyPlacedOnNodeNamesCheck(
+                            filterNodeNamesList.isEmpty() ? null : filterNodeNamesList
+                        )
                         .setDoNotPlaceWithRscList(Collections.singletonList(ctx.rscDfn.getName().displayValue))
                         .setLayerStackList(Collections.singletonList(DeviceLayerKind.DRBD))
                         .setDisklessType(Resource.Flags.DRBD_DISKLESS.name())
