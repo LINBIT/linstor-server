@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory: Limit satellite to 2G max memory (-Xmx2G) and controller to 8G
 - JVM: will now crash on OutOfMemoryError
 - Limit reactor worker threads to 16
+- DRBD .res file now contains the time the file was generated
 
 ### Fixed
 
