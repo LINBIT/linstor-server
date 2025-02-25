@@ -57,6 +57,12 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
     }
 
     @Override
+    public CtrlRscAutoHelper.AutoHelperType getType()
+    {
+        return CtrlRscAutoHelper.AutoHelperType.VerifyAlgorithm;
+    }
+
+    @Override
     public void manage(CtrlRscAutoHelper.AutoHelperContext ctx)
     {
         ctx.responses.addEntries(checkVerifyAlgorithm(ctx.rscDfn));

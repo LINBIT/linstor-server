@@ -33,7 +33,9 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 
 import reactor.core.publisher.Flux;
@@ -75,6 +77,15 @@ public class CtrlRscAutoHelper
             return preventUpdateSatellitesForResourceDelete;
         }
     }
+
+    public enum AutoHelperType {
+        DrbdProxy,
+        TieBreaker,
+        AutoQuorum,
+        AutoRePlace,
+        VerifyAlgorithm,
+        All,
+    };
 
     @Inject
     public CtrlRscAutoHelper(
@@ -171,12 +182,20 @@ public class CtrlRscAutoHelper
 
     public AutoHelperResult manage(AutoHelperContext ctx)
     {
+        return manage(ctx, Collections.singleton(AutoHelperType.All));
+    }
+
+    public AutoHelperResult manage(AutoHelperContext ctx, Set<AutoHelperType> typeFilter)
+    {
         AutoHelperResult result = new AutoHelperResult();
         boolean fluxUpdateApplied = false;
 
         for (AutoHelper autohelper : autohelperList)
         {
-            autohelper.manage(ctx);
+            if (typeFilter.contains(AutoHelperType.All) || typeFilter.contains(autohelper.getType()))
+            {
+                autohelper.manage(ctx);
+            }
         }
 
         ctx.additionalFluxList.add(resyncAfterHelper.fluxManage());
@@ -313,5 +332,6 @@ public class CtrlRscAutoHelper
     interface AutoHelper
     {
         void manage(AutoHelperContext ctx);
+        AutoHelperType getType();
     }
 }

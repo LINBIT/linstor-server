@@ -43,6 +43,12 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
     }
 
     @Override
+    public CtrlRscAutoHelper.AutoHelperType getType()
+    {
+        return CtrlRscAutoHelper.AutoHelperType.DrbdProxy;
+    }
+
+    @Override
     public void manage(AutoHelperContext ctx)
     {
         try

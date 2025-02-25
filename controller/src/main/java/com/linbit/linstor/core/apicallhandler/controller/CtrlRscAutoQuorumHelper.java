@@ -63,6 +63,12 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
     }
 
     @Override
+    public CtrlRscAutoHelper.AutoHelperType getType()
+    {
+        return CtrlRscAutoHelper.AutoHelperType.AutoQuorum;
+    }
+
+    @Override
     public void manage(AutoHelperContext ctx)
     {
         String autoQuorum = getAutoQuorum(ctx.rscDfn);

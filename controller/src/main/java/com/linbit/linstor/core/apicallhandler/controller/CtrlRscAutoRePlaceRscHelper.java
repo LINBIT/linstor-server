@@ -96,6 +96,12 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
     }
 
     @Override
+    public CtrlRscAutoHelper.AutoHelperType getType()
+    {
+        return CtrlRscAutoHelper.AutoHelperType.AutoRePlace;
+    }
+
+    @Override
     public void manage(AutoHelperContext ctx)
     {
         ResourceDefinition rscDfn = ctx.rscDfn;

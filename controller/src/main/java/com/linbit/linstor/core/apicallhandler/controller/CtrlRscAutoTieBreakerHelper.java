@@ -126,6 +126,12 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     }
 
     @Override
+    public CtrlRscAutoHelper.AutoHelperType getType()
+    {
+        return CtrlRscAutoHelper.AutoHelperType.TieBreaker;
+    }
+
+    @Override
     public void manage(@Nonnull AutoHelperContext ctx)
     {
         try
