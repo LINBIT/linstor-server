@@ -743,7 +743,7 @@ public class CtrlConfApiCallHandler
      * This is called on global enable/disable operations.
      * @return Pair of ApiCallRc and resources that got updated.
      */
-    private Pair<ApiCallRc, Set<Resource>> updateRscDfns()
+    private Pair<ApiCallRc, Set<Resource>> updateRscDfnsVerifyAlgo()
     {
         final Set<Resource> touchedResources = new HashSet<>();
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -854,7 +854,7 @@ public class CtrlConfApiCallHandler
                                 namespace,
                                 propChangedListener
                             );
-                            updateRscDfns();
+                            updateRscDfnsVerifyAlgo();
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER:
                         {
@@ -878,7 +878,7 @@ public class CtrlConfApiCallHandler
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             // also set on satellite, so conffile builder can ignore if disabled
                             setStltProp(peerAccCtx.get(), fullKey, normalized, propChangedListener);
-                            Pair<ApiCallRc, Set<Resource>> result = updateRscDfns();
+                            Pair<ApiCallRc, Set<Resource>> result = updateRscDfnsVerifyAlgo();
                             apiCallRc.addEntries(result.objA);
                             // ignore touched resources, as we disable auto-verify-algo by conf file builder global prop
                             notifyStlts = true;
@@ -1426,7 +1426,7 @@ public class CtrlConfApiCallHandler
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO:
                         {
-                            Pair<ApiCallRc, Set<Resource>> result = updateRscDfns();
+                            Pair<ApiCallRc, Set<Resource>> result = updateRscDfnsVerifyAlgo();
                             apiCallRc.addEntries(result.objA);
                             changedRscs.addAll(result.objB);
                         }
