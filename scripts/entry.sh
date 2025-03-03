@@ -103,6 +103,7 @@ fi
 case $1 in
 	startSatellite)
 		declare -a EXEC_PREFIX
+		LB_FORCE_NODE_NAME="${LB_FORCE_NODE_NAME:-}"
 		if [ -n "$LB_FORCE_NODE_NAME" ]; then
 			EXEC_PREFIX+=(unshare --uts -- sh -ec 'hostname "$LB_FORCE_NODE_NAME"; exec "$@"' --)
 		fi
