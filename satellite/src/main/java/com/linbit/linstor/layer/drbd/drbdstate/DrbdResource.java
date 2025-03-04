@@ -78,6 +78,7 @@ public class DrbdResource
     private final Map<String, DrbdConnection> connList;
     private final Map<VolumeNumber, DrbdVolume> volList;
     protected boolean isLinstorDrbdResource;
+    protected boolean suppressDestroyEvent;
 
     protected DrbdResource(String nameStr)
     {
@@ -130,6 +131,16 @@ public class DrbdResource
     public @Nullable Boolean mayPromote()
     {
         return mayPromote;
+    }
+
+    public boolean isDestroyEventSuppressed()
+    {
+        return suppressDestroyEvent;
+    }
+
+    public void suppressDestroyEvent(final boolean flag)
+    {
+        suppressDestroyEvent = flag;
     }
 
     protected static DrbdResource newFromProps(

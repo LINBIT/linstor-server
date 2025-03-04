@@ -164,7 +164,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     @Override
     public void resourceDestroyed(DrbdResource resource)
     {
-        if (resource.isKnownByLinstor())
+        if (resource.isKnownByLinstor() && !resource.isDestroyEventSuppressed())
         {
             resourceStateEvent.get().closeStream(ObjectIdentifier.resourceDefinition(resource.getResName()));
         }

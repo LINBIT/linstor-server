@@ -312,10 +312,11 @@ public class DrbdLayer implements DeviceLayer
 
         if (restartReq)
         {
+            @Nullable DrbdResource rscState = null;
             boolean performRestart = false;
             try
             {
-                final @Nullable DrbdResource rscState = drbdState.getDrbdResource(rscName.displayValue);
+                rscState = drbdState.getDrbdResource(rscName.displayValue);
                 if (rscState != null)
                 {
                     final boolean hasPrimary = isSomePeerPrimary(rscState);
@@ -350,6 +351,13 @@ public class DrbdLayer implements DeviceLayer
 
                 try
                 {
+                    // rscState != null is invariant at this point, but probably need the check for spotbugs
+                    // Also, not a bad idea if performRestart behavior changes in the future
+                    if (rscState != null)
+                    {
+                        rscState.suppressDestroyEvent(true);
+                    }
+
                     drbdUtils.down(drbdRscData);
                     syncPoint.await(ChildProcessHandler.dfltWaitTimeout, TimeUnit.MILLISECONDS);
 
@@ -372,6 +380,10 @@ public class DrbdLayer implements DeviceLayer
                 }
                 finally
                 {
+                    if (rscState != null)
+                    {
+                        rscState.suppressDestroyEvent(false);
+                    }
                     drbdState.removeObserver(rscObs);
                 }
             }
