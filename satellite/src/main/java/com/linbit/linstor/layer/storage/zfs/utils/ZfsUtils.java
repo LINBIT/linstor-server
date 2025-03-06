@@ -216,112 +216,135 @@ public class ZfsUtils
             final String[] data = line.trim().split(DELIMITER);
             try
             {
-                if (data.length == expectedColCount)
+                // older ZFS versions (< v2.0.5) do not show "-" on the "clones" column of snapshots if the snapshot
+                // does not have clones. if the snapshot does have clones, the "clones" column works properly.
+                boolean rowValid = data.length == expectedColCount || data.length == expectedColCount - 1;
+                if (rowValid)
                 {
                     final String identifier = data[ZFS_LIST_COL_IDENTIFIER];
                     final String usableSizeStr = data[ZFS_LIST_COL_VOLSIZE];
                     final String type = data[ZFS_LIST_COL_TYPE];
                     final String volBlockSizeStr = data[ZFS_LIST_COL_VOL_BLOCK_SIZE];
                     final String originStr = data[ZFS_LIST_COL_ORIGIN];
-                    final String clonesStr = data[ZFS_LIST_COL_CLONES];
-
-                    final String allocatedSizeStr;
-                    if (kindRef == DeviceProviderKind.ZFS_THIN || type.equals(ZFS_TYPE_SNAPSHOT))
+                    final @Nullable String clonesStr;
+                    if (data.length == expectedColCount)
                     {
-                        /*
-                         * "refer" column shows the allocation size on disk. This size will grow for thick and thin
-                         * volumes as well as for snapshots while using
-                         */
-                        allocatedSizeStr = data[ZFS_LIST_COL_REFER_SIZE];
+                        clonesStr = data[ZFS_LIST_COL_CLONES];
                     }
                     else
                     {
-                        /*
-                         * "volsize" represents the size which was used during "zfs create -V ..." regardless if thin or
-                         * thick volume
-                         */
-                        allocatedSizeStr = data[ZFS_LIST_COL_VOLSIZE]; // -o "volsize"
-                    }
-
-                    if (type.equals(ZFS_TYPE_VOLUME) || type.equals(ZFS_TYPE_SNAPSHOT))
-                    {
-                        String allocateByteSizeStr = allocatedSizeStr;
-                        long allocatedSize = SizeConv.convert(
-                            StorageUtils.parseDecimalAsLong(allocateByteSizeStr.trim()),
-                            SizeUnit.UNIT_B,
-                            SizeUnit.UNIT_KiB
-                        );
-
-                        long usableSize = SizeConv.convert(
-                            StorageUtils.parseDecimalAsLong(usableSizeStr.trim()),
-                            SizeUnit.UNIT_B,
-                            SizeUnit.UNIT_KiB
-                        );
-
-                        @Nullable Long volBlockSize;
-                        if (volBlockSizeStr.trim().equals("-"))
+                        if (type.equals(ZFS_TYPE_SNAPSHOT))
                         {
-                            // snapshot
-                            volBlockSize = null;
+                            clonesStr = "-";
                         }
                         else
                         {
-                            volBlockSize = SizeConv.convert(
-                                StorageUtils.parseDecimalAsLong(volBlockSizeStr.trim()),
+                            clonesStr = null; // invalid, this row will be skipped
+                            rowValid = false;
+                        }
+                    }
+
+                    if (rowValid)
+                    {
+                        final String allocatedSizeStr;
+                        if (kindRef == DeviceProviderKind.ZFS_THIN || type.equals(ZFS_TYPE_SNAPSHOT))
+                        {
+                            /*
+                             * "refer" column shows the allocation size on disk. This size will grow for thick and thin
+                             * volumes as well as for snapshots while using
+                             */
+                            allocatedSizeStr = data[ZFS_LIST_COL_REFER_SIZE];
+                        }
+                        else
+                        {
+                            /*
+                             * "volsize" represents the size which was used during "zfs create -V ..." regardless if
+                             * thin or thick volume
+                             */
+                            allocatedSizeStr = data[ZFS_LIST_COL_VOLSIZE]; // -o "volsize"
+                        }
+
+                        if (type.equals(ZFS_TYPE_VOLUME) || type.equals(ZFS_TYPE_SNAPSHOT))
+                        {
+                            String allocateByteSizeStr = allocatedSizeStr;
+                            long allocatedSize = SizeConv.convert(
+                                StorageUtils.parseDecimalAsLong(allocateByteSizeStr.trim()),
                                 SizeUnit.UNIT_B,
                                 SizeUnit.UNIT_KiB
                             );
-                        }
 
-                        int poolNameEndIndex = identifier.lastIndexOf(File.separator);
-                        if (poolNameEndIndex == -1)
-                        {
-                            poolNameEndIndex = identifier.length() - 1;
-                        }
-                        final ZfsInfo state = new ZfsInfo(
-                            identifier.substring(0, poolNameEndIndex),
-                            identifier.substring(poolNameEndIndex + 1),
-                            type,
-                            buildZfsPath(identifier),
-                            allocatedSize,
-                            usableSize,
-                            volBlockSize,
-                            originStr.equals("-") ? null : originStr,
-                            clonesStr.equals("-") ? new String[0] : clonesStr.split(",")
-                        );
-                        infoByIdentifier.put(identifier, state);
+                            long usableSize = SizeConv.convert(
+                                StorageUtils.parseDecimalAsLong(usableSizeStr.trim()),
+                                SizeUnit.UNIT_B,
+                                SizeUnit.UNIT_KiB
+                            );
 
-                        if (type.equals(ZFS_TYPE_SNAPSHOT))
-                        {
-                            String baseZvolIdentifier = identifier.substring(0, identifier.indexOf("@"));
-                            @Nullable ZfsInfo baseZvolInfo = infoByIdentifier.get(baseZvolIdentifier);
-                            if (baseZvolInfo == null)
+                            @Nullable Long volBlockSize;
+                            if (volBlockSizeStr.trim().equals("-"))
                             {
-                                unprocessedSnapshots.computeIfAbsent(baseZvolIdentifier, ignored -> new ArrayList<>())
-                                    .add(state);
+                                // snapshot
+                                volBlockSize = null;
                             }
                             else
                             {
-                                // technically we are only storing "<baseZvol> has snapshot <state>" but not
-                                // "<state> is snapshot of <baseZvol>"
-                                baseZvolInfo.snapshots.add(state);
+                                volBlockSize = SizeConv.convert(
+                                    StorageUtils.parseDecimalAsLong(volBlockSizeStr.trim()),
+                                    SizeUnit.UNIT_B,
+                                    SizeUnit.UNIT_KiB
+                                );
                             }
-                        }
-                        else
-                        {
-                            if (state.originStr != null)
+
+                            int poolNameEndIndex = identifier.lastIndexOf(File.separator);
+                            if (poolNameEndIndex == -1)
                             {
-                                @Nullable ZfsInfo baseSnapInfo = infoByIdentifier.get(state.originStr);
-                                if (baseSnapInfo == null)
+                                poolNameEndIndex = identifier.length() - 1;
+                            }
+                            final ZfsInfo state = new ZfsInfo(
+                                identifier.substring(0, poolNameEndIndex),
+                                identifier.substring(poolNameEndIndex + 1),
+                                type,
+                                buildZfsPath(identifier),
+                                allocatedSize,
+                                usableSize,
+                                volBlockSize,
+                                originStr.equals("-") ? null : originStr,
+                                clonesStr.equals("-") ? new String[0] : clonesStr.split(",")
+                            );
+                            infoByIdentifier.put(identifier, state);
+
+                            if (type.equals(ZFS_TYPE_SNAPSHOT))
+                            {
+                                String baseZvolIdentifier = identifier.substring(0, identifier.indexOf("@"));
+                                @Nullable ZfsInfo baseZvolInfo = infoByIdentifier.get(baseZvolIdentifier);
+                                if (baseZvolInfo == null)
                                 {
-                                    unprocessedZvols.computeIfAbsent(state.originStr, ignored -> new ArrayList<>())
+                                    unprocessedSnapshots
+                                        .computeIfAbsent(baseZvolIdentifier, ignored -> new ArrayList<>())
                                         .add(state);
                                 }
                                 else
                                 {
-                                    // technically we are only storing "<baseSnap> has clone <state>" but not
-                                    // "<clone> is clone of <baseSnap>"
-                                    baseSnapInfo.clones.add(state);
+                                    // technically we are only storing "<baseZvol> has snapshot <state>" but not
+                                    // "<state> is snapshot of <baseZvol>"
+                                    baseZvolInfo.snapshots.add(state);
+                                }
+                            }
+                            else
+                            {
+                                if (state.originStr != null)
+                                {
+                                    @Nullable ZfsInfo baseSnapInfo = infoByIdentifier.get(state.originStr);
+                                    if (baseSnapInfo == null)
+                                    {
+                                        unprocessedZvols.computeIfAbsent(state.originStr, ignored -> new ArrayList<>())
+                                            .add(state);
+                                    }
+                                    else
+                                    {
+                                        // technically we are only storing "<baseSnap> has clone <state>" but not
+                                        // "<clone> is clone of <baseSnap>"
+                                        baseSnapInfo.clones.add(state);
+                                    }
                                 }
                             }
                         }
