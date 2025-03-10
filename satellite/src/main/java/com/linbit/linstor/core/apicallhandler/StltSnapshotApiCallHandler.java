@@ -120,6 +120,8 @@ public class StltSnapshotApiCallHandler
 
             mergeSnapshot(snapshotRaw, snapshotDfn);
 
+            rscDfnMap.put(rscDfn.getName(), rscDfn);
+
             transMgrProvider.get().commit();
 
             errorReporter.logInfo(
@@ -127,9 +129,6 @@ public class StltSnapshotApiCallHandler
                 snapshotDfn.getName().displayValue,
                 rscDfn.getName().displayValue
             );
-
-            rscDfnMap.put(rscDfn.getName(), rscDfn);
-
             deviceManager.snapshotUpdateApplied(Collections.singleton(
                 snapshotDfn.getSnapDfnKey()
             ));

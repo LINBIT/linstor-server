@@ -114,6 +114,7 @@ class StltExternalFilesApiCallHandler
             {
                 extFile.delete(apiCtx);
                 extFileMap.remove(extFileName);
+                transMgrProvider.get().commit();
             }
         }
         catch (InvalidNameException | AccessDeniedException | DatabaseException exc)

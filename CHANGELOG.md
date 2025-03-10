@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resource delete: Fixed rare race condition where a delayed DRBD event causes "resource not found" ErrorReports
 - Fixed possible UUID mismatch after deletion of last snapshot failed to properly clean up satellite
 - Fixed "resource not found" bug when restoring from a snapshot when the source-resource was already deleted
-
+- Satellite: Fixed rare "attempt to replace active transMgr" error
 
 ## [1.30.4] - 2025-02-03
 

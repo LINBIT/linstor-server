@@ -155,6 +155,7 @@ public class StltRemoteApiCallHandler
                 errorReporter.logTrace("Cleaning up deleted Remote: %s", remoteNameStrRef);
                 remote.delete(apiCtx);
                 remoteMap.remove(remoteName);
+                transMgrProvider.get().commit();
             }
         }
         catch (InvalidNameException | AccessDeniedException | DatabaseException exc)
@@ -212,6 +213,7 @@ public class StltRemoteApiCallHandler
                 errorReporter.logTrace("Cleaning up deleted StltRemote: %s", stltRemotePojoRef);
                 remote.delete(apiCtx);
                 remoteMap.remove(remoteName);
+                transMgrProvider.get().commit();
             }
         }
         catch (InvalidNameException | AccessDeniedException | DatabaseException exc)
