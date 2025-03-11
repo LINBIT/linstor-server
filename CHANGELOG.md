@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ZFS snapshots can now be deleted while having ZFS clones (ZFS snapshots will be renamed)
 - Auto-quorum: Reworked auto-quorum property behaviour, property was removed and auto-quorum is now managed through
                the drbd option quorum. on-no-quorum properties will be inherited.
+- BackupShipping: start next queued shipment immediately when sending fails
 
 ### Fixed
 

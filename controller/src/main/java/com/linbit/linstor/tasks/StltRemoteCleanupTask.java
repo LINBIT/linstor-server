@@ -16,18 +16,21 @@ public class StltRemoteCleanupTask implements TaskScheduleService.Task
     private final BackupShippingSrcData data;
     private final CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandler;
     private final BackgroundRunner backgroundRunner;
+    private final boolean srcSuccess;
 
     public StltRemoteCleanupTask(
         AccessContext accCtxRef,
         BackupShippingSrcData dataRef,
         CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandlerRef,
-        BackgroundRunner backgroundRunnerRef
+        BackgroundRunner backgroundRunnerRef,
+        boolean srcSuccessRef
     )
     {
         accCtx = accCtxRef;
         data = dataRef;
         backupL2LSrcApiCallHandler = backupL2LSrcApiCallHandlerRef;
         backgroundRunner = backgroundRunnerRef;
+        srcSuccess = srcSuccessRef;
     }
 
     @Override
@@ -37,7 +40,7 @@ public class StltRemoteCleanupTask implements TaskScheduleService.Task
         backgroundRunner.runInBackground(
             new RunConfig<>(
                 "cleanup backup shipping of " + (srcSnapshot.isDeleted() ? " deleted snapshot" : srcSnapshot),
-                backupL2LSrcApiCallHandler.startQueueIfReady(data.getStltRemote(), false),
+                backupL2LSrcApiCallHandler.startQueueIfReady(data.getStltRemote(), srcSuccess, false),
                 accCtx,
                 Collections.emptyList(),
                 true

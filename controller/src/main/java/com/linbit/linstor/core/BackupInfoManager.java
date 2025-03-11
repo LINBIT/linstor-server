@@ -854,16 +854,22 @@ public class BackupInfoManager
 
     /**
      * Returns null if cleanup can not be started
+     * if srcSuccessRef is false, this method will ignore the finishedCount and return the cleanup data anyways
      */
-    public CleanupData l2lShippingFinished(StltRemote remote)
+    public CleanupData l2lShippingFinished(StltRemote remote, boolean srcSuccessRef)
     {
         synchronized (cleanupDataMap)
         {
-            CleanupData cleanupData = cleanupDataMap.get(remote);
+
+            CleanupData cleanupData = null;
+            if (!remote.isDeleted())
+            {
+                cleanupData = cleanupDataMap.get(remote);
+            }
             if (cleanupData != null)
             {
                 cleanupData.finishedCount++;
-                boolean startCleanup = cleanupData.finishedCount == 2;
+                boolean startCleanup = cleanupData.finishedCount == 2 || !srcSuccessRef;
                 if (startCleanup)
                 {
                     cleanupDataMap.remove(remote);

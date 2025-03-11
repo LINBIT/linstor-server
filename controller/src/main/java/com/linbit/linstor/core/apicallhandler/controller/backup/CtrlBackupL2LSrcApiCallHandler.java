@@ -717,10 +717,22 @@ public class CtrlBackupL2LSrcApiCallHandler
         return flux;
     }
 
-    public Flux<ApiCallRc> startQueueIfReady(StltRemote stltRemote, boolean allowNullReturn)
+    /**
+     * checks if the shipping to the given stltRemote is done and if so tries to start a new shipping from the queues
+     *
+     * @param stltRemote
+     * @param srcSuccessRef
+     *     - the boolean describing if the src-cluster succeeded with the shipping. If this is unknown (e.g. because we
+     *     only have info from the dst-cluster) always set to true. If this is set to false, a queued shipment will be
+     *     attempted anyways
+     * @param allowNullReturn
+     *
+     * @return
+     */
+    public Flux<ApiCallRc> startQueueIfReady(StltRemote stltRemote, boolean srcSuccessRef, boolean allowNullReturn)
     {
         Flux<ApiCallRc> ret;
-        CleanupData data = backupInfoMgr.l2lShippingFinished(stltRemote);
+        CleanupData data = backupInfoMgr.l2lShippingFinished(stltRemote, srcSuccessRef);
         if (data != null)
         {
             ret = startQueues(data.data, data.getTask());

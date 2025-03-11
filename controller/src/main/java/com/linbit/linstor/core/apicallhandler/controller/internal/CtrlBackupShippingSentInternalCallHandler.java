@@ -181,16 +181,7 @@ public class CtrlBackupShippingSentInternalCallHandler
                     );
                     doStltCleanup = true;
                     handleResult = cleanupFlagsNProps(snapDfn, nodeName, successRef);
-                    if (handleResult.objB instanceof S3Remote)
-                    {
-                        /*
-                         * In l2l-cases, shipping and shipped can both be set while the src-cluster is already done but
-                         * the dst-cluster has yet to finish. This is necessary to prevent an
-                         * AccessToDeletedDataException if the src-snap gets deleted before the dst-cluster sends the
-                         * "done"-message
-                         */
-                        snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
-                    }
+                    snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                     if (successRef)
                     {
                         snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
@@ -252,7 +243,11 @@ public class CtrlBackupShippingSentInternalCallHandler
                 else if (remoteForSchedule instanceof LinstorRemote)
                 {
                     StltRemote stltRemote = (StltRemote) handleResult.objB;
-                    Flux<ApiCallRc> queueFlux = backupL2LSrcApiCallHandler.startQueueIfReady(stltRemote, true);
+                    Flux<ApiCallRc> queueFlux = backupL2LSrcApiCallHandler.startQueueIfReady(
+                        stltRemote,
+                        successRef,
+                        true
+                    );
                     if (queueFlux != null)
                     {
                         ret = ret.concatWith(queueFlux);
@@ -263,7 +258,8 @@ public class CtrlBackupShippingSentInternalCallHandler
                             peerAccCtx.get(),
                             backupInfoMgr.getL2LSrcData(remoteForSchedule.getName(), handleResult.objB.getName()),
                             backupL2LSrcApiCallHandler,
-                            backgroundRunner
+                            backgroundRunner,
+                            successRef
                         );
                         taskScheduleService.rescheduleAt(cleanupTask, CLEANUP_AFTER);
                         backupInfoMgr.addTaskToCleanupData(stltRemote, cleanupTask);

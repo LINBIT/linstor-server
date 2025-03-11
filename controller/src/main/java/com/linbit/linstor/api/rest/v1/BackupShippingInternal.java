@@ -292,7 +292,9 @@ public class BackupShippingInternal
             RemoteName linstorRemoteName = new RemoteName(receiveRequest.linstorRemoteName);
             RemoteName stltRemoteName = new RemoteName(receiveRequest.stltRemoteName, true);
             BackupShippingSrcData data = backupInfoMgr.removeL2LSrcData(linstorRemoteName, stltRemoteName);
-            responses = backupL2LSrcApiCallHandler.startQueueIfReady(data.getStltRemote(), false)
+            // srcSuccessRef is always true, regardless of actual success - since this is only important for the src
+            // (aka backup-send)
+            responses = backupL2LSrcApiCallHandler.startQueueIfReady(data.getStltRemote(), true, false)
                 .contextWrite(
                     requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_RECEIVING_DONE, request)
                 );
