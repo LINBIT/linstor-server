@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ZFS snapshots can now be deleted while having ZFS clones (ZFS snapshots will be renamed)
 - Auto-quorum: Reworked auto-quorum property behaviour, property was removed and auto-quorum is now managed through
                the drbd option quorum. on-no-quorum properties will be inherited.
-- BackupShipping: start next queued shipment immediately when sending fails
+- BackupShip: start next queued shipment immediately when sending fails
 
 ### Fixed
 
@@ -44,8 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed "resource not found" bug when restoring from a snapshot when the source-resource was already deleted
 - Satellite: Fixed rare "attempt to replace active transMgr" error
 - SATELLITES_CAPACITY table NODE_NAME size was too short
-- BackupShipping: queued backups are now removed if the target cluster goes offline
-- BackupShipping: do not use snapshots that are deleting as base for an incremental backup
+- BackupShip: queued backups are now removed if the target cluster goes offline
+- BackupShip: do not use snapshots that are deleting as base for an incremental backup
+- BackupShip: remove snapshots from queued backups that have them as base when deleting them
 
 ## [1.30.4] - 2025-02-03
 

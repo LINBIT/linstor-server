@@ -783,6 +783,23 @@ public class BackupInfoManager
         }
     }
 
+    public void deletePrevSnapFromQueueItems(SnapshotDefinition prevSnapDfn)
+    {
+        synchronized (uploadQueues)
+        {
+            for (Entry<QueueItem, Set<Node>> entry : uploadQueues.entrySetInverted())
+            {
+                QueueItem item = entry.getKey();
+                if (prevSnapDfn.equals(item.prevSnapDfn))
+                {
+                    // set prevSnapDfn to null, forcing a full backup. Trying to get a new incremental base might be
+                    // possible for s3, but would probably not work for l2l
+                    item.prevSnapDfn = null;
+                }
+            }
+        }
+    }
+
     public QueueItem getItemFromPrevNodeUndecidedQueue(SnapshotDefinition snapDfn, AbsRemote remote)
     {
         synchronized (uploadQueues)
@@ -888,7 +905,7 @@ public class BackupInfoManager
         public final SnapshotDefinition snapDfn;
         public final AbsRemote remote;
         /* if prevSnapDfn is null, it means a full backup should be made */
-        public final @Nullable SnapshotDefinition prevSnapDfn;
+        public @Nullable SnapshotDefinition prevSnapDfn;
         public final @Nullable String preferredNode;
         public final @Nullable BackupShippingSrcData l2lData;
         /*

@@ -374,7 +374,7 @@ public class CtrlBackupApiCallHandler
                 {
                     apiCallRc.addEntry(
                         "Could not find any backups to delete.",
-                        ApiConsts.FAIL_INVLD_REQUEST | ApiConsts.MASK_BACKUP
+                        ApiConsts.INFO_NOOP | ApiConsts.MASK_BACKUP
                     );
                     flux = Flux.just(apiCallRc);
                 }

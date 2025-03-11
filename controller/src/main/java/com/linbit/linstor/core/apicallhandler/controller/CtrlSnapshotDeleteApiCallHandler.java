@@ -653,6 +653,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     {
         try
         {
+            // first remove snapDfn from backupQueueItems where it is a prevSnap
+            backupInfoMgr.deletePrevSnapFromQueueItems(snapshotDfn);
             snapshotDfn.markDeleted(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
