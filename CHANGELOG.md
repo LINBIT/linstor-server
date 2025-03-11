@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed "resource not found" bug when restoring from a snapshot when the source-resource was already deleted
 - Satellite: Fixed rare "attempt to replace active transMgr" error
 - SATELLITES_CAPACITY table NODE_NAME size was too short
+- BackupShipping: queued backups are now removed if the target cluster goes offline
 
 ## [1.30.4] - 2025-02-03
 

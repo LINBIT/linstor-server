@@ -200,7 +200,7 @@ public class BackupNodeFinder
                     ApiConsts.FAIL_NOT_ENOUGH_NODES,
                     "Backup shipping of resource '" + rscDfn.getName().displayValue +
                         "' cannot be started since there is no node available that supports backup shipping."
-                )
+                ).setSkipErrorReport(true)
             );
             throw new ApiRcException(apiCallRc);
         }
@@ -287,8 +287,8 @@ public class BackupNodeFinder
                 Node.Flags.EVICTED
             ) && rsc.getNode().getPeer(accCtx).isOnline();
         PriorityProps prioProps = new PriorityProps(
-            rsc.getNode().getProps(peerAccCtx.get()),
-            sysCfgRepo.getCtrlConfForView(peerAccCtx.get())
+            rsc.getNode().getProps(accCtx),
+            sysCfgRepo.getCtrlConfForView(accCtx)
         );
         String maxBackups = prioProps.getProp(
             ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE,

@@ -31,6 +31,7 @@ import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
@@ -44,6 +45,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,6 +76,7 @@ public class CtrlBackupQueueInternalCallHandler
     private final NodeRepository nodeRepo;
     private final SystemConfProtectionRepository sysCfgRepo;
     private final CtrlBackupApiHelper backupHelper;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public CtrlBackupQueueInternalCallHandler(
@@ -88,7 +91,8 @@ public class CtrlBackupQueueInternalCallHandler
         CtrlBackupCreateApiCallHandler backupCrtHandlerRef,
         NodeRepository nodeRepoRef,
         SystemConfProtectionRepository sysCfgRepoRef,
-        CtrlBackupApiHelper backupHelperRef
+        CtrlBackupApiHelper backupHelperRef,
+        ErrorReporter errorReporterRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -103,6 +107,7 @@ public class CtrlBackupQueueInternalCallHandler
         nodeRepo = nodeRepoRef;
         sysCfgRepo = sysCfgRepoRef;
         backupHelper = backupHelperRef;
+        errorReporter = errorReporterRef;
 
     }
 
@@ -438,7 +443,16 @@ public class CtrlBackupQueueInternalCallHandler
                 ),
                 (LinstorRemote) current.remote,
                 sysCtx
-            ).map(
+            ).doOnError(IOException.class, exc ->
+            {
+                errorReporter.logError(
+                    "sending prevSnap request to remote " + current.remote +
+                        "failed. Removing all backups queued to this remote"
+                );
+                backupInfoMgr.deleteFromQueue(current.remote);
+                errorReporter.reportError(exc);
+            })
+                .map(
                 resp -> scopeRunner.fluxInTransactionalScope(
                     "Backup shipping L2L: start queued shipping",
                     lockGuardFactory.create()

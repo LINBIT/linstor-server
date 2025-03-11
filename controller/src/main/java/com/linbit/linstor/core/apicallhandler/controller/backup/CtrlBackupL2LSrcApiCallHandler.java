@@ -68,6 +68,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -316,7 +317,15 @@ public class CtrlBackupL2LSrcApiCallHandler
                 ),
                 (LinstorRemote) remote,
                 sysCtx
-            )
+            ).doOnError(IOException.class, exc ->
+            {
+                errorReporter.logError(
+                    "sending prevSnap request to remote " + remote +
+                        "failed. Removing all backups queued to this remote"
+                );
+                backupInfoMgr.deleteFromQueue(remote);
+                errorReporter.reportError(exc);
+            })
                 .map(
                     resp -> scopeRunner.fluxInTransactionalScope(
                         "Backup shipping L2L: Create Snapshots",
@@ -552,6 +561,15 @@ public class CtrlBackupL2LSrcApiCallHandler
             // tell target cluster "Hey! Listen!"
             flux = Flux.merge(
                 restClient.sendBackupRequest(data, peerAccCtx.get())
+                    .doOnError(IOException.class, exc ->
+                    {
+                        errorReporter.logError(
+                            "sending backup request to remote " + data.getLinstorRemote() +
+                                "failed. Removing all backups queued to this remote"
+                        );
+                        backupInfoMgr.deleteFromQueue(data.getLinstorRemote());
+                        errorReporter.reportError(exc);
+                    })
                     .map(
                         restResponse -> scopeRunner.fluxInTransactionalScope(
                             "Backup shipping L2L: Starting shipment",
