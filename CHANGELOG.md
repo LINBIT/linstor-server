@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Satellite: Fixed rare "attempt to replace active transMgr" error
 - SATELLITES_CAPACITY table NODE_NAME size was too short
 - BackupShipping: queued backups are now removed if the target cluster goes offline
+- BackupShipping: do not use snapshots that are deleting as base for an incremental backup
 
 ## [1.30.4] - 2025-02-03
 

@@ -1567,7 +1567,14 @@ public class CtrlBackupRestoreApiCallHandler
             Props snapDfnProps = snapDfn.getSnapDfnProps(sysCtx);
             String fromSrcSnapDfnUuid = snapDfnProps
                 .getProp(InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID);
-            if (srcSnapDfnUuidsForIncrementalRef.contains(fromSrcSnapDfnUuid))
+            boolean shipmentFailed = snapDfn.getFlags()
+                .isSomeSet(
+                    sysCtx,
+                    SnapshotDefinition.Flags.PREPARE_SHIPPING_ABORT,
+                    SnapshotDefinition.Flags.SHIPPING_ABORT,
+                    SnapshotDefinition.Flags.DELETE
+                );
+            if (srcSnapDfnUuidsForIncrementalRef.contains(fromSrcSnapDfnUuid) && !shipmentFailed)
             {
                 Snapshot snap;
                 /*
