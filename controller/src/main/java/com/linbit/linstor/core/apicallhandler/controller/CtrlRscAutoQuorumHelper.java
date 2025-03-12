@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -16,15 +17,16 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.api.ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -44,21 +46,16 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
     private static final String PROP_VAL_QUORUM_MAJORITY = "majority";
     private static final String PROP_VAL_QUORUM_OFF = "off";
 
-    private static final String PROP_KEY_ON_NO_QUORUM = "on-no-quorum";
-
     private final SystemConfRepository systemConfRepository;
-    private final CtrlRscLayerDataFactory layerDataHelper;
     private final Provider<AccessContext> peerCtx;
 
     @Inject
     public CtrlRscAutoQuorumHelper(
         SystemConfRepository systemConfRepositoryRef,
-        CtrlRscLayerDataFactory layerDataHelperRef,
         @PeerContext Provider<AccessContext> peerCtxRef
     )
     {
         systemConfRepository = systemConfRepositoryRef;
-        layerDataHelper = layerDataHelperRef;
         peerCtx = peerCtxRef;
     }
 
@@ -71,19 +68,18 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
     @Override
     public void manage(AutoHelperContext ctx)
     {
-        String autoQuorum = getAutoQuorum(ctx.rscDfn);
-        if (autoQuorum != null && !autoQuorum.equals(ApiConsts.VAL_DRBD_AUTO_QUORUM_DISABLED))
+        if (isAutoQuorumEnabled(ctx.rscDfn))
         {
             try
             {
-                Set<Node> involvedNodesWithoutQuorumSupport = getNodesNotSupportingQuroum(peerCtx.get(), ctx.rscDfn);
+                Set<Node> involvedNodesWithoutQuorumSupport = getNodesNotSupportingQuorum(peerCtx.get(), ctx.rscDfn);
                 Props props = ctx.rscDfn.getProps(peerCtx.get());
 
                 if (isQuorumFeasible(ctx.rscDfn))
                 {
                     if (involvedNodesWithoutQuorumSupport.isEmpty())
                     {
-                        activateQuorum(ctx.responses, autoQuorum, props);
+                        activateQuorum(ctx.responses, props);
                     }
                     else
                     {
@@ -94,7 +90,7 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
                             String.format(
                                 " as the node%s %s do%s not support DRBD quorum",
                                 singular ? "" : "s",
-                                involvedNodesWithoutQuorumSupport.toString(),
+                                involvedNodesWithoutQuorumSupport,
                                 singular ? "es" : ""
                             )
                         );
@@ -122,19 +118,67 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
                 throw new ApiDatabaseException(exc);
             }
         }
+        else
+        {
+            // set depending prio prop
+            setQuorumFromUser(ctx.responses, ctx.rscDfn);
+        }
     }
 
-    private void activateQuorum(ApiCallRcImpl apiCallRcImpl, String autoQuorum, Props props)
+    private void setQuorumFromUser(ApiCallRcImpl apiCallRc, ResourceDefinition rscDfn)
+    {
+        try
+        {
+            var quorumSetBy = getQuorumSetByProp(getPrioProps(rscDfn, peerCtx.get()));
+            if (!InternalApiConsts.SET_BY_VALUE_LINSTOR.equalsIgnoreCase(quorumSetBy.objA))
+            {
+                Props rscDfnProps = rscDfn.getProps(peerCtx.get());
+                String oldQuorumProp = rscDfnProps.getProp(PROP_KEY_QUORUM, NAMESPC_DRBD_RESOURCE_OPTIONS);
+                String quorumProp = quorumSetBy.objB.getProp(PROP_KEY_QUORUM, NAMESPC_DRBD_RESOURCE_OPTIONS);
+                quorumProp = quorumProp == null ? PROP_VAL_QUORUM_MAJORITY : quorumProp;
+                if (!quorumProp.equalsIgnoreCase(oldQuorumProp))
+                {
+                    rscDfn.getProps(peerCtx.get()).setProp(PROP_KEY_QUORUM, quorumProp, NAMESPC_DRBD_RESOURCE_OPTIONS);
+
+                    apiCallRc.addEntry(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.INFO_PROP_SET,
+                            String.format(
+                                "Resource-definition property '%s/%s' updated from %s to '%s' by User",
+                                NAMESPC_DRBD_RESOURCE_OPTIONS,
+                                PROP_KEY_QUORUM,
+                                (oldQuorumProp == null ? "undefined" : "'" + oldQuorumProp + "'"),
+                                quorumProp
+                            )
+                        )
+                    );
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "checking auto-quorum feature " + getRscDfnDescriptionInline(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private void activateQuorum(ApiCallRcImpl apiCallRcImpl, Props props)
         throws InvalidValueException, AccessDeniedException, DatabaseException
     {
         String oldQuorum = props.setProp(
             PROP_KEY_QUORUM,
             PROP_VAL_QUORUM_MAJORITY,
-            NAMESPC_DRBD_RESOURCE_OPTIONS
-        );
-        String oldOnNoQuorum = props.setProp(
-            PROP_KEY_ON_NO_QUORUM,
-            autoQuorum,
             NAMESPC_DRBD_RESOURCE_OPTIONS
         );
 
@@ -144,26 +188,11 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.INFO_PROP_SET,
                     String.format(
-                        "Resource-definition property '%s/%s' updated from %s to '%s' by auto-quorum",
+                        "Resource-definition property '%s/%s' updated from %s to '%s' by AutoQuorum",
                         NAMESPC_DRBD_RESOURCE_OPTIONS,
                         PROP_KEY_QUORUM,
                         (oldQuorum == null ? "undefined" : "'" + oldQuorum + "'"),
                         PROP_VAL_QUORUM_MAJORITY
-                    )
-                )
-            );
-        }
-        if (!autoQuorum.equals(oldOnNoQuorum))
-        {
-            apiCallRcImpl.addEntry(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.INFO_PROP_SET,
-                    String.format(
-                        "Resource-definition property '%s/%s' updated from %s to '%s' by auto-quorum",
-                        NAMESPC_DRBD_RESOURCE_OPTIONS,
-                        PROP_KEY_ON_NO_QUORUM,
-                        (oldQuorum == null ? "undefined" : "'" + oldQuorum + "'"),
-                        autoQuorum
                     )
                 )
             );
@@ -174,7 +203,6 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
         throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
         String oldQuorum = props.setProp(PROP_KEY_QUORUM, PROP_VAL_QUORUM_OFF, NAMESPC_DRBD_RESOURCE_OPTIONS);
-        String oldOnNoQuorum = props.removeProp(PROP_KEY_ON_NO_QUORUM, NAMESPC_DRBD_RESOURCE_OPTIONS);
 
         if (oldQuorum != null && !oldQuorum.equals(PROP_VAL_QUORUM_OFF))
         {
@@ -190,28 +218,14 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
                 )
             );
         }
-        if (oldOnNoQuorum != null)
-        {
-            apiCallRcImpl.addEntry(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.INFO_PROP_REMOVED,
-                    String.format(
-                        "Resource-definition property '%s/%s' was removed%s",
-                        NAMESPC_DRBD_RESOURCE_OPTIONS,
-                        PROP_KEY_ON_NO_QUORUM,
-                        reason
-                    )
-                )
-            );
-        }
     }
 
-    public String getAutoQuorum(ResourceDefinition rscDfn)
+    public boolean isAutoQuorumEnabled(ResourceDefinition rscDfn)
     {
-        String autoQuorum;
+        String quorumSetBy;
         try
         {
-            autoQuorum = getAutoQuorumProp(getPrioProps(rscDfn, peerCtx.get()));
+            quorumSetBy = getQuorumSetByProp(getPrioProps(rscDfn, peerCtx.get())).objA;
         }
         catch (InvalidKeyException exc)
         {
@@ -225,7 +239,7 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
-        return autoQuorum;
+        return InternalApiConsts.SET_BY_VALUE_LINSTOR.equalsIgnoreCase(quorumSetBy);
     }
 
     private PriorityProps getPrioProps(ResourceDefinition rscDfn, AccessContext peerAccCtx)
@@ -272,22 +286,23 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
 
     public static boolean isAutoQuorumEnabled(PriorityProps prioProps)
     {
-        String autoQuorum = getAutoQuorumProp(prioProps);
-        return autoQuorum != null && !autoQuorum.equals(ApiConsts.VAL_DRBD_AUTO_QUORUM_DISABLED);
+        var quorumSetBy = getQuorumSetByProp(prioProps);
+        return InternalApiConsts.SET_BY_VALUE_LINSTOR.equalsIgnoreCase(quorumSetBy.objA);
     }
 
-    private static String getAutoQuorumProp(PriorityProps prioProps)
+    private static Pair<String, ReadOnlyProps> getQuorumSetByProp(PriorityProps prioProps)
     {
-        return prioProps.getProp(ApiConsts.KEY_DRBD_AUTO_QUORUM, ApiConsts.NAMESPC_DRBD_OPTIONS);
+        return prioProps.getPropAndContainer(
+            ApiConsts.KEY_QUORUM_SET_BY, ApiConsts.NAMESPC_INTERNAL_DRBD, InternalApiConsts.SET_BY_VALUE_LINSTOR);
     }
 
     public static boolean isQuorumSupportedByAllNodes(AccessContext accCtx, ResourceDefinition rscDfn)
         throws AccessDeniedException
     {
-        return getNodesNotSupportingQuroum(accCtx, rscDfn).isEmpty();
+        return getNodesNotSupportingQuorum(accCtx, rscDfn).isEmpty();
     }
 
-    public static Set<Node> getNodesNotSupportingQuroum(AccessContext accCtx, ResourceDefinition rscDfn)
+    public static Set<Node> getNodesNotSupportingQuorum(AccessContext accCtx, ResourceDefinition rscDfn)
         throws AccessDeniedException
     {
         Set<Node> ret = new TreeSet<>();
@@ -305,9 +320,10 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
 
     public static boolean supportsQuorum(AccessContext accCtx, Node node) throws AccessDeniedException
     {
-        return node.getPeer(accCtx)
+        ExtToolsInfo drbdInfo = node.getPeer(accCtx)
             .getExtToolsManager()
-            .getExtToolInfo(ExtTools.DRBD9_KERNEL)
+            .getExtToolInfo(ExtTools.DRBD9_KERNEL);
+        return drbdInfo != null && drbdInfo
             .hasVersionOrHigher(new ExtToolsInfo.Version(9, 0, 18));
     }
 }

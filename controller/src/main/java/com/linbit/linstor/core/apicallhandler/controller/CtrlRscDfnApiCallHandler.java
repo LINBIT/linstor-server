@@ -720,10 +720,23 @@ public class CtrlRscDfnApiCallHandler
             )
         );
 
+        String drbdQuorum = ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM;
+        boolean drbdQuorumChanged = false;
+        if (overrideProps.containsKey(drbdQuorum))
+        {
+            overrideProps.put(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY, "user");
+            drbdQuorumChanged = true;
+        }
+
+        if (deletePropKeys.contains(drbdQuorum))
+        {
+            deletePropKeys.add(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY);
+            drbdQuorumChanged = true;
+        }
+
         String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
-        String autoQuorumKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM;
         if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey) ||
-            overrideProps.containsKey(autoQuorumKey) || deletePropKeys.contains(autoQuorumKey))
+            drbdQuorumChanged)
         {
             AutoHelperContext autoHelperCtx = new AutoHelperContext(responsesRef, contextRef, rscDfn);
             ctrlRscAutoHelper.manage(autoHelperCtx);

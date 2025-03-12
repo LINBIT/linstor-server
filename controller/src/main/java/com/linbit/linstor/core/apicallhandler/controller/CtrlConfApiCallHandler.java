@@ -79,6 +79,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -135,6 +136,8 @@ public class CtrlConfApiCallHandler
     private final TaskScheduleService taskScheduleService;
     private final BalanceResourcesTask balanceResourcesTask;
 
+    private final CtrlRscAutoHelper ctrlRscAutoHelper;
+
     public enum LinstorEncryptionStatus
     {
         UNSET,
@@ -189,7 +192,8 @@ public class CtrlConfApiCallHandler
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
         CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef,
         TaskScheduleService taskScheduleServiceRef,
-        BalanceResourcesTask balanceResourcesTaskRef
+        BalanceResourcesTask balanceResourcesTaskRef,
+        CtrlRscAutoHelper ctrlRscAutoHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -222,6 +226,7 @@ public class CtrlConfApiCallHandler
         ctrlBackupQueueHandler = ctrlBackupQueueHandlerRef;
         taskScheduleService = taskScheduleServiceRef;
         balanceResourcesTask = balanceResourcesTaskRef;
+        ctrlRscAutoHelper = ctrlRscAutoHelperRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -263,6 +268,54 @@ public class CtrlConfApiCallHandler
                 MDC.getCopyOfContextMap()
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> handleAutoQuorum(
+        Collection<ResourceDefinition> rscDfns,
+        Map<String, String> overrideProps, Set<String> deletePropKeys,
+        ApiCallRcImpl apiCallRc)
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        for (ResourceDefinition rscDfn : rscDfns)
+        {
+            ResponseContext context = CtrlRscDfnApiCallHandler.makeResourceDefinitionContext(
+                ApiOperation.makeModifyOperation(),
+                rscDfn.getName().displayValue
+            );
+
+            String drbdQuorum = ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM;
+            boolean drbdQuorumChanged = false;
+            if (overrideProps.containsKey(drbdQuorum))
+            {
+                overrideProps.put(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY, "user");
+                drbdQuorumChanged = true;
+            }
+
+            if (deletePropKeys.contains(drbdQuorum))
+            {
+                deletePropKeys.add(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY);
+                drbdQuorumChanged = true;
+            }
+
+            // run auto quorum/tiebreaker manage code
+            String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" +
+                ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
+            if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey)
+                || drbdQuorumChanged)
+            {
+                ApiCallRcImpl responses = new ApiCallRcImpl();
+                CtrlRscAutoHelper.AutoHelperContext autoHelperCtx =
+                    new CtrlRscAutoHelper.AutoHelperContext(responses, context, rscDfn);
+                ctrlRscAutoHelper.manage(
+                    autoHelperCtx, new HashSet<>(Arrays.asList(
+                        CtrlRscAutoHelper.AutoHelperType.AutoQuorum, CtrlRscAutoHelper.AutoHelperType.TieBreaker)));
+
+                apiCallRc.addEntries(autoHelperCtx.responses);
+                flux = flux.concatWith(Flux.merge(autoHelperCtx.additionalFluxList));
+            }
+        }
+
+        return flux;
     }
 
     private Flux<ApiCallRc> modifyCtrlInTransaction(
@@ -359,6 +412,9 @@ public class CtrlConfApiCallHandler
                 ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty())
                     .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2()));
         }
+
+        fluxUpdRscDfns = fluxUpdRscDfns.concatWith(handleAutoQuorum(
+            rscDfnMap.values(), overridePropsRef, deletePropKeysRef, apiCallRc));
 
         Flux<ApiCallRc> autoSnapFlux;
         try
@@ -833,11 +889,24 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_TCP_PORT_RANGE:
                             setTcpPort(key, namespace, normalized, snapShipPortPool, apiCallRc, propChangedListener);
                             break;
-                        case ApiConsts.KEY_SEARCH_DOMAIN:
-                            // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER:
-                            // fall-through
-                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM:
+                            notifyStlts = setCtrlProp(
+                                peerAccCtx.get(),
+                                key,
+                                normalized,
+                                namespace,
+                                propChangedListener
+                            );
+                            break;
+                        case ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM:
+                            setCtrlProp(
+                                peerAccCtx.get(),
+                                ApiConsts.KEY_QUORUM_SET_BY,
+                                "user",
+                                ApiConsts.NAMESPC_INTERNAL_DRBD,
+                                propChangedListener
+                            );
+
                             notifyStlts = setCtrlProp(
                                 peerAccCtx.get(),
                                 key,
@@ -890,6 +959,7 @@ public class CtrlConfApiCallHandler
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                         }
                         break;
+                        case ApiConsts.KEY_SEARCH_DOMAIN: // fall-through
                         case ApiConsts.KEY_STOR_POOL_MAX_FREE_CAPACITY_OVERSUBSCRIPTION_RATIO: // fall-through
                         case ApiConsts.KEY_STOR_POOL_MAX_OVERSUBSCRIPTION_RATIO: // fall-through
                         case ApiConsts.KEY_STOR_POOL_MAX_TOTAL_CAPACITY_OVERSUBSCRIPTION_RATIO: // fall-through
@@ -1416,6 +1486,10 @@ public class CtrlConfApiCallHandler
                             break;
                         case ApiConsts.KEY_TCP_PORT_RANGE:
                             snapShipPortPool.reloadRange();
+                            break;
+                        case ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM:
+                            systemConfRepository.removeCtrlProp(
+                                peerAccCtx.get(), ApiConsts.KEY_QUORUM_SET_BY, ApiConsts.NAMESPC_INTERNAL_DRBD);
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER:
                         {

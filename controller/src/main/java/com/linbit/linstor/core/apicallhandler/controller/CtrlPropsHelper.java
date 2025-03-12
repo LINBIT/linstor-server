@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -547,6 +548,12 @@ public class CtrlPropsHelper
                     {
                         listener.changed(key, normalized, oldVal);
                     }
+
+                    if (key.equalsIgnoreCase(
+                        ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM))
+                    {
+                        targetProps.setProp(ApiConsts.KEY_QUORUM_SET_BY, "user", ApiConsts.NAMESPC_INTERNAL_DRBD);
+                    }
                 }
                 catch (AccessDeniedException exc)
                 {
@@ -727,6 +734,12 @@ public class CtrlPropsHelper
                 if (listener != null)
                 {
                     listener.changed(key, null, deletedValue);
+                }
+
+                if (key.equalsIgnoreCase(
+                    ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM))
+                {
+                    props.removeProp(ApiConsts.KEY_QUORUM_SET_BY, ApiConsts.NAMESPC_INTERNAL_DRBD);
                 }
             }
             else

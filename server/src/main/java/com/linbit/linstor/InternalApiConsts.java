@@ -226,6 +226,7 @@ public class InternalApiConsts
     public static final String DEFAULT_RSC_GRP_NAME = "DfltRscGrp";
     public static final String NODE_UNAME = "NodeUname";
     public static final String DEFAULT_AUTO_SNAPSHOT_PREFIX = "autoSnap";
+    public static final String SET_BY_VALUE_LINSTOR = "linstor";
 
     // drbd option consts
     public static final String NAMESPC_DRBD = "Drbd";
@@ -233,6 +234,7 @@ public class InternalApiConsts
     public static final String DRBD_AUTO_VERIFY_ALGO = "auto-verify-alg";
     public static final String KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_LIST = "auto-verify-algo-allowed-list";
     public static final String KEY_DRBD_NODE_IDS_TO_RESET = "NodeIdsToReset";
+    public static final String KEY_DRBD_QUORUM = "quorum";
 
     // external files consts
     public static final String NAMESPC_FILES = "files";

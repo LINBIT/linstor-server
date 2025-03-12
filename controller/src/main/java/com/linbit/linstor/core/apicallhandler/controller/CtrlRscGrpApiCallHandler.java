@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -702,11 +703,24 @@ public class CtrlRscGrpApiCallHandler
                 rscDfn.getName().displayValue
             );
 
+            String drbdQuorum = ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM;
+            boolean drbdQuorumChanged = false;
+            if (overrideProps.containsKey(drbdQuorum))
+            {
+                overrideProps.put(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY, "user");
+                drbdQuorumChanged = true;
+            }
+
+            if (deletePropKeys.contains(drbdQuorum))
+            {
+                deletePropKeys.add(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY);
+                drbdQuorumChanged = true;
+            }
+
             // run auto quorum/tiebreaker manage code
             String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
-            String autoQuorumKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM;
             if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey)
-                || overrideProps.containsKey(autoQuorumKey) || deletePropKeys.contains(autoQuorumKey))
+                || drbdQuorumChanged)
             {
                 ApiCallRcImpl responses = new ApiCallRcImpl();
                 CtrlRscAutoHelper.AutoHelperContext autoHelperCtx = new CtrlRscAutoHelper.AutoHelperContext(responses, context, rscDfn);

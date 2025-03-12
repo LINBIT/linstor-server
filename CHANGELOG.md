@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Notify controller about replication state changes in DRBD
 - Notify controller about done percentage changes in DRBD
-- Encrytion-API: added a GET endpoint to ask for the master passphrase status
+- Encryption-API: added a GET endpoint to ask for the master passphrase status
 
 ### Changed
 
@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Snapshot rollback now does internally a resource delete + snapshot restore
 - ZFS resource can now be deleted while having ZFS snapshots (ZFS volumes will be renamed)
 - ZFS snapshots can now be deleted while having ZFS clones (ZFS snapshots will be renamed)
+- Auto-quorum: Reworked auto-quorum property behaviour, property was removed and auto-quorum is now managed through
+               the drbd option quorum. on-no-quorum properties will be inherited.
 
 ### Fixed
 
