@@ -110,7 +110,7 @@ public class K8sCrdTransaction
         createOrReplace(dbTable, k8sRsc, existingCrd == null);
     }
 
-    public void createOrReplace(DatabaseTable dbTable, LinstorCrd<?> k8sRsc, boolean isNew)
+    private void createOrReplace(DatabaseTable dbTable, LinstorCrd<?> k8sRsc, boolean isNew)
     {
         if (isNew)
         {

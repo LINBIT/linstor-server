@@ -164,8 +164,7 @@ public class K8sCrdEngine implements DbEngine
             );
 
             // although tx.getclient is a cached client, the cache should be filled on startup.
-            boolean isNew = tx.getClient(tableRef).get(crd.getK8sKey()) == null;
-            tx.createOrReplace(tableRef, crd, isNew);
+            tx.upsert(tableRef, crd);
         }
         catch (AccessDeniedException accDeniedExc)
         {
