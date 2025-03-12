@@ -88,14 +88,23 @@ public class PriorityProps
         return this;
     }
 
-    public String getProp(String key, String namespace) throws InvalidKeyException
+    /**
+     * Get the prio property and the container it is included.
+     * @param key Property key
+     * @param namespace namespace the property is in.
+     * @return A Pair containing the property value and the container it is contained.
+     * @throws InvalidKeyException
+     */
+    public Pair<String, ReadOnlyProps> getPropAndContainer(String key, String namespace) throws InvalidKeyException
     {
         String value = null;
+        @Nullable ReadOnlyProps container = null;
         for (Pair<ReadOnlyProps, String> pair : propList)
         {
             value = pair.objA.getProp(key, namespace);
             if (value != null)
             {
+                container = pair.objA;
                 break;
             }
         }
@@ -104,7 +113,12 @@ public class PriorityProps
             final String fullKey = namespace != null ? namespace + ReadOnlyProps.PATH_SEPARATOR + key : key;
             value = fallbackMap.get(prepStoreKey(fullKey));
         }
-        return value;
+        return new Pair<>(value, container);
+    }
+
+    public String getProp(String key, String namespace) throws InvalidKeyException
+    {
+        return getPropAndContainer(key, namespace).objA;
     }
 
     public String getProp(String key, String namespace, String defaultValue) throws InvalidKeyException
@@ -116,6 +130,22 @@ public class PriorityProps
     public String getProp(String key) throws InvalidKeyException
     {
         return getProp(key, null);
+    }
+
+    /**
+     * Get the prio property and the container it is included if not found defaultValue is returned.
+     * @param key Property key
+     * @param namespace namespace the property is in.
+     * @param defaultValue Default value if property not found.
+     * @return A Pair containing the property value and the container it is contained, if not found and the default
+     *         value is returned, the container is null.
+     * @throws InvalidKeyException
+     */
+    public Pair<String, ReadOnlyProps> getPropAndContainer(String key, String namespace, String defaultValue)
+        throws InvalidKeyException
+    {
+        var result = getPropAndContainer(key, namespace);
+        return result.objA == null ? new Pair<>(defaultValue, null) : result;
     }
 
     private String prepStoreKey(String key)
