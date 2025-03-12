@@ -38,6 +38,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -220,10 +221,12 @@ public class ResourceStateEventHandler implements EventHandler
         NodeName nodeName = eventIdentifierRef.getNodeName();
         ResourceName resourceName = eventIdentifierRef.getResourceName();
 
-            // EventProcessor has already taken write lock on NodesMap
-            try (LockGuard ignored = lockGuardFactory.build(LockType.WRITE, LockObj.RSC_DFN_MAP))
+        // EventProcessor has already taken write lock on NodesMap
+        try (LockGuard ignored = lockGuardFactory.build(LockType.WRITE, LockObj.RSC_DFN_MAP))
+        {
+            @Nullable Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, resourceName, false);
+            if (rsc != null && !rsc.isDeleted())
             {
-                Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, resourceName, true);
                 StateFlags<Flags> flags = rsc.getStateFlags();
                 if (inUseRef != null && inUseRef)
                 {
@@ -238,15 +241,16 @@ public class ResourceStateEventHandler implements EventHandler
                     autoDiskfulTask.update(rsc);
                 }
             }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError("ApiCtx does not have enough privileges");
-            }
-            catch (DatabaseException exc)
-            {
-                throw new ApiDatabaseException(exc);
-            }
-            ctrlTransactionHelper.commit();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("ApiCtx does not have enough privileges");
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        ctrlTransactionHelper.commit();
     }
 
     private void processEventUpdateVolatile(
