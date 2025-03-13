@@ -36,7 +36,6 @@ override_dh_install:
 	cp $(CURDIR)/controller/build/libs/* $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib
 	if [ -f "$(CURDIR)/libs/controller-st.jar" ]; then cp "$(CURDIR)/libs/controller-st.jar" $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib; fi
 	mkdir -p $(CURDIR)/debian/linstor-controller/etc/linstor
-	cp $(CURDIR)/docs/linstor.toml-example $(CURDIR)/debian/linstor-controller/etc/linstor/
 	# diff and copy additional controller jars
 	rm $(CURDIR)/controller/build/install/controller/lib/jclcrypto*.jar $(CURDIR)/controller/build/install/controller/lib/server-*.jar # comes already in linstor-common
 	# for some reason install/lib/*.jars are 755

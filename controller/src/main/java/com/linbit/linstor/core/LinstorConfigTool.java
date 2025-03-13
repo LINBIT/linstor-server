@@ -73,12 +73,100 @@ public class LinstorConfigTool
     private static final String DB_USER = "linstor";
     private static final String DB_PASSWORD = "linstor";
 
-    private static List<String> supportedDbs = Arrays.asList("h2", "postgresql");
+    private static final List<String> supportedDbs = Arrays.asList("h2", "postgresql");
 
     private static final String DB_CFG = "[db]\n" +
         "  user = \"%s\"\n" +
         "  password = \"%s\"\n" +
         "  connection_url = \"%s\"\n";
+
+    private static final String DEF_CTRL_TOML = "[db]\n" +
+        "# user = \"linstor\"\n" +
+        "# password = \"linstor\"\n" +
+        "\n" +
+        "## jdbc connection url\n" +
+        "# connection_url = \"jdbc:h2:/var/lib/linstor/linstordb\"\n" +
+        "\n" +
+        "## if you use TLS with etcd/crd\n" +
+        "# ca_certificate = \"ca.pem\"\n" +
+        "# client_certificate = \"client.pem\"\n" +
+        "# client_key_pkcs8_pem = \"client-key.pkcs8\"\n" +
+        "## set client_key_password if private key has a password\n" +
+        "# client_key_password = \"mysecret\"\n" +
+        "\n" +
+        "## for etcd\n" +
+        "## do not set user field if no authentication required\n" +
+        "# connection_url = \"etcd://etcdhost:2379\"\n" +
+        "    [db.etcd]\n" +
+        "    # prefix = \"/LINSTOR/\"\n" +
+        "\n" +
+        "## for k8s crd\n" +
+        "# connection_url = \"k8s\"\n" +
+        "    [db.k8s]\n" +
+        "    ## how often to retry connecting to k8s crd\n" +
+        "    # request_retries = 5\n" +
+        "    ## how many rollack retries\n" +
+        "    # rollback_retires = 5\n" +
+        "\n" +
+        "[encrypt]\n" +
+        "## provide passphrase here to auto unlock Linstor encryption master passphrase\n" +
+        "# passphrase = \"mysecret\"\n" +
+        "\n" +
+        "[http]\n" +
+        "# enabled = true\n" +
+        "# listen_addr = \"::\"\n" +
+        "# port = 3370\n" +
+        "\n" +
+        "[https]\n" +
+        "# enabled = false\n" +
+        "# listen_addr = \"::\"\n" +
+        "# port = 3371\n" +
+        "\n" +
+        "## keystore containing the https server certificate\n" +
+        "# keystore = \"/path/to/valid/file.jks\"\n" +
+        "\n" +
+        "## keystore password to unlock the server certificate\n" +
+        "# keystore_password = \"linstor\"\n" +
+        "\n" +
+        "## to only allow clients with the correct certificates\n" +
+        "# truststore = \"/path/to/valid/truststore.jks\n" +
+        "# truststore_password = \"password\"\n" +
+        "\n" +
+        "[ldap]\n" +
+        "# enabled = false\n" +
+        "\n" +
+        "## allow_public_access: if no authorization fields are given allow users to work with the public context\n" +
+        "# allow_public_access = false\n" +
+        "\n" +
+        "## uri: ldap uri to use e.g.: ldap://hostname\n" +
+        "# uri = \"\"\n" +
+        "\n" +
+        "## distinguished name: {user} can be used as template for the user name\n" +
+        "# dn = \"uid={user}\"\n" +
+        "\n" +
+        "## search base for the search_filter field\n" +
+        "# search_base = \"\"\n" +
+        "\n" +
+        "## search_filter: ldap filter to restrict users on memberships\n" +
+        "# search_filter = \"\"\n" +
+        "\n" +
+        "[logging]\n" +
+        "# level = \"info\" # minimal log level 3rd party libs, can be trace, debug, info, warning, error\n" +
+        "# linstor_level = \"info\" # minimal log level for Linstor, can be trace, debug, info, warning, error\n" +
+        "\n" +
+        "## path to the rest access log, if relative path it will be resolved to the linstor log directory\n" +
+        "# rest_access_log_path = \"rest-access.log\"\n" +
+        "\n" +
+        "## rest_access_log_mode configures the way the log is archived\n" +
+        "##   - \"APPEND\" will always append to the same file\n" +
+        "##   - \"ROTATE_HOURLY\" will rotate the file on an hourly basis\n" +
+        "##   - \"ROTATE_DAILY\"  will rotate the file on a daily basis\n" +
+        "##   - \"NO_LOG\" will not write a access log file\n" +
+        "# rest_access_log_mode = \"NO_LOG\"\n" +
+        "\n" +
+        "[webUi]\n" +
+        "## path to the web ui directory\n" +
+        "# directory = \"./ui\"\n";
 
     @CommandLine.Command(name = "linstor-config", subcommands = {
         CmdSetPlainPort.class,
@@ -123,25 +211,18 @@ public class LinstorConfigTool
 
             if (dbInfo != null)
             {
-                os.write("# Basic linstor configuration toml file\n# For more options check documentation\n\n"
-                    .getBytes(StandardCharsets.UTF_8));
-                os.write(
-                    String.format(
-                        DB_CFG,
-                        DB_USER,
-                        DB_PASSWORD,
-                        dbInfo.jdbcUrl(dbpath)
-                    ).getBytes(StandardCharsets.UTF_8)
-                );
+                String ctrlToml = DEF_CTRL_TOML
+                    .replace("# user = ", "user = ")
+                    .replace("# password = ", "password = ")
+                    .replaceFirst("# connection_url = \".*\"", "connection_url = \"" + dbInfo.jdbcUrl(dbpath) + "\"");
+                os.write(ctrlToml.getBytes(StandardCharsets.UTF_8));
             }
             else
             {
-                System.err.println(
-                    String.format(
-                        "Database type '%s' not supported. Use one of: '%s'",
-                        dbtype,
-                        String.join("', '", supportedDbs))
-                );
+                System.err.printf(
+                    "Database type '%s' not supported. Use one of: '%s'%n",
+                    dbtype,
+                    String.join("', '", supportedDbs));
                 System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
             return null;

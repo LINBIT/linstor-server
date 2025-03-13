@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BalanceResource: Improved selection when deleting excess resource
 - AutoDiskfulTask: Improved selection when deleting excess resource
 - Tiebreaker: Improved decision making if a deleting resource should be kept as tiebreaker
+- Write a full documented linstor.toml and remove the linstor.toml-example
 
 ### Fixed
 
