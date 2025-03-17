@@ -158,6 +158,8 @@ public class TcpConnectorPeer implements Peer
 
     private final Map<String, Property> dynamicProperties = new HashMap<>();
 
+    private final static long CLOSE_FLUSH_TIMEOUT_MS = 500;
+
     protected TcpConnectorPeer(
         ErrorReporter errorReporterRef,
         CommonSerializer commonSerializerRef,
@@ -541,10 +543,39 @@ public class TcpConnectorPeer implements Peer
         connector.closeConnection(this, allowReconnect);
     }
 
+    private void waitOutMessagesFlushed()
+    {
+        // wait up to CLOSE_FLUSH_TIMEOUT_MS for out messages to be flushed
+        long start = System.currentTimeMillis();
+        synchronized (this)
+        {
+            while (!msgOutQueue.isEmpty() || msgOut != null)
+            {
+                // wait till
+                try
+                {
+                    this.wait(10);
+                }
+                catch (InterruptedException exc)
+                {
+                    errorReporter.reportError(exc);
+                    break;
+                }
+
+                if (System.currentTimeMillis() >= start + CLOSE_FLUSH_TIMEOUT_MS)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
     @Override
     public void connectionClosing()
     {
         connected = false;
+        waitOutMessagesFlushed();
+
         authenticated = false;
 
         // deactivate all interest in READ or WRITE operations

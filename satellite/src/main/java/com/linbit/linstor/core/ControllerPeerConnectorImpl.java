@@ -155,7 +155,9 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                         InternalApiConsts.API_OTHER_CONTROLLER
                     );
                 }
-                // no need to close connection, controller will do so when it finished processing the OUTDATED message
+                // If we don't actively close the connection here, it will take some time(or forever)
+                // to close it and the garbage collector starting freeing the objects
+                controllerPeer.closeConnection();
             }
             ctrlUuid = ctrlUuidRef;
             controllerPeer = controllerPeerRef;
