@@ -16,6 +16,10 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.linstor.core.types.NodeId;
+import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventService;
+import com.linbit.linstor.layer.drbd.drbdstate.DrbdResource;
+import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
+import com.linbit.linstor.layer.drbd.drbdstate.ResourceObserver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -25,6 +29,7 @@ import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -34,6 +39,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class DrbdAdm
@@ -42,28 +49,29 @@ public class DrbdAdm
     public static final String DRBDMETA_UTIL  = "drbdmeta";
     public static final String DRBDSETUP_UTIL = "drbdsetup";
 
-    public static final String ALL_KEYWORD = "all";
-    public static final String DRBDCTRL_RES_NAME = ".drbdctrl";
-
     public static final int DRBDMETA_NO_VALID_MD_RC = 255;
     public static final int DRBDMETA_STRANGE_BM_OFFSET = 1;
 
     public static final int WAIT_CONNECT_RES_TIME = 10;
+    private static final long DOWN_WAIT_TIMEOUT_SEC = 5;
 
     private final ExtCmdFactory extCmdFactory;
     private final AccessContext sysCtx;
     private final StltConfigAccessor stltCfgAccessor;
+    private final DrbdEventService drbdEventService;
 
     @Inject
     public DrbdAdm(
         ExtCmdFactory extCmdFactoryRef,
         @SystemContext AccessContext sysCtxRef,
-        StltConfigAccessor stltCfgAccessorRef
+        StltConfigAccessor stltCfgAccessorRef,
+        DrbdEventService drbdEventServiceRef
     )
     {
         extCmdFactory = extCmdFactoryRef;
         sysCtx = sysCtxRef;
         stltCfgAccessor = stltCfgAccessorRef;
+        drbdEventService = drbdEventServiceRef;
     }
 
     /**
@@ -159,11 +167,64 @@ public class DrbdAdm
 
     /**
      * Shuts down (unconfigures) a DRBD resource
-     * @param rscNameSuffix
+     * @param drbdRscData
+     * @throws StorageException
      */
-    public void down(DrbdRscData<Resource> drbdRscData) throws ExtCmdFailedException
+    public void down(DrbdRscData<Resource> drbdRscData) throws ExtCmdFailedException, StorageException
     {
-        simpleSetupCommand(drbdRscData, (VolumeNumber) null, "down");
+        down(drbdRscData, true);
+    }
+
+    /**
+     * Shuts down (unconfigures) a DRBD resource. Waits for the "destroy resource" event if
+     * <code>waitForDestroyEventRef</code> is true
+     * @param drbdRscData
+     * @param waitForDestroyEventRef
+     * @throws StorageException
+     */
+    public void down(DrbdRscData<Resource> drbdRscData, boolean waitForDestroyEventRef)
+        throws ExtCmdFailedException, StorageException
+    {
+        ArrayBlockingQueue<Boolean> queue = new ArrayBlockingQueue<>(1);
+        final ResourceObserver destroyObserver = new ResourceObserver()
+        {
+            @Override
+            public void resourceDestroyed(DrbdResource resourceRef)
+            {
+                ResourceObserver.super.resourceDestroyed(resourceRef);
+                if (resourceRef.getResName().toString().equals(drbdRscData.getSuffixedResourceName()))
+                {
+                    queue.add(true);
+                }
+            }
+        };
+        if (waitForDestroyEventRef)
+        {
+            drbdEventService.addObserver(destroyObserver, DrbdStateTracker.OBS_RES_DSTR);
+        }
+        else
+        {
+            queue.add(true);
+        }
+        simpleSetupCommand(drbdRscData, null, "down");
+        @Nullable Boolean success = null;
+        try
+        {
+            success = queue.poll(DOWN_WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
+        }
+        catch (InterruptedException exc)
+        {
+            Thread.currentThread().interrupt();
+        }
+        finally
+        {
+            drbdEventService.removeObserver(destroyObserver);
+        }
+
+        if (success == null || !success)
+        {
+            throw new StorageException("DRBD resource was not destroyed after " + DOWN_WAIT_TIMEOUT_SEC + " seconds");
+        }
     }
 
     /**
@@ -643,26 +704,6 @@ public class DrbdAdm
             drbdRscData.getSuffixedResourceName()
         );
     }
-
-    // Using -c disables /etc/drbd.d/global_common.conf
-    // private List<String> asConfigParameter(String resourceName)
-    // {
-    //    String[] ret;
-    //    if (!resourceName.toLowerCase().equals(ALL_KEYWORD) &&
-    //        !resourceName.equals(DRBDCTRL_RES_NAME))
-    //    {
-    //       String resourcePath = configPath.resolve("linstor_" + resourceName + ".res").toString();
-    //       ret = new String[]
-    //       {
-    //           "-c", resourcePath
-    //       };
-    //    }
-    //    else
-    //    {
-    //       ret = new String[0];
-    //    }
-    //    return Arrays.asList(ret);
-    // }
 
     private void execute(String... command) throws ExtCmdFailedException
     {
