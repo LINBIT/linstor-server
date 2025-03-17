@@ -180,6 +180,7 @@ public class FullSync implements ApiCall
             ),
             InternalApiConsts.API_FULL_SYNC_RESPONSE
         );
+        System.gc();
     }
 
     private ArrayList<NodePojo> asNodes(
