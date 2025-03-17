@@ -90,7 +90,7 @@ public class DrbdStateTracker
     private static final int OBS_DONE_PERC_SLOT;
 
     private static int obsSlotCount;
-    private final Set<ResourceObserver>[] observers;
+    private final List<ResourceObserver>[] observers;
     private final Map<ResourceObserver, Long> obsMaskMap;
     List<DrbdStateChange> drbdStateChangeObservers;
 
@@ -129,10 +129,10 @@ public class DrbdStateTracker
     @Inject
     public DrbdStateTracker()
     {
-        observers = new HashSet[obsSlotCount];
+        observers = new ArrayList[obsSlotCount];
         for (int slot = 0; slot < obsSlotCount; ++slot)
         {
-            observers[slot] = new HashSet<>();
+            observers[slot] = new ArrayList<>();
         }
         obsMaskMap = new HashMap<>();
 
