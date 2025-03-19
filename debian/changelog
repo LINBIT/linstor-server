@@ -1,3 +1,67 @@
+linstor-server (1.31.0~rc.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * event-replication-state: trigger event and send to client and controller
+  * events: add done percentage event and api field
+  * balance-resources: ignore resources that are not in a valid repl-state
+  * sos-report: add backup-queue-list.json
+  * sos-report: only include log-syslog if log-messages failed
+  * clone: check if clone name is provided
+  * clone: check source resource has valid resource states
+  * encryption: add endpoint to check the master passphrase status
+  * gradle: set Xmx1G to linstor-satellite
+  * gradle: controller & satellite will now crash on OutOfMemoryError
+  * reactor: limit worker threads to 16
+  * linstor-config: write full documented linstor.toml
+  * RscAutoHelper: allow to filter which helpers to run
+  * ctrlconf: method rename
+  * k8s-driver: make createOrReplace private
+  * prioprops: add getPropAndContainer methods
+  * Rework auto-quorum behaviour
+  * drbdstatetracker: use ArrayList for observer to guarantee observer order
+  * drbd-down: wait for events destroy before continue
+  * migration-sql: SATELLITES_CAPACITY table NODE_NAME size was too short
+  * fullsync: trigger garbage collector after fullsync
+  * peer-connector: actively close connection on satellite on new controller
+
+  [ Moritz Wanzenböck ]
+  * DrbdVersion: ensure all access is synchronized
+  * docker: fix unbound variable error
+
+  [ Gabor Hernadi ]
+  * ConfFileBuilder: Add generated time
+  * Autoplacer: Moved SkipAlreadyPlacedNodesCheck
+  * SelectionManger: hide internal control parameter
+  * AutoDiskfulTask: Introduce AutoUnplacer
+  * TieBreaker: Only take over if autoplacer setting allow
+  * RD: Refactored filtering method
+  * Split CtrlRscDfnDelete into truncate + delete ApiCallHandlers
+  * Snap,rollback: Implement rollback via restore
+  * ZFS,delete: Rename ZFS volumes upon resource deletion
+  * Storage: Refactored usage of asSnapLvIdentifier
+  * AbsStorProvider: Find LAYER_SNAP_DATA when rolling back
+  * AbsStorProvider: Change restoreSnap from String to LAYER_SNAP_DATA based
+  * ZFS,delete: introduce ZFS-property linstor:marked_for_deletion
+  * AbsStorProv: Introduced Init class
+  * StltSnapApiCallHandler: Deleting last snapshot now properly cleans up  [...]
+  * AbsStorageProvider: Fix finding snapshot layer data during restore
+  * SatelliteMigrations: added first version
+  * ZfsUtils: Old ZFS versions do not properly handle last '-' for clones
+  * Stlt: Properly commit transactions
+  * RscStateEvent: Workaround for already deleted rsc
+
+  [ Robert Altnöder ]
+  * Add RandomizedBitmapPoolTest
+
+  [ Johanna Kucera ]
+  * Snapshots: use SnapshotName and ResourceName instead of String
+  * BackupShipping: start queue immediately if sending failed
+  * BackupShipping: clean up queue if connection with remote breaks
+  * BackupShipping: do not use deleting snaps as incremental base snap
+  * BackupShipping: clean up queues on snapshot delete
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 19 Mar 2025 15:41:20 +0000
+
 linstor-server (1.30.4-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
