@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo.DbProduct;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,7 +19,7 @@ public class Migration_2024_11_21_CreateSnapshotsFromZfsClones extends LinstorMi
     public static final String CLM_PROP_KEY = "PROP_KEY";
     public static final String CLM_PROP_VALUE = "PROP_VALUE";
 
-    public static final String TBL_NODES = "NODES";
+    public static final String TBL_NODE_STOR_POOL = "NODE_STOR_POOL";
     public static final String CLM_NODES_NAME = "NODE_NAME";
 
     public static final String PROP_KEY_STLT_MIGRATION =
@@ -29,7 +30,9 @@ public class Migration_2024_11_21_CreateSnapshotsFromZfsClones extends LinstorMi
         CLM_PROPS_INSTANCE + ", " + CLM_PROP_KEY + ", " + CLM_PROP_VALUE +
         ") VALUES (?, ?, ?)";
 
-    private static final String SQL_SELECT_NODES = "SELECT " + CLM_NODES_NAME + " FROM " + TBL_NODES;
+    private static final String SQL_SELECT_NODES = "SELECT DISTINCT " + CLM_NODES_NAME + " FROM " + TBL_NODE_STOR_POOL +
+        " WHERE DRIVER_NAME IN ('" + DeviceProviderKind.ZFS_THIN.name() + "', '" +
+                                     DeviceProviderKind.ZFS.name() + "')";
 
     @Override
     protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception

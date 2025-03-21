@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Only satellite zfs migrate nodes that have a ZFS pool
+
 ## [1.31.0-rc.1] - 2025-03-19
 
 ### Added
