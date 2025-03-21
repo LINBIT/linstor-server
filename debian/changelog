@@ -1,3 +1,10 @@
+linstor-server (1.31.0~rc.2-1) experimental; urgency=medium
+
+  * Only satellite zfs migrate nodes that have a ZFS pool
+  * Add missing migrations (etcd/crd) for ZFS rename
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 21 Mar 2025 18:54:41 +0000
+
 linstor-server (1.31.0~rc.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

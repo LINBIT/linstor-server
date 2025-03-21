@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.31.0-rc.2] - 2025-03-21
+
 ### Fixed
 
 - Add missing migrations (etcd/crd) for ZFS rename
