@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
@@ -159,7 +160,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     }
 
     // Address that the server socket will be listening on
-    private SocketAddress bindAddress;
+    private final SocketAddress bindAddress;
 
     // Server socket for accepting incoming connections
     private ServerSocketChannel serverSocket;
@@ -172,6 +173,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
     // Selector for all connections
     Selector serverSelector;
+
+    private final AtomicInteger connCount = new AtomicInteger(0);
 
 
     public TcpConnectorService(
@@ -219,7 +222,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 socketChannel = SocketChannel.open();
                 socketChannel.configureBlocking(false);
                 socketChannel.socket().setTcpNoDelay(true);
-                String peerId = address.getAddress().getHostAddress() + ":" + address.getPort();
+                String peerId = address.getAddress().getHostAddress() + ":" + address.getPort() + "/"
+                    + connCount.incrementAndGet();
                 SelectionKey connKey;
                 synchronized (syncObj)
                 {
@@ -250,7 +254,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         // and we will need to call the finishConnection()
                         connKey = socketChannel.register(srvSel, OP_CONNECT);
                     }
-                    peer = createTcpConnectorPeer(peerId, connKey, true, node);
+                    peer = createTcpConnectorPeer(address, peerId, connKey, true, node);
                     connKey.attach(peer);
                     if (connected)
                     {
@@ -323,7 +327,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
         if (peer.getNode() == null)
         {
-            address = getInetSockAddress(peer);
+            address = peer.getHostAddr();
         }
         else
         {
@@ -334,7 +338,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 if (activeStltConn == null)
                 {
                     // this might happen when the node was rolled back and thus no longer has any content
-                    address = getInetSockAddress(peer);
+                    address = peer.getHostAddr();
                 }
                 else
                 {
@@ -353,30 +357,11 @@ public class TcpConnectorService implements Runnable, TcpConnector
             catch (AccessToDeletedDataException ignored)
             {
                 // if the netInterface was concurrently deleted, we just ignore this "access to deleted NetIf" exception
-                address = getInetSockAddress(peer); // use the old peer's address
+                address = peer.getHostAddr(); // use the old peer's address
             }
         }
 
         return this.connect(address, peer.getNode());
-    }
-
-    private InetSocketAddress getInetSockAddress(Peer peer) throws ImplementationError
-    {
-        final String host;
-        final int port;
-
-        final String id = peer.getId();
-        final int delimiter = id.lastIndexOf(':');
-        if (delimiter == -1)
-        {
-            throw new ImplementationError(
-                "peer has invalid id: " + id,
-                null
-            );
-        }
-        host = id.substring(0, delimiter);
-        port = Integer.parseInt(id.substring(delimiter + 1));
-        return new InetSocketAddress(host, port);
     }
 
     @Override
@@ -569,7 +554,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                                 name.displayValue, connPeer.getId()
                                             );
                                         }
-                                        closeConnection(currentKey, true);
+                                        closeConnection(currentKey, connPeer.isClientMode());
                                         break;
                                     default:
                                         throw new ImplementationError(
@@ -824,7 +809,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         InetAddress inetAddr = inetSockAddr.getAddress();
                         if (inetAddr != null)
                         {
-                            String peerId = inetAddr.getHostAddress() + ":" + inetSockAddr.getPort();
+                            String peerId = inetAddr.getHostAddress() + ":" + inetSockAddr.getPort() + "/" +
+                                connCount.incrementAndGet();
 
                             // Register the accepted connection with the selector loop
                             SelectionKey connKey = null;
@@ -858,7 +844,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             if (connKey != null)
                             {
                                 // Prepare the peer object and message
-                                TcpConnectorPeer connPeer = createTcpConnectorPeer(peerId, connKey, null);
+                                TcpConnectorPeer connPeer = createTcpConnectorPeer(inetSockAddr, peerId, connKey, null);
                                 connKey.attach(connPeer);
                                 connPeer.connectionEstablished();
                                 connObserver.inboundConnectionEstablished(connPeer);
@@ -940,12 +926,17 @@ public class TcpConnectorService implements Runnable, TcpConnector
         }
     }
 
-    protected TcpConnectorPeer createTcpConnectorPeer(String peerId, SelectionKey connKey, Node node)
+    protected TcpConnectorPeer createTcpConnectorPeer(
+        InetSocketAddress peerHostAddr,
+        String peerId,
+        SelectionKey connKey,
+        Node node)
     {
-        return createTcpConnectorPeer(peerId, connKey, false, node);
+        return createTcpConnectorPeer(peerHostAddr, peerId, connKey, false, node);
     }
 
     protected TcpConnectorPeer createTcpConnectorPeer(
+        InetSocketAddress peerHostAddr,
         String peerId,
         SelectionKey connKey,
         boolean outgoing,
@@ -953,7 +944,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     )
     {
         return new TcpConnectorPeer(
-            errorReporter, commonSerializer, peerId, this, connKey, defaultPeerAccCtx, node
+            errorReporter, commonSerializer, peerHostAddr, peerId, this, connKey, defaultPeerAccCtx, node, outgoing
         );
     }
 

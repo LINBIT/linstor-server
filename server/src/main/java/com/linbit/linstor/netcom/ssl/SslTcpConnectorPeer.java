@@ -75,12 +75,6 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
     // End debug logging flags
 
-
-    /**
-     * clientMode: true if connecting, false if accepting connections
-     */
-    private final boolean           clientMode;
-
     /**
      * True if SSL is ready to transfer data
      * (after the initial handshake on a new network connection has been completed)
@@ -153,20 +147,21 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      * @param node LINSTOR Node object associated with this connection (e.g., the connected LINSTOR satellite)
      */
     public SslTcpConnectorPeer(
-        @Nonnull final ErrorReporter            errorReporter,
-        @Nonnull final CommonSerializer         commonSerializer,
-        @Nonnull final String                   peerId,
-        @Nonnull final SslTcpConnectorService   sslConnectorService,
-        @Nonnull final SelectionKey             connKey,
-        @Nonnull final AccessContext            peerAccCtx,
-        @Nonnull final SSLContext               sslCtxRef,
+        final ErrorReporter            errorReporter,
+        final CommonSerializer         commonSerializer,
+        final InetSocketAddress        peerHostAddr,
+        final String                   peerId,
+        final SslTcpConnectorService   sslConnectorService,
+        final SelectionKey             connKey,
+        final AccessContext            peerAccCtx,
+        final SSLContext               sslCtxRef,
         @Nullable final InetSocketAddress       peerAddress,
-        @Nonnull final Node                     node
+        final Node                     node
     )
     {
-        super(errorReporter, commonSerializer, peerId, sslConnectorService, connKey, peerAccCtx, node);
+        super(errorReporter, commonSerializer, peerHostAddr, peerId, sslConnectorService, connKey, peerAccCtx, node,
+            peerAddress != null);
         address     = peerAddress;
-        clientMode  = peerAddress != null;
         sslReady    = false;
         ioRequest   = false;
         sslEngine   = null;
@@ -210,7 +205,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     {
         sslReady = false;
 
-        if (clientMode)
+        if (isClientMode())
         { // Client mode
             final String host = address.getAddress().getHostAddress();
             final int port = address.getPort();
@@ -221,7 +216,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             sslEngine = sslCtx.createSSLEngine();
             sslEngine.setNeedClientAuth(true);
         }
-        sslEngine.setUseClientMode(clientMode);
+        sslEngine.setUseClientMode(isClientMode());
 
         final SSLSession session = sslEngine.getSession();
         final int pktBfrSize = session.getPacketBufferSize();
@@ -244,10 +239,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         {
             debugLog(
                 "connectionEstablished: Initial I/O interest: " +
-                (clientMode ? "OP_WRITE" : "OP_READ") + " due to clientMode == " + Boolean.toString(clientMode)
+                (isClientMode() ? "OP_WRITE" : "OP_READ") + " due to clientMode == " + Boolean.toString(isClientMode())
             );
         }
-        setInterestOps(clientMode ? SelectionKey.OP_WRITE : SelectionKey.OP_READ);
+        setInterestOps(isClientMode() ? SelectionKey.OP_WRITE : SelectionKey.OP_READ);
 
         super.connectionEstablished();
     }

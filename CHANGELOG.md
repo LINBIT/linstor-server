@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Improved TCPConnector logging and only reconnect in client mode
+
 ### Fixed
 
 - Weird access to deleted resource bug on drbd down

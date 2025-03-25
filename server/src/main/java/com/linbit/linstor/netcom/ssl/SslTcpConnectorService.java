@@ -221,10 +221,11 @@ public class SslTcpConnectorService extends TcpConnectorService
      */
     @Override
     protected SslTcpConnectorPeer createTcpConnectorPeer(
-        @Nonnull final String       peerId,
-        @Nonnull final SelectionKey connKey,
-        final boolean               outgoing,
-        @Nonnull final Node         node
+        final InetSocketAddress peerHostAddr,
+        final String peerId,
+        final SelectionKey connKey,
+        final boolean outgoing,
+        final Node node
     )
     {
         if (DEBUG_CONNECTION)
@@ -256,9 +257,10 @@ public class SslTcpConnectorService extends TcpConnectorService
             }
         }
 
-        final SslTcpConnectorPeer newPeer = new SslTcpConnectorPeer(
+        return new SslTcpConnectorPeer(
             errorReporter,
             commonSerializer,
+            peerHostAddr,
             peerId,
             this,
             connKey,
@@ -267,7 +269,6 @@ public class SslTcpConnectorService extends TcpConnectorService
             address,
             node
         );
-        return newPeer;
     }
 
     /**

@@ -13,6 +13,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
@@ -65,6 +66,13 @@ public class PeerOffline implements Peer
     public String getId()
     {
         return peerId;
+    }
+
+    @Nullable
+    @Override
+    public InetSocketAddress getHostAddr()
+    {
+        return null;
     }
 
     @Override

@@ -40,6 +40,12 @@ public interface Peer
     String getId();
 
     /**
+     * Peer host address "ip:port"
+     * @return peer host address if available.
+     */
+    @Nullable InetSocketAddress getHostAddr();
+
+    /**
      * Returns the {@link Node} object the peer represents
      *
      * @return Node instance

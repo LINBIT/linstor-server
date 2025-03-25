@@ -93,6 +93,11 @@ public class TcpConnectorPeer implements Peer
     private final CommonSerializer commonSerializer;
 
     private final String peerId;
+    private final InetSocketAddress peerHost;
+
+    /** True if we actively connected to a host, false if we accepted an incoming connection */
+    private final boolean clientMode;
+
 
     private final TcpConnector connector;
 
@@ -163,19 +168,23 @@ public class TcpConnectorPeer implements Peer
     protected TcpConnectorPeer(
         ErrorReporter errorReporterRef,
         CommonSerializer commonSerializerRef,
+        InetSocketAddress peerHostRef,
         String peerIdRef,
         TcpConnector connectorRef,
         SelectionKey key,
         AccessContext accCtx,
-        Node nodeRef
+        Node nodeRef,
+        boolean clientModeRef
     )
     {
         errorReporter = errorReporterRef;
         commonSerializer = commonSerializerRef;
         peerId = peerIdRef;
+        peerHost = peerHostRef;
         connector = connectorRef;
         node = nodeRef;
         msgOutQueue = new LinkedList<>();
+        clientMode  = clientModeRef;
 
         // Do not use createMessage() here!
         // The SslTcpConnectorPeer has not initialized SSLEngine instance yet,
@@ -228,6 +237,13 @@ public class TcpConnectorPeer implements Peer
         return peerId;
     }
 
+    @Nullable
+    @Override
+    public InetSocketAddress getHostAddr()
+    {
+        return peerHost;
+    }
+
     @Override
     public ServiceName getConnectorInstanceName()
     {
@@ -243,6 +259,12 @@ public class TcpConnectorPeer implements Peer
     public Node getNode()
     {
         return node;
+    }
+
+    /** @see TcpConnectorPeer#clientMode */
+    protected boolean isClientMode()
+    {
+        return clientMode;
     }
 
     @Override
@@ -964,7 +986,7 @@ public class TcpConnectorPeer implements Peer
         }
         else
         {
-            ret = "Node: '" + node.getName().displayValue + "'";
+            ret = String.format("Node: '%s/%s'", node.getName().displayValue, getId());
         }
         return ret;
     }
