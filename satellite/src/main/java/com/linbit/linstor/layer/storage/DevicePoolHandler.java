@@ -39,13 +39,14 @@ public class DevicePoolHandler
 
     public String createVdoDevice(
         final ApiCallRcImpl apiCallRc,
+        final DeviceProviderKind kind,
         final String vgName,
         final String poolName,
         long logicalSizeKib,
         long slabSizeKib
     )
     {
-        String vdoDevicePath = null;
+        String vdoPool = null;
         try
         {
             List<String> cmd = new ArrayList<>();
@@ -56,7 +57,8 @@ public class DevicePoolHandler
             cmd.add("--name");
             cmd.add(poolName);
             cmd.add("--extents");
-            cmd.add("100%FREE");
+            // need some space for lvm-thin metadata
+            cmd.add((kind == DeviceProviderKind.LVM_THIN ? "98" : "100") + "%FREE");
             if (logicalSizeKib > 0)
             {
                 cmd.add("--virtualsize");
@@ -64,30 +66,43 @@ public class DevicePoolHandler
             }
             if (slabSizeKib > 0)
             {
-                cmd.add("--config");
-                cmd.add("allocation/vdo_slab_size_mb=" + (slabSizeKib / 1024));
+                cmd.add("--vdosettings=slab_size_mb=" + (slabSizeKib / 1024));
             }
-            cmd.add(vgName);
+            cmd.add(vgName + "/vdopool0");
 
-            final String failMsg = "Unable to create VDO device: " + poolName;
-            Commands.genericExecutor(
-                extCmdFactory.create(),
-                cmd.toArray(new String[0]),
-                failMsg,
-                failMsg
-            );
+            {
+                final String failMsg = "Unable to create VDO device: " + vgName + "/" + poolName;
+                Commands.genericExecutor(
+                    extCmdFactory.create(),
+                    cmd.toArray(new String[0]),
+                    failMsg,
+                    failMsg
+                );
+            }
 
             apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
                 ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
                 String.format("VDO '%s' on VG '%s' created.", poolName, vgName)));
-            vdoDevicePath = "/dev/" + vgName + "/" + poolName;
+
+            if (kind == DeviceProviderKind.LVM_THIN)
+            {
+                final String failMsg = "Unable to convert VDO device to thin: " + vgName + "/" + poolName;
+                Commands.genericExecutor(
+                    extCmdFactory.create(),
+                    new String[]{"lvconvert", "-y", "--type", "thin-pool", vgName + "/" + poolName},
+                    failMsg,
+                    failMsg
+                );
+            }
+
+            vdoPool = vgName + "/" + poolName;
         }
         catch (StorageException storExc)
         {
             errorReporter.reportError(storExc);
             apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_UNKNOWN_ERROR, storExc));
         }
-        return vdoDevicePath;
+        return vdoPool;
     }
 
     public ApiCallRc createDevicePool(
@@ -106,7 +121,8 @@ public class DevicePoolHandler
                 break;
             case LVM_THIN:
                 apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, LvmThinDriverKind.VGName(poolName)));
-                apiCallRc.addEntries(createLVMThinPool(LvmThinDriverKind.VGName(poolName), LvmThinDriverKind.LVName(poolName)));
+                apiCallRc.addEntries(
+                    createLVMThinPool(LvmThinDriverKind.VGName(poolName), LvmThinDriverKind.LVName(poolName)));
                 break;
             case ZFS_THIN: // no differentiation between ZFS and ZFS_THIN pool. fall-through
             case ZFS:
@@ -498,7 +514,8 @@ public class DevicePoolHandler
         switch (deviceProviderKind)
         {
             case LVM_THIN:
-                apiCallRc.addEntries(deleteLVMThinPool(devicePaths, LvmThinDriverKind.VGName(poolName), LvmThinDriverKind.LVName(poolName)));
+                apiCallRc.addEntries(deleteLVMThinPool(
+                    devicePaths, LvmThinDriverKind.VGName(poolName), LvmThinDriverKind.LVName(poolName)));
                 break;
             case LVM:
                 apiCallRc.addEntries(deleteLVMPool(devicePaths, poolName));

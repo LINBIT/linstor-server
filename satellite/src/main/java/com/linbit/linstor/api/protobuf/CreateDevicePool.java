@@ -7,14 +7,19 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.layer.storage.DevicePoolHandler;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.utils.SEDUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -32,13 +37,13 @@ import java.util.List;
 @Singleton
 public class CreateDevicePool implements ApiCall
 {
-    private static final String VDO_POOL_SUFFIX = "-vdobase";
     private final Provider<Peer> peerProvider;
     private final Provider<Long> apiCallId;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final DevicePoolHandler devicePoolHandler;
     private final ErrorReporter errorReporter;
     private final ExtCmdFactory extCmdFactory;
+    private final StltExtToolsChecker stltExtToolsChecker;
 
     @Inject
     public CreateDevicePool(
@@ -47,7 +52,8 @@ public class CreateDevicePool implements ApiCall
         CtrlStltSerializer ctrlStltSerializerRef,
         DevicePoolHandler devicePoolHandlerRef,
         ErrorReporter errorReporterRef,
-        ExtCmdFactory extCmdFactoryRef
+        ExtCmdFactory extCmdFactoryRef,
+        StltExtToolsChecker stltExtToolsCheckerRef
     )
     {
         this.peerProvider = peerProviderRef;
@@ -56,11 +62,13 @@ public class CreateDevicePool implements ApiCall
         this.devicePoolHandler = devicePoolHandlerRef;
         this.errorReporter = errorReporterRef;
         this.extCmdFactory = extCmdFactoryRef;
+        stltExtToolsChecker = stltExtToolsCheckerRef;
     }
 
     @Override
     public void execute(InputStream msgDataIn) throws IOException
     {
+        LvmUtils.recacheNext();
         MsgCreateDevicePool msgCreateDevicePool = MsgCreateDevicePool.parseDelimitedFrom(msgDataIn);
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -69,6 +77,22 @@ public class CreateDevicePool implements ApiCall
             msgCreateDevicePool.getProviderKind());
 
         apiCallRc.addEntries(devicePoolHandler.checkPoolExists(kind, msgCreateDevicePool.getPoolName()));
+
+        if (msgCreateDevicePool.hasVdoArguments() && kind == DeviceProviderKind.LVM_THIN)
+        {
+            @Nullable ExtToolsInfo lvmInfo = stltExtToolsChecker.getExternalTools(false).get(ExtTools.LVM);
+            if (lvmInfo != null && !lvmInfo.getVersion().greaterOrEqual(new ExtToolsInfo.Version(2, 3, 24)))
+            {
+                ApiCallRcImpl.ApiCallRcEntry entry =
+                    ApiCallRcImpl.entryBuilder(
+                            ApiConsts.FAIL_INVLD_CONF,
+                            "LVM version does not support VDO with LVM-THIN")
+                        .setSkipErrorReport(true)
+                        .setCause("VDO with LVM-THIN needs at least LVM 2.3.24")
+                        .build();
+                apiCallRc.add(entry);
+            }
+        }
 
         if (!apiCallRc.hasErrors())
         {
@@ -103,11 +127,12 @@ public class CreateDevicePool implements ApiCall
                         DeviceProviderKind.LVM,
                         devicePaths,
                         RaidLevel.valueOf(msgCreateDevicePool.getRaidLevel().name()),
-                        msgCreateDevicePool.getPoolName() + VDO_POOL_SUFFIX));
+                        msgCreateDevicePool.getPoolName() + InternalApiConsts.VDO_POOL_SUFFIX));
 
                 devicePoolHandler.createVdoDevice(
                     apiCallRc,
-                    msgCreateDevicePool.getPoolName() + VDO_POOL_SUFFIX,
+                    kind,
+                    msgCreateDevicePool.getPoolName() + InternalApiConsts.VDO_POOL_SUFFIX,
                     msgCreateDevicePool.getPoolName(),
                     msgCreateDevicePool.getLogicalSizeKib(),
                     msgCreateDevicePool.getVdoArguments().getSlabSizeKib()

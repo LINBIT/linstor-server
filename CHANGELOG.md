@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Improved TCPConnector logging and only reconnect in client mode
+- physical-storage-api: allow VDO with lvm-thin
 
 ### Fixed
 

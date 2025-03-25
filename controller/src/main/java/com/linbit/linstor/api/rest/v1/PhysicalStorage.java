@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -154,21 +155,43 @@ public class PhysicalStorage
         });
     }
 
-    private Map<String, String> deviceProviderToStorPoolProperty(DeviceProviderKind kind, String pool)
+    private Map<String, String> deviceProviderToStorPoolProperty(
+        DeviceProviderKind kind,
+        String pool,
+        boolean vdoEnabled)
     {
         HashMap<String, String> map = new HashMap<>();
+        String vgSuffix = vdoEnabled ? InternalApiConsts.VDO_POOL_SUFFIX : "";
 
         switch (kind)
         {
+            case LVM:
+                if (vdoEnabled)
+                {
+                    map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME,
+                        pool + vgSuffix + "/" + pool);
+                }
+                else
+                {
+                    map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME, pool);
+                }
+                break;
             case LVM_THIN:
-                map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME,
-                    LvmThinDriverKind.VGName(pool) + "/" + LvmThinDriverKind.LVName(pool));
+                if (vdoEnabled)
+                {
+                    map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME,
+                        pool + vgSuffix + "/" + pool);
+                }
+                else
+                {
+                    map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME,
+                        LvmThinDriverKind.VGName(pool) + vgSuffix + "/" + LvmThinDriverKind.LVName(pool));
+                }
                 break;
             case ZFS:
             case ZFS_THIN:
             case SPDK:
             case REMOTE_SPDK:
-            case LVM:
             case STORAGE_SPACES:
             case STORAGE_SPACES_THIN:
                 map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME, pool);
@@ -223,7 +246,8 @@ public class PhysicalStorage
             );
 
             final DeviceProviderKind deviceProviderKind = LinstorParsingUtils.asProviderKind(createData.provider_kind);
-            Map<String, String> storPoolProps = deviceProviderToStorPoolProperty(deviceProviderKind, poolName);
+            Map<String, String> storPoolProps = deviceProviderToStorPoolProperty(
+                deviceProviderKind, poolName, createData.vdo_enable);
             Flux<ApiCallRc> responses = physicalStorageApiCallHandler.createDevicePool(
                 nodeName,
                 createData.device_paths,

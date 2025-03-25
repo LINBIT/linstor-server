@@ -264,6 +264,7 @@ public class InternalApiConsts
     // lvm
     public static final String NAMESPC_LVM = "Lvm";
     public static final String KEY_LVM_STRIPES = "Stripes";
+    public static final String VDO_POOL_SUFFIX = "-vdobase";
 
     // temporary context key
     public static final String ONLY_WARN_IF_OFFLINE = "onlyWarnIfOffline";

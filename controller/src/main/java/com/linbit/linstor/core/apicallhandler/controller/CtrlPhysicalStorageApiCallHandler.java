@@ -232,11 +232,6 @@ public class CtrlPhysicalStorageApiCallHandler
         Map<String, String> storagePoolProps
     )
     {
-        if (vdoEnabled && providerKindRef.usesThinProvisioning())
-        {
-            throw new ApiException("VDO is only supported with LVM-fat provisioning.");
-        }
-
         Flux<ApiCallRc> response;
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
 
