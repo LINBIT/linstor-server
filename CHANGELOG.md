@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Weird access to deleted resource bug on drbd down
+
 ## [1.31.0-rc.2] - 2025-03-21
 
 ### Fixed

@@ -186,13 +186,14 @@ public class DrbdAdm
         throws ExtCmdFailedException, StorageException
     {
         ArrayBlockingQueue<Boolean> queue = new ArrayBlockingQueue<>(1);
+        final String suffixedResourceName = drbdRscData.getSuffixedResourceName();
         final ResourceObserver destroyObserver = new ResourceObserver()
         {
             @Override
             public void resourceDestroyed(DrbdResource resourceRef)
             {
                 ResourceObserver.super.resourceDestroyed(resourceRef);
-                if (resourceRef.getResName().toString().equals(drbdRscData.getSuffixedResourceName()))
+                if (resourceRef.getResName().toString().equals(suffixedResourceName))
                 {
                     queue.add(true);
                 }
