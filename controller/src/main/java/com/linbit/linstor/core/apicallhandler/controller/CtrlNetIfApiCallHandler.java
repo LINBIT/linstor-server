@@ -36,6 +36,7 @@ import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NET_PORT;
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NODE_TYPE;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -127,6 +128,11 @@ class CtrlNetIfApiCallHandler
             {
                 if (stltPort != null && stltEncrType != null)
                 {
+                    @Nullable Peer curPeer = node.getPeer(peerAccCtx.get());
+                    if (curPeer != null)
+                    {
+                        curPeer.closeConnection(false);
+                    }
                     node.setActiveStltConn(apiCtx, netIf);
                     satelliteConnector.startConnecting(node, apiCtx);
                 }
