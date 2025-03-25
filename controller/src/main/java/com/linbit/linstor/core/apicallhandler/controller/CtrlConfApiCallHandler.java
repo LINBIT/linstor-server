@@ -898,6 +898,11 @@ public class CtrlConfApiCallHandler
                                 propChangedListener
                             );
                             break;
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM:
+                            apiCallRc.add(ApiCallRcImpl.simpleEntry(ApiConsts.WARN_DEPRECATED,
+                                fullKey + " is deprecated, please use " +
+                                    ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM));
+                            break;
                         case ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM:
                             setCtrlProp(
                                 peerAccCtx.get(),
