@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.VlmAllocatedFetcher;
 import com.linbit.linstor.core.apicallhandler.controller.VlmAllocatedResult;
 import com.linbit.linstor.core.objects.Resource;
@@ -43,6 +44,7 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
     private final LockGuardFactory lockGuardFactory;
     private final AccessContext sysCtx;
     private final ScopeRunner scopeRunner;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
 
     @Inject
     public UpdateSpaceInfoTask(
@@ -53,6 +55,7 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
         ScopeRunner scopeRunnerRef,
         SystemConfRepository systemConfRepositoryRef,
         CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @SystemContext AccessContext sysCtxRef)
     {
         errRep = errorReporterRef;
@@ -62,6 +65,7 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
         systemConfRepository = systemConfRepositoryRef;
         ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
         scopeRunner = scopeRunnerRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         sysCtx = sysCtxRef;
     }
 
@@ -117,6 +121,7 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
                             {
                             }
                         }
+                        ctrlTransactionHelper.commit();
                         errRep.logTrace("UpdateVolumeAllocationsTask: Fetched and set volume allocations in %dms",
                             System.currentTimeMillis() - start);
                         return Flux.empty();

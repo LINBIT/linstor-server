@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Weird access to deleted resource bug on drbd down
 - CreateNetIf didn't close current peer connection
+- UpdateSpaceInfoTask did never commit() its allocation size updates
 
 ## [1.31.0-rc.2] - 2025-03-21
 
