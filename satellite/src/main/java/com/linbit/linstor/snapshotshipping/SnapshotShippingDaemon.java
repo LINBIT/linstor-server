@@ -133,7 +133,8 @@ public class SnapshotShippingDaemon implements Runnable
             {
                 errorReporter.reportError(
                     new ImplementationError(
-                        "Unknown exception occurred while executing '" + Arrays.toString(command) + "'",
+                        "An exception of type " + exc.getClass().getSimpleName() +
+                        " occurred while executing '" + Arrays.toString(command) + "'",
                         exc
                     )
                 );

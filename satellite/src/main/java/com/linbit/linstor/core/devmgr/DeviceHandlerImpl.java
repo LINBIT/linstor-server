@@ -544,7 +544,8 @@ public class DeviceHandlerImpl implements DeviceHandler
             errMsg = exc.getMessage();
             if (errMsg == null)
             {
-                errMsg = "An unknown exception occurred while processing the resource " + rscName.displayValue;
+                errMsg = "An exception of type " + exc.getClass().getSimpleName() +
+                    " occurred while processing the resource " + rscName.displayValue;
             }
 
             cause = null;

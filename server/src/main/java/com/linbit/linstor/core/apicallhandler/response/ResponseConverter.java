@@ -175,7 +175,7 @@ public class ResponseConverter
             }
             else
             {
-                errorType = "unknown exception";
+                errorType = "unhandled exception of type " + exc.getClass().getSimpleName();
                 retCode = ApiConsts.FAIL_UNKNOWN_ERROR;
             }
 

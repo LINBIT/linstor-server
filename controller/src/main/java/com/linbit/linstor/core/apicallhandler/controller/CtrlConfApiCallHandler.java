@@ -1078,7 +1078,8 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                errorMsg = "An unknown error occurred while setting controller config prop with key '" +
+                errorMsg = "An exception of type " + exc.getClass().getSimpleName() +
+                    " occurred while setting controller config prop with key '" +
                     key + "' in namespace '" + namespace + "' with value '" + value + "'.";
                 rc = ApiConsts.FAIL_UNKNOWN_ERROR;
                 createErrorReport = true;
@@ -1351,7 +1352,8 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                errorMsg = "An unknown error occurred while setting netcom (controller) config prop with key '" +
+                errorMsg = "An exception of type " + exc.getClass().getSimpleName() +
+                    " occurred while setting netcom (controller) config prop with key '" +
                     currentKey + "' with value '" + currentValue + "'.";
                 rc = ApiConsts.FAIL_UNKNOWN_ERROR;
             }
@@ -1550,7 +1552,8 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                errorMsg = "An unknown error occurred while deleting controller config prop with key '" +
+                errorMsg = "An exception of type " + exc.getClass().getSimpleName() +
+                    " occurred while deleting controller config prop with key '" +
                     key + "' in namespace '" + namespace + "'.";
                 rc = ApiConsts.FAIL_UNKNOWN_ERROR;
             }
@@ -1710,7 +1713,8 @@ public class CtrlConfApiCallHandler
         {
             ResponseUtils.reportStatic(
                 exc,
-                "Unknown error occurred while validating the passphrase",
+                "An exception of type " + exc.getClass().getSimpleName() +
+                " occurred while validating the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
                 null,
                 false,
@@ -1926,7 +1930,7 @@ public class CtrlConfApiCallHandler
         {
             ResponseUtils.reportStatic(
                 exc,
-                "An unknown exception occurred while setting the passphrase",
+                "An exception of type " + exc.getClass().getSimpleName() + " occurred while setting the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
                 null,
                 false,
