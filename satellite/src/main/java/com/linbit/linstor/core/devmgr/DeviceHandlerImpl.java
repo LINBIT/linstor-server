@@ -455,7 +455,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
                     if (Platform.isLinux())
                     {
-                        if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE))
+                        if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE, Flags.DRBD_DELETE))
                         {
                             sysFsHandler.update(rsc, apiCallRc);
                         }
@@ -1603,7 +1603,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                 .getVlmProviderObject(vlmRef.getVolumeNumber());
 
             TreeSet<String> symlinks = null;
-            if (!vlmRef.getFlags().isSet(wrkCtx, Volume.Flags.CLONING))
+            if (!vlmRef.getFlags().isSet(wrkCtx, Volume.Flags.CLONING) &&
+                !vlmRef.getFlags().isSet(wrkCtx, Volume.Flags.DRBD_DELETE))
             {
                 symlinks = udevHandler.getSymlinks(vlmProviderObject.getDevicePath());
             }

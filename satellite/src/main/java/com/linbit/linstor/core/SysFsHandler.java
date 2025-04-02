@@ -337,7 +337,8 @@ public class SysFsHandler
     private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException
     {
         String majMin = deviceMajorMinorMap.get(vlmDataRef);
-        if (vlmDataRef.exists() && !((Volume) vlmDataRef.getVolume()).getFlags().isSet(apiCtx, Volume.Flags.CLONING))
+        if (vlmDataRef.exists() && !((Volume) vlmDataRef.getVolume()).getFlags().isSet(apiCtx, Volume.Flags.CLONING) &&
+            !((Volume) vlmDataRef.getVolume()).getFlags().isSet(apiCtx, Volume.Flags.DRBD_DELETE))
         {
             if (majMin == null)
             {
