@@ -525,7 +525,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                 Resource rsc = rscIt.next();
                 if (!rsc.equals(rscRef))
                 {
-                    String createdBy = rsc.getProps(sysCtx).getProp(ApiConsts.KEY_RSC_DISKFUL_BY);
+                    @Nullable String createdBy = rsc.getProps(sysCtx).getProp(ApiConsts.KEY_RSC_DISKFUL_BY);
                     boolean explicitlyAllowed = "true".equalsIgnoreCase(
                         getPrioProps(rsc).getProp(
                             ApiConsts.KEY_DRBD_AUTO_DISKFUL_ALLOW_CLEANUP,
