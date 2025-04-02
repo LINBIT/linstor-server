@@ -718,12 +718,11 @@ public class DrbdLayer implements DeviceLayer
 
                     drbdRscData.setAdjustRequired(false);
 
-                    boolean isDiskless = drbdRscData.getAbsResource().isDrbdDiskless(workerCtx);
                     // set device paths
                     for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                     {
                         StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
-                        if (isDiskless && vlmFlags.isSomeSet(
+                        if (vlmFlags.isSomeSet(
                             workerCtx,
                             Volume.Flags.DELETE,
                             Volume.Flags.DRBD_DELETE,
@@ -735,6 +734,7 @@ public class DrbdLayer implements DeviceLayer
                         }
                         else
                         {
+                            drbdVlmData.setExists(true);
                             drbdVlmData.setDevicePath(generateDevicePath(drbdVlmData));
                             drbdVlmData.setSizeState(Size.AS_EXPECTED);
                         }
@@ -1242,6 +1242,10 @@ public class DrbdLayer implements DeviceLayer
             if (drbdRscState == null)
             {
                 drbdRscData.setExists(false);
+                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                {
+                    drbdVlmData.setExists(false);
+                }
             }
             else
             {
@@ -1405,6 +1409,7 @@ public class DrbdLayer implements DeviceLayer
                         {
                             // Missing volume, adjust the resource
                             drbdRscData.setAdjustRequired(true);
+                            drbdVlmData.setExists(false);
                         }
                     }
 
