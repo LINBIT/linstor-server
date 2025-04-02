@@ -342,7 +342,7 @@ public class CommonMessageProcessor implements MessageProcessor
                 if ((apiCallResponse.getRetCode() & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR)
                 {
                     error = new ApiRcException(ProtoDeserializationUtils.parseApiCallRc(
-                        apiCallResponse, "(" + peer + ") "
+                        apiCallResponse, "(" + peer.getNode().getName().displayValue + ") "
                     ));
                 }
             }
