@@ -106,7 +106,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -557,10 +556,18 @@ public class Json
                     vlmState = new JsonGenTypes.VolumeState();
                     SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
                     vlmState.disk_state = satVlmState.getDiskState();
-                    vlmState.replication_state = Objects.toString(satVlmState.getReplicationState(), null);
-                    if (satVlmState.getDonePercentage() != null)
+                    vlmState.replication_states = new HashMap<>();
+                    for (var entry : satVlmState.getReplicationStateMap().entrySet())
                     {
-                        vlmState.done_percentage = Double.valueOf(satVlmState.getDonePercentage());
+                        String peerName = entry.getKey();
+                        JsonGenTypes.ReplicationState replState = new JsonGenTypes.ReplicationState();
+                        replState.replication_state = entry.getValue().toString();
+                        if (satVlmState.getDonePercentageMap().containsKey(peerName))
+                        {
+                            replState.done_percentage =
+                                Double.valueOf(satVlmState.getDonePercentageMap().get(peerName));
+                        }
+                        vlmState.replication_states.put(peerName, replState);
                     }
                 }
             }

@@ -4,5 +4,6 @@ package com.linbit.linstor.proto.eventdata;
 
 message EventDonePercentage
 {
-    optional float done_percentage = 1;
+    required string peer_name = 1;
+    optional float done_percentage = 2;
 }

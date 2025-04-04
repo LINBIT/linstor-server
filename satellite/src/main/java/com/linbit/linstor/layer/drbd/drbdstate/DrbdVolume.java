@@ -213,7 +213,7 @@ public class DrbdVolume
             donePercentage = ReplState.parseDone(doneLabel);
             if (!Objects.equals(prevPercentage, donePercentage))
             {
-                obs.donePercentageChanged(resRef, null, this, prevPercentage, donePercentage);
+                obs.donePercentageChanged(resRef, connRef, this, prevPercentage, donePercentage);
             }
 
             if (volReplState == ReplState.SYNC_TARGET)
@@ -223,11 +223,11 @@ public class DrbdVolume
         }
         else
         {
-            obs.donePercentageChanged(resRef, null, this, donePercentage, null);
+            obs.donePercentageChanged(resRef, connRef, this, donePercentage, null);
             donePercentage = null;
         }
 
-        if (replLabel != null)
+        if (connRef != null && replLabel != null)
         {
             ReplState prevReplState = volReplState;
             volReplState = ReplState.parseReplState(replLabel);
@@ -256,10 +256,5 @@ public class DrbdVolume
             info = String.format("SyncTarget(%.2f%%)", donePercentage);
         }
         return info;
-    }
-
-    public ReplState replicationStateInfo()
-    {
-        return volReplState;
     }
 }

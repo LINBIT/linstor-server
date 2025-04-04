@@ -7155,6 +7155,15 @@ components:
       properties:
         disk_state:
           type: string
+        replication_states:
+          $ref: '#/components/schemas/ReplicationStates'
+    ReplicationStates:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/ReplicationState'
+    ReplicationState:
+      type: object
+      properties:
         replication_state:
           type: string
         done_percentage:

@@ -587,11 +587,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder replicationState(String replicationState)
+    public CommonSerializer.CommonSerializerBuilder replicationState(String peerName, String replicationState)
     {
         try
         {
             EventReplicationStateOuterClass.EventReplicationState.newBuilder()
+                .setPeerName(peerName)
                 .setReplicationState(replicationState)
                 .build()
                 .writeDelimitedTo(baos);
@@ -604,11 +605,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder donePercentageEvent(Float donePercentage)
+    public CommonSerializer.CommonSerializerBuilder donePercentageEvent(String peerName, @Nullable Float donePercentage)
     {
         try
         {
-            var edp = EventDonePercentageOuterClass.EventDonePercentage.newBuilder();
+            var edp = EventDonePercentageOuterClass.EventDonePercentage.newBuilder()
+                .setPeerName(peerName);
             if (donePercentage != null)
             {
                 edp.setDonePercentage(donePercentage);

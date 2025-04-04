@@ -9,6 +9,7 @@ import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.layer.drbd.drbdstate.ReplState;
 import com.linbit.linstor.proto.eventdata.EventReplicationStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -39,15 +40,18 @@ public class ReplicationStateEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        ReplState replicationState;
+        Pair<String, ReplState> replicationState;
 
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
             EventReplicationStateOuterClass.EventReplicationState eventReplicationState =
                 EventReplicationStateOuterClass.EventReplicationState.parseDelimitedFrom(eventDataIn);
 
-            replicationState = eventReplicationState.getReplicationState() == null ?
-                null : ReplState.parseReplState(eventReplicationState.getReplicationState());
+            replicationState = eventReplicationState.getReplicationState().isEmpty() ?
+                new Pair<>(eventReplicationState.getPeerName(), null) :
+                new Pair<>(
+                    eventReplicationState.getPeerName(),
+                    ReplState.parseReplState(eventReplicationState.getReplicationState()));
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
                 satelliteState -> satelliteState.setOnVolume(

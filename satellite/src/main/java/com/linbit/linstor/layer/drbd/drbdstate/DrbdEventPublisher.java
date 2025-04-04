@@ -13,6 +13,7 @@ import com.linbit.linstor.event.common.ReplicationStateEvent;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
+import com.linbit.utils.Pair;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -174,9 +175,17 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         DrbdResource resource, DrbdConnection connection, DrbdVolume volume
     )
     {
-        if (connection == null && resource.isKnownByLinstor())
+        if (resource.isKnownByLinstor())
         {
-            triggerVolumeDiskStateEvent(resource, volume);
+            if (connection == null)
+            {
+                triggerVolumeDiskStateEvent(resource, volume);
+            }
+            else
+            {
+                triggerReplicationStateEvent(resource, volume);
+                triggerDonePercentageEvent(resource, volume);
+            }
         }
     }
 
@@ -265,18 +274,24 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
 
     private void triggerReplicationStateEvent(DrbdResource resource, DrbdVolume volume)
     {
-        replicationStateEvent.get().triggerEvent(
-            ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
-            volume.replicationStateInfo()
-        );
+        if (volume.connRef != null)
+        {
+            replicationStateEvent.get().triggerEvent(
+                ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
+                new Pair<>(volume.connRef.peerName, volume.getReplState())
+            );
+        }
     }
 
     private void triggerDonePercentageEvent(DrbdResource resource, DrbdVolume volume)
     {
-        donePercentageEvent.get().triggerEvent(
-            ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
-            Optional.ofNullable(volume.donePercentage)
-        );
+        if (volume.connRef != null)
+        {
+            donePercentageEvent.get().triggerEvent(
+                ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
+                new Pair<>(volume.connRef.peerName, Optional.ofNullable(volume.donePercentage))
+            );
+        }
     }
 
     private void triggerVolumeDiskStateEvent(DrbdResource resource, DrbdVolume volume)

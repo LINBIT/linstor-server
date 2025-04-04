@@ -2,6 +2,8 @@ package com.linbit.linstor.layer.drbd.drbdstate;
 
 import com.linbit.linstor.core.identifier.VolumeNumber;
 
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -200,6 +202,16 @@ public class DrbdConnection
     public DrbdResource getResource()
     {
         return resRef;
+    }
+
+    public Iterator<DrbdVolume> iterateVolumes()
+    {
+        LinkedList<DrbdVolume> volListCopy = new LinkedList<>();
+        synchronized (volList)
+        {
+            volListCopy.addAll(volList.values());
+        }
+        return volListCopy.iterator();
     }
 
     public DrbdVolume getVolume(VolumeNumber volNr)

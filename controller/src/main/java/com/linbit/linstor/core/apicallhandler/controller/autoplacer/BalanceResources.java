@@ -306,6 +306,21 @@ public class BalanceResources
         return "false".equalsIgnoreCase(prioProps.getProp(ApiConsts.KEY_BALANCE_RESOURCES_ENABLED, null, "true"));
     }
 
+    @SuppressWarnings({"checkstyle:DescendantToken", "checkstyle:returnCount"})
+    private boolean anyBadReplicationState(Map<String, ReplState> replStateMap)
+    {
+        for (var replicationState : replStateMap.values())
+        {
+            if (!(replicationState == null ||
+                ReplState.ESTABLISHED.equals(replicationState) ||
+                ReplState.OFF.equals(replicationState)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Checks if all volumes of the given resource definition are in a "good" replication state.
      * This is to prevent resources getting removed that are e.g. currently SyncSource.
@@ -324,10 +339,7 @@ public class BalanceResources
             {
                 for (var volEntry : satRscStates.getVolumeStates().entrySet())
                 {
-                    ReplState replicationState = volEntry.getValue().getReplicationState();
-                    if (!(replicationState == null ||
-                        ReplState.ESTABLISHED.equals(replicationState) ||
-                        ReplState.OFF.equals(replicationState)))
+                    if (anyBadReplicationState(volEntry.getValue().getReplicationStateMap()))
                     {
                         return false;
                     }

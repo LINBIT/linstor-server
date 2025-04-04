@@ -479,7 +479,7 @@ public class StltApiCallHandler
 
                 for (RscPojo rsc : resources)
                 {
-                    checkForAlreadyKnownResources(rsc);
+                    checkForAlreadyKnownResources(rsc, true);
                 }
 
                 StltMigrationResult migrationResult = stltMigrationHandler.migrate();
@@ -528,7 +528,7 @@ public class StltApiCallHandler
         return new FullSyncResult(success, stltPropsToAdd, stltPropKeysToDelete, stltPropNamespacesToDelete);
     }
 
-    private void checkForAlreadyKnownResources(RscPojo rsc)
+    private void checkForAlreadyKnownResources(RscPojo rsc, boolean forceEventTrigger)
     {
         /*
          *  in rare cases (e.g. migration) it is possible that a DRBD-resource already
@@ -548,10 +548,20 @@ public class StltApiCallHandler
          * also a check if we already know this resource, so that way is also covered.
          */
 
+        /*
+         * The event should be sent to ctrl during FullSync as well as for newly created DRBD resource,
+         * but NOT when adjusting existing DRBD resources.
+         */
+
+        boolean triggerEvent = forceEventTrigger;
         DrbdResource drbdResource = drbdStateTracker.getResource(rsc.getName());
         if (drbdResource != null && !drbdResource.isKnownByLinstor())
         {
             drbdResource.setKnownByLinstor(true);
+            triggerEvent = true;
+        }
+        if (drbdResource != null && drbdResource.isKnownByLinstor() && triggerEvent)
+        {
             drbdEventPublisher.resourceCreated(drbdResource);
 
             Iterator<DrbdVolume> itVlm = drbdResource.iterateVolumes();
@@ -559,7 +569,17 @@ public class StltApiCallHandler
             {
                 DrbdVolume drbdVlm = itVlm.next();
                 drbdEventPublisher.volumeCreated(drbdResource, null, drbdVlm);
+            }
 
+            // trigger connection volumes (replication states)
+            for (var conn : drbdResource.getConnectionsMap().values())
+            {
+                Iterator<DrbdVolume> itConnVlm = conn.iterateVolumes();
+                while (itConnVlm.hasNext())
+                {
+                    DrbdVolume drbdVlm = itConnVlm.next();
+                    drbdEventPublisher.volumeCreated(drbdResource, conn, drbdVlm);
+                }
             }
         }
     }
@@ -1147,7 +1167,7 @@ public class StltApiCallHandler
                 if (rscPojo != null)
                 {
                     rscHandler.applyChanges(rscPojo);
-                    checkForAlreadyKnownResources(rscPojo);
+                    checkForAlreadyKnownResources(rscPojo, false);
                 }
                 else
                 {

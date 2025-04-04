@@ -7,6 +7,7 @@ import com.linbit.linstor.event.WatchableObject;
 import com.linbit.linstor.event.common.DonePercentageEvent;
 import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -18,7 +19,8 @@ import java.util.Optional;
     objectType = WatchableObject.VOLUME
 )
 @Singleton
-public class DonePercentageEventSerializer implements EventSerializer, EventSerializer.Serializer<Optional<Float>>
+public class DonePercentageEventSerializer
+    implements EventSerializer, EventSerializer.Serializer<Pair<String, Optional<Float>>>
 {
     private final CommonSerializer commonSerializer;
     private final DonePercentageEvent donePercentageEvent;
@@ -34,19 +36,21 @@ public class DonePercentageEventSerializer implements EventSerializer, EventSeri
     }
 
     @Override
-    public Serializer<Optional<Float>> get()
+    public Serializer<Pair<String, Optional<Float>>> get()
     {
         return this;
     }
 
     @Override
-    public byte[] writeEventValue(Optional<Float> donePercentage)
+    public byte[] writeEventValue(Pair<String, Optional<Float>> donePercentage)
     {
-        return commonSerializer.headerlessBuilder().donePercentageEvent(donePercentage.orElse(null)).build();
+        return commonSerializer.headerlessBuilder()
+            .donePercentageEvent(donePercentage.objA, donePercentage.objB.orElse(null))
+            .build();
     }
 
     @Override
-    public LinstorEvent<Optional<Float>> getEvent()
+    public LinstorEvent<Pair<String, Optional<Float>>> getEvent()
     {
         return donePercentageEvent.get();
     }

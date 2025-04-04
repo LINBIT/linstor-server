@@ -684,6 +684,17 @@ public class JsonGenTypes
     public static class VolumeState
     {
         public String disk_state;
+        public Map<String, ReplicationState> replication_states = Collections.emptyMap();
+    }
+
+//    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+//    public static class ReplicationStates
+//    {
+//    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ReplicationState
+    {
         public String replication_state;
         public Double done_percentage;
     }

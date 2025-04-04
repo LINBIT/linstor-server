@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved TCPConnector logging and only reconnect in client mode
 - physical-storage-api: allow VDO with lvm-thin
 - ETCD: Enabled DrbdOptions/auto-diskful-allow-cleanup on ctrl unless it was already set
+- ReplicationState design wasn't considering replication states per volume connection.
+  This has been reworked and now a map is used and returned to the client.
 
 ### Fixed
 

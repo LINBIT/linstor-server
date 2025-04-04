@@ -8,6 +8,7 @@ import com.linbit.linstor.event.handler.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.proto.eventdata.EventDonePercentageOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -39,14 +40,16 @@ public class DonePercentageEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        Float donePercentage;
+        Pair<String, Optional<Float>> donePercentage;
 
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
             EventDonePercentageOuterClass.EventDonePercentage eventDonePercentage =
                 EventDonePercentageOuterClass.EventDonePercentage.parseDelimitedFrom(eventDataIn);
 
-            donePercentage = eventDonePercentage.hasDonePercentage() ? eventDonePercentage.getDonePercentage() : null;
+            donePercentage = eventDonePercentage.hasDonePercentage() ?
+                new Pair<>(eventDonePercentage.getPeerName(), Optional.of(eventDonePercentage.getDonePercentage())) :
+                new Pair<>(eventDonePercentage.getPeerName(), Optional.empty());
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
                 satelliteState -> satelliteState.setOnVolume(
@@ -71,6 +74,6 @@ public class DonePercentageEventHandler implements EventHandler
         }
 
         donePercentageEvent.get().forwardEvent(
-            eventIdentifier.getObjectIdentifier(), eventAction, Optional.ofNullable(donePercentage));
+            eventIdentifier.getObjectIdentifier(), eventAction, donePercentage);
     }
 }
