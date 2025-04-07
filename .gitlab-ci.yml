@@ -56,7 +56,7 @@ workflow:
     - git clone --single-branch --branch ${ST_BRANCH} --recursive https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.at.linbit.com/linstor/linstor-server-spacetracking.git linstor-spacetracking
     - cd linstor-spacetracking
     - git remote add linstor https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.at.linbit.com/linstor/linstor-server.git
-    - git fetch linstor
+    - git fetch linstor --recurse-submodules=no
     - git config --global user.email "fake@example.com"
     - git config --global user.name "Faker"
     - git rebase $CI_COMMIT_SHORT_SHA
