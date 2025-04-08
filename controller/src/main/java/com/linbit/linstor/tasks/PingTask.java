@@ -1,7 +1,11 @@
 package com.linbit.linstor.tasks;
 
+import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 
 import javax.annotation.Nonnull;
@@ -23,11 +27,17 @@ public class PingTask implements Task
     private final HashSet<Peer> peerSet = new HashSet<>();
     private final ErrorReporter errorReporter;
     private final ReconnectorTask reconnector;
+    private final AccessContext sysCtx;
 
     @Inject
-    public PingTask(ErrorReporter errorReporterRef, ReconnectorTask reconnectorRef)
+    public PingTask(
+        ErrorReporter errorReporterRef,
+        @SystemContext AccessContext sysCtxRef,
+        ReconnectorTask reconnectorRef
+    )
     {
         errorReporter = errorReporterRef;
+        sysCtx = sysCtxRef;
         reconnector = reconnectorRef;
 
         reconnector.setPingTask(this);
@@ -85,6 +95,22 @@ public class PingTask implements Task
 
             boolean isConnected = peer.isConnected(false);
             boolean allowReconnect = peer.isAllowReconnect();
+
+            try
+            {
+                Peer nodesCurrentPeer = peer.getNode().getPeer(sysCtx);
+                if (peer != nodesCurrentPeer)
+                {
+                    errorReporter.logTrace("Dropping " + peer + " in favor of " + nodesCurrentPeer);
+                    isConnected = false;
+                    allowReconnect = false;
+                }
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ImplementationError(accDeniedExc);
+            }
+
             if ((!isConnected || lastPingReceived + PING_TIMEOUT < lastPingSent) && allowReconnect)
             {
                 reconnect = true;
