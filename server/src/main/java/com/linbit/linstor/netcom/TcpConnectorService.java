@@ -1065,7 +1065,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             {
                 // connectionClosing() calls interestOps on the selection Key, which may fail
             }
-            connObserver.connectionClosed(client, allowReconnect, shuttingDown);
+            connObserver.connectionClosed(client, shuttingDown);
         }
 
         try
@@ -1471,10 +1471,10 @@ public class TcpConnectorService implements Runnable, TcpConnector
         }
 
         @Override
-        public void connectionClosed(Peer connPeer, boolean allowReconnect, boolean shuttingDown)
+        public void connectionClosed(Peer connPeer, boolean shuttingDown)
         {
             performConnectionObserverCall(
-                notNullConnObserver -> notNullConnObserver.connectionClosed(connPeer, allowReconnect, shuttingDown),
+                notNullConnObserver -> notNullConnObserver.connectionClosed(connPeer, shuttingDown),
                 "connection closed"
             );
         }
