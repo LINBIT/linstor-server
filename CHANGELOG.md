@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.31.0] - 2025-04-08
+
 ### Changed
 
 - Improved TCPConnector logging and only reconnect in client mode

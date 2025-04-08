@@ -1,3 +1,25 @@
+linstor-server (1.31.0-1) experimental; urgency=medium
+
+  [ Robert Altnöder ]
+  * Change "unknown exception" to report exception class name instead
+
+  [ Rene Peinthor ]
+  * Fix access to deleted resource exception
+  * CreateNetIf didn't close current peer connection
+  * Improved TCPConnector logging and only reconnect in client mode
+  * still allow DrbdOptionsd/auto-quorum property to be set
+  * physical-storage: allow lvm-thin with vdo
+  * UpdateSpaceInfoTask: commit() allocation size updates to database
+  * Fix delete of a drbd resource if it was already down
+  * commonmessageprocessor: only show node name in error messages
+  * gitlab-ci: do not recurse submodules
+  * replication-states: reworked and fixed
+
+  [ Gabor Hernadi ]
+  * ETCD: Added migration for auto-diskful-allow-cleanup
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 08 Apr 2025 07:49:49 +0000
+
 linstor-server (1.31.0~rc.2-1) experimental; urgency=medium
 
   * Only satellite zfs migrate nodes that have a ZFS pool

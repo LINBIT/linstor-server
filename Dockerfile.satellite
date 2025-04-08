@@ -1,7 +1,7 @@
 ARG BUILDER=registry.access.redhat.com/ubi8/ubi
 FROM $BUILDER as builder
 
-ENV LINSTOR_VERSION 1.31.0-rc.2
+ENV LINSTOR_VERSION 1.31.0
 ARG ARCH=amd64
 
 ENV LINSTOR_TGZNAME linstor-server
@@ -50,7 +50,7 @@ RUN cd ${HOME}/${LINSTOR_TGZNAME}-${LINSTOR_VERSION} && \
 FROM quay.io/linbit/drbd-utils
 # this is/needs to be based on registry.access.redhat.com/ubi7/ubi
 
-ENV LINSTOR_VERSION 1.31.0-rc.2
+ENV LINSTOR_VERSION 1.31.0
 ARG release=1
 ARG ARCH=amd64
 

@@ -5,8 +5,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 ## [1.25.0]
 
 ### Added
-  - Added VolumeState.replication_state
-  - Added VolumeState.done_percentage
+  - Added VolumeState.replication_states
   - Added /v1/encryption/passphrase GET for getting the current encryption status
 
 ## [1.24.0]
