@@ -86,6 +86,8 @@ public class TcpConnectorPeer implements Peer
         FINISHED
     }
 
+    private static final long CLOSE_FLUSH_TIMEOUT_MS = 500;
+
     private final Node node;
 
     private final ErrorReporter errorReporter;
@@ -163,7 +165,7 @@ public class TcpConnectorPeer implements Peer
 
     private final Map<String, Property> dynamicProperties = new HashMap<>();
 
-    private final static long CLOSE_FLUSH_TIMEOUT_MS = 500;
+    private boolean allowReconnect = true;
 
     protected TcpConnectorPeer(
         ErrorReporter errorReporterRef,
@@ -547,6 +549,18 @@ public class TcpConnectorPeer implements Peer
         return connector;
     }
 
+    @Override
+    public void setAllowReconnect(boolean allowReconnectRef)
+    {
+        allowReconnect = allowReconnectRef;
+    }
+
+    @Override
+    public boolean isAllowReconnect()
+    {
+        return allowReconnect;
+    }
+
     /**
      * Closes the connection to the peer
      *
@@ -560,9 +574,9 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public void closeConnection(boolean allowReconnect)
+    public void closeConnection(boolean allowReconnectRef)
     {
-        connector.closeConnection(this, allowReconnect);
+        connector.closeConnection(this, allowReconnectRef);
     }
 
     private void waitOutMessagesFlushed()

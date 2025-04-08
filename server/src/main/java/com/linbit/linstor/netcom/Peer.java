@@ -166,6 +166,22 @@ public interface Peer
     void apiCallComplete(long apiCallId);
 
     /**
+     * Sets the allowReconnect field of the peer. The peer itself does not necessarily have to do anything with this
+     * field, just return it again in {@link #isAllowReconnect()}.
+     *
+     * It is recommended to first call "<code>setAllowReconnect(false)</code>" before tearing down the connection to
+     * avoid race conditions with controller's PingTask / ReconnectTask.
+     */
+    void setAllowReconnect(boolean allowReconnectRef);
+
+    /**
+     * Returns the value set via {@link #setAllowReconnect(boolean)} and should indicate if this peer instance should
+     * be used for a reconnect-attempt. <code>True</code> by default, unless {@link #setAllowReconnect(boolean)} was
+     * called.
+     */
+    boolean isAllowReconnect();
+
+    /**
      * Closes the connection to the peer
      */
     void closeConnection();

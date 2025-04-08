@@ -153,6 +153,17 @@ public class PeerREST implements Peer
     }
 
     @Override
+    public void setAllowReconnect(boolean ignoredAllowReconnectRef)
+    {
+    }
+
+    @Override
+    public boolean isAllowReconnect()
+    {
+        return false;
+    }
+
+    @Override
     public void closeConnection()
     {
     }

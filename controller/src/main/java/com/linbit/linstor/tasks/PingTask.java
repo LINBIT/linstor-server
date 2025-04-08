@@ -82,11 +82,14 @@ public class PingTask implements Task
             final long lastPingReceived = peer.getLastPongReceived();
             final long lastPingSent = peer.getLastPingSent();
             boolean reconnect = false;
-            if (!peer.isConnected(false) || lastPingReceived + PING_TIMEOUT < lastPingSent)
+
+            boolean isConnected = peer.isConnected(false);
+            boolean allowReconnect = peer.isAllowReconnect();
+            if ((!isConnected || lastPingReceived + PING_TIMEOUT < lastPingSent) && allowReconnect)
             {
                 reconnect = true;
             }
-            if (!reconnect)
+            if (!reconnect && isConnected)
             {
                 try
                 {
@@ -95,7 +98,7 @@ public class PingTask implements Task
                 catch (Exception exc)
                 {
                     errorReporter.reportError(exc);
-                    reconnect = true;
+                    reconnect = allowReconnect;
                 }
             }
             if (reconnect)
@@ -113,6 +116,10 @@ public class PingTask implements Task
                     // TODO: detailed error reporting
                     errorReporter.reportError(ioExc);
                 }
+            }
+            if (!isConnected && !allowReconnect)
+            {
+                peersToRemove.add(peer); // just to make sure this peer gets removed from our peerSet
             }
         }
         return peersToRemove;

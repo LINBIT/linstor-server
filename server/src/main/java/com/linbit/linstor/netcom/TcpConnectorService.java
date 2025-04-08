@@ -1057,6 +1057,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             {
                 if (client.isConnected(false))
                 {
+                    client.setAllowReconnect(allowReconnect);
                     client.connectionClosing();
                 }
             }
