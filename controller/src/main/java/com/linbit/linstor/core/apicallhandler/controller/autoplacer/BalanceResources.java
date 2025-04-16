@@ -11,6 +11,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -307,7 +308,7 @@ public class BalanceResources
     }
 
     @SuppressWarnings({"checkstyle:DescendantToken", "checkstyle:returnCount"})
-    private boolean anyBadReplicationState(Map<String, ReplState> replStateMap)
+    private boolean anyBadReplicationState(Map<NodeName, ReplState> replStateMap)
     {
         for (var replicationState : replStateMap.values())
         {

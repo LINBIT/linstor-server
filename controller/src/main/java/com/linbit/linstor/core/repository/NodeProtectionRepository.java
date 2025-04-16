@@ -8,8 +8,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Holds the singleton nodes map protection instance, allowing it to be initialized from the database
@@ -19,12 +23,14 @@ import javax.inject.Singleton;
 public class NodeProtectionRepository implements NodeRepository
 {
     private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.UnameMap uNameMap;
     private ObjectProtection nodesMapObjProt;
 
     @Inject
-    public NodeProtectionRepository(CoreModule.NodesMap nodesMapRef)
+    public NodeProtectionRepository(CoreModule.NodesMap nodesMapRef, CoreModule.UnameMap uNameMapRef)
     {
         nodesMap = nodesMapRef;
+        uNameMap = uNameMapRef;
     }
 
     public void setObjectProtection(ObjectProtection nodesMapObjProtRef)
@@ -60,7 +66,7 @@ public class NodeProtectionRepository implements NodeRepository
     {
         checkProtSet();
         nodesMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (Node) nodesMap.get(nodeName);
+        return nodesMap.get(nodeName);
     }
 
     @Override
@@ -79,6 +85,16 @@ public class NodeProtectionRepository implements NodeRepository
         checkProtSet();
         nodesMapObjProt.requireAccess(accCtx, AccessType.CHANGE);
         nodesMap.remove(nodeName);
+
+        ArrayList<String> uNamesToRemove = new ArrayList<>();
+        for (var unameEntry : uNameMap.entrySet())
+        {
+            if (unameEntry.getValue().equals(nodeName))
+            {
+                uNamesToRemove.add(unameEntry.getKey());
+            }
+        }
+        removeUnames(uNamesToRemove);
     }
 
     @Override
@@ -96,5 +112,37 @@ public class NodeProtectionRepository implements NodeRepository
         {
             throw new IllegalStateException("Object protection not yet set");
         }
+    }
+
+    private void removeUnames(Collection<String> uNames)
+    {
+        for (var uName : uNames)
+        {
+            uNameMap.remove(uName);
+        }
+    }
+
+    @Override
+    public void putUname(AccessContext accCtx, String uName, NodeName nodeName) throws AccessDeniedException
+    {
+        checkProtSet();
+        nodesMapObjProt.requireAccess(accCtx, AccessType.CHANGE);
+        uNameMap.put(uName, nodeName);
+    }
+
+    @Override
+    public @Nullable NodeName getUname(AccessContext accCtx, String uName) throws AccessDeniedException
+    {
+        checkProtSet();
+        nodesMapObjProt.requireAccess(accCtx, AccessType.VIEW);
+        return uNameMap.get(uName);
+    }
+
+    @Override
+    public void removeUname(AccessContext accCtx, String uName) throws AccessDeniedException
+    {
+        checkProtSet();
+        nodesMapObjProt.requireAccess(accCtx, AccessType.CHANGE);
+        uNameMap.remove(uName);
     }
 }

@@ -8,6 +8,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ProtectedObject;
 
+import javax.annotation.Nullable;
+
 /**
  * Provides access to nodes with automatic security checks.
  */
@@ -27,4 +29,8 @@ public interface NodeRepository extends ProtectedObject
 
     CoreModule.NodesMap getMapForView(AccessContext accCtx)
         throws AccessDeniedException;
+
+    void putUname(AccessContext accCtx, String uName, NodeName nodeName) throws AccessDeniedException;
+    @Nullable NodeName getUname(AccessContext accCtx, String uName) throws AccessDeniedException;
+    void removeUname(AccessContext accCtx, String uName) throws AccessDeniedException;
 }

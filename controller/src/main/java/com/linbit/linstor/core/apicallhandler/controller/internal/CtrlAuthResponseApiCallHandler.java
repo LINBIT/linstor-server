@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.internal;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -11,12 +12,14 @@ import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
-import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -28,8 +31,8 @@ import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.HashSet;
@@ -43,7 +46,6 @@ import reactor.core.publisher.Flux;
 public class CtrlAuthResponseApiCallHandler
 {
     private final ErrorReporter errorReporter;
-    private final Provider<Peer> peerProvider;
     private final AccessContext sysCtx;
 
     private final CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandler;
@@ -51,30 +53,28 @@ public class CtrlAuthResponseApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final ResponseConverter responseConverter;
+    private final NodeRepository nodeRepo;
 
     @Inject
     public CtrlAuthResponseApiCallHandler(
         ErrorReporter errorReporterRef,
-        Provider<Peer> peerProviderRef,
         @SystemContext AccessContext sysCtxRef,
         CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandlerRef,
         ReconnectorTask reconnectorTaskRef,
         LockGuardFactory lockGuardFactoryRef,
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        ResponseConverter responseConverterRef
+        NodeRepository nodeRepositoryRef
     )
     {
         errorReporter = errorReporterRef;
-        peerProvider = peerProviderRef;
         sysCtx = sysCtxRef;
         ctrlFullSyncApiCallHandler = ctrlFullSyncApiCallHandlerRef;
         reconnectorTask = reconnectorTaskRef;
         lockGuardFactory = lockGuardFactoryRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        responseConverter = responseConverterRef;
+        nodeRepo = nodeRepositoryRef;
     }
 
     public Flux<ApiCallRc> authResponse(
@@ -111,6 +111,53 @@ public class CtrlAuthResponseApiCallHandler
             ),
             MDC.getCopyOfContextMap()
         );
+    }
+
+    private void updateUnameMap(Peer peer, String nodeUname)
+        throws AccessDeniedException, InvalidValueException, DatabaseException
+    {
+        Node node = peer.getNode();
+        Props nodeProps = node.getProps(sysCtx);
+        @Nullable String oldUname = nodeProps.getProp(InternalApiConsts.NODE_UNAME);
+        @Nullable NodeName curNodeName = nodeRepo.getUname(sysCtx, nodeUname);
+        if (!nodeUname.equals(oldUname))
+        {
+            if (oldUname != null)
+            {
+                // uname change, cleanup old uname
+                nodeRepo.removeUname(sysCtx, oldUname);
+            }
+            if (curNodeName != null)
+            {
+                peer.setAuthenticated(false);
+                peer.setConnectionStatus(ApiConsts.ConnectionStatus.DUPLICATE_UNAME);
+                errorReporter.reportError(
+                    Level.ERROR,
+                    new InvalidNameException(
+                        String.format(
+                            "Satellite has an uname '%s' that is already used by a different satellite '%s'",
+                            nodeUname,
+                            curNodeName),
+                        nodeUname
+                    )
+                );
+            }
+            else
+            {
+                // new node added
+                nodeProps.setProp(InternalApiConsts.NODE_UNAME, nodeUname);
+                nodeRepo.putUname(sysCtx, nodeUname, node.getName());
+            }
+        }
+        else
+        {
+            if (curNodeName == null)
+            {
+                // reconnect node
+                nodeRepo.putUname(sysCtx, nodeUname, node.getName());
+            }
+        }
+
     }
 
     private Flux<ApiCallRc> authResponseInTransaction(
@@ -180,7 +227,7 @@ public class CtrlAuthResponseApiCallHandler
                     newCtx.getLimitPrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
                     peer.setAccessContext(privCtx, newCtx);
 
-                    node.getProps(sysCtx).setProp(InternalApiConsts.NODE_UNAME, nodeUname);
+                    updateUnameMap(peer, nodeUname);
 
                     ctrlTransactionHelper.commit();
                 }

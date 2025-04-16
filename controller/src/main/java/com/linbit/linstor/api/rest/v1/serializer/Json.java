@@ -559,13 +559,13 @@ public class Json
                     vlmState.replication_states = new HashMap<>();
                     for (var entry : satVlmState.getReplicationStateMap().entrySet())
                     {
-                        String peerName = entry.getKey();
+                        String peerName = entry.getKey().displayValue;
                         JsonGenTypes.ReplicationState replState = new JsonGenTypes.ReplicationState();
                         replState.replication_state = entry.getValue().toString();
-                        if (satVlmState.getDonePercentageMap().containsKey(peerName))
+                        if (satVlmState.getDonePercentageMap().containsKey(entry.getKey()))
                         {
                             replState.done_percentage =
-                                Double.valueOf(satVlmState.getDonePercentageMap().get(peerName));
+                                Double.valueOf(satVlmState.getDonePercentageMap().get(entry.getKey()));
                         }
                         vlmState.replication_states.put(peerName, replState);
                     }

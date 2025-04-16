@@ -69,6 +69,7 @@ public class CoreModule extends AbstractModule
             .toInstance(new TreeMap<>());
 
         bind(NodesMap.class).to(NodesMapImpl.class);
+        bind(UnameMap.class).to(UnameMapImpl.class);
         bind(ResourceDefinitionMap.class).to(ResourceDefinitionMapImpl.class);
         bind(ResourceDefinitionMapExtName.class).to(ResourceDefinitionMapExtNameImpl.class);
         bind(StorPoolDefinitionMap.class).to(StorPoolDefinitionMapImpl.class);
@@ -129,6 +130,10 @@ public class CoreModule extends AbstractModule
     {
     }
 
+    public interface UnameMap extends Map<String, NodeName>
+    {
+    }
+
     public interface ResourceDefinitionMap extends Map<ResourceName, ResourceDefinition>
     {
     }
@@ -175,6 +180,17 @@ public class CoreModule extends AbstractModule
     {
         @Inject
         public NodesMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(null, new TreeMap<>(), null, transMgrProvider);
+        }
+    }
+
+    @Singleton
+    public static class UnameMapImpl
+        extends TransactionMap<Void, String, NodeName> implements UnameMap
+    {
+        @Inject
+        public UnameMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
             super(null, new TreeMap<>(), null, transMgrProvider);
         }

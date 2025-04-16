@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Move generated crd db drivers into own directory to fix gradlew clean
 - mkfs ext4 and xfs creation are now forced
+- Map replication state entries with actual node names, before drbd peer names were used
 
 ### Fixed
 

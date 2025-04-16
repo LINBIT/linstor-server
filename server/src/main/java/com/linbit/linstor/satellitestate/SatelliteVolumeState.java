@@ -1,5 +1,7 @@
 package com.linbit.linstor.satellitestate;
 
+import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.layer.drbd.drbdstate.ReplState;
 import com.linbit.utils.Pair;
 
@@ -13,13 +15,13 @@ public class SatelliteVolumeState
 {
     private String diskState;
     /**
-     * Stores the replication states for each peer connection, key is the peer name, NOT the node name
+     * Stores the replication states for each node connection
      */
-    private Map<String, ReplState> replicationStateMap = new HashMap<>();
+    private Map<NodeName, ReplState> replicationStateMap = new HashMap<>();
     /**
-     * Stores the done percentage for each peer connection, key is the peer name, NOT the node name
+     * Stores the done percentage for each node connection
      */
-    private Map<String, Float> donePercentageMap = new HashMap<>();
+    private Map<NodeName, Float> donePercentageMap = new HashMap<>();
 
     public SatelliteVolumeState()
     {
@@ -42,7 +44,7 @@ public class SatelliteVolumeState
         diskState = diskStateRef;
     }
 
-    public Map<String, ReplState> getReplicationStateMap()
+    public Map<NodeName, ReplState> getReplicationStateMap()
     {
         return replicationStateMap;
     }
@@ -51,13 +53,14 @@ public class SatelliteVolumeState
     {
         if (replStatePair != null)
         {
+            NodeName nodeName = LinstorParsingUtils.asNodeName(replStatePair.objA);
             if (replStatePair.objB == null || replStatePair.objB == ReplState.OFF)
             {
-                replicationStateMap.remove(replStatePair.objA);
+                replicationStateMap.remove(nodeName);
             }
             else
             {
-                replicationStateMap.put(replStatePair.objA, replStatePair.objB);
+                replicationStateMap.put(nodeName, replStatePair.objB);
             }
         }
         else
@@ -66,7 +69,7 @@ public class SatelliteVolumeState
         }
     }
 
-    public Map<String, Float> getDonePercentageMap()
+    public Map<NodeName, Float> getDonePercentageMap()
     {
         return donePercentageMap;
     }
@@ -75,13 +78,14 @@ public class SatelliteVolumeState
     {
         if (donePercentagePair != null)
         {
+            NodeName nodeName = LinstorParsingUtils.asNodeName(donePercentagePair.objA);
             if (donePercentagePair.objB.isEmpty())
             {
-                donePercentageMap.remove(donePercentagePair.objA);
+                donePercentageMap.remove(nodeName);
             }
             else
             {
-                donePercentageMap.put(donePercentagePair.objA, donePercentagePair.objB.get());
+                donePercentageMap.put(nodeName, donePercentagePair.objB.get());
             }
         }
         else
