@@ -122,7 +122,7 @@ project(':server') {
     sourceSets {
         main {
             java {
-                srcDirs = ["src/main/java", "generated-src"]
+                srcDirs = ["src/main/java", "generated-dbdrivers", "generated-src"]
             }
             resources {
                 srcDirs = ["src/main/resources", "generated-resources"]

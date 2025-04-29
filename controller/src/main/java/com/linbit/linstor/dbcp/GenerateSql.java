@@ -346,7 +346,7 @@ public class GenerateSql
         return Paths.get(
             gitRootRef,
             prj,
-            "generated-src",
+            "generated-dbdrivers",
             pkgNameRef.replaceAll("[.]", "/")
         );
     }
