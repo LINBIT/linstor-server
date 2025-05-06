@@ -205,6 +205,7 @@ public class MkfsUtils
 
                         if (fsType.equals(ApiConsts.VAL_FS_TYPE_EXT4))
                         {
+                            mkfsParametes += " -F"; // -F force
                             if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject, false) ||
                                 VolumeUtils.isVolumeZfs(vlmProviderObject, false))
                             {
@@ -224,10 +225,11 @@ public class MkfsUtils
                         else
                         if (fsType.equals(ApiConsts.VAL_FS_TYPE_XFS))
                         {
+                            mkfsParametes += " -f"; // -f force
                             if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject, false) ||
                                 VolumeUtils.isVolumeZfs(vlmProviderObject, false))
                             {
-                                mkfsParametes += " -K";
+                                mkfsParametes += " -K"; // -K no discard
                             }
 
                             File tempFile = null;
