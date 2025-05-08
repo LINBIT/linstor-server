@@ -18,7 +18,7 @@ info:
     ```
 
     After setting this properties restart the controller and the new values should be used.
-  version: 1.25.0
+  version: 1.25.1
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -1053,6 +1053,12 @@ paths:
             type: array
             items:
               type: string
+        - name: with_volume_definitions
+          in: query
+          description: Include volume definitions attached to the resource definition
+          schema:
+            type: boolean
+            default: false
         - $ref: '#/components/parameters/Props'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'

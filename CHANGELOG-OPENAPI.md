@@ -2,6 +2,11 @@
 
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
+## [1.25.1]
+
+### Fix
+ - Add missing query param with_volume_definitions for /v1/resource-definitions GET
+
 ## [1.25.0]
 
 ### Added
