@@ -1,10 +1,12 @@
 package com.linbit.linstor.logging;
 
-import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.TestAccessContextProvider;
 
 import java.nio.file.Paths;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.event.Level;
@@ -13,9 +15,10 @@ import static org.junit.Assert.fail;
 
 public class ChangeLogLevelTest
 {
-    private StdErrorReporter reporter;
+    private static StdErrorReporter reporter;
 
-    public ChangeLogLevelTest() throws AccessDeniedException
+    @BeforeClass
+    public static void setUpClass()
     {
         reporter = new StdErrorReporter(
             "test",
@@ -34,6 +37,12 @@ public class ChangeLogLevelTest
         })
             .when(reporter)
             .logError(Mockito.anyString(), Mockito.any());
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws DatabaseException
+    {
+        reporter.shutdown();
     }
 
     @Test

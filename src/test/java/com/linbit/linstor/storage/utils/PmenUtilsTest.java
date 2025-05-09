@@ -1,26 +1,31 @@
 package com.linbit.linstor.storage.utils;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
+import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 
+import java.nio.file.Paths;
 import java.util.HashSet;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(
@@ -31,17 +36,31 @@ import org.powermock.modules.junit4.PowerMockRunner;
 )
 public class PmenUtilsTest
 {
+    private static StdErrorReporter errorReporter;
     private TestExtCmd ec;
 
     public PmenUtilsTest() throws Exception
     {
-        ec = new TestExtCmd();
+        ec = new TestExtCmd(errorReporter);
         PowerMockito
             .whenNew(ExtCmd.class)
             .withAnyArguments()
             .thenReturn(ec);
     }
 
+    @BeforeClass
+    public static void setUpClass()
+    {
+        errorReporter = new StdErrorReporter(
+            "LINSTOR-UNITTESTS",
+            Paths.get("build/test-logs"),
+            true,
+            "",
+            null,
+            null,
+            () -> null
+        );
+    }
     @Before
     public void setUp() throws Exception
     {
@@ -62,6 +81,12 @@ public class PmenUtilsTest
             sb.setLength(sb.length() - 1);
             fail("Not all expected commands were called: \n" + sb.toString());
         }
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws DatabaseException
+    {
+        errorReporter.shutdown();
     }
 
     private void setExpectedOutput(String out)

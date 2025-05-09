@@ -2,6 +2,8 @@ package com.linbit.drbd;
 
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.linstor.timer.CoreTimerImpl;
@@ -9,10 +11,13 @@ import com.linbit.linstor.timer.CoreTimerImpl;
 import static com.linbit.drbd.DrbdVersion.UNDETERMINED_VERSION_INT;
 import static com.linbit.drbd.DrbdVersion.VSN_QUERY_COMMAND;
 
+import java.nio.file.Paths;
 import java.util.HashSet;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -34,16 +39,32 @@ public class DrbdVersionTest
     public static final int DRBD8_MAJOR_VSN = 8;
     private static final int PROVOKE_NUMBER_FORMAT_EXCEPTION = 0;
 
+    private static StdErrorReporter errorReporter;
+
     private TestExtCmd testExtCmd;
     private DrbdVersion drbdVersion;
 
     public DrbdVersionTest() throws Exception
     {
-        testExtCmd = new TestExtCmd();
+        testExtCmd = new TestExtCmd(errorReporter);
         PowerMockito
                 .whenNew(ExtCmd.class)
                 .withAnyArguments()
                 .thenReturn(testExtCmd);
+    }
+
+    @BeforeClass
+    public static void setUpClass()
+    {
+        errorReporter = new StdErrorReporter(
+            "LINSTOR-UNITTESTS",
+            Paths.get("build/test-logs"),
+            true,
+            "",
+            null,
+            null,
+            () -> null
+        );
     }
 
     @Before
@@ -67,6 +88,12 @@ public class DrbdVersionTest
             stringBuilder.setLength(stringBuilder.length() - 1);
             fail("Not all expected commands were called: \n" + stringBuilder.toString());
         }
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws DatabaseException
+    {
+        errorReporter.shutdown();
     }
 
     private void setExpectedBehaviorVersion(Version kernelVsn, Version utilsVsn)

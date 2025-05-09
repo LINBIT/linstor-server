@@ -1,5 +1,7 @@
 package com.linbit.linstor.layer.storage.utils;
 
+import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.storage.ProcCryptoEntry;
 
@@ -15,30 +17,59 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-public class ProcCryptoUtilsTest extends TestCase
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+public class ProcCryptoUtilsTest
 {
-    protected static StdErrorReporter errorReporter = new StdErrorReporter(
-        "TESTS",
-        Paths.get("build/test-logs"),
-        true,
-        "",
-        "INFO",
-        "TRACE",
-        () -> null
-    );
+    private static final String PROC_CRYPTO_OUTPUT;
 
-    private static String PROC_CRYPTO_OUTPUT = null;
+    protected static StdErrorReporter errorReporter;
 
-    @Override
-    public void setUp() throws IOException, URISyntaxException
+    static
     {
-        final URI procCryptoURI = this.getClass()
-            .getResource("/com/linbit/linstor/layer/storage/utils/proc_crypto.txt").toURI();
-        PROC_CRYPTO_OUTPUT = new String(Files.readAllBytes(Paths.get(procCryptoURI)));
+        URI procCryptoURI;
+        try
+        {
+            procCryptoURI = ProcCryptoUtilsTest.class
+                .getResource("/com/linbit/linstor/layer/storage/utils/proc_crypto.txt")
+                .toURI();
+            PROC_CRYPTO_OUTPUT = new String(Files.readAllBytes(Paths.get(procCryptoURI)));
+        }
+        catch (URISyntaxException | IOException exc)
+        {
+            throw new ImplementationError("Failed to load test entries from proc_crypto.txt!", exc);
+        }
     }
 
+    @BeforeClass
+    public static void setUpClass()
+    {
+        errorReporter = new StdErrorReporter(
+            "TESTS",
+            Paths.get("build/test-logs"),
+            true,
+            "",
+            "INFO",
+            "TRACE",
+            () -> null
+        );
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws DatabaseException
+    {
+        errorReporter.shutdown();
+    }
+
+    @Test
     public void testParsing()
     {
         List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCryptoString(errorReporter, PROC_CRYPTO_OUTPUT);
@@ -50,18 +81,21 @@ public class ProcCryptoUtilsTest extends TestCase
         assertEquals(100, last.getPriority());
     }
 
+    @Test
     public void testEmptyParsing()
     {
         List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCryptoString(errorReporter, "");
         assertEquals(0, cryptos.size());
     }
 
+    @Test
     public void testLocalProcCrypto() throws IOException
     {
         List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCrypto(errorReporter);
         assertTrue(cryptos.size() > 0);
     }
 
+    @Test
     public void testSortAndFilter()
     {
         List<ProcCryptoEntry> cryptos = ProcCryptoUtils.parseProcCryptoString(errorReporter, PROC_CRYPTO_OUTPUT);
@@ -71,6 +105,7 @@ public class ProcCryptoUtilsTest extends TestCase
         assertEquals(300, hashes.get(0).getPriority());
     }
 
+    @Test
     public void testFindCommon()
     {
         ArrayList<ProcCryptoEntry> cryptoNode1 = new ArrayList<>();
@@ -109,6 +144,7 @@ public class ProcCryptoUtilsTest extends TestCase
         assertEquals("poly1305-simd", pce.getDriver());
     }
 
+    @Test
     public void testFindCommonPriority()
     {
         ArrayList<ProcCryptoEntry> cryptoNode1 = new ArrayList<>();
@@ -163,6 +199,7 @@ public class ProcCryptoUtilsTest extends TestCase
         assertEquals("poly1305-simd", pce.getDriver());
     }
 
+    @Test
     public void testFindCommonNone()
     {
         ArrayList<ProcCryptoEntry> cryptoNode1 = new ArrayList<>();
@@ -195,6 +232,7 @@ public class ProcCryptoUtilsTest extends TestCase
         assertNull(pce);
     }
 
+    @Test
     public void testFindCommonAllowed()
     {
         ArrayList<ProcCryptoEntry> cryptoNode1 = new ArrayList<>();
@@ -238,6 +276,7 @@ public class ProcCryptoUtilsTest extends TestCase
         assertEquals("crc32-pclmul", pce.getDriver());
     }
 
+    @Test
     public void testCryptoDriverSupported() {
         ArrayList<ProcCryptoEntry> cryptoNode1 = new ArrayList<>();
         cryptoNode1.add(new ProcCryptoEntry("curve25519", "curve25519-x86", ProcCryptoEntry.CryptoType.KPP, 200));
