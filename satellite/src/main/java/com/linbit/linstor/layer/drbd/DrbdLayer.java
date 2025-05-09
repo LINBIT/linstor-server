@@ -389,26 +389,25 @@ public class DrbdLayer implements DeviceLayer
             {
                 errorReporter.logTrace("Shutting down drbd resource %s", suffixedRscName);
                 drbdUtils.down(drbdRscData);
-                Path resFile = asResourceFile(drbdRscData, false, false);
-                errorReporter.logTrace("Deleting res file: %s ", resFile);
-                Files.deleteIfExists(resFile);
-                drbdRscData.setResFileExists(false);
-
                 if (Platform.isWindows())
                 {
                     windowsFirewall.closePort(drbdRscData.getRscDfnLayerObject().getTcpPort().value);
                 }
-
-                drbdRscData.setExists(false);
-                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
-                {
-                    drbdVlmData.setExists(false);
-                    drbdVlmData.setDevicePath(null);
-
-                    // in case we want to undelete this resource... but the metadata got already wiped
-                    drbdVlmData.setCheckMetaData(true);
-                }
                 addDeletedMsg(drbdRscData, apiCallRc);
+            }
+            Path resFile = asResourceFile(drbdRscData, false, false);
+            errorReporter.logTrace("Ensuring .res file is deleted: %s ", resFile);
+            Files.deleteIfExists(resFile);
+            drbdRscData.setResFileExists(false);
+
+            drbdRscData.setExists(false);
+            for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+            {
+                drbdVlmData.setExists(false);
+                drbdVlmData.setDevicePath(null);
+
+                // in case we want to undelete this resource... but the metadata got already wiped
+                drbdVlmData.setCheckMetaData(true);
             }
         }
         catch (ExtCmdFailedException cmdExc)
