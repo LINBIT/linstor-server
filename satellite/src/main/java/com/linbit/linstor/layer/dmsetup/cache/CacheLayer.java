@@ -379,7 +379,7 @@ public class CacheLayer implements DeviceLayer
         return Long.parseLong(
             getProp(
                 vlmRef,
-                ApiConsts.KEY_CACHE_META_SIZE,
+                ApiConsts.KEY_CACHE_BLOCK_SIZE,
                 DFLT_BLOCK_SIZE
             )
         );

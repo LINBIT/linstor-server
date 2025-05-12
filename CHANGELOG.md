@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed problems with JUnit ProcCryptoUtilsTest
 - Fixed possible ConcurrentModificationException when satellite deletes data
 - Fixed duplicated minor number bug (based on orphaned .res file)
+- Fixed reading wrong property for cache's blocksize
 
 ## [1.31.0] - 2025-04-08
 
