@@ -11,6 +11,9 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * {@link DeviceLayerKind#BCACHE}, {@link DeviceLayerKind#CACHE} and {@link DeviceLayerKind#WRITECACHE} have quite
  * similar calculations. Instead of duplicating the code, we unify the calculations with a few controlling options (i.e.
@@ -28,39 +31,27 @@ public abstract class AbsCacheLayerSizeCalculator<VLM_DATA extends VlmLayerObjec
      * Incrementing the number before the round with 0.5 allows us to use the {@link Math#round(double)} as a "round up"
      * method.
      */
-    private static final double ROUNDUP_INCREMENT = 0.5;
+    protected static final double ROUNDUP_INCREMENT = 0.5;
 
     private final long metadataSizeOnDataDevice;
     private final String propertyNamespace;
-    private final CacheDeviceInfo[] cacheDevices;
+    private final List<CacheDeviceCalculator> cacheDevicesSizeCalculators;
 
-    protected static class CacheDeviceInfo
+    protected interface SpecialDeviceSizeCalculator<VLM_DATA extends VlmLayerObject<?>>
+    {
+        long calculate(VLM_DATA vlmDataRef, VlmProviderObject<?> cacheChildVlmDataRef)
+            throws AccessDeniedException, DatabaseException;
+    }
+
+    protected class CacheDeviceCalculator
     {
         private final String rscLayerSuffix;
-        private final String propertyKey;
-        private final String propertyDefaultValue;
-        private final long minimumSizeInKib;
+        private final SpecialDeviceSizeCalculator<VLM_DATA> specialCalc;
 
-        public CacheDeviceInfo(
-            String rscLayerSuffixRef,
-            String propertyKeyRef,
-            String propertyDefaultValueRef
-        )
-        {
-            this(rscLayerSuffixRef, propertyKeyRef, propertyDefaultValueRef, 1);
-        }
-
-        public CacheDeviceInfo(
-            String rscLayerSuffixRef,
-            String propertyKeyRef,
-            String propertyDefaultValueRef,
-            long minimumSizeInKibRef
-        )
+        public CacheDeviceCalculator(String rscLayerSuffixRef, SpecialDeviceSizeCalculator<VLM_DATA> calcFuncRef)
         {
             rscLayerSuffix = rscLayerSuffixRef;
-            propertyKey = propertyKeyRef;
-            propertyDefaultValue = propertyDefaultValueRef;
-            minimumSizeInKib = minimumSizeInKibRef;
+            specialCalc = calcFuncRef;
         }
     }
 
@@ -68,14 +59,52 @@ public abstract class AbsCacheLayerSizeCalculator<VLM_DATA extends VlmLayerObjec
         AbsLayerSizeCalculatorInit initRef,
         DeviceLayerKind kindRef,
         String propertyNamespaceRef,
-        long metadataSizeOnDataDeviceRef,
-        CacheDeviceInfo... cacheDevicesRef
+        long metadataSizeOnDataDeviceRef
     )
     {
         super(initRef, kindRef);
         metadataSizeOnDataDevice = metadataSizeOnDataDeviceRef;
         propertyNamespace = propertyNamespaceRef;
-        cacheDevices = cacheDevicesRef;
+
+        cacheDevicesSizeCalculators = new ArrayList<>();
+    }
+
+    protected void registerChildSizeCalculator(
+        String rscLayerSuffixRef,
+        String propertyKeyRef,
+        String propertyDefaultValueRef
+    )
+    {
+        registerChildSizeCalculator(rscLayerSuffixRef, propertyKeyRef, propertyDefaultValueRef, 1);
+    }
+
+    protected void registerChildSizeCalculator(
+        String rscLayerSuffixRef,
+        String propertyKeyRef,
+        String propertyDefaultValueRef,
+        long minimumSizeInKibRef
+    )
+    {
+        registerChildSizeCalculator(
+            rscLayerSuffixRef,
+            (vlmData, cacheChildVlmData) -> getCacheSize(
+                cacheChildVlmData,
+                vlmData.getUsableSize(),
+                propertyKeyRef,
+                propertyDefaultValueRef,
+                minimumSizeInKibRef
+            )
+        );
+    }
+
+    protected void registerChildSizeCalculator(
+        String rscLayerSuffixRef,
+        SpecialDeviceSizeCalculator<VLM_DATA> specialDeviceSizeCalculatorRef
+    )
+    {
+        this.cacheDevicesSizeCalculators.add(
+            new CacheDeviceCalculator(rscLayerSuffixRef, specialDeviceSizeCalculatorRef)
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -105,13 +134,10 @@ public abstract class AbsCacheLayerSizeCalculator<VLM_DATA extends VlmLayerObjec
         boolean allCacheChildrenExists = true;
         long sumCacheAllocatedSizes;
 
-        VlmProviderObject<?>[] cacheChildrenVlmData = new VlmProviderObject[cacheDevices.length];
 
-        for (int cdIdx = 0; cdIdx < cacheDevices.length; cdIdx++)
+        for (CacheDeviceCalculator calc : cacheDevicesSizeCalculators)
         {
-            CacheDeviceInfo cdi = cacheDevices[cdIdx];
-            VlmProviderObject<?> cacheChildVlmData = vlmData.getChildBySuffix(cdi.rscLayerSuffix);
-            cacheChildrenVlmData[cdIdx] = cacheChildVlmData;
+            VlmProviderObject<?> cacheChildVlmData = vlmData.getChildBySuffix(calc.rscLayerSuffix);
             if (cacheChildVlmData == null)
             {
                 allCacheChildrenExists = false;
@@ -134,7 +160,7 @@ public abstract class AbsCacheLayerSizeCalculator<VLM_DATA extends VlmLayerObjec
 
         if (allCacheChildrenExists)
         {
-            sumCacheAllocatedSizes = calculateCacheChildren(vlmData, cacheChildrenVlmData);
+            sumCacheAllocatedSizes = calculateCacheChildren(vlmData);
         }
         else
         {
@@ -144,56 +170,62 @@ public abstract class AbsCacheLayerSizeCalculator<VLM_DATA extends VlmLayerObjec
         vlmData.setAllocatedSize(vlmData.getUsableSize() + sumCacheAllocatedSizes);
     }
 
-    private long calculateCacheChildren(
-        VLM_DATA vlmData,
-        VlmProviderObject<?>[] cacheChildrenVlmData
+    private long calculateCacheChildren(VLM_DATA vlmData)
+        throws AccessDeniedException, DatabaseException
+    {
+        long ret = 0;
+        for (CacheDeviceCalculator calc : cacheDevicesSizeCalculators)
+        {
+            VlmProviderObject<?> cacheChildVlmData = vlmData.getChildBySuffix(calc.rscLayerSuffix);
+            ret += calc.specialCalc.calculate(vlmData, cacheChildVlmData);
+        }
+        return ret;
+    }
+
+    protected long getCacheSize(
+        VlmProviderObject<?> cacheChildVlmDataRef,
+        long vlmDataUsableSize,
+        String propertyKeyRef,
+        String propertyDefaultValueRef,
+        long minimumSizeInKibRef
     )
         throws AccessDeniedException, DatabaseException
     {
         long ret = 0;
 
-        AbsVolume<?> vlm = vlmData.getVolume();
+        AbsVolume<?> vlm = cacheChildVlmDataRef.getVolume();
         PriorityProps prioProps = getPrioProps(vlm);
 
-        for (int cdIdx = 0; cdIdx < cacheDevices.length; cdIdx++)
+        // null if we are above an NVMe target
+        @Nullable String sizeStr = prioProps.getProp(propertyKeyRef, propertyNamespace, propertyDefaultValueRef);
+
+        long cacheSize;
+        if (sizeStr != null)
         {
-            CacheDeviceInfo cdi = cacheDevices[cdIdx];
-            VlmProviderObject<?> cacheChildVlmData = cacheChildrenVlmData[cdIdx];
-
-            // null if we are above an NVMe target
-            @Nullable
-            String sizeStr = prioProps.getProp(cdi.propertyKey, propertyNamespace, cdi.propertyDefaultValue);
-
-            long cacheSize;
-            if (sizeStr != null)
+            sizeStr = sizeStr.trim();
+            if (sizeStr.endsWith("%"))
             {
-                sizeStr = sizeStr.trim();
-                if (sizeStr.endsWith("%"))
-                {
-                    String cacheSizePercent = sizeStr.substring(0, sizeStr.length() - 1);
-                    double percent = Double.parseDouble(cacheSizePercent) / 100;
-                    cacheSize = Math.round(percent * vlmData.getUsableSize() + ROUNDUP_INCREMENT);
-                }
-                else
-                {
-                    cacheSize = Long.parseLong(sizeStr);
-                }
-                if (cacheSize < cdi.minimumSizeInKib)
-                {
-                    errorReporter.logDebug(
-                        "%s: size %dKiB was too small. Rounded up to %dKiB",
-                        kind.name(),
-                        cacheSize,
-                        cdi.minimumSizeInKib
-                    );
-                    cacheSize = cdi.minimumSizeInKib;
-                }
-
-                cacheChildVlmData.setUsableSize(cacheSize);
-                updateAllocatedSizeFromUsableSize(cacheChildVlmData);
-
-                ret += cacheSize;
+                String cacheSizePercent = sizeStr.substring(0, sizeStr.length() - 1);
+                double percent = Double.parseDouble(cacheSizePercent) / 100;
+                cacheSize = Math.round(percent * vlmDataUsableSize + ROUNDUP_INCREMENT);
             }
+            else
+            {
+                cacheSize = Long.parseLong(sizeStr);
+            }
+            if (cacheSize < minimumSizeInKibRef)
+            {
+                errorReporter.logDebug(
+                    "%s: size %dKiB was too small. Rounded up to %dKiB",
+                    kind.name(),
+                    cacheSize,
+                    minimumSizeInKibRef
+                );
+                cacheSize = minimumSizeInKibRef;
+            }
+
+            cacheChildVlmDataRef.setUsableSize(cacheSize);
+            updateAllocatedSizeFromUsableSize(cacheChildVlmDataRef);
         }
         return ret;
     }

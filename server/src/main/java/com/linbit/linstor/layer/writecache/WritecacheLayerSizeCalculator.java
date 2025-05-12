@@ -18,16 +18,11 @@ public class WritecacheLayerSizeCalculator extends AbsCacheLayerSizeCalculator<W
     @Inject
     public WritecacheLayerSizeCalculator(AbsLayerSizeCalculatorInit initRef)
     {
-        super(
-            initRef,
-            DeviceLayerKind.WRITECACHE,
-            ApiConsts.NAMESPC_WRITECACHE,
-            0,
-            new CacheDeviceInfo(
-                RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE,
-                ApiConsts.KEY_WRITECACHE_SIZE,
-                DFLT_CACHE_SIZE
-            )
+        super(initRef, DeviceLayerKind.WRITECACHE, ApiConsts.NAMESPC_WRITECACHE, 0);
+        registerChildSizeCalculator(
+            RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE,
+            ApiConsts.KEY_WRITECACHE_SIZE,
+            DFLT_CACHE_SIZE
         );
     }
 }

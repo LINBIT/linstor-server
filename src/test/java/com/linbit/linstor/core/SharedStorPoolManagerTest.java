@@ -43,7 +43,6 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             errorReporter
         );
 
-        resourceGroupTestFactory.initDfltRscGrp();
         volumeTestFactory.setDfltStorPoolData("spShared")
             .setDfltVlmSize(1 * GiB);
 

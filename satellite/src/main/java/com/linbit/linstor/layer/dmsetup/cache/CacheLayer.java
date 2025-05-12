@@ -22,6 +22,7 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.cache.CacheLayerSizeCalculator;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -37,6 +38,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -49,8 +51,7 @@ public class CacheLayer implements DeviceLayer
     private static final String FORMAT_DM_NAME = "linstor_cache_%s%s_%05d";
     private static final String FORMAT_DEV_PATH = "/dev/mapper/%s";
 
-    private static final String DFLT_BLOCK_SIZE = "4096";
-    private static final String DFLT_FEATURE = "writethrough";
+    private static final String DFLT_FEATURE = "writeback";
     private static final String DFLT_POLICY = "smq";
 
     private final ErrorReporter errorReporter;
@@ -376,34 +377,37 @@ public class CacheLayer implements DeviceLayer
 
     private long getBlocksize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
     {
-        return Long.parseLong(
-            getProp(
-                vlmRef,
-                ApiConsts.KEY_CACHE_BLOCK_SIZE,
-                DFLT_BLOCK_SIZE
-            )
-        );
+        @Nullable String propValue = getCacheProp(vlmRef, ApiConsts.KEY_CACHE_BLOCK_SIZE);
+        long ret;
+        if (propValue == null)
+        {
+            ret = CacheLayerSizeCalculator.DFLT_BLOCK_SIZE_IN_BYTES;
+        }
+        else
+        {
+            ret = Long.parseLong(propValue);
+        }
+        return ret;
     }
 
     private String getFeature(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
     {
-        return getProp(
-            vlmRef,
-            ApiConsts.KEY_CACHE_OPERATING_MODE,
-            DFLT_FEATURE
-        );
+        return getCacheProp(vlmRef, ApiConsts.KEY_CACHE_OPERATING_MODE, DFLT_FEATURE);
     }
 
     private String getPolicy(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
     {
-        return getProp(
-            vlmRef,
-            ApiConsts.KEY_CACHE_POLICY,
-            DFLT_POLICY
-        );
+        return getCacheProp(vlmRef, ApiConsts.KEY_CACHE_POLICY, DFLT_POLICY);
     }
 
-    private String getProp(AbsVolume<Resource> vlmRef, String key, String dfltValue)
+    private @Nullable String getCacheProp(AbsVolume<Resource> vlmRef, String key)
+        throws InvalidKeyException, AccessDeniedException
+    {
+        @Nullable String value = getPrioProps(vlmRef).getProp(key, ApiConsts.NAMESPC_CACHE);
+        return value == null ? null : value.trim();
+    }
+
+    private String getCacheProp(AbsVolume<Resource> vlmRef, String key, String dfltValue)
         throws InvalidKeyException, AccessDeniedException
     {
         return getPrioProps(vlmRef).getProp(

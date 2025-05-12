@@ -49,9 +49,6 @@ public class AutoUnplacerTest extends GenericDbBase
     {
         setUpAndEnterScope();
 
-        resourceGroupTestFactory.initDfltRscGrp();
-        storPoolDefinitionTestFactory.initDfltDisklessStorPool();
-
         vlmConfigs = new VlmCfg[] {
             new VlmCfg() };
     }

@@ -112,6 +112,6 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
     @Override
     public String toString()
     {
-        return "TransactionSimpleObject [" + object.toString() + "]";
+        return "TransactionSimpleObject [" + object + "]";
     }
 }

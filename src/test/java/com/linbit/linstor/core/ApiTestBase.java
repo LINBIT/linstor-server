@@ -98,6 +98,7 @@ public abstract class ApiTestBase extends GenericDbBase
             .thenReturn(tcpConnectorMock);
 
         enterScope();
+        initAfterScopeWasEntered();
     }
 
     private void create(TransactionMgrSQL transMgr, AccessContext accCtx) throws Exception

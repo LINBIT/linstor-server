@@ -270,6 +270,11 @@ public class VolumeTestFactory
             return this;
         }
 
+        public VolumeBuilder setSize(long sizeRef)
+        {
+            vlmSize = sizeRef;
+            return this;
+        }
 
         public Volume build()
             throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException,

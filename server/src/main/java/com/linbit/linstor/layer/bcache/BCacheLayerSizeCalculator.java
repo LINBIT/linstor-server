@@ -19,17 +19,12 @@ public class BCacheLayerSizeCalculator extends AbsCacheLayerSizeCalculator<BCach
     @Inject
     public BCacheLayerSizeCalculator(AbsLayerSizeCalculatorInit initRef)
     {
-        super(
-            initRef,
-            DeviceLayerKind.BCACHE,
-            ApiConsts.NAMESPC_BCACHE,
-            BCACHE_METADATA_SIZE_IN_KIB,
-            new CacheDeviceInfo(
-                RscLayerSuffixes.SUFFIX_BCACHE_CACHE,
-                ApiConsts.KEY_BCACHE_SIZE,
-                DFLT_CACHE_SIZE,
-                MIN_CACHE_SIZE_IN_KIB
-            )
+        super(initRef, DeviceLayerKind.BCACHE, ApiConsts.NAMESPC_BCACHE, BCACHE_METADATA_SIZE_IN_KIB);
+        registerChildSizeCalculator(
+            RscLayerSuffixes.SUFFIX_BCACHE_CACHE,
+            ApiConsts.KEY_BCACHE_SIZE,
+            DFLT_CACHE_SIZE,
+            MIN_CACHE_SIZE_IN_KIB
         );
     }
 }

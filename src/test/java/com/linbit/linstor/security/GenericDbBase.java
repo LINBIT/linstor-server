@@ -62,6 +62,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.TestDbModule;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
+import com.linbit.linstor.layer.LayerSizeCalculatorModule;
 import com.linbit.linstor.layer.resource.AbsRscLayerHelper;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -339,6 +340,13 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     {
         setUpWithoutEnteringScope(Modules.EMPTY_MODULE);
         enterScope();
+        initAfterScopeWasEntered();
+    }
+
+    protected void initAfterScopeWasEntered() throws Exception
+    {
+        resourceGroupTestFactory.initDfltRscGrp();
+        storPoolDefinitionTestFactory.initDfltDisklessStorPool();
     }
 
     protected void setUpWithoutEnteringScope(Module additionalModule) throws Exception
@@ -375,7 +383,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             BoundFieldModule.of(this),
             new NameShortenerModule(),
             new JclCryptoModule(),
-            new ApiTestModule(stltConnector)
+            new ApiTestModule(stltConnector),
+            new LayerSizeCalculatorModule()
         );
         // super.setUpWithoutEnteringScope has also initialized satelliteConnector, but with a different
         // mock as we just gave guice to bind to. i.e. override with our local mock

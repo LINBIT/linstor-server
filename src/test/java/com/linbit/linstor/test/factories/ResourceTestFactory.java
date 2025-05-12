@@ -135,6 +135,12 @@ public class ResourceTestFactory
             return this;
         }
 
+        public ResourceBuilder setLayerStack(List<DeviceLayerKind> layerStackRef)
+        {
+            layerStack = layerStackRef;
+            return this;
+        }
+
         public Resource build()
             throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException,
             ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException, InvalidNameException,
