@@ -46,6 +46,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -359,7 +360,8 @@ public class StltSnapshotApiCallHandler
     {
         ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
         SnapshotName snapName = snapDfn.getName();
-        for (Snapshot snap : snapDfn.getAllSnapshots(accCtx))
+        ArrayList<Snapshot> copyOfSnapshots = new ArrayList<>(snapDfn.getAllSnapshots(accCtx));
+        for (Snapshot snap : copyOfSnapshots)
         {
             snapshipServiceRef.snapshotDeleted(snap);
             backupShippingMgrRef.snapshotDeleted(snap);

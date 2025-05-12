@@ -174,10 +174,9 @@ class StltRscApiCallHandler
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
             if (rscDfn != null)
             {
-                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
-                while (rscIt.hasNext())
+                // Copy the resources to void concurrentModificationException when deleting the rscs from the rscDfn
+                for (Resource rsc : rscDfn.copyResourceMap(apiCtx).values())
                 {
-                    Resource rsc = rscIt.next();
                     rsc.delete(apiCtx);
                 }
                 if (rscDfn.getSnapshotDfns(apiCtx).isEmpty())

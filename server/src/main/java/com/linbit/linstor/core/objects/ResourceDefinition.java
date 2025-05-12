@@ -37,6 +37,7 @@ import com.linbit.locks.LockGuard;
 import com.linbit.utils.ExceptionThrowingPredicate;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -322,14 +323,22 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         return resourceMap.values().stream();
     }
 
-    public void copyResourceMap(
-        AccessContext accCtx, Map<NodeName, ? super Resource> dstMap
+    public Map<NodeName, Resource> copyResourceMap(AccessContext accCtx) throws AccessDeniedException
+    {
+        return copyResourceMap(accCtx, null);
+    }
+
+    public Map<NodeName, Resource> copyResourceMap(
+        AccessContext accCtx,
+        @Nullable Map<NodeName, Resource> dstMap
     )
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        dstMap.putAll(resourceMap);
+        Map<NodeName, Resource> targetMap = dstMap == null ? new TreeMap<>() : dstMap;
+        targetMap.putAll(resourceMap);
+        return targetMap;
     }
 
     @Override

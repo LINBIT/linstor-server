@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.25.0";
+    public static final String REST_API_VERSION = "1.25.1";
 
     /**
      * Common api reply structure
