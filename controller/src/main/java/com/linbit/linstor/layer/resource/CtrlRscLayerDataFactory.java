@@ -310,7 +310,6 @@ public class CtrlRscLayerDataFactory
         }
         catch (Exception exc)
         {
-            errorReporter.reportError(exc);
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_UNKNOWN_ERROR,

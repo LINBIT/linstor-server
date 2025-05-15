@@ -57,7 +57,7 @@ import java.util.Set;
 
 @Singleton
 class RscBCacheLayerHelper
-    extends AbsRscLayerHelper<
+    extends AbsCachedRscLayerHelper<
         BCacheRscData<Resource>, BCacheVlmData<Resource>,
         RscDfnLayerObject, VlmDfnLayerObject>
 {
@@ -164,7 +164,7 @@ class RscBCacheLayerHelper
         throws AccessDeniedException
     {
         Set<StorPool> storPools = new HashSet<>();
-        if (needsCacheDevice(rsc, layerListRef))
+        if (genericNeedsCacheDevice(rsc, layerListRef))
         {
             storPools.add(getCacheStorPool(rsc, vlmDfn));
         }
@@ -182,7 +182,7 @@ class RscBCacheLayerHelper
             ValueInUseException, LinStorException
     {
         StorPool cacheStorPool = null;
-        if (needsCacheDevice(bcacheRscData.getAbsResource(), layerListRef))
+        if (genericNeedsCacheDevice(bcacheRscData.getAbsResource(), layerListRef))
         {
             cacheStorPool = getCacheStorPool(vlm);
         }
@@ -212,7 +212,7 @@ class RscBCacheLayerHelper
         List<ChildResourceData> children = new ArrayList<>();
         children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA));
 
-        if (needsCacheDevice(rscDataRef.getAbsResource(), layerListRef))
+        if (genericNeedsCacheDevice(rscDataRef.getAbsResource(), layerListRef))
         {
             children.add(
                 new ChildResourceData(
@@ -224,16 +224,6 @@ class RscBCacheLayerHelper
         }
 
         return children;
-    }
-
-    private boolean needsCacheDevice(Resource rsc, List<DeviceLayerKind> layerListRef)
-        throws AccessDeniedException
-    {
-        boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
-        boolean isNvmeInitiator = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-        boolean isEbsInitiator = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
-
-        return !isNvmeBelow || isNvmeInitiator || isEbsInitiator;
     }
 
     @Override

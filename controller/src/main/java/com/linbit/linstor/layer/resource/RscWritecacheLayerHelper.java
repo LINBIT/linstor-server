@@ -15,7 +15,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
@@ -32,7 +31,6 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
@@ -59,7 +57,7 @@ import java.util.Set;
 
 @Singleton
 class RscWritecacheLayerHelper
-    extends AbsRscLayerHelper<
+    extends AbsCachedRscLayerHelper<
         WritecacheRscData<Resource>, WritecacheVlmData<Resource>,
         RscDfnLayerObject, VlmDfnLayerObject>
 {
@@ -180,7 +178,7 @@ class RscWritecacheLayerHelper
             ValueInUseException, LinStorException
     {
         StorPool cacheStorPool = null;
-        if (needsCacheDevice(writecacheRscData, layerListRef))
+        if (genericNeedsCacheDevice(writecacheRscData.getAbsResource(), layerListRef))
         {
             cacheStorPool = getCacheStorPool(vlm);
         }
@@ -210,7 +208,7 @@ class RscWritecacheLayerHelper
         List<ChildResourceData> children = new ArrayList<>();
         children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA));
 
-        if (needsCacheDevice(rscDataRef, layerListRef))
+        if (genericNeedsCacheDevice(rscDataRef.getAbsResource(), layerListRef))
         {
             children.add(
                 new ChildResourceData(
@@ -222,18 +220,6 @@ class RscWritecacheLayerHelper
         }
 
         return children;
-    }
-
-    private boolean needsCacheDevice(WritecacheRscData<Resource> rscDataRef, List<DeviceLayerKind> layerListRef)
-        throws AccessDeniedException
-    {
-        boolean isNvmeBelow = DeviceLayerKind.WRITECACHE.isAncestorOf(layerListRef, DeviceLayerKind.NVME);
-        StateFlags<Flags> rscFlags = rscDataRef.getAbsResource().getStateFlags();
-        boolean isNvmeInitiator = rscFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-        boolean isEbsInitiator = rscFlags.isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
-
-        return (isNvmeInitiator && isNvmeBelow) ||
-            (!isNvmeInitiator && !isNvmeBelow) || isEbsInitiator;
     }
 
     @Override

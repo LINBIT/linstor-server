@@ -55,7 +55,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Singleton
-class RscCacheLayerHelper extends AbsRscLayerHelper<
+class RscCacheLayerHelper extends AbsCachedRscLayerHelper<
     CacheRscData<Resource>, CacheVlmData<Resource>,
     RscDfnLayerObject, VlmDfnLayerObject>
 {
@@ -163,7 +163,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         throws AccessDeniedException
     {
         Set<StorPool> storPools = new HashSet<>();
-        if (needsCacheDevice(rscRef, layerListRef))
+        if (genericNeedsCacheDevice(rscRef, layerListRef))
         {
             storPools.add(getCacheStorPool(rscRef, vlmDfn));
             StorPool metaSP = getMetaStorPool(rscRef, vlmDfn);
@@ -189,7 +189,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     {
         StorPool cacheStorPool = null;
         StorPool metaStorPool = null;
-        if (needsCacheDevice(cacheRscData.getAbsResource(), layerListRef))
+        if (genericNeedsCacheDevice(cacheRscData.getAbsResource(), layerListRef))
         {
             cacheStorPool = getCacheStorPool(vlm);
             metaStorPool = getMetaStorPool(vlm);
@@ -230,7 +230,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         List<ChildResourceData> children = new ArrayList<>();
         children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA));
 
-        if (needsCacheDevice(rscDataRef.getAbsResource(), layerListRef))
+        if (genericNeedsCacheDevice(rscDataRef.getAbsResource(), layerListRef))
         {
             children.add(
                 new ChildResourceData(
@@ -249,18 +249,6 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         }
 
         return children;
-    }
-
-    private boolean needsCacheDevice(
-        Resource rscRef,
-        List<DeviceLayerKind> layerListRef
-    )
-        throws AccessDeniedException
-    {
-        boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
-        boolean isNvmeInitiator = rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-        boolean isEbsInitiator = rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
-        return !isNvmeBelow || isNvmeInitiator || isEbsInitiator;
     }
 
     @Override
