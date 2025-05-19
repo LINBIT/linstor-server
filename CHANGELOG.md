@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cases where DrbdVlmData's exists boolean was not properly updated
 - Fixed rare "access to deleted node" in the PingTask
 - Fixed resource-group modify not deleting tiebreaker if quorum property changed
+- Fixed auto-quorum/tiebreaker if quorum property was explicitly set to majority
 
 ## [1.31.0] - 2025-04-08
 

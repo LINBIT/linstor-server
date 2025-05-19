@@ -10,7 +10,6 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
@@ -28,7 +27,6 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
@@ -77,8 +75,6 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 {
     private final SystemConfRepository systemConfRepository;
     private final CtrlRscLayerDataFactory layerDataHelper;
-    private final NodeRepository nodeRepo;
-    private final StorPoolDefinitionMap storPoolDfnMap;
     private final CtrlRscCrtApiHelper rscCrtApiHelper;
     private final Provider<AccessContext> peerCtx;
     private final ScopeRunner scopeRunner;
@@ -92,11 +88,9 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     private final ErrorReporter errorReporter;
 
     @Inject
-    public CtrlRscAutoTieBreakerHelper(
+    CtrlRscAutoTieBreakerHelper(
         SystemConfRepository systemConfRepositoryRef,
         ScopeRunner scopeRunnerRef,
-        NodeRepository nodeRepoRef,
-        StorPoolDefinitionMap storPoolDfnMapRef,
         CtrlRscLayerDataFactory layerDataHelperRef,
         @PeerContext Provider<AccessContext> peerCtxRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
@@ -111,8 +105,6 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     {
         systemConfRepository = systemConfRepositoryRef;
         scopeRunner = scopeRunnerRef;
-        nodeRepo = nodeRepoRef;
-        storPoolDfnMap = storPoolDfnMapRef;
         layerDataHelper = layerDataHelperRef;
         peerCtx = peerCtxRef;
         nodesMapLock = nodesMapLockRef;
@@ -470,7 +462,8 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
         AccessContext peerAccCtx = peerCtx.get();
 
-        if (CtrlRscAutoQuorumHelper.isAutoQuorumEnabled(getPrioProps(rscDfn)))
+        if (CtrlRscAutoQuorumHelper.isQuorumEnabled(getPrioProps(rscDfn)) ||
+            CtrlRscAutoQuorumHelper.isAutoQuorumEnabled(getPrioProps(rscDfn)))
         {
             Predicate<StorPool> isEligibleTieBreakerStorPool = getEligibleTieBreakerStorPoolPredicate(rscDfn);
 

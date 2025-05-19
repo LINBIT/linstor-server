@@ -276,33 +276,35 @@ public class CtrlConfApiCallHandler
         ApiCallRcImpl apiCallRc)
     {
         Flux<ApiCallRc> flux = Flux.empty();
-        for (ResourceDefinition rscDfn : rscDfns)
+
+        String drbdQuorum = ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM;
+        boolean drbdQuorumChanged = false;
+        if (overrideProps.containsKey(drbdQuorum))
         {
-            ResponseContext context = CtrlRscDfnApiCallHandler.makeResourceDefinitionContext(
-                ApiOperation.makeModifyOperation(),
-                rscDfn.getName().displayValue
-            );
+            overrideProps.put(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY, "user");
+            drbdQuorumChanged = true;
+        }
 
-            String drbdQuorum = ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM;
-            boolean drbdQuorumChanged = false;
-            if (overrideProps.containsKey(drbdQuorum))
-            {
-                overrideProps.put(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY, "user");
-                drbdQuorumChanged = true;
-            }
+        if (deletePropKeys.contains(drbdQuorum))
+        {
+            deletePropKeys.add(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY);
+            drbdQuorumChanged = true;
+        }
 
-            if (deletePropKeys.contains(drbdQuorum))
+        // run auto quorum/tiebreaker manage code
+        String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" +
+            ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
+        if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey)
+            || drbdQuorumChanged)
+        {
+            for (ResourceDefinition rscDfn : rscDfns)
             {
-                deletePropKeys.add(ApiConsts.NAMESPC_INTERNAL_DRBD + "/" + ApiConsts.KEY_QUORUM_SET_BY);
-                drbdQuorumChanged = true;
-            }
+                ResponseContext context = CtrlRscDfnApiCallHandler.makeResourceDefinitionContext(
+                    ApiOperation.makeModifyOperation(),
+                    rscDfn.getName().displayValue
+                );
 
-            // run auto quorum/tiebreaker manage code
-            String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" +
-                ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
-            if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey)
-                || drbdQuorumChanged)
-            {
+                CtrlRscAutoQuorumHelper.removeQuorumPropIfSetByLinstor(rscDfn, peerAccCtx.get());
                 ApiCallRcImpl responses = new ApiCallRcImpl();
                 CtrlRscAutoHelper.AutoHelperContext autoHelperCtx =
                     new CtrlRscAutoHelper.AutoHelperContext(responses, context, rscDfn);

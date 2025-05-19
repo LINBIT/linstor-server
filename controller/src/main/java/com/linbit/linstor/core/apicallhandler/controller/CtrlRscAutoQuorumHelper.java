@@ -39,6 +39,15 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
+/**
+ * The current implementation of Linstor auto-quorum works currently directly on the DrbdOptions/Resource/quorum
+ * property.
+ * Linstor tracks if the property was set by the user or by Linstor itself via (Internal/Drbd/QuorumSetBy).
+ * If it was set by the user, Linstor doesn't automate any of the quorum settings and just takes the property settings.
+ * If it isn't set or set by Linstor, all the automagic comes into play, the quorum option will be set on RscDfn level
+ * by Linstor. It should also be deleted (@see CtrlRscAutoQuorumHelper#removeQuorumPropIfSetByLinstor())
+ * by Linstor if it is explicitly set on a higher level (C, RG).
+ */
 @Singleton
 class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
 {
@@ -50,7 +59,7 @@ class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
     private final Provider<AccessContext> peerCtx;
 
     @Inject
-    public CtrlRscAutoQuorumHelper(
+    CtrlRscAutoQuorumHelper(
         SystemConfRepository systemConfRepositoryRef,
         @PeerContext Provider<AccessContext> peerCtxRef
     )
@@ -284,10 +293,27 @@ class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
             diskfulDrbdCount >= 3;
     }
 
+    /**
+     * Checks if auto-quorum is enabled by Linstor.
+     * @param prioProps PrioProps(RD, RG, C)
+     * @return false if 'DrbdOptions/Resource/quorum' was directly set the user on any prioProp(RD, RG, C) level.
+     */
     public static boolean isAutoQuorumEnabled(PriorityProps prioProps)
     {
         var quorumSetBy = getQuorumSetByProp(prioProps);
         return InternalApiConsts.SET_BY_VALUE_LINSTOR.equalsIgnoreCase(quorumSetBy.objA);
+    }
+
+    /**
+     * Checks if the quorum option is set to `majority` on any PrioProp(RD, RG, C) level.
+     * @param prioProps PrioProps(RD, RG, C)
+     * @return true if DrbdOptions/Resource/quorum has majority on any prioProp level.
+     */
+    public static boolean isQuorumEnabled(PriorityProps prioProps)
+    {
+        String quorumSetting = prioProps.getProp(
+            InternalApiConsts.KEY_DRBD_QUORUM, ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS, PROP_VAL_QUORUM_MAJORITY);
+        return quorumSetting.equalsIgnoreCase(PROP_VAL_QUORUM_MAJORITY);
     }
 
     private static Pair<String, ReadOnlyProps> getQuorumSetByProp(PriorityProps prioProps)
@@ -325,5 +351,38 @@ class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
             .getExtToolInfo(ExtTools.DRBD9_KERNEL);
         return drbdInfo != null && drbdInfo
             .hasVersionOrHigher(new ExtToolsInfo.Version(9, 0, 18));
+    }
+
+    /**
+     * This method should be called if a higher level objects (Controller, RG) `quorum` property was modified.
+     * It will delete the rscDfn quorum property if it was auto set by Linstor, to guarantee that the higher level
+     * prio prop will be taken into account.
+     * @param rscDfn RD to check and delete the quorum prop if necessary
+     * @param accCtx access context
+     */
+    public static void removeQuorumPropIfSetByLinstor(ResourceDefinition rscDfn, AccessContext accCtx)
+    {
+        try
+        {
+            Props props = rscDfn.getProps(accCtx);
+            String quorumSetByLinstor = props.getPropWithDefault(
+                ApiConsts.KEY_QUORUM_SET_BY, ApiConsts.NAMESPC_INTERNAL_DRBD, InternalApiConsts.SET_BY_VALUE_LINSTOR);
+            if (quorumSetByLinstor.equalsIgnoreCase(InternalApiConsts.SET_BY_VALUE_LINSTOR))
+            {
+                props.removeProp(InternalApiConsts.KEY_DRBD_QUORUM, ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "cleanup Linstor set quorum property " + getRscDfnDescriptionInline(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
     }
 }
