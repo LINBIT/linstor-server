@@ -40,7 +40,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 @Singleton
-public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
+class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
 {
     private static final String PROP_KEY_QUORUM = "quorum";
     private static final String PROP_VAL_QUORUM_MAJORITY = "majority";

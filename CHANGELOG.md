@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed incorrect calculation of dm-cache's meta-device size
 - Fixed cases where DrbdVlmData's exists boolean was not properly updated
 - Fixed rare "access to deleted node" in the PingTask
+- Fixed resource-group modify not deleting tiebreaker if quorum property changed
 
 ## [1.31.0] - 2025-04-08
 

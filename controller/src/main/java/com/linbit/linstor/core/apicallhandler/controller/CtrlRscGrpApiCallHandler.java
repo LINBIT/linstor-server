@@ -96,6 +96,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -140,8 +141,7 @@ public class CtrlRscGrpApiCallHandler
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
     private final SystemConfRepository systemConfRepository;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
-    private final CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelper;
-    private final CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelper;
+    private final CtrlRscAutoHelper ctrlRscAutoHelper;
     private final EncryptionHelper encryptionHelper;
 
     @Inject
@@ -172,8 +172,7 @@ public class CtrlRscGrpApiCallHandler
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
         SystemConfRepository systemConfRepositoryRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
-        CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelperRef,
-        CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelperRef,
+        CtrlRscAutoHelper ctrlRscAutoHelperRef,
         EncryptionHelper encryptionHelperRef
     )
     {
@@ -203,8 +202,7 @@ public class CtrlRscGrpApiCallHandler
         ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
         systemConfRepository = systemConfRepositoryRef;
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
-        ctrlRscAutoTiebreakerHelper = ctrlRscAutoTiebreakerHelperRef;
-        ctrlRscAutoQuorumHelper = ctrlRscAutoQuorumHelperRef;
+        ctrlRscAutoHelper = ctrlRscAutoHelperRef;
         encryptionHelper = encryptionHelperRef;
     }
 
@@ -722,10 +720,13 @@ public class CtrlRscGrpApiCallHandler
             if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey)
                 || drbdQuorumChanged)
             {
+                CtrlRscAutoQuorumHelper.removeQuorumPropIfSetByLinstor(rscDfn, peerAccCtx.get());
                 ApiCallRcImpl responses = new ApiCallRcImpl();
-                CtrlRscAutoHelper.AutoHelperContext autoHelperCtx = new CtrlRscAutoHelper.AutoHelperContext(responses, context, rscDfn);
-                ctrlRscAutoTiebreakerHelper.manage(autoHelperCtx);
-                ctrlRscAutoQuorumHelper.manage(autoHelperCtx);
+                CtrlRscAutoHelper.AutoHelperContext autoHelperCtx = new CtrlRscAutoHelper.AutoHelperContext(
+                    responses, context, rscDfn);
+                ctrlRscAutoHelper.manage(
+                    autoHelperCtx, new HashSet<>(Arrays.asList(
+                        CtrlRscAutoHelper.AutoHelperType.AutoQuorum, CtrlRscAutoHelper.AutoHelperType.TieBreaker)));
 
                 retFlux = retFlux.concatWith(Flux.merge(autoHelperCtx.additionalFluxList));
             }

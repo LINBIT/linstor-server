@@ -73,7 +73,7 @@ import java.util.function.Predicate;
 import reactor.core.publisher.Flux;
 
 @Singleton
-public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
+class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 {
     private final SystemConfRepository systemConfRepository;
     private final CtrlRscLayerDataFactory layerDataHelper;
