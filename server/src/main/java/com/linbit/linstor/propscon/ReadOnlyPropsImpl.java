@@ -380,4 +380,10 @@ public class ReadOnlyPropsImpl implements Props
     {
         return propsMap.getType();
     }
+
+    @Override
+    public String toString()
+    {
+        return propsMap.toString();
+    }
 }
