@@ -19,6 +19,7 @@ import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -270,7 +271,14 @@ public class CtrlScheduleApiCallHandler
         {
             if (fullCronRef != null && !fullCronRef.isEmpty())
             {
-                schedule.setFullCron(peerAccCtx.get(), fullCronRef);
+                try
+                {
+                    schedule.setFullCron(peerAccCtx.get(), fullCronRef);
+                }
+                catch (IllegalArgumentException exc)
+                {
+                    throw new ApiException("Error parsing full-cron: " + exc.getMessage(), exc);
+                }
                 modifyTask = true;
             }
             if (incCronRef != null)
@@ -281,7 +289,14 @@ public class CtrlScheduleApiCallHandler
                 }
                 else
                 {
-                    schedule.setIncCron(peerAccCtx.get(), incCronRef);
+                    try
+                    {
+                        schedule.setIncCron(peerAccCtx.get(), incCronRef);
+                    }
+                    catch (IllegalArgumentException exc)
+                    {
+                        throw new ApiException("Error parsing inc-cron: " + exc.getMessage(), exc);
+                    }
                 }
                 modifyTask = true;
             }

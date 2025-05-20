@@ -3,6 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.objects.Schedule.OnFailure;
@@ -72,8 +73,24 @@ public class ScheduleControllerFactory
             throw new LinStorDataAlreadyExistsException("This schedule name is already registered");
         }
         CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
-        Cron parsedFull = parser.parse(fullCron);
-        Cron parsedInc = incCron == null ? null : parser.parse(incCron);
+        Cron parsedFull;
+        try
+        {
+            parsedFull = parser.parse(fullCron);
+        }
+        catch (IllegalArgumentException exc)
+        {
+            throw new ApiException("Error parsing full-cron: " + exc.getMessage(), exc);
+        }
+        Cron parsedInc;
+        try
+        {
+            parsedInc = incCron == null ? null : parser.parse(incCron);
+        }
+        catch (IllegalArgumentException exc)
+        {
+            throw new ApiException("Error parsing inc-cron: " + exc.getMessage(), exc);
+        }
         ZonedDateTime now = ZonedDateTime.now();
         ApiCallRcImpl errorRc = null;
         if (!ExecutionTime.forCron(parsedFull).nextExecution(now).isPresent())

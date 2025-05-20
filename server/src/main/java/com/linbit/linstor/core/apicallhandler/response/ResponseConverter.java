@@ -7,13 +7,15 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.StringUtils;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.StringJoiner;
+
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Singleton
 public class ResponseConverter
@@ -183,7 +185,8 @@ public class ResponseConverter
                 .entryBuilder(
                     retCode,
                     StringUtils.firstLetterCaps(context.getOperationDescription().getNoun()) + " of " +
-                        context.getObjectDescriptionInline() + " failed due to an " + errorType + "."
+                        context.getObjectDescriptionInline() + " failed due to an " + errorType + ". " + exc
+                            .getMessage()
                 )
                 .build()
             );
