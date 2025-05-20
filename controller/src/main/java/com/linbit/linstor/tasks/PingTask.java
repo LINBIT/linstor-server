@@ -2,18 +2,24 @@ package com.linbit.linstor.tasks;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
+import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -28,17 +34,20 @@ public class PingTask implements Task
     private final ErrorReporter errorReporter;
     private final ReconnectorTask reconnector;
     private final AccessContext sysCtx;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public PingTask(
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext sysCtxRef,
-        ReconnectorTask reconnectorRef
+        ReconnectorTask reconnectorRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         errorReporter = errorReporterRef;
         sysCtx = sysCtxRef;
         reconnector = reconnectorRef;
+        lockGuardFactory = lockGuardFactoryRef;
 
         reconnector.setPingTask(this);
     }
@@ -79,15 +88,17 @@ public class PingTask implements Task
      * Sends the ping message to the given list of Peers. If the peer's lastPongReceived is older than
      * {@value #PING_TIMEOUT} ms, attempt to reconnect to the peer
      *
-     * @param currentPeers The list of peers to be pinged
+     * @param peers The list of peers to be pinged
      *
      * @return A list of peers that should be removed from the pinglist since we started a reconnect.
      * It should not cause issues if we send them new pings, it is simply unnecessary.
      */
-    private @Nonnull List<Peer> sendPingMessages(@Nonnull final List<Peer> currentPeers)
+    private List<Peer> sendPingMessages(final List<Peer> peers)
     {
         List<Peer> peersToRemove = new ArrayList<>();
-        for (final Peer peer : currentPeers)
+        HashMap<Peer, Peer> peersToCurrentPeers = getCurrentPeers(peers);
+
+        for (final Peer peer : peers)
         {
             final long lastPingReceived = peer.getLastPongReceived();
             final long lastPingSent = peer.getLastPingSent();
@@ -96,19 +107,18 @@ public class PingTask implements Task
             boolean isConnected = peer.isConnected(false);
             boolean allowReconnect = peer.isAllowReconnect();
 
-            try
+            @Nullable Peer nodesCurrentPeer = peersToCurrentPeers.get(peer);
+            if (nodesCurrentPeer == null)
             {
-                Peer nodesCurrentPeer = peer.getNode().getPeer(sysCtx);
-                if (peer != nodesCurrentPeer)
-                {
-                    errorReporter.logTrace("Dropping " + peer + " in favor of " + nodesCurrentPeer);
-                    isConnected = false;
-                    allowReconnect = false;
-                }
+                errorReporter.logTrace("Dropping " + peer + " since node was deleted");
+                isConnected = false;
+                allowReconnect = false;
             }
-            catch (AccessDeniedException accDeniedExc)
+            else if (peer != nodesCurrentPeer)
             {
-                throw new ImplementationError(accDeniedExc);
+                errorReporter.logTrace("Dropping " + peer + " in favor of " + nodesCurrentPeer);
+                isConnected = false;
+                allowReconnect = false;
             }
 
             if ((!isConnected || lastPingReceived + PING_TIMEOUT < lastPingSent) && allowReconnect)
@@ -149,5 +159,44 @@ public class PingTask implements Task
             }
         }
         return peersToRemove;
+    }
+
+    /**
+     * If a peer's node was already deleted or got reconnected (i.e. a new peer) that we just are about to process,
+     * we need to take certain action. This method's returned map will contain all peers of the input list as keys.
+     * There are only three different cases of the value:
+     * <ul>
+     *  <li>The value is identical to its key: the peer is still the same (default case)</li>
+     *  <li>The value is a different peer than its key: the node got reconnected</li>
+     *  <li>The value is <code>null</code> for the given key, the node is already deleted</li>
+     * </ul>
+     * @param peersRef
+     * @return
+     */
+    private HashMap<Peer, /* @Nullable */ Peer> getCurrentPeers(List<Peer> peersRef)
+    {
+        HashMap<Peer, Peer> ret = new HashMap<>();
+        try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.NODES_MAP))
+        {
+            for (Peer peer : peersRef)
+            {
+                @Nullable Peer nodesCurrentPeer;
+                Node node = peer.getNode();
+                if (!node.isDeleted())
+                {
+                    nodesCurrentPeer = node.getPeer(sysCtx);
+                }
+                else
+                {
+                    nodesCurrentPeer = null;
+                }
+                ret.put(peer, nodesCurrentPeer);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return ret;
     }
 }

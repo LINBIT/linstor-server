@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed reading wrong property for cache's blocksize
 - Fixed incorrect calculation of dm-cache's meta-device size
 - Fixed cases where DrbdVlmData's exists boolean was not properly updated
+- Fixed rare "access to deleted node" in the PingTask
 
 ## [1.31.0] - 2025-04-08
 
