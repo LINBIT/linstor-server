@@ -1,3 +1,34 @@
+linstor-server (1.31.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Reconnect: Fix double reconnecting race condition
+  * ConnectionObserver: Dropped no longer needed allowReconnect parameter
+  * PingTask: Drop old connection in case of duplicates
+  * ProcCryptoTest: Properly close errorReporter after test
+  * ApplyDeletedData: Fix possible ConcurrentModificationException
+  * DRBD: Fixed orphand .res file
+  * Cache: Read correct property for cache-blocksize
+  * Cache: Fixed calculation of .dmcache_meta
+  * Cache: disable StorPool check for diskless resuorces
+  * PingTask: Fixed rare "access to deleted node"
+
+  [ Rene Peinthor ]
+  * gradle: move db drivers into own directory
+  * mkfsutils: force ext4 and xfs creation
+  * rest-docu: add missed with_volume_definitions query param
+  * Map replication state entries with node names
+  * Drbd: Set exists to false for DrbdVlmData
+  * readonlypropsimpl: implement toString()
+  * gitlab-ci: test step skip assemble as it is in test
+  * rscgrp/modify: use CtrlRscAutoHelper to invoke tiebreaker/autoquorum
+  * Fix auto-quorum/tiebreaker if quorum property was explicitly set
+  * Revert "gitlab-ci: test step skip assemble as it is in test"
+
+  [ Johanna Kucera ]
+  * Schedules: fix cron error message
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 21 May 2025 06:07:39 +0000
+
 linstor-server (1.31.0-1) experimental; urgency=medium
 
   [ Robert Altnöder ]
