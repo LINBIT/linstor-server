@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed "access to deleted storpool" of remote storage pool after deleting local storage pool
 - Fixed AutoplaceTarget property being ignored on controller level
 - Fixed AutoplaceTarget property that controller has higher priority than node
+- Fixed rare deadlock during shutdown
 
 ## [1.31.1] - 2025-05-21
 

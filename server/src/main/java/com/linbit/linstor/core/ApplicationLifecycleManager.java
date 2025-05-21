@@ -13,6 +13,7 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.ShutdownProtHolder;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -33,15 +34,18 @@ public class ApplicationLifecycleManager
     // a service thread to end
     public static final long SHUTDOWN_THR_JOIN_WAIT = 3000L;
 
+    private static final Object SHUTDOWN_SYNC_OBJ = new Object();
+
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
     private final ShutdownProtHolder shutdownProtHolder;
     private final ReadWriteLock reconfigurationLock;
 
-    private boolean shutdownFinished;
-    private WorkerPool workerThrPool;
+    private @Nullable WorkerPool workerThrPool;
 
     private ArrayList<StartupInitializer> services;
+
+    private boolean shutdownInitialized = false;
 
     @Inject
     public ApplicationLifecycleManager(
@@ -56,8 +60,6 @@ public class ApplicationLifecycleManager
         errorReporter = errorReporterRef;
         shutdownProtHolder = shutdownProtHolderRef;
         reconfigurationLock = reconfigurationLockRef;
-
-        shutdownFinished = false;
     }
 
     public void installShutdownHook()
@@ -106,7 +108,7 @@ public class ApplicationLifecycleManager
         }
     }
 
-    public void stopSystemServices(ArrayList<StartupInitializer> serviceList)
+    private void shutdownSystemServices(ArrayList<StartupInitializer> serviceList)
     {
         // Shutdown services in backwards order
         for (int idx = serviceList.size() - 1; idx >= 0; idx--)
@@ -125,17 +127,6 @@ public class ApplicationLifecycleManager
             try
             {
                 service.shutdown();
-
-                if (sysService != null)
-                {
-                    errorReporter.logInfo(
-                        String.format(
-                            "Waiting for service instance '%s' to complete shutdown",
-                            sysService.getInstanceName().displayValue
-                        )
-                    );
-                }
-                service.awaitShutdown(SHUTDOWN_THR_JOIN_WAIT);
             }
             catch (Exception unhandledExc)
             {
@@ -173,72 +164,117 @@ public class ApplicationLifecycleManager
 
     private void executeShutdown()
     {
-        try
-        {
-            errorReporter.logInfo("Shutdown in progress");
+        errorReporter.logInfo("Shutdown in progress");
 
-            // TODO: May want to add functionality so that all worker threads end
-            //       cleanly before proceeding with the shutdown procedure.
-            //       This must be done outside of the reconfigurationLock, because
-            //       worker threads may be waiting for that lock.
-            if (workerThrPool != null)
+        ArrayList<StartupInitializer> localServices;
+        localServices = initializeShutdown();
+        waitForShutdownServices(localServices);
+
+        shutdownWorkerThread();
+
+        errorReporter.logInfo("Shutdown complete");
+    }
+
+    /**
+     * Initialized the shutdown of all registered Services.
+     *
+     * @return A list of services to wait for their shutdown. List will be empty if the shutdown was already
+     *         initialized by a different thread. In other words: Only the first thread will receive a non-empty list.
+     */
+    private ArrayList<StartupInitializer> initializeShutdown()
+    {
+        ArrayList<StartupInitializer> ret;
+        synchronized (SHUTDOWN_SYNC_OBJ)
+        {
+            if (!shutdownInitialized)
             {
-                errorReporter.logInfo("Shutting down worker thread pool");
-                workerThrPool.shutdown();
-                workerThrPool = null;
+                try
+                {
+                    reconfigurationLock.writeLock().lock();
+                    ret = new ArrayList<>(services);
+
+                    // Shutdown service threads
+                    shutdownSystemServices(ret); // does NOT wait until the services are fully shut down!
+                }
+                finally
+                {
+                    reconfigurationLock.writeLock().unlock();
+                }
+                shutdownInitialized = true;
+            }
+            else
+            {
+                ret = new ArrayList<>();
             }
         }
-        catch (Throwable error)
-        {
-            errorReporter.reportError(Level.ERROR, error);
-        }
+        return ret;
+    }
 
+    private void waitForShutdownServices(ArrayList<StartupInitializer> localServices)
+    {
         try
         {
-            reconfigurationLock.writeLock().lock();
-
-            // Shutdown service threads
-            stopSystemServices(services);
-
             long exitTime = Math.addExact(System.currentTimeMillis(), SVC_SHUTDOWN_WAIT_TIME);
-            for (StartupInitializer svc : services)
+
+            // Shutdown services in backwards order
+            for (int idx = localServices.size() - 1; idx >= 0; idx--)
             {
                 long now = System.currentTimeMillis();
                 if (now < exitTime)
                 {
-                    long maxWaitTime = exitTime - now;
-                    if (maxWaitTime > SVC_SHUTDOWN_WAIT_TIME)
-                    {
-                        maxWaitTime = SVC_SHUTDOWN_WAIT_TIME;
-                    }
+                    StartupInitializer service = localServices.get(idx);
+                    SystemService sysService = service.getSystemService();
 
+                    if (sysService != null)
+                    {
+                        errorReporter.logInfo(
+                            String.format(
+                                "Waiting for service instance '%s' to complete shutdown",
+                                sysService.getInstanceName().displayValue
+                            )
+                        );
+                    }
                     try
                     {
-                        svc.awaitShutdown(maxWaitTime);
+                        service.awaitShutdown(Math.min(exitTime - now, SVC_SHUTDOWN_WAIT_TIME));
                     }
                     catch (InterruptedException ignored)
                     {
                     }
-                    catch (Throwable error)
+                    catch (Exception unhandledExc)
                     {
-                        errorReporter.reportError(Level.ERROR, error);
+                        errorReporter.reportError(unhandledExc);
                     }
                 }
-                else
-                {
-                    break;
-                }
             }
-
-            errorReporter.logInfo("Shutdown complete");
         }
         catch (Throwable error)
         {
             errorReporter.reportError(Level.ERROR, error);
         }
-        finally
+    }
+
+    private void shutdownWorkerThread()
+    {
+        synchronized (SHUTDOWN_SYNC_OBJ)
         {
-            reconfigurationLock.writeLock().unlock();
+            try
+            {
+                // TODO: May want to add functionality so that all worker threads end
+                // cleanly before proceeding with the shutdown procedure.
+                // This must be done outside of the reconfigurationLock, because
+                // worker threads may be waiting for that lock.
+                if (workerThrPool != null)
+                {
+                    errorReporter.logInfo("Shutting down worker thread pool");
+                    workerThrPool.shutdown();
+                    workerThrPool = null;
+                }
+            }
+            catch (Throwable error)
+            {
+                errorReporter.reportError(Level.ERROR, error);
+            }
         }
     }
 
