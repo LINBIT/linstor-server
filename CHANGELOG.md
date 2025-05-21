@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed "access to deleted storpool" of remote storage pool after deleting local storage pool
+
 ## [1.31.1] - 2025-05-21
 
 ### Changed

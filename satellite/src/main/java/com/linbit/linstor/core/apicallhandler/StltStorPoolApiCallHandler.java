@@ -130,16 +130,28 @@ class StltStorPoolApiCallHandler
         {
             StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
 
-            StorPoolDefinition removedStorPoolDfn = storPoolDfnMap.remove(storPoolName); // just to be sure
-            if (removedStorPoolDfn != null)
+            @Nullable StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
+            if (storPoolDfn != null)
             {
-                removedStorPoolDfn.delete(apiCtx);
-                transMgrProvider.get().commit();
+                @Nullable StorPool localStorPool = storPoolDfn.getStorPool(
+                    apiCtx,
+                    controllerPeerConnector.getLocalNodeName()
+                );
+                if (localStorPool != null)
+                {
+                    localStorPool.delete(apiCtx);
+                    errorReporter.logInfo("Local storage pool '" + storPoolNameStr + " deleted");
+                }
+                // storPoolDfn might still be referred by other nodes. We still need the remote storage pools
+                // since the layer-data of our peer-resources still refer to them!
+                if (!storPoolDfn.iterateStorPools(apiCtx).hasNext())
+                {
+                    storPoolDfn.delete(apiCtx);
+                    storPoolDfnMap.remove(storPoolName);
+                    errorReporter.logInfo("Storage pool definition '" + storPoolNameStr + " deleted");
+                }
             }
-
-            errorReporter.logInfo("Storage pool definition '" + storPoolNameStr +
-                "' and the corresponding storage pool was removed by Controller.");
-
+            transMgrProvider.get().commit();
             Set<StorPoolName> storPoolSet = new TreeSet<>();
             storPoolSet.add(storPoolName);
             deviceManager.storPoolUpdateApplied(storPoolSet, Collections.emptySet(), new ApiCallRcImpl());
