@@ -416,7 +416,7 @@ public class StorPoolFilter
 
                 if (nodeMatches)
                 {
-                    PriorityProps prioProps = new PriorityProps(ctrlPropsHelper.getCtrlPropsForView(), nodeProps);
+                    PriorityProps prioProps = new PriorityProps(nodeProps, ctrlPropsHelper.getCtrlPropsForView());
                     String allowAutoPlace = prioProps.getProp(ApiConsts.KEY_AUTOPLACE_ALLOW_TARGET);
                     if (allowAutoPlace != null && allowAutoPlace.equalsIgnoreCase("false"))
                     {
