@@ -8,7 +8,7 @@ import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -90,7 +90,7 @@ public class VlmApiData implements VolumeApi
     }
 
     @Override
-    public @Nullable List<Pair<String, VlmLayerDataApi>> getVlmLayerData()
+    public @Nullable List<PairNonNull<String, VlmLayerDataApi>> getVlmLayerData()
     {
         return null; // only needed for compat, not available on protobuf (as that is java-internal only)
     }

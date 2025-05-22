@@ -6,6 +6,7 @@ import com.google.common.base.Objects;
 
 public class Triple<A, B, C> implements Comparable<Triple<A, B, C>>
 {
+    // TODO: remove nullable annotations and add them where triple is used as soon as internal issue #1217 is done
     public @Nullable A objA;
     public @Nullable B objB;
     public @Nullable C objC;

@@ -30,7 +30,7 @@ import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Provider;
 
@@ -424,7 +424,7 @@ public class Volume extends AbsVolume<Resource>
     {
         checkDeleted();
         VolumeNumber vlmNr = volumeDfn.getVolumeNumber();
-        List<Pair<String, VlmLayerDataApi>> layerDataList = new ArrayList<>();
+        List<PairNonNull<String, VlmLayerDataApi>> layerDataList = new ArrayList<>();
 
         StorPool compatStorPool = null;
 
@@ -440,7 +440,7 @@ public class Volume extends AbsVolume<Resource>
                 // vlmProvider is null as a layer (like DRBD) does not need for all volumes backing vlmProvider
                 // (like in the case of mixed internal and external meta-data)
                 layerDataList.add(
-                    new Pair<>(
+                    new PairNonNull<>(
                         vlmProvider.getLayerKind().name(),
                         vlmProvider.asPojo(accCtx)
                     )

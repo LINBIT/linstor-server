@@ -12,12 +12,13 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.StringUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 
 public class LayerSizeCalculatorModule extends AbstractModule
@@ -25,7 +26,9 @@ public class LayerSizeCalculatorModule extends AbstractModule
     @Override
     protected void configure()
     {
-        Map<DeviceLayerKind, Class<? extends AbsLayerSizeCalculator>> allSizeCalculators = new HashMap<>();
+        Map<DeviceLayerKind, Class<? extends AbsLayerSizeCalculator<?>>> allSizeCalculators = new EnumMap<>(
+            DeviceLayerKind.class
+        );
         allSizeCalculators.put(DeviceLayerKind.DRBD, DrbdLayerSizeCalculator.class);
         allSizeCalculators.put(DeviceLayerKind.BCACHE, BCacheLayerSizeCalculator.class);
         allSizeCalculators.put(DeviceLayerKind.CACHE, CacheLayerSizeCalculator.class);
@@ -53,12 +56,16 @@ public class LayerSizeCalculatorModule extends AbstractModule
             );
         }
 
-        MapBinder<DeviceLayerKind, AbsLayerSizeCalculator> absLayerSizeCalcMapBinder = MapBinder.newMapBinder(
+        MapBinder<DeviceLayerKind, AbsLayerSizeCalculator<?>> absLayerSizeCalcMapBinder = MapBinder.newMapBinder(
             binder(),
-            DeviceLayerKind.class,
-            AbsLayerSizeCalculator.class
+            new TypeLiteral<DeviceLayerKind>()
+            {
+            },
+            new TypeLiteral<AbsLayerSizeCalculator<?>>()
+            {
+            }
         );
-        for (Entry<DeviceLayerKind, Class<? extends AbsLayerSizeCalculator>> entry : allSizeCalculators.entrySet())
+        for (Entry<DeviceLayerKind, Class<? extends AbsLayerSizeCalculator<?>>> entry : allSizeCalculators.entrySet())
         {
             absLayerSizeCalcMapBinder.addBinding(entry.getKey()).to(entry.getValue());
         }

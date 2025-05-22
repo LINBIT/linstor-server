@@ -60,7 +60,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -815,7 +815,7 @@ class StltRscApiCallHandler
             rscObj -> rscObj.getVlmProviderObject(vlmNr)
         ));
 
-        for (Pair<String, VlmLayerDataApi> pair : vlmApiRef.getVlmLayerData())
+        for (PairNonNull<String, VlmLayerDataApi> pair : vlmApiRef.getVlmLayerData())
         {
             VlmLayerDataApi vlmApi = pair.objB;
             StorPoolApi storPoolApi = vlmApi.getStorPoolApi();

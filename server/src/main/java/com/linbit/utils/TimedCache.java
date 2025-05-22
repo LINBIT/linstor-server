@@ -10,7 +10,7 @@ import java.util.Map.Entry;
 
 public class TimedCache<KEY, VALUE>
 {
-    private final Map<KEY, Pair<VALUE, Long>> map = new HashMap<>();
+    private final Map<KEY, PairNonNull<VALUE, Long>> map = new HashMap<>();
     private long maxCacheTimeInMs;
 
     public TimedCache(long maxCacheTimeInMsRef)
@@ -37,7 +37,7 @@ public class TimedCache<KEY, VALUE>
             {
                 final long now = System.currentTimeMillis();
                 List<KEY> keysToRemove = new ArrayList<>();
-                for (Entry<KEY, Pair<VALUE, Long>> entry : map.entrySet())
+                for (Entry<KEY, PairNonNull<VALUE, Long>> entry : map.entrySet())
                 {
                     if (!isEntryValid(now, entry.getValue().objB, maxCacheTimeRef))
                     {
@@ -67,7 +67,7 @@ public class TimedCache<KEY, VALUE>
         @Nullable VALUE ret = null;
         synchronized (map)
         {
-            @Nullable Pair<VALUE, Long> pair = map.get(keyRef);
+            @Nullable PairNonNull<VALUE, Long> pair = map.get(keyRef);
             if (pair != null)
             {
                 long createdTimestamp = pair.objB;
@@ -94,10 +94,10 @@ public class TimedCache<KEY, VALUE>
 
     public @Nullable VALUE put(KEY keyRef, VALUE valueRef, long nowRef)
     {
-        @Nullable Pair<VALUE, Long> oldPair;
+        @Nullable PairNonNull<VALUE, Long> oldPair;
         synchronized (map)
         {
-            oldPair = map.put(keyRef, new Pair<>(valueRef, nowRef));
+            oldPair = map.put(keyRef, new PairNonNull<>(valueRef, nowRef));
         }
         return oldPair == null ? null : oldPair.objA;
     }

@@ -660,25 +660,18 @@ public class CtrlScheduleApiCallHandler
             {
                 PairNonNull<Long, Boolean> pair = currentConf.timeoutAndType;
                 Long pairCalculatedFrom = currentConf.timeoutAndTypeCalculatedFrom;
-                if (pair.objA != null)
+                if (pairCalculatedFrom != null)
                 {
-                    if (pairCalculatedFrom != null)
-                    {
-                        nextExecTime = pairCalculatedFrom + pair.objA;
-                    }
-                    else
-                    {
-                        throw new ImplementationError(
-                            "timeoutAndType of conf " + currentConf +
-                                " was set without also setting timeoutAndTypeCalculatedFrom"
-                        );
-                    }
+                    nextExecTime = pairCalculatedFrom + pair.objA;
                 }
                 else
                 {
-                    nextExecTime = -1;
+                    throw new ImplementationError(
+                        "timeoutAndType of conf " + currentConf +
+                            " was set without also setting timeoutAndTypeCalculatedFrom"
+                    );
                 }
-                nextExecInc = pair.objB != null && pair.objB;
+                nextExecInc = pair.objB;
 
             }
             ScheduledRscsPojo pojo = new ScheduledRscsPojo(

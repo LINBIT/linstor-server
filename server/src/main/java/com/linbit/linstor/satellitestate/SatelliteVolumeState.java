@@ -4,7 +4,7 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.layer.drbd.drbdstate.ReplState;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,12 +48,12 @@ public class SatelliteVolumeState
         return replicationStateMap;
     }
 
-    public void setReplicationState(@Nullable Pair<String, ReplState> replStatePair)
+    public void setReplicationState(@Nullable PairNonNull<String, ReplState> replStatePair)
     {
         if (replStatePair != null)
         {
             NodeName nodeName = LinstorParsingUtils.asNodeName(replStatePair.objA);
-            if (replStatePair.objB == null || replStatePair.objB == ReplState.OFF)
+            if (replStatePair.objB == ReplState.OFF)
             {
                 replicationStateMap.remove(nodeName);
             }
@@ -73,7 +73,7 @@ public class SatelliteVolumeState
         return donePercentageMap;
     }
 
-    public void setDonePercentage(@Nullable Pair<String, Optional<Float>> donePercentagePair)
+    public void setDonePercentage(@Nullable PairNonNull<String, Optional<Float>> donePercentagePair)
     {
         if (donePercentagePair != null)
         {

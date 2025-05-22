@@ -379,9 +379,10 @@ public class CtrlBackupL2LSrcApiCallHandler
                 response.prevSnapUuid,
                 data
             );
-            if (createSnapshot.objB != null)
+            @Nullable Snapshot snap = createSnapshot.objB;
+            if (snap != null)
             {
-                data.setSrcSnapshot(createSnapshot.objB);
+                data.setSrcSnapshot(snap);
                 data.setSrcNodeName(data.getSrcSnapshot().getNode().getName().displayValue);
                 flux = createSnapshot.objA;
                 Flux<ApiCallRc> waitForStartFlux = scopeRunner.fluxInTransactionalScope(
@@ -390,9 +391,9 @@ public class CtrlBackupL2LSrcApiCallHandler
                         .read(LockObj.NODES_MAP)
                         .write(LockObj.RSC_DFN_MAP)
                         .buildDeferred(),
-                    () -> createStltRemoteInTransaction(data, createSnapshot.objB.getNode())
+                    () -> createStltRemoteInTransaction(data, snap.getNode())
                 );
-                if (isL2LSkipWaitForStartSetPrivileged(createSnapshot.objB))
+                if (isL2LSkipWaitForStartSetPrivileged(snap))
                 {
                     flux = flux.concatWith(
                         Mono.fromRunnable(

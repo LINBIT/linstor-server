@@ -17,7 +17,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.utils.Either;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
@@ -359,7 +359,7 @@ public class StltExtToolsChecker
     private ExtToolsInfo getStorageSpacesInfo()
     {
         ExtToolsInfo extToolsInfo;
-        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(
+        Either<PairNonNull<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(
             ec -> ec == 0,
             "linstor-wmi-helper",
             "storage-pool",
@@ -574,7 +574,7 @@ public class StltExtToolsChecker
         }
         else
         {
-            Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(
+            Either<PairNonNull<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(
                 ec -> ec == 0 || ec == 1,
                 "make-bcache",
                 "-h"
@@ -753,30 +753,30 @@ public class StltExtToolsChecker
 
     private void check(List<String> resultErrors, String... commandParts)
     {
-        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(commandParts);
+        Either<PairNonNull<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(commandParts);
         stdoutOrErrorReason.map(
             ignore -> true, // addAll also returns boolean, just to make the <T> of the map method happy
             failList -> resultErrors.addAll(failList)
         );
     }
 
-    private Either<Pair<String, String>, List<String>> getStdoutOrErrorReason(String... cmds)
+    private Either<PairNonNull<String, String>, List<String>> getStdoutOrErrorReason(String... cmds)
     {
         return getStdoutOrErrorReason(exitCode -> exitCode == 0, cmds);
     }
 
-    private Either<Pair<String, String>, List<String>> getStdoutOrErrorReason(
+    private Either<PairNonNull<String, String>, List<String>> getStdoutOrErrorReason(
         Predicate<Integer> exitCodeTest,
         String... cmds
     )
     {
-        Either<Pair<String, String>, List<String>> ret;
+        Either<PairNonNull<String, String>, List<String>> ret;
         try
         {
             OutputData out = extCmdFactory.create().logExecution(false).exec(cmds);
             if (exitCodeTest.test(out.exitCode))
             {
-                ret = Either.left(new Pair<>(new String(out.stdoutData), new String(out.stderrData)));
+                ret = Either.left(new PairNonNull<>(new String(out.stdoutData), new String(out.stderrData)));
             }
             else
             {

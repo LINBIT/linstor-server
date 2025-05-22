@@ -8,7 +8,7 @@ import com.linbit.linstor.event.common.ReplicationStateEvent;
 import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
 import com.linbit.linstor.layer.drbd.drbdstate.ReplState;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -19,7 +19,7 @@ import javax.inject.Singleton;
 )
 @Singleton
 public class ReplicationStateEventSerializer
-    implements EventSerializer, EventSerializer.Serializer<Pair<String, ReplState>>
+    implements EventSerializer, EventSerializer.Serializer<PairNonNull<String, ReplState>>
 {
     private final CommonSerializer commonSerializer;
     private final ReplicationStateEvent replicationStateEvent;
@@ -35,13 +35,13 @@ public class ReplicationStateEventSerializer
     }
 
     @Override
-    public Serializer<Pair<String, ReplState>> get()
+    public Serializer<PairNonNull<String, ReplState>> get()
     {
         return this;
     }
 
     @Override
-    public byte[] writeEventValue(Pair<String, ReplState> replStatePair)
+    public byte[] writeEventValue(PairNonNull<String, ReplState> replStatePair)
     {
         return commonSerializer.headerlessBuilder()
             .replicationState(replStatePair.objA, replStatePair.objB.toString())
@@ -49,7 +49,7 @@ public class ReplicationStateEventSerializer
     }
 
     @Override
-    public LinstorEvent<Pair<String, ReplState>> getEvent()
+    public LinstorEvent<PairNonNull<String, ReplState>> getEvent()
     {
         return replicationStateEvent.get();
     }

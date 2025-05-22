@@ -1273,7 +1273,11 @@ public class CtrlApiCallHandler
     }
 
     private boolean containsLayerKind(ResourceDefinitionApi rscDfnApi, ApiConsts.DeviceLayerKind kind) {
-        return rscDfnApi.getLayerData().stream().anyMatch(pair -> pair.objA.equalsIgnoreCase(kind.getValue()));
+        return rscDfnApi.getLayerData().stream().anyMatch(pair ->
+        {
+            // this shouldn't be null, but we can't use PairNonNull since objB (RscDfnLayerDataApi) is nullable
+            return pair.objA != null && pair.objA.equalsIgnoreCase(kind.getValue());
+        });
     }
 
     private static Map<String, Integer> getExpectedOnlineDiskfulNodeIds(ResourceList rscs)

@@ -4,6 +4,7 @@ import java.util.Objects;
 
 public class PairNonNull<A, B> implements Comparable<PairNonNull<A, B>>
 {
+    // TODO: remove this class and use pair instead as soon as internal issue #1217 is done
     public A objA;
     public B objB;
 

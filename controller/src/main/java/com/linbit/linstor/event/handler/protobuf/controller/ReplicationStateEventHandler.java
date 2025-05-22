@@ -16,7 +16,7 @@ import com.linbit.linstor.proto.eventdata.EventReplicationStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -75,7 +75,7 @@ public class ReplicationStateEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        Pair<String, ReplState> replicationState;
+        PairNonNull<String, ReplState> replicationState;
 
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
@@ -84,8 +84,8 @@ public class ReplicationStateEventHandler implements EventHandler
 
             NodeName mappedName = getMappedName(nodeRepo, sysCtx, eventReplicationState.getPeerName());
             replicationState = eventReplicationState.getReplicationState().isEmpty() ?
-                new Pair<>(mappedName.displayValue, null) :
-                new Pair<>(
+                new PairNonNull<>(mappedName.displayValue, ReplState.UNKNOWN) :
+                new PairNonNull<>(
                     mappedName.displayValue,
                     ReplState.parseReplState(eventReplicationState.getReplicationState()));
             satelliteStateHelper.onSatelliteState(

@@ -12,7 +12,7 @@ import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.proto.eventdata.EventDonePercentageOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.event.handler.protobuf.controller.ReplicationStateEventHandler.getMappedName;
 
@@ -52,7 +52,7 @@ public class DonePercentageEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        Pair<String, Optional<Float>> donePercentage;
+        PairNonNull<String, Optional<Float>> donePercentage;
 
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
@@ -61,8 +61,8 @@ public class DonePercentageEventHandler implements EventHandler
 
             NodeName mappedName = getMappedName(nodeRepo, sysCtx, eventDonePercentage.getPeerName());
             donePercentage = eventDonePercentage.hasDonePercentage() ?
-                new Pair<>(mappedName.displayValue, Optional.of(eventDonePercentage.getDonePercentage())) :
-                new Pair<>(mappedName.displayValue, Optional.empty());
+                new PairNonNull<>(mappedName.displayValue, Optional.of(eventDonePercentage.getDonePercentage())) :
+                new PairNonNull<>(mappedName.displayValue, Optional.empty());
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
                 satelliteState -> satelliteState.setOnVolume(

@@ -14,7 +14,7 @@ import com.linbit.linstor.event.common.ReplicationStateEvent;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -280,7 +280,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         {
             replicationStateEvent.get().triggerEvent(
                 ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
-                new Pair<>(volume.connRef.peerName, volume.getReplState())
+                new PairNonNull<>(volume.connRef.peerName, volume.getReplState())
             );
         }
     }
@@ -291,7 +291,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         {
             donePercentageEvent.get().triggerEvent(
                 ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
-                new Pair<>(volume.connRef.peerName, Optional.ofNullable(volume.donePercentage))
+                new PairNonNull<>(volume.connRef.peerName, Optional.ofNullable(volume.donePercentage))
             );
         }
     }

@@ -6,7 +6,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +27,7 @@ public class VlmPojo implements VolumeApi
     private final Map<String, String> vlmProps;
     private final Optional<Long> allocated;
     private final Optional<Long> usableSize;
-    private final @Nullable List<Pair<String, VlmLayerDataApi>> layerData;
+    private final @Nullable List<PairNonNull<String, VlmLayerDataApi>> layerData;
 
     private final @Nullable String compatStorPoolName;
     private final @Nullable DeviceProviderKind compatDevProviderKind;
@@ -42,7 +42,7 @@ public class VlmPojo implements VolumeApi
         final Map<String, String> vlmPropsRef,
         final Optional<Long> allocatedRef,
         final Optional<Long> usableSizeRef,
-        final @Nullable List<Pair<String, VlmLayerDataApi>> layerDataRef,
+        final @Nullable List<PairNonNull<String, VlmLayerDataApi>> layerDataRef,
         final @Nullable String compatStorPoolNameRef,
         final @Nullable DeviceProviderKind compatDevProviderKindRef,
         final @Nullable ApiCallRc reportsRef
@@ -111,7 +111,7 @@ public class VlmPojo implements VolumeApi
     }
 
     @Override
-    public List<Pair<String, VlmLayerDataApi>> getVlmLayerData()
+    public List<PairNonNull<String, VlmLayerDataApi>> getVlmLayerData()
     {
         return layerData;
     }

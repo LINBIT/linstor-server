@@ -143,7 +143,8 @@ class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
             {
                 Props rscDfnProps = rscDfn.getProps(peerCtx.get());
                 String oldQuorumProp = rscDfnProps.getProp(PROP_KEY_QUORUM, NAMESPC_DRBD_RESOURCE_OPTIONS);
-                String quorumProp = quorumSetBy.objB.getProp(PROP_KEY_QUORUM, NAMESPC_DRBD_RESOURCE_OPTIONS);
+                String quorumProp = quorumSetBy.objB == null ? null :
+                    quorumSetBy.objB.getProp(PROP_KEY_QUORUM, NAMESPC_DRBD_RESOURCE_OPTIONS);
                 quorumProp = quorumProp == null ? PROP_VAL_QUORUM_MAJORITY : quorumProp;
                 if (!quorumProp.equalsIgnoreCase(oldQuorumProp))
                 {

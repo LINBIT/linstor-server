@@ -98,6 +98,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
+import com.linbit.utils.PairNonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
@@ -839,7 +840,7 @@ public class Json
 
         volume.layer_data_list = new ArrayList<>();
 
-        for (Pair<String, VlmLayerDataApi> layerData : vlmApi.getVlmLayerData())
+        for (PairNonNull<String, VlmLayerDataApi> layerData : vlmApi.getVlmLayerData())
         {
             JsonGenTypes.VolumeLayer volumeLayerData = new JsonGenTypes.VolumeLayer();
             volumeLayerData.type = getLayerTypeString(layerData.objB.getLayerKind());

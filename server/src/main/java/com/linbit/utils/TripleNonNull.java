@@ -4,6 +4,7 @@ import com.google.common.base.Objects;
 
 public class TripleNonNull<A, B, C> implements Comparable<TripleNonNull<A, B, C>>
 {
+    // TODO: remove this class and use triple instead as soon as internal issue #1217 is done
     public A objA;
     public B objB;
     public C objC;
