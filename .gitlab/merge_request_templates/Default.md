@@ -12,7 +12,7 @@
    * Are **special return values** properly documented? (i.e. -1)
    * Are **parameters** properly explained?
    * Does the Javadoc (still) properly **describe the functionality**?
-* Are all parameters annotated with **`@javax.annotation.{Nullable,Nonnull}`**?
+* Are all parameters annotated with **`@com.linbit.linstor.annotation.Nullable`**?
 * Do **tests (unit/E2E)** exist (if needed)?
 * Does this MR require updates in **UG**?
 * Does this MR require updates in **linstor-client**?
