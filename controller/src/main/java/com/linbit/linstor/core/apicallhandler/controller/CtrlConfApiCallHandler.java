@@ -967,6 +967,7 @@ public class CtrlConfApiCallHandler
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                         }
                         break;
+                        case ApiConsts.KEY_AUTOPLACE_ALLOW_TARGET: // fall-through
                         case ApiConsts.KEY_SEARCH_DOMAIN: // fall-through
                         case ApiConsts.KEY_STOR_POOL_MAX_FREE_CAPACITY_OVERSUBSCRIPTION_RATIO: // fall-through
                         case ApiConsts.KEY_STOR_POOL_MAX_OVERSUBSCRIPTION_RATIO: // fall-through
