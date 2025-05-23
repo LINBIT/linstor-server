@@ -19,5 +19,9 @@ public interface DynamicNumberPool
     int autoAllocate()
         throws ExhaustedPoolException;
 
+    int getRangeMin();
+
+    int getRangeMax();
+
     void deallocate(int nr);
 }

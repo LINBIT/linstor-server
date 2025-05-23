@@ -18,6 +18,8 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -26,6 +28,7 @@ import com.linbit.utils.Pair;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -42,6 +45,7 @@ import io.prometheus.client.hotspot.DefaultExports;
 public class PrometheusBuilder
 {
     private final ErrorReporter errorReporter;
+    private final DynamicNumberPool tcpPortPool;
 
     private static final String VOLUME_STATE_HELP;
     private static final String NODE_STATE_HELP;
@@ -119,10 +123,12 @@ public class PrometheusBuilder
 
     @Inject
     public PrometheusBuilder(
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef
     )
     {
         errorReporter = errorReporterRef;
+        tcpPortPool = tcpPortPoolRef;
         DefaultExports.initialize();
     }
 
@@ -410,6 +416,12 @@ public class PrometheusBuilder
                 tf.writeSample(errMap, entry.getValue());
             }
         }
+
+        tf.startGauge("linstor_controller_tcp_port_auto_range_min");
+        tf.writeSample(tcpPortPool.getRangeMin());
+
+        tf.startGauge("linstor_controller_tcp_port_auto_range_max");
+        tf.writeSample(tcpPortPool.getRangeMax());
 
         StringWriter sw = new StringWriter();
         io.prometheus.client.exporter.common.TextFormat.write004(

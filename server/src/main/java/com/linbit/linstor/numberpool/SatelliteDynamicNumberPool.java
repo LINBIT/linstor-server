@@ -38,4 +38,10 @@ public class SatelliteDynamicNumberPool implements DynamicNumberPool
     {
         // no-op
     }
+
+    @Override
+    public int getRangeMin() { return 0; }
+
+    @Override
+    public int getRangeMax() { return 0; }
 }

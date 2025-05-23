@@ -141,6 +141,12 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         numberPool.deallocate(nr);
     }
 
+    @Override
+    public int getRangeMin() { return rangeMin; }
+
+    @Override
+    public int getRangeMax() { return rangeMax; }
+
     public interface NumberRangeChecker
     {
         void check(Integer integer)

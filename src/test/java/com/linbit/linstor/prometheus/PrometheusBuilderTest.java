@@ -36,6 +36,8 @@ public class PrometheusBuilderTest
                 start);
         Assert.assertNotNull(promText);
         Assert.assertTrue(promText.contains("linstor_scrape_requests_count"));
+        Assert.assertTrue(promText.contains("linstor_controller_tcp_port_auto_range_min"));
+        Assert.assertTrue(promText.contains("linstor_controller_tcp_port_auto_range_max"));
     }
 
     @Test
