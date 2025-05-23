@@ -26,7 +26,7 @@ public class ReadOnlyPropsImpl implements Props
         try
         {
             EMPTY_RO_PROP = new ReadOnlyPropsImpl(
-                new PropsContainer(null, null, null, null, null, null, null)
+                new PropsContainer(null, null, null, "", LinStorObject.EMPTY_RO_PROPS, null, null)
             );
         }
         catch (InvalidKeyException exc)
@@ -35,7 +35,7 @@ public class ReadOnlyPropsImpl implements Props
         }
     }
 
-    private Props propsMap;
+    private final Props propsMap;
 
     public ReadOnlyPropsImpl(Props propsRef)
     {
@@ -49,9 +49,9 @@ public class ReadOnlyPropsImpl implements Props
     }
 
     @Override
-    public @Nullable String getPropWithDefault(String key, @Nullable String defaultValue) throws InvalidKeyException
+    public String getPropWithDefault(String key, String defaultValue) throws InvalidKeyException
     {
-        final String value = propsMap.getProp(key);
+        final @Nullable String value = propsMap.getProp(key);
         return value == null ? defaultValue : value;
     }
 
@@ -62,10 +62,10 @@ public class ReadOnlyPropsImpl implements Props
     }
 
     @Override
-    public @Nullable String getPropWithDefault(String key, @Nullable String namespace, @Nullable String defaultValue)
+    public String getPropWithDefault(String key, @Nullable String namespace, String defaultValue)
         throws InvalidKeyException
     {
-        final String value = propsMap.getProp(key, namespace);
+        final @Nullable String value = propsMap.getProp(key, namespace);
         return value == null ? defaultValue : value;
     }
 
@@ -81,7 +81,7 @@ public class ReadOnlyPropsImpl implements Props
     }
 
     @Override
-    public String setProp(String key, String value, String namespace)
+    public String setProp(String key, String value, @Nullable String namespace)
         throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         // throws UnsupportedOperationException
@@ -102,7 +102,7 @@ public class ReadOnlyPropsImpl implements Props
     }
 
     @Override
-    public String removeProp(String key, String namespace)
+    public String removeProp(String key, @Nullable String namespace)
         throws InvalidKeyException, AccessDeniedException
     {
         // throws UnsupportedOperationException
@@ -210,7 +210,7 @@ public class ReadOnlyPropsImpl implements Props
     }
 
     @Override
-    public @Nullable Props getNamespace(String namespace)
+    public @Nullable Props getNamespace(@Nullable String namespace)
     {
         // TODO change return type
         @Nullable Props ret;
@@ -233,7 +233,7 @@ public class ReadOnlyPropsImpl implements Props
     }
 
     @Override
-    public void setConnection(TransactionMgr transMgr)
+    public void setConnection(@Nullable TransactionMgr transMgr)
     {
         // ignore - ReadOnlyProps cannot be changed
     }
@@ -275,7 +275,7 @@ public class ReadOnlyPropsImpl implements Props
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((propsMap == null) ? 0 : propsMap.hashCode());
+        result = prime * result + propsMap.hashCode();
         return result;
     }
 
@@ -291,14 +291,6 @@ public class ReadOnlyPropsImpl implements Props
         if (obj != null && getClass() == obj.getClass())
         {
             ReadOnlyPropsImpl other = (ReadOnlyPropsImpl) obj;
-            if (propsMap == null)
-            {
-                if (other.propsMap == null)
-                {
-                    result = true;
-                }
-            }
-            else
             if (propsMap.equals(other.propsMap))
             {
                 result = true;
@@ -341,7 +333,7 @@ public class ReadOnlyPropsImpl implements Props
 
     static class ReadOnlyIterator<T> implements Iterator<T>
     {
-        private Iterator<T> iter;
+        private final Iterator<T> iter;
 
         ReadOnlyIterator(Iterator<T> iterRef)
         {

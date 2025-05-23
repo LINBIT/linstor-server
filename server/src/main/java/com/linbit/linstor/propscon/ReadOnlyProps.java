@@ -21,15 +21,13 @@ public interface ReadOnlyProps extends Iterable<Map.Entry<String, String>>
     String getProp(String key)
         throws InvalidKeyException;
 
-    @Nullable
-    String getPropWithDefault(String key, @Nullable String defaultValue) throws InvalidKeyException;
+    String getPropWithDefault(String key, String defaultValue) throws InvalidKeyException;
 
     @Nullable
     String getProp(String key, @Nullable String namespace)
         throws InvalidKeyException;
 
-    @Nullable
-    String getPropWithDefault(String key, @Nullable String namespace, @Nullable String defaultValue)
+    String getPropWithDefault(String key, @Nullable String namespace, String defaultValue)
         throws InvalidKeyException;
 
     int size();
@@ -86,7 +84,7 @@ public interface ReadOnlyProps extends Iterable<Map.Entry<String, String>>
             for (final String pFilter : propFilters)
             {
                 String[] split = pFilter.split("=", 2);
-                String value = getProp(split[0]);
+                @Nullable String value = getProp(split[0]);
                 if (value == null)
                 {
                     result = false;

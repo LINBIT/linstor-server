@@ -82,15 +82,15 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * Only sub-containers do not have an instance name, since they use their parent's
      */
     private final @Nullable String instanceName;
-    private final @Nullable String description;
-    private final @Nullable LinStorObject type;
+    private final String description;
+    private final LinStorObject type;
 
     PropsContainer(
         @Nullable String key,
         @Nullable PropsContainer parent,
         @Nullable String instanceNameRef,
-        @Nullable String descriptionRef,
-        @Nullable LinStorObject typeRef,
+        String descriptionRef,
+        LinStorObject typeRef,
         @Nullable PropsDatabaseDriver dbDriverRef,
         @Nullable Provider<TransactionMgr> transMgrProviderRef
     )
@@ -212,13 +212,13 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     @Override
-    public @Nullable String getDescription()
+    public String getDescription()
     {
         return description;
     }
 
     @Override
-    public @Nullable LinStorObject getType()
+    public LinStorObject getType()
     {
         return type;
     }
@@ -240,10 +240,10 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     @Override
-    public @Nullable String getPropWithDefault(String key, @Nullable String namespace, @Nullable String defaultValue)
+    public String getPropWithDefault(String key, @Nullable String namespace, String defaultValue)
         throws InvalidKeyException
     {
-        String value = getProp(key, namespace);
+        @Nullable String value = getProp(key, namespace);
         return value == null ? defaultValue : value;
     }
 
@@ -514,7 +514,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     @Override
-    public @Nullable String getPropWithDefault(String key, @Nullable String defaultValue) throws InvalidKeyException
+    public String getPropWithDefault(String key, String defaultValue) throws InvalidKeyException
     {
         return getPropWithDefault(key, null, defaultValue);
     }

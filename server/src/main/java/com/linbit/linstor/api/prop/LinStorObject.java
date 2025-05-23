@@ -40,7 +40,8 @@ public enum LinStorObject
     DRBD_PROXY_ZSTD(0, null),
     DRBD_PROXY_ZLIB(0, null),
     DRBD_PROXY_LZMA(0, null),
-    DRBD_PROXY_LZ4(0, null);
+    DRBD_PROXY_LZ4(0, null),
+    EMPTY_RO_PROPS( 0, null);
 
     public final long apiMask;
     public final @Nullable String path;

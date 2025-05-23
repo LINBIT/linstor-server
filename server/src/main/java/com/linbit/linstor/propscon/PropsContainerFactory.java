@@ -43,7 +43,7 @@ public class PropsContainerFactory
         return container;
     }
 
-    public PropsContainer create(@Nullable String instanceName, @Nullable String description, LinStorObject type)
+    public PropsContainer create(@Nullable String instanceName, String description, LinStorObject type)
     {
         PropsContainer container;
         try

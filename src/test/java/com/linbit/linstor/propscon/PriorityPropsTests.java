@@ -25,9 +25,9 @@ public class PriorityPropsTests extends GenericDbBase
     {
         super.setUpAndEnterScope();
 
-        prop1 = propsContainerFactory.getInstance("testInstanceName1", null, LinStorObject.CTRL);
-        prop2 = propsContainerFactory.getInstance("testInstanceName2", null, LinStorObject.CTRL);
-        prop3 = propsContainerFactory.getInstance("testInstanceName3", null, LinStorObject.CTRL);
+        prop1 = propsContainerFactory.getInstance("testInstanceName1", "", LinStorObject.CTRL);
+        prop2 = propsContainerFactory.getInstance("testInstanceName2", "", LinStorObject.CTRL);
+        prop3 = propsContainerFactory.getInstance("testInstanceName3", "", LinStorObject.CTRL);
 
         prop1.setProp("/a/1", "1");
         prop1.setProp("/b/1", "2");

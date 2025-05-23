@@ -31,7 +31,7 @@ public interface Props extends TransactionObject, ReadOnlyProps
         throws AccessDeniedException, DatabaseException;
 
     @Override
-    @Nullable Props getNamespace(String namespace);
+    @Nullable Props getNamespace(@Nullable String namespace);
 
     void loadAll() throws DatabaseException, AccessDeniedException;
 

@@ -160,8 +160,8 @@ public class ConfFileBuilderTest
         transObjFactory = new TransactionObjectFactory(transMgrProvider);
         PropsContainerFactory propsContainerFactory = new PropsContainerFactory(
                 new SatellitePropDriver(), transMgrProvider);
-        rscConnProps = propsContainerFactory.getInstance("TESTINSTANCE", null, LinStorObject.RSC_CONN);
-        nodeConnProps = propsContainerFactory.getInstance("TESTINSTANCE", null, LinStorObject.NODE_CONN);
+        rscConnProps = propsContainerFactory.getInstance("TESTINSTANCE", "", LinStorObject.RSC_CONN);
+        nodeConnProps = propsContainerFactory.getInstance("TESTINSTANCE", "", LinStorObject.NODE_CONN);
 
         mockedTcpPool = Mockito.mock(DynamicNumberPool.class);
         mockedMinorPool = Mockito.mock(DynamicNumberPool.class);
@@ -184,7 +184,7 @@ public class ConfFileBuilderTest
         when(peerRscData.getAbsResource().getAbsResourceConnection(accessContext, localRscData.getAbsResource()))
             .thenReturn(rscConn);
 
-        stltProps = propsContainerFactory.getInstance("STLT_CFG", null, LinStorObject.STLT);
+        stltProps = propsContainerFactory.getInstance("STLT_CFG", "", LinStorObject.STLT);
         drbdVersion = new DrbdVersion(new CoreTimerImpl(), new EmptyErrorReporter());
     }
 
