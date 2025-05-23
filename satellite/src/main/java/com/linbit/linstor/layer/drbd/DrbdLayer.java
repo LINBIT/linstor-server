@@ -65,7 +65,6 @@ import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.AccessUtils;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -528,7 +527,7 @@ public class DrbdLayer implements DeviceLayer
                     }
                 }
 
-                regenerateResFile(drbdRscData);
+                boolean resFileUpdated = regenerateResFile(drbdRscData);
 
                 // createMetaData needs rendered resFile
                 for (DrbdVlmData<Resource> drbdVlmData : createMetaData)
@@ -693,12 +692,23 @@ public class DrbdLayer implements DeviceLayer
                         }
                     }
 
-                    drbdUtils.adjust(
-                        drbdRscData,
-                        false,
-                        skipDisk,
-                        false
-                    );
+                    try
+                    {
+                        drbdUtils.adjust(
+                            drbdRscData,
+                            false,
+                            skipDisk,
+                            false
+                        );
+                    }
+                    catch (ExtCmdFailedException extCmdExc)
+                    {
+                        if (resFileUpdated)
+                        {
+                            restoreBackupResFile(drbdRscData);
+                        }
+                        throw extCmdExc;
+                    }
 
                     if (
                         drbdRscData.getAbsResource().getStateFlags()
@@ -1478,12 +1488,6 @@ public class DrbdLayer implements DeviceLayer
     {
         boolean fileWritten = false;
         Path resFile = asResourceFile(drbdRscData, false, false);
-
-        /* On Linux this will be the same as resFile above.
-         * On Windows it has the format /cygdrive/c/WinDRBD/var/lib/linstor
-         * We need it for drbdadm's --config-to-exclude parameter.
-         */
-        Path resFileCygwin = asResourceFile(drbdRscData, false, true);
         Path tmpResFile = asResourceFile(drbdRscData, true, false);
 
         List<DrbdRscData<Resource>> drbdPeerRscDataList = drbdRscData.getRscDfnLayerObject()
@@ -1553,23 +1557,6 @@ public class DrbdLayer implements DeviceLayer
 
             try
             {
-                drbdUtils.checkResFile(tmpResFile, resFileCygwin);
-            }
-            catch (ExtCmdFailedException exc)
-            {
-                String errMsg = exc.getMessage();
-                throw new StorageException(
-                    "Generated resource file for resource '" + drbdRscData.getSuffixedResourceName() + "' is invalid.",
-                    getAbortMsg(drbdRscData),
-                    "Verification of resource file failed",
-                    null,
-                    "The error reported by the runtime environment or operating system is:\n" + errMsg,
-                    exc
-                );
-            }
-
-            try
-            {
                 Files.move(
                     tmpResFile,
                     resFile,
@@ -1597,13 +1584,12 @@ public class DrbdLayer implements DeviceLayer
         return fileWritten;
     }
 
-    private void copyResFileToBackup(DrbdRscData<Resource> drbdRscData) throws StorageException
+    private void copyResFile(Path srcPath, Path dstPath, String errMsg, String errCause)
+        throws StorageException
     {
-        Path resFile = asResourceFile(drbdRscData, false, false);
-        Path backupFile = asBackupResourceFile(drbdRscData);
         try
         {
-            Files.copy(resFile, backupFile, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(srcPath, dstPath, StandardCopyOption.REPLACE_EXISTING);
         }
         catch (IOException ioExc)
         {
@@ -1614,9 +1600,8 @@ public class DrbdLayer implements DeviceLayer
                     "the I/O error";
             }
             throw new StorageException(
-                "Failed to create a backup of the resource file of resource '" + drbdRscData.getSuffixedResourceName() +
-                    "'",
-                getAbortMsg(drbdRscData),
+                errMsg,
+                errCause,
                 null,
                 "- Check whether enough free space is available for the creation of the file\n" +
                     "- Check whether the application has write access to the target directory\n" +
@@ -1625,6 +1610,33 @@ public class DrbdLayer implements DeviceLayer
                 ioExc
             );
         }
+    }
+
+    private void copyResFileToBackup(DrbdRscData<Resource> drbdRscData) throws StorageException
+    {
+        Path resFile = asResourceFile(drbdRscData, false, false);
+        Path backupFile = asBackupResourceFile(drbdRscData);
+        String rscName = drbdRscData.getSuffixedResourceName();
+        copyResFile(
+            resFile,
+            backupFile,
+            String.format("Failed to create a backup of the resource file of resource '%s'", rscName),
+            getAbortMsg(drbdRscData)
+        );
+    }
+
+    private void restoreBackupResFile(DrbdRscData<Resource> drbdRscData) throws StorageException
+    {
+        String rscName = drbdRscData.getSuffixedResourceName();
+        errorReporter.logError("Restoring resource file from backup: %s", rscName);
+        Path backupFile = asBackupResourceFile(drbdRscData);
+        Path resFile = asResourceFile(drbdRscData, false, false);
+        copyResFile(
+            backupFile,
+            resFile,
+            String.format("Failed to restore resource file from backup of resource '%s'", rscName),
+            getAbortMsg(drbdRscData)
+        );
     }
 
     private void deleteBackupResFile(DrbdRscData<Resource> drbdRscDataRef) throws StorageException

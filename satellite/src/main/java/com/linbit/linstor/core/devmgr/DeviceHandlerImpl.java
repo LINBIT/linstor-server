@@ -1701,7 +1701,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                         }
                         catch (InterruptedException exc1)
                         {
-                            exc1.printStackTrace();
+                            errorReporter.reportError(exc1);
                         }
                     }
                 }
