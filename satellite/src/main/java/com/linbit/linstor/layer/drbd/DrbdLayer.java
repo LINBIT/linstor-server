@@ -256,7 +256,7 @@ public class DrbdLayer implements DeviceLayer
                 }
                 else
                 {
-                    addAbortedMsg(drbdRscData, apiCallRc);
+                    addNotAdjustedMsg(drbdRscData, apiCallRc);
                 }
             }
         }
@@ -317,18 +317,18 @@ public class DrbdLayer implements DeviceLayer
         errorReporter.logInfo(msg);
     }
 
-    private void addAbortedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
+    private void addNotAdjustedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
     {
         final String msg = "Resource '" + drbdRscData.getSuffixedResourceName() + "' [DRBD] not adjusted ";
         apiCallRc.addEntry(
             ApiCallRcImpl.simpleEntry(
                 ApiConsts.MASK_RSC,
-                "Resource '" + drbdRscData.getSuffixedResourceName() + "' [DRBD] not adjusted "
+                msg
             ).setCause(
                 "This happened most likely because the layer below did not provide a device to work with."
             )
         );
-        errorReporter.logError(msg);
+        errorReporter.logInfo(msg);
     }
 
     private boolean processChild(
