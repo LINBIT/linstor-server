@@ -365,6 +365,7 @@ public class LvmCommands
 
     public static synchronized OutputData createSnapshotThin(
         ExtCmd extCmd,
+        boolean readOnly,
         String volumeGroup,
         String thinPool,
         String identifier,
@@ -374,6 +375,11 @@ public class LvmCommands
     )
         throws StorageException
     {
+        ArrayList<String> addParams = new ArrayList<>(Arrays.asList(additionalParameters));
+        if (readOnly)
+        {
+            addParams.add("-pr");
+        }
         String failMsg = "Failed to create snapshot " + snapshotIdentifier + " from " + identifier +
             " within thin volume group " + volumeGroup + File.separator + thinPool;
         return genericExecutor(
@@ -381,7 +387,7 @@ public class LvmCommands
             buildCmd(
                 "lvcreate",
                 lvmConfig,
-                additionalParameters == null ? null : Arrays.asList(additionalParameters),
+                addParams,
                 "--snapshot",
                 "--setactivationskip", "y", // snapshot needs to be active from
                 "--ignoreactivationskip", // the beginning for

@@ -328,7 +328,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    protected void createSnapshot(FileData<Resource> fileData, FileData<Snapshot> snapVlmRef)
+    protected void createSnapshot(FileData<Resource> fileData, FileData<Snapshot> snapVlmRef, boolean readOnly)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         Path storageDirectory = fileData.getStorageDirectory();

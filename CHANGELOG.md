@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Snapshot rollback now allows and restores snapshots on nodes that don't have a local snapshot (with DRBD)
+- LVM-Thin snapshots are set to read-only now
 
 ### Fixed
 

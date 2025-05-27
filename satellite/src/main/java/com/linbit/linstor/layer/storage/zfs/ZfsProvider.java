@@ -588,7 +588,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected void createSnapshot(ZfsData<Resource> vlmData, ZfsData<Snapshot> snapVlm)
+    protected void createSnapshot(ZfsData<Resource> vlmData, ZfsData<Snapshot> snapVlm, boolean readOnly)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         Snapshot snap = snapVlm.getVolume().getAbsResource();

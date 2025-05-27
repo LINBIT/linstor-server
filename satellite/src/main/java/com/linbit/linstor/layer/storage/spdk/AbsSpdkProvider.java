@@ -496,7 +496,7 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     }
 
     @Override
-    protected void createSnapshot(SpdkData<Resource> vlmData, SpdkData<Snapshot> snapVlm)
+    protected void createSnapshot(SpdkData<Resource> vlmData, SpdkData<Snapshot> snapVlm, boolean readOnly)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         spdkCommands.createSnapshot(

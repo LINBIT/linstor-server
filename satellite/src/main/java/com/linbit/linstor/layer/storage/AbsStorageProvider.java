@@ -680,7 +680,7 @@ public abstract class AbsStorageProvider<
                          */
                         if (!snapshotExists(sourceSnapVlm, true))
                         {
-                            createSnapshot(vlmData, sourceSnapVlm);
+                            createSnapshot(vlmData, sourceSnapVlm, true);
                         }
                         copySizes(vlmData, sourceSnapVlm);
                     }
@@ -982,13 +982,14 @@ public abstract class AbsStorageProvider<
                 }
                 else
                 {
-                    createSnapshot(vlmData, snapVlm);
+                    boolean isShippingTarget = snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
+                        snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING);
+                    createSnapshot(vlmData, snapVlm, !isShippingTarget);
                     copySizes(vlmData, snapVlm);
 
                     addSnapCreatedMsg(snapVlm, apiCallRc);
 
-                    if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
-                        snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
+                    if (isShippingTarget)
                     {
                         waitForSnapIfNeeded(snapVlm);
                         startReceiving(vlmData, snapVlm);
@@ -1893,7 +1894,7 @@ public abstract class AbsStorageProvider<
 
     protected abstract String getStorageName(StorPool storPoolRef) throws AccessDeniedException, StorageException;
 
-    protected void createSnapshot(LAYER_DATA vlmData, LAYER_SNAP_DATA snapVlmRef)
+    protected void createSnapshot(LAYER_DATA vlmData, LAYER_SNAP_DATA snapVlmRef, boolean readOnly)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());

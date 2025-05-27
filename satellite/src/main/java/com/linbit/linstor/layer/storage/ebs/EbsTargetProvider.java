@@ -390,7 +390,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     }
 
     @Override
-    protected void createSnapshot(EbsData<Resource> vlmDataRef, EbsData<Snapshot> snapVlmRef)
+    protected void createSnapshot(EbsData<Resource> vlmDataRef, EbsData<Snapshot> snapVlmRef, boolean readOnly)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         EbsRemote remote = getEbsRemote(vlmDataRef.getStorPool());

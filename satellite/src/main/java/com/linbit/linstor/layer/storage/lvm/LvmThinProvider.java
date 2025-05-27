@@ -191,6 +191,7 @@ public class LvmThinProvider extends LvmProvider
                     Collections.singleton(snapVlm.getVolumeGroup()),
                     config -> LvmCommands.createSnapshotThin(
                         extCmdFactory.create(),
+                        false,
                         snapVlm.getVolumeGroup(),
                         ((LvmThinData<Snapshot>) snapVlm).getThinPool(),
                         prevSnapData.getIdentifier(),
@@ -223,7 +224,7 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void createSnapshot(LvmData<Resource> vlmDataRef, LvmData<Snapshot> snapVlmRef)
+    protected void createSnapshot(LvmData<Resource> vlmDataRef, LvmData<Snapshot> snapVlmRef, boolean readOnly)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateSnapshotOptions(vlmDataRef));
@@ -236,6 +237,7 @@ public class LvmThinProvider extends LvmProvider
             Collections.singleton(vlmData.getVolumeGroup()),
             config -> LvmCommands.createSnapshotThin(
                 extCmdFactory.create(),
+                readOnly,
                 vlmData.getVolumeGroup(),
                 vlmData.getThinPool(),
                 vlmData.getIdentifier(),
@@ -339,6 +341,7 @@ public class LvmThinProvider extends LvmProvider
             Collections.singleton(vlmData.getVolumeGroup()),
             config -> LvmCommands.createSnapshotThin(
                 extCmdFactory.create(),
+                true,
                 volumeGroup,
                 thinPool,
                 targetLvId,
@@ -440,7 +443,7 @@ public class LvmThinProvider extends LvmProvider
         LvmUtils.recacheNextLvs();
 
         // for keeping the same behavior as zfsProvider, we want to "keep" the snapshot. #
-        createSnapshot(vlmDataRef, snapVlmRef);
+        createSnapshot(vlmDataRef, snapVlmRef, true);
     }
 
     private String getVolumeGroupForLvs(StorPoolInfo storPool) throws StorageException
@@ -518,6 +521,7 @@ public class LvmThinProvider extends LvmProvider
                 Collections.singleton(vlmData.getVolumeGroup()),
                 config -> LvmCommands.createSnapshotThin(
                     extCmdFactory.create(),
+                    true,
                     vlmData.getVolumeGroup(),
                     vlmData.getThinPool(),
                     srcId,
