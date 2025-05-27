@@ -42,7 +42,14 @@ import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
 
 @GenCrd(
-    dataVersion = "v1-27-1"
+    dataVersion = GenCrdCurrent.VERSION
+)
+@SuppressWarnings(
+    {
+        "checkstyle:LineLength",
+        "checkstyle:ReturnCount",
+        "checkstyle:TypeName"
+    }
 )
 public class GenCrdCurrent
 {
@@ -1208,7 +1215,7 @@ public class GenCrdCurrent
         return new K8sCrdSchemaUpdateContext(
             GenCrdCurrent::databaseTableToYamlLocation,
             GenCrdCurrent::databaseTableToYamlName,
-            "v1-27-1"
+            GenCrdCurrent.VERSION
         );
     }
 

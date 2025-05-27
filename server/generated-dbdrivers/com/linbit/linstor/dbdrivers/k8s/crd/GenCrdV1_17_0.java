@@ -40,6 +40,13 @@ import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
 
+@SuppressWarnings(
+    {
+        "checkstyle:LineLength",
+        "checkstyle:ReturnCount",
+        "checkstyle:TypeName"
+    }
+)
 public class GenCrdV1_17_0
 {
     public static final String VERSION = "v1-17-0";
@@ -150,7 +157,7 @@ public class GenCrdV1_17_0
         DatabaseTable table
     )
     {
-        switch(table.getName())
+        switch (table.getName())
         {
             case "FILES":
                 return (Class<CRD>) Files.class;
@@ -246,11 +253,11 @@ public class GenCrdV1_17_0
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public static <SPEC extends LinstorSpec> Class<SPEC> databaseTableToSpecClass(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<SPEC> databaseTableToSpecClass(
         DatabaseTable table
     )
     {
-        switch(table.getName())
+        switch (table.getName())
         {
             case "FILES":
                 return (Class<SPEC>) FilesSpec.class;
@@ -346,9 +353,9 @@ public class GenCrdV1_17_0
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public static <SPEC extends LinstorSpec> LinstorCrd<SPEC> specToCrd(SPEC spec)
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> LinstorCrd<SPEC> specToCrd(SPEC spec)
     {
-        switch(spec.getDatabaseTable().getName())
+        switch (spec.getDatabaseTable().getName())
         {
             case "FILES":
                 return (LinstorCrd<SPEC>) new Files((FilesSpec) spec);
@@ -449,7 +456,7 @@ public class GenCrdV1_17_0
     )
         throws AccessDeniedException
     {
-        switch(table.getName())
+        switch (table.getName())
         {
             case "FILES":
             {
@@ -975,7 +982,7 @@ public class GenCrdV1_17_0
 
     public static @Nullable String databaseTableToYamlLocation(DatabaseTable dbTable)
     {
-        switch(dbTable.getName())
+        switch (dbTable.getName())
         {
             case "FILES":
                 return "/com/linbit/linstor/dbcp/k8s/crd/v1_17_0/Files.yaml";
@@ -1071,7 +1078,7 @@ public class GenCrdV1_17_0
 
     public static @Nullable String databaseTableToYamlName(DatabaseTable dbTable)
     {
-        switch(dbTable.getName())
+        switch (dbTable.getName())
         {
             case "FILES":
                 return "files";
@@ -1207,9 +1214,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class FilesSpec implements LinstorSpec
+    public static class FilesSpec implements LinstorSpec<Files, FilesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -6232808401267725547L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -1245,8 +1251,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public Files getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -1268,7 +1273,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -1357,9 +1362,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class KeyValueStoreSpec implements LinstorSpec
+    public static class KeyValueStoreSpec implements LinstorSpec<KeyValueStore, KeyValueStoreSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -1891092509266286234L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -1389,8 +1393,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public KeyValueStore getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -1410,7 +1413,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -1499,9 +1502,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerBcacheVolumesSpec implements LinstorSpec
+    public static class LayerBcacheVolumesSpec implements LinstorSpec<LayerBcacheVolumes, LayerBcacheVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -5616777385584094884L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
@@ -1538,8 +1540,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerBcacheVolumes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -1561,7 +1562,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1654,9 +1655,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerCacheVolumesSpec implements LinstorSpec
+    public static class LayerCacheVolumesSpec implements LinstorSpec<LayerCacheVolumes, LayerCacheVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 3960315281542474499L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
@@ -1693,8 +1693,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerCacheVolumes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -1716,7 +1715,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1811,9 +1810,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerDrbdResourcesSpec implements LinstorSpec
+    public static class LayerDrbdResourcesSpec implements LinstorSpec<LayerDrbdResources, LayerDrbdResourcesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -4543600970437749238L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
@@ -1852,8 +1850,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerDrbdResources getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -1876,7 +1873,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1979,9 +1976,9 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerDrbdResourceDefinitionsSpec implements LinstorSpec
+    public static class LayerDrbdResourceDefinitionsSpec implements
+        LinstorSpec<LayerDrbdResourceDefinitions, LayerDrbdResourceDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -1938906255383676986L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s";
@@ -2031,8 +2028,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerDrbdResourceDefinitions getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -2058,7 +2054,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2157,9 +2153,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerDrbdVolumesSpec implements LinstorSpec
+    public static class LayerDrbdVolumesSpec implements LinstorSpec<LayerDrbdVolumes, LayerDrbdVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 4803158794164520316L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
@@ -2193,8 +2188,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerDrbdVolumes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -2215,7 +2209,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2306,9 +2300,9 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerDrbdVolumeDefinitionsSpec implements LinstorSpec
+    public static class LayerDrbdVolumeDefinitionsSpec implements
+        LinstorSpec<LayerDrbdVolumeDefinitions, LayerDrbdVolumeDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -5463195160684515617L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%d";
@@ -2347,8 +2341,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerDrbdVolumeDefinitions getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -2370,7 +2363,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2459,9 +2452,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerLuksVolumesSpec implements LinstorSpec
+    public static class LayerLuksVolumesSpec implements LinstorSpec<LayerLuksVolumes, LayerLuksVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -9100100931303035689L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
@@ -2492,8 +2484,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerLuksVolumes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -2513,7 +2504,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2600,9 +2591,9 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerOpenflexResourceDefinitionsSpec implements LinstorSpec
+    public static class LayerOpenflexResourceDefinitionsSpec implements
+        LinstorSpec<LayerOpenflexResourceDefinitions, LayerOpenflexResourceDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 785717419967330436L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
@@ -2636,8 +2627,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerOpenflexResourceDefinitions getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -2658,7 +2648,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2747,9 +2737,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerOpenflexVolumesSpec implements LinstorSpec
+    public static class LayerOpenflexVolumesSpec implements LinstorSpec<LayerOpenflexVolumes, LayerOpenflexVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -4535382248945783167L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
@@ -2783,8 +2772,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerOpenflexVolumes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -2805,7 +2793,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2902,9 +2890,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerResourceIdsSpec implements LinstorSpec
+    public static class LayerResourceIdsSpec implements LinstorSpec<LayerResourceIds, LayerResourceIdsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -8128310015797337492L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
@@ -2949,8 +2936,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerResourceIds getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -2975,7 +2961,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3074,9 +3060,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerStorageVolumesSpec implements LinstorSpec
+    public static class LayerStorageVolumesSpec implements LinstorSpec<LayerStorageVolumes, LayerStorageVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -5261090305495685466L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
@@ -3113,8 +3098,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerStorageVolumes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -3136,7 +3120,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3227,9 +3211,9 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LayerWritecacheVolumesSpec implements LinstorSpec
+    public static class LayerWritecacheVolumesSpec implements
+        LinstorSpec<LayerWritecacheVolumes, LayerWritecacheVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 387465434638683223L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
@@ -3263,8 +3247,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LayerWritecacheVolumes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -3285,7 +3268,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3380,9 +3363,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class LinstorRemotesSpec implements LinstorSpec
+    public static class LinstorRemotesSpec implements LinstorSpec<LinstorRemotes, LinstorRemotesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 3945853363014361012L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -3424,8 +3406,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public LinstorRemotes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -3449,7 +3430,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3546,9 +3527,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class NodesSpec implements LinstorSpec
+    public static class NodesSpec implements LinstorSpec<Nodes, NodesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -6228486132846779260L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -3584,8 +3564,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public Nodes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -3607,7 +3586,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3696,9 +3675,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class NodeConnectionsSpec implements LinstorSpec
+    public static class NodeConnectionsSpec implements LinstorSpec<NodeConnections, NodeConnectionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -6594802702606788897L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
@@ -3729,8 +3707,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public NodeConnections getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -3750,7 +3727,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3843,9 +3820,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class NodeNetInterfacesSpec implements LinstorSpec
+    public static class NodeNetInterfacesSpec implements LinstorSpec<NodeNetInterfaces, NodeNetInterfacesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -7167588687277493192L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
@@ -3888,8 +3864,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public NodeNetInterfaces getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -3913,7 +3888,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4014,9 +3989,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class NodeStorPoolSpec implements LinstorSpec
+    public static class NodeStorPoolSpec implements LinstorSpec<NodeStorPool, NodeStorPoolSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 281061651659706526L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
@@ -4059,8 +4033,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public NodeStorPool getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -4084,7 +4057,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4177,9 +4150,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class PropsContainersSpec implements LinstorSpec
+    public static class PropsContainersSpec implements LinstorSpec<PropsContainers, PropsContainersSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 5069245678165851198L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
@@ -4210,8 +4182,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public PropsContainers getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -4231,7 +4202,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "PROPS_INSTANCE":
                     return propsInstance;
@@ -4322,9 +4293,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class ResourcesSpec implements LinstorSpec
+    public static class ResourcesSpec implements LinstorSpec<Resources, ResourcesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 1164943591213284652L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s";
@@ -4365,8 +4335,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public Resources getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -4389,7 +4358,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4488,9 +4457,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class ResourceConnectionsSpec implements LinstorSpec
+    public static class ResourceConnectionsSpec implements LinstorSpec<ResourceConnections, ResourceConnectionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -4438579759164890782L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%s";
@@ -4535,8 +4503,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public ResourceConnections getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -4560,7 +4527,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4667,9 +4634,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class ResourceDefinitionsSpec implements LinstorSpec
+    public static class ResourceDefinitionsSpec implements LinstorSpec<ResourceDefinitions, ResourceDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -3481166801534882552L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
@@ -4721,8 +4687,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public ResourceDefinitions getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -4749,7 +4714,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4872,9 +4837,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class ResourceGroupsSpec implements LinstorSpec
+    public static class ResourceGroupsSpec implements LinstorSpec<ResourceGroups, ResourceGroupsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -9106529273273947915L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -4940,8 +4904,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public ResourceGroups getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -4973,7 +4936,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -5094,9 +5057,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class S3RemotesSpec implements LinstorSpec
+    public static class S3RemotesSpec implements LinstorSpec<S3Remotes, S3RemotesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -8887712484217776779L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -5144,8 +5106,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public S3Remotes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -5171,7 +5132,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -5272,9 +5233,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SatellitesCapacitySpec implements LinstorSpec
+    public static class SatellitesCapacitySpec implements LinstorSpec<SatellitesCapacity, SatellitesCapacitySpec>
     {
         @JsonIgnore private static final long serialVersionUID = 5842214342499665228L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -5310,8 +5270,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SatellitesCapacity getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -5333,7 +5292,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "NODE_NAME":
                     return nodeName;
@@ -5420,9 +5379,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecAccessTypesSpec implements LinstorSpec
+    public static class SecAccessTypesSpec implements LinstorSpec<SecAccessTypes, SecAccessTypesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -5771293933316578053L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -5449,8 +5407,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecAccessTypes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -5469,7 +5426,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ACCESS_TYPE_NAME":
                     return accessTypeName;
@@ -5552,9 +5509,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecAclMapSpec implements LinstorSpec
+    public static class SecAclMapSpec implements LinstorSpec<SecAclMap, SecAclMapSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -2576926936251141567L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
@@ -5585,8 +5541,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecAclMap getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -5606,7 +5561,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -5691,9 +5646,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecConfigurationSpec implements LinstorSpec
+    public static class SecConfigurationSpec implements LinstorSpec<SecConfiguration, SecConfigurationSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 1808882161560414180L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -5723,8 +5677,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecConfiguration getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -5744,7 +5697,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ENTRY_KEY":
                     return entryKey;
@@ -5827,9 +5780,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecDfltRolesSpec implements LinstorSpec
+    public static class SecDfltRolesSpec implements LinstorSpec<SecDfltRoles, SecDfltRolesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -7816511352490663504L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -5856,8 +5808,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecDfltRoles getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -5876,7 +5827,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -5965,9 +5916,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecIdentitiesSpec implements LinstorSpec
+    public static class SecIdentitiesSpec implements LinstorSpec<SecIdentities, SecIdentitiesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 8394397900124060864L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -6006,8 +5956,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecIdentities getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -6030,7 +5979,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -6119,9 +6068,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecIdRoleMapSpec implements LinstorSpec
+    public static class SecIdRoleMapSpec implements LinstorSpec<SecIdRoleMap, SecIdRoleMapSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -7422306145851688965L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
@@ -6149,8 +6097,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecIdRoleMap getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -6169,7 +6116,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -6254,9 +6201,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecObjectProtectionSpec implements LinstorSpec
+    public static class SecObjectProtectionSpec implements LinstorSpec<SecObjectProtection, SecObjectProtectionSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 5454473694752692449L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -6289,8 +6235,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecObjectProtection getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -6311,7 +6256,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -6402,9 +6347,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecRolesSpec implements LinstorSpec
+    public static class SecRolesSpec implements LinstorSpec<SecRoles, SecRolesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -700589550472898425L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -6440,8 +6384,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecRoles getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -6463,7 +6406,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ROLE_NAME":
                     return roleName;
@@ -6552,9 +6495,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecTypesSpec implements LinstorSpec
+    public static class SecTypesSpec implements LinstorSpec<SecTypes, SecTypesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 4915612233441451232L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -6584,8 +6526,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecTypes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -6605,7 +6546,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "TYPE_NAME":
                     return typeName;
@@ -6690,9 +6631,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SecTypeRulesSpec implements LinstorSpec
+    public static class SecTypeRulesSpec implements LinstorSpec<SecTypeRules, SecTypeRulesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -1723140792116772291L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
@@ -6723,8 +6663,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SecTypeRules getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -6744,7 +6683,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "DOMAIN_NAME":
                     return domainName;
@@ -6827,9 +6766,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class SpaceHistorySpec implements LinstorSpec
+    public static class SpaceHistorySpec implements LinstorSpec<SpaceHistory, SpaceHistorySpec>
     {
         @JsonIgnore private static final long serialVersionUID = -4917833147658766058L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -6856,8 +6794,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public SpaceHistory getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -6876,7 +6813,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ENTRY_DATE":
                     return entryDate;
@@ -6959,9 +6896,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class StorPoolDefinitionsSpec implements LinstorSpec
+    public static class StorPoolDefinitionsSpec implements LinstorSpec<StorPoolDefinitions, StorPoolDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 9002662673527913482L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -6991,8 +6927,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public StorPoolDefinitions getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -7012,7 +6947,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7093,9 +7028,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class TrackingDateSpec implements LinstorSpec
+    public static class TrackingDateSpec implements LinstorSpec<TrackingDate, TrackingDateSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -619630151392959964L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
@@ -7120,8 +7054,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public TrackingDate getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -7139,7 +7072,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ENTRY_DATE":
                     return entryDate;
@@ -7226,9 +7159,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class VolumesSpec implements LinstorSpec
+    public static class VolumesSpec implements LinstorSpec<Volumes, VolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 2154456530138845535L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%d";
@@ -7270,8 +7202,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public Volumes getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -7294,7 +7225,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7391,9 +7322,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class VolumeConnectionsSpec implements LinstorSpec
+    public static class VolumeConnectionsSpec implements LinstorSpec<VolumeConnections, VolumeConnectionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -3432779408856984213L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%s:%d";
@@ -7436,8 +7366,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public VolumeConnections getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -7460,7 +7389,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7557,9 +7486,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class VolumeDefinitionsSpec implements LinstorSpec
+    public static class VolumeDefinitionsSpec implements LinstorSpec<VolumeDefinitions, VolumeDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -2774126609881833807L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%d";
@@ -7600,8 +7528,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public VolumeDefinitions getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -7624,7 +7551,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7717,9 +7644,8 @@ public class GenCrdV1_17_0
         );
     }
 
-    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
-    public static class VolumeGroupsSpec implements LinstorSpec
+    public static class VolumeGroupsSpec implements LinstorSpec<VolumeGroups, VolumeGroupsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -2467564575378494059L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%d";
@@ -7753,8 +7679,7 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
-        public LinstorCrd getCrd()
+        public VolumeGroups getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
@@ -7775,7 +7700,7 @@ public class GenCrdV1_17_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;

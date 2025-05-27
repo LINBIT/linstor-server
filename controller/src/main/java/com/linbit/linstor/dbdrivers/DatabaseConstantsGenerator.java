@@ -573,7 +573,17 @@ public final class DatabaseConstantsGenerator
         appendLine("@GenCrd(");
         try (IndentLevel annotIndent = new IndentLevel("", ")", false, true))
         {
-            appendLine("dataVersion = \"%s\"", asYamlVersionString(currentVersionRef));
+            appendLine("dataVersion = %s.VERSION", clazzName);
+        }
+
+        try (IndentLevel annotIndent = new IndentLevel("@SuppressWarnings(", ")", true, true))
+        {
+            try (IndentLevel annotedWarningsIndent = new IndentLevel())
+            {
+                appendLine("\"checkstyle:LineLength\",");
+                appendLine("\"checkstyle:ReturnCount\",");
+                appendLine("\"checkstyle:TypeName\"");
+            }
         }
         appendLine("public class %s", clazzName);
         try (IndentLevel clazzIndent = new IndentLevel())
@@ -881,7 +891,7 @@ public final class DatabaseConstantsGenerator
                 {
                     appendLine("%s::databaseTableToYamlLocation,", clazzName);
                     appendLine("%s::databaseTableToYamlName,", clazzName);
-                    appendLine("\"%s\"", asYamlVersionString(currentVersionRef));
+                    appendLine("%s.VERSION", clazzName);
                 }
                 appendLine(");");
             }

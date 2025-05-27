@@ -78,7 +78,8 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
         {
             DatabaseTable dbTableOldVersion = oldEntries.getKey();
             DatabaseTable dbTableNewVersion = dbTableRemapping.get(dbTableOldVersion);
-            Class<LinstorSpec<?, ?>> v1_17_0SpecClass = GenCrdV1_17_0.databaseTableToSpecClass(dbTableNewVersion);
+            Class<LinstorSpec<?, ?>> v1_17_0SpecClass = (Class<LinstorSpec<?, ?>>) GenCrdV1_17_0
+                .databaseTableToSpecClass(dbTableNewVersion);
             HashMap<String, LinstorCrd<LinstorSpec<?, ?>>> oldCrds = oldEntries.getValue();
             for (LinstorCrd<LinstorSpec<?, ?>> oldCrd : oldCrds.values())
             {
@@ -87,10 +88,7 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
                 String json = objMapper.writeValueAsString(oldCrd.getSpec());
                 // however, the new json must include a "@class=..." entry, which is missing from the oldCrd.
                 // that means we need to add that entry
-                @SuppressWarnings("unchecked")
                 Map<String, Object> map = objMapper.readValue(json, Map.class);
-
-                // map.put("@c", v1_17_0SpecClass.getSimpleName());
 
                 LinstorSpec<?, ?> v1_17_0_spec = objMapper.readValue(
                     objMapper.writeValueAsString(map),
@@ -98,10 +96,18 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
                 );
 
                 // Use create here, as we previously removed all values from the DB.
-                txTo.create(dbTableNewVersion, GenCrdV1_17_0.specToCrd(v1_17_0_spec));
+                txTo.create(dbTableNewVersion, castedSpecToCrd(v1_17_0_spec));
             }
         }
 
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> LinstorCrd<SPEC> castedSpecToCrd(
+        LinstorSpec<?, ?> spec
+    )
+    {
+        return GenCrdV1_17_0.specToCrd((SPEC) (spec));
     }
 }

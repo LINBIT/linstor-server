@@ -31,6 +31,14 @@ import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
 
+@SuppressWarnings(
+    {
+        "checkstyle:LineLength",
+        "checkstyle:ReturnCount",
+        "checkstyle:TypeName",
+        "checkstyle:MagicNumber"
+    }
+)
 public class GenCrdV1_15_0
 {
     public static final String VERSION = "v1-15-0";
@@ -47,7 +55,7 @@ public class GenCrdV1_15_0
         DatabaseTable table
     )
     {
-        switch(table.getName())
+        switch (table.getName())
         {
             case "FILES":
                 return (Class<CRD>) Files.class;
@@ -143,9 +151,11 @@ public class GenCrdV1_15_0
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public static <SPEC extends LinstorSpec> LinstorCrd<SPEC> specToCrd(SPEC spec)
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> LinstorCrd<SPEC> specToCrd(
+        SPEC spec
+    )
     {
-        switch(spec.getDatabaseTable().getName())
+        switch (spec.getDatabaseTable().getName())
         {
             case "FILES":
                 return (LinstorCrd<SPEC>) new Files((FilesSpec) spec);
@@ -246,7 +256,7 @@ public class GenCrdV1_15_0
     )
         throws AccessDeniedException
     {
-        switch(table.getName())
+        switch (table.getName())
         {
             case "FILES":
             {
@@ -770,7 +780,7 @@ public class GenCrdV1_15_0
 
     public static @Nullable String databaseTableToYamlLocation(DatabaseTable dbTable)
     {
-        switch(dbTable.getName())
+        switch (dbTable.getName())
         {
             case "FILES":
                 return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/Files.yaml";
@@ -866,7 +876,7 @@ public class GenCrdV1_15_0
 
     public static @Nullable String databaseTableToYamlName(DatabaseTable dbTable)
     {
-        switch(dbTable.getName())
+        switch (dbTable.getName())
         {
             case "FILES":
                 return "files";
@@ -1055,7 +1065,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -1078,7 +1087,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -1202,7 +1211,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -1223,7 +1231,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -1356,7 +1364,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -1379,7 +1386,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1516,7 +1523,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -1539,7 +1545,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1681,7 +1687,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -1705,7 +1710,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1869,7 +1874,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -1896,7 +1900,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2035,7 +2039,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -2057,7 +2060,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2194,7 +2197,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -2217,7 +2219,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2342,7 +2344,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -2363,7 +2364,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2490,7 +2491,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -2512,7 +2512,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2641,7 +2641,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -2663,7 +2662,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2815,7 +2814,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -2841,7 +2839,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2984,7 +2982,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -3007,7 +3004,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3138,7 +3135,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -3160,7 +3156,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3306,7 +3302,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -3331,7 +3326,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3471,7 +3466,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -3494,7 +3488,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3619,7 +3613,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -3640,7 +3633,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3785,7 +3778,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -3810,7 +3802,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3963,7 +3955,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -3988,7 +3979,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4117,7 +4108,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -4138,7 +4128,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "PROPS_INSTANCE":
                     return propsInstance;
@@ -4278,7 +4268,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -4302,7 +4291,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4455,7 +4444,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -4480,7 +4468,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4651,7 +4639,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -4679,7 +4666,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4885,7 +4872,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -4918,7 +4904,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -5098,7 +5084,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -5125,7 +5110,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -5257,7 +5242,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -5278,7 +5262,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "NODE_NAME":
                     return nodeName;
@@ -5392,7 +5376,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -5412,7 +5395,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ACCESS_TYPE_NAME":
                     return accessTypeName;
@@ -5531,7 +5514,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -5552,7 +5534,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -5672,7 +5654,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -5693,7 +5674,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ENTRY_KEY":
                     return entryKey;
@@ -5807,7 +5788,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -5827,7 +5807,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -5963,7 +5943,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -5987,7 +5966,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -6108,7 +6087,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -6128,7 +6106,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -6252,7 +6230,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -6274,7 +6251,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -6408,7 +6385,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -6431,7 +6407,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ROLE_NAME":
                     return roleName;
@@ -6555,7 +6531,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -6576,7 +6551,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "TYPE_NAME":
                     return typeName;
@@ -6697,7 +6672,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -6718,7 +6692,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "DOMAIN_NAME":
                     return domainName;
@@ -6832,7 +6806,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -6852,7 +6825,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ENTRY_DATE":
                     return entryDate;
@@ -6970,7 +6943,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -6991,7 +6963,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7100,7 +7072,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -7119,7 +7090,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "ENTRY_DATE":
                     return entryDate;
@@ -7256,7 +7227,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -7280,7 +7250,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7428,7 +7398,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -7452,7 +7421,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7598,7 +7567,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -7622,7 +7590,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7755,7 +7723,6 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        @SuppressWarnings("rawtypes")
         public LinstorCrd getCrd()
         {
             throw new ImplementationError("Pre 1_19_1 does not support this method");
@@ -7777,7 +7744,7 @@ public class GenCrdV1_15_0
         @Override
         public Object getByColumn(String clmNameStr)
         {
-            switch(clmNameStr)
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7839,7 +7806,7 @@ public class GenCrdV1_15_0
         }
     }
 
-    private static final String base32Encode(String format, Object... args)
+    private static String base32Encode(String format, Object... args)
     {
         String stringToEncode = String.format(format, args);
         return new BigInteger(1, stringToEncode.getBytes(StandardCharsets.UTF_8)).toString(32);

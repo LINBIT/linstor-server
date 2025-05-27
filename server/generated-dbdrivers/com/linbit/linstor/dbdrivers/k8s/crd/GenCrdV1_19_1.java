@@ -44,6 +44,13 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @GenCrd(
     dataVersion = "v1-19-1"
 )
+@SuppressWarnings(
+    {
+        "checkstyle:LineLength",
+        "checkstyle:ReturnCount",
+        "checkstyle:TypeName"
+    }
+)
 public class GenCrdV1_19_1
 {
     public static final String VERSION = "v1-19-1";

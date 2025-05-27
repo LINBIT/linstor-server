@@ -16,13 +16,6 @@ satellite/.externalToolBuilders/
 
 # build output
 server/generated-src/*
-!server/generated-src/com
-server/generated-src/com/*
-!server/generated-src/com/linbit
-server/generated-src/com/linbit/*
-!server/generated-src/com/linbit/linstor
-server/generated-src/com/linbit/linstor/*
-!server/generated-src/com/linbit/linstor/dbdrivers
 server/generated-resources/*
 build/
 out/

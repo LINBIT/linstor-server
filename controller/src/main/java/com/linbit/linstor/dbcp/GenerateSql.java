@@ -229,6 +229,11 @@ public class GenerateSql
                     String sanitizedNewCode = replaceVersionUID(generatedCrdJavaClass.javaCode);
 
                     ret = !sanitizedNewCode.equals(sanitizedOldCode);
+                    // if (ret)
+                    // {
+                    // printDiff(sanitizedOldCode, sanitizedNewCode);
+                    // System.exit(1);
+                    // }
                 }
                 break;
             }
