@@ -1,5 +1,6 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
@@ -65,7 +66,6 @@ public class RscApiTest extends ApiTestBase
     private Node testSatelliteNode;
 
     private ResourceName testRscName;
-    private Integer testRscDfnPort;
     private ResourceDefinition.Flags[] testRscDfnFlags;
     private String testRscDfnSecret;
     private TransportType tesTRscDfnTransportType;
@@ -83,7 +83,6 @@ public class RscApiTest extends ApiTestBase
     @SuppressWarnings("checkstyle:magicnumber")
     public RscApiTest() throws Exception
     {
-        super();
         testControllerName = new NodeName("TestController");
         testControllerType = Node.Type.CONTROLLER;
         testControllerFlags = null;
@@ -93,7 +92,6 @@ public class RscApiTest extends ApiTestBase
         testSatelliteFlags = null;
 
         testRscName = new ResourceName("TestRsc");
-        testRscDfnPort = 4242;
         testRscDfnFlags = null;
         testRscDfnSecret = "notTellingYou";
         tesTRscDfnTransportType = TransportType.IP;
@@ -126,7 +124,6 @@ public class RscApiTest extends ApiTestBase
 
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = testRscDfnPort;
         drbdRscDfn.sharedSecret = testRscDfnSecret;
         drbdRscDfn.transportType = tesTRscDfnTransportType;
         testRscDfn = resourceDefinitionFactory.create(
@@ -238,6 +235,8 @@ public class RscApiTest extends ApiTestBase
         private RscApiData rscApi;
         private Integer drbdNodeId;
         private List<String> layerStackList;
+        private @Nullable Integer portCount;
+        private @Nullable List<Integer> ports;
 
         RscWithPayloadApiData(Rsc rscRef)
         {
@@ -269,6 +268,16 @@ public class RscApiTest extends ApiTestBase
             return drbdNodeId;
         }
 
+        @Override
+        public @Nullable Integer getPortCount()
+        {
+            return portCount;
+        }
 
+        @Override
+        public @Nullable List<Integer> getPorts()
+        {
+            return ports;
+        }
     }
 }

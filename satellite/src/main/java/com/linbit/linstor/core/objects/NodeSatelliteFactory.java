@@ -2,8 +2,10 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionFactory;
@@ -18,35 +20,35 @@ import java.util.UUID;
 
 public class NodeSatelliteFactory
 {
+    private final ErrorReporter errorReporter;
     private final NodeDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
-    private final StorPoolSatelliteFactory storPoolFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final CoreModule.NodesMap nodesMap;
+    private final StltConfigAccessor stltCfgAccessor;
 
     @Inject
     public NodeSatelliteFactory(
+        ErrorReporter errorReporterRef,
         NodeDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
-        StorPoolSatelliteFactory storPoolFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CoreModule.NodesMap nodesMapRef
+        CoreModule.NodesMap nodesMapRef,
+        StltConfigAccessor stltCfgAccessorRef
     )
     {
+        errorReporter = errorReporterRef;
         dbDriver = dbDriverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
-        storPoolFactory = storPoolFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
-        freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
         transMgrProvider = transMgrProviderRef;
         nodesMap = nodesMapRef;
+        stltCfgAccessor = stltCfgAccessorRef;
     }
 
     public Node getInstanceSatellite(
@@ -75,6 +77,8 @@ public class NodeSatelliteFactory
                     nameRef,
                     typeRef,
                     StateFlagsBits.getMask(flags),
+                    stltCfgAccessor.getReadonlyProps(),
+                    errorReporter,
                     dbDriver,
                     propsContainerFactory,
                     transObjFactory,

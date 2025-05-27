@@ -3,6 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -17,6 +18,7 @@ import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
@@ -33,6 +35,7 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Nodes.NODE_TY
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Nodes.UUID;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -49,11 +52,13 @@ public final class NodeDbDriver extends AbsProtectedDatabaseDriver<Node, Node.In
 
     protected final StateFlagsPersistence<Node> flagsDriver;
     protected final SingleColumnDatabaseDriver<Node, Node.Type> nodeTypeDriver;
+    private ReadOnlyProps ctrlConf;
 
     @Inject
     public NodeDbDriver(
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext dbCtxRef,
+        @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef,
         DbEngine dbEngine,
         Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionFactory objProtFactoryRef,
@@ -62,6 +67,7 @@ public final class NodeDbDriver extends AbsProtectedDatabaseDriver<Node, Node.In
     )
     {
         super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.NODES, dbEngine, objProtFactoryRef);
+        ctrlConf = ctrlConfRef;
         transMgrProvider = transMgrProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
@@ -153,6 +159,8 @@ public final class NodeDbDriver extends AbsProtectedDatabaseDriver<Node, Node.In
             nodeName,
             nodeType,
             flags,
+            ctrlConf,
+            errorReporter,
             this,
             propsContainerFactory,
             transObjFactory,

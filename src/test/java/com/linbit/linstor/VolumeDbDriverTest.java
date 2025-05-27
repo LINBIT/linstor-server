@@ -15,6 +15,7 @@ import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscPayload;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -32,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.junit.Before;
@@ -54,7 +56,7 @@ public class VolumeDbDriverTest extends GenericDbBase
     private Node node;
 
     private ResourceName resName;
-    private Integer resPort;
+    private Set<Integer> resPorts;
     private ResourceDefinition resDfn;
 
     private Integer nodeId;
@@ -94,10 +96,9 @@ public class VolumeDbDriverTest extends GenericDbBase
         );
 
         resName = new ResourceName("TestResName");
-        resPort = 9001;
+        resPorts = Collections.singleton(9001);
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = resPort;
         drbdRscDfn.sharedSecret = "secret";
         drbdRscDfn.transportType = TransportType.IP;
         resDfn = resourceDefinitionFactory.create(
@@ -111,7 +112,9 @@ public class VolumeDbDriverTest extends GenericDbBase
         );
 
         nodeId = 7;
-        payload.getDrbdRsc().nodeId = nodeId;
+        DrbdRscPayload drbdRsc = payload.getDrbdRsc();
+        drbdRsc.nodeId = nodeId;
+        drbdRsc.tcpPorts = resPorts;
         res = resourceFactory.create(
             SYS_CTX,
             resDfn,

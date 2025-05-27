@@ -41,7 +41,6 @@ public class VolumeDefinitionDbDriverTest extends GenericDbBase
         " FROM " + TBL_VOLUME_DEFINITIONS;
 
     private ResourceName resName;
-    private Integer resPort;
     private ResourceDefinition resDfn;
 
     private java.util.UUID uuid;
@@ -69,10 +68,8 @@ public class VolumeDefinitionDbDriverTest extends GenericDbBase
         dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
 
         resName = new ResourceName("TestResource");
-        resPort = 9001;
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = resPort;
         drbdRscDfn.sharedSecret = "secret";
         drbdRscDfn.transportType = TransportType.IP;
         resDfn = resourceDefinitionFactory.create(
@@ -141,7 +138,6 @@ public class VolumeDefinitionDbDriverTest extends GenericDbBase
 
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = resPort + 1; // prevent tcp-port-conflict
         drbdRscDfn.sharedSecret = "secret";
         drbdRscDfn.transportType = TransportType.IP;
         ResourceDefinition resDefinitionTest = resourceDefinitionFactory.create(

@@ -10,6 +10,7 @@ import com.linbit.linstor.core.objects.AbsLayerRscDataDbDriver.ParentObjects;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.Pair;
@@ -40,7 +41,7 @@ public interface ControllerLayerRscDatabaseDriver
         int rscLayerId
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
-        MdException;
+        MdException, AccessDeniedException;
 
     void loadAllLayerVlmData() throws DatabaseException;
 }

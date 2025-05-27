@@ -48,7 +48,6 @@ public class ResourceDefinitionTestFactory
     private AccessContext dfltAccCtx = TestAccessContextProvider.PUBLIC_CTX;
     private Supplier<String> dfltRscNameSupplier = () -> String.format(dfltRscNamePattern, nextId.incrementAndGet());
     private byte[] dfltExtName = null;
-    private AtomicInteger dfltPort = new AtomicInteger(9000);
     private Flags[] dfltFlags = new Flags[0];
     private Supplier<String> dfltSecret = () -> String.format(dfltSecretPattern, nextSecret.incrementAndGet());
     private TransportType dfltTransType = TransportType.IP;
@@ -100,12 +99,6 @@ public class ResourceDefinitionTestFactory
     public ResourceDefinitionTestFactory setDfltExtName(byte[] dfltExtNameRef)
     {
         dfltExtName = dfltExtNameRef;
-        return this;
-    }
-
-    public ResourceDefinitionTestFactory setDfltPort(AtomicInteger dfltPortRef)
-    {
-        dfltPort = dfltPortRef;
         return this;
     }
 
@@ -193,11 +186,10 @@ public class ResourceDefinitionTestFactory
             accCtx = dfltAccCtx;
             extName = dfltExtName;
             flags = dfltFlags;
-            payload = createCopy(dfltPayload);
+            payload = TestFactoryUtils.createCopy(dfltPayload);
             layerStack = copyOrNull(dfltLayerStack);
             rscGroupName = dfltRscGroupName;
 
-            payload.drbdRscDfn.tcpPort = dfltPort.getAndIncrement();
             payload.drbdRscDfn.sharedSecret = dfltSecret.get();
             payload.drbdRscDfn.transportType = dfltTransType;
             payload.drbdRscDfn.peerSlotsNewResource = dfltPeerSlots;
@@ -218,12 +210,6 @@ public class ResourceDefinitionTestFactory
         public ResourceDefinitionBuilder setExtName(byte[] extNameRef)
         {
             extName = extNameRef;
-            return this;
-        }
-
-        public ResourceDefinitionBuilder setPort(Integer portRef)
-        {
-            payload.drbdRscDfn.tcpPort = portRef;
             return this;
         }
 
@@ -280,28 +266,5 @@ public class ResourceDefinitionTestFactory
             rscDfnMap.put(rscName.toUpperCase(), rscDfn);
             return rscDfn;
         }
-    }
-
-    public static LayerPayload createCopy(LayerPayload copyFrom)
-    {
-        LayerPayload ret = new LayerPayload();
-        if (copyFrom != null)
-        {
-            ret.drbdRsc.alStripes = copyFrom.drbdRsc.alStripes;
-            ret.drbdRsc.alStripeSize = copyFrom.drbdRsc.alStripeSize;
-            ret.drbdRsc.needsNewNodeId = copyFrom.drbdRsc.needsNewNodeId;
-            ret.drbdRsc.nodeId = copyFrom.drbdRsc.nodeId;
-            ret.drbdRsc.peerSlots = copyFrom.drbdRsc.peerSlots;
-
-            ret.drbdRscDfn.peerSlotsNewResource = copyFrom.drbdRscDfn.peerSlotsNewResource;
-            ret.drbdRscDfn.sharedSecret = copyFrom.drbdRscDfn.sharedSecret;
-            ret.drbdRscDfn.tcpPort = copyFrom.drbdRscDfn.tcpPort;
-            ret.drbdRscDfn.transportType = copyFrom.drbdRscDfn.transportType;
-
-            ret.drbdVlmDfn.minorNr = copyFrom.drbdVlmDfn.minorNr;
-
-            ret.storagePayload = new HashMap<>(copyFrom.storagePayload);
-        }
-        return ret;
     }
 }

@@ -26,7 +26,9 @@ import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscPayload;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -36,6 +38,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -43,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -82,6 +86,8 @@ public class NodeDbDriverTest extends GenericDbBase
     private final NodeName nodeName;
 
     @Inject private NodeDbDriver dbDriver;
+    @Inject
+    @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef;
     private java.util.UUID uuid;
     private ObjectProtection objProt;
     private long initialFlags;
@@ -120,6 +126,8 @@ public class NodeDbDriverTest extends GenericDbBase
             nodeName,
             initialType,
             initialFlags,
+            ctrlConfRef,
+            errorReporter,
             dbDriver,
             propsContainerFactory,
             transObjFactory,
@@ -256,7 +264,7 @@ public class NodeDbDriverTest extends GenericDbBase
         // resDfn
         ResourceName resName = new ResourceName("TestResName");
         java.util.UUID resDfnUuid;
-        int resPort = 9001;
+        Set<Integer> resPorts = Collections.singleton(9001);
         String resDfnTestKey = "resDfnTestKey";
         String resDfnTestValue = "resDfnTestValue";
         TransportType transportType = TransportType.IP;
@@ -357,7 +365,6 @@ public class NodeDbDriverTest extends GenericDbBase
             // resDfn
             LayerPayload payload = new LayerPayload();
             DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-            drbdRscDfn.tcpPort = resPort;
             drbdRscDfn.sharedSecret = "secret";
             drbdRscDfn.transportType = transportType;
             ResourceDefinition resDfn = resourceDefinitionFactory.create(
@@ -422,7 +429,9 @@ public class NodeDbDriverTest extends GenericDbBase
 
             // node1 res
             LayerPayload payload1 = new LayerPayload();
-            payload1.getDrbdRsc().nodeId = node1Id;
+            DrbdRscPayload drbdRsc1 = payload1.getDrbdRsc();
+            drbdRsc1.nodeId = node1Id;
+            drbdRsc1.tcpPorts = resPorts;
             Resource res1 = resourceFactory.create(
                 SYS_CTX,
                 resDfn,
@@ -455,7 +464,9 @@ public class NodeDbDriverTest extends GenericDbBase
 
             // node2 res
             LayerPayload payload2 = new LayerPayload();
-            payload2.getDrbdRsc().nodeId = node2Id;
+            DrbdRscPayload drbdRsc2 = payload2.getDrbdRsc();
+            drbdRsc2.nodeId = node2Id;
+            drbdRsc2.tcpPorts = resPorts;
             Resource res2 = resourceFactory.create(
                 SYS_CTX,
                 resDfn,

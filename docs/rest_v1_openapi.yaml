@@ -6565,7 +6565,7 @@ components:
           type: integer
           format: int32
           example: 7000
-          description: used drbd port for this resource
+          description: The preferred TCP port if available on node level
         transport_type:
           type: string
         secret:
@@ -6620,7 +6620,7 @@ components:
         drbd_port:
           type: integer
           format: int32
-          description: drbd port for resources
+          description: The preferred TCP port if available on node level
         drbd_secret:
           type: string
           example: 7sqCWjvGmwAiV5kzg3VF
@@ -6650,7 +6650,7 @@ components:
         drbd_port:
           type: integer
           format: int32
-          description: drbd port for resources
+          description: The preferred TCP port if available on node level
         drbd_peer_slots:
           type: integer
           format: int32
@@ -6763,6 +6763,11 @@ components:
         node_id:
           type: integer
           format: int32
+        tcp_ports:
+          type: array
+          items:
+            type: integer
+            format: int32
         peer_slots:
           type: integer
           format: int32
@@ -6937,6 +6942,14 @@ components:
         drbd_node_id:
           type: integer
           format: int32
+        drbd_tcp_port_count:
+          type: integer
+          format: int32
+        drbd_tcp_ports:
+          type: array
+          items:
+            type: integer
+            format: int32
     ResourceMakeAvailable:
       type: object
       properties:
@@ -6948,6 +6961,11 @@ components:
           type: boolean
           default: false
           description: if true resource will be created as diskful even if diskless would be possible
+        drbd_tcp_ports:
+          type: array
+          items:
+            type: integer
+            format: int32
     ResourceModify:
       type: object
       properties:
@@ -7418,6 +7436,9 @@ components:
           type: number
           format: double
           description: Multiplier of thin storage pool's free space
+        port_count:
+          type: integer
+          format: int32
     Candidate:
       type: object
       properties:
@@ -7893,6 +7914,11 @@ components:
           items:
             type: string
         port:
+          deprecated: true
+          type: integer
+        drbd_proxy_port_a:
+          type: integer
+        drbd_proxy_port_b:
           type: integer
     ResourceConnectionModify:
       type: object
@@ -8566,7 +8592,15 @@ components:
         port:
           type: integer
           format: int32
-          description: Proxy port to use (optional)
+          description: Proxy port to use (optional). Is used as a default port if port_source or port_target is not set
+        port_src:
+          type: integer
+          format: int32
+          description: Port to use for DRBD Proxy (optiona, auto-generated if omitted).
+        port_target:
+          type: integer
+          format: int32
+          description: Port to use for DRBD Proxy (optiona, auto-generated if omitted).
     DrbdProxyModify:
       type: object
       properties:

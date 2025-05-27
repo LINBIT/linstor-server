@@ -104,13 +104,15 @@ public abstract class AbsRscLayerHelper<
      * resource name suffix.
      * If the resource definition already has such an object, it depends on the layer whether the
      * content can be merged / updated or not.
+     *
+     * @throws ValueOutOfRangeException If a preferred TcpPort was given via payload but the port is invalid.
      */
     public @Nullable RSC_DFN_LO ensureResourceDefinitionExists(
         ResourceDefinition rscDfn,
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException, LinStorException
+        throws LinStorException, ValueOutOfRangeException
     {
         RSC_DFN_LO rscDfnData = rscDfn.getLayerData(apiCtx, kind, rscNameSuffix);
         if (rscDfnData == null)
@@ -631,7 +633,7 @@ public abstract class AbsRscLayerHelper<
         LayerPayload payload
     )
         throws AccessDeniedException, DatabaseException, InvalidNameException, ImplementationError,
-        ExhaustedPoolException, ValueOutOfRangeException;
+        ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException;
 
 
     protected abstract @Nullable RSC_DFN_LO createRscDfnData(
@@ -639,12 +641,10 @@ public abstract class AbsRscLayerHelper<
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException, LinStorException;
+        throws AccessDeniedException, DatabaseException, LinStorException, ValueOutOfRangeException;
 
     protected abstract void mergeRscDfnData(RSC_DFN_LO rscDfn, LayerPayload payload)
-        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException,
-        AccessDeniedException;
+        throws DatabaseException, AccessDeniedException, ValueOutOfRangeException;
 
     protected abstract VLM_DFN_LO createVlmDfnData(
         VolumeDefinition vlmDfnRef,
@@ -738,7 +738,8 @@ public abstract class AbsRscLayerHelper<
         AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
     )
-        throws DatabaseException, AccessDeniedException, ExhaustedPoolException;
+        throws DatabaseException, AccessDeniedException, ExhaustedPoolException, ValueOutOfRangeException,
+        ValueInUseException;
 
     protected abstract <RSC extends AbsResource<RSC>> VLM_DFN_LO restoreVlmDfnData(
         VolumeDefinition vlmDfn,

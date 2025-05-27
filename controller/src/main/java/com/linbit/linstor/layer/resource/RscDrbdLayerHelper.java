@@ -34,6 +34,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.types.NodeId;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.AbsLayerHelperUtils;
 import com.linbit.linstor.layer.LayerIgnoreReason;
@@ -138,17 +139,16 @@ public class RscDrbdLayerHelper extends
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException
     {
         DrbdRscDfnPayload drbdRscDfnPayload = payload.drbdRscDfn;
 
-        TransportType transportType = drbdRscDfnPayload.transportType;
-        String secret = drbdRscDfnPayload.sharedSecret;
-        Short peerSlots = drbdRscDfnPayload.peerSlotsNewResource;
-        Integer tcpPort = drbdRscDfnPayload.tcpPort;
-        Integer alStripes = drbdRscDfnPayload.alStripes;
-        Long alStripeSize = drbdRscDfnPayload.alStripeSize;
+        @Nullable Integer tcpPort = drbdRscDfnPayload.tcpPort;
+        @Nullable TransportType transportType = drbdRscDfnPayload.transportType;
+        @Nullable String secret = drbdRscDfnPayload.sharedSecret;
+        @Nullable Short peerSlots = drbdRscDfnPayload.peerSlotsNewResource;
+        @Nullable Integer alStripes = drbdRscDfnPayload.alStripes;
+        @Nullable Long alStripeSize = drbdRscDfnPayload.alStripeSize;
         if (secret == null)
         {
             final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
@@ -188,8 +188,7 @@ public class RscDrbdLayerHelper extends
 
     @Override
     protected void mergeRscDfnData(DrbdRscDfnData<Resource> drbdRscDfnData, LayerPayload payload)
-        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException,
-        AccessDeniedException
+        throws DatabaseException, AccessDeniedException, ValueOutOfRangeException
     {
         DrbdRscDfnPayload drbdRscDfnPayload = payload.drbdRscDfn;
 
@@ -273,20 +272,20 @@ public class RscDrbdLayerHelper extends
             initFlags |= DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue;
         }
 
-        DrbdRscData<Resource> drbdRscData = layerDataFactory.createDrbdRscData(
+        return layerDataFactory.createDrbdRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,
             rscNameSuffixRef,
             parentObjectRef,
             drbdRscDfnData,
             nodeId,
+            TcpPortNumber.parse(payloadRef.drbdRsc.tcpPorts),
+            payloadRef.drbdRsc.portCount,
             null,
             null,
             null,
             initFlags
         );
-        drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
-        return drbdRscData;
     }
 
     private boolean isResourceDiskless(Resource rscRef) throws AccessDeniedException
@@ -424,7 +423,7 @@ public class RscDrbdLayerHelper extends
     @Override
     protected void mergeRscData(DrbdRscData<Resource> drbdRscData, LayerPayload payloadRef)
         throws AccessDeniedException, DatabaseException, InvalidNameException, ImplementationError,
-        ExhaustedPoolException, ValueOutOfRangeException
+        ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException
     {
         Resource rsc = drbdRscData.getAbsResource();
 
@@ -447,6 +446,11 @@ public class RscDrbdLayerHelper extends
             payloadRef.drbdRsc.needsNewNodeId ? null : oldNodeId
         );
         drbdRscData.setNodeId(newNodeId);
+
+        if (payloadRef.drbdRsc.tcpPorts != null)
+        {
+            drbdRscData.setPorts(TcpPortNumber.parse(payloadRef.drbdRsc.tcpPorts));
+        }
     }
 
     @Override
@@ -891,7 +895,9 @@ public class RscDrbdLayerHelper extends
         Resource rscRef,
         AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
-    ) throws DatabaseException, AccessDeniedException, ExhaustedPoolException
+    )
+        throws DatabaseException, AccessDeniedException, ExhaustedPoolException, ValueOutOfRangeException,
+        ValueInUseException
     {
         DrbdRscData<Snapshot> drbdSnapData = (DrbdRscData<Snapshot>) fromAbsRscDataRef;
         String resourceNameSuffix = drbdSnapData.getResourceNameSuffix();
@@ -901,20 +907,20 @@ public class RscDrbdLayerHelper extends
             resourceNameSuffix
         );
 
-        DrbdRscData<Resource> drbdRscData = layerDataFactory.createDrbdRscData(
+        return layerDataFactory.createDrbdRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,
             resourceNameSuffix,
             rscParentRef,
             drbdRscDfnData,
             drbdSnapData.getNodeId(),
+            drbdSnapData.getTcpPortList(),
+            drbdSnapData.getPortCount(),
             drbdSnapData.getPeerSlots(),
             drbdSnapData.getAlStripes(),
             drbdSnapData.getAlStripeSize(),
             drbdSnapData.getFlags().getFlagsBits(apiCtx)
         );
-        drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
-        return drbdRscData;
     }
 
     @Override

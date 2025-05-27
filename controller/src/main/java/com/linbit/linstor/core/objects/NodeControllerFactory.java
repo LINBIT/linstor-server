@@ -2,12 +2,14 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
@@ -17,6 +19,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -32,6 +35,7 @@ public class NodeControllerFactory
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final NodeRepository nodeRepository;
+    private final ReadOnlyProps ctrlConf;
 
     @Inject
     public NodeControllerFactory(
@@ -41,7 +45,8 @@ public class NodeControllerFactory
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        NodeRepository nodeRepositoryRef
+        NodeRepository nodeRepositoryRef,
+        @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef
     )
     {
         errorReporter = errorReporterRef;
@@ -51,6 +56,7 @@ public class NodeControllerFactory
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
         nodeRepository = nodeRepositoryRef;
+        ctrlConf = ctrlConfRef;
     }
 
     public Node create(
@@ -78,6 +84,8 @@ public class NodeControllerFactory
             nameRef,
             type,
             StateFlagsBits.getMask(flags),
+            ctrlConf,
+            errorReporter,
             dbDriver,
             propsContainerFactory,
             transObjFactory,

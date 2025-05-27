@@ -54,9 +54,15 @@ public class RscConnApiData implements ResourceConnectionApi
     }
 
     @Override
-    public @Nullable Integer getPort()
+    public @Nullable Integer getDrbdProxyPortSource()
     {
-        return rscConnProto.hasPort() ? rscConnProto.getPort() : null;
+        return rscConnProto.hasDrbdProxyPortSource() ? rscConnProto.getDrbdProxyPortSource() : null;
+    }
+
+    @Override
+    public @Nullable Integer getDrbdProxyPortTarget()
+    {
+        return rscConnProto.hasDrbdProxyPortTarget() ? rscConnProto.getDrbdProxyPortTarget() : null;
     }
 
     public static RscConnOuterClass.RscConn toProto(
@@ -71,9 +77,13 @@ public class RscConnApiData implements ResourceConnectionApi
         rscConnBld.putAllRscConnProps(apiResourceConn.getProps());
         rscConnBld.setRscConnUuid(apiResourceConn.getUuid().toString());
         rscConnBld.addAllRscConnFlags(ResourceConnection.Flags.toStringList(apiResourceConn.getFlags()));
-        if (apiResourceConn.getPort() != null)
+        if (apiResourceConn.getDrbdProxyPortSource() != null)
         {
-            rscConnBld.setPort(apiResourceConn.getPort());
+            rscConnBld.setDrbdProxyPortSource(apiResourceConn.getDrbdProxyPortSource());
+        }
+        if (apiResourceConn.getDrbdProxyPortTarget() != null)
+        {
+            rscConnBld.setDrbdProxyPortTarget(apiResourceConn.getDrbdProxyPortTarget());
         }
 
         return rscConnBld.build();

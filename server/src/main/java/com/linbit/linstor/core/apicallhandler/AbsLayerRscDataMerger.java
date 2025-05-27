@@ -817,8 +817,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         RSC rsc,
         DrbdRscDfnPojo drbdRscDfnPojo
     )
-        throws IllegalArgumentException, DatabaseException, ValueOutOfRangeException, AccessDeniedException,
-            ExhaustedPoolException, ValueInUseException;
+        throws IllegalArgumentException, DatabaseException, AccessDeniedException, ValueOutOfRangeException;
 
     protected abstract DrbdRscData<RSC> createDrbdRscData(
         RSC rsc,
@@ -827,14 +826,16 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         DrbdRscPojo drbdRscPojo,
         DrbdRscDfnData<RSC> drbdRscDfnData
     )
-        throws DatabaseException, ValueOutOfRangeException, AccessDeniedException;
+        throws DatabaseException, ValueOutOfRangeException, AccessDeniedException, ExhaustedPoolException,
+        ValueInUseException;
 
     protected abstract void mergeDrbdRscData(
         AbsRscLayerObject<RSC> parent,
         DrbdRscPojo drbdRscPojo,
         DrbdRscData<RSC> drbdRscData
     )
-        throws AccessDeniedException, DatabaseException;
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException, ImplementationError;
 
     protected abstract void removeDrbdVlm(DrbdRscData<RSC> drbdRscData, VolumeNumber vlmNr)
         throws AccessDeniedException, DatabaseException;

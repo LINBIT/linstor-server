@@ -6,10 +6,26 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 ### Added
  - Add /v1/resource-definitions/{resource}/snapshots/{snapshot} PUT for modifying snapshots
 
+## [1.26.0]
+
+### Added
+  - Added DrbdResource.tcp_ports
+  - Added ResourceCreate.drbd_tcp_port_count
+  - Added ResourceCreate.drbd_tcp_ports
+  - Added ResourceMakeAvailable.drbd_tcp_ports
+  - Added AutoSelectFilter.port_count
+  - Added ResourceConnection.drbd_proxy_port_a
+  - Added ResourceConnection.drbd_proxy_port_b
+  - Added DrbdProxyEnable.port_src
+  - Added DrbdProxyEnable.port_target
+
+### Deprecated
+  - ResourceConnection.port
+
 ## [1.25.1]
 
 ### Fix
- - Add missing query param with_volume_definitions for /v1/resource-definitions GET
+  - Add missing query param with_volume_definitions for /v1/resource-definitions GET
 
 ## [1.25.0]
 

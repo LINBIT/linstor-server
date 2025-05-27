@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -12,6 +13,7 @@ import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheVlmDatabaseDriver;
@@ -31,6 +33,8 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheVlmDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
@@ -67,12 +71,15 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.TreeMap;
 
 @Singleton
 public class LayerDataFactory
 {
+    private final AccessContext sysCtx;
+
     private final LayerResourceIdDatabaseDriver layerRscIdDatabaseDriver;
 
     private final LayerDrbdRscDfnDatabaseDriver layerDrbdRscDfnDbDriver;
@@ -97,15 +104,16 @@ public class LayerDataFactory
     private final LayerBCacheRscDatabaseDriver layerBCacheRscDbDriver;
     private final LayerBCacheVlmDatabaseDriver layerBCacheVlmDbDriver;
 
-    private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
 
     private final Provider<TransactionMgr> transMgrProvider;
     private final TransactionObjectFactory transObjFactory;
 
 
+
     @Inject
     public LayerDataFactory(
+        @SystemContext AccessContext sysCtxRef,
         LayerResourceIdDatabaseDriver layerRscIdDatabaseDriverRef,
         LayerLuksRscDatabaseDriver layerLuksRscDbDriverRef,
         LayerLuksVlmDatabaseDriver layerLuksVlmDbDriverRef,
@@ -122,12 +130,12 @@ public class LayerDataFactory
         LayerCacheVlmDatabaseDriver layerCacheVlmDbDriverRef,
         LayerBCacheRscDatabaseDriver layerBCacheRscDbDriverRef,
         LayerBCacheVlmDatabaseDriver layerBCacheVlmDbDriverRef,
-        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
         Provider<TransactionMgr> transMgrProviderRef,
         TransactionObjectFactory transObjFactoryRef
     )
     {
+        sysCtx = sysCtxRef;
         layerRscIdDatabaseDriver = layerRscIdDatabaseDriverRef;
         layerLuksRscDbDriver = layerLuksRscDbDriverRef;
         layerLuksVlmDbDriver = layerLuksVlmDbDriverRef;
@@ -144,7 +152,6 @@ public class LayerDataFactory
         layerCacheVlmDbDriver = layerCacheVlmDbDriverRef;
         layerBCacheRscDbDriver = layerBCacheRscDbDriverRef;
         layerBCacheVlmDbDriver = layerBCacheVlmDbDriverRef;
-        tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
 
         transMgrProvider = transMgrProviderRef;
@@ -156,47 +163,40 @@ public class LayerDataFactory
         RSC rsc,
         String rscNameSuffix,
         @Nullable AbsRscLayerObject<RSC> parent,
-        DrbdRscDfnData<RSC> rscDfnData,
+        DrbdRscDfnData<RSC> drbdRscDfnData,
         NodeId nodeId,
+        @Nullable Collection<TcpPortNumber> portsRef,
+        @Nullable Integer portsCountRef,
         @Nullable Short peerSlots,
         @Nullable Integer alStripes,
         @Nullable Long alStripeSize,
         long initFlags
     )
-        throws DatabaseException
+        throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException,
+        AccessDeniedException
     {
-        // check that the nodeid is unique within rscdatalist
-        // there is somewhere a race condition and we couldn't determine the cause yet
-        // for (DrbdRscData<RSC> sib : rscDfnData.getDrbdRscDataList())
-        // {
-        // if (sib.getNodeId().equals(nodeId))
-        // {
-        // final String allIds = rscDfnData.getDrbdRscDataList().stream()
-        // .map(rscData -> Integer.toString(rscData.getNodeId().value))
-        // .collect(Collectors.joining(","));
-        // throw new LinStorRuntimeException(
-        // String.format("Duplicate node id '%d' detected. ids: [%s]", nodeId.value, allIds)
-        // );
-        // }
-        // }
         DrbdRscData<RSC> drbdRscData = new DrbdRscData<>(
             rscLayerId,
             rsc,
             parent,
-            rscDfnData,
+            drbdRscDfnData,
             new HashSet<>(),
             new TreeMap<>(),
             rscNameSuffix,
             nodeId,
+            portsRef,
+            portsCountRef,
             peerSlots,
             alStripes,
             alStripeSize,
             initFlags,
+            rsc.getNode().getTcpPortPool(sysCtx),
             layerDrbdRscDbDriver,
             layerDrbdVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
+        drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
         layerRscIdDatabaseDriver.create(drbdRscData);
         layerDrbdRscDbDriver.create(drbdRscData);
         return drbdRscData;
@@ -209,11 +209,11 @@ public class LayerDataFactory
         short peerSlots,
         int alStripes,
         long alStripeSize,
-        Integer portInt,
+        @Nullable Integer tcpPortRef,
         TransportType transportType,
         @Nullable String secret
     )
-        throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
+        throws DatabaseException, ValueOutOfRangeException
     {
         DrbdRscDfnData<RSC> drbdRscDfnData = new DrbdRscDfnData<>(
             rscName,
@@ -222,12 +222,11 @@ public class LayerDataFactory
             peerSlots,
             alStripes,
             alStripeSize,
-            portInt,
+            tcpPortRef,
             transportType,
             secret,
             new ArrayList<>(),
             new TreeMap<>(),
-            tcpPortPool,
             layerDrbdRscDfnDbDriver,
             transObjFactory,
             transMgrProvider

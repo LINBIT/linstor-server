@@ -27,6 +27,8 @@ public class DrbdRscPojo implements RscLayerDataApi
 
     private final DrbdRscDfnPojo drbdRscDfn;
     private final int nodeId;
+    @JsonIgnore private final @Nullable Set<Integer> ports;
+    private final @Nullable Integer portCount;
     private final short peerSlots;
     private final int alStripes;
     private final long alStripeSize;
@@ -47,6 +49,8 @@ public class DrbdRscPojo implements RscLayerDataApi
         String rscNameSuffixRef,
         DrbdRscDfnPojo drbdRscDfnRef,
         int nodeIdRef,
+        @Nullable Set<Integer> portListRef,
+        @Nullable Integer portCountRef,
         short peerSlotsRef,
         int alStripesRef,
         long alStripeSizeRef,
@@ -63,6 +67,8 @@ public class DrbdRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         drbdRscDfn = drbdRscDfnRef;
         nodeId = nodeIdRef;
+        ports = portListRef;
+        portCount = portCountRef;
         peerSlots = peerSlotsRef;
         alStripes = alStripesRef;
         alStripeSize = alStripeSizeRef;
@@ -80,6 +86,7 @@ public class DrbdRscPojo implements RscLayerDataApi
         @JsonProperty("rscNameSuffix") String rscNameSuffixRef,
         @JsonProperty("drbdRscDfn") DrbdRscDfnPojo drbdRscDfnRef,
         @JsonProperty("nodeId") int nodeIdRef,
+        @JsonProperty("portCount") @Nullable Integer portCountRef,
         @JsonProperty("peerSlots") short peerSlotsRef,
         @JsonProperty("alStripes") int alStripesRef,
         @JsonProperty("alStripeSize") long alStripeSizeRef,
@@ -92,6 +99,8 @@ public class DrbdRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         drbdRscDfn = drbdRscDfnRef;
         nodeId = nodeIdRef;
+        ports = null;
+        portCount = portCountRef == null ? 1 : portCountRef;
         peerSlots = peerSlotsRef;
         alStripes = alStripesRef;
         alStripeSize = alStripeSizeRef;
@@ -135,6 +144,16 @@ public class DrbdRscPojo implements RscLayerDataApi
     public int getNodeId()
     {
         return nodeId;
+    }
+
+    public @Nullable Set<Integer> getPorts()
+    {
+        return ports;
+    }
+
+    public @Nullable Integer getPortCount()
+    {
+        return portCount;
     }
 
     public short getPeerSlots()
@@ -192,7 +211,6 @@ public class DrbdRscPojo implements RscLayerDataApi
         private final short peerSlots;
         private final int alStripes;
         private final long alStripeSize;
-        @JsonIgnore
         private final @Nullable Integer port;
         private final String transportType;
         @JsonIgnore
@@ -261,11 +279,6 @@ public class DrbdRscPojo implements RscLayerDataApi
             return alStripeSize;
         }
 
-        public Integer getPort()
-        {
-            return port;
-        }
-
         public String getTransportType()
         {
             return transportType;
@@ -285,6 +298,11 @@ public class DrbdRscPojo implements RscLayerDataApi
         public DeviceLayerKind getLayerKind()
         {
             return DeviceLayerKind.DRBD;
+        }
+
+        public @Nullable Integer getPort()
+        {
+            return port;
         }
     }
 

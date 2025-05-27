@@ -19,7 +19,6 @@ import static com.linbit.linstor.numberpool.NumberPoolModule.LAYER_RSC_ID_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.MINOR_NUMBER_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL;
-import static com.linbit.linstor.numberpool.NumberPoolModule.TCP_PORT_POOL;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -31,10 +30,8 @@ public class DbNumberPoolInitializer implements StartupInitializer
     private final ErrorReporter errorReporter;
     private final AccessContext initCtx;
     private final DynamicNumberPool minorNrPool;
-    private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool specStltTargetPortPool;
     private final DynamicNumberPool layerRscIdPool;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.NodesMap nodesMap;
     private final DynamicNumberPool snapShipPortPool;
 
@@ -43,22 +40,18 @@ public class DbNumberPoolInitializer implements StartupInitializer
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext initCtxRef,
         @Named(MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
-        @Named(TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltTargetPortPoolRef,
         @Named(LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
         @Named(SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapShipPortPoolRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.NodesMap nodesMapRef
     )
     {
         errorReporter = errorReporterRef;
         initCtx = initCtxRef;
         minorNrPool = minorNrPoolRef;
-        tcpPortPool = tcpPortPoolRef;
         specStltTargetPortPool = specStltTargetPortPoolRef;
         layerRscIdPool = layerRscIdPoolRef;
         snapShipPortPool = snapShipPortPoolRef;
-        rscDfnMap = rscDfnMapRef;
         nodesMap = nodesMapRef;
     }
 
@@ -66,7 +59,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
     public void initialize()
     {
         initializeMinorNrPool();
-        initializeTcpPortPool();
+        initializeTcpPortPools();
         initializeSpecStltTargetPortPool();
         initializeLayerRscIdPool();
         initializeSnapShipPortPool();
@@ -77,9 +70,19 @@ public class DbNumberPoolInitializer implements StartupInitializer
         minorNrPool.reloadRange();
     }
 
-    private void initializeTcpPortPool()
+    private void initializeTcpPortPools()
     {
-        tcpPortPool.reloadRange();
+        try
+        {
+            for (Node node : nodesMap.values())
+            {
+                node.getTcpPortPool(initCtx).reloadRange();
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private void initializeSpecStltTargetPortPool()

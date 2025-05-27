@@ -116,6 +116,8 @@ import com.google.common.net.UrlEscapers;
 
 public class Json
 {
+    private static final int COMPAT_RD_PORT = -1;
+
     public static String deviceProviderKindAsString(DeviceProviderKind deviceProviderKind)
     {
         return deviceProviderKind.name();
@@ -288,7 +290,15 @@ public class Json
         drbdResourceDefinitionLayer.peer_slots = (int) drbdRscDfnPojo.getPeerSlots();
         drbdResourceDefinitionLayer.al_stripes = drbdRscDfnPojo.getAlStripes();
         drbdResourceDefinitionLayer.al_stripe_size_kib = drbdRscDfnPojo.getAlStripeSize();
-        drbdResourceDefinitionLayer.port = drbdRscDfnPojo.getPort();
+        if (drbdRscDfnPojo.getPort() == null)
+        {
+            // old clients / apipy still require a TCP port here.
+            drbdResourceDefinitionLayer.port = COMPAT_RD_PORT;
+        }
+        else
+        {
+            drbdResourceDefinitionLayer.port = drbdRscDfnPojo.getPort();
+        }
         drbdResourceDefinitionLayer.transport_type = drbdRscDfnPojo.getTransportType();
         drbdResourceDefinitionLayer.secret = drbdRscDfnPojo.getSecret();
         drbdResourceDefinitionLayer.down = drbdRscDfnPojo.isDown();
@@ -424,6 +434,7 @@ public class Json
         JsonGenTypes.DrbdResource drbdResource = new JsonGenTypes.DrbdResource();
         drbdResource.drbd_resource_definition = pojoToDrbdRscDfnLayer(drbdRscPojo.getDrbdRscDfn());
         drbdResource.node_id = drbdRscPojo.getNodeId();
+        drbdResource.tcp_ports = new ArrayList<>(drbdRscPojo.getPorts());
         drbdResource.peer_slots = (int) drbdRscPojo.getPeerSlots();
         drbdResource.al_stripes = drbdRscPojo.getAlStripes();
         drbdResource.al_size = drbdRscPojo.getAlStripeSize();
@@ -1009,6 +1020,12 @@ public class Json
         {
             return null;
         }
+
+        @Override
+        public @Nullable Integer getDrbdPortCount()
+        {
+            return autoSelectFilter.port_count;
+        }
     }
 
     public static JsonGenTypes.SnapshotVolumeDefinition apiToSnapshotVolumeDefinition(
@@ -1109,7 +1126,8 @@ public class Json
         resourceConnection.flags = FlagsHelper.toStringList(
             ResourceConnection.Flags.class, rscConnApi.getFlags()
         );
-        resourceConnection.port = rscConnApi.getPort();
+        resourceConnection.drbd_proxy_port_a = rscConnApi.getDrbdProxyPortSource();
+        resourceConnection.drbd_proxy_port_b = rscConnApi.getDrbdProxyPortTarget();
         return resourceConnection;
     }
 

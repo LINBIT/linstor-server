@@ -18,8 +18,6 @@ import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -35,11 +33,11 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConne
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.NODE_NAME_SRC;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.RESOURCE_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.SNAPSHOT_NAME;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.TCP_PORT;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.TCP_PORT_DST;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.TCP_PORT_SRC;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.UUID;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -55,10 +53,10 @@ public final class ResourceConnectionDbDriver
     private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final DynamicNumberPool tcpPortPool;
 
     private final StateFlagsPersistence<ResourceConnection> flagsDriver;
-    private final SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> portDriver;
+    private final SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> drbdProxyPortSourceDriver;
+    private final SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> drbdProxyPortTargetDriver;
 
     @Inject
     public ResourceConnectionDbDriver(
@@ -68,8 +66,7 @@ public final class ResourceConnectionDbDriver
         Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionFactory objProtFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
-        TransactionObjectFactory transObjFactoryRef,
-        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef
+        TransactionObjectFactory transObjFactoryRef
     )
     {
         super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.RESOURCE_CONNECTIONS, dbEngineRef, objProtFactoryRef);
@@ -77,21 +74,26 @@ public final class ResourceConnectionDbDriver
         transMgrProvider = transMgrProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
-        tcpPortPool = tcpPortPoolRef;
 
         setColumnSetter(UUID, rc -> rc.getUuid().toString());
         setColumnSetter(NODE_NAME_SRC, rc -> rc.getSourceResource(dbCtxRef).getNode().getName().value);
         setColumnSetter(NODE_NAME_DST, rc -> rc.getTargetResource(dbCtxRef).getNode().getName().value);
         setColumnSetter(RESOURCE_NAME, rc -> rc.getSourceResource(dbCtxRef).getResourceDefinition().getName().value);
         setColumnSetter(FLAGS, rc -> rc.getStateFlags().getFlagsBits(dbCtxRef));
-        setColumnSetter(TCP_PORT, rc -> TcpPortNumber.getValueNullable(rc.getPort(dbCtxRef)));
+        setColumnSetter(TCP_PORT_SRC, rc -> TcpPortNumber.getValueNullable(rc.getDrbdProxyPortSource(dbCtxRef)));
+        setColumnSetter(TCP_PORT_DST, rc -> TcpPortNumber.getValueNullable(rc.getDrbdProxyPortTarget(dbCtxRef)));
 
         setColumnSetter(SNAPSHOT_NAME, ignored -> DFLT_SNAP_NAME_FOR_RSC);
 
         flagsDriver = generateFlagDriver(FLAGS, ResourceConnection.Flags.class);
-        portDriver = generateSingleColumnDriver(
-            TCP_PORT,
-            rc -> Objects.toString(rc.getPort(dbCtxRef)),
+        drbdProxyPortSourceDriver = generateSingleColumnDriver(
+            TCP_PORT_SRC,
+            rc -> Objects.toString(rc.getDrbdProxyPortSource(dbCtxRef)),
+            TcpPortNumber::getValueNullable
+        );
+        drbdProxyPortTargetDriver = generateSingleColumnDriver(
+            TCP_PORT_DST,
+            rc -> Objects.toString(rc.getDrbdProxyPortTarget(dbCtxRef)),
             TcpPortNumber::getValueNullable
         );
     }
@@ -103,9 +105,15 @@ public final class ResourceConnectionDbDriver
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getPortDriver()
+    public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getDrbdProxyPortSourceDriver()
     {
-        return portDriver;
+        return drbdProxyPortSourceDriver;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getDrbdProxyPortTargetDriver()
+    {
+        return drbdProxyPortTargetDriver;
     }
 
     @Override
@@ -127,18 +135,25 @@ public final class ResourceConnectionDbDriver
             final NodeName nodeNameDst = raw.build(NODE_NAME_DST, NodeName::new);
             final ResourceName rscName = raw.build(RESOURCE_NAME, ResourceName::new);
 
-            final TcpPortNumber port;
+            final @Nullable TcpPortNumber portSrc;
+            final @Nullable TcpPortNumber portDst;
             final long flags;
             switch (getDbType())
             {
                 case ETCD:
-                    String portStr = raw.get(TCP_PORT);
-                    port = portStr != null ? new TcpPortNumber(Integer.parseInt(portStr)) : null;
+                    String portSrcStr = raw.get(TCP_PORT_SRC);
+                    portSrc = portSrcStr != null ? new TcpPortNumber(Integer.parseInt(portSrcStr)) : null;
+
+                    String portDstStr = raw.get(TCP_PORT_DST);
+                    portDst = portDstStr != null ? new TcpPortNumber(Integer.parseInt(portDstStr)) : null;
+
                     flags = Long.parseLong(raw.get(FLAGS));
                     break;
                 case SQL: // fall-through
                 case K8S_CRD:
-                    port = raw.build(TCP_PORT, TcpPortNumber::new);
+                    portSrc = raw.build(TCP_PORT_SRC, TcpPortNumber::new);
+                    portDst = raw.build(TCP_PORT_DST, TcpPortNumber::new);
+
                     flags = raw.get(FLAGS);
                     break;
                 default:
@@ -150,8 +165,8 @@ public final class ResourceConnectionDbDriver
                     raw.build(UUID, java.util.UUID::fromString),
                     rscMap.get(new Pair<>(nodeNameSrc, rscName)),
                     rscMap.get(new Pair<>(nodeNameDst, rscName)),
-                    port,
-                    tcpPortPool,
+                    portSrc,
+                    portDst,
                     this,
                     propsContainerFactory,
                     transObjFactory,

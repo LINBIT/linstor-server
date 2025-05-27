@@ -1,12 +1,8 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
-import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
-import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -23,8 +19,6 @@ import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
@@ -33,16 +27,13 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.Transp
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import com.linbit.utils.Pair;
-import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
 
@@ -51,8 +42,6 @@ public class LayerDrbdRscDfnDbDriver
     extends AbsLayerRscDfnDataDbDriver<DrbdRscDfnData<?>, DrbdRscData<?>>
     implements LayerDrbdRscDfnDatabaseDriver
 {
-    private final DynamicNumberPool tcpPortPool;
-
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
@@ -66,7 +55,6 @@ public class LayerDrbdRscDfnDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
@@ -77,7 +65,6 @@ public class LayerDrbdRscDfnDbDriver
             GeneratedDatabaseTables.LAYER_DRBD_RESOURCE_DEFINITIONS,
             dbEngineRef
         );
-        tcpPortPool = tcpPortPoolRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
 
@@ -177,17 +164,16 @@ public class LayerDrbdRscDfnDbDriver
 
     @Override
     protected Pair<DrbdRscDfnData<?>, List<DrbdRscData<?>>> load(RawParameters raw, ParentObjects parentRef)
-        throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
-        MdException, ExhaustedPoolException, ValueInUseException
+        throws DatabaseException, InvalidNameException, ValueOutOfRangeException
     {
         ResourceName rscName = raw.buildParsed(LayerDrbdResourceDefinitions.RESOURCE_NAME, ResourceName::new);
         String rscNameSuffix = raw.getParsed(LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX);
         String snapNameStr = raw.getParsed(LayerDrbdResourceDefinitions.SNAPSHOT_NAME);
 
         short peerSlots;
-        Integer alStripes = raw.getParsed(LayerDrbdResourceDefinitions.AL_STRIPES);
-        Long alStripesSize = raw.getParsed(LayerDrbdResourceDefinitions.AL_STRIPE_SIZE);
-        Integer port = raw.getParsed(LayerDrbdResourceDefinitions.TCP_PORT);
+        @Nullable Integer alStripes = raw.getParsed(LayerDrbdResourceDefinitions.AL_STRIPES);
+        @Nullable Long alStripesSize = raw.getParsed(LayerDrbdResourceDefinitions.AL_STRIPE_SIZE);
+        @Nullable Integer port = raw.getParsed(LayerDrbdResourceDefinitions.TCP_PORT);
         TransportType transportType = raw.<String, TransportType, IllegalArgumentException>build(
             LayerDrbdResourceDefinitions.TRANSPORT_TYPE,
             TransportType::byValue
@@ -213,19 +199,14 @@ public class LayerDrbdRscDfnDbDriver
         if (snapNameStr == null || snapNameStr.equals(ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC))
         {
             suffixedRscName = new SuffixedResourceName(rscName, null, rscNameSuffix);
-            if (port == null)
-            {
-                throw new DatabaseException("DrbdRscDfnData without tcpPort!");
-            }
         }
         else
         {
             suffixedRscName = new SuffixedResourceName(rscName, new SnapshotName(snapNameStr), rscNameSuffix);
-            port = DrbdRscDfnData.SNAPSHOT_TCP_PORT;
             secret = null; // just to be sure
         }
 
-        Triple<DrbdRscDfnData<?>, Map<VolumeNumber, DrbdVlmDfnData<?>>, List<DrbdRscData<?>>> triple = genericCreate(
+        return genericCreate(
             suffixedRscName,
             peerSlots,
             alStripes,
@@ -234,24 +215,19 @@ public class LayerDrbdRscDfnDbDriver
             transportType,
             secret
         );
-
-        return new Pair<>(triple.objA, triple.objC);
     }
 
     @SuppressWarnings("unchecked")
-    private <RSC extends AbsResource<RSC>>
-        Triple<DrbdRscDfnData<?>,
-               Map<VolumeNumber, DrbdVlmDfnData<?>>,
-               List<DrbdRscData<?>>> genericCreate(
+    private <RSC extends AbsResource<RSC>> Pair<DrbdRscDfnData<?>, List<DrbdRscData<?>>> genericCreate(
         SuffixedResourceName suffixedRscNameRef,
         short peerSlotsRef,
-        Integer alStripesRef,
-        Long alStripesSizeRef,
-        Integer portRef,
+        @Nullable Integer alStripesRef,
+        @Nullable Long alStripesSizeRef,
+        @Nullable Integer portRef,
         TransportType transportTypeRef,
-                @Nullable String secretRef
+        @Nullable String secretRef
     )
-        throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
+        throws ValueOutOfRangeException
     {
         TreeMap<VolumeNumber, DrbdVlmDfnData<RSC>> drbdVlmDfnDataMap = new TreeMap<>();
         List<DrbdRscData<RSC>> rscDataList = new ArrayList<>();
@@ -268,14 +244,12 @@ public class LayerDrbdRscDfnDbDriver
             secretRef,
             rscDataList,
             drbdVlmDfnDataMap,
-            tcpPortPool,
             this,
             transObjFactory,
             transMgrProvider
         );
-        return new Triple<>(
+        return new Pair<>(
             drbdRscDfnData,
-            (Map<VolumeNumber, DrbdVlmDfnData<?>>) ((Object) drbdVlmDfnDataMap),
             (List<DrbdRscData<?>>) ((Object) rscDataList)
         );
     }

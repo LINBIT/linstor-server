@@ -289,8 +289,8 @@ public class CtrlApiCallHandler
      *            rscDfn's UUID.
      * @param rscName
      *            required
-     * @param port
-     *            optional - if given, attempts to override the old port
+     * @param portInt
+     *            optional - if given, attempts to override old preferred DRBD port
      * @param overrideProps
      *            required (can be empty) - overrides the given property key-value pairs
      * @param deletePropKeys
@@ -301,7 +301,7 @@ public class CtrlApiCallHandler
     public Flux<ApiCallRc> modifyRscDfn(
         @Nullable UUID rscDfnUuid,
         String rscName,
-        Integer port,
+        @Nullable Integer portInt,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deletePropNamespaces,
@@ -316,7 +316,7 @@ public class CtrlApiCallHandler
             flux = rscDfnApiCallHandler.modify(
                 rscDfnUuid,
                 rscName,
-                port,
+                portInt,
                 overrideProps,
                 deletePropKeys,
                 deletePropNamespaces,

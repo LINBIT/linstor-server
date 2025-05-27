@@ -28,6 +28,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.drbd.drbdstate.DiskState;
@@ -421,7 +422,10 @@ public class DrbdLayer implements DeviceLayer
                 drbdUtils.down(drbdRscData);
                 if (Platform.isWindows())
                 {
-                    windowsFirewall.closePort(drbdRscData.getRscDfnLayerObject().getTcpPort().value);
+                    for (TcpPortNumber port : drbdRscData.getTcpPortList())
+                    {
+                        windowsFirewall.closePort(port.value);
+                    }
                 }
                 addDeletedMsg(drbdRscData, apiCallRc);
             }
@@ -491,7 +495,10 @@ public class DrbdLayer implements DeviceLayer
 
             if (Platform.isWindows())
             {
-                windowsFirewall.openPort(drbdRscData.getRscDfnLayerObject().getTcpPort().value);
+                for (TcpPortNumber port : drbdRscData.getTcpPortList())
+                {
+                    windowsFirewall.openPort(port.value);
+                }
             }
 
             updateResourceToCurrentDrbdState(drbdRscData);

@@ -8,7 +8,6 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.TestFactory;
-import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.linstor.dbdrivers.interfaces.SecObjProtDatabaseDriver;
 import com.linbit.linstor.layer.LayerPayload;
@@ -49,7 +48,6 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
         " FROM " + TBL_RESOURCE_DEFINITIONS;
 
     private final ResourceName resName;
-    private final int port;
     private final NodeName nodeName;
     private final String secret;
     private final TransportType transportType;
@@ -57,7 +55,6 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
     private java.util.UUID rscDfnUuid;
     private ObjectProtection rscDfnObjProt;
 
-    private NodeId node1Id;
     private Node node1;
 
     private ResourceDefinition resDfn;
@@ -72,7 +69,6 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
     public ResourceDefinitionDbDriverTest() throws InvalidNameException
     {
         resName = new ResourceName("TestResName");
-        port = 4242;
         nodeName = new NodeName("TestNodeName1");
         secret = "secret";
         transportType = TransportType.IP;
@@ -98,7 +94,6 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
 
         dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
 
-        node1Id = new NodeId(1);
         node1 = nodeFactory.create(
             SYS_CTX,
             nodeName,
@@ -150,7 +145,6 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
     {
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = port;
         drbdRscDfn.sharedSecret = secret;
         drbdRscDfn.transportType = transportType;
         resourceDefinitionFactory.create(
@@ -265,7 +259,6 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
         ResourceName resName2 = new ResourceName("ResName2");
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = port + 1; // prevent tcp-port-conflict
         drbdRscDfn.sharedSecret = secret;
         drbdRscDfn.transportType = transportType;
         resourceDefinitionFactory.create(
@@ -300,7 +293,6 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
 
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = port;
         drbdRscDfn.sharedSecret = secret;
         drbdRscDfn.transportType = transportType;
         resourceDefinitionFactory.create(

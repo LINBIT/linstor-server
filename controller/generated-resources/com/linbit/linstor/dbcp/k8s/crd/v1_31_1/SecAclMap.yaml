@@ -1,0 +1,125 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "secaclmap.internal.linstor.linbit.com"
+spec:
+  group: "internal.linstor.linbit.com"
+  versions:
+  - name: "v1-31-1"
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              object_path:
+                type: "string"
+              role_name:
+                type: "string"
+              access_type:
+                type: "integer"
+  - name: "v1-27-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              object_path:
+                type: "string"
+              role_name:
+                type: "string"
+              access_type:
+                type: "integer"
+  - name: "v1-25-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              object_path:
+                type: "string"
+              role_name:
+                type: "string"
+              access_type:
+                type: "integer"
+  - name: "v1-19-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              object_path:
+                type: "string"
+              role_name:
+                type: "string"
+              access_type:
+                type: "integer"
+  - name: "v1-18-2"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              object_path:
+                type: "string"
+              role_name:
+                type: "string"
+              access_type:
+                type: "integer"
+  - name: "v1-17-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              object_path:
+                type: "string"
+              role_name:
+                type: "string"
+              access_type:
+                type: "integer"
+  - name: "v1-15-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              object_path:
+                type: "string"
+              role_name:
+                type: "string"
+              access_type:
+                type: "integer"
+  scope: "Cluster"
+  names:
+    plural: "secaclmap"
+    singular: "secaclmap"
+    kind: "SecAclMap"

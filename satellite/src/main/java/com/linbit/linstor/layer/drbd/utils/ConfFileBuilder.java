@@ -139,7 +139,8 @@ public class ConfFileBuilder
         final ReadOnlyProps rscDfnProps = rscDfn.getProps(accCtx);
         final ResourceGroup rscGrp = rscDfn.getResourceGroup();
         final ReadOnlyProps rscGrpProps = rscGrp.getProps(accCtx);
-        final String localNodeName = localRscData.getAbsResource().getNode().getName().displayValue;
+        final Node localNode = localRscData.getAbsResource().getNode();
+        final String localNodeName = localNode.getName().displayValue;
 
         appendLine(header());
         appendLine("");
@@ -269,7 +270,9 @@ public class ConfFileBuilder
                 }
             }
 
-            int port = rscDfnData.getTcpPort().value;
+            // currently we only consider one port...
+            final int localPort = localRscData.getTcpPortList().iterator().next().value;
+
             // Create local network configuration
             {
                 appendLine("");
@@ -319,6 +322,9 @@ public class ConfFileBuilder
             // first generate all with local first
             for (final DrbdRscData<Resource> peerRscData : peerRscSet)
             {
+                // currently we only consider one port...
+                final int peerPort = peerRscData.getTcpPortList().iterator().next().value;
+
                 final ConfFileBuilderAutoRules peerRscAutoRules = new ConfFileBuilderAutoRules(accCtx, peerRscData);
 
                 Resource peerRsc = peerRscData.getAbsResource();
@@ -336,7 +342,7 @@ public class ConfFileBuilder
                     {
                         List<PairNonNull<NetInterface, NetInterface>> pathsList = new ArrayList<>();
                         NodeConnection nodeConn = localRsc.getNode().getNodeConnection(accCtx, peerRsc.getNode());
-                        ResourceConnection rscConn = localRsc.getAbsResourceConnection(accCtx, peerRsc);
+                        @Nullable ResourceConnection rscConn = localRsc.getAbsResourceConnection(accCtx, peerRsc);
                         @Nullable ReadOnlyProps paths = null;
 
                         PriorityProps prioPropsConn = new PriorityProps();
@@ -547,16 +553,29 @@ public class ConfFileBuilder
                                 appendLine("path");
                                 try (Section pathSection = new Section())
                                 {
-                                    appendConnectionHost(port, rscConn, path.objA);
-                                    appendConnectionHost(port, rscConn, path.objB);
+                                    int portA;
+                                    int portB;
+                                    if (path.objA.getNode().equals(localNode))
+                                    {
+                                        portA = localPort;
+                                        portB = peerPort;
+                                    }
+                                    else
+                                    {
+                                        portA = peerPort;
+                                        portB = localPort;
+                                    }
+
+                                    appendConnectionHost(portA, rscConn, path.objA);
+                                    appendConnectionHost(portB, rscConn, path.objB);
                                 }
                             }
                         }
                         else
                         {
                             // ...or fall back to previous implementation
-                            appendConnectionHost(port, rscConn, getPreferredNetIf(localRscData));
-                            appendConnectionHost(port, rscConn, getPreferredNetIf(peerRscData));
+                            appendConnectionHost(localPort, rscConn, getPreferredNetIf(localRscData));
+                            appendConnectionHost(peerPort, rscConn, getPreferredNetIf(peerRscData));
                         }
                     }
                 }
@@ -596,7 +615,7 @@ public class ConfFileBuilder
     private void appendConnectionHost(int rscDfnPort, @Nullable ResourceConnection rscConn, NetInterface netIf)
         throws AccessDeniedException
     {
-        TcpPortNumber rscConnPort = rscConn == null ? null : rscConn.getPort(accCtx);
+        TcpPortNumber rscConnPort = rscConn == null ? null : rscConn.getDrbdProxyPortSource(accCtx);
         int port = rscConnPort == null ? rscDfnPort : rscConnPort.value;
 
         LsIpAddress addr = netIf.getAddress(accCtx);

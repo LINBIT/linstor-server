@@ -130,7 +130,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
         ResourceConnection rscConn =
             ctrlRscConnectionHelper.loadOrCreateRscConn(rscConnUuid, nodeName1, nodeName2, rscNameStr);
 
-        unsetPort(rscConn);
+        unsetPorts(rscConn);
         disableLocalProxyFlag(rscConn);
         disableAutoProxy(rscConn);
 
@@ -204,11 +204,12 @@ public class CtrlDrbdProxyDisableApiCallHandler
         }
     }
 
-    private void unsetPort(ResourceConnection rscConn)
+    private void unsetPorts(ResourceConnection rscConn)
     {
         try
         {
-            rscConn.setPort(peerAccCtx.get(), null);
+            rscConn.setDrbdProxyPortSource(peerAccCtx.get(), null);
+            rscConn.setDrbdProxyPortTarget(peerAccCtx.get(), null);
         }
         catch (ValueInUseException exc)
         {

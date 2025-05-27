@@ -44,7 +44,8 @@ public class ResourceConnectionSatelliteFactory
         Resource sourceResource,
         Resource targetResource,
         ResourceConnection.Flags[] initFlags,
-        @Nullable TcpPortNumber portRef
+        @Nullable TcpPortNumber drbdProxyPortSrcRef,
+        @Nullable TcpPortNumber drbdProxyPortTargetRef
     )
         throws ImplementationError
     {
@@ -60,8 +61,8 @@ public class ResourceConnectionSatelliteFactory
                     uuid,
                     sourceResource,
                     targetResource,
-                    portRef,
-                    null,
+                    drbdProxyPortSrcRef,
+                    drbdProxyPortTargetRef,
                     dbDriver,
                     propsContainerFactory,
                     transObjFactory,

@@ -52,7 +52,8 @@ public class CtrlDrbdProxyHelper
         String nodeName1,
         String nodeName2,
         String rscNameStr,
-        @Nullable Integer port
+        @Nullable Integer drbdProxyPortSrc,
+        @Nullable Integer drbdProxyPortTarget
     )
     {
         ResourceConnection rscConn = ctrlRscConnectionHelper.loadOrCreateRscConn(
@@ -62,20 +63,83 @@ public class CtrlDrbdProxyHelper
             rscNameStr
         );
 
-        if (port == null)
-        {
-            autoAllocateTcpPort(rscConn);
-        }
-        else
-        {
-            setTcpPort(port, rscConn);
-        }
+        setOrAutoAllocateDrbdProxyPort(rscConn, drbdProxyPortSrc, true);
+        setOrAutoAllocateDrbdProxyPort(rscConn, drbdProxyPortTarget, false);
 
         enableLocalProxyFlag(rscConn);
 
         // set protocol A as default
         setPropHardcoded(rscConn, "protocol", "A", ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
         return rscConn;
+    }
+
+    private void setOrAutoAllocateDrbdProxyPort(
+        ResourceConnection rscConnRef,
+        @Nullable Integer port,
+        boolean srcPort
+    )
+    {
+        try
+        {
+            if (port == null)
+            {
+                if (srcPort)
+                {
+                    rscConnRef.autoAllocateDrbdProxyPortSource(peerAccCtx.get());
+                }
+                else
+                {
+                    rscConnRef.autoAllocateDrbdProxyPortTarget(peerAccCtx.get());
+                }
+            }
+            else
+            {
+                if (srcPort)
+                {
+                    rscConnRef.setDrbdProxyPortSource(peerAccCtx.get(), new TcpPortNumber(port));
+                }
+                else
+                {
+                    rscConnRef.setDrbdProxyPortTarget(peerAccCtx.get(), new TcpPortNumber(port));
+                }
+            }
+        }
+        catch (ExhaustedPoolException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT,
+                    "Could not find free TCP port"
+                ),
+                exc
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                (port == null ? "auto-allocate" : "set") + " TCP port for " +
+                    getResourceConnectionDescriptionInline(apiCtx, rscConnRef),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        catch (ValueOutOfRangeException | ValueInUseException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_RSC_PORT,
+                    String.format(
+                        "The specified TCP port '%d' is invalid.",
+                        port
+                    )
+                ),
+                exc
+            );
+        }
     }
 
     private void setPropHardcoded(
@@ -126,68 +190,4 @@ public class CtrlDrbdProxyHelper
             throw new ApiDatabaseException(exc);
         }
     }
-
-    private void setTcpPort(int port, ResourceConnection rscConn)
-    {
-        try
-        {
-            rscConn.setPort(peerAccCtx.get(), new TcpPortNumber(port));
-        }
-        catch (ValueOutOfRangeException | ValueInUseException exc)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_RSC_PORT,
-                    String.format(
-                        "The specified TCP port '%d' is invalid.",
-                        port
-                    )
-                ),
-                exc
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "set TCP port of " + getResourceConnectionDescriptionInline(apiCtx, rscConn),
-                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-    }
-
-    private void autoAllocateTcpPort(ResourceConnection rscConn)
-    {
-        try
-        {
-            rscConn.autoAllocatePort(peerAccCtx.get());
-        }
-        catch (ExhaustedPoolException exc)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT,
-                    "Could not find free TCP port"
-                ),
-                exc
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "auto-allocate port for " + getResourceConnectionDescriptionInline(apiCtx, rscConn),
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-    }
-
 }

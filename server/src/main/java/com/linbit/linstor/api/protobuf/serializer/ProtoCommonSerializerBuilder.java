@@ -1314,10 +1314,15 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     rscConn.getStateFlags().getFlagsBits(accCtx)
                 )
             );
-        TcpPortNumber port = rscConn.getPort(accCtx);
-        if (port != null)
+        @Nullable TcpPortNumber drbdProxyPortSource = rscConn.getDrbdProxyPortSource(accCtx);
+        if (drbdProxyPortSource != null)
         {
-            builder.setPort(port.value);
+            builder.setDrbdProxyPortSource(drbdProxyPortSource.value);
+        }
+        @Nullable TcpPortNumber drbdProxyPortTarget = rscConn.getDrbdProxyPortTarget(accCtx);
+        if (drbdProxyPortTarget != null)
+        {
+            builder.setDrbdProxyPortTarget(drbdProxyPortTarget.value);
         }
         return builder.build();
     }
@@ -1833,6 +1838,13 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setFlags(drbdRscPojo.getFlags())
                 .addAllDrbdVlms(serializedDrbdVlms);
 
+            @Nullable Set<Integer> ports = drbdRscPojo.getPorts();
+            if (ports != null)
+            {
+                builder.addAllPorts(ports);
+            }
+            // portCount is not sent via protobuf
+
             return builder.build();
         }
 
@@ -1878,11 +1890,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setAlSize(drbdRscDfnPojo.getAlStripeSize())
                 .setTransportType(drbdRscDfnPojo.getTransportType())
                 .setDown(drbdRscDfnPojo.isDown());
-            Integer port = drbdRscDfnPojo.getPort();
-            if (port != null)
-            {
-                builder.setPort(port);
-            }
             String secret = drbdRscDfnPojo.getSecret();
             if (secret != null)
             {

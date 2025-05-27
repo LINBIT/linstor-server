@@ -80,8 +80,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         Resource rsc,
         DrbdRscDfnPojo drbdRscDfnPojo
     )
-        throws IllegalArgumentException, DatabaseException, ValueOutOfRangeException, AccessDeniedException,
-            ExhaustedPoolException, ValueInUseException
+        throws IllegalArgumentException, DatabaseException, AccessDeniedException
     {
         // nothing to merge
         return rsc.getResourceDefinition().getLayerData(

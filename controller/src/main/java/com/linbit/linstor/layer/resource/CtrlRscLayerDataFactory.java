@@ -311,8 +311,7 @@ public class CtrlRscLayerDataFactory
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException, LinStorException
+        throws DatabaseException, LinStorException, ValueOutOfRangeException
     {
         List<DeviceLayerKind> layerStack;
         try

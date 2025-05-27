@@ -3,7 +3,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -409,7 +408,7 @@ public class CtrlRscDfnApiCallHandler
     public Flux<ApiCallRc> modify(
         @Nullable UUID rscDfnUuid,
         String rscNameStr,
-        Integer portInt,
+        @Nullable Integer portInt,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deleteNamespaces,
@@ -450,7 +449,7 @@ public class CtrlRscDfnApiCallHandler
     private Flux<ApiCallRc> modifyInTransaction(
         @Nullable UUID rscDfnUuid,
         String rscNameStr,
-        Integer portInt,
+        @Nullable Integer portInt,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deletePropNamespaces,
@@ -1485,7 +1484,7 @@ public class CtrlRscDfnApiCallHandler
         LayerPayload payload,
         @Nullable String rscGrpNameStrPrm
     )
-        throws InvalidNameException
+        throws InvalidNameException, ValueOutOfRangeException
     {
         if (rscNameStr == null)
         {
@@ -1631,37 +1630,6 @@ public class CtrlRscDfnApiCallHandler
                 payload,
                 rscGrp
             );
-        }
-        catch (ValueOutOfRangeException | ValueInUseException exc)
-        {
-            ApiCallRcImpl.EntryBuilder rcEntry = ApiCallRcImpl.entryBuilder(
-                ApiConsts.FAIL_INVLD_RSC_PORT,
-                "The creation of a new resource definition failed due to an invalid TCP port number"
-            );
-            rcEntry.setCause(
-                String.format("The specified number %d is not a valid TCP port number", payload.drbdRscDfn.tcpPort)
-            );
-            rcEntry.setDetails(getCrtRscDfnName(rscName, generatedRscName));
-            throw new ApiRcException(rcEntry.build(), exc);
-        }
-        catch (ExhaustedPoolException exc)
-        {
-            ApiCallRcImpl.EntryBuilder rcEntry = ApiCallRcImpl.entryBuilder(
-                ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT,
-                "The creation of a new resource definition failed, because no TCP port number\n" +
-                "could be allocated for the resource definition"
-            );
-            rcEntry.setCause("TCP port number allocation failed, because the pool of free numbers is exhausted");
-            rcEntry.setCorrection(
-                "- Increase the size of the free TCP port number pool by extending the\n" +
-                "  port number range for automatic allocation\n" +
-                "or\n" +
-                "- Delete existing resource definitions that have a TCP port number within\n" +
-                "  the port number range for automatic allocation, if those resource definitions\n" +
-                "  are no longer needed"
-            );
-            rcEntry.setDetails(getCrtRscDfnName(rscName, generatedRscName));
-            throw new ApiRcException(rcEntry.build(), exc);
         }
         catch (AccessDeniedException accDeniedExc)
         {

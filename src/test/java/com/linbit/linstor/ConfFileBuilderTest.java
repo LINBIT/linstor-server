@@ -480,12 +480,11 @@ public class ConfFileBuilderTest
             InternalApiConsts.DEFAULT_PEER_COUNT,
             InternalApiConsts.DEFAULT_AL_STRIPES,
             InternalApiConsts.DEFAULT_AL_SIZE,
-            42,
+            null,
             null,
             "SuperSecretPassword",
             rscDataList,
             new TreeMap<>(),
-            mockedTcpPool,
             LAYER_DRBD_RSC_DFN_NO_OP_DRIVER,
             transObjFactory,
             transMgrProvider
@@ -505,11 +504,14 @@ public class ConfFileBuilderTest
                 drbdRscDataVlmMap,
                 "",
                 new NodeId(13),
+                null,
+                null,
                 null, // copied from rscDfnData
                 null, // copied from rscDfnData
                 null, // copied from rscDfnData
                 resource.isDrbdDiskless(accessContext) ?
                     DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue : 0,
+                mockedTcpPool,
                 LAYER_DRBD_RSC_NO_OP_DRIVER,
                 LAYER_DRBD_VLM_NO_OP_DRIVER,
                 transObjFactory,

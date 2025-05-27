@@ -104,8 +104,7 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
         Snapshot snap,
         DrbdRscDfnPojo drbdRscDfnPojo
     )
-        throws IllegalArgumentException, DatabaseException, ValueOutOfRangeException, AccessDeniedException,
-        ExhaustedPoolException, ValueInUseException
+        throws IllegalArgumentException, DatabaseException, AccessDeniedException, ValueOutOfRangeException
     {
         SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
         DrbdRscDfnData<Snapshot> snapDfnData = snapDfn.getLayerData(
@@ -122,7 +121,8 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
                 drbdRscDfnPojo.getPeerSlots(),
                 drbdRscDfnPojo.getAlStripes(),
                 drbdRscDfnPojo.getAlStripeSize(),
-                DrbdRscDfnData.SNAPSHOT_TCP_PORT,
+                // stlt does not care about the preferred DrbdRscDfnData's port. Stlt will only use DrbdRscData's port
+                null,
                 TransportType.valueOfIgnoreCase(
                     drbdRscDfnPojo.getTransportType(),
                     TransportType.IP
@@ -151,7 +151,8 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
         DrbdRscPojo drbdRscPojo,
         DrbdRscDfnData<Snapshot> drbdRscDfnData
     )
-        throws DatabaseException, ValueOutOfRangeException, AccessDeniedException
+        throws DatabaseException, ValueOutOfRangeException, AccessDeniedException, ExhaustedPoolException,
+        ValueInUseException
     {
         DrbdRscData<Snapshot> drbdRscData = layerDataFactory.createDrbdRscData(
             rscDataPojo.getId(),
@@ -160,13 +161,13 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             parent,
             drbdRscDfnData,
             new NodeId(drbdRscPojo.getNodeId()),
+            null, // we do not care about the DRBD ports on the satellite
+            1, // we do not care about the DRBD ports on the satellite
             drbdRscPojo.getPeerSlots(),
             drbdRscPojo.getAlStripes(),
             drbdRscPojo.getAlStripeSize(),
             drbdRscPojo.getFlags()
         );
-        drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
-        drbdRscData.addAllIgnoreReasons(drbdRscPojo.getIgnoreReasons());
         if (parent == null)
         {
             snap.setLayerData(apiCtx, drbdRscData);

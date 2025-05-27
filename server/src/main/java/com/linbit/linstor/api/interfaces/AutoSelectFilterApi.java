@@ -62,6 +62,9 @@ public interface AutoSelectFilterApi
     @Nullable
     Map<ExtTools, ExtToolsInfo.Version> getRequiredExtTools();
 
+    @Nullable
+    Integer getDrbdPortCount();
+
     default String asHelpString()
     {
         return asHelpString("");

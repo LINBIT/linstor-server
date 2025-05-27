@@ -117,7 +117,6 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Mockito.when(mockedRemote.getType()).thenReturn(RemoteType.S3);
 
         LayerPayload payload = new LayerPayload();
-        payload.drbdRscDfn.tcpPort = 4242;
         rscDfn = resourceDefinitionFactory.create(
             PUBLIC_CTX,
             new ResourceName("test"),

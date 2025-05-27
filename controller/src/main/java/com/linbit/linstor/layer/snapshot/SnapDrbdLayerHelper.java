@@ -20,6 +20,7 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.types.NodeId;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.AbsLayerHelperUtils;
 // import com.linbit.linstor.layer.LayerPayload;
@@ -45,6 +46,7 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 import java.util.Map;
+import java.util.Set;
 
 @Singleton
 class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
@@ -90,7 +92,7 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
             rscDfnData.getPeerSlots(),
             rscDfnData.getAlStripes(),
             rscDfnData.getAlStripeSize(),
-            DrbdRscDfnData.SNAPSHOT_TCP_PORT,
+            null,
             rscDfnData.getTransportType(),
             null // not saving secret
         );
@@ -121,7 +123,8 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
         AbsRscLayerObject<Resource> rscDataRef,
         AbsRscLayerObject<Snapshot> parentObjectRef
     )
-        throws AccessDeniedException, DatabaseException, ExhaustedPoolException
+        throws AccessDeniedException, DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
+        ValueInUseException
     {
         DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscDataRef;
         DrbdRscDfnData<Snapshot> snapDfnData = snapRef.getSnapshotDefinition().getLayerData(
@@ -137,6 +140,8 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
             parentObjectRef,
             snapDfnData,
             drbdRscData.getNodeId(),
+            drbdRscData.getTcpPortList(),
+            drbdRscData.getPortCount(),
             drbdRscData.getPeerSlots(),
             drbdRscData.getAlStripes(),
             drbdRscData.getAlStripeSize(),
@@ -181,7 +186,7 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
             drbdRscDfnPojo.getPeerSlots(),
             drbdRscDfnPojo.getAlStripes(),
             drbdRscDfnPojo.getAlStripeSize(),
-            DrbdRscDfnData.SNAPSHOT_TCP_PORT,
+            null,
             TransportType.valueOfIgnoreCase(drbdRscDfnPojo.getTransportType(), TransportType.IP),
             null // not saving secret
         );
@@ -216,7 +221,7 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
         @Nullable AbsRscLayerObject<Snapshot> parentRef,
         Map<String, String> renameStorPoolMapRef
     )
-        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException
+        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException, ValueInUseException
     {
         DrbdRscPojo drbdRscPojo = (DrbdRscPojo) rscLayerDataApiRef;
         DrbdRscDfnData<Snapshot> snapDfnData = snapRef.getSnapshotDefinition().getLayerData(
@@ -225,6 +230,8 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
             drbdRscPojo.getRscNameSuffix()
         );
 
+        @Nullable Set<Integer> ports = drbdRscPojo.getPorts();
+
         return layerDataFactory.createDrbdRscData(
             layerRscIdPool.autoAllocate(),
             snapRef,
@@ -232,6 +239,8 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
             parentRef,
             snapDfnData,
             new NodeId(drbdRscPojo.getNodeId()),
+            ports == null ? null : TcpPortNumber.parse(ports),
+            drbdRscPojo.getPortCount(),
             drbdRscPojo.getPeerSlots(),
             drbdRscPojo.getAlStripes(),
             drbdRscPojo.getAlStripeSize(),

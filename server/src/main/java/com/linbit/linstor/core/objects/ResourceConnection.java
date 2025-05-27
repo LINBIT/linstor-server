@@ -52,10 +52,9 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
     // State flags
     private final StateFlags<Flags> flags;
 
-    // TCP Port
-    private final TransactionSimpleObject<ResourceConnection, TcpPortNumber> port;
-
-    private final @Nullable DynamicNumberPool tcpPortPool;
+    // TCP Ports
+    private final TransactionSimpleObject<ResourceConnection, TcpPortNumber> drbdProxyPortSource;
+    private final TransactionSimpleObject<ResourceConnection, TcpPortNumber> drbdProxyPortTarget;
 
     private final ResourceConnectionDatabaseDriver dbDriver;
 
@@ -68,8 +67,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         UUID uuid,
         Resource sourceResourceRef,
         Resource targetResourceRef,
-        @Nullable TcpPortNumber portRef,
-        @Nullable DynamicNumberPool tcpPortPoolRef,
+        @Nullable TcpPortNumber drbdProxyPortSourceRef,
+        @Nullable TcpPortNumber drbdProxyPortTargetRef,
         ResourceConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -79,7 +78,6 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         throws DatabaseException
     {
         super(uuid, transObjFactory, transMgrProviderRef);
-        tcpPortPool = tcpPortPoolRef;
         dbDriver = dbDriverRef;
 
         source = sourceResourceRef;
@@ -123,10 +121,15 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             initFlags
         );
 
-        port = transObjFactory.createTransactionSimpleObject(
+        drbdProxyPortSource = transObjFactory.createTransactionSimpleObject(
             this,
-            portRef,
-            this.dbDriver.getPortDriver()
+            drbdProxyPortSourceRef,
+            this.dbDriver.getDrbdProxyPortSourceDriver()
+        );
+        drbdProxyPortTarget = transObjFactory.createTransactionSimpleObject(
+            this,
+            drbdProxyPortTargetRef,
+            this.dbDriver.getDrbdProxyPortTargetDriver()
         );
         snapshotNameInProgress = transObjFactory.createTransactionSimpleObject(this, null, null);
 
@@ -135,7 +138,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             target,
             flags,
             props,
-            port,
+            drbdProxyPortSource,
+            drbdProxyPortTarget,
             snapshotNameInProgress,
             deleted
         );
@@ -145,8 +149,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         UUID uuidRef,
         Resource rsc1,
         Resource rsc2,
-        @Nullable TcpPortNumber portRef,
-        @Nullable DynamicNumberPool tcpPortPoolRef,
+        @Nullable TcpPortNumber drbdProxyPort1Ref,
+        @Nullable TcpPortNumber drbdProxyPort2Ref,
         ResourceConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -174,16 +178,22 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
 
         Resource src;
         Resource dst;
+        @Nullable TcpPortNumber srcPort;
+        @Nullable TcpPortNumber dstPort;
         int comp = rsc1.compareTo(rsc2);
         if (comp > 0)
         {
             src = rsc2;
+            srcPort = drbdProxyPort2Ref;
             dst = rsc1;
+            dstPort = drbdProxyPort1Ref;
         }
         else if (comp < 0)
         {
             src = rsc1;
+            srcPort = drbdProxyPort1Ref;
             dst = rsc2;
+            dstPort = drbdProxyPort2Ref;
         }
         else
         {
@@ -194,8 +204,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             uuidRef,
             src,
             dst,
-            portRef,
-            tcpPortPoolRef,
+            srcPort,
+            dstPort,
             dbDriverRef,
             propsContainerFactory,
             transObjFactory,
@@ -213,8 +223,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         UUID uuidRef,
         Resource rsc1,
         Resource rsc2,
-        @Nullable TcpPortNumber portRef,
-        @Nullable DynamicNumberPool tcpPortPoolRef,
+        @Nullable TcpPortNumber drbdProxyPortSourceRef,
+        @Nullable TcpPortNumber drbdProxyPortTargetRef,
         ResourceConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -226,8 +236,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             uuidRef,
             rsc1,
             rsc2,
-            portRef,
-            tcpPortPoolRef,
+            drbdProxyPortSourceRef,
+            drbdProxyPortTargetRef,
             dbDriverRef,
             propsContainerFactory,
             transObjFactory,
@@ -283,42 +293,78 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         return flags;
     }
 
-    public TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException
+    public @Nullable TcpPortNumber getDrbdProxyPortSource(AccessContext accCtx) throws AccessDeniedException
     {
         requireAccess(accCtx, AccessType.VIEW);
-        return port.get();
+        return drbdProxyPortSource.get();
     }
 
-    public TcpPortNumber setPort(AccessContext accCtx, @Nullable TcpPortNumber portNr)
+    public @Nullable TcpPortNumber getDrbdProxyPortTarget(AccessContext accCtx) throws AccessDeniedException
+    {
+        requireAccess(accCtx, AccessType.VIEW);
+        return drbdProxyPortTarget.get();
+    }
+
+    public @Nullable TcpPortNumber setDrbdProxyPortSource(AccessContext accCtx, @Nullable TcpPortNumber portNr)
+        throws DatabaseException, AccessDeniedException, ValueInUseException
+    {
+        return setDrbdProxyPortImpl(accCtx, portNr, source);
+    }
+
+    public @Nullable TcpPortNumber setDrbdProxyPortTarget(AccessContext accCtx, @Nullable TcpPortNumber portNr)
+        throws DatabaseException, AccessDeniedException, ValueInUseException
+    {
+        return setDrbdProxyPortImpl(accCtx, portNr, target);
+    }
+
+    private @Nullable TcpPortNumber setDrbdProxyPortImpl(
+        AccessContext accCtx,
+        @Nullable TcpPortNumber portNr,
+        Resource rsc
+    )
         throws DatabaseException, ValueInUseException, AccessDeniedException
     {
         requireAccess(accCtx, AccessType.USE);
-        if (tcpPortPool != null)
+        DynamicNumberPool pool = rsc.getNode().getTcpPortPool(accCtx);
+        @Nullable TcpPortNumber tcpPortNumber = drbdProxyPortSource.get();
+        if (tcpPortNumber != null)
         {
-            TcpPortNumber tcpPortNumber = port.get();
-            if (tcpPortNumber != null)
-            {
-                tcpPortPool.deallocate(tcpPortNumber.value);
-            }
-            if (portNr != null)
-            {
-                tcpPortPool.allocate(portNr.value);
-            }
+            pool.deallocate(tcpPortNumber.value);
         }
-        return port.set(portNr);
+        if (portNr != null)
+        {
+            pool.allocate(portNr.value);
+        }
+        return drbdProxyPortSource.set(portNr);
     }
 
-    public void autoAllocatePort(AccessContext accCtx)
-        throws DatabaseException, ExhaustedPoolException, AccessDeniedException
+    public void autoAllocateDrbdProxyPortSource(AccessContext accCtx)
+        throws DatabaseException, AccessDeniedException, ExhaustedPoolException
+    {
+        autoAllocateDrbdProxyPortImpl(accCtx, drbdProxyPortSource, source);
+    }
+
+    public void autoAllocateDrbdProxyPortTarget(AccessContext accCtx)
+        throws DatabaseException, AccessDeniedException, ExhaustedPoolException
+    {
+        autoAllocateDrbdProxyPortImpl(accCtx, drbdProxyPortTarget, target);
+    }
+
+    private void autoAllocateDrbdProxyPortImpl(
+        AccessContext accCtxRef,
+        TransactionSimpleObject<ResourceConnection, TcpPortNumber> drbdProxyPortFieldRef,
+        Resource rscRef
+    )
+        throws AccessDeniedException, ExhaustedPoolException, DatabaseException
     {
         checkDeleted();
-        requireAccess(accCtx, AccessType.USE);
-        TcpPortNumber tcpPortNumber = port.get();
+        requireAccess(accCtxRef, AccessType.USE);
+        DynamicNumberPool tcpPortPool = rscRef.getNode().getTcpPortPool(accCtxRef);
+        @Nullable TcpPortNumber tcpPortNumber = drbdProxyPortFieldRef.get();
         if (tcpPortNumber != null)
         {
             tcpPortPool.deallocate(tcpPortNumber.value);
         }
-
         TcpPortNumber portNr;
         try
         {
@@ -328,8 +374,7 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         {
             throw new ImplementationError("Auto-allocated TCP port number out of range", exc);
         }
-
-        port.set(portNr);
+        drbdProxyPortFieldRef.set(portNr);
     }
 
     public void setSnapshotShippingNameInProgress(@Nullable SnapshotName snapshotNameInProgressRef)
@@ -363,9 +408,15 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
 
             props.delete();
 
-            if (tcpPortPool != null && port.get() != null)
+            @Nullable TcpPortNumber srcPort = drbdProxyPortSource.get();
+            if (srcPort != null)
             {
-                tcpPortPool.deallocate(port.get().value);
+                source.getNode().getTcpPortPool(accCtx).deallocate(srcPort.value);
+            }
+            @Nullable TcpPortNumber dstPort = drbdProxyPortTarget.get();
+            if (dstPort != null)
+            {
+                target.getNode().getTcpPortPool(accCtx).deallocate(dstPort.value);
             }
 
             activateTransMgr();
@@ -431,7 +482,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             connectionKey.getResourceName().getDisplayName(),
             getProps(accCtx).map(),
             getStateFlags().getFlagsBits(accCtx),
-            TcpPortNumber.getValueNullable(getPort(accCtx))
+            TcpPortNumber.getValueNullable(getDrbdProxyPortSource(accCtx)),
+            TcpPortNumber.getValueNullable(getDrbdProxyPortTarget(accCtx))
         );
     }
 

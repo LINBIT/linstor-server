@@ -1,0 +1,167 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "layerstoragevolumes.internal.linstor.linbit.com"
+spec:
+  group: "internal.linstor.linbit.com"
+  versions:
+  - name: "v1-31-1"
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              provider_kind:
+                type: "string"
+              node_name:
+                type: "string"
+              stor_pool_name:
+                type: "string"
+  - name: "v1-27-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              provider_kind:
+                type: "string"
+              node_name:
+                type: "string"
+              stor_pool_name:
+                type: "string"
+  - name: "v1-25-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              provider_kind:
+                type: "string"
+              node_name:
+                type: "string"
+              stor_pool_name:
+                type: "string"
+  - name: "v1-19-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              provider_kind:
+                type: "string"
+              node_name:
+                type: "string"
+              stor_pool_name:
+                type: "string"
+  - name: "v1-18-2"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              provider_kind:
+                type: "string"
+              node_name:
+                type: "string"
+              stor_pool_name:
+                type: "string"
+  - name: "v1-17-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              provider_kind:
+                type: "string"
+              node_name:
+                type: "string"
+              stor_pool_name:
+                type: "string"
+  - name: "v1-15-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              provider_kind:
+                type: "string"
+              node_name:
+                type: "string"
+              stor_pool_name:
+                type: "string"
+  scope: "Cluster"
+  names:
+    plural: "layerstoragevolumes"
+    singular: "layerstoragevolumes"
+    kind: "LayerStorageVolumes"

@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 
 import java.util.Map;
@@ -13,7 +14,8 @@ public class RscConnPojo implements ResourceConnectionApi
     private final String rscName;
     private final Map<String, String> props;
     private final long flags;
-    private final Integer port;
+    private final @Nullable Integer drbdProxyPortSource;
+    private final @Nullable Integer drbdProxyPortTarget;
 
     public RscConnPojo(
         UUID uuidRef,
@@ -22,16 +24,18 @@ public class RscConnPojo implements ResourceConnectionApi
         String rscNameRef,
         Map<String, String> propsRef,
         long flagRef,
-        Integer portRef
+        @Nullable Integer drbdProxyPortSourceRef,
+        @Nullable Integer drbdProxyPortTargetRef
     )
     {
-        this.uuid = uuidRef;
-        this.sourceNodeName = sourceNodeNameRef;
-        this.targetNodeName = targetNodeNameRef;
-        this.rscName = rscNameRef;
-        this.props = propsRef;
-        this.flags = flagRef;
-        this.port = portRef;
+        uuid = uuidRef;
+        sourceNodeName = sourceNodeNameRef;
+        targetNodeName = targetNodeNameRef;
+        rscName = rscNameRef;
+        props = propsRef;
+        flags = flagRef;
+        drbdProxyPortSource = drbdProxyPortSourceRef;
+        drbdProxyPortTarget = drbdProxyPortTargetRef;
     }
 
     @Override
@@ -71,8 +75,14 @@ public class RscConnPojo implements ResourceConnectionApi
     }
 
     @Override
-    public Integer getPort()
+    public @Nullable Integer getDrbdProxyPortSource()
     {
-        return port;
+        return drbdProxyPortSource;
+    }
+
+    @Override
+    public @Nullable Integer getDrbdProxyPortTarget()
+    {
+        return drbdProxyPortTarget;
     }
 }

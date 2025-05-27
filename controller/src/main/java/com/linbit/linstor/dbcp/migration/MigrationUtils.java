@@ -172,6 +172,54 @@ public class MigrationUtils
         return sql.toString();
     }
 
+    public static String renameColumn(
+        DbProduct dbProductRef,
+        String tbl,
+        String oldClm,
+        String newClm
+    )
+    {
+        StringBuilder sql = new StringBuilder();
+
+        switch (dbProductRef)
+        {
+            case ASE:
+            case MSFT_SQLSERVER:
+                sql.append("sp_rename '").append(tbl).append(".").append(oldClm)
+                    .append("', ").append(newClm);
+                break;
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case MARIADB:
+            case MYSQL:
+            case ORACLE_RDBMS:
+            case POSTGRESQL:
+                sql.append("ALTER TABLE ").append(tbl)
+                    .append(" RENAME COLUMN ").append(oldClm)
+                    .append(" TO ").append(newClm);
+                break;
+            case DERBY:
+            case INFORMIX:
+                sql.append("RENAME COLUMN ")
+                    .append(tbl).append(".").append(oldClm)
+                    .append(" TO ").append(newClm);
+                break;
+            case H2:
+                sql.append("ALTER TABLE ").append(tbl)
+                    .append(" ALTER COLUMN ").append(oldClm)
+                    .append(" RENAME TO ").append(newClm);
+                break;
+            case ETCD:
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
+
+        }
+
+        return sql.toString();
+    }
+
     public static String replaceTypesByDialect(DbProduct databaseRef, String typeRef)
     {
         String type;

@@ -158,6 +158,8 @@ public class CtrlRscCrtApiCallHandler
                 rscapi.getProps(),
                 rscapi.getVlmList(),
                 rscWithPayloadApi.getDrbdNodeId(),
+                rscWithPayloadApi.getPorts(),
+                rscWithPayloadApi.getPortCount(),
                 thinFreeCapacities,
                 rscWithPayloadApi.getLayerStack(),
                 diskfulByRef

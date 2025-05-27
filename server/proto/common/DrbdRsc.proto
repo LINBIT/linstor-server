@@ -12,6 +12,8 @@ message DrbdRsc
     required int64              al_size = 5;
     required uint64             flags = 6;
     repeated DrbdVlm            drbd_vlms = 7;
+    repeated sint32             ports = 8;
+    // stlt does not need to know the portCount of snapshots
 }
 
 // multiple DrbdRscs might refer to the same DrbdRscDfn. The pair of the corresponding resource definition's name and the rsc_name_suffix are the primary key.

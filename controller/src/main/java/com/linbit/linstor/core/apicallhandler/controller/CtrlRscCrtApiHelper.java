@@ -49,6 +49,7 @@ import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -95,6 +96,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -204,6 +206,8 @@ public class CtrlRscCrtApiHelper
         Map<String, String> rscPropsMap,
         List<? extends VolumeApi> vlmApiList,
         @Nullable Integer nodeIdInt,
+        @Nullable List<Integer> portsRef,
+        @Nullable Integer portCountRef,
         @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
         List<String> layerStackStrListRef,
         @Nullable Resource.DiskfulBy diskfulByRef
@@ -313,7 +317,10 @@ public class CtrlRscCrtApiHelper
         else
         {
             LayerPayload payload = new LayerPayload();
-            payload.getDrbdRsc().nodeId = nodeIdInt;
+            DrbdRscPayload drbdRsc = payload.getDrbdRsc();
+            drbdRsc.nodeId = nodeIdInt;
+            drbdRsc.tcpPorts = portsRef == null ? null : new TreeSet<>(portsRef);
+            drbdRsc.portCount = portCountRef;
             if (storPoolName != null)
             {
                 // null if resource is created with "-d" (diskless)

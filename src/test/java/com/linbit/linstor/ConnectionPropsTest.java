@@ -18,6 +18,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscPayload;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -29,6 +30,8 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +44,7 @@ public class ConnectionPropsTest extends GenericDbBase
     private NodeName nodeName1;
     private NodeName nodeName2;
     private ResourceName resName;
-    private Integer resDfnPort;
+    private Set<Integer> drbdPorts;
     private TransportType resDfnTransportType;
     private StorPoolName storPoolName;
     private Integer nodeId1;
@@ -83,7 +86,7 @@ public class ConnectionPropsTest extends GenericDbBase
         nodeName1 = new NodeName("Node1");
         nodeName2 = new NodeName("Node2");
         resName = new ResourceName("ResName");
-        resDfnPort = 4242;
+        drbdPorts = new TreeSet<>(Arrays.asList(4242));
         resDfnTransportType = TransportType.IP;
         storPoolName = new StorPoolName("StorPool");
         nodeId1 = 1;
@@ -99,7 +102,6 @@ public class ConnectionPropsTest extends GenericDbBase
 
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = resDfnPort;
         drbdRscDfn.sharedSecret = "secret";
         drbdRscDfn.transportType = resDfnTransportType;
         resDfn = resourceDefinitionFactory.create(
@@ -113,9 +115,13 @@ public class ConnectionPropsTest extends GenericDbBase
         );
 
         LayerPayload payload1 = new LayerPayload();
-        payload1.getDrbdRsc().nodeId = nodeId1;
+        DrbdRscPayload drbdRsc1 = payload1.getDrbdRsc();
+        drbdRsc1.nodeId = nodeId1;
+        drbdRsc1.tcpPorts = drbdPorts;
         LayerPayload payload2 = new LayerPayload();
-        payload2.getDrbdRsc().nodeId = nodeId2;
+        DrbdRscPayload drbdRsc2 = payload2.getDrbdRsc();
+        drbdRsc2.nodeId = nodeId2;
+        drbdRsc2.tcpPorts = drbdPorts;
 
         res1 = resourceFactory.create(SYS_CTX, resDfn, node1, payload1, null, Collections.emptyList());
         res2 = resourceFactory.create(SYS_CTX, resDfn, node2, payload2, null, Collections.emptyList());

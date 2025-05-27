@@ -46,7 +46,6 @@ public class ResourceDbDriverTest extends GenericDbBase
 
     private final NodeName nodeName;
     private final ResourceName resName;
-    private final Integer resPort;
     private final Integer nodeId;
 
     private Node node;
@@ -64,7 +63,6 @@ public class ResourceDbDriverTest extends GenericDbBase
     {
         nodeName = new NodeName("TestNodeName");
         resName = new ResourceName("TestResName");
-        resPort = 9001;
         nodeId = 13;
     }
 
@@ -82,7 +80,6 @@ public class ResourceDbDriverTest extends GenericDbBase
         node = nodeFactory.create(SYS_CTX, nodeName, null, null);
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = resPort;
         drbdRscDfn.sharedSecret = "secret";
         drbdRscDfn.transportType = TransportType.IP;
         resDfn = resourceDefinitionFactory.create(

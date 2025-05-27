@@ -67,8 +67,7 @@ public class CtrlSnapLayerDataMerger extends AbsLayerRscDataMerger<Snapshot>
 
     @Override
     protected DrbdRscDfnData<Snapshot> mergeOrCreateDrbdRscDfnData(Snapshot snap, DrbdRscDfnPojo drbdRscDfnPojoRef)
-        throws IllegalArgumentException, DatabaseException, ValueOutOfRangeException, AccessDeniedException,
-        ExhaustedPoolException, ValueInUseException
+        throws IllegalArgumentException, DatabaseException, AccessDeniedException
     {
         // nothing to merge
         return snap.getSnapshotDefinition()

@@ -183,11 +183,6 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @Mock
     @Bind
-    @Named(NumberPoolModule.TCP_PORT_POOL)
-    protected DynamicNumberPool tcpPortPoolMock;
-
-    @Mock
-    @Bind
     @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL)
     protected DynamicNumberPool openflexPortPoolMock;
 

@@ -4,8 +4,6 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -14,7 +12,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -25,7 +22,6 @@ public class ResourceConnectionControllerFactory
 {
     private final ResourceConnectionDatabaseDriver dbDriver;
     private final PropsContainerFactory propsContainerFactory;
-    private final DynamicNumberPool tcpPortPool;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
@@ -33,14 +29,12 @@ public class ResourceConnectionControllerFactory
     public ResourceConnectionControllerFactory(
         ResourceConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbDriver = dbDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
-        tcpPortPool = tcpPortPoolRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -58,7 +52,7 @@ public class ResourceConnectionControllerFactory
             sourceResource,
             targetResource,
             null,
-            tcpPortPool,
+            null,
             dbDriver,
             propsContainerFactory,
             transObjFactory,

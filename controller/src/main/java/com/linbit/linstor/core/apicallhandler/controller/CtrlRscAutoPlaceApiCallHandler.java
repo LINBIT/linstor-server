@@ -288,7 +288,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                     disklessOnRemaining,
                     candidate,
                     null,
-                    mergedSelectFilter.getLayerStackList()
+                    mergedSelectFilter.getLayerStackList(),
+                    mergedSelectFilter.getDrbdPortCount()
                 );
 
                 autoFlux = autoHelperProvider.get()
@@ -381,7 +382,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         Boolean disklessOnRemainingNodes,
         Set<StorPool> selectedStorPoolSet,
         @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
-        List<DeviceLayerKind> layerStackList
+        List<DeviceLayerKind> layerStackList,
+        @Nullable Integer rscPortCountRef
     )
     {
         List<Flux<ApiCallRc>> autoFlux = new ArrayList<>();
@@ -409,6 +411,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                 rscPropsMap,
                 Collections.emptyList(),
                 null,
+                null,
+                rscPortCountRef,
                 thinFreeCapacities,
                 layerStackStrList,
                 Resource.DiskfulBy.AUTO_PLACER
@@ -447,6 +451,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                                 rscInitFlags,
                                 rscPropsMap,
                                 Collections.emptyList(),
+                                null,
+                                null,
                                 null,
                                 thinFreeCapacities,
                                 layerStackStrList,

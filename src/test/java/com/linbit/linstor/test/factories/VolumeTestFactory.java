@@ -196,7 +196,7 @@ public class VolumeTestFactory
             accCtx = dfltAccCtx;
             flags = dfltFlags;
 
-            payload = ResourceDefinitionTestFactory.createCopy(dfltPayload);
+            payload = TestFactoryUtils.createCopy(dfltPayload);
             vlmSize = dfltVlmSize;
         }
 
@@ -296,30 +296,4 @@ public class VolumeTestFactory
         }
 
     }
-
-    public static LayerPayload createCopy(LayerPayload copyFrom)
-    {
-        LayerPayload ret = new LayerPayload();
-
-        if (copyFrom != null)
-        {
-            ret.drbdRsc.alStripes = copyFrom.drbdRsc.alStripes;
-            ret.drbdRsc.alStripeSize = copyFrom.drbdRsc.alStripeSize;
-            ret.drbdRsc.needsNewNodeId = copyFrom.drbdRsc.needsNewNodeId;
-            ret.drbdRsc.nodeId = copyFrom.drbdRsc.nodeId;
-            ret.drbdRsc.peerSlots = copyFrom.drbdRsc.peerSlots;
-
-            ret.drbdRscDfn.peerSlotsNewResource = copyFrom.drbdRscDfn.peerSlotsNewResource;
-            ret.drbdRscDfn.sharedSecret = copyFrom.drbdRscDfn.sharedSecret;
-            ret.drbdRscDfn.tcpPort = copyFrom.drbdRscDfn.tcpPort;
-            ret.drbdRscDfn.transportType = copyFrom.drbdRscDfn.transportType;
-
-            ret.drbdVlmDfn.minorNr = copyFrom.drbdVlmDfn.minorNr;
-
-            ret.storagePayload = new HashMap<>(copyFrom.storagePayload);
-        }
-
-        return ret;
-    }
-
 }

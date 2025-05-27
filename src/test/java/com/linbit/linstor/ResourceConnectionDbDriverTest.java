@@ -11,6 +11,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscPayload;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -27,6 +28,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +47,7 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
         " FROM " + TBL_RESOURCE_CONNECTIONS;
 
     private final ResourceName resName;
-    private final Integer resPort;
+    private final Set<Integer> drbdPorts;
     private final NodeName sourceName;
     private final NodeName targetName;
 
@@ -68,7 +71,7 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
     public ResourceConnectionDbDriverTest() throws InvalidNameException
     {
         resName = new ResourceName("testResourceName");
-        resPort = 9001;
+        drbdPorts = new TreeSet<>(Arrays.asList(9001));
 
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
@@ -89,7 +92,6 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
 
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = resPort;
         drbdRscDfn.sharedSecret = "secret";
         drbdRscDfn.transportType = TransportType.IP;
         resDfn = resourceDefinitionFactory.create(
@@ -109,9 +111,13 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
         nodeIdDst = 14;
 
         LayerPayload payLoadSrc = new LayerPayload();
-        payLoadSrc.getDrbdRsc().nodeId = nodeIdSrc;
+        DrbdRscPayload drbdRsc1 = payLoadSrc.getDrbdRsc();
+        drbdRsc1.nodeId = nodeIdSrc;
+        drbdRsc1.tcpPorts = drbdPorts;
         LayerPayload payLoadDst = new LayerPayload();
-        payLoadDst.getDrbdRsc().nodeId = nodeIdDst;
+        DrbdRscPayload drbdRsc2 = payLoadDst.getDrbdRsc();
+        drbdRsc2.nodeId = nodeIdDst;
+        drbdRsc2.tcpPorts = drbdPorts;
 
         resSrc = resourceFactory.create(SYS_CTX, resDfn, nodeSrc, payLoadSrc, null, Collections.emptyList());
         resDst = resourceFactory.create(SYS_CTX, resDfn, nodeDst, payLoadDst, null, Collections.emptyList());
@@ -121,7 +127,7 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
             resSrc,
             resDst,
             null,
-            tcpPortPoolMock,
+            null,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -155,8 +161,8 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
         driver.create(resCon);
 
         Map<Pair<NodeName, ResourceName>, Resource> rscmap = new HashMap<>();
-        rscmap.put(new Pair<NodeName, ResourceName>(sourceName, resName), resSrc);
-        rscmap.put(new Pair<NodeName, ResourceName>(targetName, resName), resDst);
+        rscmap.put(new Pair<>(sourceName, resName), resSrc);
+        rscmap.put(new Pair<>(targetName, resName), resDst);
         List<ResourceConnection> cons = driver.loadAllAsList(rscmap);
 
         assertNotNull(cons);

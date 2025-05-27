@@ -33,6 +33,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     private @Nullable Boolean skipAlreadyPlacedOnAllNodeCheck;
     private @Nullable String disklessType;
     private @Nullable Map<ExtTools, Version> requiredExtTools;
+    private @Nullable Integer drbdPortCount;
 
     public AutoSelectFilterPojo(
         @Nullable Integer placeCountRef,
@@ -51,7 +52,8 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheckRef,
         @Nullable Boolean skipAlreadyPlacedOnAllNodeCheckRef,
         @Nullable String disklessTypeRef,
-        @Nullable Map<ExtTools, Version> requiredExtToolsRef
+        @Nullable Map<ExtTools, Version> requiredExtToolsRef,
+        @Nullable Integer portCountRef
     )
     {
         placeCount = placeCountRef;
@@ -71,6 +73,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         skipAlreadyPlacedOnAllNodeCheck = skipAlreadyPlacedOnAllNodeCheckRef;
         disklessType = disklessTypeRef;
         requiredExtTools = requiredExtToolsRef;
+        drbdPortCount = portCountRef;
     }
 
     public static AutoSelectFilterPojo copy(AutoSelectFilterApi api) {
@@ -91,7 +94,8 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             api.skipAlreadyPlacedOnNodeNamesCheck(),
             api.skipAlreadyPlacedOnAllNodeCheck(),
             api.getDisklessType(),
-            api.getRequiredExtTools()
+            api.getRequiredExtTools(),
+            api.getDrbdPortCount()
         );
     }
 
@@ -114,6 +118,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         @Nullable Boolean skipAlreadyPlacedOnAllNodeCheck = null;
         @Nullable String disklessType = null;
         @Nullable Map<ExtTools, ExtToolsInfo.Version> requiredExtTools = null;
+        @Nullable Integer rscPortCount = null;
 
         for (@Nullable AutoSelectFilterApi cfgApi : cfgArr)
         {
@@ -187,6 +192,10 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
                 {
                     requiredExtTools = cfgApi.getRequiredExtTools();
                 }
+                if (rscPortCount == null)
+                {
+                    rscPortCount = cfgApi.getDrbdPortCount();
+                }
             }
         }
 
@@ -207,7 +216,8 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             skipAlreadyPlacedOnNodeCheck,
             skipAlreadyPlacedOnAllNodeCheck,
             disklessType,
-            requiredExtTools
+            requiredExtTools,
+            rscPortCount
         );
     }
 
@@ -313,6 +323,12 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         return requiredExtTools;
     }
 
+    @Override
+    public @Nullable Integer getDrbdPortCount()
+    {
+        return drbdPortCount;
+    }
+
     public void setPlaceCount(@Nullable Integer placeCountRef)
     {
         placeCount = placeCountRef;
@@ -378,6 +394,11 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         disklessType = disklessTypeRef;
     }
 
+    public void setDrbdPortCount(@Nullable Integer drbdPortCountRef)
+    {
+        drbdPortCount = drbdPortCountRef;
+    }
+
     @Override
     public int hashCode()
     {
@@ -430,5 +451,4 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             Objects.equals(storPoolDisklessNameList, other.storPoolDisklessNameList) &&
             Objects.equals(storPoolNameList, other.storPoolNameList);
     }
-
 }

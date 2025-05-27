@@ -13,5 +13,6 @@ message RscConn
     optional string rsc_2_uuid = 6;
     map<string, string> rsc_conn_props = 7;
     repeated string rsc_conn_flags = 8;
-    optional sint32 port = 9;
+    optional sint32 drbd_proxy_port_source = 9;
+    optional sint32 drbd_proxy_port_target = 10;
 }

@@ -28,6 +28,7 @@ import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -294,7 +295,7 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
         }
     }
 
-    protected String toString(List<?> asStrListRef) throws LinStorDBRuntimeException
+    protected String toString(Collection<?> asStrListRef) throws LinStorDBRuntimeException
     {
         try
         {
@@ -306,7 +307,7 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
         }
     }
 
-    protected byte[] toBlob(List<?> asStrListRef) throws LinStorDBRuntimeException
+    protected byte[] toBlob(Collection<?> asStrListRef) throws LinStorDBRuntimeException
     {
         try
         {

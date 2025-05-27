@@ -595,7 +595,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                 rscState.getKey().getDisplayName(),
                 rscNameStr,
                 Collections.emptyList(),
-                rscState.getValue()
+                rscState.getValue(),
+                null
             ));
         }
 

@@ -138,7 +138,8 @@ public class CtrlRscMakeAvailableApiCallHandler
         String nodeNameRef,
         String rscNameRef,
         List<String> layerStackRef,
-        boolean diskfulRef
+        boolean diskfulRef,
+        @Nullable List<Integer> drbdTcpPortsRef
     )
     {
         ResponseContext context = makeContext(nodeNameRef, rscNameRef);
@@ -156,6 +157,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                     rscNameRef,
                     layerStackRef,
                     diskfulRef,
+                    drbdTcpPortsRef,
                     context
                 )
             )
@@ -167,6 +169,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         String rscNameRef,
         @Nullable List<String> layerStackRef,
         boolean diskfulRequestedRef,
+        @Nullable List<Integer> drbdTcpPortsRef,
         ResponseContext contextRef
     )
     {
@@ -332,7 +335,9 @@ public class CtrlRscMakeAvailableApiCallHandler
                     )
                 ).onErrorResume(
                     error -> abortDeactivateOldRsc(activeRsc, null)
-                        .concatWith(placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRequestedRef))
+                        .concatWith(
+                            placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRequestedRef, drbdTcpPortsRef)
+                        )
                 );
             }
             else
@@ -348,7 +353,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                             LockObj.RSC_DFN_MAP,
                             LockObj.STOR_POOL_DFN_MAP
                         ),
-                        () -> placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRequestedRef)
+                        () -> placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRequestedRef, drbdTcpPortsRef)
                     )
                 );
             }
@@ -534,7 +539,8 @@ public class CtrlRscMakeAvailableApiCallHandler
         String nodeNameRef,
         ResourceDefinition rscDfnRef,
         List<DeviceLayerKind> layerStackRef,
-        boolean diskfulRef
+        boolean diskfulRef,
+        @Nullable List<Integer> drbdTcpPortsRef
     )
     {
         ResponseContext context = makeContext(nodeNameRef, rscDfnRef.getName().displayValue);
@@ -551,7 +557,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                 nodeNameRef,
                 rscDfnRef,
                 layerStackRef,
-                diskfulRef
+                diskfulRef,
+                drbdTcpPortsRef
             )
         )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -561,7 +568,8 @@ public class CtrlRscMakeAvailableApiCallHandler
         String nodeNameRef,
         ResourceDefinition rscDfn,
         List<DeviceLayerKind> layerStack,
-        boolean diskfulRef
+        boolean diskfulRef,
+        @Nullable List<Integer> drbdTcpPortsRef
     )
     {
         AutoSelectFilterPojo autoSelect = null;
@@ -731,7 +739,9 @@ public class CtrlRscMakeAvailableApiCallHandler
                 )
             ),
             layerStack.stream().map(DeviceLayerKind::name).collect(Collectors.toList()),
-            null
+            null,
+            autoSelect.getDrbdPortCount(),
+            drbdTcpPortsRef
         );
         ctrlTransactionHelper.commit();
         return ctrlRscCrtApiCallHandler.createResource(
@@ -906,7 +916,9 @@ public class CtrlRscMakeAvailableApiCallHandler
                         ),
                         LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).stream()
                             .map(DeviceLayerKind::name).collect(Collectors.toList()),
-                        nodeId
+                        nodeId,
+                        null,
+                        null
                     );
                 }
             }

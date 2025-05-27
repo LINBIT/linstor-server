@@ -38,4 +38,10 @@ public class SatelliteDynamicNumberPool implements DynamicNumberPool
     {
         // no-op
     }
+
+    @Override
+    public boolean tryAllocate(int nrRef)
+    {
+        return true;
+    }
 }

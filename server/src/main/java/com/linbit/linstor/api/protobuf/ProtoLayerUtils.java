@@ -60,6 +60,8 @@ import com.linbit.utils.Pair;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public class ProtoLayerUtils
@@ -82,12 +84,18 @@ public class ProtoLayerUtils
                         DrbdRscDfn protoDrbdRscDfn = protoDrbdRsc.getDrbdRscDfn();
                         // rscDfn does not have to be the same reference, just contain the data
                         DrbdRscDfnPojo drbdRscDfnPojo = extractDrbdRscDfn(protoDrbdRscDfn);
+                        @Nullable Set<Integer> ports = protoDrbdRsc.getPortsCount() > 0 ?
+                            new TreeSet<>(protoDrbdRsc.getPortsList()) :
+                            null;
+
                         DrbdRscPojo drbdRscPojo = new DrbdRscPojo(
                             protoRscData.getId(),
                             new ArrayList<>(),
                             protoRscData.getRscNameSuffix(),
                             drbdRscDfnPojo,
                             protoDrbdRsc.getNodeId(),
+                            ports,
+                            null,
                             (short) protoDrbdRsc.getPeersSlots(),
                             protoDrbdRsc.getAlStripes(),
                             protoDrbdRsc.getAlSize(),

@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
@@ -13,6 +14,7 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.interfaces.NodeInfo;
@@ -20,6 +22,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerController;
 import com.linbit.linstor.netcom.PeerOffline;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.DynamicNumberPoolImpl;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -81,6 +85,13 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         Map<NodeName, NodeConnection> getNodeConnMap();
     }
 
+    private static final String TCP_PORT_ELEMENT_NAME = "TCP port";
+
+    // we will load the ranges from the database, but if the database contains
+    // invalid ranges (e.g. -1 for port), we will fall back to these defaults
+    private static final int DEFAULT_TCP_PORT_MIN = 7000;
+    private static final int DEFAULT_TCP_PORT_MAX = 7999;
+
     // Node name
     private final NodeName nodeName;
 
@@ -114,6 +125,8 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
 
     private final NodeDatabaseDriver dbDriver;
 
+    private final DynamicNumberPool tcpPortPool;
+
     private transient @Nullable Peer peer;
 
     private transient TransactionSimpleObject<Node, @Nullable NetInterface> activeStltConn;
@@ -131,6 +144,8 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         NodeName nameRef,
         @Nullable Type type,
         long initialFlags,
+        ReadOnlyProps ctrlPropsRef,
+        ErrorReporter errorReporterRef,
         NodeDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -144,6 +159,8 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
             nameRef,
             type,
             initialFlags,
+            ctrlPropsRef,
+            errorReporterRef,
             dbDriverRef,
             propsContainerFactory,
             transObjFactory,
@@ -162,6 +179,8 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         NodeName nameRef,
         @Nullable Type type,
         long initialFlags,
+        ReadOnlyProps ctrlPropsRef,
+        ErrorReporter errorReporterRef,
         NodeDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -192,6 +211,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
             LinStorObject.NODE
         );
         roNodeProps = new ReadOnlyPropsImpl(nodeProps);
+        tcpPortPool = createTcpPortPool(errorReporterRef, ctrlPropsRef);
 
         nodeConnections = transObjFactory.createTransactionMap(this, nodeConnMapRef, null);
 
@@ -216,6 +236,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         transObjs = Arrays.<TransactionObject>asList(
             flags,
             nodeType,
+            // tcpPortPool, // TODO: tcpPortPool does not implement TransactionObject!
             objProt,
             resourceMap,
             snapshotMap,
@@ -230,6 +251,19 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         supportedCryptos = new ArrayList<>();
     }
 
+    private DynamicNumberPool createTcpPortPool(ErrorReporter errorReporter, ReadOnlyProps ctrlPropsRef)
+    {
+        return new DynamicNumberPoolImpl(
+            errorReporter,
+            new PriorityProps(roNodeProps, ctrlPropsRef),
+            ApiConsts.KEY_TCP_PORT_AUTO_RANGE,
+            nodeName + "'s " + TCP_PORT_ELEMENT_NAME,
+            TcpPortNumber::tcpPortNrCheck,
+            TcpPortNumber.PORT_NR_MAX,
+            DEFAULT_TCP_PORT_MIN,
+            DEFAULT_TCP_PORT_MAX
+        );
+    }
 
     @Override
     public int compareTo(Node node)
@@ -631,6 +665,12 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         return nodeType.get();
     }
 
+    public DynamicNumberPool getTcpPortPool(AccessContext accCtxRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtxRef, AccessType.USE);
+        return tcpPortPool;
+    }
 
     public boolean hasNodeType(AccessContext accCtx, Type reqType)
         throws AccessDeniedException

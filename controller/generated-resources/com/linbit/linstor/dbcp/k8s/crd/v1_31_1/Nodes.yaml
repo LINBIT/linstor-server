@@ -1,0 +1,167 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "nodes.internal.linstor.linbit.com"
+spec:
+  group: "internal.linstor.linbit.com"
+  versions:
+  - name: "v1-31-1"
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              node_dsp_name:
+                type: "string"
+              node_flags:
+                type: "integer"
+                format: "int64"
+              node_type:
+                type: "integer"
+                format: "int32"
+  - name: "v1-27-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              node_dsp_name:
+                type: "string"
+              node_flags:
+                type: "integer"
+                format: "int64"
+              node_type:
+                type: "integer"
+                format: "int32"
+  - name: "v1-25-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              node_dsp_name:
+                type: "string"
+              node_flags:
+                type: "integer"
+                format: "int64"
+              node_type:
+                type: "integer"
+                format: "int32"
+  - name: "v1-19-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              node_dsp_name:
+                type: "string"
+              node_flags:
+                type: "integer"
+                format: "int64"
+              node_type:
+                type: "integer"
+                format: "int32"
+  - name: "v1-18-2"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              node_dsp_name:
+                type: "string"
+              node_flags:
+                type: "integer"
+                format: "int64"
+              node_type:
+                type: "integer"
+                format: "int32"
+  - name: "v1-17-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              node_dsp_name:
+                type: "string"
+              node_flags:
+                type: "integer"
+                format: "int64"
+              node_type:
+                type: "integer"
+                format: "int32"
+  - name: "v1-15-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              node_dsp_name:
+                type: "string"
+              node_flags:
+                type: "integer"
+                format: "int64"
+              node_type:
+                type: "integer"
+                format: "int32"
+  scope: "Cluster"
+  names:
+    plural: "nodes"
+    singular: "nodes"
+    kind: "Nodes"

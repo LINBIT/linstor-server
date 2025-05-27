@@ -1,5 +1,7 @@
 package com.linbit.linstor.test.factories;
 
+import com.linbit.linstor.layer.LayerPayload;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,4 +27,27 @@ public class TestFactoryUtils
         return new HashMap<>(map);
     }
 
+    public static LayerPayload createCopy(LayerPayload copyFrom)
+    {
+        LayerPayload ret = new LayerPayload();
+        if (copyFrom != null)
+        {
+            ret.drbdRsc.alStripes = copyFrom.drbdRsc.alStripes;
+            ret.drbdRsc.alStripeSize = copyFrom.drbdRsc.alStripeSize;
+            ret.drbdRsc.needsNewNodeId = copyFrom.drbdRsc.needsNewNodeId;
+            ret.drbdRsc.nodeId = copyFrom.drbdRsc.nodeId;
+            ret.drbdRsc.tcpPorts = copyFrom.drbdRsc.tcpPorts;
+            ret.drbdRsc.portCount = copyFrom.drbdRsc.portCount;
+            ret.drbdRsc.peerSlots = copyFrom.drbdRsc.peerSlots;
+
+            ret.drbdRscDfn.peerSlotsNewResource = copyFrom.drbdRscDfn.peerSlotsNewResource;
+            ret.drbdRscDfn.sharedSecret = copyFrom.drbdRscDfn.sharedSecret;
+            ret.drbdRscDfn.transportType = copyFrom.drbdRscDfn.transportType;
+
+            ret.drbdVlmDfn.minorNr = copyFrom.drbdVlmDfn.minorNr;
+
+            ret.storagePayload = new HashMap<>(copyFrom.storagePayload);
+        }
+        return ret;
+    }
 }

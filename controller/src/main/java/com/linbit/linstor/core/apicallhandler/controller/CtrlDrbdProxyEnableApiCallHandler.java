@@ -77,7 +77,8 @@ public class CtrlDrbdProxyEnableApiCallHandler
         String nodeName1,
         String nodeName2,
         String rscNameStr,
-        Integer port
+        @Nullable Integer drbdProxyPortSrc,
+        @Nullable Integer drbdProxyPortTarget
     )
     {
         ResponseContext context = makeDrbdProxyContext(
@@ -100,7 +101,8 @@ public class CtrlDrbdProxyEnableApiCallHandler
                     nodeName1,
                     nodeName2,
                     rscNameStr,
-                    port
+                    drbdProxyPortSrc,
+                    drbdProxyPortTarget
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -111,7 +113,8 @@ public class CtrlDrbdProxyEnableApiCallHandler
         String nodeName1,
         String nodeName2,
         String rscNameStr,
-        Integer port
+        @Nullable Integer drbdProxyPortSrc,
+        @Nullable Integer drbdProxyPortTarget
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -123,7 +126,8 @@ public class CtrlDrbdProxyEnableApiCallHandler
             nodeName1,
             nodeName2,
             rscNameStr,
-            port
+            drbdProxyPortSrc,
+            drbdProxyPortTarget
         );
 
         ctrlTransactionHelper.commit();

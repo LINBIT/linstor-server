@@ -4,6 +4,10 @@ import com.linbit.Checks;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
@@ -114,5 +118,27 @@ public class TcpPortNumber implements Comparable<TcpPortNumber>
     public static @Nullable Integer getValueNullable(TcpPortNumber tcpPortNumber)
     {
         return tcpPortNumber == null ? null : tcpPortNumber.value;
+    }
+
+    public static @Nullable List<TcpPortNumber> parse(@Nullable Collection<Integer> tcpPortsRef)
+        throws ValueOutOfRangeException
+    {
+        @Nullable List<TcpPortNumber> ret;
+        if (tcpPortsRef != null)
+        {
+            ret = new ArrayList<>();
+            for (@Nullable Integer port : tcpPortsRef)
+            {
+                if (port != null)
+                {
+                    ret.add(new TcpPortNumber(port));
+                }
+            }
+        }
+        else
+        {
+            ret = null;
+        }
+        return ret;
     }
 }

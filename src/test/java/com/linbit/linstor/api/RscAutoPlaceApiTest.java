@@ -126,7 +126,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         seedDefaultPeerRule.setDefaultPeerAccessContext(BOB_ACC_CTX);
         super.setUp();
         dfltRscGrp = createDefaultResourceGroup(BOB_ACC_CTX);
-        createRscDfn(TEST_RSC_NAME, TEST_TCP_PORT_NR);
+        createRscDfn(TEST_RSC_NAME);
         MINOR_GEN.set(MINOR_NR_MIN);
 
         Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
@@ -138,9 +138,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         {
             optAutoplacerNamespace.clear();
         }
-
-        AtomicInteger atomicTcpPorts = new AtomicInteger(TEST_TCP_PORT_NR + 1);
-        Mockito.when(tcpPortPoolMock.autoAllocate()).thenReturn(atomicTcpPorts.incrementAndGet());
 
         commitAndCleanUp(true);
     }
@@ -324,7 +321,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
             .doNotPlaceWith("avoid1")
 
-            .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
+            .addRscDfn("avoid1")
             .addVlmDfn("avoid1", 0, 2 * TB)
             .addRsc("avoid1", "slow1", "stlt1", "stlt2")
         );
@@ -383,7 +380,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .doNotPlaceWith("avoid1")
                 .addStorPool("slow1")
 
-            .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
+            .addRscDfn("avoid1")
             .addVlmDfn("avoid1", 0, 2 * TB)
             .addRsc("avoid1", "slow1", "stlt1", "stlt2")
         );
@@ -422,10 +419,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
             .setDoNotPlaceWithRegex("avoid.*")
 
-            .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
+            .addRscDfn("avoid1")
             .addVlmDfn("avoid1", 0, 2 * TB)
                 .addRsc("avoid1", "slow1", "stlt1", "stlt2")
-            .addRscDfn("avoid2", TEST_TCP_PORT_NR + 2)
+            .addRscDfn("avoid2")
             .addVlmDfn("avoid2", 0, 2 * TB)
                 .addRsc("avoid2", "slow2", "stlt1", "stlt2")
         );
@@ -469,10 +466,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
             .setDoNotPlaceWithRegex("avoid") // no trailing ".*"
 
-            .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
+            .addRscDfn("avoid1")
             .addVlmDfn("avoid1", 0, 2 * TB)
                 .addRsc("avoid1", "slow1", "stlt1", "stlt2")
-            .addRscDfn("avoid2", TEST_TCP_PORT_NR + 2)
+            .addRscDfn("avoid2")
             .addVlmDfn("avoid2", 0, 2 * TB)
                 .addRsc("avoid2", "slow2", "stlt1", "stlt2")
         );
@@ -2147,11 +2144,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .stltBuilder("stlt3")
                 .addStorPool("sp1", 50 * GB)
                 .build()
-            .addRscDfn("dummyRsc1", 9000)
+            .addRscDfn("dummyRsc1")
                 .addVlmDfn("dummyRsc1", 0, 12 * MB)
-            .addRscDfn("dummyRsc2", 9001)
+            .addRscDfn("dummyRsc2")
                 .addVlmDfn("dummyRsc2", 0, 12 * MB)
-            .addRscDfn("dummyRsc3", 9002)
+            .addRscDfn("dummyRsc3")
                 .addVlmDfn("dummyRsc3", 0, 12 * MB)
             .addRsc("dummyRsc1", "sp1", "stlt1")
             .addRsc("dummyRsc2", "sp1", "stlt1")
@@ -2220,7 +2217,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 )
                 .build()
 
-            .addRscDfn("dummyRsc1", 9000)
+            .addRscDfn("dummyRsc1")
                 .addVlmDfn("dummyRsc1", 0, 12 * MB)
                 .setVlmDfnProp(
                     "dummyRsc1",
@@ -2228,7 +2225,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     ApiConsts.NAMESPC_SYS_FS + "/" + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
                     "100"
                 )
-            .addRscDfn("dummyRsc2", 9001)
+            .addRscDfn("dummyRsc2")
                 .addVlmDfn("dummyRsc2", 0, 12 * MB)
                 .setVlmDfnProp(
                     "dummyRsc2",
@@ -2236,7 +2233,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     ApiConsts.NAMESPC_SYS_FS + "/" + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
                     "100"
                 )
-            .addRscDfn("dummyRsc3", 9002)
+            .addRscDfn("dummyRsc3")
                 .addVlmDfn("dummyRsc3", 0, 12 * MB)
                 .setVlmDfnProp(
                     "dummyRsc3",
@@ -2394,13 +2391,13 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         // expect proxy between stlt1 <-> stlt3
         ResourceConnection rscCon13 = rsc1.getAbsResourceConnection(SYS_CTX, rsc3);
         assertNotNull(rscCon13);
-        assertNotNull(rscCon13.getPort(SYS_CTX));
+        assertNotNull(rscCon13.getDrbdProxyPortSource(SYS_CTX));
         assertTrue(rscCon13.getStateFlags().isSet(SYS_CTX, ResourceConnection.Flags.LOCAL_DRBD_PROXY));
 
         // expect proxy between stlt2 <-> stlt3
         ResourceConnection rscCon23 = rsc2.getAbsResourceConnection(SYS_CTX, rsc3);
         assertNotNull(rscCon23);
-        assertNotNull(rscCon23.getPort(SYS_CTX));
+        assertNotNull(rscCon23.getDrbdProxyPortSource(SYS_CTX));
         assertTrue(rscCon23.getStateFlags().isSet(SYS_CTX, ResourceConnection.Flags.LOCAL_DRBD_PROXY));
     }
 
@@ -2761,12 +2758,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
 
-    private ResourceDefinition createRscDfn(String rscNameStr, int tcpPort)
+    private ResourceDefinition createRscDfn(String rscNameStr)
         throws Exception
     {
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.tcpPort = tcpPort;
         drbdRscDfn.sharedSecret = "NotTellingYou";
         drbdRscDfn.transportType = TransportType.IP;
         ResourceDefinition rscDfn = resourceDefinitionFactory.create(
@@ -2822,6 +2818,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new ArrayList<>(Arrays.asList(DeviceProviderKind.values()));
         private @Nullable String disklessType;
         private Map<ExtTools, ExtToolsInfo.Version> requiredExtTools = null;
+        private @Nullable Integer portCount = null;
 
         RscAutoPlaceApiCall(
             String rscNameStrRef,
@@ -3062,6 +3059,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     {
                         return requiredExtTools;
                     }
+
+                    @Override
+                    public @Nullable Integer getDrbdPortCount()
+                    {
+                        return portCount;
+                    }
                 }
             ).contextWrite(contextWrite()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
@@ -3150,11 +3153,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
-        RscAutoPlaceApiCall addRscDfn(String rscNameStrRef, int tcpPortRef) throws Exception
+        RscAutoPlaceApiCall addRscDfn(String rscNameStrRef) throws Exception
         {
             enterScope();
 
-            createRscDfn(rscNameStrRef, tcpPortRef);
+            createRscDfn(rscNameStrRef);
 
             commitAndCleanUp(true);
 
@@ -3177,6 +3180,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     rscPropsMap,
                     Collections.emptyList(),
                     null,
+                    null,
+                    portCount,
                     null,
                     Collections.emptyList(),
                     Resource.DiskfulBy.USER

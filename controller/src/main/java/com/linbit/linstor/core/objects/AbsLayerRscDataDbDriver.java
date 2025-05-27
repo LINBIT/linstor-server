@@ -379,7 +379,8 @@ public abstract class AbsLayerRscDataDbDriver<
         RSC absRscRef,
         int rscLayerIdRef
     )
-        throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
+        throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
+        MdException, AccessDeniedException
     {
         AbsRscLayerObject<?> dummyLoadingRLO = getDummyLoadingRLO(rscLayerIdRef);
         PairNonNull<NodeName, SuffixedResourceName> nodeNameSuffixedRscNamePair = getNodeNameSuffixedRscNamePair(
@@ -495,7 +496,7 @@ public abstract class AbsLayerRscDataDbDriver<
         RSC absRscRef
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
-        MdException;
+        MdException, AccessDeniedException;
 
     public LayerResourceIdDatabaseDriver getIdDriver()
     {

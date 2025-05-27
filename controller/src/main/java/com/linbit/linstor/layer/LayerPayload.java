@@ -11,6 +11,7 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.Transp
 import com.linbit.utils.Pair;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 
@@ -38,6 +39,8 @@ public class LayerPayload
     public class DrbdRscPayload
     {
         public @Nullable Integer nodeId;
+        public @Nullable Set<Integer> tcpPorts;
+        public @Nullable Integer portCount;
         public @Nullable Short peerSlots;
         public @Nullable Integer alStripes;
         public @Nullable Long alStripeSize;

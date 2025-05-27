@@ -303,7 +303,8 @@ public abstract class AbsSnapLayerHelper<
         AbsRscLayerObject<Resource> rscDataRef,
         @Nullable AbsRscLayerObject<Snapshot> parentRef
     )
-        throws AccessDeniedException, DatabaseException, ExhaustedPoolException;
+        throws AccessDeniedException, DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
+        ValueInUseException;
 
     protected abstract SNAPVLM_LO createSnapVlmLayerData(
         SnapshotVolume snapVlmRef,
@@ -334,7 +335,8 @@ public abstract class AbsSnapLayerHelper<
         @Nullable AbsRscLayerObject<Snapshot> parentRef,
         Map<String, String> renameStorPoolMapRef
     )
-        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException;
+        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException,
+        ValueInUseException;
 
     protected abstract SNAPVLM_LO restoreSnapVlmLayerData(
         SnapshotVolume snapVlmRef,

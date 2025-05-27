@@ -78,7 +78,8 @@ public class DrbdProxy
                 nodeA,
                 nodeB,
                 rscName,
-                proxyEnable.port
+                proxyEnable.port_src == null ? proxyEnable.port : proxyEnable.port_src,
+                proxyEnable.port_target == null ? proxyEnable.port : proxyEnable.port_target
             );
 
             requestHelper.doFlux(

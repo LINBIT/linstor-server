@@ -219,7 +219,7 @@ public class JsonGenTypes
         public @Nullable Integer al_stripes;
         public @Nullable Long al_stripe_size_kib;
         /**
-         * used drbd port for this resource
+         * The preferred TCP port if available on node level
          */
         public @Nullable Integer port;
         public @Nullable String transport_type;
@@ -260,7 +260,7 @@ public class JsonGenTypes
     public static class ResourceDefinitionCreate
     {
         /**
-         * drbd port for resources
+         * The preferred TCP port if available on node level
          */
         public @Nullable Integer drbd_port;
         /**
@@ -282,7 +282,7 @@ public class JsonGenTypes
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
         /**
-         * drbd port for resources
+         * The preferred TCP port if available on node level
          */
         public @Nullable Integer drbd_port;
         /**
@@ -366,6 +366,7 @@ public class JsonGenTypes
     {
         public @Nullable DrbdResourceDefinitionLayer drbd_resource_definition;
         public @Nullable Integer node_id;
+        public List<Integer> tcp_ports = Collections.emptyList();
         public @Nullable Integer peer_slots;
         public @Nullable Integer al_stripes;
         public @Nullable Long al_size;
@@ -481,6 +482,8 @@ public class JsonGenTypes
         public @Nullable Resource resource;
         public List<String> layer_list = Collections.emptyList();
         public @Nullable Integer drbd_node_id;
+        public @Nullable Integer drbd_tcp_port_count;
+        public List<Integer> drbd_tcp_ports = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -491,6 +494,7 @@ public class JsonGenTypes
          * if true resource will be created as diskful even if diskless would be possible
          */
         public boolean diskful = false;
+        public List<Integer> drbd_tcp_ports = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -828,6 +832,7 @@ public class JsonGenTypes
          * Multiplier of thin storage pool's free space
          */
         public @Nullable Double overprovision;
+        public @Nullable Integer port_count;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1200,7 +1205,9 @@ public class JsonGenTypes
         public @Nullable String node_b;
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
-        public @Nullable Integer port;
+        @Deprecated(forRemoval = true) public @Nullable Integer port;
+        public @Nullable Integer drbd_proxy_port_a;
+        public @Nullable Integer drbd_proxy_port_b;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1677,9 +1684,17 @@ public class JsonGenTypes
     public static class DrbdProxyEnable
     {
         /**
-         * Proxy port to use (optional)
+         * Proxy port to use (optional). Is used as a default port if port_source or port_target is not set
          */
         public @Nullable Integer port;
+        /**
+         * Port to use for DRBD Proxy (optiona, auto-generated if omitted).
+         */
+        public @Nullable Integer port_src;
+        /**
+         * Port to use for DRBD Proxy (optiona, auto-generated if omitted).
+         */
+        public @Nullable Integer port_target;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

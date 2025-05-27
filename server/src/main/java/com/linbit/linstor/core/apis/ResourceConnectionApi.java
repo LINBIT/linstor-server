@@ -15,5 +15,8 @@ public interface ResourceConnectionApi
     long getFlags();
 
     @Nullable
-    Integer getPort();
+    Integer getDrbdProxyPortSource();
+
+    @Nullable
+    Integer getDrbdProxyPortTarget();
 }

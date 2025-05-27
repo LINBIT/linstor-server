@@ -236,14 +236,15 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                             "Auto-evicting resource: " + rscDfn.getName(),
                                             "auto-evicting resource: " + rscDfn.getName(),
                                             ApiConsts.MASK_DEL,
-                                            new HashMap<String, String>()
+                                            new HashMap<>()
                                         ),
                                         new ApiCallRcImpl(),
                                         rscDfn.getName().toString(),
                                         selectFilter.getDisklessOnRemaining(),
                                         candidate,
                                         null,
-                                        selectFilter.getLayerStackList()
+                                        selectFilter.getLayerStackList(),
+                                        selectFilter.getDrbdPortCount()
                                     );
                                 ctrlTransactionHelper.commit();
                                 ctx.additionalFluxList

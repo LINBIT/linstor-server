@@ -105,6 +105,15 @@ public class TransactionObjectFactory
         return new TransactionSet<>(parent, backingSet, dbDriver, transMgrProvider);
     }
 
+    public <PARENT, VALUE> TransactionSet<PARENT, VALUE> createTransactionPrimitiveSet(
+        @Nullable PARENT parent,
+        Set<VALUE> backingList,
+        @Nullable CollectionDatabaseDriver<PARENT, VALUE> dbDriver
+    )
+    {
+        return new TransactionSet<>(parent, backingList, dbDriver, transMgrProvider);
+    }
+
     /*
      * TxList
      */

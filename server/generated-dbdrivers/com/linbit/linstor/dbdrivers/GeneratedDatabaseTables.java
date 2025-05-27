@@ -244,6 +244,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl AL_STRIPE_SIZE = new ColumnImpl("AL_STRIPE_SIZE", Types.BIGINT, false, false);
         public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
         public static final ColumnImpl NODE_ID = new ColumnImpl("NODE_ID", Types.INTEGER, false, false);
+        public static final ColumnImpl TCP_PORT_LIST = new ColumnImpl("TCP_PORT_LIST", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -252,7 +253,8 @@ public class GeneratedDatabaseTables
             AL_STRIPES,
             AL_STRIPE_SIZE,
             FLAGS,
-            NODE_ID
+            NODE_ID,
+            TCP_PORT_LIST
         };
 
         @Override
@@ -888,7 +890,8 @@ public class GeneratedDatabaseTables
 
         public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
         public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
-        public static final ColumnImpl TCP_PORT = new ColumnImpl("TCP_PORT", Types.INTEGER, false, true);
+        public static final ColumnImpl TCP_PORT_SRC = new ColumnImpl("TCP_PORT_SRC", Types.INTEGER, false, true);
+        public static final ColumnImpl TCP_PORT_DST = new ColumnImpl("TCP_PORT_DST", Types.INTEGER, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -898,7 +901,8 @@ public class GeneratedDatabaseTables
             RESOURCE_NAME,
             SNAPSHOT_NAME,
             FLAGS,
-            TCP_PORT
+            TCP_PORT_SRC,
+            TCP_PORT_DST
         };
 
         @Override
@@ -1973,6 +1977,7 @@ public class GeneratedDatabaseTables
         LayerDrbdResources.AL_STRIPE_SIZE.table = LAYER_DRBD_RESOURCES;
         LayerDrbdResources.FLAGS.table = LAYER_DRBD_RESOURCES;
         LayerDrbdResources.NODE_ID.table = LAYER_DRBD_RESOURCES;
+        LayerDrbdResources.TCP_PORT_LIST.table = LAYER_DRBD_RESOURCES;
         LayerDrbdResourceDefinitions.RESOURCE_NAME.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdResourceDefinitions.SNAPSHOT_NAME.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
@@ -2055,7 +2060,8 @@ public class GeneratedDatabaseTables
         ResourceConnections.RESOURCE_NAME.table = RESOURCE_CONNECTIONS;
         ResourceConnections.SNAPSHOT_NAME.table = RESOURCE_CONNECTIONS;
         ResourceConnections.FLAGS.table = RESOURCE_CONNECTIONS;
-        ResourceConnections.TCP_PORT.table = RESOURCE_CONNECTIONS;
+        ResourceConnections.TCP_PORT_SRC.table = RESOURCE_CONNECTIONS;
+        ResourceConnections.TCP_PORT_DST.table = RESOURCE_CONNECTIONS;
         ResourceDefinitions.UUID.table = RESOURCE_DEFINITIONS;
         ResourceDefinitions.RESOURCE_NAME.table = RESOURCE_DEFINITIONS;
         ResourceDefinitions.SNAPSHOT_NAME.table = RESOURCE_DEFINITIONS;

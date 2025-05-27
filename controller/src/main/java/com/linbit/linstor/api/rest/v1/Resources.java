@@ -181,6 +181,18 @@ public class Resources
         {
             return rscPayload.drbd_node_id;
         }
+
+        @Override
+        public @Nullable Integer getPortCount()
+        {
+            return rscPayload.drbd_tcp_port_count;
+        }
+
+        @Override
+        public @Nullable List<Integer> getPorts()
+        {
+            return rscPayload.drbd_tcp_ports;
+        }
     }
 
     @POST
@@ -321,7 +333,8 @@ public class Resources
                     nodeNameRef,
                     rscNameRef,
                     rscData.layer_list,
-                    rscData.diskful
+                    rscData.diskful,
+                    rscData.drbd_tcp_ports
                 );
             requestHelper.doFlux(
                 ApiConsts.API_MAKE_RSC_AVAIL,

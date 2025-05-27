@@ -18,7 +18,12 @@ public interface ResourceConnectionDatabaseDriver extends GenericDatabaseDriver<
     StateFlagsPersistence<ResourceConnection> getStateFlagPersistence();
 
     /**
-     * A special sub-driver to update the port
+     * A special sub-driver to update DRBD Proxy's TCP port for the source resource
      */
-    SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getPortDriver();
+    SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getDrbdProxyPortSourceDriver();
+
+    /**
+     * A special sub-driver to update DRBD Proxy's TCP port for the target resource
+     */
+    SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getDrbdProxyPortTargetDriver();
 }

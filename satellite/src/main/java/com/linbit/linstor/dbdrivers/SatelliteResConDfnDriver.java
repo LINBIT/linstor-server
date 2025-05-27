@@ -15,13 +15,15 @@ public class SatelliteResConDfnDriver
     implements ResourceConnectionDatabaseDriver
 {
     private final StateFlagsPersistence<ResourceConnection> stateFlagsDriver;
-    private final SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> portDriver;
+    private final SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> drbdProxyPortSourceDriver;
+    private final SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> drbdProxyPortTargetDriver;
 
     @Inject
     public SatelliteResConDfnDriver()
     {
         stateFlagsDriver = getNoopFlagDriver();
-        portDriver = getNoopColumnDriver();
+        drbdProxyPortSourceDriver = getNoopColumnDriver();
+        drbdProxyPortTargetDriver = getNoopColumnDriver();
     }
 
     @Override
@@ -31,8 +33,14 @@ public class SatelliteResConDfnDriver
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getPortDriver()
+    public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getDrbdProxyPortSourceDriver()
     {
-        return portDriver;
+        return drbdProxyPortSourceDriver;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getDrbdProxyPortTargetDriver()
+    {
+        return drbdProxyPortTargetDriver;
     }
 }

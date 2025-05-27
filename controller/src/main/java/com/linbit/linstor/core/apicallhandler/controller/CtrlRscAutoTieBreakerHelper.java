@@ -195,6 +195,8 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                 ),
                                 Collections.emptyList(),
                                 null,
+                                null,
+                                null,
                                 Collections.emptyMap(),
                                 Collections.emptyList(),
                                 null

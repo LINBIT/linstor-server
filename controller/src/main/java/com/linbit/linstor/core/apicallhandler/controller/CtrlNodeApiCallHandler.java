@@ -1708,6 +1708,8 @@ public class CtrlNodeApiCallHandler
                                     ),
                                     rscDfn.getLayerStack(peerCtx).stream().map(DeviceLayerKind::name)
                                         .collect(Collectors.toList()),
+                                    null,
+                                    null,
                                     null
                                 );
                                 createOrToggleDiskFlux = ctrlRscCrtApiCallHandler

@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -12,8 +13,9 @@ import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
@@ -103,6 +105,8 @@ public class TestFactory
         NodeName nodeNameRef,
         Node.Type initialTypeRef,
         long initialFlagsRef,
+        ReadOnlyProps ctrlPropsRef,
+        ErrorReporter errorReporterRef,
         NodeDbDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -116,6 +120,8 @@ public class TestFactory
             nodeNameRef,
             initialTypeRef,
             initialFlagsRef,
+            ctrlPropsRef,
+            errorReporterRef,
             dbDriverRef,
             propsContainerFactoryRef,
             transObjFactoryRef,
@@ -134,8 +140,8 @@ public class TestFactory
         UUID uuidRef,
         Resource resSrcRef,
         Resource resDstRef,
-        TcpPortNumber portRef,
-        DynamicNumberPool tcpPortPoolRef,
+        @Nullable TcpPortNumber drbdProxyPortSrcRef,
+        @Nullable TcpPortNumber drbdProxyPortDstRef,
         ResourceConnectionDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -149,8 +155,8 @@ public class TestFactory
             uuidRef,
             resSrcRef,
             resDstRef,
-            portRef,
-            tcpPortPoolRef,
+            drbdProxyPortSrcRef,
+            drbdProxyPortDstRef,
             driverRef,
             propsContainerFactoryRef,
             transObjFactoryRef,

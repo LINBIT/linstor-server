@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -73,6 +74,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.Objects;
+import java.util.Set;
 
 @Singleton
 public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
@@ -104,8 +106,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         Resource rsc,
         DrbdRscDfnPojo drbdRscDfnPojo
     )
-        throws IllegalArgumentException, DatabaseException, ValueOutOfRangeException, AccessDeniedException,
-        ExhaustedPoolException, ValueInUseException
+        throws IllegalArgumentException, DatabaseException, AccessDeniedException, ValueOutOfRangeException
     {
         ResourceDefinition rscDfn = rsc.getResourceDefinition();
         DrbdRscDfnData<Resource> rscDfnData = rscDfn.getLayerData(
@@ -122,7 +123,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
                 drbdRscDfnPojo.getPeerSlots(),
                 drbdRscDfnPojo.getAlStripes(),
                 drbdRscDfnPojo.getAlStripeSize(),
-                drbdRscDfnPojo.getPort(),
+                // stlt does not care about the preferred DrbdRscDfnData's port. Stlt will only use DrbdRscData's port
+                null,
                 TransportType.valueOfIgnoreCase(
                     drbdRscDfnPojo.getTransportType(),
                     TransportType.IP
@@ -133,7 +135,6 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         }
         else
         {
-            rscDfnData.setPort(new TcpPortNumber(drbdRscDfnPojo.getPort()));
             rscDfnData.setSecret(drbdRscDfnPojo.getSecret());
             rscDfnData.setTransportType(
                 TransportType.valueOfIgnoreCase(
@@ -153,9 +154,11 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         DrbdRscPojo drbdRscPojo,
         DrbdRscDfnData<Resource> drbdRscDfnData
     )
-        throws DatabaseException, ValueOutOfRangeException, AccessDeniedException
+        throws DatabaseException, ValueOutOfRangeException, AccessDeniedException, ExhaustedPoolException,
+        ValueInUseException
     {
         DrbdRscData<Resource> drbdRscData;
+        @Nullable Set<Integer> ports = drbdRscPojo.getPorts();
         drbdRscData = layerDataFactory.createDrbdRscData(
             rscDataPojo.getId(),
             rsc,
@@ -163,12 +166,13 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             parent,
             drbdRscDfnData,
             new NodeId(drbdRscPojo.getNodeId()),
+            ports == null ? null : TcpPortNumber.parse(ports),
+            drbdRscPojo.getPortCount(),
             drbdRscPojo.getPeerSlots(),
             drbdRscPojo.getAlStripes(),
             drbdRscPojo.getAlStripeSize(),
             drbdRscPojo.getFlags()
         );
-        drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
         drbdRscData.addAllIgnoreReasons(drbdRscPojo.getIgnoreReasons());
 
         if (parent == null)
@@ -188,7 +192,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         DrbdRscPojo drbdRscPojoRef,
         DrbdRscData<Resource> drbdRscDataRef
     )
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException, ImplementationError
     {
         drbdRscDataRef.getFlags().resetFlagsTo(
             apiCtx,
@@ -204,6 +209,15 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             {
                 throw new ImplementationError(exc);
             }
+        }
+        if (drbdRscPojoRef.getPortCount() != null && drbdRscPojoRef.getPortCount() != drbdRscDataRef.getPortCount())
+        {
+            drbdRscDataRef.setPortCount(drbdRscPojoRef.getPortCount());
+        }
+        @Nullable Set<Integer> ports = drbdRscPojoRef.getPorts();
+        if (ports != null)
+        {
+            drbdRscDataRef.setPorts(TcpPortNumber.parse(ports));
         }
         updateParent(drbdRscDataRef, parentRef);
         drbdRscDataRef.setShouldSuspendIo(drbdRscPojoRef.getSuspend());

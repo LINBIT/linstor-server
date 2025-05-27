@@ -4,10 +4,10 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.ReadOnlyProps;
 
 import java.util.regex.Matcher;
 
@@ -17,8 +17,8 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         " %d is already in use";
 
     private final ErrorReporter errorReporter;
-    private final @Nullable ReadOnlyProps ctrlConf;
-    private final @Nullable String ctrlConfKeyRange;
+    private final @Nullable PriorityProps prioProps;
+    private final @Nullable String propKeyRange;
     private final @Nullable String elementName;
     private final @Nullable NumberRangeChecker rangeLimitChecker;
     private final int defaultMin;
@@ -31,8 +31,8 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
 
     public DynamicNumberPoolImpl(
         ErrorReporter errorReporterRef,
-        @Nullable ReadOnlyProps ctrlConfRef,
-        @Nullable String ctrlConfKeyRangeRef,
+        @Nullable PriorityProps prioPropsRef,
+        @Nullable String propKeyRangeRef,
         @Nullable String elementNameRef,
         @Nullable NumberRangeChecker rangeLimitCheckerRef,
         int hardMax,
@@ -41,8 +41,8 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
     )
     {
         errorReporter = errorReporterRef;
-        ctrlConf = ctrlConfRef;
-        ctrlConfKeyRange = ctrlConfKeyRangeRef;
+        prioProps = prioPropsRef;
+        propKeyRange = propKeyRangeRef;
         elementName = elementNameRef;
         rangeLimitChecker = rangeLimitCheckerRef;
         defaultMin = defaultMinRef;
@@ -61,9 +61,9 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         try
         {
             // it's possible that there are only the default values, so check for that
-            if (ctrlConfKeyRange != null)
+            if (propKeyRange != null)
             {
-                strRange = ctrlConf.getProp(ctrlConfKeyRange);
+                strRange = prioProps.getProp(propKeyRange);
             }
             else
             {
@@ -124,6 +124,12 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         {
             throw new ValueInUseException(String.format(elementName + IN_USE_EXC_FORMAT, nr));
         }
+    }
+
+    @Override
+    public boolean tryAllocate(int nr)
+    {
+        return numberPool.allocate(nr);
     }
 
     @Override

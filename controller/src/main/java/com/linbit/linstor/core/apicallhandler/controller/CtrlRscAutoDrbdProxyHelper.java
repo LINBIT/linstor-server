@@ -114,12 +114,13 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
                 firstRscRef.getNode().getName().displayValue,
                 secondRscRef.getNode().getName().displayValue,
                 firstRscRef.getResourceDefinition().getName().displayValue,
-                null // generate new tcp port for drbd proxy
+                null, // generate new source tcp port for drbd proxy
+                null // generate new target tcp port for drbd proxy
             );
             if (rscConn == null)
             {
-                rscConn = firstRscRef.getAbsResourceConnection(peerCtx, secondRscRef); // drbdProxyHelper should have
-                                                                                       // created the rscConn
+                // drbdProxyHelper should have created the rscConn
+                rscConn = firstRscRef.getAbsResourceConnection(peerCtx, secondRscRef);
             }
             apiCallRcImplRef.addEntry(
                 "Enabled drbd-proxy for " + rscConn.toString(),

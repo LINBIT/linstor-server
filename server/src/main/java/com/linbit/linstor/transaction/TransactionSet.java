@@ -18,7 +18,7 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
-public class TransactionSet<PARENT, VALUE extends TransactionObject>
+public class TransactionSet<PARENT, VALUE>
     extends AbsTransactionObject implements Set<VALUE>
 {
     private final @Nullable PARENT parent;
@@ -45,7 +45,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
         else
         {
             if (parentRef == null)
-        {
+            {
                 throw new ImplementationError("Parent must not be null when using a database driver!");
             }
             dbDriver = dbDriverRef;
@@ -56,7 +56,13 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     protected void postSetConnection(@Nullable TransactionMgr transMgrRef)
     {
         // forward transaction manager to values
-        backingSet.forEach(to -> to.setConnection(transMgrRef));
+        for (VALUE val : backingSet)
+        {
+            if (val instanceof TransactionObject)
+            {
+                ((TransactionObject) val).setConnection(transMgrRef);
+            }
+        }
     }
 
     @Override

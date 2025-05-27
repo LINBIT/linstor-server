@@ -189,18 +189,19 @@ public class ApplyRsc implements ApiCall
     )
     {
         return rscConnections.stream()
-            .map(rscConnData ->
-                new RscConnPojo(
+            .map(
+                rscConnData -> new RscConnPojo(
                     UUID.fromString(rscConnData.getRscConnUuid()),
                     rscConnData.getNodeName1(),
                     rscConnData.getNodeName2(),
                     rscName,
                     rscConnData.getRscConnPropsMap(),
                     FlagsHelper.fromStringList(
-                    ResourceConnection.Flags.class,
+                        ResourceConnection.Flags.class,
                         rscConnData.getRscConnFlagsList()
                     ),
-                    rscConnData.getPort() == 0 ? null : rscConnData.getPort()
+                    rscConnData.getDrbdProxyPortSource() == 0 ? null : rscConnData.getDrbdProxyPortSource(),
+                    rscConnData.getDrbdProxyPortTarget() == 0 ? null : rscConnData.getDrbdProxyPortTarget()
                 )
             )
             .collect(Collectors.toList());

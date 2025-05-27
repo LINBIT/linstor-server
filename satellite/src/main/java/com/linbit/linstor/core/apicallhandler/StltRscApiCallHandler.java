@@ -638,6 +638,7 @@ class StltRscApiCallHandler
                         targetResource,
                         new ResourceConnection.Flags[]
                         {},
+                        null,
                         null
                     );
 
@@ -649,8 +650,19 @@ class StltRscApiCallHandler
                         apiCtx, ResourceConnection.Flags.restoreFlags(rscConnApi.getFlags())
                     );
 
-                    rscConn.setPort(
-                        apiCtx, rscConnApi.getPort() == null ? null : new TcpPortNumber(rscConnApi.getPort()));
+                    rscConn.setDrbdProxyPortSource(
+                        apiCtx,
+                        rscConnApi.getDrbdProxyPortSource() == null ?
+                            null :
+                            new TcpPortNumber(rscConnApi.getDrbdProxyPortSource())
+                    );
+                    rscConn.setDrbdProxyPortTarget(
+                        apiCtx,
+                        rscConnApi.getDrbdProxyPortTarget() == null ?
+                            null :
+                            new TcpPortNumber(rscConnApi.getDrbdProxyPortTarget())
+                    );
+
                 }
             }
 

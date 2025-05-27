@@ -1,5 +1,9 @@
 package com.linbit.linstor.storage.data.adapter.drbd;
 
+import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
@@ -14,9 +18,11 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.types.NodeId;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -26,6 +32,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSet;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
@@ -33,10 +40,15 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class DrbdRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, DrbdVlmData<RSC>>
@@ -50,9 +62,14 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     private final long alStripeSize;
     private final LayerDrbdRscDatabaseDriver drbdRscDbDriver;
     private final LayerDrbdVlmDatabaseDriver drbdVlmDbDriver;
+    private final DynamicNumberPool tcpPortPool;
 
     // persisted, serialized
     private final StateFlags<DrbdRscFlags> flags;
+    /** non-empty for Resources, empty for Snapshots */
+    private final TransactionSet<DrbdRscData<?>, TcpPortNumber> rscPorts;
+    /** null for Resources, non-null for Snapshots */
+    private final TransactionSimpleObject<DrbdRscData<?>, @Nullable Integer> snapPortCount;
 
     // not persisted, serialized
     private @Nullable Integer promotionScore = null;
@@ -75,15 +92,19 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         Map<VolumeNumber, DrbdVlmData<RSC>> vlmLayerObjectsMapRef,
         String rscNameSuffixRef,
         NodeId nodeIdRef,
+        @Nullable Collection<TcpPortNumber> portListRef,
+        @Nullable Integer portCountRef,
         @Nullable Short peerSlotsRef,
         @Nullable Integer alStripesRef,
         @Nullable Long alStripeSizeRef,
         long initFlags,
+        DynamicNumberPool tcpPortPoolRef,
         LayerDrbdRscDatabaseDriver drbdRscDbDriverRef,
         LayerDrbdVlmDatabaseDriver drbdVlmDbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
+        throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         super(
             rscLayerIdRef,
@@ -100,6 +121,13 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         nodeId = transObjFactory.createTransactionSimpleObject(this, nodeIdRef, drbdRscDbDriverRef.getNodeIdDriver());
         drbdRscDbDriver = drbdRscDbDriverRef;
         drbdVlmDbDriver = drbdVlmDbDriverRef;
+        tcpPortPool = tcpPortPoolRef;
+
+        rscPorts = transObjFactory.createTransactionPrimitiveSet(
+            this,
+            new TreeSet<>(),
+            drbdRscDbDriver.getTcpPortDriver()
+        );
 
         flags = transObjFactory.createStateFlagsImpl(
             rscRef.getObjProt(),
@@ -114,8 +142,48 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         alStripes = alStripesRef != null ? alStripesRef : drbdRscDfnDataRef.getAlStripes();
         alStripeSize = alStripeSizeRef != null ? alStripeSizeRef : drbdRscDfnDataRef.getAlStripeSize();
 
+        final @Nullable Integer tmpPortCount;
+        if (rsc instanceof Resource)
+        {
+            initPorts(portListRef, portCountRef);
+            tmpPortCount = null;
+        }
+        else
+        {
+            // skip setPorts for snapshots
+            tmpPortCount = Objects.requireNonNull(portCountRef);
+        }
+        snapPortCount = transObjFactory.createNonPersistentTransactionSimpleObject(tmpPortCount);
+
+        transObjs.add(rscPorts);
         transObjs.add(flags);
         transObjs.add(drbdRscDfnData);
+        transObjs.add(snapPortCount);
+        transObjs.add(nodeId);
+    }
+
+    private void initPorts(
+        @Nullable Collection<TcpPortNumber> portListRef,
+        @Nullable Integer portCountRef
+    )
+        throws ValueInUseException, ImplementationError, ValueOutOfRangeException, ExhaustedPoolException
+    {
+        // preserve order so the DrbdRscDfn port is preferred over all others
+        Set<TcpPortNumber> preferredNewPortsRef = new LinkedHashSet<>();
+        @Nullable TcpPortNumber preferredDrbdRscDfnPort = drbdRscDfnData.getTcpPort();
+        if (preferredDrbdRscDfnPort != null)
+        {
+            preferredNewPortsRef.add(preferredDrbdRscDfnPort);
+        }
+        for (DrbdRscData<RSC> peer : drbdRscDfnData.getDrbdRscDataList())
+        {
+            // we do not need to exclude ourselves since "this" was not yet added to drbdRscDfnData.getDrbdRscDataList()
+            if (rscSuffix.equals(peer.rscSuffix))
+            {
+                preferredNewPortsRef.addAll(peer.rscPorts);
+            }
+        }
+        setPorts(portListRef, preferredNewPortsRef, portCountRef);
     }
 
     @Override
@@ -162,6 +230,150 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     }
 
     // no setNodeId - unmodifiable after initialized
+
+    @Override
+    public @Nullable Collection<TcpPortNumber> getTcpPortList()
+    {
+        return rscPorts;
+    }
+
+    public void setPortCount(int countRef) throws ValueOutOfRangeException, ExhaustedPoolException
+    {
+        if (rscPorts.size() != countRef)
+        {
+            if (rscPorts.size() < countRef)
+            {
+                for (int remaining = countRef - rscPorts.size(); remaining > 0; remaining--)
+                {
+                    rscPorts.add(new TcpPortNumber(tcpPortPool.autoAllocate()));
+                }
+            }
+            else
+            {
+                Iterator<TcpPortNumber> it = new ArrayList<>(rscPorts).iterator();
+                for (int remaining = rscPorts.size() - countRef; remaining > 0; remaining--)
+                {
+                    TcpPortNumber portToRemove = it.next();
+                    rscPorts.remove(portToRemove);
+                    tcpPortPool.deallocate(portToRemove.value);
+                }
+            }
+        }
+    }
+
+    public void setPorts(@Nullable Collection<TcpPortNumber> portsRef)
+        throws ValueInUseException, ImplementationError, ValueOutOfRangeException, ExhaustedPoolException
+    {
+        setPorts(portsRef, null, null);
+    }
+
+    private void setPorts(
+        @Nullable Collection<TcpPortNumber> fixedNewPortsRef,
+        @Nullable Collection<TcpPortNumber> preferredNewPortsRef,
+        @Nullable Integer expectedPortCountRef
+    )
+        throws ValueInUseException, ImplementationError, ValueOutOfRangeException, ExhaustedPoolException
+    {
+        Set<Integer> allocatedNumbers = new HashSet<>();
+        Set<Integer> deallocatedNumbers = new HashSet<>();
+        try
+        {
+            int expPortCount;
+            if (expectedPortCountRef != null)
+            {
+                expPortCount = expectedPortCountRef;
+            }
+            else if (fixedNewPortsRef != null && !fixedNewPortsRef.isEmpty())
+            {
+                expPortCount = fixedNewPortsRef.size();
+            }
+            else
+            {
+                expPortCount = 1;
+            }
+
+            Set<TcpPortNumber> portsToDeallocate = new HashSet<>(rscPorts);
+            if (fixedNewPortsRef != null)
+            {
+                for (TcpPortNumber fixedNewPort : fixedNewPortsRef)
+                {
+                    if (rscPorts.contains(fixedNewPort))
+                    {
+                        portsToDeallocate.remove(fixedNewPort);
+                    }
+                    else
+                    {
+                        tcpPortPool.allocate(fixedNewPort.value);
+                        allocatedNumbers.add(fixedNewPort.value);
+                        rscPorts.add(fixedNewPort);
+                    }
+                }
+            }
+            for (TcpPortNumber port : portsToDeallocate)
+            {
+                rscPorts.remove(port);
+                tcpPortPool.deallocate(port.value);
+                deallocatedNumbers.add(port.value);
+            }
+
+            if (preferredNewPortsRef != null)
+            {
+                Iterator<TcpPortNumber> iterator = preferredNewPortsRef.iterator();
+                while (iterator.hasNext() && rscPorts.size() < expPortCount)
+                {
+                    TcpPortNumber prefTcpPort = iterator.next();
+                    if (tcpPortPool.tryAllocate(prefTcpPort.value))
+                    {
+                        allocatedNumbers.add(prefTcpPort.value);
+                        rscPorts.add(prefTcpPort);
+                    }
+                }
+            }
+
+            while (rscPorts.size() < expPortCount)
+            {
+                int autoAllocate = tcpPortPool.autoAllocate();
+                rscPorts.add(new TcpPortNumber(autoAllocate));
+                allocatedNumbers.add(autoAllocate);
+            }
+        }
+        catch (ValueInUseException | ImplementationError | ValueOutOfRangeException | ExhaustedPoolException exc)
+        {
+            // NumberPools are (currently) not transaction objects so we still need to undo our allocations, if any
+            for (Integer allocNr : allocatedNumbers)
+            {
+                tcpPortPool.deallocate(allocNr);
+            }
+            for (Integer deallocNr : deallocatedNumbers)
+            {
+                tcpPortPool.deallocate(deallocNr);
+            }
+            throw exc;
+        }
+    }
+
+    public int getPortCount()
+    {
+        int ret;
+        if (rsc instanceof Resource)
+        {
+            ret = rscPorts.size();
+            if (ret == 0)
+            {
+                throw new ImplementationError("resource has no ports configured! " + rsc);
+            }
+        }
+        else
+        {
+            @Nullable Integer tmp = snapPortCount.get();
+            if (tmp == null || tmp == 0)
+            {
+                throw new ImplementationError("snapshot has no portCount configured! " + rsc);
+            }
+            ret = tmp;
+        }
+        return ret;
+    }
 
     @Override
     public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
@@ -217,6 +429,14 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     public void delete(AccessContext accCtxRef) throws DatabaseException, AccessDeniedException
     {
         super.delete(accCtxRef);
+        @Nullable TransactionSet<DrbdRscData<?>, TcpPortNumber> localPorts = rscPorts;
+        if (localPorts != null)
+        {
+            for (TcpPortNumber port : localPorts)
+            {
+                tcpPortPool.deallocate(port.value);
+            }
+        }
         drbdRscDfnData.getDrbdRscDataList().remove(this);
     }
 
@@ -317,12 +537,28 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         {
             vlmPojos.add(drbdVlmData.asPojo(accCtx));
         }
+        @Nullable TreeSet<Integer> portsInt;
+        @Nullable Set<TcpPortNumber> localPorts = rscPorts;
+        if (localPorts != null)
+        {
+            portsInt = new TreeSet<>();
+            for (TcpPortNumber port : localPorts)
+            {
+                portsInt.add(port.value);
+            }
+        }
+        else
+        {
+            portsInt = null;
+        }
         return new DrbdRscPojo(
             rscLayerId,
             getChildrenPojos(accCtx),
             getResourceNameSuffix(),
             drbdRscDfnData.getApiData(accCtx),
             nodeId.get().value,
+            portsInt,
+            getPortCount(),
             peerSlots,
             alStripes,
             alStripeSize,

@@ -8,6 +8,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -103,7 +104,6 @@ public class CtrlConfApiCallHandler
 
     private final ErrorReporter errorReporter;
     private final SystemConfRepository systemConfRepository;
-    private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorNrPool;
     private final DynamicNumberPool snapShipPortPool;
     private final Provider<AccessContext> peerAccCtx;
@@ -165,11 +165,11 @@ public class CtrlConfApiCallHandler
     public CtrlConfApiCallHandler(
         ErrorReporter errorReporterRef,
         SystemConfRepository systemConfRepositoryRef,
-        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @Named(
             NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL
         ) DynamicNumberPool snapShipPortPoolRef,
+        @SystemContext AccessContext sysCtxRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerProviderRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -199,7 +199,6 @@ public class CtrlConfApiCallHandler
     {
         errorReporter = errorReporterRef;
         systemConfRepository = systemConfRepositoryRef;
-        tcpPortPool = tcpPortPoolRef;
         minorNrPool = minorNrPoolRef;
         snapShipPortPool = snapShipPortPoolRef;
         peerAccCtx = peerAccCtxRef;
@@ -884,7 +883,7 @@ public class CtrlConfApiCallHandler
                     switch (fullKey)
                     {
                         case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
-                            setTcpPort(key, namespace, normalized, tcpPortPool, apiCallRc, propChangedListener);
+                            setTcpPort(key, namespace, normalized, null, apiCallRc, propChangedListener);
                             break;
                         case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
                             setMinorNr(key, namespace, normalized, apiCallRc, propChangedListener);
@@ -1490,7 +1489,7 @@ public class CtrlConfApiCallHandler
                     switch (fullKey)
                     {
                         case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
-                            tcpPortPool.reloadRange();
+                            reloadAllNodesTcpPortPools();
                             break;
                         case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
                             minorNrPool.reloadRange();
@@ -1576,6 +1575,15 @@ public class CtrlConfApiCallHandler
             );
         }
         return new TripleNonNull<>(apiCallRc, notifyStlts, changedRscs);
+    }
+
+    private void reloadAllNodesTcpPortPools() throws AccessDeniedException
+    {
+        AccessContext peerCtx = peerAccCtx.get();
+        for (Node node : nodesMap.values())
+        {
+            node.getTcpPortPool(peerCtx).reloadRange();
+        }
     }
 
     public LinstorEncryptionStatus masterPassphraseStatus()
@@ -1951,7 +1959,7 @@ public class CtrlConfApiCallHandler
         String key,
         String namespace,
         String value,
-        DynamicNumberPool portPool,
+        @Nullable DynamicNumberPool poolToReloadRef,
         ApiCallRcImpl apiCallRc,
         PropertyChangedListener propChangedListenerRef
     )
@@ -1965,8 +1973,15 @@ public class CtrlConfApiCallHandler
                 isValidTcpPort(matcher.group("max"), apiCallRc)
             )
             {
-                String oldValue = systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
-                portPool.reloadRange();
+                @Nullable String oldValue = systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
+                if (poolToReloadRef != null)
+                {
+                    poolToReloadRef.reloadRange();
+                }
+                else
+                {
+                    reloadAllNodesTcpPortPools();
+                }
 
                 if (propChangedListenerRef != null)
                 {

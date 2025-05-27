@@ -29,6 +29,7 @@ public class AutoSelectFilterBuilder
     private @Nullable Boolean skipAlreadyPlacedOnAllNodeCheck = null;
     private @Nullable String disklessType = null;
     private @Nullable Map<ExtTools, Version> extTools = null;
+    private @Nullable Integer drbdPortCount = null;
 
     public AutoSelectFilterBuilder(AutoSelectFilterPojo pojo)
     {
@@ -49,6 +50,7 @@ public class AutoSelectFilterBuilder
         skipAlreadyPlacedOnAllNodeCheck = pojo.skipAlreadyPlacedOnAllNodeCheck();
         disklessType = pojo.getDisklessType();
         extTools = pojo.getRequiredExtTools();
+        drbdPortCount = pojo.getDrbdPortCount();
     }
 
     public AutoSelectFilterBuilder()
@@ -155,7 +157,14 @@ public class AutoSelectFilterBuilder
         return this;
     }
 
-    public AutoSelectFilterPojo build() {
+    public AutoSelectFilterBuilder setDrbdPortCount(@Nullable Integer drbdPortCountRef)
+    {
+        drbdPortCount = drbdPortCountRef;
+        return this;
+    }
+
+    public AutoSelectFilterPojo build()
+    {
         return new AutoSelectFilterPojo(
             placeCount,
             additionalPlaceCount,
@@ -173,7 +182,8 @@ public class AutoSelectFilterBuilder
             skipAlreadyPlacedOnNodeNamesCheck,
             skipAlreadyPlacedOnAllNodeCheck,
             disklessType,
-            extTools
+            extTools,
+            drbdPortCount
         );
     }
 

@@ -1,7 +1,9 @@
 package com.linbit.linstor.storage.interfaces.layers.drbd;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.types.NodeId;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -10,12 +12,17 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public interface DrbdRscObject<RSC extends AbsResource<RSC>>
     extends AbsRscLayerObject<RSC>
 {
     NodeId getNodeId();
+
+    /** Nullable for Snapshots, not for Resources */
+    @Nullable
+    Collection<TcpPortNumber> getTcpPortList();
 
     void setNodeId(NodeId nodeIdRef) throws DatabaseException;
 
