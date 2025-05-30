@@ -13,6 +13,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
 
+import javax.management.relation.Role;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -21,6 +22,8 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
+import java.security.Identity;
 import java.util.Hashtable;
 
 import org.slf4j.event.Level;
@@ -163,6 +166,7 @@ public class CtrlAuthentication<CTRL_DB_TYPE extends ControllerDatabase>
         ldapEnv.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         ldapEnv.put(Context.PROVIDER_URL, ctrlCfg.getLdapUri());
         ldapEnv.put(Context.SECURITY_AUTHENTICATION, "simple");
+        String escapedUserName = escapeLdapName(idName.displayValue);
         String ldapDN = ctrlCfg.getLdapDn().replaceAll("\\{user}", idName.displayValue);
         ldapEnv.put(Context.SECURITY_PRINCIPAL, ldapDN);
         ldapEnv.put(Context.SECURITY_CREDENTIALS, new String(password, StandardCharsets.UTF_8));
@@ -176,7 +180,7 @@ public class CtrlAuthentication<CTRL_DB_TYPE extends ControllerDatabase>
                 SearchControls searchControls = new SearchControls();
                 searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-                final String searchFilter = ctrlCfg.getLdapSearchFilter().replaceAll("\\{user}", idName.displayValue);
+                final String searchFilter = ctrlCfg.getLdapSearchFilter().replaceAll("\\{user}", escapeLdapSearchFilter(idName.displayValue));
 
                 NamingEnumeration result = ctx.search(ctrlCfg.getLdapSearchFilter(), searchFilter, searchControls);
 
@@ -196,7 +200,17 @@ public class CtrlAuthentication<CTRL_DB_TYPE extends ControllerDatabase>
                     );
                 }
 
-                result.close();
+                return signInContext;
+            }
+
+            // Helper method to escape LDAP DN values
+            private String escapeLdapName(String name) {
+                return name.replaceAll("([,+\"\\\\<>;=\\x00-\\x1f\\x7f-\\x9f])", "\\\\$1");
+            }
+            
+            // Helper method to escape LDAP search filter values  
+            private String escapeLdapSearchFilter(String filter) {
+                return filter.replaceAll("([\\\\*\\(\\)\\x00])", "\\\\$1");
             }
 
             final SignInEntryPojo signInEntry = dbDriver.getSignInEntry(ctrlDb, idName);
