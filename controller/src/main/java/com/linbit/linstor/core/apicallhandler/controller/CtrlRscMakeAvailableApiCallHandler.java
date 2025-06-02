@@ -165,7 +165,7 @@ public class CtrlRscMakeAvailableApiCallHandler
     private Flux<ApiCallRc> makeRscAvailableInTransaction(
         String nodeNameRef,
         String rscNameRef,
-        List<String> layerStackRef,
+        @Nullable List<String> layerStackRef,
         boolean diskfulRequestedRef,
         ResponseContext contextRef
     )
@@ -1019,7 +1019,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         return layerStack;
     }
 
-    private List<DeviceLayerKind> getLayerStack(List<String> layerStackStr, ResourceDefinition rscDfnRef)
+    private List<DeviceLayerKind> getLayerStack(@Nullable List<String> layerStackStr, ResourceDefinition rscDfnRef)
     {
         List<DeviceLayerKind> layerStack;
         if (layerStackStr == null || layerStackStr.isEmpty())
@@ -1042,7 +1042,7 @@ public class CtrlRscMakeAvailableApiCallHandler
             layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStr);
         }
 
-        if (layerStack == null || layerStack.isEmpty())
+        if (layerStack.isEmpty())
         {
             layerStack = Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE);
         }
