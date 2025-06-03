@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Snapshot rollback now allows and restores snapshots on nodes that don't have a local snapshot (with DRBD)
+
 ### Fixed
 
 - Fixed "access to deleted storpool" of remote storage pool after deleting local storage pool
