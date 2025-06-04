@@ -1,0 +1,24 @@
+[logging]
+  # possible logging levels are: ERROR, WARN, INFO, DEBUG, TRACE
+  # external library logging
+  level = "INFO"
+  # linstor logging
+  linstor_level = "INFO"
+
+[netcom]
+  type = "plain"
+  bind_address = "::0"
+  port = 3366
+
+  # fields for SSL secured satellite connections
+  # https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-linstor-secure-connections
+  server_certificate = ""
+  key_password = ""
+  keystore_password = ""
+  truststore_password = ""
+  trusted_certificates = ""
+  ssl_protocol = "TLSv1.2"
+
+[files]
+  # directories and files allowed to be altered by external files API
+  allowExtFiles = []

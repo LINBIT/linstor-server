@@ -75,6 +75,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/drbd.d/
 cp %{_builddir}/%{NAME_VERS}/scripts/linstor-resources.res %{buildroot}/%{_sysconfdir}/drbd.d/
 touch %{buildroot}/%{LS_PREFIX}/{.server,.satellite,.controller}
 mkdir -p %{buildroot}/%{_sysconfdir}/linstor
+cp %{_builddir}/%{NAME_VERS}/scripts/linstor_satellite-example.toml %{buildroot}/%{_sysconfdir}/linstor/
 
 ### common
 %package common
@@ -154,6 +155,7 @@ and creates drbd resource files.
 %{FIREWALLD_SERVICES}/linstor-satellite.xml
 %{FIREWALLD_SERVICES}/drbd.xml
 %config(noreplace) %{_sysconfdir}/drbd.d/linstor-resources.res
+%{_sysconfdir}/linstor/linstor_satellite-example.toml
 
 %post satellite
 %systemd_post linstor-satellite.service

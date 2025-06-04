@@ -45,7 +45,9 @@ override_dh_install:
 	# satellite
 	cp $(CURDIR)/scripts/linstor-satellite.service $(CURDIR)/debian/
 	install -d $(CURDIR)/debian/linstor-satellite/etc/drbd.d/
-	install -m644  $(CURDIR)/scripts/linstor-resources.res $(CURDIR)/debian/linstor-satellite/etc/drbd.d/
+	install -m644 $(CURDIR)/scripts/linstor-resources.res $(CURDIR)/debian/linstor-satellite/etc/drbd.d/
+	install -d $(CURDIR)/debian/linstor-satellite/etc/linstor
+	install -m644 $(CURDIR)/scripts/linstor_satellite-example.toml $(CURDIR)/debian/linstor-satellite/etc/linstor/
 	mkdir -p $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/bin
 	mkdir -p $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
 	cp $(CURDIR)/build/install/linstor-server/bin/Satellite $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/bin
@@ -56,7 +58,6 @@ override_dh_install:
 	# for some reason install/lib/*.jars are 755
 	chmod 644 $(CURDIR)/controller/build/install/controller/lib/*.jar
 	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/satellite/build/install/satellite/lib $(CURDIR)/server/libs/runtimeClasspath/ $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
-	# dh_install
 	dh_install
 
 .PHONY: override_jh_depends
