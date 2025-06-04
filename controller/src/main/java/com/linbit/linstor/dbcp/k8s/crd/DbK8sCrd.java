@@ -35,6 +35,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.inject.Provider;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
@@ -44,6 +46,7 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 
 @Singleton
 public class DbK8sCrd implements ControllerK8sCrdDatabase
@@ -338,9 +341,15 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             throw new SystemServiceStartException("Not configured for kubernetes connection!", true);
         }
 
+        final ObjectMapper customMapper = new ObjectMapper();
         k8sClient = new KubernetesClientBuilder()
             .withConfig(new ConfigBuilder().withRequestRetryBackoffLimit(ctrlCfg.getK8sRequestRetries()).build())
+            .withKubernetesSerialization(new KubernetesSerialization(customMapper, true))
             .build();
+        // farbric8 KubernetesClient library changed the default serialization behavior with version 6.13.0
+        // as we rely on the old behavior we revert this, to the old write DATE as timestamps
+        // https://github.com/fabric8io/kubernetes-client/pull/5962
+        customMapper.enable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         k8sCachingClient = new HashMap<>();
         atomicStarted.set(true);
     }

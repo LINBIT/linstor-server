@@ -9,13 +9,13 @@ apply plugin: 'jacoco'
 
 checkstyleTest.enabled = false
 
-def protobufVersion = '23.3'
+def protobufVersion = '31.1'
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
 def logbackConfig = "logback.xml"
 def jvmOpts = ["-Xms32M"]
 def jvmSatelliteOpts = ["-Xms32M", "-Xmx2G", "-XX:+CrashOnOutOfMemoryError"]
 def jvmControllerOpts = ["-Xms256M", "-Xmx8G", "-XX:+CrashOnOutOfMemoryError"]
-def cronVersion = '9.1.6'
+def cronVersion = '9.2.1'
 def javaHome = providers.gradleProperty("javaHome")
 
 // workaround to force gradle to download not just the dependencies for --offline use
@@ -65,34 +65,34 @@ project(':server') {
 
     dependencies {
         if (!gradle.startParameter.isOffline()) {
-            api group: 'com.google.inject', name: 'guice', version: '5.1.0'
-            api group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '5.1.0'
+            api group: 'com.google.inject', name: 'guice', version: '6.0.0' // upgrade to 7.0 would require switch to jakarta namespace
+            api group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '6.0.0'
 
 //            compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
-            api group: 'com.google.protobuf', name: 'protobuf-java', version: '3.' + protobufVersion
+            api group: 'com.google.protobuf', name: 'protobuf-java', version: '4.' + protobufVersion
 
             api 'io.sentry:sentry:5.6.1'
-            api 'info.picocli:picocli:4.7.4'
+            api 'info.picocli:picocli:4.7.7'
 
             // project-reactor
-            api platform('io.projectreactor:reactor-bom:2022.0.8')
+            api platform('io.projectreactor:reactor-bom:2023.0.18')
             // add dependencies without a version number
             api 'io.projectreactor:reactor-core'
 
-            compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.7'
-            api group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.8'
-            api 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
-            api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
-            api 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
+            compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
+            api group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.14'
+            api 'org.apache.httpcomponents.client5:httpclient5:5.4.4'
+            api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.18.+'
+            api 'com.fasterxml.jackson.core:jackson-databind:2.18.+'
 
-            api group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.7.0'
-            api group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
+            api group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.13.0'
+            api group: 'org.apache.commons', name: 'commons-pool2', version: '2.12.1'
             api group: 'com.h2database', name: 'h2', version: '1.4.197'
 
             // prometheus client
             api group: 'io.prometheus', name: 'simpleclient_common', version: '0.16.0'
 
-            api platform('com.amazonaws:aws-java-sdk-bom:1.12.496')
+            api platform('com.amazonaws:aws-java-sdk-bom:1.12.784') // switching to awssdk 2.x needs some more work
             api 'com.amazonaws:aws-java-sdk-s3'
             api 'com.amazonaws:aws-java-sdk-ebs'
             api 'com.amazonaws:aws-java-sdk-ec2'
@@ -100,24 +100,49 @@ project(':server') {
             api group: 'com.cronutils', name: 'cron-utils', version: cronVersion
 
             // toml parsing library
-            api group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
+            api group: 'io.hotmoka', name: 'toml4j', version: '0.7.3'
 
-            // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
+            // this needs to be moved to the controller, once we have refactored
+            // our interfaces requiring this to be here
             api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.24'
-
-            api group: 'io.fabric8', name: 'kubernetes-client', version: '6.7.2'
             constraints {
-                api('com.squareup.okhttp3:okhttp:4.10.0') {
-                    because('previous versions had a bug when validationg certificates against IPv6 addresses')
+                api('io.netty:netty-transport-native-epoll:4.1.118.Final') {
+                    because('to have the same version with newer libs')
                 }
-                api('com.squareup.okhttp3:logging-interceptor:4.10.0') {
-                    because('previous versions had a bug when validationg certificates against IPv6 addresses')
+                api('io.netty:netty-codec:4.1.118.Final') {
+                    because('to have the same version with newer libs')
+                }
+                api('io.netty:netty-codec-http:4.1.118.Final') {
+                    because('to have the same version with newer libs')
+                }
+                api('io.netty:netty-codec-http2:4.1.118.Final') {
+                    because('to have the same version with newer libs')
+                }
+                api('io.netty:netty-handler:4.1.118.Final') {
+                    because('to have the same version with newer libs')
+                }
+                runtimeOnly('io.grpc:grpc-netty:1.72.0') {
+                    because('newer protobuf version')
+                }
+                api('io.grpc:grpc-protobuf:1.72.0') {
+                    because('newer protobuf version')
+                }
+                api('io.grpc:grpc-stub:1.72.0') {
+                    because('newer protobuf version')
+                }
+                api('io.grpc:grpc-netty:1.72.0') {
+                    because('newer protobuf version')
+                }
+                api('com.google.code.gson:gson:2.11.0') {
+                    because('newer protobuf version')
                 }
             }
+
+            api group: 'io.fabric8', name: 'kubernetes-client', version: '7.3.1'
             
             api group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.8.4'
 
-            testCompileOnly group: 'junit', name: 'junit', version: '4.+'
+            testImplementation(platform('org.junit:junit-bom:5.13.0'))
         }
     }
 
@@ -228,7 +253,7 @@ project(':satellite') {
     dependencies {
         implementation project(':server'), project(':jclcrypto')
 
-        testImplementation group: 'junit', name: 'junit', version: '4.+'
+        testImplementation(platform('org.junit:junit-bom:5.13.0'))
     }
 
     sourceSets {
@@ -303,7 +328,7 @@ project(':controller').version = version
 project(':satellite').version = version
 project(':jclcrypto').version = version
 
-def jerseyVersion = '2.40'
+def jerseyVersion = '2.46'
 
 project(':controller') {
     apply plugin: 'application'
@@ -320,7 +345,7 @@ project(':controller') {
             testImplementation fileTree(dir: "libs/testImplementation")
         } else {
             // rest libs (grizzly http(s), jersey(rest))
-            implementation 'org.glassfish.grizzly:grizzly-http-server:4.0.0'
+            implementation 'org.glassfish.grizzly:grizzly-http-server:4.0.2'
             implementation 'org.glassfish.hk2:guice-bridge:2.6.1'
             implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
             implementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: jerseyVersion
@@ -330,13 +355,10 @@ project(':controller') {
             // prometheus client library
             implementation group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.16.0'
 
-            implementation group: 'javax.activation', name: 'activation', version: '1.1.1'
-            implementation group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
-
             implementation group: 'org.flywaydb', name: 'flyway-core', version: '7.15.0'
 
             runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.1.4'
-            runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.5.4'
+            runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.5.6'
         }
     }
 
@@ -488,24 +510,25 @@ dependencies {
     implementation project(':server'), project(':controller'), project(':satellite'), project(':jclcrypto')
     testImplementation project(':server'), project(':controller'), project(':satellite'), project(':jclcrypto')
 
-    testImplementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.' + protobufVersion
+    testImplementation group: 'com.google.protobuf', name: 'protobuf-java', version: '4.' + protobufVersion
 
     def powerMockVersion = '2.0.9'
-    testImplementation group: 'junit', name: 'junit', version: '4.+'
+    testImplementation(platform('org.junit:junit-bom:5.13.0'))
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
     testImplementation group: 'org.mockito', name: 'mockito-inline', version: '2.28.2'
+    // TODO get rid of unsupported powermock
     testImplementation group: 'org.powermock', name: 'powermock-core', version: powerMockVersion
     testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: powerMockVersion
     testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: powerMockVersion
 
-    testCompileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
-    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.18.+'
+    testCompileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
+    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.27.+'
     testImplementation group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
 
     testImplementation group: 'com.cronutils', name: 'cron-utils', version: cronVersion
 
-    testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '5.0.1'
-    testImplementation group: 'io.projectreactor', name: 'reactor-test', version: '3.3.12.RELEASE'
+    testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '6.0.0'
+    testImplementation group: 'io.projectreactor', name: 'reactor-test', version: '3.6.+'
 }
 
 /////////////////////////// Start scripts ///////////////////////////

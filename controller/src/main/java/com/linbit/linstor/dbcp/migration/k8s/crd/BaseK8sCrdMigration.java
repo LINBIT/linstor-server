@@ -87,8 +87,6 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
     protected void updateCrdSchemaForAllTables()
         throws DatabaseException
     {
-        ensureRollbackCrdApplied();
-
         Function<DatabaseTable, String> dbTableToYamlLocation = toCtx.schemaCtx.getGetYamlLocations();
 
         HashSet<DatabaseTable> tablesToUpdate = new HashSet<>(
@@ -247,6 +245,8 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             fromCtx.txMgrContext
         );
         K8sCrdTransaction txFrom = txMgrFrom.getTransaction();
+
+        ensureRollbackCrdApplied();
 
         try
         {
