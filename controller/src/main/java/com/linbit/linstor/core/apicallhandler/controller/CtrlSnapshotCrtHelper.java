@@ -376,7 +376,7 @@ public class CtrlSnapshotCrtHelper
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.FAIL_NOT_CONNECTED,
-                    "No diskful connected satellite for snapshot."
+                    "No diskful connected satellite for snapshot or no resources."
                 )
                 .setDetails("Snapshots need at least one diskful online satellite.")
                 .build()

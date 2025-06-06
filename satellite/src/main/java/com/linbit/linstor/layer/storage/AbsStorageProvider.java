@@ -1142,7 +1142,7 @@ public abstract class AbsStorageProvider<
     {
         try
         {
-            final SnapshotName snapName = new SnapshotName(snapNameStrRef, true);
+            final SnapshotName snapName = new SnapshotName(snapNameStrRef);
             final StorageRscData<Resource> rscData = vlmDataRef.getRscLayerObject();
             final Resource rsc = rscData.getAbsResource();
             final @Nullable SnapshotDefinition snapDfn = rsc.getResourceDefinition()
