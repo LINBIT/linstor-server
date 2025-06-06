@@ -71,7 +71,7 @@ public class ChangedData implements ApiCallReactive
                 atomicUpdateHolder.putSnap(
                     UUID.fromString(protoSnap.getUuid()),
                     new ResourceName(protoSnap.getRscName()),
-                    new SnapshotName(protoSnap.getSnapName(), true)
+                    new SnapshotName(protoSnap.getSnapName())
                 );
             }
         }

@@ -178,7 +178,7 @@ public class StltSnapshotApiCallHandler
         throws AccessDeniedException, DivergentUuidsException, InvalidNameException, ValueOutOfRangeException,
             DatabaseException
     {
-        SnapshotName snapName = new SnapshotName(snapshotDfnApi.getSnapshotName(), true);
+        SnapshotName snapName = new SnapshotName(snapshotDfnApi.getSnapshotName());
 
         SnapshotDefinition snapDfn = rscDfn.getSnapshotDfn(apiCtx, snapName);
         if (snapDfn == null)
@@ -316,7 +316,7 @@ public class StltSnapshotApiCallHandler
         try
         {
             ResourceName rscName = new ResourceName(rscNameStr);
-            SnapshotName snapshotName = new SnapshotName(snapshotNameStr, true);
+            SnapshotName snapshotName = new SnapshotName(snapshotNameStr);
 
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
             if (rscDfn != null)

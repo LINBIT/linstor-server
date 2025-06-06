@@ -2,7 +2,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
@@ -59,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
@@ -87,19 +87,7 @@ import reactor.util.function.Tuple2;
 @Singleton
 public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnectionListener
 {
-    private static final SnapshotName SAFETY_SNAP_NAME;
-
-    static
-    {
-        try
-        {
-            SAFETY_SNAP_NAME = new SnapshotName(".safety-snap", true);
-        }
-        catch (InvalidNameException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
+    private static final String SAFETY_SNAP_PREFIX = "safety-snap-";
 
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
@@ -181,9 +169,22 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             }
         }
 
-        return anyNodeRollbackPending ?
-            Collections.singletonList(updateForRollback(rscDfn.getName())) :
-            Collections.emptyList();
+        List<Flux<ApiCallRc>> fluxes = new ArrayList<>();
+        if (anyNodeRollbackPending)
+        {
+            fluxes.add(updateForRollback(rscDfn.getName()));
+        }
+
+        for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(apiCtx))
+        {
+            if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SAFETY_SNAPSHOT)
+                && snapshotDfn.getFlags().isUnset(apiCtx, SnapshotDefinition.Flags.DELETE))
+            {
+                fluxes.add(recoverFailedRollback(rscDfn, snapshotDfn));
+            }
+        }
+
+        return fluxes;
     }
 
     public Flux<ApiCallRc> rollbackSnapshot(String rscNameStr, String snapshotNameStr)
@@ -222,30 +223,82 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         Map<NodeName, Boolean> rscNodes = currentRscNodeDisks(rscDfn);
 
         ApiCallRcImpl responses = new ApiCallRcImpl();
-        SnapshotDefinition safetySnapDfn = ctrlSnapCrtHelper.createSnapshots(
+        try
+        {
+            SnapshotDefinition safetySnapDfn = ctrlSnapCrtHelper.createSnapshots(
+                Collections.emptyList(),
+                rscName,
+                new SnapshotName(SAFETY_SNAP_PREFIX + UUID.randomUUID()),
+                responses
+            );
+            safetySnapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SAFETY_SNAPSHOT);
+            ctrlTransactionHelper.commit();
+            return ctrlSnapshotCrtHandler.postCreateSnapshot(safetySnapDfn, false)
+                .concatWith(Flux.<ApiCallRc>just(responses))
+                .concatWith(
+                    deleteRscs(rscDfn.getName())
+                        .onErrorResume(
+                            exc -> rollbackToSafetySnap(snapshotDfn, false).concatWith(Flux.error(exc))
+                        )
+                )
+                .concatWith(
+                    restoreSnap(rscName, snapName)
+                        .onErrorResume(
+                            exc -> rollbackToSafetySnap(snapshotDfn, true).concatWith(Flux.error(exc))
+                        )
+                )
+                .concatWith(deleteSafetySnap(null, rscDfn))
+                .concatWith(recreateResources(rscNameStr, rscNodes))
+                .onErrorResume(exc -> deleteSafetySnap(exc, rscDfn));
+        }
+        catch (AccessDeniedException accDenyExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDenyExc,
+                "unable to access snapshots for " + getRscDfnDescriptionInline(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private Flux<ApiCallRc> recoverFailedRollback(ResourceDefinition rscDfn, SnapshotDefinition snapshotDfn)
+    {
+        ResponseContext context = makeSnapshotContext(
+            ApiOperation.makeModifyOperation(),
             Collections.emptyList(),
-            rscName,
-            SAFETY_SNAP_NAME,
-            responses
+            rscDfn.getName().displayValue,
+            snapshotDfn.getName().displayValue
         );
-        ctrlTransactionHelper.commit();
-        return ctrlSnapshotCrtHandler.postCreateSnapshot(safetySnapDfn, false)
-            .concatWith(Flux.<ApiCallRc>just(responses))
-            .concatWith(
-                deleteRscs(rscDfn.getName())
-                    .onErrorResume(
-                    exc -> rollbackToSafetySnap(snapshotDfn, false).concatWith(Flux.error(exc))
-                )
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "prepare rollback",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> recoverFailedRollbackInTransaction(rscDfn, snapshotDfn)
             )
-            .concatWith(
-                restoreSnap(rscName, snapName)
-                    .onErrorResume(
-                    exc -> rollbackToSafetySnap(snapshotDfn, true).concatWith(Flux.error(exc))
-                )
-            )
-            .concatWith(deleteSafetySnap(null, rscNameStr))
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> recoverFailedRollbackInTransaction(
+        ResourceDefinition rscDfn, SnapshotDefinition snapshotDfn)
+    {
+        String rscNameStr = rscDfn.getName().displayValue;
+        Map<NodeName, Boolean> rscNodes = currentRscNodeDisks(rscDfn);
+        return rollbackToSafetySnap(snapshotDfn, true)
+            .concatWith(deleteSafetySnap(null, rscDfn))
             .concatWith(recreateResources(rscNameStr, rscNodes))
-            .onErrorResume(exc -> deleteSafetySnap(exc, rscNameStr));
+            .onErrorResume(exc -> deleteSafetySnap(exc, rscDfn));
     }
 
     private void ensureNoScheduleActive(String rscNameStr)
@@ -297,8 +350,34 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
+    private @Nullable SnapshotDefinition findSafetySnapDfn(ResourceDefinition rscDfn)
+    {
+        @Nullable SnapshotDefinition snapDfnRet = null;
+        try
+        {
+            for (var snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
+            {
+                if (snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SAFETY_SNAPSHOT))
+                {
+                    snapDfnRet = snapDfn;
+                    break;
+                }
+            }
+        }
+        catch (AccessDeniedException accDenyExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDenyExc,
+                "unable to access snapshots for " + getRscDfnDescriptionInline(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+
+        return snapDfnRet;
+    }
+
     /**
-     * Performs a rollback to {@link #SAFETY_SNAP_NAME}.
+     * Performs a rollback to safety-snapshot for this resource definition.
      *
      * @param snapDfn The target snapshot definition that should have been rolled back to (*not* the SAFETY_SNAP!)
      * @param restoreStarted Indicates whether or not the restore to the given target snapDfn was already attempted.
@@ -317,16 +396,25 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
         ResourceName rscName = rscDfn.getName();
         Flux<ApiCallRc> flux;
+
+        @Nullable SnapshotDefinition safetySnapDfn = findSafetySnapDfn(rscDfn);
+
+        if (safetySnapDfn == null)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN,
+                "Couldn't find safety-snapshot for resource: " + rscName));
+        }
+
         if (restoreStarted)
         {
             flux = deleteRscs(rscDfn.getName())
-                .concatWith(restoreSnap(rscName, SAFETY_SNAP_NAME));
+                .concatWith(restoreSnap(rscName, safetySnapDfn.getName()));
         }
         else
         {
             List<String> nodeNamesNoRsc = new ArrayList<>();
             boolean updateRscDfn = false;
-            SnapshotDefinition safetySnapDfn = rscDfn.getSnapshotDfn(apiCtx, SAFETY_SNAP_NAME);
             for (Snapshot snap : safetySnapDfn.getAllSnapshots(peerAccCtx.get()))
             {
                 NodeName nodeName = snap.getNodeName();
@@ -348,7 +436,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             Flux<ApiCallRc> restoreSafetySnapFlux = ctrlSnapRstApiCallHandler.restoreSnapshot(
                 nodeNamesNoRsc,
                 rscName,
-                SAFETY_SNAP_NAME,
+                safetySnapDfn.getName(),
                 rscName,
                 Collections.emptyMap()
             );
@@ -395,16 +483,21 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         return ret;
     }
 
-    private Flux<ApiCallRc> deleteSafetySnap(@Nullable Throwable excRef, String rscNameStr)
+    private Flux<ApiCallRc> deleteSafetySnap(@Nullable Throwable excRef, ResourceDefinition rscDfn)
     {
-        Flux<ApiCallRc> ret = ctrlSnapDelHandler.deleteSnapshot(
-            LinstorParsingUtils.asRscName(rscNameStr),
-            SAFETY_SNAP_NAME,
-            null
-        );
-        if (excRef != null)
+        Flux<ApiCallRc> ret = Flux.empty();
+        @Nullable SnapshotDefinition safetySnapDfn = findSafetySnapDfn(rscDfn);
+        if (safetySnapDfn != null)
         {
-            ret = ret.concatWith(Flux.error(excRef));
+            ret = ctrlSnapDelHandler.deleteSnapshot(
+                rscDfn.getName(),
+                safetySnapDfn.getName(),
+                null
+            );
+            if (excRef != null)
+            {
+                ret = ret.concatWith(Flux.error(excRef));
+            }
         }
         return ret;
     }
