@@ -150,13 +150,6 @@ public class CtrlFullSyncResponseApiCallHandler
 
         try
         {
-            Iterator<Resource> localRscIter = localNode.iterateResources(apiCtx);
-            while (localRscIter.hasNext())
-            {
-                Resource localRsc = localRscIter.next();
-                fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc, responseCtxRef));
-            }
-
             Pair<Set<SnapshotDefinition>, Set<RemoteName>> objsToDel = backupInfoMgr.removeAllRestoreEntries(
                 apiCtx,
                 localNode
@@ -178,6 +171,14 @@ public class CtrlFullSyncResponseApiCallHandler
             ctrlTransactionHelper.commit();
 
             satellitePeer.setConnectionStatus(ApiConsts.ConnectionStatus.ONLINE);
+
+            Iterator<Resource> localRscIter = localNode.iterateResources(apiCtx);
+            while (localRscIter.hasNext())
+            {
+                Resource localRsc = localRscIter.next();
+                fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc, responseCtxRef));
+            }
+
             satellitePeer.fullSyncApplied();
         }
         catch (DatabaseException dbExc)
