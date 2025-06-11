@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.31.2] - 2025-06-11
+
 ### Changed
 
 - Snapshot rollback now allows and restores snapshots on nodes that don't have a local snapshot (with DRBD)
