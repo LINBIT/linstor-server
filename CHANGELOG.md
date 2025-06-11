@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed AutoplaceTarget property being ignored on controller level
 - Fixed AutoplaceTarget property that controller has higher priority than node
 - Fixed rare deadlock during shutdown
+- Fixed toggle-disk for cache, writecache, bcache, luks and nvme resources
 
 ## [1.31.1] - 2025-05-21
 

@@ -148,8 +148,10 @@ public class NvmeLayer implements DeviceLayer
 
             // disconnect
             if (
-                nvmeRscData.exists() &&
-                    (rscFlags.isSet(sysCtx, Resource.Flags.DELETE) || rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE))
+                nvmeRscData.exists() && rscFlags.isSomeSet(sysCtx, Resource.Flags.DELETE,
+                    Resource.Flags.DISK_REMOVING,
+                    Resource.Flags.INACTIVE
+                )
             )
             {
                 // disconnect
@@ -157,8 +159,12 @@ public class NvmeLayer implements DeviceLayer
             }
             // connect
             else if (!nvmeRscData.exists() &&
-                !rscFlags.isSet(sysCtx, Resource.Flags.DELETE) &&
-                !rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE)
+                !rscFlags.isSomeSet(
+                    sysCtx,
+                    Resource.Flags.DELETE,
+                    Resource.Flags.DISK_REMOVING,
+                    Resource.Flags.INACTIVE
+                )
             )
             {
                 // connect
@@ -213,7 +219,12 @@ public class NvmeLayer implements DeviceLayer
 
             nvmeRscData.setExists(nvmeUtils.isTargetConfigured(nvmeRscData));
 
-            if (rscFlags.isSet(sysCtx, Resource.Flags.DELETE) || rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE))
+            if (rscFlags.isSomeSet(
+                sysCtx,
+                Resource.Flags.DELETE,
+                Resource.Flags.DISK_REMOVING,
+                Resource.Flags.INACTIVE
+            ))
             {
                 if (nvmeRscData.exists())
                 {
@@ -322,7 +333,13 @@ public class NvmeLayer implements DeviceLayer
         throws AccessDeniedException
     {
         NvmeRscData<Resource> nvmeRscData = (NvmeRscData<Resource>) layerDataRef;
-        if (nvmeRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+        if (nvmeRscData.getAbsResource()
+            .getStateFlags()
+            .isSomeSet(
+                sysCtx,
+                Resource.Flags.DELETE,
+                Resource.Flags.DISK_REMOVING
+            ))
         {
             resourceProcessorProvider.get().sendResourceDeletedEvent(nvmeRscData);
         }

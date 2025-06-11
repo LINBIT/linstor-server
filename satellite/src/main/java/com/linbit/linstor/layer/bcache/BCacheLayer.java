@@ -173,7 +173,11 @@ public class BCacheLayer implements DeviceLayer
         BCacheRscData<Resource> rscData = (BCacheRscData<Resource>) rscLayerDataRef;
         StateFlags<Flags> rscFlags = rscData.getAbsResource().getStateFlags();
 
-        boolean deleteFlagSet = rscFlags.isSomeSet(storDriverAccCtx, Resource.Flags.DELETE);
+        boolean deleteFlagSet = rscFlags.isSomeSet(
+            storDriverAccCtx,
+            Resource.Flags.DELETE,
+            Resource.Flags.DISK_REMOVING
+        );
         boolean inactiveFlagSet = rscFlags.isSomeSet(storDriverAccCtx, Resource.Flags.INACTIVE);
         boolean forceCreateMetaData = rscFlags.isSet(storDriverAccCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT) ||
             rscData.getAbsResource().getResourceDefinition().getFlags()

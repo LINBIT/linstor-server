@@ -185,7 +185,8 @@ public class CacheLayer implements DeviceLayer
         boolean shouldRscExist = rscFlags.isUnset(
             storDriverAccCtx,
             Resource.Flags.DELETE,
-            Resource.Flags.INACTIVE
+            Resource.Flags.INACTIVE,
+            Resource.Flags.DISK_REMOVING
         );
         for (CacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
