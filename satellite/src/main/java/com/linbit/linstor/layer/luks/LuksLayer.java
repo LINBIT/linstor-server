@@ -183,7 +183,7 @@ public class LuksLayer implements DeviceLayer
     {
         LuksRscData<Resource> luksRscData = (LuksRscData<Resource>) rscData;
         StateFlags<Flags> flags = luksRscData.getAbsResource().getStateFlags();
-        boolean deleteRsc = flags.isSet(sysCtx, Resource.Flags.DELETE);
+        boolean deleteRsc = flags.isSomeSet(sysCtx, Resource.Flags.DELETE, Resource.Flags.DISK_REMOVING);
         boolean deactivateRsc = flags.isSet(sysCtx, Resource.Flags.INACTIVE);
 
         boolean failedMissingDecryptedPassphrase = false;

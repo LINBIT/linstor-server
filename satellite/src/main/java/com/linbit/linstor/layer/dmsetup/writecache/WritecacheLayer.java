@@ -219,7 +219,8 @@ public class WritecacheLayer implements DeviceLayer
         boolean shouldRscExist = rscFlags.isUnset(
             storDriverAccCtx,
             Resource.Flags.DELETE,
-            Resource.Flags.INACTIVE
+            Resource.Flags.INACTIVE,
+            Resource.Flags.DISK_REMOVING
         );
         for (WritecacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
