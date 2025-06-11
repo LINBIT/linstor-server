@@ -10,8 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Snapshot rollback now allows and restores snapshots on nodes that don't have a local snapshot (with DRBD)
 - LVM-Thin snapshots are set to read-only now
+
+## [1.31.2] - 2025-06-11
+
+### Changed
+
+- Snapshot rollback now allows and restores snapshots on nodes that don't have a local snapshot (with DRBD)
 
 ### Fixed
 
@@ -20,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed AutoplaceTarget property that controller has higher priority than node
 - Fixed rare deadlock during shutdown
 - Fixed toggle-disk for cache, writecache, bcache, luks and nvme resources
-- Fixed order of resourcdDefinitionConnected listener notifiers
+- Fixed order of resourceDefinitionConnected listener notifiers
 - Fixed restore/deletion of the safety-snap-* if a snapshot rollback was canceled too early
 
 ## [1.31.1] - 2025-05-21

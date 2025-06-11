@@ -1,3 +1,19 @@
+linstor-server (1.31.2-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * ApplyDelStorPool: Do not prematurely delete StorPoolDfn
+  * AutoplaceTarget: Fixed bugs
+  * AppLifeCycleMgr: Fixed deadlock during shutdown
+  * Toggle-Disk: Properly remove device for non DRBD layers
+
+  [ Rene Peinthor ]
+  * snap/rollback: allow rollback if no local snapshot
+  * Add an example satellite toml configuration file
+  * fullsync-notifier: Fix order of resourcdDefinitionConnected listener n [...]
+  * snapshot/rollback: fix .safety-snap cleanup if rollback interrupted
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 11 Jun 2025 11:50:44 +0000
+
 linstor-server (1.31.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
