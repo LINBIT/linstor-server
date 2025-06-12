@@ -9,7 +9,7 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.CriticalError;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
@@ -141,7 +141,7 @@ public class StltSnapshotApiCallHandler
     }
 
     private ResourceDefinition mergeResourceDefinition(ResourceDefinitionApi rscDfnApi)
-        throws InvalidNameException, DivergentUuidsException, AccessDeniedException, DatabaseException
+        throws InvalidNameException, AccessDeniedException, DatabaseException
     {
         ResourceName rscName = new ResourceName(rscDfnApi.getResourceName());
 
@@ -175,7 +175,7 @@ public class StltSnapshotApiCallHandler
         SnapshotDefinitionApi snapshotDfnApi,
         ResourceDefinition rscDfn
     )
-        throws AccessDeniedException, DivergentUuidsException, InvalidNameException, ValueOutOfRangeException,
+        throws AccessDeniedException, InvalidNameException, ValueOutOfRangeException,
             DatabaseException
     {
         SnapshotName snapName = new SnapshotName(snapshotDfnApi.getSnapshotName());
@@ -249,7 +249,7 @@ public class StltSnapshotApiCallHandler
     }
 
     private void mergeSnapshot(SnapshotPojo snapshotRaw, SnapshotDefinition snapshotDfn)
-        throws DivergentUuidsException, AccessDeniedException, ValueOutOfRangeException, InvalidNameException,
+        throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException,
             DatabaseException
     {
         Node localNode = controllerPeerConnector.getLocalNode();
@@ -289,7 +289,7 @@ public class StltSnapshotApiCallHandler
     }
 
     private void mergeSnapVlm(SnapshotVolumeApi snapVlmApi, Snapshot snap)
-        throws ValueOutOfRangeException, DivergentUuidsException, InvalidNameException, AccessDeniedException
+        throws ValueOutOfRangeException, AccessDeniedException
     {
         VolumeNumber vlmNr = new VolumeNumber(snapVlmApi.getSnapshotVlmNr());
         SnapshotVolume snapVlm = snap.getVolume(vlmNr);
@@ -400,7 +400,6 @@ public class StltSnapshotApiCallHandler
     }
 
     private void checkUuid(ResourceDefinition rscDfn, ResourceDefinitionApi rscDfnApi)
-        throws DivergentUuidsException
     {
         checkUuid(
             rscDfn.getUuid(),
@@ -412,7 +411,6 @@ public class StltSnapshotApiCallHandler
     }
 
     private void checkUuid(SnapshotDefinition snapshotDfn, SnapshotDefinitionApi snapshotDfnApi)
-        throws DivergentUuidsException
     {
         checkUuid(
             snapshotDfn.getUuid(),
@@ -424,7 +422,6 @@ public class StltSnapshotApiCallHandler
     }
 
     private void checkUuid(Snapshot snapshot, SnapshotPojo snapshotRaw)
-        throws DivergentUuidsException
     {
         checkUuid(
             snapshot.getUuid(),
@@ -436,7 +433,6 @@ public class StltSnapshotApiCallHandler
     }
 
     private void checkUuid(SnapshotVolume snapshotVolume, SnapshotVolumeApi snapshotVlmApi)
-        throws DivergentUuidsException
     {
         checkUuid(
             snapshotVolume.getUuid(),
@@ -448,11 +444,10 @@ public class StltSnapshotApiCallHandler
     }
 
     private void checkUuid(UUID localUuid, UUID remoteUuid, String type, String localName, String remoteName)
-        throws DivergentUuidsException
     {
         if (!localUuid.equals(remoteUuid))
         {
-            throw new DivergentUuidsException(
+            CriticalError.dieUuidMissmatch(errorReporter,
                 type,
                 localName,
                 remoteName,

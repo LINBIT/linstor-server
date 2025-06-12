@@ -5,27 +5,22 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
-import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.core.CriticalError;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.core.DivergentDataException;
-import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
-import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.identifier.SharedStorPoolName;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.core.objects.NetInterfaceFactory;
@@ -38,8 +33,6 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceSatelliteFactory;
-import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
@@ -55,11 +48,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
-import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
-import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -426,13 +415,13 @@ class StltRscApiCallHandler
 
                 if (localRsc == null)
                 {
-                    throw new DivergentUuidsException(
+                    CriticalError.die(
+                        errorReporter,
                         String.format(
                             "The local resource with the UUID '%s' was not found in the stored " +
                                 "resource definition '%s'.",
-                            rscRawData.getLocalRscUuid().toString(),
-                            rscName
-                        )
+                            rscRawData.getUuid().toString(),
+                            rscName)
                     );
                 }
 
@@ -488,7 +477,8 @@ class StltRscApiCallHandler
                                 removed.getNode().getName().displayValue)
                             )
                             {
-                                throw new DivergentDataException(
+                                CriticalError.die(
+                                    errorReporter,
                                     "The resource with UUID '%s' was deployed on node '%s' but is now " +
                                         "on node '%s' (this should have cause a delete and re-deploy of that resource)."
                                 );
@@ -497,7 +487,7 @@ class StltRscApiCallHandler
                                 removed.getNode().getUuid())
                             )
                             {
-                                throw new DivergentUuidsException(
+                                CriticalError.dieUuidMissmatch(errorReporter,
                                     "Node",
                                     removed.getNode().getName().displayValue,
                                     otherRsc.getNodeName(),
@@ -724,7 +714,7 @@ class StltRscApiCallHandler
         boolean remoteRsc,
         RscLayerDataApi rscLayerDataApi
     )
-        throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException,
+        throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException,
             DatabaseException
     {
         Resource rsc = resourceFactory.getInstanceSatellite(
@@ -760,7 +750,7 @@ class StltRscApiCallHandler
         Resource rsc,
         boolean remoteRsc
     )
-        throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException,
+        throws AccessDeniedException, InvalidNameException, ValueOutOfRangeException,
         DatabaseException
     {
         VolumeDefinition vlmDfn = rsc.getResourceDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
@@ -779,7 +769,7 @@ class StltRscApiCallHandler
     }
 
     private void mergeVlm(Volume vlm, VolumeApi vlmApi, boolean remoteRsc)
-        throws DivergentDataException, AccessDeniedException, DatabaseException, InvalidNameException
+        throws AccessDeniedException, DatabaseException, InvalidNameException
     {
         if (!remoteRsc)
         {
@@ -798,94 +788,7 @@ class StltRscApiCallHandler
         vlm.getFlags().resetFlagsTo(apiCtx, Volume.Flags.restoreFlags(vlmApi.getFlags()));
     }
 
-    private void restoreStorPools(Volume vlmRef, VolumeApi vlmApiRef, boolean remoteRscRef)
-        throws AccessDeniedException, InvalidNameException, DivergentDataException, DatabaseException
-    {
-        VolumeNumber vlmNr = vlmRef.getVolumeDefinition().getVolumeNumber();
-        Resource rsc = vlmRef.getAbsResource();
-        Node node = rsc.getNode();
-        NodeName nodeName = node.getName();
-
-        Map<String, VlmProviderObject<Resource>> storVlmObjMap = LayerRscUtils.getRscDataByLayer(
-            rsc.getLayerData(apiCtx),
-            DeviceLayerKind.STORAGE
-        ).stream().collect(Collectors.toMap(
-            rscObj -> rscObj.getResourceNameSuffix(),
-            rscObj -> rscObj.getVlmProviderObject(vlmNr)
-        ));
-
-        for (Pair<String, VlmLayerDataApi> pair : vlmApiRef.getVlmLayerData())
-        {
-            VlmLayerDataApi vlmApi = pair.objB;
-            StorPoolApi storPoolApi = vlmApi.getStorPoolApi();
-            if (!storPoolApi.getNodeName().equalsIgnoreCase(nodeName.displayValue))
-            {
-                throw new DivergentDataException("VlmLayerData from volume " + vlmRef + " contains a reference to " +
-                    "a storage pool of a different satellite (" + vlmApi.getStorPoolApi().getNodeName() + ")");
-            }
-
-            StorPoolName storPoolName = new StorPoolName(vlmApi.getStorPoolApi().getStorPoolName());
-            StorPool storPool = node.getStorPool(apiCtx, storPoolName);
-            if (storPool == null)
-            {
-                if (remoteRscRef)
-                {
-                    StorPoolDefinition storPoolDfn =
-                        storPoolDfnMap.get(new StorPoolName(storPoolApi.getStorPoolName()));
-                    if (storPoolDfn == null)
-                    {
-                        storPoolDfn = storPoolDefinitionFactory.getInstance(
-                            apiCtx,
-                            storPoolApi.getStorPoolDfnUuid(),
-                            new StorPoolName(storPoolApi.getStorPoolName())
-                        );
-                        storPoolDfn.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolDfnProps());
-                        storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
-                    }
-                    storPool = storPoolFactory.getInstanceSatellite(
-                        apiCtx,
-                        storPoolApi.getStorPoolUuid(),
-                        rsc.getNode(),
-                        storPoolDfn,
-                        storPoolApi.getDeviceProviderKind(),
-                        freeSpaceMgrFactory.getInstance(
-                            SharedStorPoolName.restoreName(storPoolApi.getFreeSpaceManagerName())
-                        ),
-                        storPoolApi.isExternalLocking()
-                    );
-                    storPool.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolProps());
-
-                }
-                else
-                {
-                    throw new DivergentDataException("Unknown StorPool: '" + storPoolApi.getStorPoolName() + "'");
-                }
-            }
-            if (!remoteRscRef && !storPool.getUuid().equals(storPoolApi.getStorPoolUuid()))
-            {
-                throw new DivergentUuidsException(
-                    "StorPool",
-                    storPool.toString(),
-                    storPoolApi.getStorPoolName(),
-                    storPool.getUuid(),
-                    storPoolApi.getStorPoolUuid()
-                );
-            }
-
-            storVlmObjMap.get(pair.objA).setStorPool(apiCtx, storPool);
-
-            Props storPoolProps = storPool.getProps(apiCtx);
-            storPoolProps.map().putAll(storPoolApi.getStorPoolProps());
-            storPoolProps.keySet().retainAll(storPoolApi.getStorPoolProps().keySet());
-
-
-
-
-        }
-    }
-
     private void checkUuid(Node node, OtherRscPojo otherRsc)
-        throws DivergentUuidsException
     {
         checkUuid(
             node.getUuid(),
@@ -897,7 +800,6 @@ class StltRscApiCallHandler
     }
 
     private void checkUuid(ResourceDefinition rscDfn, RscPojo rscRawData)
-        throws DivergentUuidsException
     {
         checkUuid(
             rscDfn.getUuid(),
@@ -908,30 +810,11 @@ class StltRscApiCallHandler
         );
     }
 
-    private void checkUuid(Resource rsc, OtherRscPojo otherRsc, String otherRscName)
-        throws DivergentUuidsException
-    {
-        checkUuid(
-            rsc.getUuid(),
-            otherRsc.getRscUuid(),
-            "Resource",
-            String.format("Node: '%s', Rsc: '%s'",
-                rsc.getNode().getName().displayValue,
-                rsc.getResourceDefinition().getName().displayValue
-            ),
-            String.format("Node: '%s', Rsc: '%s'",
-                otherRsc.getNodeName(),
-                otherRscName
-            )
-        );
-    }
-
     private void checkUuid(
         VolumeDefinition vlmDfn,
         VolumeDefinitionApi vlmDfnRaw,
         String remoteRscName
     )
-        throws DivergentUuidsException
     {
         checkUuid(
             vlmDfn.getUuid(),
@@ -950,7 +833,6 @@ class StltRscApiCallHandler
         Volume vlm,
         VolumeApi vlmRaw
     )
-        throws DivergentUuidsException
     {
         checkUuid(
             vlm.getUuid(),
@@ -966,11 +848,11 @@ class StltRscApiCallHandler
     }
 
     private void checkUuid(UUID localUuid, UUID remoteUuid, String type, String localName, String remoteName)
-        throws DivergentUuidsException
     {
         if (!localUuid.equals(remoteUuid))
         {
-            throw new DivergentUuidsException(
+            CriticalError.dieUuidMissmatch(
+                errorReporter,
                 type,
                 localName,
                 remoteName,

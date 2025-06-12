@@ -9,7 +9,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.CriticalError;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
@@ -320,7 +320,7 @@ public class StltNodeApiCallHandler
         return deleted;
     }
 
-    private void checkUuid(Node node, NodePojo nodePojo) throws DivergentUuidsException
+    private void checkUuid(Node node, NodePojo nodePojo)
     {
         checkUuid(
             node.getUuid(),
@@ -332,11 +332,11 @@ public class StltNodeApiCallHandler
     }
 
     private void checkUuid(UUID localUuid, UUID remoteUuid, String type, String localName, String remoteName)
-        throws DivergentUuidsException
     {
         if (!localUuid.equals(remoteUuid))
         {
-            throw new DivergentUuidsException(
+            CriticalError.dieUuidMissmatch(
+                errorReporter,
                 type,
                 localName,
                 remoteName,
