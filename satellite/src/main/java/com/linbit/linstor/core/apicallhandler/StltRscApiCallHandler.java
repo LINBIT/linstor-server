@@ -12,8 +12,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.core.DivergentDataException;
-import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.CriticalError;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
@@ -414,13 +413,13 @@ class StltRscApiCallHandler
 
                 if (localRsc == null)
                 {
-                    throw new DivergentUuidsException(
+                    CriticalError.die(
+                        errorReporter,
                         String.format(
                             "The local resource with the UUID '%s' was not found in the stored " +
                                 "resource definition '%s'.",
                             rscRawData.getUuid().toString(),
-                            rscName
-                        )
+                            rscName)
                     );
                 }
 
@@ -476,7 +475,8 @@ class StltRscApiCallHandler
                                 removed.getNode().getName().displayValue)
                             )
                             {
-                                throw new DivergentDataException(
+                                CriticalError.die(
+                                    errorReporter,
                                     "The resource with UUID '%s' was deployed on node '%s' but is now " +
                                         "on node '%s' (this should have cause a delete and re-deploy of that resource)."
                                 );
@@ -485,7 +485,7 @@ class StltRscApiCallHandler
                                 removed.getNode().getUuid())
                             )
                             {
-                                throw new DivergentUuidsException(
+                                CriticalError.dieUuidMissmatch(errorReporter,
                                     "Node",
                                     removed.getNode().getName().displayValue,
                                     otherRsc.getNodeName(),
@@ -710,7 +710,7 @@ class StltRscApiCallHandler
         boolean remoteRsc,
         RscLayerDataApi rscLayerDataApi
     )
-        throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException,
+        throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException,
             DatabaseException
     {
         Resource rsc = resourceFactory.getInstanceSatellite(
@@ -746,7 +746,7 @@ class StltRscApiCallHandler
         Resource rsc,
         boolean remoteRsc
     )
-        throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException,
+        throws AccessDeniedException, InvalidNameException, ValueOutOfRangeException,
         DatabaseException
     {
         VolumeDefinition vlmDfn = rsc.getResourceDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
@@ -765,7 +765,7 @@ class StltRscApiCallHandler
     }
 
     private void mergeVlm(Volume vlm, VolumeApi vlmApi, boolean remoteRsc)
-        throws DivergentDataException, AccessDeniedException, DatabaseException, InvalidNameException
+        throws AccessDeniedException, DatabaseException, InvalidNameException
     {
         if (!remoteRsc)
         {
@@ -785,7 +785,6 @@ class StltRscApiCallHandler
     }
 
     private void checkUuid(Node node, OtherRscPojo otherRsc)
-        throws DivergentUuidsException
     {
         checkUuid(
             node.getUuid(),
@@ -797,7 +796,6 @@ class StltRscApiCallHandler
     }
 
     private void checkUuid(ResourceDefinition rscDfn, RscPojo rscRawData)
-        throws DivergentUuidsException
     {
         checkUuid(
             rscDfn.getUuid(),
@@ -813,7 +811,6 @@ class StltRscApiCallHandler
         VolumeDefinitionApi vlmDfnRaw,
         String remoteRscName
     )
-        throws DivergentUuidsException
     {
         checkUuid(
             vlmDfn.getUuid(),
@@ -832,7 +829,6 @@ class StltRscApiCallHandler
         Volume vlm,
         VolumeApi vlmRaw
     )
-        throws DivergentUuidsException
     {
         checkUuid(
             vlm.getUuid(),
@@ -848,11 +844,11 @@ class StltRscApiCallHandler
     }
 
     private void checkUuid(UUID localUuid, UUID remoteUuid, String type, String localName, String remoteName)
-        throws DivergentUuidsException
     {
         if (!localUuid.equals(remoteUuid))
         {
-            throw new DivergentUuidsException(
+            CriticalError.dieUuidMissmatch(
+                errorReporter,
                 type,
                 localName,
                 remoteName,

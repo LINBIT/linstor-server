@@ -15,7 +15,7 @@ import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.CriticalError;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -368,7 +368,7 @@ class StltStorPoolApiCallHandler
     }
 
     private void checkUuid(StorPool storPool, StorPoolPojo storPoolRaw)
-        throws DivergentUuidsException, AccessDeniedException
+        throws AccessDeniedException
     {
         checkUuid(
             storPool.getUuid(),
@@ -380,7 +380,6 @@ class StltStorPoolApiCallHandler
     }
 
     private void checkUuid(StorPoolDefinition storPoolDfn, StorPoolPojo storPoolRaw)
-        throws DivergentUuidsException
     {
         checkUuid(
             storPoolDfn.getUuid(),
@@ -392,11 +391,11 @@ class StltStorPoolApiCallHandler
     }
 
     private void checkUuid(UUID localUuid, UUID remoteUuid, String type, String localName, String remoteName)
-        throws DivergentUuidsException
     {
         if (!localUuid.equals(remoteUuid))
         {
-            throw new DivergentUuidsException(
+            CriticalError.dieUuidMissmatch(
+                errorReporter,
                 type,
                 localName,
                 remoteName,
