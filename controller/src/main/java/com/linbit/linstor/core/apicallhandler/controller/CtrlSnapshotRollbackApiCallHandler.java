@@ -2,6 +2,8 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.drbd.md.MaxSizeException;
+import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
@@ -19,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -27,15 +30,19 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.tasks.ScheduleBackupService;
+import com.linbit.linstor.utils.PropsUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -108,6 +115,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private final CtrlSnapshotRestoreApiCallHandler ctrlSnapRstApiCallHandler;
     private final CtrlSnapshotCrtHelper ctrlSnapCrtHelper;
     private final CtrlRscMakeAvailableApiCallHandler ctrlRscMakeAvailableApiCallHandler;
+    private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
 
     @Inject
     public CtrlSnapshotRollbackApiCallHandler(
@@ -129,7 +137,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         ScheduleBackupService scheduleServiceRef,
         CtrlSnapshotRestoreApiCallHandler ctrlSnapRstApiCallHandlerRef,
         CtrlSnapshotCrtHelper ctrlSnapCrtHelperRef,
-        CtrlRscMakeAvailableApiCallHandler ctrlRscMakeAvailableApiCallHandlerRef
+        CtrlRscMakeAvailableApiCallHandler ctrlRscMakeAvailableApiCallHandlerRef,
+        CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -151,6 +160,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         ctrlSnapRstApiCallHandler = ctrlSnapRstApiCallHandlerRef;
         ctrlSnapCrtHelper = ctrlSnapCrtHelperRef;
         ctrlRscMakeAvailableApiCallHandler = ctrlRscMakeAvailableApiCallHandlerRef;
+        ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
     }
 
     @Override
@@ -242,7 +252,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                         )
                 )
                 .concatWith(
-                    restoreSnap(rscName, snapName)
+                    restoreSnap(rscDfn, snapshotDfn)
                         .onErrorResume(
                             exc -> rollbackToSafetySnap(snapshotDfn, true).concatWith(Flux.error(exc))
                         )
@@ -320,15 +330,123 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         return ctrlRscDfnTruncateApiCallHandler.truncateRscDfnInTransaction(rscName, false);
     }
 
-    private Flux<ApiCallRc> restoreSnap(ResourceName rscNameStr, SnapshotName snapNameStr)
+    /**
+     * Start transactional scope for {@link #resetVlmDfnsInTransaction(ResourceDefinition, SnapshotDefinition)}
+     *
+     * @param targetRscDfn
+     * @param srcSnapDfn
+     *
+     * @return
+     */
+    private Flux<ApiCallRc> resetVlmDfns(ResourceDefinition targetRscDfn, SnapshotDefinition srcSnapDfn)
     {
-        return ctrlSnapRstApiCallHandler.restoreSnapshot(
-            Collections.emptyList(),
-            rscNameStr,
-            snapNameStr,
-            rscNameStr,
-            Collections.emptyMap()
-        );
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "prepare rollback - reset vlmDfns",
+                lockGuardFactory.create()
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> resetVlmDfnsInTransaction(targetRscDfn, srcSnapDfn)
+            );
+    }
+
+    /**
+     * Ensure the volume definitions are in the same state they were in when the snapshot was made.
+     * This includes deleting vlmDfns that were created after that snapshot, and recreating vlmDfns that had since been
+     * deleted, as well as ensuring the sizes and properties of all vlmDfns are those from the snapshot.
+     *
+     * @param targetRscDfn
+     * @param srcSnapDfn
+     *
+     * @return
+     *
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     * @throws ImplementationError
+     */
+    private Flux<ApiCallRc> resetVlmDfnsInTransaction(ResourceDefinition targetRscDfn, SnapshotDefinition srcSnapDfn)
+        throws AccessDeniedException, DatabaseException, ImplementationError
+    {
+        // since vlmNrs can be chosen arbitrarily by the user, first remove any vlmDfns that did not exist when the
+        // snapshot was created
+        Iterator<VolumeDefinition> rscVlmDfnIterator = targetRscDfn.iterateVolumeDfn(peerAccCtx.get());
+        ArrayList<VolumeDefinition> vlmDfnsToDelete = new ArrayList<>();
+        while (rscVlmDfnIterator.hasNext())
+        {
+            VolumeDefinition rscVlmDfn = rscVlmDfnIterator.next();
+            if (srcSnapDfn.getSnapshotVolumeDefinition(peerAccCtx.get(), rscVlmDfn.getVolumeNumber()) == null)
+            {
+                vlmDfnsToDelete.add(rscVlmDfn);
+            }
+        }
+        for (VolumeDefinition vlmDfnToDelete : vlmDfnsToDelete)
+        {
+            vlmDfnToDelete.delete(peerAccCtx.get());
+        }
+        // now create any vlmDfns that have been deleted since the snap was made, and modify all props and sizes of
+        // still existing vlmDfns
+        for (SnapshotVolumeDefinition snapVlmDfn : srcSnapDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
+        {
+            @Nullable VolumeDefinition targetVlmDfn = targetRscDfn.getVolumeDfn(
+                peerAccCtx.get(),
+                snapVlmDfn.getVolumeNumber()
+            );
+            long snapVlmSize = snapVlmDfn.getVolumeSize(peerAccCtx.get());
+            if (targetVlmDfn == null)
+            {
+                targetVlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
+                    peerAccCtx.get(),
+                    targetRscDfn,
+                    snapVlmDfn.getVolumeNumber(),
+                    null,
+                    snapVlmSize,
+                    VolumeDefinition.Flags.restoreFlags(0)
+                );
+            }
+            else
+            {
+                try
+                {
+                    targetVlmDfn.setVolumeSize(peerAccCtx.get(), snapVlmSize);
+                }
+                catch (MinSizeException | MaxSizeException exc)
+                {
+                    throw new ImplementationError("Invalid size during snapshot rollback", exc);
+                }
+            }
+            ReadOnlyProps vlmDfnProps = snapVlmDfn.getVlmDfnProps(peerAccCtx.get());
+            PropsUtils.resetProps(vlmDfnProps.map(), targetVlmDfn.getProps(peerAccCtx.get()));
+        }
+        ctrlTransactionHelper.commit();
+        return ctrlSatelliteUpdateCaller.updateSatellites(
+            targetRscDfn,
+            nodeName -> Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))),
+            Flux.empty()
+        )
+            .transform(
+                updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
+                    updateResponses,
+                    targetRscDfn.getName(),
+                    "Rsc {1} on {0} updated"
+                )
+            );
+    }
+
+    private Flux<ApiCallRc> restoreSnap(ResourceDefinition rscDfn, SnapshotDefinition snapDfn)
+    {
+        ResourceName rscName = rscDfn.getName();
+        // ensure the vlmDfns are in the state that they were when the snapshot was made
+        return resetVlmDfns(rscDfn, snapDfn)
+            .concatWith(
+                ctrlSnapRstApiCallHandler.restoreSnapshotForRollback(
+                    Collections.emptyList(),
+                    rscName,
+                    snapDfn.getName(),
+                    rscName,
+                    Collections.emptyMap()
+                )
+            );
     }
 
     private Flux<ApiCallRc> rollbackToSafetySnap(SnapshotDefinition snapDfn, boolean restoreStarted)
@@ -409,7 +527,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         if (restoreStarted)
         {
             flux = deleteRscs(rscDfn.getName())
-                .concatWith(restoreSnap(rscName, safetySnapDfn.getName()));
+                .concatWith(restoreSnap(rscDfn, safetySnapDfn));
         }
         else
         {
@@ -484,6 +602,18 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     }
 
     private Flux<ApiCallRc> deleteSafetySnap(@Nullable Throwable excRef, ResourceDefinition rscDfn)
+    {
+        return scopeRunner
+            .fluxInTransactionlessScope(
+                "delete safety-snap",
+                lockGuardFactory.create()
+                    .read(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> deleteSafetySnapInScope(excRef, rscDfn)
+            );
+    }
+
+    private Flux<ApiCallRc> deleteSafetySnapInScope(@Nullable Throwable excRef, ResourceDefinition rscDfn)
     {
         Flux<ApiCallRc> ret = Flux.empty();
         @Nullable SnapshotDefinition safetySnapDfn = findSafetySnapDfn(rscDfn);

@@ -184,6 +184,33 @@ public class CtrlSnapshotRestoreApiCallHandler
                 fromSnapshotName,
                 toRscName,
                 false,
+                true,
+                renameStorPoolMap
+            )
+        );
+    }
+
+    public Flux<ApiCallRc> restoreSnapshotForRollback(
+        List<String> nodeNameStrs,
+        ResourceName fromRscName,
+        SnapshotName fromSnapshotName,
+        ResourceName toRscName,
+        Map<String, String> renameStorPoolMap
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Restore Snapshot Resource for Rollback",
+            lockGuardFactory.createDeferred()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .build(),
+            () -> restoreResourceInTransaction(
+                nodeNameStrs,
+                fromRscName,
+                fromSnapshotName,
+                toRscName,
+                false,
+                false,
                 renameStorPoolMap
             )
         );
@@ -208,6 +235,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 fromSnapshotName,
                 toRscName,
                 true,
+                false,
                 Collections.emptyMap() // rename-storpool already happened during download
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -219,6 +247,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         SnapshotName fromSnapshotName,
         ResourceName toRscName,
         boolean fromBackup,
+        boolean fromApi,
         Map<String, String> renameStorPoolMap
     )
     {
@@ -359,28 +388,35 @@ public class CtrlSnapshotRestoreApiCallHandler
                 .build()
             );
 
+            final Flux<ApiCallRc> cleanupFlux = cleanupPropertiesFlux;
+
+            return Flux.<ApiCallRc>just(responses)
+                .concatWith(deploymentResponses)
+                .concatWith(autoFlux)
+                .concatWith(cleanupFlux)
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> cleanupFlux)
+                .onErrorResume(
+                    EventStreamTimeoutException.class,
+                    ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context))
+                        .concatWith(cleanupFlux)
+                )
+                .onErrorResume(
+                    EventStreamClosedException.class,
+                    ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context))
+                        .concatWith(cleanupFlux)
+                );
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-            autoFlux = Flux.empty();
+            if (fromApi)
+            {
+                return Flux.just(responseConverter.reportException(peer.get(), context, exc));
+            }
+            else
+            {
+                return Flux.error(exc);
+            }
         }
-
-        final Flux<ApiCallRc> cleanupFlux = cleanupPropertiesFlux;
-
-        return Flux.<ApiCallRc>just(responses)
-            .concatWith(deploymentResponses)
-            .concatWith(autoFlux)
-            .concatWith(cleanupFlux)
-            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> cleanupFlux)
-            .onErrorResume(EventStreamTimeoutException.class,
-                ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context))
-                    .concatWith(cleanupFlux)
-            )
-            .onErrorResume(EventStreamClosedException.class,
-                ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context))
-                    .concatWith(cleanupFlux)
-            );
     }
 
     private boolean isFlagSet(SnapshotDefinition snapDfn, SnapshotDefinition.Flags... flags)

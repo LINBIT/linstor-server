@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API: do not store error reports if user-named node/storage-pool/rg/... was not found
 - API: do not store error reports for invalid cron expressions
 
+### Fixed
+
+- Fixed error-handling of snapshot-rollback to correctly restore the safety-snap if an error occurs
+- Fixed snapshot-rollback ignoring changes to the volume definitions that also need to be reversed
+
 ## [1.31.2] - 2025-06-11
 
 ### Changed
