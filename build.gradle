@@ -1,5 +1,20 @@
 import org.gradle.process.internal.ExecException
 
+// workaround to force gradle to download not just the dependencies for --offline use
+// but also the plugins
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        if (gradle.startParameter.isOffline()) {
+            classpath fileTree(dir: "$projectDir/libs/plugins")
+        }
+    }
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
@@ -18,25 +33,11 @@ def jvmControllerOpts = ["-Xms256M", "-Xmx8G", "-XX:+CrashOnOutOfMemoryError"]
 def cronVersion = '9.2.1'
 def javaHome = providers.gradleProperty("javaHome")
 
-// workaround to force gradle to download not just the dependencies for --offline use
-// but also the plugins
-buildscript {
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        if (gradle.startParameter.isOffline()) {
-            classpath fileTree(dir: "$projectDir/libs/plugins")
-        }
-    }
-}
+group 'com.linbit'
 
 subprojects {
     apply plugin: 'java'
     apply plugin: 'checkstyle'
-    group 'com.linbit'
 
     compileJava {
         options.release = 11
