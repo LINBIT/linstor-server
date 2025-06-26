@@ -408,6 +408,14 @@ public class DeviceHandlerImpl implements DeviceHandler
                     if (rscFlags.isSet(wrkCtx, Resource.Flags.DELETE))
                     {
                         rscListNotifyDelete.add(rsc);
+                        Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
+                        while (iterateVolumes.hasNext())
+                        {
+                            Volume vlm = iterateVolumes.next();
+                            // verify if all VlmProviderObject were deleted correctly
+                            ensureAllVlmDataDeleted(rscLayerObject, vlm.getVolumeDefinition().getVolumeNumber());
+                            vlmListNotifyDelete.add(vlm);
+                        }
                         notificationListener.notifyResourceDeleted(rsc);
                         // rsc.delete is done by the deviceManager
                     }

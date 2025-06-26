@@ -30,6 +30,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -649,6 +650,11 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         try
         {
             rsc.markDeleted(apiCtx);
+            Iterator<Volume> vlmIter = rsc.iterateVolumes();
+            while (vlmIter.hasNext())
+            {
+                vlmIter.next().markDeleted(apiCtx);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
