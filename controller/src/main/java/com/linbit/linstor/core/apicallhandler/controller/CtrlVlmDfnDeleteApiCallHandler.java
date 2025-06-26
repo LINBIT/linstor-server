@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.NotConnectedHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -17,11 +18,13 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -43,9 +46,11 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import reactor.core.publisher.Flux;
@@ -180,10 +185,18 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         // mark volumes to delete or check if all a 'CLEAN'
         Iterator<Volume> itVolumes = getVolumeIteratorPrivileged(vlmDfn);
+        Set<SnapshotDefinition> handleZfsRenameIfNeeded = new HashSet<>();
         while (itVolumes.hasNext())
         {
             Volume vlm = itVolumes.next();
             markDeleted(vlm);
+
+            handleZfsRenameIfNeeded.addAll(
+                CtrlRscDeleteApiCallHandler.handleZfsRenameIfNeeded(
+                    apiCtx,
+                    vlm.getAbsResource()
+                )
+            );
         }
 
         markDeleted(vlmDfn);
@@ -198,7 +211,26 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             .build()
         );
 
-        Flux<ApiCallRc> updateResponses = updateSatellites(rscName, vlmNr);
+        Flux<ApiCallRc> updateResponses = Flux.empty();
+        NotConnectedHandler notConnectedHandler = nodeName -> Flux.error(
+            new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))
+        );
+        // TODO re really need an atomic updater...
+        for (SnapshotDefinition snapDfnToUpdate : handleZfsRenameIfNeeded)
+        {
+            updateResponses = updateResponses.concatWith(
+                ctrlSatelliteUpdateCaller.updateSatellites(snapDfnToUpdate, notConnectedHandler)
+                    .transform(
+                        updateResponse -> CtrlResponseUtils.combineResponses(
+                            errorReporter,
+                            updateResponse,
+                            rscName,
+                            "SnapshotDefinition {1} on {0} updated"
+                        )
+                    )
+            );
+        }
+        updateResponses = updateResponses.concatWith(updateSatellites(rscName, vlmNr));
 
         return Flux
             .just(responses)
