@@ -44,7 +44,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -383,7 +382,6 @@ public abstract class AbsRscLayerHelper<
 
             AbsRscLayerHelper<?, ?, ?, ?> layerHelperByKind = layerDataHelperProvider.get()
                 .getLayerHelperByKind(rscDataRef.getLayerKind());
-            Set<LayerIgnoreReason> ignoreReasonPreSet = rscDataRef.getIgnoreReasons();
 
             boolean setIgnoreReasonForCurrent = setIgnoreReasonForRscDataPredicateRef.test(rscDataRef);
             if (setIgnoreReasonForCurrent)
@@ -399,25 +397,22 @@ public abstract class AbsRscLayerHelper<
                 visitedRef
             );
 
-            Set<LayerIgnoreReason> currentIgnoreReason = rscDataRef.getIgnoreReasons();
 
-            // we only need to process our children if the ignore reason has changed.
-            // however, since we are able to skip changing the ignore reason for some rscData, we also have to
-            // process our children in those cases.
-            boolean hasOwnIgnoreReasonChanged = !Objects.equals(ignoreReasonPreSet, currentIgnoreReason);
-            if (!setIgnoreReasonForCurrent || hasOwnIgnoreReasonChanged)
+            // In theory, we only need to process our children if the ignore reason has changed. However, since usually
+            // only 2 or 3, maybe 4 layers are stacked, the time save of skipping the children is not really worth it,
+            // especially since it can lead to errors in special cases (e.g. re-creating a subset of the layer tree
+            // during toggle disk)
+
+            // if goDown was set to false, our children (if any) were added to visited set so we will
+            // come back here soon
+            for (AbsRscLayerObject<Resource> childRscData : rscDataRef.getChildren())
             {
-                // if goDown was set to false, our children (if any) were added to visited set so we will
-                // come back here soon
-                for (AbsRscLayerObject<Resource> childRscData : rscDataRef.getChildren())
-                {
-                    changed |= addIgnoreReasonRec(
-                        childRscData,
-                        ignoreReasonRef,
-                        setIgnoreReasonForRscDataPredicateRef,
-                        visitedRef
-                    );
-                }
+                changed |= addIgnoreReasonRec(
+                    childRscData,
+                    ignoreReasonRef,
+                    setIgnoreReasonForRscDataPredicateRef,
+                    visitedRef
+                );
             }
         }
         return changed;

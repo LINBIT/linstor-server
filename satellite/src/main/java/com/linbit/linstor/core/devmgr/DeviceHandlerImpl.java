@@ -702,7 +702,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         throws ImplementationError
     {
         VlmProviderObject<Resource> vlmData = rscLayerObjectRef.getVlmProviderObject(volumeNumberRef);
-        if (vlmData.exists())
+        if (!vlmData.getRscLayerObject().hasAnyPreventExecutionWhenDeletingReason() && vlmData.exists())
         {
             throw new ImplementationError("Layer '" + rscLayerObjectRef.getLayerKind() + " did not delete the volume " +
                 volumeNumberRef + " of resource " + rscLayerObjectRef.getSuffixedResourceName() + " properly");
@@ -1428,6 +1428,10 @@ public class DeviceHandlerImpl implements DeviceHandler
                     "Suppressing exception due to ignore reasons. Exception message: %s",
                     exc.getMessage()
                 );
+                for (VlmProviderObject<RSC> vlmData : rscLayerData.getVlmLayerObjects().values())
+                {
+                    vlmData.setExists(false);
+                }
             }
         }
         /*
