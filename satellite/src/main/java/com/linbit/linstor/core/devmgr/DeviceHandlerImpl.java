@@ -334,9 +334,9 @@ public class DeviceHandlerImpl implements DeviceHandler
     {
         boolean prepareSuccess = true;
 
-        Set<DeviceLayer> layerSet = SetUtils.mergeIntoHashSet(rscByLayer.keySet(), snapByLayer.keySet());
+        TreeSet<DeviceLayer> layerTreeSet = SetUtils.mergeIntoTreeSet(rscByLayer.keySet(), snapByLayer.keySet());
 
-        for (DeviceLayer layer : layerSet)
+        for (DeviceLayer layer : layerTreeSet)
         {
             Set<AbsRscLayerObject<Resource>> rscSet = rscByLayer.get(layer);
             Set<AbsRscLayerObject<Snapshot>> snapSet = snapByLayer.get(layer);

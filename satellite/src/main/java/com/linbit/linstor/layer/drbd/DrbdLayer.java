@@ -59,6 +59,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
@@ -112,6 +113,12 @@ public class DrbdLayer implements DeviceLayer
 
     @Nullable private static String drbdSetupStatusOutput;
 
+    /**
+     * This is a list of resource names (lowercase) that needs to be adjusted, in the devmanager run
+     * If null, adjust all resources as before this command was available
+     */
+    @Nullable private static List<String> adjustResourcesList;
+
     @Inject
     public DrbdLayer(
         @DeviceManagerContext AccessContext workerCtxRef,
@@ -163,6 +170,25 @@ public class DrbdLayer implements DeviceLayer
         {
             drbdSetupStatusOutput = drbdUtils.drbdSetupStatus();
         }
+
+        List<String> notGeneratedResFiles = regenerateAllResFile(rscDataList);
+
+        if (drbdVersion.getUtilsVsn().greaterOrEqual(new ExtToolsInfo.Version(9, 32, 0)))
+        {
+            try
+            {
+                adjustResourcesList = drbdUtils.listAdjustable();
+                if (adjustResourcesList != null)
+                {
+                    adjustResourcesList.addAll(notGeneratedResFiles);
+                }
+            }
+            catch (ExtCmdFailedException extCmdExc)
+            {
+                adjustResourcesList = null;
+                errorReporter.reportError(extCmdExc);
+            }
+        }
     }
 
     @Override
@@ -201,6 +227,7 @@ public class DrbdLayer implements DeviceLayer
     public void clearCache()
     {
         drbdSetupStatusOutput = null;
+        adjustResourcesList = null;
     }
 
     @Override
@@ -527,7 +554,10 @@ public class DrbdLayer implements DeviceLayer
                     }
                 }
 
-                boolean resFileUpdated = regenerateResFile(drbdRscData);
+                // The .res file might not have been generated in the prepare method since it was
+                // missing information from the child-layers. Now that we have processed them, we
+                // need to make sure the .res file exists in all circumstances.
+                regenerateResFile(drbdRscData);
 
                 // createMetaData needs rendered resFile
                 for (DrbdVlmData<Resource> drbdVlmData : createMetaData)
@@ -703,10 +733,7 @@ public class DrbdLayer implements DeviceLayer
                     }
                     catch (ExtCmdFailedException extCmdExc)
                     {
-                        if (resFileUpdated)
-                        {
-                            restoreBackupResFile(drbdRscData);
-                        }
+                        restoreBackupResFile(drbdRscData);
                         throw extCmdExc;
                     }
 
@@ -899,7 +926,9 @@ public class DrbdLayer implements DeviceLayer
 
     private void updateRequiresAdjust(DrbdRscData<?> drbdRscData)
     {
-        drbdRscData.setAdjustRequired(true); // TODO: could be improved :)
+        drbdRscData.setAdjustRequired(
+            adjustResourcesList == null || adjustResourcesList.contains(
+                drbdRscData.getResourceName().displayValue.toLowerCase()));
     }
 
     private List<DrbdVlmData<Resource>> detachVolumesIfNecessary(DrbdRscData<Resource> drbdRscData)
@@ -1473,6 +1502,34 @@ public class DrbdLayer implements DeviceLayer
     private String readResFile(Path resFilePath) throws IOException
     {
         return Files.readString(resFilePath);
+    }
+
+    private List<String> regenerateAllResFile(Set<AbsRscLayerObject<Resource>> rscDataList)
+    {
+        List<String> notGeneratedList = new ArrayList<>();
+        for (AbsRscLayerObject<Resource> rscLayerObject : rscDataList)
+        {
+            DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>)rscLayerObject;
+            try
+            {
+                if (drbdRscData.isResFileReady(workerCtx) &&
+                    !drbdRscData.getAbsResource().getStateFlags().isSomeSet(
+                        workerCtx, Flags.DRBD_DELETE, Flags.DELETE, Flags.INACTIVE))
+                {
+                    regenerateResFile(drbdRscData);
+                }
+                else
+                {
+                    notGeneratedList.add(drbdRscData.getResourceName().displayValue.toLowerCase());
+                }
+            }
+            catch (AccessDeniedException|StorageException exc)
+            {
+                errorReporter.reportError(exc);
+                notGeneratedList.add(drbdRscData.getResourceName().displayValue.toLowerCase());
+            }
+        }
+        return notGeneratedList;
     }
 
     /**

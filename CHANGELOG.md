@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LVM-Thin snapshots are set to read-only now
 - Cache drbdsetup status output for the device manager run
 - DevMgr: Do not conf-test the new resource file, but instead restore the backup on failure
+- Ask drbdadm for resources that need to be adjusted instead of adjusting everything all the time
 
 ### Fixed
 

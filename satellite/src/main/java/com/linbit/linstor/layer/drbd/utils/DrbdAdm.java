@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Singleton
 public class DrbdAdm
@@ -604,6 +605,39 @@ public class DrbdAdm
         // Using -c disables /etc/drbd.d/global_common.conf
         // execute(DRBDADM_UTIL, "-c", tmpResPathStr, "-d", "up", resourceName.value);
         // execute(DRBDADM_UTIL, "-d", "up", resourceName.value);
+    }
+
+    /**
+     * Calls drbdadm sh-list-adjustable all and returns a lower case list of resources that need to be adjusted.
+     * On error exit code != 0, null will be returned
+     * @return lower case resource list, except on exit code !=0 null will be returned
+     * @throws ExtCmdFailedException if timeout or io exception
+     */
+    public @Nullable List<String> listAdjustable() throws ExtCmdFailedException
+    {
+        @Nullable List<String> ret = null;
+        // it isn't worth only specifying our interested resources, as drbdadm will read all files anyway.
+        String[] cmd = new String[]{ DRBDADM_UTIL, "sh-list-adjustable", "all" };
+        ExtCmd utilsCmd = extCmdFactory.create();
+        try
+        {
+            OutputData outputData = utilsCmd.exec(cmd);
+            if (outputData.exitCode == 0)
+            {
+                String output = new String(outputData.stdoutData);
+                var resLines = output.split("\n");
+                ret = Arrays.stream(resLines).map(String::toLowerCase).collect(Collectors.toList());
+            }
+        }
+        catch (ChildProcessTimeoutException exc)
+        {
+            throw new ExtCmdFailedException(cmd, exc);
+        }
+        catch (IOException ioExc)
+        {
+            throw new ExtCmdFailedException(cmd, ioExc);
+        }
+        return ret;
     }
 
 

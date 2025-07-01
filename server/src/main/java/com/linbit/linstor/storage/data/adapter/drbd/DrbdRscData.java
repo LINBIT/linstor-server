@@ -382,4 +382,22 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
 
         return ret;
     }
+
+    public boolean isResFileReady(AccessContext accCtx) throws AccessDeniedException
+    {
+        boolean isReady = true;
+        if (!isDiskless(accCtx))
+        {
+            for (DrbdVlmData<RSC> vlmData : this.getVlmLayerObjects().values())
+            {
+                if (vlmData.getDataDevice() == null ||
+                    vlmData.isUsingExternalMetaData() && vlmData.getMetaDiskPath() == null)
+                {
+                    isReady = false;
+                    break;
+                }
+            }
+        }
+        return isReady;
+    }
 }
