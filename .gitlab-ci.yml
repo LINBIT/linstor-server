@@ -155,7 +155,8 @@ check-openapi:
     name: jamescooke/openapi-validator:0.51.3
     entrypoint: [""] # force empty entrypoint to workaround a gitlab issue
   rules:
-    - changes:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+      changes:
         - docs/rest_v1_openapi.yaml
         - docs/.spectral.yaml
         - docs/.validaterc
