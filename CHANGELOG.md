@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - UUID mismatch will now trigger a System.exit(70) as the best way to recover is to restart the satellite
+- API: do not store error reports if user-named node/storage-pool/rg/... was not found
 
 ## [1.31.2] - 2025-06-11
 

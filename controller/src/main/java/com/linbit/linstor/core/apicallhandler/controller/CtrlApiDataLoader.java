@@ -146,6 +146,7 @@ public class CtrlApiDataLoader
                     )
                     .setCause("The specified node '" + fqdnName.displayValue + "' could not be found in the database")
                     .setCorrection("Create a node with the name '" + fqdnName.displayValue + "' first.")
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }
@@ -192,6 +193,7 @@ public class CtrlApiDataLoader
                     .setCause("The specified resource definition '" + rscName.displayValue +
                         "' could not be found in the database")
                     .setCorrection("Create a resource definition with the name '" + rscName.displayValue + "' first.")
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }
@@ -234,6 +236,7 @@ public class CtrlApiDataLoader
                     .setCause("The specified volume definition '" + rscName +
                         "' with volume number '" + vlmNr + "' could not be found in the database")
                     .setCorrection("Create a volume definition with the name '" + rscName + "' first.")
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }
@@ -296,6 +299,7 @@ public class CtrlApiDataLoader
                         "be found in the database")
                     .setCorrection("Create a resource with the name '" + rscName + "' on node '" + nodeName +
                         "' first.")
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }
@@ -379,6 +383,7 @@ public class CtrlApiDataLoader
                         "Snapshot '" + snapshotName.displayValue +
                             "' of resource '" + rscDfn.getName().displayValue + "' not found."
                     )
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }
@@ -471,6 +476,7 @@ public class CtrlApiDataLoader
                     .setCause("The specified storage pool definition '" + storPoolName.displayValue +
                         "' could not be found in the database")
                     .setCorrection("Create a storage pool definition '" + storPoolName.displayValue + "' first.")
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }
@@ -540,6 +546,7 @@ public class CtrlApiDataLoader
                             "Create a storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
                                 node.getName().displayValue + "' first."
                         )
+                        .setSkipErrorReport(true)
                         .build()
                 );
             }
@@ -582,6 +589,7 @@ public class CtrlApiDataLoader
                         "' could not be found in the database"
                     )
                     .setCorrection("Create a keyValueStore with the name '" + kvsName.displayValue + "' first.")
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }
@@ -713,6 +721,7 @@ public class CtrlApiDataLoader
                         "' with volume number '" + vlmNr + "' could not be found in the database")
                     .setCorrection("Create a volume group with the name '" +
                         rscGrpNameRef.displayValue + "' and volume number '" + vlmNr + "' first.")
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }
@@ -757,6 +766,7 @@ public class CtrlApiDataLoader
                         "The specified external file '" + extFileName.extFileName +
                         "' could not be found in the database")
                     .setCorrection("Create an external file with the name '" + extFileName.extFileName + "' first.")
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }
@@ -803,6 +813,7 @@ public class CtrlApiDataLoader
                                 "' could not be found in the database"
                         )
                         .setCorrection("Create a remote with the name '" + remoteName.displayValue + "' first.")
+                        .setSkipErrorReport(true)
                         .build()
                 );
             }
@@ -849,6 +860,7 @@ public class CtrlApiDataLoader
                                 "' could not be found in the database"
                         )
                         .setCorrection("Create a schedule with the name '" + scheduleName.displayValue + "' first.")
+                        .setSkipErrorReport(true)
                         .build()
                 );
             }
