@@ -17,71 +17,19 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.utils.ShellUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class MkfsUtils
 {
-    public static List<String> shellSplit(CharSequence string)
-    {
-        List<String> tokens = new ArrayList<>();
-        boolean escaping = false;
-        char quoteChar = ' ';
-        boolean quoting = false;
-        StringBuilder current = new StringBuilder();
-        for (int index = 0; index < string.length(); index++)
-        {
-            char chr = string.charAt(index);
-            if (escaping)
-            {
-                current.append(chr);
-                escaping = false;
-            }
-            else
-            if (chr == '\\' && !(quoting && quoteChar == '\''))
-            {
-                escaping = true;
-            }
-            else
-            if (quoting && chr == quoteChar)
-            {
-                quoting = false;
-            }
-            else
-            if (!quoting && (chr == '\'' || chr == '"'))
-            {
-                quoting = true;
-                quoteChar = chr;
-            }
-            else
-            if (!quoting && Character.isWhitespace(chr))
-            {
-                if (current.length() > 0)
-                {
-                    tokens.add(current.toString());
-                    current = new StringBuilder();
-                }
-            }
-            else
-            {
-                current.append(chr);
-            }
-        }
-        if (current.length() > 0)
-        {
-            tokens.add(current.toString());
-        }
-        return tokens;
-    }
-
     private static ExtCmd.OutputData makeFs(
         ExtCmd extCmd,
         String fileSystem,
@@ -91,7 +39,7 @@ public class MkfsUtils
     {
         final String cmdString = "mkfs." + fileSystem + " -q " + additionalParams + " " + devicePath;
 
-        List<String> cmdList = shellSplit(cmdString);
+        List<String> cmdList = ShellUtils.shellSplit(cmdString);
 
         return Commands.genericExecutor(extCmd,
             cmdList.toArray(new String[cmdList.size()]),

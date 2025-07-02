@@ -18,9 +18,9 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.utils.Either;
 import com.linbit.utils.PairNonNull;
-import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
+import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -726,7 +726,7 @@ public class StltExtToolsChecker
                         null,
                         null,
                         Arrays.asList(
-                            "Failed to parse version of installed '" + StringUtils.joinShellQuote(cmd) + "'",
+                            "Failed to parse version of installed '" + ShellUtils.joinShellQuote(cmd) + "'",
                             "Standard out: '" + pair.objA.trim() + "'",
                             "Standard err: '" + pair.objB.trim() + "'"
                         )
@@ -782,7 +782,7 @@ public class StltExtToolsChecker
             {
                 ret = Either.right(
                     Arrays.asList(
-                        "'" + StringUtils.joinShellQuote(cmds) + "' returned with exit code " + out.exitCode
+                        "'" + ShellUtils.joinShellQuote(cmds) + "' returned with exit code " + out.exitCode
                     )
                 );
             }
@@ -791,7 +791,7 @@ public class StltExtToolsChecker
         {
             ret = Either.right(
                 Arrays.asList(
-                    "IO exception occured when running '" + StringUtils.joinShellQuote(cmds) + "': " +
+                    "IO exception occured when running '" + ShellUtils.joinShellQuote(cmds) + "': " +
                         ioExc.getMessage()
                 )
             );
@@ -801,7 +801,7 @@ public class StltExtToolsChecker
         {
             ret = Either.right(
                 Arrays.asList(
-                    "'" + StringUtils.joinShellQuote(cmds) + "' timed out."
+                    "'" + ShellUtils.joinShellQuote(cmds) + "' timed out."
                 )
             );
             errorReporter.reportError(timeoutExc);

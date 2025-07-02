@@ -50,7 +50,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.utils.ExosMappingManager;
-import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.utils.Align;
 import com.linbit.utils.Triple;
 
@@ -74,6 +73,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.base.Objects;
+import com.linbit.utils.ShellUtils;
 
 @Deprecated(forRemoval = true)
 @Singleton
@@ -253,7 +253,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     protected void createLvImpl(ExosData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        List<String> additionalOptions = MkfsUtils.shellSplit(getCreateVlmOptions(vlmData));
+        List<String> additionalOptions = ShellUtils.shellSplit(getCreateVlmOptions(vlmData));
         String[] additionalOptionsArr = new String[additionalOptions.size()];
         additionalOptions.toArray(additionalOptionsArr);
 

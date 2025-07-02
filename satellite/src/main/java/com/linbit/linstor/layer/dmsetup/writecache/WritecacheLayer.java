@@ -35,8 +35,8 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
+import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -394,7 +394,7 @@ public class WritecacheLayer implements DeviceLayer
                             dmsetupOptsSb.setLength(dmsetupOptsSb.length() - 1); // cut the last " "
                         }
                         String dmsetupOptsStr = dmsetupOptsSb.toString();
-                        int dmsetupOpsCounts = MkfsUtils.shellSplit(dmsetupOptsStr).size();
+                        int dmsetupOpsCounts = ShellUtils.shellSplit(dmsetupOptsStr).size();
 
                         DmSetupUtils.createWritecache(
                             extCmdFactory,

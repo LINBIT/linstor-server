@@ -40,8 +40,8 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
-import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.ZfsPropsUtils;
+import com.linbit.utils.ShellUtils;
 import com.linbit.utils.TimeUtils;
 
 import javax.inject.Inject;
@@ -309,7 +309,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 namespace,
                 dfltValue
             );
-            List<String> additionalOptions = MkfsUtils.shellSplit(options);
+            List<String> additionalOptions = ShellUtils.shellSplit(options);
             additionalOptionsArr = new String[additionalOptions.size()];
             additionalOptions.toArray(additionalOptionsArr);
         }

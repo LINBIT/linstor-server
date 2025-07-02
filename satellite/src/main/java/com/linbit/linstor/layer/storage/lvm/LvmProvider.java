@@ -46,7 +46,7 @@ import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.storage.utils.MkfsUtils;
+import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -211,7 +211,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             // vlmData.setUsableSize(-1);
             vlmDataRef.setAttributes(null);
 
-            List<String> additionalOptions = MkfsUtils.shellSplit(lvcreateOptions);
+            List<String> additionalOptions = ShellUtils.shellSplit(lvcreateOptions);
             String[] additionalOptionsArr = new String[additionalOptions.size()];
             additionalOptions.toArray(additionalOptionsArr);
             updateStripesPropIfNeeded(vlmDataRef, findStripesInAdditionalArgs(additionalOptionsArr));
@@ -287,7 +287,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected void createLvImpl(LvmData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateOptions(vlmData));
+        List<String> additionalOptions = ShellUtils.shellSplit(getLvcreateOptions(vlmData));
         String[] additionalOptionsArr = new String[additionalOptions.size()];
         additionalOptions.toArray(additionalOptionsArr);
 
@@ -907,7 +907,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         }
         if (stripeCount == null)
         {
-            List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateOptions(lvmData));
+            List<String> additionalOptions = ShellUtils.shellSplit(getLvcreateOptions(lvmData));
             String[] additionalOptionsArr = new String[additionalOptions.size()];
             additionalOptions.toArray(additionalOptionsArr);
             stripeCount = findStripesInAdditionalArgs(additionalOptionsArr);

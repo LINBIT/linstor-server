@@ -26,7 +26,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.storage.utils.MkfsUtils;
+import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -89,7 +89,7 @@ public class LvmThinProvider extends LvmProvider
         String volumeGroup = vlmData.getVolumeGroup();
         String lvId = asLvIdentifier(vlmData);
 
-        List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateOptions(vlmData));
+        List<String> additionalOptions = ShellUtils.shellSplit(getLvcreateOptions(vlmData));
         String[] additionalOptionsArr = new String[additionalOptions.size()];
         additionalOptions.toArray(additionalOptionsArr);
 
@@ -176,7 +176,7 @@ public class LvmThinProvider extends LvmProvider
     {
         try
         {
-            List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateSnapshotOptions(snapVlm));
+            List<String> additionalOptions = ShellUtils.shellSplit(getLvcreateSnapshotOptions(snapVlm));
             String[] additionalOptionsArr = new String[additionalOptions.size()];
             additionalOptions.toArray(additionalOptionsArr);
 
@@ -227,7 +227,7 @@ public class LvmThinProvider extends LvmProvider
     protected void createSnapshot(LvmData<Resource> vlmDataRef, LvmData<Snapshot> snapVlmRef, boolean readOnly)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateSnapshotOptions(vlmDataRef));
+        List<String> additionalOptions = ShellUtils.shellSplit(getLvcreateSnapshotOptions(vlmDataRef));
         String[] additionalOptionsArr = new String[additionalOptions.size()];
         additionalOptions.toArray(additionalOptionsArr);
 
@@ -486,7 +486,7 @@ public class LvmThinProvider extends LvmProvider
         final String srcId = asLvIdentifier(vlmData);
         final String srcFullSnapshotName = getCloneSnapshotNameFull(vlmData, cloneRscName, "_");
 
-        List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateSnapshotOptions(lvmVlmData));
+        List<String> additionalOptions = ShellUtils.shellSplit(getLvcreateSnapshotOptions(lvmVlmData));
         String[] additionalOptionsArr = new String[additionalOptions.size()];
         additionalOptions.toArray(additionalOptionsArr);
 

@@ -7,7 +7,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
-import com.linbit.utils.StringUtils;
+import com.linbit.utils.ShellUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -111,7 +111,7 @@ public class ExtCmd extends ChildProcessHandler
         throws IOException
     {
         execCommand = command;
-        execCommandStr = StringUtils.joinShellQuote(command);
+        execCommandStr = ShellUtils.joinShellQuote(command);
 
         if (logExecution)
         {

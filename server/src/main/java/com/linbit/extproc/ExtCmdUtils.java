@@ -3,7 +3,7 @@ package com.linbit.extproc;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.utils.StringUtils;
+import com.linbit.utils.ShellUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -82,7 +82,7 @@ public class ExtCmdUtils
                         "Error message: %n" +
                         "%s" +
                         "%n",
-                    StringUtils.joinShellQuote(output.executedCommand),
+                    ShellUtils.joinShellQuote(output.executedCommand),
                     output.exitCode,
                     new String(output.stdoutData),
                     new String(output.stderrData)

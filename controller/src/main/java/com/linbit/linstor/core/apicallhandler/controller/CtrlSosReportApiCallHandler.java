@@ -62,7 +62,6 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.CommandExec;
 import com.linbit.utils.FileCollector;
-import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
 import javax.inject.Inject;
@@ -96,6 +95,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linbit.utils.ShellUtils;
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
@@ -1042,7 +1042,7 @@ public class CtrlSosReportApiCallHandler
                     errorReporter.logError(
                         "Unknown event type during SOS report: %s while processing command %s",
                         event.getClass().getCanonicalName(),
-                        StringUtils.joinShellQuote(command)
+                        ShellUtils.joinShellQuote(command)
                     );
                 }
             }
@@ -1103,7 +1103,7 @@ public class CtrlSosReportApiCallHandler
                 errorReporter.logError(
                     "IOException occured while writing to %s from the command '%s'",
                     file.toString(),
-                    StringUtils.joinShellQuote(command)
+                    ShellUtils.joinShellQuote(command)
                 );
             }
             else

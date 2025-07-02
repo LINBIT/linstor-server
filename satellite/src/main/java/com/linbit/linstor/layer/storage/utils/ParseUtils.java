@@ -3,7 +3,7 @@ package com.linbit.linstor.layer.storage.utils;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
-import com.linbit.utils.StringUtils;
+import com.linbit.utils.ShellUtils;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -74,7 +74,7 @@ public class ParseUtils
                         "Numeric value to parse: '" + data[1] + "'",
                         null,
                         null,
-                        "External command: " + StringUtils.joinShellQuote(output.executedCommand),
+                        "External command: " + ShellUtils.joinShellQuote(output.executedCommand),
                         nfExc
                     );
                 }
@@ -89,7 +89,7 @@ public class ParseUtils
                         "Expected " + requiredColumns + " columns, but got " + data.length,
                         "Failed to parse line: '" + line + "'",
                         null,
-                        "External command: " + StringUtils.joinShellQuote(output.executedCommand)
+                        "External command: " + ShellUtils.joinShellQuote(output.executedCommand)
                     );
                 }
                 // else just return the empty map

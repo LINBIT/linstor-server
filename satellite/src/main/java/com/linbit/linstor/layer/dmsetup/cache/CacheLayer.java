@@ -37,7 +37,7 @@ import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-import com.linbit.linstor.storage.utils.MkfsUtils;
+import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -286,7 +286,7 @@ public class CacheLayer implements DeviceLayer
                         // );
 
                         String policyArgStr = ""; // for now
-                        int policyArgsCount = MkfsUtils.shellSplit(policyArgStr).size();
+                        int policyArgsCount = ShellUtils.shellSplit(policyArgStr).size();
                         DmSetupUtils.createCache(
                             extCmdFactory,
                             vlmData.getIdentifier(),

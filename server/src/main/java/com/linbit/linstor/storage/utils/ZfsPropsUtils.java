@@ -18,6 +18,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
+import com.linbit.utils.ShellUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +50,7 @@ public class ZfsPropsUtils
             ApiConsts.NAMESPC_STORAGE_DRIVER,
             ""
         );
-        List<String> additionalOptions = MkfsUtils.shellSplit(zfsCreateProp);
+        List<String> additionalOptions = ShellUtils.shellSplit(zfsCreateProp);
         String[] zfscreateOptions = new String[additionalOptions.size()];
         additionalOptions.toArray(zfscreateOptions);
 

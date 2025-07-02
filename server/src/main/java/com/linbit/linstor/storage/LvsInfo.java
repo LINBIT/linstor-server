@@ -6,7 +6,7 @@ import java.util.HashMap;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.utils.StringUtils;
+import com.linbit.utils.ShellUtils;
 
 /**
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
@@ -73,7 +73,7 @@ public class LvsInfo extends VolumeInfo
                         "Size to parse: '" + rawSize + "'",
                         null,
                         null,
-                        "External command used to query logical volume info: " + StringUtils.joinShellQuote(lvmLvsCommand),
+                        "External command used to query logical volume info: " + ShellUtils.joinShellQuote(lvmLvsCommand),
                         nfExc
                     );
                 }

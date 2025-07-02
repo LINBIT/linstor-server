@@ -9,7 +9,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.Commands;
-import com.linbit.linstor.storage.utils.MkfsUtils;
+import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
 
@@ -52,7 +52,7 @@ public class UdevHandler
                 "Failed to query symlinks of device " + devicePath
             );
             String symLinksRaw = new String(outputData.stdoutData).trim();
-            ret = new TreeSet<>(MkfsUtils.shellSplit(symLinksRaw));
+            ret = new TreeSet<>(ShellUtils.shellSplit(symLinksRaw));
         }
 
         return ret;

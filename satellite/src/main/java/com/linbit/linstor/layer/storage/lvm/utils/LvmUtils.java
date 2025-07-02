@@ -10,7 +10,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.ExceptionThrowingSupplier;
-import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimedCache;
 
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_ATTRIBUTES;
@@ -24,6 +23,7 @@ import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_SIZ
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_STRIPES;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_VG;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.VGS_COL_VG_NAME;
+import com.linbit.utils.ShellUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -397,7 +397,7 @@ public class LvmUtils
                             null,
                             null,
                             "External command used to query logical volume info: " +
-                                StringUtils.joinShellQuote(output.executedCommand),
+                                ShellUtils.joinShellQuote(output.executedCommand),
                                 nfExc
                             );
                     }
@@ -416,7 +416,7 @@ public class LvmUtils
                         null,
                         null,
                         "External command used to query logical volume info: " +
-                            StringUtils.joinShellQuote(output.executedCommand),
+                            ShellUtils.joinShellQuote(output.executedCommand),
                             nfExc
                         );
                 }
@@ -437,7 +437,7 @@ public class LvmUtils
                         null,
                         null,
                         "External command used to query logical volume info: " +
-                            StringUtils.joinShellQuote(output.executedCommand),
+                            ShellUtils.joinShellQuote(output.executedCommand),
                         nfExc
                     );
                 }
@@ -456,7 +456,7 @@ public class LvmUtils
                         null,
                         null,
                         "External command used to query logical volume info: " +
-                            StringUtils.joinShellQuote(output.executedCommand),
+                            ShellUtils.joinShellQuote(output.executedCommand),
                         nfExc
                     );
                 }
@@ -789,7 +789,7 @@ public class LvmUtils
                     null,
                     null,
                     "External command used to query logical volume info: " +
-                        StringUtils.joinShellQuote(executedCommandRef),
+                        ShellUtils.joinShellQuote(executedCommandRef),
                     null
                 );
             }
@@ -808,7 +808,7 @@ public class LvmUtils
                     null,
                     null,
                     "External command used to query logical volume info: " +
-                        StringUtils.joinShellQuote(executedCommandRef),
+                        ShellUtils.joinShellQuote(executedCommandRef),
                     nfExc
                 );
             }

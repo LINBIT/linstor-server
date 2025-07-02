@@ -10,6 +10,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.ShellUtils;
 import com.linbit.utils.StringUtils;
 
 import java.io.IOException;
@@ -118,7 +119,7 @@ public class Commands
                     "External command threw an IOException" :
                     "External command timed out",
                 null,
-                String.format("External command: %s", StringUtils.joinShellQuote(command)),
+                String.format("External command: %s", ShellUtils.joinShellQuote(command)),
                 exc
             );
         }

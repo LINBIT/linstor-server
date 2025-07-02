@@ -47,7 +47,7 @@ public class CommandExec
             Files.write(
                 errFileRef.toPath(),
                 ("\n\nCommand did not terminate within " + ChildProcessHandler.dfltWaitTimeout + "ms. Command was: " +
-                    StringUtils.joinShellQuote(commandRef)).getBytes(),
+                    ShellUtils.joinShellQuote(commandRef)).getBytes(),
                 StandardOpenOption.CREATE,
                 StandardOpenOption.APPEND,
                 StandardOpenOption.WRITE
