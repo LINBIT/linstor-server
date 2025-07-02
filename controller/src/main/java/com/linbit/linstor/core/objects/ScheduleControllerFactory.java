@@ -3,7 +3,6 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.objects.Schedule.OnFailure;
@@ -80,7 +79,11 @@ public class ScheduleControllerFactory
         }
         catch (IllegalArgumentException exc)
         {
-            throw new ApiException("Error parsing full-cron: " + exc.getMessage(), exc);
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_ERROR | ApiConsts.MASK_SCHEDULE,
+                "Error parsing full-cron \"" + fullCron + "\": " + exc.getMessage(),
+                true
+                ));
         }
         Cron parsedInc;
         try
@@ -89,7 +92,11 @@ public class ScheduleControllerFactory
         }
         catch (IllegalArgumentException exc)
         {
-            throw new ApiException("Error parsing inc-cron: " + exc.getMessage(), exc);
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_ERROR | ApiConsts.MASK_SCHEDULE,
+                "Error parsing full-cron \"" + incCron + "\": " + exc.getMessage(),
+                true
+            ));
         }
         ZonedDateTime now = ZonedDateTime.now();
         ApiCallRcImpl errorRc = null;
