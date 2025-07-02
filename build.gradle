@@ -446,9 +446,9 @@ jacocoTestReport {
         sourceDirectories.setFrom(files(subprojects.sourceSets.main.allSource.srcDirs))
         classDirectories.setFrom(files(subprojects.sourceSets.main.output))
         reports {
-            html.enabled = true
-            xml.enabled = true
-            csv.enabled = true
+            html.required = true
+            xml.required = true
+            csv.required = true
         }
         onlyIf = {
             true
