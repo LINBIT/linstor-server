@@ -182,7 +182,8 @@ public class CtrlScheduleApiCallHandler
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_EXISTS_SCHEDULE,
                     "A schedule with the name '" + scheduleNameStr
-                       + "' already exists. Please use a different name or try to modify the schedule instead."
+                       + "' already exists. Please use a different name or try to modify the schedule instead.",
+                    true
                 )
             );
         }
