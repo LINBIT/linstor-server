@@ -12,6 +12,7 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.ShutdownProtHolder;
 import com.linbit.linstor.systemstarter.StartupInitializer;
+import com.linbit.utils.CollectionUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -191,7 +192,7 @@ public class ApplicationLifecycleManager
                 try
                 {
                     reconfigurationLock.writeLock().lock();
-                    ret = new ArrayList<>(services);
+                    ret = new ArrayList<>(CollectionUtils.nonNullOrEmptyList(services));
 
                     // Shutdown service threads
                     shutdownSystemServices(ret); // does NOT wait until the services are fully shut down!
