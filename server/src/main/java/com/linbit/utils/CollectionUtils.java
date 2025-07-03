@@ -36,7 +36,7 @@ public class CollectionUtils
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, LIST extends List<E>> LIST nonNullOrEmptyList(LIST listRef)
+    public static <E, LIST extends List<E>> LIST nonNullOrEmptyList(@Nullable LIST listRef)
     {
         return listRef == null ? (LIST) Collections.emptyList() : listRef;
     }
