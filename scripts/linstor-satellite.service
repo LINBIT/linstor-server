@@ -13,6 +13,8 @@ ExecStart=/usr/share/linstor-server/bin/Satellite --logs=/var/log/linstor-satell
 KillMode=mixed
 # if killed by signal 143 -> SIGTERM, 129 -> SIGHUP
 SuccessExitStatus=0 143 129
+# 70 -> critical error(e.g.: uuid mismatch)
+RestartForceExitStatus=70
 User=root
 PrivateTmp=yes
 

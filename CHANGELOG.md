@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API: do not store error reports if user-named node/storage-pool/rg/... was not found
 - API: do not store error reports for invalid cron expressions
 - Improve output of property changes messages
+- Restart Satellite service on exit code 70 (critical error)
 
 ### Fixed
 
