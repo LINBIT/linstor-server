@@ -204,11 +204,8 @@ public class InternalApiConsts
     // Startup failed because the default NetCom service could not be initialized
     public static final int EXIT_CODE_NETCOM_ERROR = 20;
 
-    // Startup failed because DRBD is not usable / not installed
-    // FIXME: This will probably not be a shutdown reason in future releases.
-    //        In this case, the constant can be removed.
-    public static final int EXIT_CODE_DRBD_ERROR = 21;
-
+    // Critical error triggered that would require restart of the satellite (uuid mismatch)
+    public static final int EXIT_CODE_INTERNAL_CRITICAL_ERROR = 70;
     // Shutdown caused by an unexpected exception, some unrecoverable error, or an implementation error
     public static final int EXIT_CODE_IMPL_ERROR = 199;
 

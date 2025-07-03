@@ -1,14 +1,13 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import java.util.UUID;
 
 public class CriticalError
 {
-    public static final int EXIT_CODE_INTERNAL_CRITICAL_ERROR = 70;
-
     private CriticalError()
     {
     }
@@ -16,7 +15,7 @@ public class CriticalError
     public static void die(ErrorReporter errorReporter, String message)
     {
         errorReporter.reportError(new ImplementationError(message));
-        System.exit(EXIT_CODE_INTERNAL_CRITICAL_ERROR);
+        System.exit(InternalApiConsts.EXIT_CODE_INTERNAL_CRITICAL_ERROR);
     }
 
     public static void dieUuidMissmatch(
