@@ -576,7 +576,7 @@ public class CtrlPropsHelper
                     if (key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/"))
                     {
                         throw new ApiRcException(ApiCallRcImpl
-                            .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid key.")
+                            .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid key: " + key)
                             .setCause("The key '" + key + "' is invalid.")
                             .build(),
                             exc
@@ -593,7 +593,7 @@ public class CtrlPropsHelper
                     if (key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/"))
                     {
                         throw new ApiRcException(ApiCallRcImpl
-                            .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid value.")
+                            .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid value: " + value)
                             .setCause("The value '" + value + "' is invalid.")
                             .build(),
                             exc
@@ -614,7 +614,8 @@ public class CtrlPropsHelper
             if (propsWhiteList.isKeyKnown(linstorObj, key))
             {
                 throw new ApiRcException(ApiCallRcImpl
-                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property value")
+                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP,
+                        String.format("Invalid property(%s) value: %s", key, value))
                     .setCause("The value '" + value + "' is not valid for the key '" + key + "'")
                     .setDetails(propsWhiteList.getErrMsg(linstorObj, key))
                     .build()
@@ -623,7 +624,7 @@ public class CtrlPropsHelper
             else
             {
                 throw new ApiRcException(ApiCallRcImpl
-                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property key")
+                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property key: " + key)
                     .setCause("The key '" + key + "' is not whitelisted.")
                     .build()
                 );
