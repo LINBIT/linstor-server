@@ -180,15 +180,14 @@ public class CtrlSatelliteUpdateCaller
     {
         NotConnectedHandler dfltNotConnectedHandler;
         // TODO move this into context class
-        if (cv != null &&
-            cv.hasKey(InternalApiConsts.ONLY_WARN_IF_OFFLINE) &&
-            Boolean.TRUE.equals(cv.get(InternalApiConsts.ONLY_WARN_IF_OFFLINE)))
+        if (cv.hasKey(InternalApiConsts.ERR_IF_OFFLINE) &&
+            Boolean.TRUE.equals(cv.get(InternalApiConsts.ERR_IF_OFFLINE)))
         {
-            dfltNotConnectedHandler = notConnectedWarn();
+            dfltNotConnectedHandler = notConnectedError();
         }
         else
         {
-            dfltNotConnectedHandler = notConnectedError();
+            dfltNotConnectedHandler = notConnectedWarn();
         }
 
         return updateSatellites(rscDfn, dfltNotConnectedHandler, nextStepRef);
