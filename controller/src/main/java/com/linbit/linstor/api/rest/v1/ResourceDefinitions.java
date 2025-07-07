@@ -1,7 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -36,6 +35,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -220,8 +220,7 @@ public class ResourceDefinitions
                     modifyData.layer_stack,
                     modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue(),
                     modifyData.resource_group
-                )
-                .contextWrite(reactor.util.context.Context.of(InternalApiConsts.ONLY_WARN_IF_OFFLINE, Boolean.TRUE));
+                );
 
             requestHelper.doFlux(
                 ApiConsts.API_MOD_RSC_DFN,
