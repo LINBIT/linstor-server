@@ -221,7 +221,7 @@ public class ResponseUtils
             .entryBuilder(
                 ApiConsts.WARN_STLT_NOT_UPDATED,
                 "Satellite reported an error during fullSync. This change will NOT be " +
-                    "delivered to satellte '" + satellite.getNode().getName().displayValue +
+                    "delivered to satellite '" + satellite.getNode().getName().displayValue +
                     "' until the error is resolved. Reconnect the satellite to the controller " +
                     "to remove this blockade."
             )
