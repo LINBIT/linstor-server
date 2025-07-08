@@ -1,13 +1,17 @@
 package com.linbit.linstor.layer.luks;
 
+import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.DecryptionHelper;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
@@ -16,14 +20,19 @@ import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -36,6 +45,8 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.Commands;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
+import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -43,6 +54,8 @@ import javax.inject.Singleton;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 @Singleton
@@ -62,6 +75,7 @@ public class LuksLayer implements DeviceLayer
     private final ErrorReporter errorReporter;
     private final StltSecurityObjects secObjs;
     private final DecryptionHelper decryptionHelper;
+    private final StltConfigAccessor stltConfigAccessor;
 
     @Inject
     public LuksLayer(
@@ -72,7 +86,8 @@ public class LuksLayer implements DeviceLayer
         ErrorReporter errorReporterRef,
         StltExtToolsChecker extToolsCheckerRef,
         StltSecurityObjects secObjsRef,
-        DecryptionHelper decryptionHelperRef
+        DecryptionHelper decryptionHelperRef,
+        StltConfigAccessor stltConfigAccessorRef
     )
     {
         sysCtx = sysCtxRef;
@@ -82,7 +97,8 @@ public class LuksLayer implements DeviceLayer
         errorReporter = errorReporterRef;
         secObjs = secObjsRef;
         decryptionHelper = decryptionHelperRef;
-    }
+        stltConfigAccessor = stltConfigAccessorRef;
+   }
 
     @Override
     public String getName()
@@ -309,10 +325,13 @@ public class LuksLayer implements DeviceLayer
                 {
                     if (decryptedPassphrase != null)
                     {
+                        List<String> additionalOptions = getCreateOptions(vlmData);
+
                         String providedDev = cryptSetup.createLuksDevice(
                             vlmData.getDataDevice(),
                             vlmData.getDecryptedPassword(),
-                            identifier
+                            identifier,
+                            additionalOptions
                         );
                         vlmData.setDevicePath(providedDev);
 
@@ -340,11 +359,14 @@ public class LuksLayer implements DeviceLayer
                 {
                     if (decryptedPassphrase != null)
                     {
+                        List<String> additionalOptions = getOpenOptions(vlmData);
+
                         cryptSetup.openLuksDevice(
                             vlmData.getDataDevice(),
                             identifier,
                             vlmData.getDecryptedPassword(),
-                            false
+                            false,
+                            additionalOptions
                         );
                     }
                     else
@@ -455,11 +477,14 @@ public class LuksLayer implements DeviceLayer
 
             if (targetRscNameRef == null)
             {
+                List<String> createOptions = getCreateOptions(luksVlmData);
+
                 // initialize luks device
                 cryptSetup.createLuksDevice(
                     storageChild.getCloneDevicePath(),
                     luksVlmData.getDecryptedPassword(),
-                    identifier
+                    identifier,
+                    createOptions
                 );
             }
 
@@ -467,7 +492,8 @@ public class LuksLayer implements DeviceLayer
                 storageChild.getCloneDevicePath(),
                 identifier,
                 luksVlmData.getDecryptedPassword(),
-                targetRscNameRef != null
+                targetRscNameRef != null,
+                getOpenOptions(luksVlmData)
             );
         }
         else
@@ -499,5 +525,54 @@ public class LuksLayer implements DeviceLayer
     public DeviceLayerKind getKind()
     {
         return DeviceLayerKind.LUKS;
+    }
+    public List<String> getCreateOptions(final LuksVlmData<Resource> vlmData)
+    {
+        return getOptions(vlmData, ApiConsts.KEY_STOR_DRIVER_LUKS_FORMAT_OPTIONS);
+    }
+
+    public List<String> getOpenOptions(final LuksVlmData<Resource> vlmData)
+    {
+        return getOptions(vlmData, ApiConsts.KEY_STOR_DRIVER_LUKS_OPEN_OPTIONS);
+    }
+
+    public List<String> getOptions(final LuksVlmData<Resource> vlmData, final String optionsKey)
+    {
+        List<String> additionalOptions;
+        try
+        {
+            Volume vlm = (Volume) vlmData.getVolume();
+            Resource rsc = vlm.getAbsResource();
+            ResourceDefinition rscDfn = vlm.getResourceDefinition();
+            ResourceGroup rscGrp = rscDfn.getResourceGroup();
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+
+            PriorityProps prioProps = new PriorityProps(
+                vlm.getProps(sysCtx),
+                rsc.getProps(sysCtx)
+            );
+            for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlmData, sysCtx))
+            {
+                prioProps.addProps(storPool.getProps(sysCtx));
+            }
+            prioProps.addProps(
+                rsc.getNode().getProps(sysCtx),
+                vlmDfn.getProps(sysCtx),
+                rscDfn.getProps(sysCtx),
+                rscGrp.getVolumeGroupProps(sysCtx, vlmDfn.getVolumeNumber()),
+                rscGrp.getProps(sysCtx),
+                stltConfigAccessor.getReadonlyProps()
+            );
+
+            final @Nullable String userOptProp = prioProps.getProp(optionsKey, STOR_DRIVER_NAMESPACE);
+            additionalOptions = userOptProp != null ?
+                ShellUtils.shellSplit(userOptProp) :
+                new LinkedList<>();
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return additionalOptions;
     }
 }

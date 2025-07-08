@@ -66,7 +66,8 @@ public class CryptSetupCommands implements Luks
     public String createLuksDevice(
         String dev,
         byte[] cryptKey,
-        String identifier
+        String identifier,
+        List<String> additionalOptions
     )
         throws StorageException
     {
@@ -76,6 +77,7 @@ public class CryptSetupCommands implements Luks
 
             ArrayList<String> command = new ArrayList<>();
             command.add(CRYPTSETUP);
+            command.addAll(additionalOptions);
             command.add("-q");
             command.add("luksFormat");
             if (version.greaterOrEqual(V2_0_0))
@@ -88,7 +90,7 @@ public class CryptSetupCommands implements Luks
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
                 null,
-                command.toArray(new String[0])
+                command.toArray(new String[command.size()])
             );
             outputStream.write(cryptKey);
             outputStream.write('\n');
@@ -121,7 +123,13 @@ public class CryptSetupCommands implements Luks
     }
 
     @Override
-    public void openLuksDevice(String dev, String targetIdentifier, byte[] cryptKey, boolean readOnly)
+    public void openLuksDevice(
+        String dev,
+        String targetIdentifier,
+        byte[] cryptKey,
+        boolean readOnly,
+        List<String> additionalOptions
+    )
         throws StorageException
     {
         try
@@ -129,6 +137,7 @@ public class CryptSetupCommands implements Luks
             final ExtCmd extCommand = extCmdFactory.create();
             List<String> cmd = new ArrayList<>(10);
             cmd.add(CRYPTSETUP);
+            cmd.addAll(additionalOptions);
             cmd.add("open");
             cmd.add("--tries");
             cmd.add("1");
@@ -143,7 +152,7 @@ public class CryptSetupCommands implements Luks
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
                 null,
-                cmd.toArray(new String[0])
+                cmd.toArray(new String[cmd.size()])
             );
             outputStream.write(cryptKey);
             outputStream.write('\n');
