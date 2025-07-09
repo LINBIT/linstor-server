@@ -1443,7 +1443,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         if (!processedChildren)
         {
             errorReporter.logTrace(
-                "Ignoring layer '%s' for %s because '%s'",
+                "Layer '%s' did not decide if children of '%s' should be processed (ignore reason: '%s'). " +
+                    "DeviceHandler proceeds processing children.",
                 currentLayer.getName(),
                 dataDescrFct.apply(rscLayerData),
                 LayerIgnoreReason.getDescriptions(rscLayerData.getIgnoreReasons())
