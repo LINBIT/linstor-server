@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed vlmDfn UUID mismatch occurring after deleting and later creating a new one with the same vlmNr
 - Fixed incorrect zfs-vlm renaming during vlmDfn delete
 - Fixed deleting offline node causing "AccessToDeleted node" exception
+- Fixed allVolumesUpToDate method while creating a snapshot for diskless resources
 
 ## [1.31.2] - 2025-06-11
 

@@ -704,6 +704,7 @@ public class CtrlSnapshotCrtApiCallHandler
         {
             for (SnapshotDefinition snapDfn : reqRef.getCreatedSnapDfns())
             {
+                errorReporter.logWarning("Not all resources are UpToDate or diskless. Aborting " + snapDfn.toString());
                 // no need for isDeleted check here since we already updated the list before. It should not be possible
                 // that a SnapshotDefinition is deleted in the current list
                 enableFlagPrivileged(snapDfn, SnapshotDefinition.Flags.DELETE);
