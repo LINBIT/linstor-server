@@ -315,6 +315,7 @@ test-e2e:
 
 sbom:
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: $CI_COMMIT_TAG
     - if: $CI_COMMIT_BRANCH == 'jenkins'
   stage: build
@@ -327,4 +328,36 @@ sbom:
   script:
     - git apply scripts/gradle-cyclonedx.diff
     - ./gradlew cyclonedxBom
-    - ci_put_bom linstor-server ${CI_COMMIT_TAG:-$CI_COMMIT_BRANCH} build/reports/linstor-server.json
+    - if [ -n "$CI_COMMIT_TAG" ] || [ "$CI_COMMIT_BRANCH" == "jenkins" ]; then
+    -   ci_put_bom linstor-server ${CI_COMMIT_TAG:-$CI_COMMIT_BRANCH} build/reports/linstor-server.json
+    - fi
+  artifacts:
+    paths:
+    - build/reports/linstor-server.json
+
+cve-scan:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == 'jenkins'
+  stage: test
+  image:
+    name: docker.io/aquasec/trivy:latest
+    entrypoint: [ "" ]
+  variables:
+    # No need to clone the repo, we exclusively work on artifacts.  See
+    # https://docs.gitlab.com/ee/ci/runners/README.html#git-strategy
+    GIT_STRATEGY: none
+  script:
+    - trivy --version
+    - trivy -q sbom --exit-code 0 --format template --template "@/contrib/html.tpl" -o cve-scan.html build/reports/linstor-server.json
+    # Prints full report
+    - trivy -q sbom --exit-code 0 build/reports/linstor-server.json
+    # Fail on critical (unfixed) vulnerabilities
+    - trivy -q sbom --exit-code 1 --ignore-unfixed --severity CRITICAL build/reports/linstor-server.json
+  allow_failure: yes # For now...
+  artifacts:
+    when: always
+    expose_as: "CVE Scan"
+    paths:
+      - cve-scan.html
