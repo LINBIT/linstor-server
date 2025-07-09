@@ -28,9 +28,10 @@ public class SatelliteResourceStateDrbdUtils
                 Resource rsc = node.getResource(accCtx, rscName);
                 // list of nodes might have been created from a list of snapshot, where the corresponding
                 // resource is already deleted
-                if (rsc != null && !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(accCtx, rsc))
+                if (rsc != null && !rsc.isDeleted() && !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(accCtx, rsc))
                 {
                     ret = false;
+                    break;
                 }
             }
             catch (AccessDeniedException exc)
@@ -55,6 +56,8 @@ public class SatelliteResourceStateDrbdUtils
         // do not check EBS target resource, only initiator resource
         checkState &= (!EbsUtils.hasEbsVlms(rsc, accCtx) ||
             rsc.getStateFlags().isSet(accCtx, Resource.Flags.EBS_INITIATOR));
+
+        checkState &= !rsc.getStateFlags().isSet(accCtx, Resource.Flags.DRBD_DISKLESS);
 
         if (checkState)
         {
