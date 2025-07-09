@@ -474,7 +474,7 @@ public class CtrlSnapshotCrtApiCallHandler
             }
             if (reqNeedsUpdate)
             {
-                updateRequstPrivileged(reqRef);
+                updateRequestPrivileged(reqRef);
             }
         }
 
@@ -567,7 +567,7 @@ public class CtrlSnapshotCrtApiCallHandler
             {
                 if (!updated)
                 {
-                    updateRequstPrivileged(reqRef);
+                    updateRequestPrivileged(reqRef);
                     updated = true;
                 }
             }
@@ -669,7 +669,7 @@ public class CtrlSnapshotCrtApiCallHandler
             else
             {
                 allUpToDate = false;
-                updateRequstPrivileged(reqRef);
+                updateRequestPrivileged(reqRef);
                 break;
             }
         }
@@ -800,7 +800,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 if (!updatedReq)
                 {
                     updatedReq = true;
-                    updateRequstPrivileged(reqRef);
+                    updateRequestPrivileged(reqRef);
                 }
             }
         }
@@ -858,7 +858,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 if (!updatedRequest)
                 {
                     updatedRequest = true;
-                    updateRequstPrivileged(reqRef);
+                    updateRequestPrivileged(reqRef);
                 }
             }
         }
@@ -1021,7 +1021,7 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
-    private void updateRequstPrivileged(CreateMultiSnapRequest reqRef)
+    private void updateRequestPrivileged(CreateMultiSnapRequest reqRef)
     {
         try
         {
