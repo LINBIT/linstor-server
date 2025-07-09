@@ -137,7 +137,7 @@ public class ReconnectorTask implements Task
                     {
                         if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                         {
-                            reconnectorConfigSet.add(new ReconnectConfig(peer, drbdConnectionsOk(peer)));
+                            reconnectorConfigSet.add(new ReconnectConfig(peer, drbdConnectionsOk(node)));
                             getFailedPeers(); // update evictionTime if necessary
                         }
                         else
@@ -466,88 +466,92 @@ public class ReconnectorTask implements Task
         {
             try
             {
-                boolean drbdOkNew = drbdConnectionsOk(config.peer);
                 Node node = config.peer.getNode();
-                final PriorityProps props = new PriorityProps(
-                    node.getProps(apiCtx),
-                    systemConfRepo.getCtrlConfForView(apiCtx)
-                );
-                final long timeout = Long.parseLong(
-                    props.getProp(
-                        ApiConsts.KEY_AUTO_EVICT_AFTER_TIME,
-                        ApiConsts.NAMESPC_DRBD_OPTIONS,
-                        "60" // 1 hour
-                    )
-                ) * 60 * 1000; // to milliseconds
-                final boolean allowEviction = Boolean.parseBoolean(
-                    props.getProp(
-                        ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION,
-                        ApiConsts.NAMESPC_DRBD_OPTIONS,
-                        "false"
-                    )
-                );
-                if (config.drbdOk != drbdOkNew)
+                if (!node.isDeleted())
                 {
-                    config.drbdOk = drbdOkNew;
-                    if (!config.drbdOk)
+                    boolean drbdOkNew = drbdConnectionsOk(node);
+
+                    final PriorityProps props = new PriorityProps(
+                        node.getProps(apiCtx),
+                        systemConfRepo.getCtrlConfForView(apiCtx)
+                    );
+                    final long timeout = Long.parseLong(
+                        props.getProp(
+                            ApiConsts.KEY_AUTO_EVICT_AFTER_TIME,
+                            ApiConsts.NAMESPC_DRBD_OPTIONS,
+                            "60" // 1 hour
+                        )
+                    ) * 60 * 1000; // to milliseconds
+                    final boolean allowEviction = Boolean.parseBoolean(
+                        props.getProp(
+                            ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION,
+                            ApiConsts.NAMESPC_DRBD_OPTIONS,
+                            "false"
+                        )
+                    );
+                    if (config.drbdOk != drbdOkNew)
                     {
-                        config.offlineSince = System.currentTimeMillis();
+                        config.drbdOk = drbdOkNew;
+                        if (!config.drbdOk)
+                        {
+                            config.offlineSince = System.currentTimeMillis();
+                        }
                     }
-                }
-                if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
-                {
-                    retry.add(config);
-                    long evictionTimestamp = config.offlineSince + timeout;
-                    if (allowEviction)
+                    if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                     {
-                        node.setEvictionTimestamp(evictionTimestamp);
-                    }
-                    else
-                    {
-                        node.setEvictionTimestamp(null);
-                    }
-                    if (!config.drbdOk && System.currentTimeMillis() >= evictionTimestamp)
-                    {
+                        retry.add(config);
+                        long evictionTimestamp = config.offlineSince + timeout;
                         if (allowEviction)
                         {
-                            int numDiscon = reconnectorConfigSet.size();
-                            int maxPercentDiscon = Integer.parseInt(
-                                props.getProp(
-                                    ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES,
-                                    ApiConsts.NAMESPC_DRBD_OPTIONS,
-                                    "34"
-                                )
-                            );
-                            int numNodes = nodeRepository.getMapForView(apiCtx).size();
-                            int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
-                            if (numDiscon <= maxDiscon)
-                            {
-                                errorReporter.logTrace(
-                                    config.peer + " has been offline for too long, relocation of resources started."
-                                );
-                                fluxes.add(new Pair<>(ctrlNodeApiCallHandler.get().declareEvicted(node), config.peer));
-
-                                // evicted, stop trying reconnect
-                                retry.remove(config);
-                                reconnectorConfigSet.remove(config);
-                            }
-                            else
-                            {
-                                errorReporter.logTrace(
-                                    "Currently more than %d%% nodes are not connected to the controller. " +
-                                        "The controller might have a problem with it's connections, therefore " +
-                                        "no nodes will be declared as EVICTED",
-                                    maxPercentDiscon
-                                );
-                            }
+                            node.setEvictionTimestamp(evictionTimestamp);
                         }
                         else
                         {
-                            errorReporter.logDebug(
-                                "The node %s will not be evicted since the property AutoEvictAllowEviction is set " +
-                                    "to false.",
-                                node.getName()
-                            );
+                            node.setEvictionTimestamp(null);
+                        }
+                        if (!config.drbdOk && System.currentTimeMillis() >= evictionTimestamp)
+                        {
+                            if (allowEviction)
+                            {
+                                int numDiscon = reconnectorConfigSet.size();
+                                int maxPercentDiscon = Integer.parseInt(
+                                    props.getProp(
+                                        ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES,
+                                        ApiConsts.NAMESPC_DRBD_OPTIONS,
+                                        "34"
+                                    )
+                                );
+                                int numNodes = nodeRepository.getMapForView(apiCtx).size();
+                                int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
+                                if (numDiscon <= maxDiscon)
+                                {
+                                    errorReporter.logTrace(
+                                        config.peer + " has been offline for too long, relocation of resources started."
+                                    );
+                                    fluxes.add(new Pair<>(ctrlNodeApiCallHandler.get().declareEvicted(node), config.peer));
+
+                                    // evicted, stop trying reconnect
+                                    retry.remove(config);
+                                    reconnectorConfigSet.remove(config);
+                                }
+                                else
+                                {
+                                    errorReporter.logTrace(
+                                        "Currently more than %d%% nodes are not connected to the controller. " +
+                                            "The controller might have a problem with it's connections, therefore " +
+                                            "no nodes will be declared as EVICTED",
+                                        maxPercentDiscon
+                                    );
+                                }
+                            }
+                            else
+                            {
+                                errorReporter.logDebug(
+                                    "The node %s will not be evicted since the property AutoEvictAllowEviction is set " +
+                                        "to false.",
+                                    node.getName()
+                                );
+                            }
                         }
                     }
                 }
@@ -560,14 +564,13 @@ public class ReconnectorTask implements Task
         return new Pair<>(retry, fluxes);
     }
 
-    private boolean drbdConnectionsOk(Peer peer)
+    private boolean drbdConnectionsOk(Node node)
     {
         boolean drbdOk = false;
 
         try
         {
-            Node nodeToCheck = peer.getNode();
-            Set<Node> neighbors = getNeighbors(nodeToCheck);
+            Set<Node> neighbors = getNeighbors(node);
             for (Node neighbor : neighbors)
             {
                 if (neighbor.getPeer(apiCtx) != null)
@@ -582,7 +585,7 @@ public class ReconnectorTask implements Task
                                 .entrySet()
                         )
                         {
-                            if (conStateEntry.getKey().equals(nodeToCheck.getName()))
+                            if (conStateEntry.getKey().equals(node.getName()))
                             {
                                 Map<NodeName, String> conStates = conStateEntry.getValue();
                                 for (Entry<NodeName, String> conEntry : conStates.entrySet())
@@ -597,7 +600,7 @@ public class ReconnectorTask implements Task
                             }
                             else
                             {
-                                String conValOrNull = conStateEntry.getValue().get(nodeToCheck.getName());
+                                String conValOrNull = conStateEntry.getValue().get(node.getName());
                                 if (conValOrNull != null && conValOrNull.equalsIgnoreCase(STATUS_CONNECTED))
                                 {
                                     drbdOk = true;
