@@ -1,9 +1,5 @@
 image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
 
-before_script:
-  - export GRADLE_USER_HOME=`pwd`/.gradle
-  - ./gradlew -PoverrideVersion= getProtoc
-
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   VIRTER_VERSION: v0.27.0
