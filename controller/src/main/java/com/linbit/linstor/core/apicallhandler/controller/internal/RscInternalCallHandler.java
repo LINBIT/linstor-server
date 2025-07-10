@@ -11,7 +11,6 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.CtrlSnapLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
@@ -53,9 +52,10 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.tasks.RetryResourcesTask;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 
 import java.time.Instant;
@@ -65,7 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -80,10 +79,8 @@ public class RscInternalCallHandler
 
     private final NodeRepository nodeRepository;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
+    private final LockGuardFactory lockGuardFactory;
 
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock rscDfnMapLock;
-    private final ReadWriteLock storPoolDfnMapLock;
     private final CtrlRscLayerDataMerger layerRscDataMerger;
     private final CtrlSnapLayerDataMerger layerSnapDataMerger;
     private final RetryResourcesTask retryResourceTask;
@@ -100,9 +97,7 @@ public class RscInternalCallHandler
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         Provider<Peer> peerRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         CtrlRscLayerDataMerger layerRscDataMergerRef,
         CtrlSnapLayerDataMerger layerSnapDataMergerRef,
         RetryResourcesTask retryResourceTaskRef,
@@ -119,10 +114,7 @@ public class RscInternalCallHandler
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         peer = peerRef;
-
-        nodesMapLock = nodesMapLockRef;
-        rscDfnMapLock = rscDfnMapLockRef;
-        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         layerRscDataMerger = layerRscDataMergerRef;
         layerSnapDataMerger = layerSnapDataMergerRef;
         retryResourceTask = retryResourceTaskRef;
@@ -138,12 +130,10 @@ public class RscInternalCallHandler
     )
     {
         try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.readLock(),
-                rscDfnMapLock.readLock(),
-                storPoolDfnMapLock.readLock(),
-                peer.get().getSerializerLock().readLock()
-            )
+            LockGuard lg = lockGuardFactory.create()
+                .read(LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP)
+                .postLinstorLocks(peer.get().getSerializerLock().readLock())
+                .build()
         )
         {
             NodeName nodeName = new NodeName(nodeNameStr);
@@ -220,7 +210,12 @@ public class RscInternalCallHandler
         List<CapacityInfoPojo> capacityInfos
     )
     {
-        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
+        try (
+            LockGuard lg = lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP)
+                .build()
+        )
         {
             /*
              * be careful setting this to true - otherwise we could run into infinite loop between
@@ -417,7 +412,12 @@ public class RscInternalCallHandler
 
     public void handleResourceFailed(String nodeName, String rscName, Map<String, RscLayerDataApi> snapLayersRef)
     {
-        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.readLock()))
+        try (
+            LockGuard lg = lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP)
+                .build()
+        )
         {
             Resource rsc = apiDataLoader.loadRsc(
                 nodeName,

@@ -95,6 +95,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         );
     }
 
+    @SuppressWarnings("resource")
     @Override
     public Mono<Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>>> fetchThinFreeSpaceInfo(Set<NodeName> nodesFilter)
     {
@@ -186,13 +187,17 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         return peer;
     }
 
+    @SuppressWarnings("resource")
     private Flux<Tuple2<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>>> parseFreeSpaces(
         Tuple2<NodeName, ByteArrayInputStream> freeSpaceAnswer
     )
     {
         return scopeRunner.fluxInTransactionalScope(
             "Parse thin free space response",
-            lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
+            lockGuardFactory.createDeferred()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.STOR_POOL_DFN_MAP)
+                .build(),
             () -> parseFreeSpacesInTransaction(freeSpaceAnswer)
         );
     }
