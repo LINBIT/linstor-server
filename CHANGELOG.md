@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.31.3] - 2025-07-10
+
 ### Changed
 
 - UUID mismatch will now trigger a System.exit(70) as the best way to recover is to restart the satellite
