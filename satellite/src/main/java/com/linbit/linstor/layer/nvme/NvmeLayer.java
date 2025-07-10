@@ -28,6 +28,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import static com.linbit.linstor.layer.nvme.NvmeUtils.NVME_SUBSYSTEMS_PATH;
 import static com.linbit.linstor.layer.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
@@ -375,5 +376,11 @@ public class NvmeLayer implements DeviceLayer
     )
     {
         return CloneSupportResult.PASSTHROUGH;
+    }
+
+    @Override
+    public DeviceLayerKind getKind()
+    {
+        return DeviceLayerKind.NVME;
     }
 }

@@ -36,6 +36,7 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.Either;
 import com.linbit.utils.PairNonNull;
 
@@ -567,5 +568,11 @@ public class StorageLayer implements DeviceLayer
         DeviceProvider devProvider = getDevProviderByVlmObj(vlm);
         devProvider.closeForClone(vlm, targetRscNameRef);
         vlm.setCloneDevicePath(null);
+    }
+
+    @Override
+    public DeviceLayerKind getKind()
+    {
+        return DeviceLayerKind.STORAGE;
     }
 }

@@ -2051,4 +2051,10 @@ public class DrbdLayer implements DeviceLayer
             throw new StorageException("drbdmeta check-resize failed", exc);
         }
     }
+
+    @Override
+    public DeviceLayerKind getKind()
+    {
+        return DeviceLayerKind.DRBD;
+    }
 }

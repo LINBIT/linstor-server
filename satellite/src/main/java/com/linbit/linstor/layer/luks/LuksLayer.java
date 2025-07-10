@@ -34,6 +34,7 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.Commands;
 
 import javax.inject.Inject;
@@ -492,5 +493,11 @@ public class LuksLayer implements DeviceLayer
         }
         resourceProcessorProvider.get().closeAfterClone(((LuksVlmData<?>) vlm).getSingleChild(), targetRscNameRef);
         vlm.setCloneDevicePath(null);
+    }
+
+    @Override
+    public DeviceLayerKind getKind()
+    {
+        return DeviceLayerKind.LUKS;
     }
 }

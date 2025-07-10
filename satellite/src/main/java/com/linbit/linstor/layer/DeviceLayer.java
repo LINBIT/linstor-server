@@ -27,12 +27,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-public interface DeviceLayer
+public interface DeviceLayer extends Comparable<DeviceLayer>
 {
     String STOR_DRIVER_NAMESPACE = ApiConsts.NAMESPC_STORAGE_DRIVER;
 
@@ -285,5 +286,12 @@ public interface DeviceLayer
     default void processAfterClone(VlmProviderObject<?> vlmSrc, VlmProviderObject<?> vlmTgt, String clonedPath)
         throws StorageException
     {
+    }
+
+    DeviceLayerKind getKind();
+
+    default int compareTo(DeviceLayer other)
+    {
+        return Integer.compare(this.getKind().getOrder(), other.getKind().getOrder());
     }
 }

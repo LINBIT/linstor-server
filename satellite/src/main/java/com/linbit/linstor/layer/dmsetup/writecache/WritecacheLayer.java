@@ -35,6 +35,7 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.ShellUtils;
 
@@ -485,5 +486,11 @@ public class WritecacheLayer implements DeviceLayer
     )
     {
         return CloneSupportResult.PASSTHROUGH;
+    }
+
+    @Override
+    public DeviceLayerKind getKind()
+    {
+        return DeviceLayerKind.WRITECACHE;
     }
 }

@@ -38,6 +38,7 @@ import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -618,5 +619,11 @@ public class BCacheLayer implements DeviceLayer
     )
     {
         return CloneSupportResult.PASSTHROUGH;
+    }
+
+    @Override
+    public DeviceLayerKind getKind()
+    {
+        return DeviceLayerKind.BCACHE;
     }
 }

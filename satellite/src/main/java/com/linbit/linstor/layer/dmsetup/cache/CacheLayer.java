@@ -37,6 +37,7 @@ import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
@@ -441,4 +442,9 @@ public class CacheLayer implements DeviceLayer
         return CloneSupportResult.PASSTHROUGH;
     }
 
+    @Override
+    public DeviceLayerKind getKind()
+    {
+        return DeviceLayerKind.CACHE;
+    }
 }
