@@ -1,3 +1,37 @@
+linstor-server (1.31.3-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * DivergentUuidsExc: will now trigger a System.exit(70)
+  * ctrpropshelper: improve output invalid key/value messages
+  * applifemanager: survive non root user starts
+  * Restart Satellite service on exit code 70 (critical error)
+  * gradlew: switch to version 8.14.2
+  * gitlab: add sbom build step
+  * response-utils: fix typo
+  * Not connected errors are now treated as warnings
+
+  [ Moritz Wanzenböck ]
+  * skip even more error reports for missing objects
+  * ci: check-openapi in MR pipeline
+  * schedules: skip error reports for invalid crons
+
+  [ Johanna Kucera ]
+  * Snapshot,Rollback: fix error handling and vlmDfn-changes
+  * Prevent VlmDfn UUID mismatch
+  * Ensure zfs-vlm-suffix is set correctly during vlmDfn delete
+  * LayerIgnoreReason: fix problems with ignore-reason and skip-disk
+
+  [ Christoph Böhmwalder ]
+  * gradle: reorder buildscript block for better compat
+
+  [ Gabor Hernadi ]
+  * Node,del: Fixed AccessToDeleted node after deleting offline node
+  * Snap,create: fix typo
+  * DevHandler: Improve trace log message
+  * Snap,create: Fix allVolumesUpToDate method
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 10 Jul 2025 05:58:25 +0000
+
 linstor-server (1.31.2-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
