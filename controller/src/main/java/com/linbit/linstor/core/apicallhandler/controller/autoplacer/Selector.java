@@ -122,66 +122,66 @@ class Selector
                         {
                             alreadyDeployedDiskfulCount++;
                         }
-                    }
 
-                    nodeStrList.add(node.getName().displayValue);
+                        nodeStrList.add(node.getName().displayValue);
 
-                    // determine already selected provider kind
-                    List<AbsRscLayerObject<Resource>> storageRscDataList = LayerUtils.getChildLayerDataByKind(
-                        rsc.getLayerData(apiCtx),
-                        DeviceLayerKind.STORAGE
-                    );
-                    // might be possible to skip this loop if rsc to be placed is diskless
-                    for (AbsRscLayerObject<Resource> storageRscData : storageRscDataList)
-                    {
-                        if (storageRscData.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
+                        // determine already selected provider kind
+                        List<AbsRscLayerObject<Resource>> storageRscDataList = LayerUtils.getChildLayerDataByKind(
+                            rsc.getLayerData(apiCtx),
+                            DeviceLayerKind.STORAGE
+                        );
+                        // might be possible to skip this loop if rsc to be placed is diskless
+                        for (AbsRscLayerObject<Resource> storageRscData : storageRscDataList)
                         {
-                            for (
-                                VlmProviderObject<Resource> storageVlmData : storageRscData.getVlmLayerObjects()
-                                    .values()
-                            )
+                            if (storageRscData.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
                             {
-                                StorPool sp = storageVlmData.getStorPool();
-                                alreadyDeployedInSharedSPNames.add(sp.getSharedStorPoolName());
-
-                                DeviceProviderKind storageVlmProviderKind = sp.getDeviceProviderKind();
-                                ExtToolsInfo drbdInfo = sp.getNode()
-                                    .getPeer(apiCtx)
-                                    .getExtToolsManager()
-                                    .getExtToolInfo(ExtTools.DRBD9_KERNEL);
-                                Version storageVlmDrbdVersion = drbdInfo == null ? null : drbdInfo.getVersion();
-                                if (!storageVlmProviderKind.equals(DeviceProviderKind.DISKLESS))
+                                for (
+                                    VlmProviderObject<Resource> storageVlmData : storageRscData.getVlmLayerObjects()
+                                        .values()
+                                )
                                 {
-                                    Set<Entry<DeviceProviderKind, List<Version>>> entrySet = alreadyDeployedKindsAndVersion
-                                        .entrySet();
-                                    for (Entry<DeviceProviderKind, List<Version>> entry : entrySet)
+                                    StorPool sp = storageVlmData.getStorPool();
+                                    alreadyDeployedInSharedSPNames.add(sp.getSharedStorPoolName());
+
+                                    DeviceProviderKind storageVlmProviderKind = sp.getDeviceProviderKind();
+                                    ExtToolsInfo drbdInfo = sp.getNode()
+                                        .getPeer(apiCtx)
+                                        .getExtToolsManager()
+                                        .getExtToolInfo(ExtTools.DRBD9_KERNEL);
+                                    Version storageVlmDrbdVersion = drbdInfo == null ? null : drbdInfo.getVersion();
+                                    if (!storageVlmProviderKind.equals(DeviceProviderKind.DISKLESS))
                                     {
-                                        DeviceProviderKind alreadyDeloyedKind = entry.getKey();
-                                        for (Version alreadyDeloyedDrbdVersion : entry.getValue())
+                                        Set<Entry<DeviceProviderKind, List<Version>>> entrySet = alreadyDeployedKindsAndVersion
+                                            .entrySet();
+                                        for (Entry<DeviceProviderKind, List<Version>> entry : entrySet)
                                         {
-
-                                            boolean isMixingAllowed = DeviceProviderKind.isMixingAllowed(
-                                                alreadyDeloyedKind,
-                                                alreadyDeloyedDrbdVersion,
-                                                storageVlmProviderKind,
-                                                storageVlmDrbdVersion,
-                                                allowMixing
-                                            );
-
-                                            if (!isMixingAllowed)
+                                            DeviceProviderKind alreadyDeloyedKind = entry.getKey();
+                                            for (Version alreadyDeloyedDrbdVersion : entry.getValue())
                                             {
-                                                throw new ImplementationError(
-                                                    "Multiple deployed provider kinds found for: " +
-                                                        rsc
-                                                );
-                                            }
-                                        }
 
+                                                boolean isMixingAllowed = DeviceProviderKind.isMixingAllowed(
+                                                    alreadyDeloyedKind,
+                                                    alreadyDeloyedDrbdVersion,
+                                                    storageVlmProviderKind,
+                                                    storageVlmDrbdVersion,
+                                                    allowMixing
+                                                );
+
+                                                if (!isMixingAllowed)
+                                                {
+                                                    throw new ImplementationError(
+                                                        "Multiple deployed provider kinds found for: " +
+                                                            rsc
+                                                    );
+                                                }
+                                            }
+
+                                        }
+                                        alreadyDeployedKindsAndVersion.computeIfAbsent(
+                                            storageVlmProviderKind,
+                                            ignored -> new ArrayList<>()
+                                        ).add(storageVlmDrbdVersion);
                                     }
-                                    alreadyDeployedKindsAndVersion.computeIfAbsent(
-                                        storageVlmProviderKind,
-                                        ignored -> new ArrayList<>()
-                                    ).add(storageVlmDrbdVersion);
                                 }
                             }
                         }
