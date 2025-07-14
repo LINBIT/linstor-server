@@ -441,7 +441,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
             if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
             {
-                canDelete = node.getResourceCount() == 0;
+                canDelete = node.getResourceCount() == 0 && !node.hasSnapshots(apiCtx);
                 if (canDelete)
                 {
                     // If the node has no resources, then there should not be any volumes referenced
@@ -461,7 +461,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                                     ApiConsts.FAIL_EXISTS_VLM,
                                     String.format(
                                         "Deletion of node '%s' failed because the storage pool '%s' references " +
-                                            "volumes on this node, although the node does not reference any resources",
+                                            "volumes or snapshotvolumes on this node, although the node does not " +
+                                            "reference any resources or snapshots",
                                         node.getName(),
                                         storPool.getName()
                                     )
