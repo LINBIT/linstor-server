@@ -11,6 +11,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -37,6 +38,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -77,6 +79,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlSnapshotRestoreApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlSnapshotHelper ctrlSnapshotHelper;
@@ -90,9 +93,11 @@ public class CtrlSnapshotRestoreApiCallHandler
     private final CtrlRscAutoHelper autoHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final BackupInfoManager backupInfoMgr;
+    private final CtrlSatelliteUpdateCaller ctrlStltUpdateCaller;
 
     @Inject
     public CtrlSnapshotRestoreApiCallHandler(
+        ErrorReporter errorReporterRef,
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlSnapshotHelper ctrlSnapshotHelperRef,
@@ -105,9 +110,11 @@ public class CtrlSnapshotRestoreApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         CtrlRscAutoHelper ctrlRscAutoHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
-        BackupInfoManager backupInfoMgrRef
+        BackupInfoManager backupInfoMgrRef,
+        CtrlSatelliteUpdateCaller ctrlStltUpdateCallerRef
     )
     {
+        errorReporter = errorReporterRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlSnapshotHelper = ctrlSnapshotHelperRef;
@@ -121,6 +128,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         autoHelper = ctrlRscAutoHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         backupInfoMgr = backupInfoMgrRef;
+        ctrlStltUpdateCaller = ctrlStltUpdateCallerRef;
     }
 
     private ResponseContext makeSnapshotRestoreContext(String rscNameStr)
@@ -417,6 +425,43 @@ public class CtrlSnapshotRestoreApiCallHandler
                 return Flux.error(exc);
             }
         }
+    }
+
+    public Flux<ApiCallRc> unsetRestoreTarget(ResourceName rscNameRef)
+    {
+        ResponseContext context = makeSnapshotRestoreContext(rscNameRef.displayValue);
+        return scopeRunner.fluxInTransactionalScope(
+            "Remove RESTORE_TARGET",
+            lockGuardFactory.createDeferred()
+                .write(LockObj.RSC_DFN_MAP)
+                .build(),
+            () -> unsetRestoreTargetInTransaction(rscNameRef)
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> unsetRestoreTargetInTransaction(ResourceName rscNameRef)
+    {
+        @Nullable ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, false);
+        Flux<ApiCallRc> ret;
+        if (rscDfn != null)
+        {
+            unsetFlags(rscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
+            ctrlTransactionHelper.commit();
+            ret = ctrlStltUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+                .transform(
+                    responses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
+                        responses,
+                        rscDfn.getName(),
+                        "Removed RESTORE_TARGET flag of {1} on {0}"
+                    )
+                );
+        }
+        else
+        {
+            ret = Flux.empty();
+        }
+        return ret;
     }
 
     private boolean isFlagSet(SnapshotDefinition snapDfn, SnapshotDefinition.Flags... flags)

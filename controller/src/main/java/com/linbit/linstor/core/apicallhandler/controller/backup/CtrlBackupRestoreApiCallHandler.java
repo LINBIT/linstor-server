@@ -1990,6 +1990,12 @@ public class CtrlBackupRestoreApiCallHandler
                                  */
                             }
                             keepGoing = false; // we received the last backup
+
+                            // whatever happens, make sure to unset the RESTORE_TARGET flag from RD, otherwise the RD
+                            // will not be able to crate new resources, rollback, etc..
+                            flux = flux.concatWith(
+                                ctrlSnapRestoreApiCallHandler.unsetRestoreTarget(snapDfn.getResourceName())
+                            );
                         }
                         else
                         {
