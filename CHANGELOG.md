@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed possible "attempt to replace active transaction Mgr" when updating free space
 - Fixed race condition while cleaning up after cloning for ZFS resources
+- Fixed resource definitions not allowing new resource (or rollback/restores) after "backup ship .. --download-only"
 
 ### Removed
 

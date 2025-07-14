@@ -716,6 +716,7 @@ public class CtrlBackupRestoreApiCallHandler
             resetData,
             dstRscGrpRef,
             forceRscGrpRef,
+            !downloadOnly || forceRestore,
             responses
         );
 
@@ -1133,6 +1134,7 @@ public class CtrlBackupRestoreApiCallHandler
         boolean resetData,
         @Nullable String dstRscGrpRef,
         boolean forceMoveRscGrpRef,
+        boolean markAsRestoreTargetRef,
         ApiCallRcImpl responsesRef
     )
     {
@@ -1212,7 +1214,10 @@ public class CtrlBackupRestoreApiCallHandler
                     }
                 }
             }
-            rscDfn.getFlags().enableFlags(peerAccCtx.get(), ResourceDefinition.Flags.RESTORE_TARGET);
+            if (markAsRestoreTargetRef)
+            {
+                rscDfn.getFlags().enableFlags(peerAccCtx.get(), ResourceDefinition.Flags.RESTORE_TARGET);
+            }
         }
         catch (AccessDeniedException exc)
         {
@@ -1254,6 +1259,7 @@ public class CtrlBackupRestoreApiCallHandler
                 data.isResetData(),
                 dstRscGrp,
                 data.isForceRscGrp(),
+                !data.isDownloadOnly() || data.isForceRestore(),
                 responses
             );
 
