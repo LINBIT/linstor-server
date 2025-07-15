@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.RaidLevel;
+import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.storage.utils.Commands.genericExecutor;
@@ -103,10 +104,33 @@ public class ZfsCommands
     public static OutputData delete(ExtCmd extCmd, String zpool, String identifier, ZfsVolumeType type)
         throws StorageException
     {
-        return delete(extCmd, zpool + File.separator + identifier, type);
+        return delete(extCmd, zpool + File.separator + identifier, type, new RetryIfDeviceBusy());
+    }
+
+    public static OutputData delete(
+        ExtCmd extCmd,
+        String zpool,
+        String identifier,
+        ZfsVolumeType type,
+        RetryHandler retryHandlerRef
+    )
+        throws StorageException
+    {
+        return delete(extCmd, zpool + File.separator + identifier, type, retryHandlerRef);
     }
 
     public static OutputData delete(ExtCmd extCmd, String fullQualifiedIdentifier, ZfsVolumeType type)
+        throws StorageException
+    {
+        return delete(extCmd, fullQualifiedIdentifier, type, new RetryIfDeviceBusy());
+    }
+
+    public static OutputData delete(
+        ExtCmd extCmd,
+        String fullQualifiedIdentifier,
+        ZfsVolumeType type,
+        RetryHandler retryHandlerRef
+    )
         throws StorageException
     {
         return genericExecutor(
@@ -118,7 +142,7 @@ public class ZfsCommands
             },
             "Failed to delete zfs " + type.descr,
             "Failed to delete zfs " + type.descr + " '" + fullQualifiedIdentifier + "'",
-            new RetryIfDeviceBusy()
+            retryHandlerRef
         );
     }
 

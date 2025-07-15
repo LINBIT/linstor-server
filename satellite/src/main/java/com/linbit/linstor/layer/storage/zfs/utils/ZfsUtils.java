@@ -11,6 +11,7 @@ import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands.ZfsVolumeType;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.utils.StringUtils;
 
 import java.io.File;
@@ -32,6 +33,10 @@ import java.util.regex.Pattern;
 
 public class ZfsUtils
 {
+    // cloning easily takes minutes if not longer. We can wait a few more seconds if ZFS still needs time..
+    private static final int ZFS_DELETE_IF_EXISTS_RETRY_COUNT = 10;
+    private static final int ZFS_DESTROY_RETRY_DELAY_IN_MS = 1_000;
+
     private static final String DELIMITER = "\t"; // default for all "zfs -H ..." commands
 
     private static final int ZFS_LIST_COL_IDENTIFIER        = 0; // -o "name"
@@ -431,7 +436,6 @@ public class ZfsUtils
         return new TreeSet<>(Arrays.asList(stdOut.split("\n")));
     }
 
-
     public static <T> Map<String, T> getZfsLocalProperty(
         ExtCmd extCmdRef,
         String zfsPropRef,
@@ -600,5 +604,52 @@ public class ZfsUtils
             devices.add(subColumns[0]);
         }
         return devices;
+    }
+
+    /**
+     * Attempts a "zfs destroy ...", retries if necessary (with delays between attempts) until either exit code is 0
+     * or error message suggests that the ZFS identifier (ZVOL or snapshot) no longer exists.
+     * Will only throw Exception after max retry failed attempts.
+     */
+    public static void deleteIfExists(
+        ExtCmd extCmdRef,
+        String zpoolRef,
+        String zfsIdentifierRef,
+        ZfsCommands.ZfsVolumeType zfsTypeRef
+    )
+        throws StorageException
+    {
+        ZfsCommands.delete(
+            extCmdRef,
+            zpoolRef,
+            zfsIdentifierRef,
+            zfsTypeRef,
+            new Commands.RetryHandler()
+            {
+                private int retryCount = ZFS_DELETE_IF_EXISTS_RETRY_COUNT;
+                @Override
+                public boolean skip(OutputData outDataRef)
+                {
+                    String stdErr = new String(outDataRef.stderrData);
+                    return stdErr.contains("dataset does not exist") ||
+                        stdErr.contains("could not find any snapshots to destroy; check snapshot names.");
+                }
+
+                @Override
+                public boolean retry(OutputData outputDataRef)
+                {
+                    try
+                    {
+                        Thread.sleep(ZFS_DESTROY_RETRY_DELAY_IN_MS);
+                    }
+                    catch (InterruptedException exc)
+                    {
+                        retryCount = 0;
+                        Thread.currentThread().interrupt();
+                    }
+                    return retryCount-- > 0;
+                }
+            }
+        );
     }
 }

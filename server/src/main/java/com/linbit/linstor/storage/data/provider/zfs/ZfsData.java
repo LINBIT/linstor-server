@@ -25,6 +25,7 @@ import javax.inject.Provider;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class ZfsData<RSC extends AbsResource<RSC>>
     extends AbsStorageVlmData<RSC> implements ZfsProviderObject<RSC>
@@ -76,8 +77,18 @@ public class ZfsData<RSC extends AbsResource<RSC>>
     public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef)
         throws DatabaseException, AccessDeniedException
     {
-        super.setStorPool(accCtxRef, storPoolRef);
-        zpool = null; // force Zfs(Thin)Provider to repeat the lookup using the new storage pool
+        if (!Objects.equals(storPool.get(), storPoolRef))
+        {
+            super.setStorPool(accCtxRef, storPoolRef);
+
+            // force Zfs(Thin)Provider to repeat the lookup using the new storage pool
+
+            // however, this only needs to be done if the storage pool actually changes. If it is the same SP as before
+            // chances are that this ZfsData is part of a DevMgr-external process like cloning. Setting zpool to null in
+            // such a scenario might screw up some post-processing like cleanup procedures for the aforementioned
+            // DevMgr-external process.
+            zpool = null;
+        }
     }
 
     public void setZPool(String zpoolRef)
