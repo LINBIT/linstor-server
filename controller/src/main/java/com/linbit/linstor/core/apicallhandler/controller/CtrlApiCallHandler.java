@@ -1077,6 +1077,28 @@ public class CtrlApiCallHandler
         return listSnapshotShippings;
     }
 
+    public Flux<ApiCallRc> modifySnapshotDefinition(
+        String rscNameStr,
+        String snapshotNameStr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces
+    )
+    {
+        Flux<ApiCallRc> flux;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
+        {
+            flux = snapshotApiCallHandler.modify(
+                rscNameStr,
+                snapshotNameStr,
+                overrideProps,
+                deletePropKeys,
+                deletePropNamespaces
+            );
+        }
+        return flux;
+    }
+
     /**
      * Modifies the DRBD Proxy configuration for a given resource definition.
      *

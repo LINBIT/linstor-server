@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.25.1";
+    public static final String REST_API_VERSION = "1.26.0";
 
     /**
      * Common api reply structure
@@ -1233,6 +1233,14 @@ public class JsonGenTypes
          */
         public @Nullable String uuid;
         public List<SnapshotNode> snapshots = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SnapshotModify
+    {
+        public Map<String, String> override_props = Collections.emptyMap();
+        public List<String> delete_props = Collections.emptyList();
+        public List<String> delete_namespaces = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

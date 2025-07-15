@@ -476,8 +476,8 @@ public class CtrlPropsHelper
             sourceProps,
             targetProps,
             failAccDeniedRc,
-            new ArrayList<>(),
-            new HashMap<>()
+            Collections.emptyList(),
+            Collections.emptyMap()
         );
     }
 
@@ -671,8 +671,8 @@ public class CtrlPropsHelper
             props,
             deletePropKeys,
             deleteNamespaces,
-            new ArrayList<>(),
-            new HashMap<>()
+            Collections.emptyList(),
+            Collections.emptyMap()
         );
     }
 

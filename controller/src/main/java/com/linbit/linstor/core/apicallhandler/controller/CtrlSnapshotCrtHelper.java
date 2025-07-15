@@ -11,6 +11,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -108,6 +109,7 @@ public class CtrlSnapshotCrtHelper
         Collection<String> nodeNameStrs,
         ResourceName rscName,
         SnapshotName snapshotName,
+        Map<String, String> props,
         ApiCallRcImpl responses
     )
     {
@@ -122,6 +124,11 @@ public class CtrlSnapshotCrtHelper
             ctrlPropsHelper.getProps(rscDfn),
             ctrlPropsHelper.getProps(snapshotDfn, true)
         );
+
+        // apply given creation props
+        ctrlPropsHelper.fillProperties(
+            responses, LinStorObject.SNAP_DFN, props, ctrlPropsHelper.getProps(snapshotDfn, false),
+            ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN);
 
         ensureSnapshotsViable(rscDfn);
 

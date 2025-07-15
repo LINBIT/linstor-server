@@ -7,16 +7,19 @@ import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -29,6 +32,7 @@ import javax.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,19 +51,22 @@ public class Snapshots
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtApiCallHandler;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandler;
+    private final CtrlSnapshotApiCallHandler ctrlSnapshotApiCallHandler;
 
     @Inject
     public Snapshots(
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtApiCallHandlerRef,
-        CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef,
+        CtrlSnapshotApiCallHandler ctrlSnapshotApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlSnapshotCrtApiCallHandler = ctrlSnapshotCrtApiCallHandlerRef;
         ctrlSnapshotDeleteApiCallHandler = ctrlSnapshotDeleteApiCallHandlerRef;
+        ctrlSnapshotApiCallHandler = ctrlSnapshotApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
     }
@@ -141,7 +148,8 @@ public class Snapshots
             Flux<ApiCallRc> responses = ctrlSnapshotCrtApiCallHandler.createSnapshot(
                     snapData.nodes,
                     rscName,
-                    snapData.name
+                    snapData.name,
+                    snapData.snapshot_definition_props
                 );
 
             requestHelper.doFlux(
@@ -176,6 +184,40 @@ public class Snapshots
                 request,
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(responses)
+            );
+        }
+    }
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("{snapName}")
+    public void modifySnapshot(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("rscName") String rscName,
+        @PathParam("snapName") String snapName,
+        String jsonData
+    )
+        throws IOException
+    {
+        try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+        {
+            JsonGenTypes.SnapshotModify modifyData =
+                objectMapper.readValue(jsonData, JsonGenTypes.SnapshotModify.class);
+
+            Flux<ApiCallRc> flux = ctrlSnapshotApiCallHandler.modify(
+                    rscName,
+                    snapName,
+                    modifyData.override_props,
+                    new HashSet<>(modifyData.delete_props),
+                    new HashSet<>(modifyData.delete_namespaces)
+                );
+
+            requestHelper.doFlux(
+                ApiConsts.API_MOD_SNAPSHOT,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
             );
         }
     }

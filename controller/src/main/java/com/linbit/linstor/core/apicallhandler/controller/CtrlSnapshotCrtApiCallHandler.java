@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -133,10 +134,11 @@ public class CtrlSnapshotCrtApiCallHandler
     public Flux<ApiCallRc> createSnapshot(
         List<String> nodeNameStrs,
         String rscNameStr,
-        String snapshotNameStr
+        String snapshotNameStr,
+        Map<String, String> props
     )
     {
-        return createSnapshot(nodeNameStrs, rscNameStr, snapshotNameStr, true);
+        return createSnapshot(nodeNameStrs, rscNameStr, snapshotNameStr, props, true);
     }
 
     /**
@@ -154,11 +156,12 @@ public class CtrlSnapshotCrtApiCallHandler
         List<String> nodeNameStrs,
         String rscNameStr,
         String snapshotNameStr,
+        Map<String, String> props,
         boolean handleErrors
     )
     {
         return createSnapshot(
-            singleSnapReq(nodeNameStrs, rscNameStr, snapshotNameStr),
+            singleSnapReq(nodeNameStrs, rscNameStr, snapshotNameStr, props),
             handleErrors
         );
     }
@@ -166,11 +169,12 @@ public class CtrlSnapshotCrtApiCallHandler
     private CreateMultiSnapRequest singleSnapReq(
         List<String> nodeNameStrsRef,
         String rscNameStrRef,
-        String snapshotNameStrRef
+        String snapshotNameStrRef,
+        Map<String, String> props
     )
     {
         return new CreateMultiSnapRequest(
-            Collections.singleton(new SnapReq(nodeNameStrsRef, rscNameStrRef, snapshotNameStrRef))
+            Collections.singleton(new SnapReq(nodeNameStrsRef, rscNameStrRef, snapshotNameStrRef, props))
         );
     }
 
@@ -213,6 +217,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 nodeNameStrs,
                 LinstorParsingUtils.asRscName(rscNameStr),
                 LinstorParsingUtils.asSnapshotName(snapshotNameStr),
+                snapReq.getProps(),
                 responses
             );
             snapDfnList.add(snapDfn);
@@ -310,6 +315,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 nodeNameStrs,
                 LinstorParsingUtils.asRscName(rscNameStr),
                 LinstorParsingUtils.asSnapshotName(autoSnapshotName),
+                Collections.emptyMap(),
                 responses
             );
             enableFlagPrivileged(snapDfn, SnapshotDefinition.Flags.AUTO_SNAPSHOT);

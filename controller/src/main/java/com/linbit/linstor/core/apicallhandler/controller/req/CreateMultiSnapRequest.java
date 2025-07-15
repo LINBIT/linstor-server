@@ -240,17 +240,20 @@ public class CreateMultiSnapRequest
         private final List<String> nodeNames;
         private final String rscName;
         private final String snapName;
+        private final Map<String, String> props;
 
-        public SnapReq(List<String> nodeNamesRef, String rscNameRef, String snapNameRef)
+        public SnapReq(List<String> nodeNamesRef, String rscNameRef, String snapNameRef, Map<String, String> propsRef)
         {
             nodeNames = nodeNamesRef;
             rscName = rscNameRef;
             snapName = snapNameRef;
+            props = propsRef;
         }
 
         public SnapReq(AccessContext accCtx, SnapshotDefinition snapDfnRef) throws AccessDeniedException
         {
             nodeNames = new ArrayList<>();
+            props = Collections.emptyMap();
             if (!snapDfnRef.isDeleted())
             {
                 for (Snapshot snap : snapDfnRef.getAllSnapshots(accCtx))
@@ -298,6 +301,11 @@ public class CreateMultiSnapRequest
         public String getDescription()
         {
             return getSnapshotDescription(nodeNames, rscName, snapName);
+        }
+
+        public Map<String, String> getProps()
+        {
+            return props;
         }
 
         @Override

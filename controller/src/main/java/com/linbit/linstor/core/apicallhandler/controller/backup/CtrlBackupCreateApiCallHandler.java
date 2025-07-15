@@ -259,6 +259,7 @@ public class CtrlBackupCreateApiCallHandler
                     Collections.emptyList(),
                     rscDfn.getName(),
                     LinstorParsingUtils.asSnapshotName(snapName),
+                    Collections.emptyMap(),
                     responses
                 );
             setBackupSnapDfnFlagsAndProps(snapDfn, scheduleNameRef, nowRef);

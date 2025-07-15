@@ -286,6 +286,7 @@ public class CtrlSnapshotShippingApiCallHandler
             Arrays.asList(fromNodeNameRef, toNodeNameRef),
             LinstorParsingUtils.asRscName(rscNameRef),
             LinstorParsingUtils.asSnapshotName(snapShipName),
+            Collections.emptyMap(),
             responses
         );
 
