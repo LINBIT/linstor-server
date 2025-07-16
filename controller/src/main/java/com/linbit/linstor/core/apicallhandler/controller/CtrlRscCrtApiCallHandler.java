@@ -29,6 +29,7 @@ import com.linbit.utils.PairNonNull;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -77,7 +78,7 @@ public class CtrlRscCrtApiCallHandler
 
     public Flux<ApiCallRc> createResource(
         List<ResourceWithPayloadApi> rscApiList,
-        DiskfulBy diskfulByRef
+        @Nullable DiskfulBy diskfulByRef
     )
     {
         List<String> rscNames = rscApiList.stream()
@@ -137,7 +138,7 @@ public class CtrlRscCrtApiCallHandler
         List<ResourceWithPayloadApi> rscApiList,
         ResponseContext context,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        DiskfulBy diskfulByRef
+        @Nullable DiskfulBy diskfulByRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();

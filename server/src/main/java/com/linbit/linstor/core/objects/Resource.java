@@ -10,7 +10,6 @@ import com.linbit.linstor.api.pojo.EffectivePropertiesPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -416,7 +415,7 @@ public class Resource extends AbsResource<Resource>
         }
     }
 
-    public ResourceApi getApiData(
+    public RscPojo getApiData(
         AccessContext accCtx,
         @Nullable Long fullSyncId,
         @Nullable Long updateId,

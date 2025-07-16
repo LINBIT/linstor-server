@@ -1229,11 +1229,19 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
     }
 
-    private void setDiskfulByProp(Resource rscRef, DiskfulBy diskfulByRef)
+    private void setDiskfulByProp(Resource rscRef, @Nullable DiskfulBy diskfulByRef)
     {
         try
         {
-            rscRef.getProps(peerAccCtx.get()).setProp(ApiConsts.KEY_RSC_DISKFUL_BY, diskfulByRef.getValue());
+            Props rscProp = rscRef.getProps(peerAccCtx.get());
+            if (diskfulByRef != null)
+            {
+                rscProp.setProp(ApiConsts.KEY_RSC_DISKFUL_BY, diskfulByRef.getValue());
+            }
+            else
+            {
+                rscProp.removeProp(ApiConsts.KEY_RSC_DISKFUL_BY);
+            }
         }
         catch (InvalidKeyException | InvalidValueException exc)
         {

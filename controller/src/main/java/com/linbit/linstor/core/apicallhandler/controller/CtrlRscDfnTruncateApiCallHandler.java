@@ -14,8 +14,11 @@ import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteU
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -86,6 +89,7 @@ public class CtrlRscDfnTruncateApiCallHandler
     private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
     private final CtrlResyncAfterHelper ctrlResyncAfterHelper;
     private final ErrorReporter errorReporter;
+    private final ResponseConverter responseConverter;
 
     @Inject
     public CtrlRscDfnTruncateApiCallHandler(
@@ -103,7 +107,8 @@ public class CtrlRscDfnTruncateApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
         CtrlResyncAfterHelper ctrlResyncAfterHelperRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        ResponseConverter responseConverterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -121,6 +126,23 @@ public class CtrlRscDfnTruncateApiCallHandler
         ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
         ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
         errorReporter = errorReporterRef;
+        responseConverter = responseConverterRef;
+    }
+
+    public Flux<ApiCallRc> truncateRscDfn(ResourceName rscName, boolean suppressNodeOfflineWarningRef)
+    {
+        ResponseContext context = CtrlRscDfnApiCallHandler.makeResourceDefinitionContext(
+            ApiOperation.makeDeleteOperation(),
+            rscName.displayValue
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Truncate resource definition",
+                lockGuardFactory.create().write(LockObj.RSC_DFN_MAP).buildDeferred(),
+                () -> truncateRscDfnInTransaction(rscName, suppressNodeOfflineWarningRef)
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
     /**

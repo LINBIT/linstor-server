@@ -19,6 +19,8 @@ import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.ResourceWithPayloadPojo;
+import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.backups.BackupInfoVlmPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaInfoPojo;
@@ -32,8 +34,10 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnTruncateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtHelper;
@@ -54,11 +58,13 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
+import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -155,6 +161,7 @@ public class CtrlBackupRestoreApiCallHandler
     private final CtrlSnapshotCrtHelper snapshotCrtHelper;
     private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
     private final CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
+    private final CtrlRscDfnTruncateApiCallHandler ctrlRscDfnTruncateApiCallHandler;
     private final Autoplacer autoplacer;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final RemoteRepository remoteRepo;
@@ -167,6 +174,7 @@ public class CtrlBackupRestoreApiCallHandler
     private final LayerSizeHelper layerSizeHelper;
     private final SystemConfRepository systemConfRepository;
     private final CtrlRscDeleteApiCallHandler ctrlRscDelApiCallHandler;
+    private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
     private final CtrlRemoteApiCallHandler ctrlRemoteApiCallHandler;
 
     @Inject
@@ -187,6 +195,7 @@ public class CtrlBackupRestoreApiCallHandler
         DecryptionHelper decHelperRef,
         CtrlSnapshotCrtHelper snapCrtHelperRef,
         CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandlerRef,
+        CtrlRscDfnTruncateApiCallHandler ctrlRscDfnTruncateApiCallHandlerRef,
         CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
         Autoplacer autoplacerRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
@@ -200,6 +209,7 @@ public class CtrlBackupRestoreApiCallHandler
         LayerSizeHelper layerSizeHelperRef,
         SystemConfRepository systemConfRepositoryRef,
         CtrlRscDeleteApiCallHandler ctrlRscDelApiCallHandlerRef,
+        CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         CtrlRemoteApiCallHandler ctrlRemoteApiCallHandlerRef
     )
     {
@@ -219,6 +229,7 @@ public class CtrlBackupRestoreApiCallHandler
         decHelper = decHelperRef;
         snapshotCrtHelper = snapCrtHelperRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
+        ctrlRscDfnTruncateApiCallHandler = ctrlRscDfnTruncateApiCallHandlerRef;
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
         autoplacer = autoplacerRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
@@ -232,6 +243,7 @@ public class CtrlBackupRestoreApiCallHandler
         layerSizeHelper = layerSizeHelperRef;
         systemConfRepository = systemConfRepositoryRef;
         ctrlRscDelApiCallHandler = ctrlRscDelApiCallHandlerRef;
+        ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
         ctrlRemoteApiCallHandler = ctrlRemoteApiCallHandlerRef;
     }
 
@@ -1072,10 +1084,10 @@ public class CtrlBackupRestoreApiCallHandler
             SnapshotDefinition.Flags.BACKUP
         );
 
-        int rscCt = rscDfn.getResourceCount();
-        if (rscCt != 0)
+        int diskfulRscCt = rscDfn.getDiskfulCount(accCtx);
+        if (diskfulRscCt != 0)
         {
-            if (rscCt == 1 && forceRestore)
+            if (diskfulRscCt == 1 && forceRestore)
             {
                 snapDfn.getFlags()
                     .enableFlags(accCtx, SnapshotDefinition.Flags.FORCE_RESTORE_BACKUP_ON_SUCCESS);
@@ -1888,24 +1900,27 @@ public class CtrlBackupRestoreApiCallHandler
                     }
                     else
                     {
+                        ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
                         if (successRef)
                         {
                             snapDfnFlags.enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
                             flux = ctrlRemoteApiCallHandler.cleanupRemotesIfNeeded(
                                 backupInfoMgr.removeAllRestoreEntries(
-                                    snapDfn.getResourceDefinition(),
+                                    rscDfn,
                                     rscNameRef,
                                     snap
                                 )
                             );
                             // start snap-restore
-                            int rscCt = snapDfn.getResourceDefinition().getResourceCount();
+                            List<Resource> diskfulRscs = rscDfn.getDiskfulResources(peerCtx);
+                            List<Resource> disklessRscs = Collections.emptyList();
+                            int diskfulRscCt = diskfulRscs.size();
                             if (snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.FORCE_RESTORE_BACKUP_ON_SUCCESS) &&
-                                rscCt > 0)
+                                diskfulRscCt > 0)
                             {
                                 PriorityProps prioProps = new PriorityProps(
-                                    snapDfn.getResourceDefinition().getProps(peerCtx),
-                                    snapDfn.getResourceDefinition().getResourceGroup().getProps(peerCtx),
+                                    rscDfn.getProps(peerCtx),
+                                    rscDfn.getResourceGroup().getProps(peerCtx),
                                     systemConfRepository.getCtrlConfForView(peerCtx)
                                 );
                                 boolean forceRestoreAllowed = ApiConsts.VAL_TRUE.equalsIgnoreCase(
@@ -1915,10 +1930,11 @@ public class CtrlBackupRestoreApiCallHandler
                                         ApiConsts.VAL_TRUE
                                     )
                                 );
-                                boolean inUse = snapDfn.getResourceDefinition().anyResourceInUse(peerCtx).isPresent();
-                                if (forceRestoreAllowed && !inUse && rscCt == 1)
+                                boolean inUse = rscDfn.anyResourceInUse(peerCtx).isPresent();
+                                if (forceRestoreAllowed && !inUse && diskfulRscCt == 1)
                                 {
-                                    flux = ctrlRscDelApiCallHandler.deleteResource(nodeName.displayValue, rscNameRef);
+                                    disklessRscs = rscDfn.getDisklessResources(peerCtx);
+                                    flux = ctrlRscDfnTruncateApiCallHandler.truncateRscDfn(rscDfn.getName(), true);
                                 }
                                 else
                                 {
@@ -1939,9 +1955,11 @@ public class CtrlBackupRestoreApiCallHandler
                                     {
                                         problemDetails.add(" * The target resource-definition is not in use");
                                     }
-                                    if (rscCt > 1)
+                                    if (diskfulRscCt > 1)
                                     {
-                                        problemDetails.add(" * The target resource-definition has at most 1 resource");
+                                        problemDetails.add(
+                                            " * The target resource-definition has at most 1 diskful resource"
+                                        );
                                     }
                                     if (!problemDetails.isEmpty())
                                     {
@@ -1974,13 +1992,35 @@ public class CtrlBackupRestoreApiCallHandler
                                     SnapshotDefinition.Flags.FORCE_RESTORE_BACKUP_ON_SUCCESS
                                 );
 
+                                List<ResourceWithPayloadApi> disklessRscApiList = new ArrayList<>();
+                                for (Resource disklessRsc : disklessRscs)
+                                {
+                                    if (!disklessRsc.getNode().getName().equals(snap.getNodeName()))
+                                    {
+                                        // do not restore the previous diskless resource that will eventually restore
+                                        // the snapshot, thus becoming the new diskful resource.
+                                        disklessRscApiList.add(getDisklessCreateData(disklessRsc));
+                                    }
+                                    else
+                                    {
+                                        // if the current disklessRsc will become the new diskful resource
+                                        // we do want to make the just deleted diskful resource to a new
+                                        // diskless resource
+                                        if (!diskfulRscs.isEmpty())
+                                        {
+                                            disklessRscApiList.add(getDisklessCreateData(diskfulRscs.get(0)));
+                                        }
+                                    }
+                                }
                                 flux = flux.concatWith(
                                     ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
                                         Collections.emptyList(),
                                         snapDfn.getName(),
                                         snapDfn.getResourceName()
                                     )
-                                );
+                                )
+                                    // restore the diskless resources again...
+                                    .concatWith(ctrlRscCrtApiCallHandler.createResource(disklessRscApiList, null));
                             }
                             else
                             {
@@ -2016,7 +2056,7 @@ public class CtrlBackupRestoreApiCallHandler
                             {
                                 ctrlRemoteApiCallHandler.cleanupRemotesIfNeeded(
                                     backupInfoMgr.removeAllRestoreEntries(
-                                        snapDfn.getResourceDefinition(),
+                                        rscDfn,
                                         rscNameRef,
                                         snap
                                     )
@@ -2114,6 +2154,29 @@ public class CtrlBackupRestoreApiCallHandler
             }
         }
         return flux;
+    }
+
+    private ResourceWithPayloadPojo getDisklessCreateData(Resource copyFromRsc) throws AccessDeniedException
+    {
+        List<String> layerStackStr = new ArrayList<>();
+        for (DeviceLayerKind devLayerKind : LayerUtils.getLayerStack(copyFromRsc, sysCtx))
+        {
+            layerStackStr.add(devLayerKind.name());
+        }
+        Map<String, String> propsCopy = new HashMap<>(copyFromRsc.getProps(sysCtx).map());
+        propsCopy.remove(ApiConsts.KEY_STOR_POOL_NAME); // make sure the resource gets created disklessly
+        return new ResourceWithPayloadPojo(
+            new RscPojo(
+                copyFromRsc.getResourceDefinition().getName().displayValue,
+                copyFromRsc.getNode().getName().displayValue,
+                Resource.Flags.DRBD_DISKLESS.flagValue,
+                propsCopy
+            ),
+            layerStackStr,
+            null,
+            null,
+            null
+        );
     }
 
     private Flux<ApiCallRc> cleanupBackupTarget(Snapshot snapRef)
