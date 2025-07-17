@@ -39,7 +39,6 @@ public class ZfsData<RSC extends AbsResource<RSC>>
 
     // not persisted, not serialized, stlt only
     private transient @Nullable String zpool = null;
-    private boolean initialShipment;
     private boolean markedForDeletion = false;
 
     public ZfsData(
@@ -94,16 +93,6 @@ public class ZfsData<RSC extends AbsResource<RSC>>
     public void setZPool(String zpoolRef)
     {
         zpool = zpoolRef;
-    }
-
-    public void setInitialShipment(boolean initialShipmentRef)
-    {
-        initialShipment = initialShipmentRef;
-    }
-
-    public boolean isInitialShipment()
-    {
-        return initialShipment;
     }
 
     @Override

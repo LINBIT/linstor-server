@@ -3,7 +3,6 @@ package com.linbit.linstor.tasks;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.core.apicallhandler.controller.internal.SnapshotShippingInternalApiCallHandler;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -27,7 +26,6 @@ public class LogArchiveTask implements TaskScheduleService.Task
     private final LockGuardFactory lockGuardFactory;
     private final AccessContext sysCtx;
     private final CtrlStltSerializer ctrlStltSerializer;
-    private final SnapshotShippingInternalApiCallHandler snapshotShippingHandler;
 
     @Inject
     public LogArchiveTask(
@@ -35,8 +33,7 @@ public class LogArchiveTask implements TaskScheduleService.Task
         NodeRepository nodeRepositoryRef,
         LockGuardFactory lockGuardFactoryRef,
         @SystemContext AccessContext sysCtxRef,
-        CtrlStltSerializer ctrlClientSerializerRef,
-        SnapshotShippingInternalApiCallHandler snapshotShippingHandlerRef
+        CtrlStltSerializer ctrlClientSerializerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -44,7 +41,6 @@ public class LogArchiveTask implements TaskScheduleService.Task
         lockGuardFactory = lockGuardFactoryRef;
         sysCtx = sysCtxRef;
         ctrlStltSerializer = ctrlClientSerializerRef;
-        snapshotShippingHandler = snapshotShippingHandlerRef;
     }
 
     @Override
@@ -69,8 +65,7 @@ public class LogArchiveTask implements TaskScheduleService.Task
         {
         }
 
-        // also clean up blacklisted ports for snapshot shipping
-        snapshotShippingHandler.cleanBlacklistPorts();
+        // TODO also clean up blacklisted ports for backup shipping
 
         return getNextFutureReschedule(scheduledAt, LOGARCHIVE_SLEEP);
     }

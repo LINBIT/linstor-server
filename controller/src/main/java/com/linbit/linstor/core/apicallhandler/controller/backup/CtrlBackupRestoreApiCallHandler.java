@@ -166,7 +166,7 @@ public class CtrlBackupRestoreApiCallHandler
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final RemoteRepository remoteRepo;
     private final Provider<Peer> peerProvider;
-    private final DynamicNumberPool snapshotShippingPortPool;
+    private final DynamicNumberPool backupShippingPortPool;
     private final CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandler;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandler;
     private final CtrlBackupApiCallHandler backupApiCallHandler;
@@ -201,7 +201,7 @@ public class CtrlBackupRestoreApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         RemoteRepository remoteRepoRef,
         Provider<Peer> peerProviderRef,
-        @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
+        @Named(NumberPoolModule.BACKUP_SHIPPING_PORT_POOL) DynamicNumberPool backupShippingPortPoolRef,
         CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandlerRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandlerRef,
         CtrlBackupApiCallHandler backupApiCallHandlerRef,
@@ -235,7 +235,7 @@ public class CtrlBackupRestoreApiCallHandler
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         remoteRepo = remoteRepoRef;
         peerProvider = peerProviderRef;
-        snapshotShippingPortPool = snapshotShippingPortPoolRef;
+        backupShippingPortPool = backupShippingPortPoolRef;
         ctrlSnapRestoreApiCallHandler = ctrlSnapRestoreApiCallHandlerRef;
         ctrlSnapDeleteApiCallHandler = ctrlSnapDeleteApiCallHandlerRef;
         backupApiCallHandler = backupApiCallHandlerRef;
@@ -1861,7 +1861,7 @@ public class CtrlBackupRestoreApiCallHandler
                     {
                         if (port != null)
                         {
-                            snapshotShippingPortPool.deallocate(port);
+                            backupShippingPortPool.deallocate(port);
                         }
                     }
 

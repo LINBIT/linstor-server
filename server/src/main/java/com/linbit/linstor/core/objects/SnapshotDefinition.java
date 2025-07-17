@@ -674,9 +674,13 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         FAILED_DEPLOYMENT(1L << 1),
         FAILED_DISCONNECT(1L << 2),
         DELETE(1L << 3),
+        @Deprecated
         SHIPPING(1L << 4),
+        @Deprecated
         SHIPPING_CLEANUP(1L << 5),
+        @Deprecated
         SHIPPING_ABORT(1L << 6),
+        @Deprecated
         SHIPPED(1L << 7),
         AUTO_SNAPSHOT(1L << 8),
         BACKUP(1L << 9),

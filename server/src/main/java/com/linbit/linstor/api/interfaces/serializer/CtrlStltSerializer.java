@@ -135,13 +135,6 @@ public interface CtrlStltSerializer extends CommonSerializer
             boolean successRef
         );
 
-        @Deprecated(forRemoval = true)
-        CtrlStltSerializerBuilder notifySnapshotShipped(
-            Snapshot snap,
-            boolean successRef,
-            Set<Integer> vlmNrsWithBlockedPort
-        );
-
         CtrlStltSerializerBuilder notifyCloneUpdate(
             String rscName,
             int vlmNr,

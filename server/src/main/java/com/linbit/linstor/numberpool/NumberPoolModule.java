@@ -24,8 +24,7 @@ public class NumberPoolModule extends AbstractModule
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String SPECIAL_SATELLTE_PORT_POOL = "SpecStltPortPool";
     public static final String LAYER_RSC_ID_POOL = "LayerRscIdPool";
-    @Deprecated(forRemoval = true)
-    public static final String SNAPSHOPT_SHIPPING_PORT_POOL = "SnapshotShippingPortPool";
+    public static final String BACKUP_SHIPPING_PORT_POOL = "BackupShippingPortPool";
 
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
 
@@ -43,12 +42,9 @@ public class NumberPoolModule extends AbstractModule
     private static final int LAYER_RSC_ID_MAX = BitmapPool.MAX_CAPACITY - 1;
     private static final String LAYER_RSC_ID_ELEMENT_NAME = "Layer Resource Id";
 
-    @Deprecated(forRemoval = true)
-    private static final int DEFAULT_SNAP_SHIP_PORT_MIN = 12_000;
-    @Deprecated(forRemoval = true)
-    private static final int DEFAULT_SNAP_SHIP_PORT_MAX = 12_999;
-    @Deprecated(forRemoval = true)
-    private static final String SNAP_SHIP_PORT_ELEMENT_NAME = "Snapshot Shipping Port";
+    private static final int DEFAULT_BACK_SHIP_PORT_MIN = 12_000;
+    private static final int DEFAULT_BACK_SHIP_PORT_MAX = 12_999;
+    private static final String BACK_SHIP_PORT_ELEMENT_NAME = "Backup Shipping Port";
 
     @Override
     protected void configure()
@@ -120,11 +116,10 @@ public class NumberPoolModule extends AbstractModule
         );
     }
 
-    @Deprecated(forRemoval = true)
     @Provides
     @Singleton
-    @Named(SNAPSHOPT_SHIPPING_PORT_POOL)
-    public DynamicNumberPool snapshotShippingPortPool(
+    @Named(BACKUP_SHIPPING_PORT_POOL)
+    public DynamicNumberPool snapshotBackupPortPool(
         ErrorReporter errorReporter,
         @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef
     )
@@ -133,11 +128,11 @@ public class NumberPoolModule extends AbstractModule
             errorReporter,
             new PriorityProps(ctrlConfRef),
             ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_TCP_PORT_RANGE,
-            SNAP_SHIP_PORT_ELEMENT_NAME,
+            BACK_SHIP_PORT_ELEMENT_NAME,
             TcpPortNumber::tcpPortNrCheck,
             TcpPortNumber.PORT_NR_MAX,
-            DEFAULT_SNAP_SHIP_PORT_MIN,
-            DEFAULT_SNAP_SHIP_PORT_MAX
+            DEFAULT_BACK_SHIP_PORT_MIN,
+            DEFAULT_BACK_SHIP_PORT_MAX
         );
     }
 }

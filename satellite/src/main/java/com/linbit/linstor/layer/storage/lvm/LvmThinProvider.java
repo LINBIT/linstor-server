@@ -404,13 +404,13 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected String getSnapshotShippingReceivingCommandImpl(LvmData<Snapshot> snapVlmDataRef) throws StorageException
+    protected String getBackupShippingReceivingCommandImpl(LvmData<Snapshot> snapVlmDataRef) throws StorageException
     {
         return "thin_recv " + snapVlmDataRef.getVolumeGroup() + "/" + asSnapLvIdentifier(snapVlmDataRef);
     }
 
     @Override
-    protected String getSnapshotShippingSendingCommandImpl(
+    protected String getBackupShippingSendingCommandImpl(
         LvmData<Snapshot> lastSnapVlmDataRef,
         LvmData<Snapshot> curSnapVlmDataRef
     )
@@ -424,26 +424,6 @@ public class LvmThinProvider extends LvmProvider
         }
         sb.append(curSnapVlmDataRef.getVolumeGroup()).append("/").append(curSnapVlmDataRef.getIdentifier());
         return sb.toString();
-    }
-
-    @Override
-    protected void finishShipReceiving(LvmData<Resource> vlmDataRef, LvmData<Snapshot> snapVlmRef)
-        throws StorageException, DatabaseException, AccessDeniedException
-    {
-        String vlmDataId = asLvIdentifier(vlmDataRef);
-        deleteLvImpl(vlmDataRef, vlmDataId); // delete calls "lvmVlmData.setExists(false);" - we have to undo this
-        LvmCommands.rename(
-            extCmdFactory.create(),
-            vlmDataRef.getVolumeGroup(),
-            asSnapLvIdentifier(snapVlmRef),
-            vlmDataId,
-            null
-        );
-        vlmDataRef.setExists(true);
-        LvmUtils.recacheNextLvs();
-
-        // for keeping the same behavior as zfsProvider, we want to "keep" the snapshot. #
-        createSnapshot(vlmDataRef, snapVlmRef, true);
     }
 
     private String getThinPool(StorPoolInfo storPool) throws AccessDeniedException

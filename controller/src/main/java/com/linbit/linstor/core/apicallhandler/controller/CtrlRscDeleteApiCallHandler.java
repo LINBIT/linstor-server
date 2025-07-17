@@ -82,7 +82,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlRscAutoHelper autoHelper;
-    private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
     private final SharedResourceManager sharedRscMgr;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
@@ -100,7 +99,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscAutoHelper autoHelperRef,
-        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
         SharedResourceManager sharedRscMgrRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
@@ -118,7 +116,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         rscDfnMapLock = rscDfnMapLockRef;
         peerAccCtx = peerAccCtxRef;
         autoHelper = autoHelperRef;
-        snapShipAbortHandler = snapShipAbortHandlerRef;
         sharedRscMgr = sharedRscMgrRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
@@ -266,9 +263,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                     ).withKeepTiebreaker(keepTiebreakerRef)
                 );
 
-                Flux<ApiCallRc> abortSnapShipFlux = snapShipAbortHandler
-                    .abortSnapshotShippingPrivileged(rsc.getResourceDefinition());
-
                 ctrlTransactionHelper.commit();
 
                 flux = Flux.just(responses);
@@ -278,8 +272,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                     // only mark resource as delete if automagic does not want to keep the resource
                     next = next.concatWith(deleteResourceOnPeers(nodeNameStr, rscNameStr, context));
                 }
-                next = next.concatWith(abortSnapShipFlux)
-                    .concatWith(autoResult.getFlux());
+                next = next.concatWith(autoResult.getFlux());
                 if (!autoResult.isPreventUpdateSatellitesForResourceDelete())
                 {
                     String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
@@ -454,10 +447,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                 )
             );
 
-            Flux<ApiCallRc> abortSnapShipFlux = snapShipAbortHandler.abortSnapshotShippingPrivileged(
-                rsc.getResourceDefinition()
-            );
-
             ctrlTransactionHelper.commit();
 
             if (!autoResult.isPreventUpdateSatellitesForResourceDelete())
@@ -486,7 +475,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                 flux = Flux.just(responses);
             }
             flux = flux
-                .concatWith(abortSnapShipFlux)
                 .concatWith(autoResult.getFlux())
                 .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rsc.getResourceDefinition()));
         }

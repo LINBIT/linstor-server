@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
@@ -92,7 +94,6 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.Msg
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntCloneUpdateOuterClass.MsgIntCloneUpdate;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntSnapshotShippedOuterClass.MsgIntSnapshotShipped;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateLocalNodeChangeOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass;
@@ -125,8 +126,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
-
-import static java.util.stream.Collectors.toList;
 
 public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     implements CtrlStltSerializer.CtrlStltSerializerBuilder
@@ -937,30 +936,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         catch (AccessDeniedException exc)
         {
             handleAccessDeniedException(exc);
-        }
-        return this;
-    }
-
-    @Override
-    public CtrlStltSerializerBuilder notifySnapshotShipped(
-        Snapshot snapRef,
-        boolean success,
-        Set<Integer> vlmNrsWithBlockedPort
-    )
-    {
-        try
-        {
-            MsgIntSnapshotShipped.newBuilder()
-                .setRscName(snapRef.getResourceName().displayValue)
-                .setSnapName(snapRef.getSnapshotName().displayValue)
-                .setSuccess(success)
-                .addAllVlmNrsWithBlockedPort(vlmNrsWithBlockedPort)
-                .build()
-                .writeDelimitedTo(baos);
-        }
-        catch (IOException exc)
-        {
-            handleIOException(exc);
         }
         return this;
     }

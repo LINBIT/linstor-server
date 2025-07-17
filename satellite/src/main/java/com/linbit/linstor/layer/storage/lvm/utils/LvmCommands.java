@@ -391,7 +391,7 @@ public class LvmCommands
                 "--snapshot",
                 "--setactivationskip", "y", // snapshot needs to be active from
                 "--ignoreactivationskip", // the beginning for
-                "--activate", "y", // snapshot-shipping to work
+                "--activate", "y", // backup-shipping to work
                 "--name", snapshotIdentifier,
                 volumeGroup + File.separator + identifier
             ),

@@ -172,7 +172,6 @@ public class CtrlRscDfnTruncateApiCallHandler
 
         Flux<ApiCallRc> flux;
         scheduleService.removeTasks(rscDfn);
-        autoSnapshotTask.removeAutoSnapshotShipping(rscName.getName());
         autoSnapshotTask.removeAutoSnapshotting(rscName.getName());
 
         ctrlTransactionHelper.commit();

@@ -14,7 +14,7 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingAbortHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupShippingAbortHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
@@ -66,7 +66,7 @@ public class CtrlBackupShippingSentInternalCallHandler
     private final ErrorReporter errorReporter;
     private final Provider<Peer> peerProvider;
     private final BackupInfoManager backupInfoMgr;
-    private final CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandler;
+    private final CtrlBackupShippingAbortHandler ctrlSnapShipAbortHandler;
     private final RemoteRepository remoteRepo;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final CtrlBackupApiHelper backupHelper;
@@ -88,7 +88,7 @@ public class CtrlBackupShippingSentInternalCallHandler
         ErrorReporter errorReporterRef,
         Provider<Peer> peerProviderRef,
         BackupInfoManager backupInfoMgrRef,
-        CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandlerRef,
+        CtrlBackupShippingAbortHandler ctrlSnapShipAbortHandlerRef,
         RemoteRepository remoteRepoRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlBackupApiHelper backupHelperRef,

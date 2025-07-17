@@ -637,6 +637,8 @@ public class Resource extends AbsResource<Resource>
          */
         REACTIVATE(1L << 11),
         /**
+         * TODO: do we still need INACTIVE_PERMANENTLY flag now that we just removed the old snapshot-shipping?
+         *
          * Same as {@link #INACTIVE} but ... permanently (who would have guessed)?
          * A resource will be declared permanently inactive once it is used as a snapshot-shipping target.
          * The reason for this is that the received snapshot will (except for external metadata) contain the internal

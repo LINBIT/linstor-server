@@ -12,7 +12,7 @@ import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingAbortHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupShippingAbortHandler;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.NetInterface;
@@ -75,7 +75,7 @@ public class ReconnectorTask implements Task
     private final TransactionMgrGenerator transactionMgrGenerator;
     private final LinStorScope reconnScope;
     private final LockGuardFactory lockGuardFactory;
-    private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
+    private final CtrlBackupShippingAbortHandler backupShipAbortHandler;
     private final SystemConfRepository systemConfRepo;
     private final NodeRepository nodeRepository;
     private final Provider<CtrlNodeApiCallHandler> ctrlNodeApiCallHandler;
@@ -89,7 +89,7 @@ public class ReconnectorTask implements Task
         TransactionMgrGenerator transactionMgrGeneratorRef,
         LinStorScope reconnScopeRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
+        CtrlBackupShippingAbortHandler backupShipAbortHandlerRef,
         SystemConfRepository systemConfRepoRef,
         NodeRepository nodeRepositoryRef,
         Provider<CtrlNodeApiCallHandler> ctrlNodeApiCallHandlerRef
@@ -102,7 +102,7 @@ public class ReconnectorTask implements Task
         reconnScope = reconnScopeRef;
         lockGuardFactory = lockGuardFactoryRef;
         transactionMgrGenerator = transactionMgrGeneratorRef;
-        snapShipAbortHandler = snapShipAbortHandlerRef;
+        backupShipAbortHandler = backupShipAbortHandlerRef;
         systemConfRepo = systemConfRepoRef;
         nodeRepository = nodeRepositoryRef;
         ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
@@ -118,7 +118,7 @@ public class ReconnectorTask implements Task
         add(peer, authenticateImmediately, false);
     }
 
-    public void add(Peer peer, boolean authenticateImmediately, boolean abortSnapshotShippings)
+    public void add(Peer peer, boolean authenticateImmediately, boolean abortBackupShipments)
     {
         boolean sendAuthentication = false;
         Node node = peer.getNode();
@@ -154,7 +154,7 @@ public class ReconnectorTask implements Task
             }
         }
 
-        if (abortSnapshotShippings)
+        if (abortBackupShipments)
         {
             /*
              * FIXME NEEDS PROPER FIX
@@ -170,7 +170,7 @@ public class ReconnectorTask implements Task
              */
             if (!node.isDeleted())
             {
-                snapShipAbortHandler.abortAllShippingPrivileged(node, true)
+                backupShipAbortHandler.abortAllShippingPrivileged(node, true)
                     .contextWrite(
                         Context.of(
                             ApiModule.API_CALL_NAME,

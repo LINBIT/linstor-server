@@ -105,7 +105,7 @@ public class CtrlConfApiCallHandler
     private final ErrorReporter errorReporter;
     private final SystemConfRepository systemConfRepository;
     private final DynamicNumberPool minorNrPool;
-    private final DynamicNumberPool snapShipPortPool;
+    private final DynamicNumberPool backupShipPortPool;
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<Peer> peerProvider;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -167,8 +167,8 @@ public class CtrlConfApiCallHandler
         SystemConfRepository systemConfRepositoryRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @Named(
-            NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL
-        ) DynamicNumberPool snapShipPortPoolRef,
+            NumberPoolModule.BACKUP_SHIPPING_PORT_POOL
+        ) DynamicNumberPool backupShipPortPoolRef,
         @SystemContext AccessContext sysCtxRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerProviderRef,
@@ -200,7 +200,7 @@ public class CtrlConfApiCallHandler
         errorReporter = errorReporterRef;
         systemConfRepository = systemConfRepositoryRef;
         minorNrPool = minorNrPoolRef;
-        snapShipPortPool = snapShipPortPoolRef;
+        backupShipPortPool = backupShipPortPoolRef;
         peerAccCtx = peerAccCtxRef;
         peerProvider = peerProviderRef;
         transMgrProvider = transMgrProviderRef;
@@ -883,7 +883,7 @@ public class CtrlConfApiCallHandler
                             setMinorNr(key, namespace, normalized, apiCallRc, propChangedListener);
                             break;
                         case ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_TCP_PORT_RANGE:
-                            setTcpPort(key, namespace, normalized, snapShipPortPool, apiCallRc, propChangedListener);
+                            setTcpPort(key, namespace, normalized, backupShipPortPool, apiCallRc, propChangedListener);
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER:
                             notifyStlts = setCtrlProp(
@@ -1483,7 +1483,7 @@ public class CtrlConfApiCallHandler
                             minorNrPool.reloadRange();
                             break;
                         case ApiConsts.KEY_TCP_PORT_RANGE:
-                            snapShipPortPool.reloadRange();
+                            backupShipPortPool.reloadRange();
                             break;
                         case ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM:
                             systemConfRepository.removeCtrlProp(

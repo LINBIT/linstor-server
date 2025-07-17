@@ -15,11 +15,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.RemoteName;
-import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
@@ -35,7 +31,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +39,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import reactor.core.publisher.Flux;
 
 @Singleton
-public class CtrlSnapshotShippingAbortHandler
+public class CtrlBackupShippingAbortHandler
 {
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
@@ -59,7 +54,7 @@ public class CtrlSnapshotShippingAbortHandler
     private final Provider<CtrlRemoteApiCallHandler> ctrlRemoteApiCallHandler;
 
     @Inject
-    public CtrlSnapshotShippingAbortHandler(
+    public CtrlBackupShippingAbortHandler(
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockguardFactoryRef,
@@ -125,51 +120,6 @@ public class CtrlSnapshotShippingAbortHandler
         return flux;
     }
 
-    public Flux<ApiCallRc> abortSnapshotShippingPrivileged(ResourceDefinition rscDfn)
-    {
-        return scopeRunner
-            .fluxInTransactionalScope(
-                "Abort snapshot shipments of rscDfn",
-                lockGuardFactory.create()
-                    .read(LockObj.NODES_MAP)
-                    .write(LockObj.RSC_DFN_MAP)
-                    .buildDeferred(),
-                () -> abortSnapshotShippingPrivilegedInTransaction(rscDfn)
-            );
-    }
-
-    private Flux<ApiCallRc> abortSnapshotShippingPrivilegedInTransaction(ResourceDefinition rscDfn)
-    {
-        Flux<ApiCallRc> flux = Flux.empty();
-        try
-        {
-
-            for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(apiCtx))
-            {
-                if (
-                    snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING) &&
-                        !snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.BACKUP)
-                )
-                {
-                    flux = flux.concatWith(
-                        snapDelHandlerProvider.get()
-                            .deleteSnapshot(
-                                snapDfn.getResourceName(),
-                                snapDfn.getName(),
-                                null
-                            )
-                    );
-                }
-            }
-            ctrlTransactionHelper.commit();
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return flux;
-    }
-
     public Flux<ApiCallRc> abortBackupShippingPrivileged(SnapshotDefinition snapDfn, boolean abortMultiPartRef)
     {
         return scopeRunner
@@ -209,48 +159,6 @@ public class CtrlSnapshotShippingAbortHandler
             throw new ImplementationError(exc);
         }
         return flux;
-    }
-
-    public void markSnapshotShippingAborted(SnapshotDefinition snapDfnRef)
-    {
-        try
-        {
-            snapDfnRef.getFlags().disableFlags(
-                apiCtx,
-                SnapshotDefinition.Flags.SHIPPING,
-                SnapshotDefinition.Flags.SHIPPING_CLEANUP,
-                SnapshotDefinition.Flags.SHIPPED
-            );
-            snapDfnRef.getFlags().enableFlags(apiCtx, SnapshotDefinition.Flags.SHIPPING_ABORT);
-            ResourceName rscName = snapDfnRef.getResourceName();
-
-            Collection<Snapshot> snapshots = snapDfnRef.getAllSnapshots(apiCtx);
-            for (Snapshot snap : snapshots)
-            {
-                Resource rsc1 = snap.getNode().getResource(apiCtx, rscName);
-                for (Snapshot snap2 : snapshots)
-                {
-                    if (snap != snap2)
-                    {
-                        Resource rsc2 = snap2.getNode().getResource(apiCtx, rscName);
-
-                        ResourceConnection rscConn = rsc1.getAbsResourceConnection(apiCtx, rsc2);
-                        if (rscConn != null)
-                        {
-                            rscConn.setSnapshotShippingNameInProgress(null);
-                        }
-                    }
-                }
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
     }
 
     private Flux<ApiCallRc> abortBackupShippings(SnapshotDefinition snapDfn, boolean abortMultiPartRef)
@@ -370,5 +278,4 @@ public class CtrlSnapshotShippingAbortHandler
             throw new ApiDatabaseException(exc);
         }
     }
-
 }

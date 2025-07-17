@@ -65,7 +65,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -219,7 +218,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private boolean devHandlerInitialized = false;
     private ResourceStateEvent resourceStateEvent;
 
-    private SnapshotShippingService snapshipService;
     private BackupShippingMgr backupServiceMgr;
 
     // Saved for later check against what the controller granted
@@ -272,7 +270,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         DeviceHandler deviceHandlerRef,
         DrbdVersion drbdVersionRef,
         ExtCmdFactory extCmdFactoryRef,
-        SnapshotShippingService snapshipServiceRef,
         BackupShippingMgr backupServiceMgrRef,
         StltExternalFileHandler extFileHandlerRef,
         StltConfig stltCfgRef
@@ -303,7 +300,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         resourceStateEvent = resourceStateEventRef;
         drbdVersion = drbdVersionRef;
         extCmdFactory = extCmdFactoryRef;
-        snapshipService = snapshipServiceRef;
         backupServiceMgr = backupServiceMgrRef;
         extFileHandler = extFileHandlerRef;
         stltCfg = stltCfgRef;
@@ -1598,7 +1594,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                             snapshotDefinition,
                             wrkCtx,
                             errLog,
-                            snapshipService,
                             backupServiceMgr
                         );
                     }

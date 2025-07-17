@@ -17,7 +17,6 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
@@ -36,7 +35,6 @@ import com.linbit.locks.LockGuardFactory.LockType;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescription;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -239,15 +237,6 @@ public class CtrlRscActivateApiCallHandler
 
     private void checkIfReactivatable(Resource rsc)
     {
-        if (isSnapshotShippingInProgress(rsc))
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_SNAPSHOT_SHIPPING_IN_PROGRESS,
-                    "Cannot activate a resource while being a snapshot-shipping-target!"
-                )
-            );
-        }
         if (hasDrbdInStack(rsc))
         {
             if (isFlagSet(rsc, Resource.Flags.INACTIVE_PERMANENTLY))
@@ -255,7 +244,7 @@ public class CtrlRscActivateApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_LAYER_STACK,
-                        "A DRDB-resource cannot be activated after snapshot-shipping!"
+                        "This DRDB-resource cannot be re-activated!"
                     )
                 );
             }
@@ -370,31 +359,6 @@ public class CtrlRscActivateApiCallHandler
         {
             throw new ApiDatabaseException(sqlExc);
         }
-    }
-
-    private boolean isSnapshotShippingInProgress(Resource rscRef)
-    {
-        boolean ret = false;
-        try
-        {
-            for (SnapshotDefinition snapDfn : rscRef.getResourceDefinition().getSnapshotDfns(peerAccCtx.get()))
-            {
-                if (snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING))
-                {
-                    ret = true;
-                    break;
-                }
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access snapshot-definitions of " + getRscDfnDescription(rscRef.getResourceDefinition()),
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        return ret;
     }
 
     private boolean isResourceInUse(Resource rscRef)

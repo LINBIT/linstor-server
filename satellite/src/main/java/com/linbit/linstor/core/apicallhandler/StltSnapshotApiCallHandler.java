@@ -9,8 +9,8 @@ import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.CriticalError;
+import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
@@ -37,7 +37,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.PropsUtils;
@@ -71,7 +70,6 @@ public class StltSnapshotApiCallHandler
     private final StltLayerSnapDataMerger layerSnapDataMerger;
     private final Provider<TransactionMgr> transMgrProvider;
     private final BackupShippingMgr backupShippingMgr;
-    private final SnapshotShippingService snapShipService;
 
     @Inject
     StltSnapshotApiCallHandler(
@@ -89,8 +87,7 @@ public class StltSnapshotApiCallHandler
         StltRscGrpApiCallHelper stltGrpApiCallHelperRef,
         StltLayerSnapDataMerger layerSnapDataMergerRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        BackupShippingMgr backupShippingMgrRef,
-        SnapshotShippingService snapShipServiceRef
+        BackupShippingMgr backupShippingMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -108,7 +105,6 @@ public class StltSnapshotApiCallHandler
         layerSnapDataMerger = layerSnapDataMergerRef;
         transMgrProvider = transMgrProviderRef;
         backupShippingMgr = backupShippingMgrRef;
-        snapShipService = snapShipServiceRef;
     }
 
     public void applyChanges(SnapshotPojo snapshotRaw)
@@ -330,7 +326,6 @@ public class StltSnapshotApiCallHandler
                         snapDfn,
                         apiCtx,
                         errorReporter,
-                        snapShipService,
                         backupShippingMgr
                     );
                 }
@@ -353,7 +348,6 @@ public class StltSnapshotApiCallHandler
         SnapshotDefinition snapDfn,
         AccessContext accCtx,
         ErrorReporter errorReporterRef,
-        SnapshotShippingService snapshipServiceRef,
         BackupShippingMgr backupShippingMgrRef
     )
         throws AccessDeniedException, DatabaseException
@@ -363,7 +357,6 @@ public class StltSnapshotApiCallHandler
         ArrayList<Snapshot> copyOfSnapshots = new ArrayList<>(snapDfn.getAllSnapshots(accCtx));
         for (Snapshot snap : copyOfSnapshots)
         {
-            snapshipServiceRef.snapshotDeleted(snap);
             backupShippingMgrRef.snapshotDeleted(snap);
             snap.delete(accCtx);
         }

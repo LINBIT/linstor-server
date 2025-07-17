@@ -352,7 +352,7 @@ public class BackupNodeFinder
         for (StorPool sp : storPools)
         {
             DeviceProviderKind deviceProviderKind = sp.getDeviceProviderKind();
-            if (deviceProviderKind.isSnapshotShippingSupported())
+            if (deviceProviderKind.isBackupShippingSupported())
             {
                 ExtToolsManager extToolsManager = rsc.getNode().getPeer(peerAccCtx.get()).getExtToolsManager();
                 errors.addEntry(

@@ -2956,29 +2956,6 @@ paths:
                 $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
-  /v1/resource-definitions/{resource}/snapshot-shipping:
-    parameters:
-      - $ref: '#/components/parameters/Resource'
-    post:
-      tags:
-        - developers
-      summary: ship a snapshot
-      description: Transfers the resource from one node to another based on snapshot-shipping
-      operationId: snapshotShipping
-      responses:
-        '200':
-          description: Snapshot shipping in progress
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiCallRcList'
-        '500':
-          $ref: '#/components/responses/OperationFailed'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SnapshotShipping'
   /v1/resource-groups:
     get:
       tags:
@@ -4797,48 +4774,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Snapshot'
-        '500':
-          $ref: '#/components/responses/OperationFailed'
-
-  /v1/view/snapshot-shippings:
-    get:
-      tags:
-        - developers
-      operationId: viewSnapshotShippings
-      summary: view current snapshot shippings
-      parameters:
-        - $ref: '#/components/parameters/Nodes'
-        - $ref: '#/components/parameters/Resources'
-        - name: snapshots
-          in: query
-          description: Filter only for the specified snapshots, if not specified,
-            no filtering.
-          schema:
-            type: array
-            items:
-              type: string
-        - name: status
-          in: query
-          description: Filter only for the specified status, if not specified, no
-            filtering.
-          schema:
-            type: array
-            items:
-              type: string
-              enum:
-                - running
-                - complete
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: physical storage list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SnapshotShippingStatus'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/view/schedules-by-resource:
@@ -7815,20 +7750,6 @@ components:
           type: array
           items:
             type: string
-    SnapshotShippingStatus:
-      type: object
-      properties:
-        snapshot:
-          $ref: '#/components/schemas/Snapshot'
-        from_node_name:
-          type: string
-        to_node_name:
-          type: string
-        status:
-          type: string
-          enum:
-            - Running
-            - Complete
     SnapshotNode:
       type: object
       description: Objects holding one or multiple SnapshotVolumeNode objects for the given node
@@ -7913,24 +7834,6 @@ components:
           type: object
           additionalProperties:
             type: string
-    SnapshotShipping:
-      type: object
-      required:
-        - from_node
-        - to_node
-      properties:
-        from_node:
-          type: string
-          description: Node where to ship the snapshot from
-        from_nic:
-          type: string
-          description: NetInterface of the source node
-        to_node:
-          type: string
-          description: Node where to ship the snapshot
-        to_nic:
-          type: string
-          description: NetInterface of the destination node
     BackupList:
       type: object
       properties:

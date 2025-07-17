@@ -79,7 +79,6 @@ public class RscInternalCallHandler
     private final CtrlSnapLayerDataMerger layerSnapDataMerger;
     private final RetryResourcesTask retryResourceTask;
     private final CtrlSatelliteUpdater stltUpdater;
-    private final SnapshotShippingInternalApiCallHandler snapShipIntHandler;
     private final EbsStatusManagerService ebsStatusMgr;
 
     @Inject
@@ -97,7 +96,6 @@ public class RscInternalCallHandler
         RetryResourcesTask retryResourceTaskRef,
         CtrlApiDataLoader ctrlApiDataLoader,
         CtrlSatelliteUpdater stltUpdaterRef,
-        SnapshotShippingInternalApiCallHandler snapShipIntHandlerRef,
         EbsStatusManagerService ebsStatusMgrRef
     )
     {
@@ -114,7 +112,6 @@ public class RscInternalCallHandler
         retryResourceTask = retryResourceTaskRef;
         apiDataLoader = ctrlApiDataLoader;
         stltUpdater = stltUpdaterRef;
-        snapShipIntHandler = snapShipIntHandlerRef;
         ebsStatusMgr = ebsStatusMgrRef;
     }
 
@@ -340,21 +337,6 @@ public class RscInternalCallHandler
                             vlm.getVolumeDefinition().getVolumeNumber().value
                         )
                     );
-                }
-            }
-
-            /*
-             * TODO: instead of this loop, we should introduce a "notifySnapshotApplied"
-             * and put the logic of this loop there
-             */
-            for (SnapshotDefinition snapDfn : rsc.getResourceDefinition().getSnapshotDfns(apiCtx))
-            {
-                Snapshot snap = snapDfn.getSnapshot(apiCtx, nodeName);
-                if (
-                    snap != null && snap.getFlags().isSet(apiCtx, Snapshot.Flags.SHIPPING_TARGET) &&
-                    snapShipIntHandler.startShipping(snap))
-                {
-                    updateSatellite = true;
                 }
             }
 

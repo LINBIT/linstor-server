@@ -10,7 +10,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.BackgroundRunner.RunConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingApiCallHandler;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
@@ -45,10 +44,8 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
     private static final long TASK_TIMEOUT = 10_000;
     private static final int MIN_TO_MS = 60_000;
     private static final String AUTO_SNAPSHOT_API_NAME = "AutoSnapshot";
-    private static final String AUTO_SHIPPING_API_NAME = "AutoSnapshotShipping";
 
     private final CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtApiCallHandler;
-    private final CtrlSnapshotShippingApiCallHandler ctrlSnapshotShippingApiCallHandler;
     private final BackgroundRunner backgroundRunner;
     private final LockGuardFactory lockGuardFactory;
 
@@ -64,7 +61,6 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
     @Inject
     public AutoSnapshotTask(
         CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtApiCallHandlerRef,
-        CtrlSnapshotShippingApiCallHandler ctrlSnapshotShippingApiCallHandlerRef,
         ResourceDefinitionRepository rscDfnRepoRef,
         SystemConfRepository sysConfRepoRef,
         @SystemContext AccessContext sysCtxRef,
@@ -73,7 +69,6 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
     )
     {
         ctrlSnapshotCrtApiCallHandler = ctrlSnapshotCrtApiCallHandlerRef;
-        ctrlSnapshotShippingApiCallHandler = ctrlSnapshotShippingApiCallHandlerRef;
         rscDfnRepo = rscDfnRepoRef;
         sysConfRepo = sysConfRepoRef;
         sysCtx = sysCtxRef;
@@ -95,20 +90,6 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                     rscDfn.getResourceGroup().getProps(sysCtx),
                     sysConfRepo.getStltConfForView(sysCtx)
                 );
-                String autoShipping = prioProps.getProp(
-                    ApiConsts.KEY_RUN_EVERY,
-                    ApiConsts.NAMESPC_SNAPSHOT_SHIPPING
-                );
-                if (autoShipping != null)
-                {
-                    long runEveryInMs = Long.parseLong(autoShipping) * MIN_TO_MS;
-                    configSet.add(new AutoSnapshotConfig(
-                        rscDfn.getName().displayValue,
-                        runEveryInMs,
-                        now + runEveryInMs + TASK_TIMEOUT, // delay the first run to give the nodes some time to connect
-                        true
-                    ));
-                }
 
                 String autoSnapshot = prioProps.getProp(
                     ApiConsts.KEY_RUN_EVERY,
@@ -120,8 +101,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                     AutoSnapshotConfig cfg = new AutoSnapshotConfig(
                         rscDfn.getName().displayValue,
                         runEveryInMs,
-                        now + runEveryInMs + TASK_TIMEOUT, // delay the first run to give the nodes some time to connect
-                        false
+                        now + runEveryInMs + TASK_TIMEOUT // delay the first run to give the nodes some time to connect
                     );
                     configSet.add(cfg);
                 }
@@ -135,30 +115,20 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
 
     public Flux<ApiCallRc> addAutoSnapshotting(String rscName, long runEveryInMinRef)
     {
-        return synchronizedAdd(rscName, runEveryInMinRef, false);
-    }
-
-    public Flux<ApiCallRc> addAutoSnapshotShipping(String rscName, long runEveryInMinRef)
-    {
-        return synchronizedAdd(rscName, runEveryInMinRef, true);
+        return synchronizedAdd(rscName, runEveryInMinRef);
     }
 
     public void removeAutoSnapshotting(String rscName)
     {
-        synchronizedRemove(rscName, false);
+        synchronizedRemove(rscName);
     }
 
-    public void removeAutoSnapshotShipping(String rscName)
-    {
-        synchronizedRemove(rscName, true);
-    }
-
-    private Flux<ApiCallRc> synchronizedAdd(String rscNameRef, long runEveryInMinRef, boolean shippingRef)
+    private Flux<ApiCallRc> synchronizedAdd(String rscNameRef, long runEveryInMinRef)
     {
         Flux<ApiCallRc> ret = Flux.empty();
         if (runEveryInMinRef <= 0)
         {
-            synchronizedRemove(rscNameRef, shippingRef);
+            synchronizedRemove(rscNameRef);
         }
         else
         {
@@ -167,11 +137,11 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                 @Nullable PairNonNull<AutoSnapshotConfig, AutoSnapshotConfig> cfgToReplace = null;
                 for (AutoSnapshotConfig cfg : configSet)
                 {
-                    if (cfg.rscName.equalsIgnoreCase(rscNameRef) && cfg.shipping == shippingRef)
+                    if (cfg.rscName.equalsIgnoreCase(rscNameRef))
                     {
                         cfgToReplace = new PairNonNull<>(
                             cfg,
-                            new AutoSnapshotConfig(rscNameRef, runEveryInMinRef * MIN_TO_MS, shippingRef)
+                            new AutoSnapshotConfig(rscNameRef, runEveryInMinRef * MIN_TO_MS)
                         );
                         break;
                     }
@@ -180,8 +150,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                 {
                     AutoSnapshotConfig cfg = new AutoSnapshotConfig(
                         rscNameRef,
-                        runEveryInMinRef * MIN_TO_MS,
-                        shippingRef
+                        runEveryInMinRef * MIN_TO_MS
                     );
                     ret = getFlux(cfg);
                     configSet.add(cfg);
@@ -196,14 +165,14 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         return ret;
     }
 
-    private void synchronizedRemove(String rscNameRef, boolean shippingRef)
+    private void synchronizedRemove(String rscNameRef)
     {
         synchronized (configSet)
         {
             AutoSnapshotConfig found = null;
             for (AutoSnapshotConfig cfg : configSet)
             {
-                if (cfg.rscName.equalsIgnoreCase(rscNameRef) && cfg.shipping == shippingRef)
+                if (cfg.rscName.equalsIgnoreCase(rscNameRef))
                 {
                     found = cfg;
                     break;
@@ -216,48 +185,6 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         }
     }
 
-    public void shippingFinished(String rscNameRef)
-    {
-        AutoSnapshotConfig ret = null;
-        boolean runNow = false;
-        synchronized (configSet)
-        {
-            @Nullable PairNonNull<AutoSnapshotConfig, AutoSnapshotConfig> cfgToReplace = null;
-            for (AutoSnapshotConfig cfg : configSet)
-            {
-                if (cfg.rscName.equalsIgnoreCase(rscNameRef))
-                {
-                    ret = cfg;
-                    if (cfg.nextRerunAt < System.currentTimeMillis())
-                    {
-                        cfgToReplace = new PairNonNull<>(
-                            cfg,
-                            new AutoSnapshotConfig(
-                                rscNameRef,
-                                cfg.runEveryInMs,
-                                Long.MAX_VALUE, // prevent concurrent reRun from the actual run() method
-                                true
-                            )
-                        );
-                        // however, DO NOT call run(cfg) within this synchronized block, as that could
-                        // cause a deadlock
-                        runNow = true;
-                    }
-                    break;
-                }
-            }
-            if (cfgToReplace != null)
-            {
-                configSet.remove(cfgToReplace.objA);
-                configSet.add(cfgToReplace.objB);
-            }
-        }
-        if (runNow)
-        {
-            run(ret);
-        }
-    }
-
     @Override
     public long run(long scheduleAt)
     {
@@ -267,7 +194,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             for (AutoSnapshotConfig cfg : configSet)
             {
-                if (cfg.nextRerunAt <= curTime && !cfg.shippingInProgress)
+                if (cfg.nextRerunAt <= curTime)
                 {
                     cfgSet.add(cfg);
                 }
@@ -288,17 +215,13 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
     {
         backgroundRunner.runInBackground(
             new RunConfig<>(
-                (cfgRef.shipping ? AUTO_SHIPPING_API_NAME : AUTO_SNAPSHOT_API_NAME) + " of resource " + cfgRef.rscName,
+                AUTO_SNAPSHOT_API_NAME + " of resource " + cfgRef.rscName,
                 getFlux(cfgRef),
                 sysCtx,
                 getNodeNamessByRscName(cfgRef.rscName),
                 true
             )
         );
-        if (cfgRef.shipping)
-        {
-            cfgRef.shippingInProgress = true;
-        }
         synchronized (configSet)
         {
             // since we will change the ordering of the configSet, we must remove this entry from the
@@ -335,22 +258,12 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
 
     private Flux<ApiCallRc> getFlux(AutoSnapshotConfig cfgRef)
     {
-        Flux<ApiCallRc> flux;
-        if (cfgRef.shipping)
-        {
-            flux = ctrlSnapshotShippingApiCallHandler.autoShipSnapshot(cfgRef.rscName);
-        }
-        else
-        {
-            flux = ctrlSnapshotCrtApiCallHandler.createAutoSnapshot(Collections.emptyList(), cfgRef.rscName);
-        }
-        return flux;
+        return ctrlSnapshotCrtApiCallHandler.createAutoSnapshot(Collections.emptyList(), cfgRef.rscName);
     }
 
     private class AutoSnapshotConfig implements Comparable<AutoSnapshotConfig>
     {
         private final String rscName;
-        private final boolean shipping;
 
         /*
          * We MUST NOT change runEveryInMs and nextRerunAt variables, since they are part of the compareTo method.
@@ -364,22 +277,19 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         private final long runEveryInMs;
         private final long nextRerunAt;
 
-        private boolean shippingInProgress = false;
-
-        private AutoSnapshotConfig(String rscNameRef, long runEveryInMsRef, boolean shippingRef)
+        private AutoSnapshotConfig(String rscNameRef, long runEveryInMsRef)
         {
-            this(rscNameRef, runEveryInMsRef, System.currentTimeMillis() + runEveryInMsRef, shippingRef);
+            this(rscNameRef, runEveryInMsRef, System.currentTimeMillis() + runEveryInMsRef);
         }
 
         public AutoSnapshotConfig next()
         {
-            return new AutoSnapshotConfig(rscName, runEveryInMs, nextRerunAt + runEveryInMs, shipping);
+            return new AutoSnapshotConfig(rscName, runEveryInMs, nextRerunAt + runEveryInMs);
         }
 
-        private AutoSnapshotConfig(String rscNameRef, long runEveryInMsRef, long nextRerunAtRef, boolean shippingRef)
+        private AutoSnapshotConfig(String rscNameRef, long runEveryInMsRef, long nextRerunAtRef)
         {
             rscName = rscNameRef;
-            shipping = shippingRef;
 
             runEveryInMs = runEveryInMsRef;
             nextRerunAt = nextRerunAtRef;
@@ -405,7 +315,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + Objects.hash(nextRerunAt, rscName, shipping, shippingInProgress);
+            result = prime * result + Objects.hash(nextRerunAt, rscName);
             return result;
         }
 
@@ -416,8 +326,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
             if (eq)
             {
                 AutoSnapshotConfig other = (AutoSnapshotConfig) obj;
-                eq = nextRerunAt == other.nextRerunAt && Objects.equals(rscName, other.rscName) &&
-                    shipping == other.shipping && shippingInProgress == other.shippingInProgress;
+                eq = nextRerunAt == other.nextRerunAt && Objects.equals(rscName, other.rscName);
             }
             return eq;
         }

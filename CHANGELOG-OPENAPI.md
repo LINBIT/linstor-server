@@ -33,6 +33,11 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
     - components/schemas/ExosEnclosure
     - components/schemas/ExosEnclosureEvent
     - components/schemas/ExosConnectionMap
+  - Removed deprecated snapshot shipping:
+    - /v1/view/snapshot-shippings
+    - /v1/resource-definitions/{resource}/snapshot-shipping
+    - components/schemas/SnapshotShippingStatus
+    - components/schemas/SnapshotShipping
 
 ## [1.25.1]
 

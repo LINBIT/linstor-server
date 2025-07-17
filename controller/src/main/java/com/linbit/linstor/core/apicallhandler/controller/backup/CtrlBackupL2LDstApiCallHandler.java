@@ -118,7 +118,7 @@ public class CtrlBackupL2LDstApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlBackupRestoreApiCallHandler backupRestoreApiCallHandlerRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
-        @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
+        @Named(NumberPoolModule.BACKUP_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
         ModularCryptoProvider cryptoProviderRef,
         StltRemoteControllerFactory stltRemoteControllerFactoryRef,
         RemoteRepository remoteRepoRef,

@@ -681,29 +681,9 @@ public class CtrlRscDfnApiCallHandler
         Set<String> deletePropNamespacesRef,
         ApiCallRcImpl responsesRef,
         ResponseContext contextRef
-    ) throws AccessDeniedException, DatabaseException
+    ) throws AccessDeniedException
     {
         Flux<ApiCallRc> retFlux = Flux.empty();
-        String rscNameStr = rscDfn.getName().displayValue;
-
-        String autoSnapShipKey = ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_RUN_EVERY;
-        String autoSnapShipVal = overrideProps.get(autoSnapShipKey);
-        if (autoSnapShipVal != null)
-        {
-            retFlux = autoSnapshotTask.addAutoSnapshotShipping(rscNameStr, Long.parseLong(autoSnapShipVal));
-        }
-        else
-        {
-            if (deletePropKeys.contains(autoSnapShipKey))
-            {
-                autoSnapshotTask.removeAutoSnapshotShipping(rscNameStr);
-            }
-        }
-        String autoSnapShipKeepKey = ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_KEEP;
-        if (overrideProps.containsKey(autoSnapShipKeepKey) || deletePropKeys.contains(autoSnapShipKeepKey))
-        {
-            retFlux = retFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldShippedSnapshots(rscDfn));
-        }
 
         retFlux = retFlux.concatWith(
             ResourceDefinitionUtils.handleAutoSnapProps(

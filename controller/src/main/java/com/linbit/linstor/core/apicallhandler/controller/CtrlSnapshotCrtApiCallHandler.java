@@ -329,8 +329,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 )
             );
             flux = Flux.<ApiCallRc>just(responses)
-                .concatWith(postCreateSnapshot(createSimpleSnapshotRequestPrivileged(snapDfn), true))
-                .concatWith(ctrlSnapshotDeleteApiCallHandler.cleanupOldAutoSnapshots(rscDfn));
+                .concatWith(postCreateSnapshot(createSimpleSnapshotRequestPrivileged(snapDfn), true));
         }
         return flux;
     }
@@ -590,7 +589,7 @@ public class CtrlSnapshotCrtApiCallHandler
         Flux<ApiCallRc> retFlux = Flux.empty();
 
         SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, false);
-        // might be null when a snapshot(-shipping) is aborted multiple times
+        // might be null when a snapshot (or backup-shipping) is aborted multiple times
         // which can happen as both, sender and receiver try to abort a failed shipment
         if (snapshotDfn != null)
         {

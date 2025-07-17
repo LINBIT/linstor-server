@@ -188,8 +188,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @Mock
     @Bind
-    @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL)
-    protected DynamicNumberPool snapshotShippingPortPoolMock;
+    @Named(NumberPoolModule.BACKUP_SHIPPING_PORT_POOL)
+    protected DynamicNumberPool backupShippingPortPoolMock;
 
     @Mock
     @Bind

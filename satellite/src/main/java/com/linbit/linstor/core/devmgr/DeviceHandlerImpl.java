@@ -53,7 +53,6 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.StorageException;
@@ -104,7 +103,6 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final AtomicBoolean fullSyncApplied;
     private final StorageLayer storageLayer;
     private final ExtCmdFactory extCmdFactory;
-    private final SnapshotShippingService snapshotShippingManager;
     private final CloneService cloneService;
 
     private final SysFsHandler sysFsHandler;
@@ -129,7 +127,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         ExtCmdFactory extCmdFactoryRef,
         SysFsHandler sysFsHandlerRef,
         UdevHandler udevHandlerRef,
-        SnapshotShippingService snapshotShippingManagerRef,
         StltExternalFileHandler extFileHandlerRef,
         BackupShippingMgr backupShippingManagerRef,
         SuspendManager suspendMgrRef,
@@ -149,7 +146,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         extCmdFactory = extCmdFactoryRef;
         sysFsHandler = sysFsHandlerRef;
         udevHandler = udevHandlerRef;
-        snapshotShippingManager = snapshotShippingManagerRef;
         extFileHandler = extFileHandlerRef;
         backupShippingManager = backupShippingManagerRef;
         suspendMgr = suspendMgrRef;
@@ -751,8 +747,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     }
                     else
                     {
-                        // start the snapshot-shipping-daemons and backup-shipping-daemons if necessary
-                        snapshotShippingManager.allSnapshotPartsRegistered(snap);
+                        // start the backup-shipping-daemons if necessary
                         snapListNotifyApplied.add(snap);
                         backupShippingManager.allBackupPartsRegistered(snap);
                     }
@@ -1462,7 +1457,6 @@ public class DeviceHandlerImpl implements DeviceHandler
             extFileHandler.rebuildExtFilesToRscDfnMaps(localNode);
 
             backupShippingManager.killAllShipping();
-            snapshotShippingManager.killAllShipping();
         }
         catch (AccessDeniedException exc)
         {

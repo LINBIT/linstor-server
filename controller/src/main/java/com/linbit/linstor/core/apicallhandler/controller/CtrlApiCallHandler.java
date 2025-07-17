@@ -23,7 +23,6 @@ import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
-import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
@@ -91,7 +90,6 @@ public class CtrlApiCallHandler
     private final CtrlNetIfApiCallHandler netIfApiCallHandler;
     private final CtrlWatchApiCallHandler watchApiCallHandler;
     private final CtrlSnapshotApiCallHandler snapshotApiCallHandler;
-    private final CtrlSnapshotShippingApiCallHandler snapshotShippingApiCallHandler;
     private final CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandler;
     private final CtrlDrbdProxyModifyApiCallHandler drbdProxyModifyApiCallHandler;
     private final CtrlKvsApiCallHandler kvsApiCallHandler;
@@ -122,7 +120,6 @@ public class CtrlApiCallHandler
         CtrlNetIfApiCallHandler netIfApiCallHandlerRef,
         CtrlWatchApiCallHandler watchApiCallHandlerRef,
         CtrlSnapshotApiCallHandler snapshotApiCallHandlerRef,
-        CtrlSnapshotShippingApiCallHandler snapshotShippingApiCallHandlerRef,
         CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandlerRef,
         CtrlDrbdProxyModifyApiCallHandler drbdProxyModifyApiCallHandlerRef,
         CtrlKvsApiCallHandler kvsApiCallHandlerRef,
@@ -151,7 +148,6 @@ public class CtrlApiCallHandler
         netIfApiCallHandler = netIfApiCallHandlerRef;
         watchApiCallHandler = watchApiCallHandlerRef;
         snapshotApiCallHandler = snapshotApiCallHandlerRef;
-        snapshotShippingApiCallHandler = snapshotShippingApiCallHandlerRef;
         snapshotRestoreVlmDfnApiCallHandler = snapshotRestoreVlmDfnApiCallHandlerRef;
         drbdProxyModifyApiCallHandler = drbdProxyModifyApiCallHandlerRef;
         kvsApiCallHandler = kvsApiCallHandlerRef;
@@ -1055,48 +1051,6 @@ public class CtrlApiCallHandler
                 nodeNames, resourceNames);
         }
         return listSnapshotDefinitions;
-    }
-
-    public ArrayList<SnapshotShippingListItemApi> listSnapshotShippings(
-        List<String> nodeNames,
-        List<String> resourceNames,
-        List<String> snapshotNames,
-        List<String> status
-    )
-    {
-        ArrayList<SnapshotShippingListItemApi> listSnapshotShippings;
-        try (LockGuard lg = lockGuardFactory.build(READ, RSC_DFN_MAP))
-        {
-            listSnapshotShippings = snapshotShippingApiCallHandler.listSnapshotShippings(
-                nodeNames,
-                resourceNames,
-                snapshotNames,
-                status
-            );
-        }
-        return listSnapshotShippings;
-    }
-
-    public Flux<ApiCallRc> modifySnapshotDefinition(
-        String rscNameStr,
-        String snapshotNameStr,
-        Map<String, String> overrideProps,
-        Set<String> deletePropKeys,
-        Set<String> deletePropNamespaces
-    )
-    {
-        Flux<ApiCallRc> flux;
-        try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
-        {
-            flux = snapshotApiCallHandler.modify(
-                rscNameStr,
-                snapshotNameStr,
-                overrideProps,
-                deletePropKeys,
-                deletePropNamespaces
-            );
-        }
-        return flux;
     }
 
     /**

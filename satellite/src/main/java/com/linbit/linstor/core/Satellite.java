@@ -52,7 +52,6 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SatelliteSecurityModule;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.security.StltCoreObjProtInitializer;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.systemstarter.NetComInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.StartupInitializer;
@@ -113,7 +112,6 @@ public final class Satellite
     private final FileSystemWatch fsWatchSvc;
 
     private final DrbdEventService drbdEventSvc;
-    private final SnapshotShippingService snapShipSvc;
     private final CloneService cloneService;
 
     private final BackupShippingMgr backShipMgr;
@@ -140,7 +138,6 @@ public final class Satellite
         DebugConsoleCreator debugConsoleCreatorRef,
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
-        SnapshotShippingService snapShipSvcRef,
         BackupShippingMgr backShipMgrRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
         StltCoreObjProtInitializer stltCoreObjProtInitializerRef,
@@ -161,7 +158,6 @@ public final class Satellite
         debugConsoleCreator = debugConsoleCreatorRef;
         fsWatchSvc = fsWatchSvcRef;
         drbdEventSvc = drbdEventSvcRef;
-        snapShipSvc = snapShipSvcRef;
         backShipMgr = backShipMgrRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
         stltCoreObjProtInitializer = stltCoreObjProtInitializerRef;
@@ -238,7 +234,6 @@ public final class Satellite
             startOrderlist.add(new ServiceStarter(fsWatchSvc));
             startOrderlist.add(new ServiceStarter(drbdEventSvc));
             startOrderlist.add(new ServiceStarter(drbdEventPublisher));
-            startOrderlist.add(new ServiceStarter(snapShipSvc));
             for (AbsBackupShippingService absBackupSvc : backShipMgr.getAllServices())
             {
                 startOrderlist.add(new ServiceStarter(absBackupSvc));
@@ -257,7 +252,6 @@ public final class Satellite
                 systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
                 systemServicesMap.put(drbdEventPublisher.getInstanceName(), drbdEventPublisher);
             }
-            systemServicesMap.put(snapShipSvc.getInstanceName(), snapShipSvc);
             systemServicesMap.put(devMgrService.getInstanceName(), devMgrService);
             systemServicesMap.put(cloneService.getInstanceName(), cloneService);
 

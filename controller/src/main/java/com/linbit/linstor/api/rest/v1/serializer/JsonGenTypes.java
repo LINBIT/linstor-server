@@ -1250,15 +1250,6 @@ public class JsonGenTypes
         public List<String> delete_namespaces = Collections.emptyList();
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class SnapshotShippingStatus
-    {
-        public @Nullable Snapshot snapshot;
-        public @Nullable String from_node_name;
-        public @Nullable String to_node_name;
-        public @Nullable String status;
-    }
-
     /**
      * Objects holding one or multiple SnapshotVolumeNode objects for the given node
      */
@@ -1334,27 +1325,6 @@ public class JsonGenTypes
          */
         public List<String> nodes = Collections.emptyList();
         public Map<String, String> stor_pool_rename = Collections.emptyMap();
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class SnapshotShipping
-    {
-        /**
-         * Node where to ship the snapshot from
-         */
-        public String from_node;
-        /**
-         * NetInterface of the source node
-         */
-        public @Nullable String from_nic;
-        /**
-         * Node where to ship the snapshot
-         */
-        public String to_node;
-        /**
-         * NetInterface of the destination node
-         */
-        public @Nullable String to_nic;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

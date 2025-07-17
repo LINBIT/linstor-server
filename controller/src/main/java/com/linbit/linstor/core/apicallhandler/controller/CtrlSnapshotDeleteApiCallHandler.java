@@ -69,7 +69,6 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlPropsHelper propsHelper;
     private final ErrorReporter errorReporter;
-    private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
     private final BackupInfoManager backupInfoMgr;
 
     @Inject
@@ -84,7 +83,6 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlPropsHelper propsHelperRef,
         ErrorReporter errorReporterRef,
-        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
         BackupInfoManager backupInfoMgrRef
     )
     {
@@ -98,7 +96,6 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         peerAccCtx = peerAccCtxRef;
         propsHelper = propsHelperRef;
         errorReporter = errorReporterRef;
-        snapShipAbortHandler = snapShipAbortHandlerRef;
         backupInfoMgr = backupInfoMgrRef;
     }
 
@@ -231,11 +228,6 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             );
         }
         ensureSnapshotNotQueued(snapshotDfn);
-        if (isSnapshotShippingInProgress(snapshotDfn))
-        {
-            snapShipAbortHandler.markSnapshotShippingAborted(snapshotDfn);
-            responses.addEntry("Aborted snapshot shipping", ApiConsts.MASK_INFO);
-        }
 
         if (nodeNamesStrListRef == null || nodeNamesStrListRef.isEmpty())
         {
@@ -318,24 +310,6 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                 )
             );
         }
-    }
-
-    private boolean isSnapshotShippingInProgress(SnapshotDefinition snapshotDfnRef)
-    {
-        boolean shipping = false;
-        try
-        {
-            shipping = snapshotDfnRef.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "checking if SnapshotDefinition is in progress",
-                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
-            );
-        }
-        return shipping;
     }
 
     private boolean isBackupShippingInProgress(SnapshotDefinition snapshotDfnRef)
@@ -492,22 +466,6 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         );
     }
 
-    public Flux<ApiCallRc> cleanupOldShippedSnapshots(ResourceDefinition rscDfnRef)
-    {
-        return scopeRunner.fluxInTransactionalScope(
-            "Clean up old shipped snapshots",
-            lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
-            () -> cleanupOldSnapshotsInTransaction(
-                rscDfnRef,
-                ApiConsts.NAMESPC_SNAPSHOT_SHIPPING,
-                ApiConsts.KEY_KEEP,
-                ApiConsts.DFLT_SHIPPED_SNAPSHOT_KEEP,
-                ApiConsts.KEY_SNAPSHOT_SHIPPING_PREFIX,
-                ApiConsts.DFLT_SNAPSHOT_SHIPPING_PREFIX,
-                SnapshotDefinition.Flags.SHIPPED
-            )
-        );
-    }
 
     private Flux<ApiCallRc> cleanupOldSnapshotsInTransaction(
         ResourceDefinition rscDfnRef,

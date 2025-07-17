@@ -206,7 +206,7 @@ public enum DeviceProviderKind
 
     private final boolean isSnapshotSupported;
     private final boolean isSnapshotDependent;
-    private final boolean isSnapshotShippingSupported;
+    private final boolean isBackupShippingSupported;
     private final boolean isResizeSupported;
     private final boolean isShrinkingSupported;
     private final boolean hasBackingDevice;
@@ -220,7 +220,7 @@ public enum DeviceProviderKind
     DeviceProviderKind(
         boolean isSnapshotSupportedRef,
         boolean isSnapshotDependentRef,
-        boolean isSnapshotShippingSupportedRef,
+        boolean isBackupShippingSupportedRef,
         boolean isResizeSupportedRef,
         boolean isShrinkingSupportedRef,
         boolean hasBackingDeviceRef,
@@ -233,7 +233,7 @@ public enum DeviceProviderKind
     {
         isSnapshotSupported = isSnapshotSupportedRef;
         isSnapshotDependent = isSnapshotDependentRef;
-        isSnapshotShippingSupported = isSnapshotShippingSupportedRef;
+        isBackupShippingSupported = isBackupShippingSupportedRef;
         isResizeSupported = isResizeSupportedRef;
         isShrinkingSupported = isShrinkingSupportedRef;
         hasBackingDevice = hasBackingDeviceRef;
@@ -259,9 +259,9 @@ public enum DeviceProviderKind
         return isSnapshotDependent;
     }
 
-    public boolean isSnapshotShippingSupported()
+    public boolean isBackupShippingSupported()
     {
-        return isSnapshotShippingSupported;
+        return isBackupShippingSupported;
     }
 
     public boolean hasBackingDevice()

@@ -16,7 +16,6 @@ import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
-import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -248,53 +247,6 @@ public class View
 
             response = RequestHelper.queryRequestResponse(
                 objectMapper, ApiConsts.FAIL_NOT_FOUND_SNAPSHOT, "Snapshot", null, snapshot
-            );
-
-            return response;
-        }, false);
-    }
-
-    @Deprecated(forRemoval = true)
-    @GET
-    @Path("snapshot-shippings")
-    public Response listSnapshotShippings(
-        @Context Request request,
-        @QueryParam("nodes") List<String> nodes,
-        @QueryParam("resources") List<String> resources,
-        @QueryParam("snapshots") List<String> snapshots,
-        @QueryParam("status") List<String> status,
-        @DefaultValue("0") @QueryParam("limit") int limit,
-        @DefaultValue("0") @QueryParam("offset") int offset
-    )
-    {
-        return requestHelper.doInScope(ApiConsts.API_LST_SNAPSHOT_SHIPPINGS, request, () ->
-        {
-            List<String> nodesFilter = nodes != null ? nodes : Collections.emptyList();
-            List<String> resourcesFilter = resources != null ?
-                resources.parallelStream().map(String::toLowerCase).collect(Collectors.toList()) :
-                Collections.emptyList();
-            List<String> statusFilter = status != null ? status : Collections.emptyList();
-
-            Response response;
-
-            Stream<SnapshotShippingListItemApi> snapsStream = ctrlApiCallHandler
-                .listSnapshotShippings(nodesFilter, resourcesFilter, snapshots, statusFilter).stream();
-
-            if (limit > 0)
-            {
-                snapsStream = snapsStream.skip(offset).limit(limit);
-            }
-
-            List<JsonGenTypes.SnapshotShippingStatus> snapshot = snapsStream
-                .map(Json::apiToSnapshotShipping)
-                .collect(Collectors.toList());
-
-            response = RequestHelper.queryRequestResponse(
-                objectMapper,
-                ApiConsts.FAIL_NOT_FOUND_SNAPSHOT,
-                "Snapshot shippments",
-                null,
-                snapshot
             );
 
             return response;

@@ -17,7 +17,7 @@ import com.linbit.linstor.systemstarter.StartupInitializer;
 
 import static com.linbit.linstor.numberpool.NumberPoolModule.LAYER_RSC_ID_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.MINOR_NUMBER_POOL;
-import static com.linbit.linstor.numberpool.NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL;
+import static com.linbit.linstor.numberpool.NumberPoolModule.BACKUP_SHIPPING_PORT_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL;
 
 import javax.inject.Inject;
@@ -33,7 +33,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
     private final DynamicNumberPool specStltTargetPortPool;
     private final DynamicNumberPool layerRscIdPool;
     private final CoreModule.NodesMap nodesMap;
-    private final DynamicNumberPool snapShipPortPool;
+    private final DynamicNumberPool backupShipPortPool;
 
     @Inject
     public DbNumberPoolInitializer(
@@ -42,7 +42,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
         @Named(MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @Named(SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltTargetPortPoolRef,
         @Named(LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
-        @Named(SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapShipPortPoolRef,
+        @Named(BACKUP_SHIPPING_PORT_POOL) DynamicNumberPool backupShipPortPoolRef,
         CoreModule.NodesMap nodesMapRef
     )
     {
@@ -51,7 +51,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
         minorNrPool = minorNrPoolRef;
         specStltTargetPortPool = specStltTargetPortPoolRef;
         layerRscIdPool = layerRscIdPoolRef;
-        snapShipPortPool = snapShipPortPoolRef;
+        backupShipPortPool = backupShipPortPoolRef;
         nodesMap = nodesMapRef;
     }
 
@@ -62,7 +62,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
         initializeTcpPortPools();
         initializeSpecStltTargetPortPool();
         initializeLayerRscIdPool();
-        initializeSnapShipPortPool();
+        initializeBackupShipPortPool();
     }
 
     private void initializeMinorNrPool()
@@ -182,8 +182,8 @@ public class DbNumberPoolInitializer implements StartupInitializer
         }
     }
 
-    private void initializeSnapShipPortPool()
+    private void initializeBackupShipPortPool()
     {
-        snapShipPortPool.reloadRange();
+        backupShipPortPool.reloadRange();
     }
 }

@@ -52,7 +52,6 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
@@ -106,7 +105,6 @@ public abstract class AbsStorageProvider<
         private final WipeHandler wipeHandler;
         private final Provider<NotificationListener> notificationListenerProvider;
         private final Provider<TransactionMgr> transMgrProvider;
-        @Deprecated private final SnapshotShippingService snapshotShippingService;
         private final StltExtToolsChecker stltExtToolsChecker;
         private final CloneService cloneService;
         private final BackupShippingMgr backupShippingMgr;
@@ -122,7 +120,6 @@ public abstract class AbsStorageProvider<
             WipeHandler wipeHandlerRef,
             Provider<NotificationListener> notificationListenerProviderRef,
             Provider<TransactionMgr> transMgrProviderRef,
-            SnapshotShippingService snapshotShippingServiceRef,
             StltExtToolsChecker stltExtToolsCheckerRef,
             CloneService cloneServiceRef,
             BackupShippingMgr backupShippingMgrRef,
@@ -137,7 +134,6 @@ public abstract class AbsStorageProvider<
             wipeHandler = wipeHandlerRef;
             notificationListenerProvider = notificationListenerProviderRef;
             transMgrProvider = transMgrProviderRef;
-            snapshotShippingService = snapshotShippingServiceRef;
             stltExtToolsChecker = stltExtToolsCheckerRef;
             cloneService = cloneServiceRef;
             backupShippingMgr = backupShippingMgrRef;
@@ -159,7 +155,6 @@ public abstract class AbsStorageProvider<
     protected final StltConfigAccessor stltConfigAccessor;
     protected final CoreModule.ResourceDefinitionMap rscDfnMap;
     protected @Nullable ReadOnlyProps localNodeProps;
-    private final SnapshotShippingService snapShipMgr;
     protected final CloneService cloneService;
     protected final StltExtToolsChecker extToolsChecker;
     private final BackupShippingMgr backupShipMapper;
@@ -191,7 +186,6 @@ public abstract class AbsStorageProvider<
         stltConfigAccessor = initRef.stltConfigAccessor;
         rscDfnMap = initRef.rscDfnMap;
         transMgrProvider = initRef.transMgrProvider;
-        snapShipMgr = initRef.snapshotShippingService;
         extToolsChecker = initRef.stltExtToolsChecker;
         cloneService = initRef.cloneService;
         backupShipMapper = initRef.backupShippingMgr;
@@ -904,7 +898,6 @@ public abstract class AbsStorageProvider<
                 .getFlags();
             if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
             {
-                snapShipMgr.abort(snapVlm);
                 if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.BACKUP))
                 {
                     AbsBackupShippingService backupShipService = backupShipMapper.getService(snapVlm);
@@ -982,38 +975,10 @@ public abstract class AbsStorageProvider<
                 }
                 else
                 {
-                    boolean isShippingTarget = snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
-                        snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING);
-                    createSnapshot(vlmData, snapVlm, !isShippingTarget);
+                    createSnapshot(vlmData, snapVlm, true);
                     copySizes(vlmData, snapVlm);
 
                     addSnapCreatedMsg(snapVlm, apiCallRc);
-
-                    if (isShippingTarget)
-                    {
-                        waitForSnapIfNeeded(snapVlm);
-                        startReceiving(vlmData, snapVlm);
-                    }
-                }
-            }
-            else
-            {
-                try
-                {
-                    if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_SOURCE_START) &&
-                        snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
-                    {
-                        startSending(snapVlm);
-                    }
-                    // else if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                    // snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
-                    // {
-                    // startBackupRestore(snapVlm);
-                    // }
-                }
-                catch (InvalidNameException exc)
-                {
-                    throw new ImplementationError(exc);
                 }
             }
             if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE) &&
@@ -1033,13 +998,6 @@ public abstract class AbsStorageProvider<
         }
         else
         {
-            if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
-                snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_CLEANUP))
-            {
-                errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
-                finishShipReceiving(vlmData, snapVlm);
-            }
-
             if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT) &&
                 backupShippingService != null)
             {
@@ -1300,59 +1258,6 @@ public abstract class AbsStorageProvider<
         return prevSnapVlmData;
     }
 
-    protected void startReceiving(
-        LAYER_DATA vlmDataRef,
-        LAYER_SNAP_DATA snapVlmData
-    )
-        throws AccessDeniedException, StorageException
-    {
-        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-        ReadOnlyProps snapVlmDfnProps = snapVlm.getSnapshotVolumeDefinition()
-            .getSnapVlmDfnProps(storDriverAccCtx);
-        String socatPort = snapVlmDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
-
-        snapShipMgr.startReceiving(
-            asSnapLvIdentifier(snapVlmData),
-            getSnapshotShippingReceivingCommandImpl(snapVlmData),
-            socatPort,
-            snapVlmData
-        );
-    }
-
-    protected void startSending(
-        LAYER_SNAP_DATA curSnapVlmData
-    )
-        throws AccessDeniedException, StorageException, InvalidNameException
-    {
-        Snapshot snapSource = curSnapVlmData.getRscLayerObject().getAbsResource();
-
-        SnapshotDefinition snapDfn = snapSource.getSnapshotDefinition();
-        SnapshotVolumeDefinition snapVlmDfn = ((SnapshotVolume) curSnapVlmData.getVolume())
-            .getSnapshotVolumeDefinition();
-        ReadOnlyProps snapDfnProps = snapDfn.getSnapDfnProps(storDriverAccCtx);
-        ReadOnlyProps snapVlmDfnProps = snapVlmDfn.getSnapVlmDfnProps(storDriverAccCtx);
-
-        String socatPort = snapVlmDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
-        String snapTargetName = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_TARGET_NODE);
-
-        NetInterface targetNetIf = getTargetNetIf(snapDfn, snapTargetName);
-
-        Resource sourceRsc = snapSource.getResourceDefinition().getResource(storDriverAccCtx, snapSource.getNodeName());
-        Resource targetRsc = targetNetIf.getNode().getResource(storDriverAccCtx, snapSource.getResourceName());
-
-        ResourceConnection rscCon = sourceRsc.getAbsResourceConnection(storDriverAccCtx, targetRsc);
-
-        LAYER_SNAP_DATA prevSnapVlmData = getPreviousSnapvlmData(curSnapVlmData, rscCon);
-
-        snapShipMgr.startSending(
-            asSnapLvIdentifier(curSnapVlmData),
-            getSnapshotShippingSendingCommandImpl(prevSnapVlmData, curSnapVlmData),
-            targetNetIf,
-            socatPort,
-            curSnapVlmData
-        );
-    }
-
     protected void startBackupShipping(LAYER_SNAP_DATA snapVlmData)
         throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException
     {
@@ -1363,7 +1268,7 @@ public abstract class AbsStorageProvider<
             snapVlm.getResourceName().displayValue,
             snapVlmData.getRscLayerObject().getResourceNameSuffix(),
             snapVlm.getVolumeNumber().value,
-            getSnapshotShippingSendingCommandImpl(prevSnapVlmData, snapVlmData),
+            getBackupShippingSendingCommandImpl(prevSnapVlmData, snapVlmData),
             prevSnapVlmData,
             snapVlmData
         );
@@ -1685,7 +1590,7 @@ public abstract class AbsStorageProvider<
         throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException, DatabaseException
     {
         backupShipMapper.getService(snapVlmData).restoreBackup(
-            getSnapshotShippingReceivingCommandImpl(snapVlmData),
+            getBackupShippingReceivingCommandImpl(snapVlmData),
             snapVlmData
         );
     }
@@ -1920,23 +1825,17 @@ public abstract class AbsStorageProvider<
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
-    protected String getSnapshotShippingReceivingCommandImpl(LAYER_SNAP_DATA snapVlmDataRef)
+    protected String getBackupShippingReceivingCommandImpl(LAYER_SNAP_DATA snapVlmDataRef)
         throws StorageException, AccessDeniedException
     {
         throw new StorageException("Snapshot shipping is not supported by " + getClass().getSimpleName());
     }
 
-    protected String getSnapshotShippingSendingCommandImpl(
+    protected String getBackupShippingSendingCommandImpl(
         LAYER_SNAP_DATA lastSnapVlmDataRef,
         LAYER_SNAP_DATA curSnapVlmDataRef
     )
         throws StorageException, AccessDeniedException
-    {
-        throw new StorageException("Snapshot shipping is not supported by " + getClass().getSimpleName());
-    }
-
-    protected void finishShipReceiving(LAYER_DATA vlmDataRef, LAYER_SNAP_DATA snapVlmRef)
-        throws StorageException, DatabaseException, AccessDeniedException
     {
         throw new StorageException("Snapshot shipping is not supported by " + getClass().getSimpleName());
     }

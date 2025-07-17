@@ -10,7 +10,6 @@ import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
@@ -57,8 +56,6 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
     private final TransactionSimpleObject<ResourceConnection, TcpPortNumber> drbdProxyPortTarget;
 
     private final ResourceConnectionDatabaseDriver dbDriver;
-
-    private final TransactionSimpleObject<ResourceConnection, @Nullable SnapshotName> snapshotNameInProgress;
 
     /**
      * Use ResourceConnection.createWithSorting instead
@@ -131,7 +128,6 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             drbdProxyPortTargetRef,
             this.dbDriver.getDrbdProxyPortTargetDriver()
         );
-        snapshotNameInProgress = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         transObjs = Arrays.asList(
             source,
@@ -140,7 +136,6 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             props,
             drbdProxyPortSource,
             drbdProxyPortTarget,
-            snapshotNameInProgress,
             deleted
         );
     }
@@ -375,19 +370,6 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             throw new ImplementationError("Auto-allocated TCP port number out of range", exc);
         }
         drbdProxyPortFieldRef.set(portNr);
-    }
-
-    public void setSnapshotShippingNameInProgress(@Nullable SnapshotName snapshotNameInProgressRef)
-        throws DatabaseException
-    {
-        checkDeleted();
-        snapshotNameInProgress.set(snapshotNameInProgressRef);
-    }
-
-    public @Nullable SnapshotName getSnapshotShippingNameInProgress()
-    {
-        checkDeleted();
-        return snapshotNameInProgress.get();
     }
 
     private void requireAccess(AccessContext accCtxRef, AccessType accType) throws AccessDeniedException
