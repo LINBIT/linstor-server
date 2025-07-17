@@ -111,16 +111,20 @@ workflow:
 
 .common_e2e:
   script:
+    - IMAGE_NAME=$LINBIT_DOCKER_REGISTRY/linstor-tests:latest
     - |
       SAFE_REF_NAME=${CI_COMMIT_REF_SLUG}
       if docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:$SAFE_REF_NAME ; then
           TEST_BRANCH=$SAFE_REF_NAME
-          TEST_BUNDLE_BRANCH=$SAFE_REF_NAME
+          IMAGE_NAME=$LINBIT_DOCKER_REGISTRY/linstor-tests:$SAFE_REF_NAME
       else
-          docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:latest
+          docker image pull $IMAGE_NAME
       fi
-    - mkdir -p linstor-test-bundle
-    - curl -sSL $LINBIT_REGISTRY_URL/repository/test-suite/linstor-test-bundle-$TEST_BUNDLE_BRANCH.tgz | tar -C linstor-test-bundle -xvzf -
+# copy virter files out from the docker image (replaces old bundle)
+    - |
+      CID=$(docker create $IMAGE_NAME)
+      docker cp $CID:/linstor-tests/virter ./
+      docker rm -v $CID
     - |
       mkdir build-helpers
       curl -sSfL $LINBIT_REGISTRY_URL/repository/test-suite/build-helpers-$BUILD_HELPERS_VERSION.tar.gz | tar -xvz -C ./build-helpers
@@ -142,7 +146,7 @@ workflow:
     - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
     - export LINBIT_CI_JOB_ID=$CI_JOB_ID
-    - ./linstor-test-bundle/virter/run-test.py $VARIANTS --torun $VMSHED_TORUN --repeats="$LINSTOR_TEST_REPEATS"
+    - ./virter/run-test.py $VARIANTS --torun $VMSHED_TORUN --repeats="$LINSTOR_TEST_REPEATS"
 
 check-openapi:
   stage: build
@@ -271,7 +275,6 @@ test-e2e-all:
     - echo "no before"
   script:
     - TEST_BRANCH=latest
-    - TEST_BUNDLE_BRANCH=master
     - TMP_VARIANTS="--variant nonstandard"
     - !reference [.common_e2e, script]
   artifacts:
@@ -297,7 +300,6 @@ test-e2e:
     - echo "no before"
   script:
     - TEST_BRANCH=latest
-    - TEST_BUNDLE_BRANCH=master
     - if [[ "$CI_PIPELINE_SOURCE" == "web" ]]; then TMP_VARIANTS=$VMSHED_VARIANTS; fi
     - !reference [.common_e2e, script]
   artifacts:
