@@ -12,6 +12,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.backups.BackupNodeQueuesPojo;
 import com.linbit.linstor.api.pojo.backups.BackupSnapQueuesPojo;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.BackupInfoManager.QueueItem;
 import com.linbit.linstor.core.LinStor;
@@ -297,18 +298,18 @@ public class CtrlBackupQueueInternalCallHandler
                          * therefore be started on this specific node.
                          */
                         next.alreadyStartedOn = node;
-                        if (next.remote instanceof S3Remote)
+                        if (next.s3orLinRemote instanceof S3Remote)
                         {
                             flux = handleS3QueueItem(node, nextItem, next);
                         }
-                        else if (next.remote instanceof LinstorRemote)
+                        else if (next.s3orLinRemote instanceof LinstorRemote)
                         {
                             flux = handleL2LQueueItem(node, nextItem, next);
                         }
                         else
                         {
                             throw new ImplementationError(
-                                "Unexpected Remote type: " + next.remote.getClass().getSimpleName()
+                                "Unexpected Remote type: " + next.s3orLinRemote.getClass().getSimpleName()
                             );
                         }
                     }
@@ -344,7 +345,12 @@ public class CtrlBackupQueueInternalCallHandler
             if (
                 prevSnapDfn.isDeleted() ||
                     prevSnapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.DELETE) ||
-                    prevSnapDfn.getFlags().isUnset(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED)
+                    !BackupShippingUtils.hasShippingStatus(
+                        prevSnapDfn,
+                        current.s3orLinRemote.getName().displayValue,
+                        InternalApiConsts.VALUE_SUCCESS,
+                        peerAccCtx.get()
+                    )
             )
             {
                 /*
@@ -366,7 +372,7 @@ public class CtrlBackupQueueInternalCallHandler
         {
             prevSnapDfn = backupCrtHandler.getIncrementalBase(
                 current.snapDfn.getResourceDefinition(),
-                current.remote,
+                current.s3orLinRemote,
                 true,
                 true
             );
@@ -374,14 +380,18 @@ public class CtrlBackupQueueInternalCallHandler
             {
                 // if the current node does not have the new prevSnap, a new node needs to be chosen
                 // as well
-                boolean queueAnyways = prevSnapDfn.getFlags()
-                    .isUnset(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                boolean queueAnyways = !BackupShippingUtils.hasShippingStatus(
+                    prevSnapDfn,
+                    current.s3orLinRemote.getName().displayValue,
+                    InternalApiConsts.VALUE_SUCCESS,
+                    peerAccCtx.get()
+                );
                 // nodeForShipping will be null if snap gets queued in the method
                 nodeForShipping = backupCrtHandler.getNodeForBackupOrQueue(
                     current.snapDfn.getResourceDefinition(),
                     prevSnapDfn,
                     current.snapDfn,
-                    current.remote,
+                    current.s3orLinRemote,
                     current.preferredNode,
                     new ApiCallRcImpl(),
                     queueAnyways,
@@ -397,7 +407,7 @@ public class CtrlBackupQueueInternalCallHandler
                 flux = backupCrtHandler.startShippingInTransaction(
                     current.snapDfn,
                     nodeForShipping,
-                    current.remote,
+                    current.s3orLinRemote,
                     prevSnapDfn,
                     new ApiCallRcImpl(),
                     current.preferredNode,
@@ -447,15 +457,15 @@ public class CtrlBackupQueueInternalCallHandler
                     srcSnapDfnUuids,
                     l2lData.getDstNodeName()
                 ),
-                (LinstorRemote) current.remote,
+                (LinstorRemote) current.s3orLinRemote,
                 sysCtx
             ).doOnError(IOException.class, exc ->
             {
                 errorReporter.logError(
-                    "sending prevSnap request to remote " + current.remote +
+                    "sending prevSnap request to remote " + current.s3orLinRemote +
                         "failed. Removing all backups queued to this remote"
                 );
-                backupInfoMgr.deleteFromQueue(current.remote);
+                backupInfoMgr.deleteFromQueue(current.s3orLinRemote);
                 errorReporter.reportError(exc);
             })
                 .map(
@@ -500,17 +510,22 @@ public class CtrlBackupQueueInternalCallHandler
                 SnapshotDefinition l2lPrevSnapDfn = backupCrtHandler.getIncrementalBaseL2L(
                     next.snapDfn.getResourceDefinition(),
                     resp.prevSnapUuid,
-                    next.remote.getName(),
+                    next.s3orLinRemote.getName(),
                     next.prevSnapDfn != null,
-                    resp.responses
+                    resp.responses,
+                    l2lData.getDstRscName()
                 );
-                boolean queueAnyways = l2lPrevSnapDfn != null && l2lPrevSnapDfn.getFlags()
-                    .isUnset(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                boolean queueAnyways = l2lPrevSnapDfn != null && !BackupShippingUtils.hasShippingStatus(
+                    l2lPrevSnapDfn,
+                    next.s3orLinRemote.getName().displayValue,
+                    InternalApiConsts.VALUE_SUCCESS,
+                    peerAccCtx.get()
+                );
                 l2lNodeForShipping = backupCrtHandler.getNodeForBackupOrQueue(
                     next.snapDfn.getResourceDefinition(),
                     l2lPrevSnapDfn,
                     next.snapDfn,
-                    next.remote,
+                    next.s3orLinRemote,
                     next.preferredNode,
                     new ApiCallRcImpl(),
                     queueAnyways,
@@ -526,7 +541,7 @@ public class CtrlBackupQueueInternalCallHandler
                     ret = backupCrtHandler.startShippingInTransaction(
                         next.snapDfn,
                         l2lNodeForShipping,
-                        next.remote,
+                        next.s3orLinRemote,
                         l2lPrevSnapDfn,
                         new ApiCallRcImpl(),
                         next.preferredNode,
@@ -723,7 +738,7 @@ public class CtrlBackupQueueInternalCallHandler
             resourcesRef,
             item -> item.snapDfn.getResourceName().displayValue
         );
-        Predicate<QueueItem> remoteFilter = createFilter(remotesRef, item -> item.remote.getName().displayValue);
+        Predicate<QueueItem> remoteFilter = createFilter(remotesRef, item -> item.s3orLinRemote.getName().displayValue);
         Predicate<String> nodeFilter = createFilter(nodesRef, Function.identity());
 
         Map<QueueItem, Set<String>> queueMap = getSnapToNodeQueueMap();
@@ -796,7 +811,7 @@ public class CtrlBackupQueueInternalCallHandler
     {
         BackupSnapQueuesPojo ret = null;
         // not null means at least VIEW access, snapDfn gets checked in queueItemToPojo
-        if (matches && item.remote.getObjProt().queryAccess(peerAccCtx.get()) != null)
+        if (matches && item.s3orLinRemote.getObjProt().queryAccess(peerAccCtx.get()) != null)
         {
             List<BackupNodeQueuesPojo> nodes = new ArrayList<>();
             for (String node : queuedOnNodes)
@@ -824,7 +839,7 @@ public class CtrlBackupQueueInternalCallHandler
             resourcesRef,
             item -> item.snapDfn.getResourceName().displayValue
         );
-        Predicate<QueueItem> remoteFilter = createFilter(remotesRef, item -> item.remote.getName().displayValue);
+        Predicate<QueueItem> remoteFilter = createFilter(remotesRef, item -> item.s3orLinRemote.getName().displayValue);
         Predicate<String> nodeFilter = createFilter(nodesRef, Function.identity());
 
         Map<String, Set<QueueItem>> queueMap = getNodeToSnapQueueMap();
@@ -897,7 +912,7 @@ public class CtrlBackupQueueInternalCallHandler
             for (QueueItem item : queueItems)
             {
                 // not null means at least VIEW access
-                if (item.remote.getObjProt().queryAccess(peerAccCtx.get()) != null)
+                if (item.s3orLinRemote.getObjProt().queryAccess(peerAccCtx.get()) != null)
                 {
                     BackupSnapQueuesPojo queueItemPojo = queueItemToPojo(item, null);
                     // if no access to snapDfn, queueItemPojo is null
@@ -918,7 +933,10 @@ public class CtrlBackupQueueInternalCallHandler
         try
         {
             startTimeStr = item.snapDfn.getSnapDfnProps(peerAccCtx.get())
-                .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                .getProp(
+                    InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                    BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + item.s3orLinRemote.getName().displayValue
+                );
             @Nullable final SnapshotDefinition prevSnapDfn = item.prevSnapDfn;
             boolean inc = false;
             @Nullable String basedOn = null;
@@ -930,7 +948,7 @@ public class CtrlBackupQueueInternalCallHandler
             ret = new BackupSnapQueuesPojo(
                 item.snapDfn.getResourceName().displayValue,
                 item.snapDfn.getName().displayValue,
-                item.remote.getName().displayValue,
+                item.s3orLinRemote.getName().displayValue,
                 inc,
                 basedOn,
                 (startTimeStr == null || startTimeStr.isEmpty()) ? null : Long.parseLong(startTimeStr),
@@ -1012,7 +1030,7 @@ public class CtrlBackupQueueInternalCallHandler
             @Nullable QueueItem ret = item;
             if (ret != null)
             {
-                backupInfoMgr.deleteFromQueue(ret.snapDfn, ret.remote);
+                backupInfoMgr.deleteFromQueue(ret.snapDfn, ret.s3orLinRemote);
                 item = null;
             }
             return ret;

@@ -13,6 +13,7 @@ import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaInfoPojo;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.backupshipping.S3MetafileNameInfo;
 import com.linbit.linstor.backupshipping.S3VolumeNameInfo;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -25,7 +26,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
@@ -35,6 +35,7 @@ import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -47,6 +48,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -216,48 +218,55 @@ public class CtrlBackupApiHelper
      * Get all snapDfns that are currently shipping a backup.
      */
     Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn)
-        throws AccessDeniedException, InvalidNameException
+        throws AccessDeniedException
     {
         return getInProgressBackups(rscDfn, null);
     }
 
     Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn, @Nullable AbsRemote remote)
-        throws AccessDeniedException, InvalidNameException
+        throws AccessDeniedException
     {
         Set<SnapshotDefinition> snapDfns = new HashSet<>();
+        @Nullable String remoteName = remote == null ? null : remote.getName().displayValue;
         for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
         {
-            if (
-                snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING) &&
-                    snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.BACKUP)
-            )
+            ReadOnlyProps snapDfnTarget = snapDfn.getSnapDfnProps(peerAccCtx.get())
+                .getNamespaceOrEmpty(BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC);
+            ReadOnlyProps snapDfnSource = snapDfn.getSnapDfnProps(peerAccCtx.get())
+                .getNamespaceOrEmpty(BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC);
+            if (remoteName == null)
             {
-                if (remote == null)
+                @Nullable String targetStatus = snapDfnTarget.getProp(InternalApiConsts.KEY_SHIPPING_STATUS);
+                boolean shipping = targetStatus != null && targetStatus.equals(InternalApiConsts.VALUE_SHIPPING);
+                Iterator<String> namespcIter = snapDfnSource.iterateNamespaces();
+                while (namespcIter.hasNext() && !shipping)
+                {
+                    String tmpRemoteName = namespcIter.next();
+                    @Nullable String sourceStatus = snapDfnSource
+                        .getNamespaceOrEmpty(tmpRemoteName)
+                        .getProp(InternalApiConsts.KEY_SHIPPING_STATUS);
+                    boolean sourceShipping = sourceStatus != null && sourceStatus.equals(
+                        InternalApiConsts.VALUE_SHIPPING
+                    );
+                    if (sourceShipping)
+                    {
+                        snapDfns.add(snapDfn);
+                        shipping = true;
+                    }
+                }
+            }
+            else
+            {
+                @Nullable String targetStatus = snapDfnTarget
+                    .getProp(InternalApiConsts.KEY_SHIPPING_STATUS);
+                boolean targetShipping = targetStatus != null && targetStatus.equals(InternalApiConsts.VALUE_SHIPPING);
+                @Nullable String sourceStatus = snapDfnSource
+                    .getNamespaceOrEmpty(remoteName)
+                    .getProp(InternalApiConsts.KEY_SHIPPING_STATUS);
+                boolean sourceShipping = sourceStatus != null && sourceStatus.equals(InternalApiConsts.VALUE_SHIPPING);
+                if (targetShipping || sourceShipping)
                 {
                     snapDfns.add(snapDfn);
-                }
-                else
-                {
-                    for (Snapshot snap : snapDfn.getAllSnapshots(peerAccCtx.get()))
-                    {
-                        String remoteName = "";
-                        if (snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE))
-                        {
-                            remoteName = snap.getSnapProps(peerAccCtx.get())
-                                .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                        }
-                        else if (snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET))
-                        {
-                            remoteName = snap.getSnapProps(peerAccCtx.get())
-                                .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                        }
-
-                        if (hasShippingToRemote(remoteName, remote.getName().displayValue))
-                        {
-                            snapDfns.add(snapDfn);
-                            break;
-                        }
-                    }
                 }
             }
         }
@@ -439,9 +448,10 @@ public class CtrlBackupApiHelper
      * by the stlt itself since that might be too early and therefore trigger a second shipping by an
      * unrelated update
      */
-    public Flux<ApiCallRc> startStltCleanup(Peer peer, String rscNameRef, String snapNameRef)
+    public Flux<ApiCallRc> startStltCleanup(Peer peer, String rscNameRef, String snapNameRef, String remoteNameRef)
     {
-        byte[] msg = ctrlStltSerializer.headerlessBuilder().notifyBackupShippingFinished(rscNameRef, snapNameRef)
+        byte[] msg = ctrlStltSerializer.headerlessBuilder()
+            .notifyBackupShippingFinished(rscNameRef, snapNameRef, remoteNameRef)
             .build();
         return peer.apiCall(InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_FINISHED, msg).map(
             inputStream -> CtrlSatelliteUpdateCaller.deserializeApiCallRc(

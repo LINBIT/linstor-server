@@ -42,7 +42,7 @@ public class StltRemote extends AbsRemote
     private final TransactionSimpleObject<StltRemote, Boolean> deleted;
     private final StateFlags<Flags> flags;
     // this remoteName references the complete cluster instead of only the stlt the shipping should go to
-    private final @Nullable RemoteName linstorRemoteName;
+    private final RemoteName linstorRemoteName;
     // a reference to the node the stltRemote is describing
     private final Node node;
     // rsc-name of the snapDfn we are shipping to or receiving from
@@ -56,7 +56,7 @@ public class StltRemote extends AbsRemote
         String ipRef,
         Map<String, Integer> portRef,
         @Nullable Boolean useZstdRef,
-        @Nullable RemoteName linstorRemoteNameRef,
+        RemoteName linstorRemoteNameRef,
         Node nodeRef,
         StateFlagsPersistence<StltRemote> stateFlagsDriverRef,
         TransactionObjectFactory transObjFactory,
@@ -150,7 +150,7 @@ public class StltRemote extends AbsRemote
         return remoteName;
     }
 
-    public @Nullable RemoteName getLinstorRemoteName()
+    public RemoteName getLinstorRemoteName()
     {
         checkDeleted();
         return linstorRemoteName;
@@ -251,6 +251,7 @@ public class StltRemote extends AbsRemote
         return new StltRemotePojo(
             objId,
             remoteName.displayValue,
+            linstorRemoteName.displayValue,
             flags.getFlagsBits(accCtx),
             ip.get(),
             ports,

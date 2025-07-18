@@ -39,7 +39,11 @@ public class BackupShippingFinished implements ApiCallReactive
         MsgIntBackupShippingFinished backupShippingFinished = MsgIntBackupShippingFinished
             .parseDelimitedFrom(msgDataInRef);
         apiCallHandler
-            .backupShippingFinished(backupShippingFinished.getRscName(), backupShippingFinished.getSnapName());
+            .backupShippingFinished(
+                backupShippingFinished.getRscName(),
+                backupShippingFinished.getSnapName(),
+                backupShippingFinished.getRemoteName()
+            );
 
         return Flux.<ApiCallRc> just(
             ApiCallRcImpl.singleApiCallRc(0 /* internal */, "Backup finished and cleaned up")

@@ -354,21 +354,6 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         }
     }
 
-    /**
-     * Is the snapshot being used for a linstor action such as creation, deletion or rollback?
-     *
-     * @param accCtx
-     */
-    public boolean getInProgress(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-
-        return inCreation.get() ||
-            flags.isSet(accCtx, Flags.DELETE) ||
-            flags.isSet(accCtx, Flags.SHIPPING);
-    }
-
     public void setInCreation(AccessContext accCtx, boolean inCreationRef)
         throws DatabaseException, AccessDeniedException
     {
@@ -683,9 +668,13 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         @Deprecated
         SHIPPED(1L << 7),
         AUTO_SNAPSHOT(1L << 8),
+        @Deprecated
         BACKUP(1L << 9),
+        @Deprecated
         RESTORE_BACKUP_ON_SUCCESS(1L << 10),
+        @Deprecated
         FORCE_RESTORE_BACKUP_ON_SUCCESS(1L << 11 | RESTORE_BACKUP_ON_SUCCESS.flagValue),
+        @Deprecated
         PREPARE_SHIPPING_ABORT(1L << 12),
         SAFETY_SNAPSHOT(1L << 13),
         ;

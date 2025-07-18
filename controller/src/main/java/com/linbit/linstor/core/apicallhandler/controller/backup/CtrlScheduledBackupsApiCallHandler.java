@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.backupshipping.S3MetafileNameInfo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
@@ -19,7 +20,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Schedule;
-import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
@@ -53,8 +53,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -62,10 +60,6 @@ public class CtrlScheduledBackupsApiCallHandler
 {
     private static final String SCHEDULE_KEY = InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR
         + InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE;
-    private static final String REMOTE_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + ReadOnlyProps.PATH_SEPARATOR
-        + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE;
-    private static final String PREV_FULL_BACKUP_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + ReadOnlyProps.PATH_SEPARATOR
-        + InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP;
 
     private final Provider<ScheduleBackupService> scheduleService;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandler;
@@ -128,17 +122,11 @@ public class CtrlScheduledBackupsApiCallHandler
     ) throws InvalidKeyException, AccessDeniedException
     {
         boolean lastBackupIncremental = false;
-        Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
-        if (snap != null && !snap.isDeleted())
-        {
-            lastBackupIncremental = snap.getSnapProps(peerAccCtx.get())
-                .getProp(
-                    InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                ) != null;
-        }
+        String namespace = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remote.getName().displayValue;
+        lastBackupIncremental = snapDfn.getSnapDfnProps(peerAccCtx.get())
+            .getProp(InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, namespace) != null;
         String backupTimeRaw = snapDfn.getSnapDfnProps(peerAccCtx.get())
-            .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+            .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, namespace);
         scheduleService.get().addTaskAgain(
             rscDfn,
             schedule,
@@ -155,15 +143,15 @@ public class CtrlScheduledBackupsApiCallHandler
     /**
      * Checks and if needed deletes snaps and backups as specified in the schedule
      */
-    public Flux<ApiCallRc> checkScheduleKeep(ResourceDefinition rscDfn, Schedule schedule, AbsRemote remote)
-        throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
+    public Flux<ApiCallRc> checkScheduleKeep(ResourceDefinition rscDfn, Schedule schedule, AbsRemote s3orLinRemote)
+        throws AccessDeniedException, IOException
     {
         Flux<ApiCallRc> deleteFlux = Flux.empty();
-        deleteFlux = deleteFlux.concatWith(checkKeepLocal(rscDfn, schedule, remote.getName().displayValue));
-        if (remote instanceof S3Remote)
+        deleteFlux = deleteFlux.concatWith(checkKeepLocal(rscDfn, schedule, s3orLinRemote));
+        if (s3orLinRemote instanceof S3Remote)
         {
             deleteFlux = deleteFlux
-                .concatWith(checkKeepRemote(rscDfn.getName().displayValue, (S3Remote) remote, schedule));
+                .concatWith(checkKeepRemote(rscDfn.getName().displayValue, (S3Remote) s3orLinRemote, schedule));
         }
 
         return deleteFlux;
@@ -173,12 +161,15 @@ public class CtrlScheduledBackupsApiCallHandler
      * Finds out how many full-backup-base-snaps exist locally, and if that number is too big.
      * If it is, deletes the failed ones first, and if there are no failed snaps, the oldest.
      */
-    private Flux<ApiCallRc> checkKeepLocal(ResourceDefinition rscDfn, Schedule schedule, String remoteName)
+    private Flux<ApiCallRc> checkKeepLocal(ResourceDefinition rscDfn, Schedule schedule, AbsRemote s3orLinRemote)
         throws AccessDeniedException
     {
+        String s3orLinRemoteName = s3orLinRemote.getName().displayValue;
         Flux<ApiCallRc> deleteFlux = Flux.empty();
         List<SnapshotDefinition> snapDfnsToCheck = getFullBackupBaseSnaps(
-            rscDfn, schedule.getName().displayValue, remoteName
+            rscDfn,
+            schedule.getName().displayValue,
+            s3orLinRemoteName
         );
         Integer keepLocal = schedule.getKeepLocal(peerAccCtx.get());
         if (keepLocal != null && keepLocal < snapDfnsToCheck.size())
@@ -195,17 +186,25 @@ public class CtrlScheduledBackupsApiCallHandler
                     ts1 = a.getSnapDfnProps(peerAccCtx.get())
                         .getProp(
                             InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                            BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + s3orLinRemoteName
                         );
-                    success1 = a.getFlags()
-                        .isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                    success1 = BackupShippingUtils.hasShippingStatus(
+                        a,
+                        s3orLinRemoteName,
+                        InternalApiConsts.VALUE_SUCCESS,
+                        peerAccCtx.get()
+                    );
                     ts2 = b.getSnapDfnProps(peerAccCtx.get())
                         .getProp(
                             InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                            BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + s3orLinRemoteName
                         );
-                    success2 = b.getFlags()
-                        .isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                    success2 = BackupShippingUtils.hasShippingStatus(
+                        b,
+                        s3orLinRemoteName,
+                        InternalApiConsts.VALUE_SUCCESS,
+                        peerAccCtx.get()
+                    );
                 }
                 catch (AccessDeniedException exc)
                 {
@@ -214,8 +213,7 @@ public class CtrlScheduledBackupsApiCallHandler
                     throw new ImplementationError(exc);
                 }
                 int successComp = Boolean.compare(success1, success2);
-                return successComp == 0 ? Long.compare(Long.parseLong(ts1), Long.parseLong(ts2))
-                    : successComp;
+                return successComp == 0 ? Long.compare(Long.parseLong(ts1), Long.parseLong(ts2)) : successComp;
             });
 
             List<SnapshotDefinition> fullSnapsToDel = new ArrayList<>();
@@ -234,7 +232,10 @@ public class CtrlScheduledBackupsApiCallHandler
                 }
             }
             Map<SnapshotDefinition, List<SnapshotDefinition>> chains = getAllSnapshotChains(
-                rscDfn, schedule.getName().displayValue, remoteName
+                rscDfn,
+                schedule.getName().displayValue,
+                s3orLinRemote.getName().displayValue,
+                s3orLinRemoteName
             );
             for (SnapshotDefinition fullSnapToDel : fullSnapsToDel)
             {
@@ -269,7 +270,7 @@ public class CtrlScheduledBackupsApiCallHandler
      * If it is, deletes the oldest ones first.
      */
     private Flux<ApiCallRc> checkKeepRemote(String rscName, S3Remote remote, Schedule schedule)
-        throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
+        throws AccessDeniedException, IOException
     {
         Flux<ApiCallRc> deleteFlux = Flux.empty();
         Map<LocalDateTime, String> backupsToCheck = getFullBackupS3Keys(
@@ -323,7 +324,8 @@ public class CtrlScheduledBackupsApiCallHandler
     private Map<SnapshotDefinition, List<SnapshotDefinition>> getAllSnapshotChains(
         ResourceDefinition rscDfn,
         String scheduleName,
-        String remoteName
+        String s3orStltRemoteName,
+        String s3orLinRemoteName
     ) throws AccessDeniedException
     {
         TreeMap<String, SnapshotDefinition> sourceSnaps = new TreeMap<>();
@@ -331,21 +333,32 @@ public class CtrlScheduledBackupsApiCallHandler
         {
             ReadOnlyProps props = snapDfn.getSnapDfnProps(peerAccCtx.get());
             String schedule = props.getProp(SCHEDULE_KEY);
-            String remote = props.getProp(REMOTE_KEY);
-            if (schedule != null && schedule.equals(scheduleName) && remote != null && remote.equals(remoteName))
+            String s3orStltRemote = props.getProp(
+                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + s3orLinRemoteName + "/" +
+                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE
+            );
+            if (
+                schedule != null && schedule.equals(scheduleName) && s3orStltRemote != null && s3orStltRemote.equals(
+                    s3orStltRemoteName
+                )
+            )
             {
                 sourceSnaps.put(snapDfn.getName().displayValue, snapDfn);
             }
         }
         Map<SnapshotDefinition, List<SnapshotDefinition>> chains = new TreeMap<>();
-        final String PREV_BACKUP_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + ReadOnlyProps.PATH_SEPARATOR
-            + remoteName + ReadOnlyProps.PATH_SEPARATOR + InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT;
+        final String PREV_BACKUP_KEY = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC +
+            ReadOnlyProps.PATH_SEPARATOR + s3orLinRemoteName + ReadOnlyProps.PATH_SEPARATOR +
+            InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT;
         while (!sourceSnaps.isEmpty())
         {
             List<SnapshotDefinition> chain = new ArrayList<>();
             SnapshotDefinition startSnap = sourceSnaps.pollFirstEntry().getValue();
             Props startSnapDfnProps = startSnap.getSnapDfnProps(peerAccCtx.get());
-            String prevFullSnap = startSnapDfnProps.getProp(PREV_FULL_BACKUP_KEY);
+            String prevFullSnap = startSnapDfnProps.getProp(
+                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + s3orLinRemoteName + "/" +
+                    InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP
+            );
             String prevSnap = startSnapDfnProps.getProp(PREV_BACKUP_KEY);
             if (!prevFullSnap.equalsIgnoreCase(startSnap.getName().value))
             {
@@ -397,7 +410,10 @@ public class CtrlScheduledBackupsApiCallHandler
                         else
                         {
                             prevSnap = startSnapDfnProps.getProp(PREV_BACKUP_KEY);
-                            prevFullSnap = startSnapDfnProps.getProp(PREV_FULL_BACKUP_KEY);
+                            prevFullSnap = startSnapDfnProps.getProp(
+                                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + s3orLinRemoteName + "/" +
+                                    InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP
+                            );
                         }
                     }
                 }
@@ -416,7 +432,7 @@ public class CtrlScheduledBackupsApiCallHandler
     private List<SnapshotDefinition> getFullBackupBaseSnaps(
         ResourceDefinition rscDfn,
         String scheduleName,
-        String remoteName
+        String s3orLinRemoteName
     ) throws AccessDeniedException
     {
         List<SnapshotDefinition> snapDfns = new ArrayList<>();
@@ -427,11 +443,13 @@ public class CtrlScheduledBackupsApiCallHandler
                 ReadOnlyProps props = snapDfn.getSnapDfnProps(peerAccCtx.get());
                 if (
                     isFullBackupOfSchedule(
-                        props.map(), scheduleName, remoteName,
+                        props.map(),
+                        scheduleName,
+                        s3orLinRemoteName,
                         snapDfn.getName().displayValue
                     ) && props.getProp(
                         InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + s3orLinRemoteName
                     ) != null
                 )
                 {
@@ -450,7 +468,7 @@ public class CtrlScheduledBackupsApiCallHandler
      * Find all backups of the given triple that are full backups
      */
     private Map<LocalDateTime, String> getFullBackupS3Keys(String rscNameRef, S3Remote remote, String scheduleName)
-        throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
+        throws AccessDeniedException, IOException
     {
         Map<LocalDateTime, String> s3keysRet = new TreeMap<>();
         Set<String> s3keys = backupHelper.getAllS3Keys(remote, rscNameRef);
@@ -487,15 +505,17 @@ public class CtrlScheduledBackupsApiCallHandler
     private boolean isFullBackupOfSchedule(
         Map<String, String> props,
         String scheduleName,
-        String remoteName,
+        String s3orLinRemoteName,
         String snapName
     )
     {
         String schedule = props.get(SCHEDULE_KEY);
-        String remote = props.get(REMOTE_KEY);
         // if PREV_BACKUP_KEY == snapName it is a full backup
-        return schedule != null && schedule.equals(scheduleName) && remote != null && remote.equals(remoteName) &&
-            props.get(PREV_FULL_BACKUP_KEY).equalsIgnoreCase(snapName);
+        return schedule != null && schedule.equals(scheduleName) &&
+            props.get(
+                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + s3orLinRemoteName + "/" +
+                    InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP
+            ).equalsIgnoreCase(snapName);
     }
 
     /**

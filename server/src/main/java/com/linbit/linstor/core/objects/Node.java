@@ -465,25 +465,6 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         return !snapshotMap.isEmpty();
     }
 
-
-    public Collection<Snapshot> getInProgressSnapshots(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-
-        List<Snapshot> inProgressSnapshots = new ArrayList<>();
-        for (Snapshot snapshot : snapshotMap.values())
-        {
-            if (snapshot.getSnapshotDefinition().getInProgress(accCtx))
-            {
-                inProgressSnapshots.add(snapshot);
-            }
-        }
-        return inProgressSnapshots;
-    }
-
-
     public Collection<Snapshot> getSnapshots(AccessContext accCtx)
         throws AccessDeniedException
     {

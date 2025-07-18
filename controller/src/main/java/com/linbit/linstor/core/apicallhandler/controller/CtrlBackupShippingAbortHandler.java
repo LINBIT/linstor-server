@@ -2,11 +2,14 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.BackupInfoManager.AbortInfo;
 import com.linbit.linstor.core.BackupInfoManager.AbortS3Info;
@@ -22,6 +25,9 @@ import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -31,6 +37,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -103,9 +110,8 @@ public class CtrlBackupShippingAbortHandler
             {
                 SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
                 if (
-                    snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING) &&
-                        !snap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                        snapDfn.getFlags().isUnset(apiCtx, SnapshotDefinition.Flags.BACKUP)
+                    BackupShippingUtils.isAnyShippingInProgress(snapDfn, apiCtx) ||
+                        BackupShippingUtils.isAnyAbortInProgress(snapDfn, apiCtx)
                 )
                 {
                     flux = flux.concatWith(abortBackupShippings(snapDfn, abortMultiPartRef));
@@ -139,25 +145,8 @@ public class CtrlBackupShippingAbortHandler
     )
     {
         Flux<ApiCallRc> flux = Flux.empty();
-        try
-        {
-            if (snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP))
-            {
-                for (Snapshot snap : snapDfn.getAllSnapshots(apiCtx))
-                {
-                    if (!snap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET))
-                    {
-                        flux = flux.concatWith(abortBackupShippings(snapDfn, abortMultiPartRef));
-                        break;
-                    }
-                }
-            }
-            ctrlTransactionHelper.commit();
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
+        flux = flux.concatWith(abortBackupShippings(snapDfn, abortMultiPartRef));
+        ctrlTransactionHelper.commit();
         return flux;
     }
 
@@ -247,9 +236,8 @@ public class CtrlBackupShippingAbortHandler
         }
         if (shouldAbort)
         {
-            enableFlagsPrivileged(
-                snapDfn,
-                SnapshotDefinition.Flags.SHIPPING_ABORT
+            enableAbortingPrivileged(
+                snapDfn
             );
             flux = flux.concatWith(
                 snapDelHandlerProvider.get()
@@ -263,13 +251,58 @@ public class CtrlBackupShippingAbortHandler
         return flux;
     }
 
-    private void enableFlagsPrivileged(SnapshotDefinition snapDfn, SnapshotDefinition.Flags... snapDfnFlags)
+    private void enableAbortingPrivileged(SnapshotDefinition snapDfn)
     {
         try
         {
-            snapDfn.getFlags().enableFlags(apiCtx, snapDfnFlags);
+            @Nullable Props backupProps = snapDfn.getSnapDfnProps(apiCtx)
+                .getNamespace(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+            // if the decision was made that we need to abort, this namespc should not be able to be null, but check
+            // anyways
+            if (backupProps != null)
+            {
+                @Nullable Props dstProps = backupProps.getNamespace(InternalApiConsts.KEY_BACKUP_TARGET);
+                if (
+                    dstProps != null && BackupShippingUtils.hasShippingStatus(
+                        snapDfn,
+                        null,
+                        InternalApiConsts.VALUE_SHIPPING,
+                        apiCtx
+                    )
+                )
+                {
+                    dstProps.setProp(InternalApiConsts.KEY_SHIPPING_STATUS, InternalApiConsts.VALUE_ABORTING);
+                }
+                else
+                {
+                    @Nullable Props srcProps = backupProps.getNamespace(InternalApiConsts.KEY_BACKUP_SOURCE);
+                    if (srcProps != null)
+                    {
+                        Iterator<String> namespcIter = srcProps.iterateNamespaces();
+                        while (namespcIter.hasNext())
+                        {
+                            String remoteName = namespcIter.next();
+                            if (
+                                BackupShippingUtils.hasShippingStatus(
+                                    snapDfn,
+                                    remoteName,
+                                    InternalApiConsts.VALUE_SHIPPING,
+                                    apiCtx
+                                )
+                            )
+                            {
+                                srcProps.setProp(
+                                    InternalApiConsts.KEY_SHIPPING_STATUS,
+                                    InternalApiConsts.VALUE_ABORTING,
+                                    remoteName
+                                );
+                            }
+                        }
+                    }
+                }
+            }
         }
-        catch (AccessDeniedException exc)
+        catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
         {
             throw new ImplementationError(exc);
         }

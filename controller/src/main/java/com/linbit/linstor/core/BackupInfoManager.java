@@ -5,7 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingDstData;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingSrcData;
@@ -20,6 +20,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.StltRemoteCleanupTask;
@@ -152,22 +153,20 @@ public class BackupInfoManager
             while (localSnapIter.hasNext())
             {
                 Snapshot localSnap = localSnapIter.next();
-                if (
-                    localSnap.getFlags().isSet(accCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                        localSnap.getSnapshotDefinition()
-                            .getFlags()
-                            .isSet(
-                                accCtx,
-                                SnapshotDefinition.Flags.SHIPPING,
-                                SnapshotDefinition.Flags.BACKUP
-                            )
-                )
+                @Nullable Props snapDfnTargetProps = localSnap.getSnapshotDefinition()
+                    .getSnapDfnProps(accCtx)
+                    .getNamespace(BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC);
+                if (snapDfnTargetProps != null)
                 {
-                    snapDfnsToCleanup.add(localSnap.getSnapshotDefinition());
-                    // complete abort, remove restore-lock on rscDfn
-                    restoreRemoveEntry(localSnap.getResourceDefinition());
-                    abortRestoreDeleteAllEntries(localSnap.getResourceName().displayValue);
-                    backupsToDownloadCleanUp(localSnap);
+                    String targetStatus = snapDfnTargetProps.getProp(InternalApiConsts.KEY_SHIPPING_STATUS);
+                    if (targetStatus != null && targetStatus.equals(InternalApiConsts.VALUE_SHIPPING))
+                    {
+                        snapDfnsToCleanup.add(localSnap.getSnapshotDefinition());
+                        // complete abort, remove restore-lock on rscDfn
+                        restoreRemoveEntry(localSnap.getResourceDefinition());
+                        abortRestoreDeleteAllEntries(localSnap.getResourceName().displayValue);
+                        backupsToDownloadCleanUp(localSnap);
+                    }
                 }
             }
             Set<RemoteName> remotesToCleanup = removeInProgressBackups(snapDfnsToCleanup);
@@ -689,7 +688,12 @@ public class BackupInfoManager
                     QueueItem next = iterator.next();
                     SnapshotDefinition prevSnapDfn = next.prevSnapDfn;
                     boolean isValid = prevSnapDfn == null || prevSnapDfn.isDeleted() ||
-                        prevSnapDfn.getFlags().isSet(accCtx, SnapshotDefinition.Flags.SHIPPED);
+                        BackupShippingUtils.hasShippingStatus(
+                            prevSnapDfn,
+                            next.s3orLinRemote.getName().displayValue,
+                            InternalApiConsts.VALUE_SUCCESS,
+                            accCtx
+                        );
                     if (isValid)
                     {
                         ret = next;
@@ -741,7 +745,7 @@ public class BackupInfoManager
         Set<QueueItem> ret = new HashSet<>();
         for (QueueItem item : items)
         {
-            if (item.remote.equals(remote))
+            if (item.s3orLinRemote.equals(remote))
             {
                 ret.add(item);
             }
@@ -817,7 +821,7 @@ public class BackupInfoManager
                 final @Nullable SnapshotDefinition prevSnap = item.prevSnapDfn;
                 if (prevSnap != null)
                 {
-                    if (!prevSnap.isDeleted() && prevSnap.equals(snapDfn) && item.remote.equals(remote))
+                    if (!prevSnap.isDeleted() && prevSnap.equals(snapDfn) && item.s3orLinRemote.equals(remote))
                     {
                         ret = item;
                         break;
@@ -855,7 +859,7 @@ public class BackupInfoManager
                 // point, since those that trigger this check will never be started by a getFollowUpSnaps call.
                 SnapshotDefinition prevSnapDfn = item.prevSnapDfn;
                 if (
-                    item.remote.equals(remote) && prevSnapDfn != null &&
+                    item.s3orLinRemote.equals(remote) && prevSnapDfn != null &&
                         !prevSnapDfn.isDeleted() && prevSnapDfn.equals(snapDfn)
                 )
                 {
@@ -920,7 +924,8 @@ public class BackupInfoManager
     public class QueueItem implements Comparable<QueueItem>
     {
         public final SnapshotDefinition snapDfn;
-        public final AbsRemote remote;
+        // this is either an S3Remote or an L2LRemote, never a StltRemote
+        public final AbsRemote s3orLinRemote;
         /* if prevSnapDfn is null, it means a full backup should be made */
         public @Nullable SnapshotDefinition prevSnapDfn;
         public final @Nullable String preferredNode;
@@ -945,7 +950,7 @@ public class BackupInfoManager
         )
         {
             snapDfn = snapDfnRef;
-            remote = remoteRef;
+            s3orLinRemote = remoteRef;
             prevSnapDfn = prevSnapDfnRef;
             preferredNode = preferredNodeRef;
             l2lData = l2lDataRef;
@@ -954,7 +959,7 @@ public class BackupInfoManager
         @Override
         public String toString()
         {
-            return "QueueItem [snapDfn=" + snapDfn + ", remote=" + remote + ", prevSnapDfn=" + prevSnapDfn +
+            return "QueueItem [snapDfn=" + snapDfn + ", remote=" + s3orLinRemote + ", prevSnapDfn=" + prevSnapDfn +
                 ", preferredNode=" + preferredNode + ", l2lData=" + l2lData + "]";
         }
 
@@ -963,7 +968,7 @@ public class BackupInfoManager
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + remote.hashCode();
+            result = prime * result + s3orLinRemote.hashCode();
             result = prime * result + snapDfn.hashCode();
             return result;
         }
@@ -981,7 +986,7 @@ public class BackupInfoManager
                 else
                 {
                     QueueItem other = (QueueItem) obj;
-                    equals = Objects.equals(remote, other.remote) &&
+                    equals = Objects.equals(s3orLinRemote, other.s3orLinRemote) &&
                         Objects.equals(snapDfn, other.snapDfn);
                 }
             }
@@ -995,9 +1000,15 @@ public class BackupInfoManager
             try
             {
                 String myDateStr = snapDfn.getSnapDfnProps(sysCtx)
-                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                    .getProp(
+                        InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                        BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + s3orLinRemote.getName().displayValue
+                    );
                 String otherDateStr = other.snapDfn.getSnapDfnProps(sysCtx)
-                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                    .getProp(
+                        InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                        BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + other.s3orLinRemote.getName().displayValue
+                    );
                 /*
                  * To prevent an ImplementationError from possibly completely stopping whatever thread is currently
                  * trying to sort these QueueItems, it is not thrown but instead creates an ErrorReport
@@ -1010,7 +1021,9 @@ public class BackupInfoManager
                         errorReporter.reportError(
                             new ImplementationError(
                                 "The snapDfns '" + snapDfn + "' and '" + other.snapDfn +
-                                    "' do not have the property BackupShipping/BackupStartTimestamp set."
+                                    "' do not have the property " +
+                                    "BackupShipping/Source/<remoteName>/BackupStartTimestamp set. Remotes: " +
+                                    s3orLinRemote.getName() + " and " + other.s3orLinRemote.getName()
                             )
                         );
                     }
@@ -1020,7 +1033,8 @@ public class BackupInfoManager
                         errorReporter.reportError(
                             new ImplementationError(
                                 "The snapDfns '" + snapDfn +
-                                    "' does not have the property BackupShipping/BackupStartTimestamp set."
+                                    "' does not have the property BackupShipping/Source/" + s3orLinRemote.getName() +
+                                    "/BackupStartTimestamp set."
                             )
                         );
                     }
@@ -1033,7 +1047,8 @@ public class BackupInfoManager
                         errorReporter.reportError(
                             new ImplementationError(
                                 "The snapDfns '" + other.snapDfn +
-                                    "' does not have the property BackupShipping/BackupStartTimestamp set."
+                                    "' does not have the property BackupShipping/Source/" + other.s3orLinRemote.getName() +
+                                    "/BackupStartTimestamp set."
                             )
                         );
                     }

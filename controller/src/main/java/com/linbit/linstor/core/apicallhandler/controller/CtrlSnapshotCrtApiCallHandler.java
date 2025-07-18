@@ -10,6 +10,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.BackgroundRunner.RunConfig;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -600,8 +601,7 @@ public class CtrlSnapshotCrtApiCallHandler
                     SnapshotDefinition.Flags.FAILED_DEPLOYMENT;
 
             enableFlagPrivileged(snapshotDfn, flag);
-            // make sure backup shipping does not recognize the failed snap as "in progress"
-            disableFlagsPrivileged(snapshotDfn, SnapshotDefinition.Flags.SHIPPING);
+            disableBackupShipping(snapshotDfn);
             unsetInCreationPrivileged(snapshotDfn);
             ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
@@ -633,6 +633,50 @@ public class CtrlSnapshotCrtApiCallHandler
         }
 
         return retFlux;
+    }
+
+    private void disableBackupShipping(SnapshotDefinition snapshotDfn)
+    {
+        // if there is a shipping going on, it can only be the single one, since linstor was trying to create the
+        // snap for it
+        try
+        {
+            if (BackupShippingUtils.isAnyShippingInProgress(snapshotDfn, apiCtx))
+            {
+                Props backupProps = snapshotDfn.getSnapDfnProps(apiCtx).getNamespace(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                // this has to be nonnull since a shipping is in progress, but check anyways
+                if (backupProps != null)
+                {
+                    Props targetProps = backupProps.getNamespace(InternalApiConsts.KEY_BACKUP_TARGET);
+                    if (targetProps != null)
+                    {
+                        targetProps.setProp(InternalApiConsts.KEY_SHIPPING_STATUS, InternalApiConsts.VALUE_FAILED);
+                    }
+                    else
+                    {
+                        Props srcProps = backupProps.getNamespace(InternalApiConsts.KEY_BACKUP_SOURCE);
+                        Iterator<String> namespcIter = srcProps.iterateNamespaces();
+                        // this will only have one entry, since we just failed to create the snap
+                        while (namespcIter.hasNext())
+                        {
+                            srcProps.setProp(
+                                InternalApiConsts.KEY_SHIPPING_STATUS,
+                                InternalApiConsts.VALUE_FAILED,
+                                namespcIter.next()
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException | InvalidKeyException | InvalidValueException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
     }
 
     private Flux<ApiCallRc> takeSnapshot(CreateMultiSnapRequest reqRef)

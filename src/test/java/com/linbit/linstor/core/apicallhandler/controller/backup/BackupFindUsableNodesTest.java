@@ -5,6 +5,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apicallhandler.controller.backup.nodefinder.BackupNodeFinder;
@@ -83,6 +84,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
     private static final String NODE_E = "nodeE";
     private static final String SNAP_NAME = "test-snap";
     private static final String REMOTE_NAME = "dummy-remote";
+    // since our mocked remote is an s3-remote, we don't have a target-rsc-name
+    private static final String TARGET_RSC_NAME = null;
     @Inject
     private BackupNodeFinder backupNodeFinder;
     private boolean supportShipping = true;
@@ -206,7 +209,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             snapDfn,
-            mockedRemote
+            mockedRemote,
+            TARGET_RSC_NAME
         );
         assertSet(usableNodes, NODE_A);
         singleStorageRsc(nodeB);
@@ -215,7 +219,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             usableNodes = backupNodeFinder.findUsableNodes(
                 rscDfn,
                 snapDfn,
-                mockedRemote
+                mockedRemote,
+                TARGET_RSC_NAME
             );
             fail();
         }
@@ -249,18 +254,19 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             null,
-            mockedRemote
+            mockedRemote,
+            TARGET_RSC_NAME
         );
         assertSet(usableNodes, NODE_A, NODE_B);
         singleDrbdRsc(nodeD, false);
         singleDrbdRsc(nodeE, false);
         snapDfn.getSnapDfnProps(SYS_CTX)
             .setProp(
-                InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + REMOTE_NAME,
+                InternalApiConsts.KEY_BACKUP_SRC_NODE,
                 nodeA.getName().displayValue,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + REMOTE_NAME
             );
-        usableNodes = backupNodeFinder.findUsableNodes(rscDfn, snapDfn, mockedRemote);
+        usableNodes = backupNodeFinder.findUsableNodes(rscDfn, snapDfn, mockedRemote, TARGET_RSC_NAME);
         assertSet(usableNodes, NODE_A, NODE_B);
     }
 
@@ -286,7 +292,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             null,
-            mockedRemote
+            mockedRemote,
+            TARGET_RSC_NAME
         );
         assertEquals(3, usableNodes.size());
     }
@@ -323,9 +330,9 @@ public class BackupFindUsableNodesTest extends ApiTestBase
                 inc = true;
                 snapDfn.getSnapDfnProps(SYS_CTX)
                     .setProp(
-                        InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + REMOTE_NAME,
+                        InternalApiConsts.KEY_BACKUP_SRC_NODE,
                         inputNode.nodeName,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + REMOTE_NAME
                     );
             }
             firstNode = false;
@@ -338,7 +345,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             inc ? snapDfn : null,
-            mockedRemote
+            mockedRemote,
+            TARGET_RSC_NAME
         );
         // assertMap(usableNodes, input.objB);
 

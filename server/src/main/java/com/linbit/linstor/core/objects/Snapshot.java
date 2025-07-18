@@ -441,7 +441,9 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         SHIPPING_TARGET_CLEANING_UP(SHIPPING_TARGET.flagValue | 1L << 5),
         @Deprecated
         SHIPPING_TARGET_DONE(SHIPPING_TARGET.flagValue | 1L << 6),
+        @Deprecated
         BACKUP_SOURCE(1L << 7),
+        @Deprecated
         BACKUP_TARGET(1L << 8);
 
         public final long flagValue;

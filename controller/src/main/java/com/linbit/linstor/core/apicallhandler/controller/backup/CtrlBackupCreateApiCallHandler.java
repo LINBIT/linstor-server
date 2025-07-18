@@ -72,6 +72,7 @@ import javax.inject.Singleton;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -190,7 +191,7 @@ public class CtrlBackupCreateApiCallHandler
         String rscNameRef,
         String remoteName,
         String nodeName,
-        String snapNameRef,
+        @Nullable String snapNameRef,
         LocalDateTime nowRef,
         boolean allowIncremental,
         RemoteType remoteTypeRef,
@@ -246,7 +247,8 @@ public class CtrlBackupCreateApiCallHandler
                     prevSnapDfnUuid,
                     remote.getName(),
                     allowIncremental,
-                    responses
+                    responses,
+                    l2lData.getDstRscName()
                 );
             }
             else
@@ -262,13 +264,17 @@ public class CtrlBackupCreateApiCallHandler
                     Collections.emptyMap(),
                     responses
                 );
-            setBackupSnapDfnFlagsAndProps(snapDfn, scheduleNameRef, nowRef);
+            setBackupSnapDfnFlagsAndProps(snapDfn, scheduleNameRef, nowRef, remoteName);
             /*
              * See if the previous snap has already finished shipping. If it hasn't, the current snap must be queued to
              * prevent two consecutive shippings from happening at the same time
              */
-            boolean queueAnyways = prevSnapDfn != null &&
-                prevSnapDfn.getFlags().isUnset(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+            boolean queueAnyways = prevSnapDfn != null && !BackupShippingUtils.hasShippingStatus(
+                prevSnapDfn,
+                remoteName,
+                InternalApiConsts.VALUE_SUCCESS,
+                peerAccCtx.get()
+            );
             Node chosenNode = getNodeForBackupOrQueue(
                 rscDfn,
                 prevSnapDfn,
@@ -306,14 +312,16 @@ public class CtrlBackupCreateApiCallHandler
             {
                 // only do this for s3, l2l does it on its own later on
                 setIncrementalDependentProps(snapDfn, prevSnapDfn, remoteName, scheduleNameRef);
+                // this is used to determine the prevSnap for s3
+                // nur für auto-namen setzen
+                rscDfn.getProps(peerAccCtx.get())
+                    .setProp(
+                        InternalApiConsts.KEY_BACKUP_LAST_STARTED_OR_QUEUED,
+                        snapName,
+                        BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" +
+                            remote.getName().displayValue
+                    );
             }
-            rscDfn.getProps(peerAccCtx.get())
-                .setProp(
-                    InternalApiConsts.KEY_BACKUP_LAST_STARTED_OR_QUEUED,
-                    snapName,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" +
-                        remote.getName().displayValue
-                );
             ctrlTransactionHelper.commit();
 
             responses.addEntry(
@@ -394,25 +402,33 @@ public class CtrlBackupCreateApiCallHandler
             // doublecheck free shipping slots, if none are free, queue
             if (getFreeShippingSlots(node) > 0)
             {
-                snapDfn.getFlags()
-                    .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
+                Props snapDfnProps = snapDfn.getSnapDfnProps(peerAccCtx.get());
+                String propsNamespc = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remote.getName();
+                snapDfnProps.setProp(
+                    InternalApiConsts.KEY_SHIPPING_STATUS,
+                    InternalApiConsts.VALUE_PREPARE_SHIPPING,
+                    propsNamespc
+                );
                 if (remote instanceof S3Remote)
                 {
-                    snapDfn.getSnapDfnProps(peerAccCtx.get())
+                    snapDfnProps
                         .setProp(
-                            InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName(),
+                            InternalApiConsts.KEY_BACKUP_SRC_NODE,
                             node.getName().displayValue,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                            propsNamespc
                         );
                 }
                 else if (remote instanceof LinstorRemote)
                 {
-                    snapDfn.getSnapDfnProps(peerAccCtx.get())
+                    if (optL2LData == null)
+                    {
+                        throw new ImplementationError("doing l2l-shipping but no l2l-data given");
+                    }
+                    snapDfnProps
                         .setProp(
-                            InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName() +
-                                "/" + snapDfn.getResourceName().displayValue,
+                            InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + optL2LData.getDstRscName(),
                             node.getName().displayValue,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                            propsNamespc
                         );
                 }
                 // now that it is decided that this node will do the shipping, see if any snapDfn can be moved to the
@@ -425,7 +441,7 @@ public class CtrlBackupCreateApiCallHandler
                         snapDfn.getResourceDefinition(),
                         snapDfn,
                         item.snapDfn,
-                        item.remote,
+                        item.s3orLinRemote,
                         item.preferredNode,
                         responsesRef,
                         true, // always queue to avoid simultaneous shippings of consecutive backups
@@ -436,24 +452,22 @@ public class CtrlBackupCreateApiCallHandler
                 Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), node.getName());
                 if (remote instanceof S3Remote)
                 {
-                    // l2l does not need this to be set...
-                    snap.getFlags()
-                        .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+                    // make stlt start shipping - l2l needs to do this later
+                    snapDfnProps.setProp(
+                        InternalApiConsts.KEY_SHIPPING_STATUS,
+                        InternalApiConsts.VALUE_SHIPPING,
+                        propsNamespc
+                    );
                     snap.setTakeSnapshot(peerAccCtx.get(), true);
-                    snap.getSnapProps(peerAccCtx.get())
-                        .setProp(
-                            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                            remote.getName().displayValue,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
-                        );
+                    // KEY_BACKUP_TARGET_REMOTE was set here previously - this is not needed for s3, since the remote is
+                    // now part of the namespace - for l2l it will still be needed since there we save the stlt-remote
                 }
                 if (prevSnapDfn != null)
                 {
-                    snap.getSnapProps(peerAccCtx.get())
-                        .setProp(
+                    snapDfnProps.setProp(
                             InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
                             prevSnapDfn.getName().displayValue,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                            propsNamespc
                         );
                 }
 
@@ -601,7 +615,7 @@ public class CtrlBackupCreateApiCallHandler
                         item.snapDfn.getResourceDefinition(),
                         prevSnap,
                         item.snapDfn,
-                        item.remote,
+                        item.s3orLinRemote,
                         item.preferredNode,
                         responses,
                         false,
@@ -613,7 +627,7 @@ public class CtrlBackupCreateApiCallHandler
                             startShippingInTransaction(
                                 item.snapDfn,
                                 shipFromNode,
-                                item.remote,
+                                item.s3orLinRemote,
                                 item.prevSnapDfn,
                                 responses,
                                 item.preferredNode,
@@ -647,7 +661,8 @@ public class CtrlBackupCreateApiCallHandler
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             prevSnapDfn,
-            remote
+            remote,
+            l2lData == null ? null : l2lData.getDstRscName()
         );
         Node chosenNode = null;
         if (!queueAnyways)
@@ -671,7 +686,8 @@ public class CtrlBackupCreateApiCallHandler
     private void setBackupSnapDfnFlagsAndProps(
         SnapshotDefinition snapDfn,
         @Nullable String scheduleNameRef,
-        LocalDateTime nowRef
+        LocalDateTime nowRef,
+        String remoteName
     )
         throws AccessDeniedException, DatabaseException, InvalidKeyException, InvalidValueException
     {
@@ -700,11 +716,12 @@ public class CtrlBackupCreateApiCallHandler
                 ApiConsts.VAL_TRUE,
                 ApiConsts.NAMESPC_DRBD_OPTIONS
             );
+        String backupNamespc = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName;
         snapDfn.getSnapDfnProps(peerAccCtx.get())
             .setProp(
                 InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
                 Long.toString(TimeUtils.getEpochMillis(nowRef)),
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                backupNamespc
             );
 
         // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name
@@ -719,7 +736,7 @@ public class CtrlBackupCreateApiCallHandler
                 .setProp(
                 ApiConsts.KEY_BACKUP_S3_SUFFIX,
                 s3Suffix,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    backupNamespc
             );
         }
     }
@@ -736,12 +753,11 @@ public class CtrlBackupCreateApiCallHandler
                 StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
-        // also needed on snapDfn only for scheduled shippings
         snapDfn.getSnapDfnProps(peerAccCtx.get())
             .setProp(
                 InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                 remoteName,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName
             );
     }
 
@@ -756,19 +772,21 @@ public class CtrlBackupCreateApiCallHandler
         int activeShippings = 0;
         for (Snapshot snap : node.getSnapshots(peerAccCtx.get()))
         {
-            boolean isShipping = snap.getSnapshotDefinition().getFlags().isSet(
-                peerAccCtx.get(),
-                SnapshotDefinition.Flags.SHIPPING,
-                SnapshotDefinition.Flags.BACKUP
-            );
-            /*
-             * check that this is not a backup receive - we can not check if BACKUP_SOURCE is set because in l2l-cases
-             * this flag gets set considerably later than the SHIPPING flag on the snapDfn
-             */
-            boolean isSource = snap.getFlags().isUnset(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
-            if (isShipping && isSource)
+            ReadOnlyProps sourceProps = snap.getSnapshotDefinition()
+                .getSnapDfnProps(peerAccCtx.get())
+                .getNamespaceOrEmpty(BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC);
+            Iterator<String> remoteIter = sourceProps.iterateNamespaces();
+            while (remoteIter.hasNext())
             {
-                activeShippings++;
+                String remoteName = remoteIter.next();
+                if (
+                    InternalApiConsts.VALUE_SHIPPING.equals(
+                        sourceProps.getProp(InternalApiConsts.KEY_SHIPPING_STATUS, remoteName)
+                    )
+                )
+                {
+                    activeShippings++;
+                }
             }
         }
         PriorityProps prioProps = new PriorityProps(
@@ -825,7 +843,7 @@ public class CtrlBackupCreateApiCallHandler
                 prevSnapName = rscDfn.getProps(peerAccCtx.get())
                     .getProp(
                         InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remote.getName()
+                        BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remote.getName()
                     );
             }
             else
@@ -833,7 +851,7 @@ public class CtrlBackupCreateApiCallHandler
                 prevSnapName = rscDfn.getProps(peerAccCtx.get())
                     .getProp(
                         InternalApiConsts.KEY_BACKUP_LAST_STARTED_OR_QUEUED,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remote.getName()
+                        BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remote.getName()
                     );
             }
 
@@ -855,8 +873,12 @@ public class CtrlBackupCreateApiCallHandler
                 else
                 {
                     if (
-                        remote instanceof S3Remote &&
-                            prevSnapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED)
+                        remote instanceof S3Remote && BackupShippingUtils.hasShippingStatus(
+                            prevSnapDfn,
+                            remote.getName().displayValue,
+                            InternalApiConsts.VALUE_SUCCESS,
+                            peerAccCtx.get()
+                        )
                     )
                     {
                         S3Remote s3remote = (S3Remote) remote;
@@ -927,7 +949,8 @@ public class CtrlBackupCreateApiCallHandler
         @Nullable String prevSnapDfnUuid,
         RemoteName remoteName,
         boolean allowIncremental,
-        ApiCallRcImpl responses
+        ApiCallRcImpl responses,
+        String targetRscName
     ) throws AccessDeniedException
     {
         SnapshotDefinition prevSnapDfn = null;
@@ -942,9 +965,8 @@ public class CtrlBackupCreateApiCallHandler
                     {
                         String prevNodeStr = snapDfn.getSnapDfnProps(sysCtx)
                             .getProp(
-                                InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remoteName +
-                                    "/" + rscDfn.getName().displayValue,
-                                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + targetRscName,
+                                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName
                             );
                         if (prevNodeStr != null)
                         {
@@ -1149,12 +1171,13 @@ public class CtrlBackupCreateApiCallHandler
     {
         Props snapDfnProps = curSnapDfn.getSnapDfnProps(peerAccCtx.get());
         Props rscDfnProps = curSnapDfn.getResourceDefinition().getProps(peerAccCtx.get());
+        String backupNamespc = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName;
         if (prevSnapDfn == null)
         {
             snapDfnProps.setProp(
                 InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
                 curSnapDfn.getName().displayValue,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                backupNamespc
             );
             if (scheduleName != null)
             {
@@ -1173,9 +1196,9 @@ public class CtrlBackupCreateApiCallHandler
                 prevSnapDfn.getSnapDfnProps(peerAccCtx.get())
                     .getProp(
                         InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        backupNamespc
                     ),
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                backupNamespc
             );
             if (scheduleName != null)
             {

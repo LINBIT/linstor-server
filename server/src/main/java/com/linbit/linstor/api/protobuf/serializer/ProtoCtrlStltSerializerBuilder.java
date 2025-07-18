@@ -965,7 +965,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     public CtrlStltSerializerBuilder notifyBackupShipped(
         SnapshotDefinition.Key snapKeyRef,
         boolean success,
-        Set<Integer> ports
+        Set<Integer> ports,
+        String remoteName
     )
     {
         try
@@ -975,6 +976,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setSnapName(snapKeyRef.getSnapshotName().displayValue)
                 .addAllPorts(ports)
                 .setSuccess(success)
+                .setRemoteName(remoteName)
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -1063,13 +1065,14 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public CtrlStltSerializerBuilder notifyBackupShippingFinished(String rscName, String snapName)
+    public CtrlStltSerializerBuilder notifyBackupShippingFinished(String rscName, String snapName, String remoteName)
     {
         try
         {
             MsgIntBackupShippingFinished.newBuilder()
                 .setRscName(rscName)
                 .setSnapName(snapName)
+                .setRemoteName(remoteName)
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -1613,6 +1616,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             IntStltRemote.Builder builder = IntStltRemote.newBuilder()
                 .setUuid(ProtoUuidUtils.serialize(stltremote.getUuid()))
                 .setName(stltremote.getName().displayValue)
+                .setLinRemote(stltremote.getLinstorRemoteName().displayValue)
                 .setFlags(stltremote.getFlags().getFlagsBits(serializerCtx));
 
             String ip = stltremote.getIp(serializerCtx);

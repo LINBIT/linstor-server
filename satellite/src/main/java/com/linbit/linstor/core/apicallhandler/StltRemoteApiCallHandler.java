@@ -172,6 +172,7 @@ public class StltRemoteApiCallHandler
                 apiCtx,
                 stltRemotePojo.getUuid(),
                 new RemoteName(stltRemotePojo.getRemoteName(), true),
+                new RemoteName(stltRemotePojo.getLinRemoteName()),
                 null, // stlt does not need the node
                 stltRemotePojo.getFlags(),
                 stltRemotePojo.getIp(),

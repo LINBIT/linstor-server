@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
@@ -101,10 +100,11 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         throws InvalidKeyException, AccessDeniedException
     {
         Snapshot snap = snapVlmDataRef.getVolume().getAbsResource();
-        String backupId = snap.getSnapProps(accCtx)
+        String backupId = snap.getSnapshotDefinition()
+            .getSnapDfnProps(accCtx)
             .getProp(
                 InternalApiConsts.KEY_BACKUP_TO_RESTORE,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
             );
 
         try
@@ -170,7 +170,7 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         {
             try
             {
-                S3Remote s3Remote = (S3Remote) shippingInfo.remote;
+                S3Remote s3Remote = (S3Remote) shippingInfo.s3orStltRemote;
 
                 backupHandler.putObject(
                     shippingInfo.s3MetaKey,

@@ -7,6 +7,7 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
 {
     private final UUID uuid;
     private final String remoteName;
+    private final String linRemoteName;
     private final long flags;
     private final String ip;
     private final Map<String, Integer> ports;
@@ -17,6 +18,7 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
     public StltRemotePojo(
         UUID uuidRef,
         String remoteNameRef,
+        String linRemoteNameRef,
         long flagsRef,
         String ipRet,
         Map<String, Integer> portsRef,
@@ -27,6 +29,7 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
     {
         uuid = uuidRef;
         remoteName = remoteNameRef;
+        linRemoteName = linRemoteNameRef;
         flags = flagsRef;
         ip = ipRet;
         ports = portsRef;
@@ -43,6 +46,11 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
     public String getRemoteName()
     {
         return remoteName;
+    }
+
+    public String getLinRemoteName()
+    {
+        return linRemoteName;
     }
 
     public long getFlags()

@@ -14,12 +14,15 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.backupshipping.AbsBackupShippingService;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -32,12 +35,14 @@ import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.LinstorRemote;
+import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
@@ -119,6 +124,7 @@ public abstract class AbsStorageProvider<
         private final FileSystemWatch fileSystemWatch;
         private final CoreModule.ResourceDefinitionMap rscDfnMap;
         private final DrbdInvalidateUtils drbdInvalidateUtils;
+        private final RemoteMap remoteMap;
 
         @Inject
         public AbsStorageProviderInit(
@@ -134,7 +140,8 @@ public abstract class AbsStorageProvider<
             BackupShippingMgr backupShippingMgrRef,
             FileSystemWatch fileSystemWatchRef,
             CoreModule.ResourceDefinitionMap rscDfnMapRef,
-            DrbdInvalidateUtils drbdInvalidateUtilsRef
+            DrbdInvalidateUtils drbdInvalidateUtilsRef,
+            RemoteMap remoteMapRef
         )
         {
             errorReporter = errorReporterRef;
@@ -150,6 +157,7 @@ public abstract class AbsStorageProvider<
             fileSystemWatch = fileSystemWatchRef;
             rscDfnMap = rscDfnMapRef;
             drbdInvalidateUtils = drbdInvalidateUtilsRef;
+            remoteMap = remoteMapRef;
         }
     }
 
@@ -183,6 +191,7 @@ public abstract class AbsStorageProvider<
     private final Set<StorPool> changedStorPools = new HashSet<>();
     private boolean prepared;
     protected boolean isDevPathExpectedToBeNull = false;
+    private final RemoteMap remoteMap;
 
     protected AbsStorageProvider(
         AbsStorageProviderInit initRef,
@@ -203,6 +212,7 @@ public abstract class AbsStorageProvider<
         backupShipMapper = initRef.backupShippingMgr;
         fsWatch = initRef.fileSystemWatch;
         drbdInvalidateUtils = initRef.drbdInvalidateUtils;
+        remoteMap = initRef.remoteMap;
 
         typeDescr = typeDescrRef;
         kind = kindRef;
@@ -701,7 +711,8 @@ public abstract class AbsStorageProvider<
                 if (targetRscName.equals(sourceRscName))
                 {
                     Snapshot snap = sourceSnap.getAbsResource();
-                    if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                    if (
+                        BackupShippingUtils.isBackupTarget(snap.getSnapshotDefinition(), storDriverAccCtx) &&
                         !RscLayerSuffixes.shouldSuffixBeShipped(targetRscData.getResourceNameSuffix()))
                     {
                         /*
@@ -939,18 +950,10 @@ public abstract class AbsStorageProvider<
         else
         {
             Snapshot snap = snapVlm.getRscLayerObject().getAbsResource();
-            StateFlags<Flags> snapDfnFlags = snap.getSnapshotDefinition()
-                .getFlags();
-            if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
+            Set<AbsBackupShippingService> backupShipServices = backupShipMapper.getServices(snap);
+            for (AbsBackupShippingService service : backupShipServices)
             {
-                if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.BACKUP))
-                {
-                    AbsBackupShippingService backupShipService = backupShipMapper.getService(snapVlm);
-                    if (backupShipService != null)
-                    {
-                        backupShipService.abort(snapVlm, false);
-                    }
-                }
+                service.abortAll(snapVlm, false);
             }
 
             errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
@@ -966,27 +969,144 @@ public abstract class AbsStorageProvider<
         }
     }
 
-    private void takeSnapshots(
+    private void takeSnapshots(LAYER_SNAP_DATA snapVlm, ApiCallRcImpl apiCallRc) throws StorageException,
+        AccessDeniedException, DatabaseException
+    {
+        SnapshotDefinition snapDfn = snapVlm.getVolume().getAbsResource().getSnapshotDefinition();
+        if (BackupShippingUtils.isBackupTarget(snapDfn, storDriverAccCtx))
+        {
+            String remoteName = BackupShippingUtils.getBackupSrcRemote(snapDfn, storDriverAccCtx);
+            @Nullable AbsRemote remote;
+            try
+            {
+                remote = remoteMap.get(new RemoteName(remoteName, true));
+            }
+            catch (InvalidNameException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            if (remote instanceof StltRemote)
+            {
+                remoteName = ((StltRemote) remote).getLinstorRemoteName().displayValue;
+            }
+            if (remote == null)
+            {
+                // since the remote is null, we have no idea whether the remoteName is an s3-name or a stlt-name, and we
+                // cannot pass a stlt-name here
+                takeSnapshotsImpl(snapVlm, apiCallRc, null, null, true);
+            }
+            else
+            {
+                takeSnapshotsImpl(snapVlm, apiCallRc, remoteName, backupShipMapper.getService(remote), true);
+            }
+        }
+        else
+        {
+            ReadOnlyProps sourceProps = snapDfn.getSnapDfnProps(storDriverAccCtx)
+                .getNamespaceOrEmpty(BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC);
+            if (sourceProps.isEmpty())
+            {
+                // we aren't shipping at all, just a normal take snapshot
+                takeSnapshotsImpl(snapVlm, apiCallRc, null, null, false);
+            }
+            else
+            {
+                Iterator<String> namespcIter = sourceProps.iterateNamespaces();
+                while (namespcIter.hasNext())
+                {
+                    String remoteName = namespcIter.next();
+                    String stltRemoteName = BackupShippingUtils.getBackupDstRemote(
+                        snapDfn,
+                        remoteName,
+                        storDriverAccCtx
+                    );
+                    AbsRemote remote;
+                    try
+                    {
+                        remote = remoteMap.get(new RemoteName(stltRemoteName, true));
+                    }
+                    catch (InvalidNameException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
+                    if (remote == null || remote instanceof LinstorRemote)
+                    {
+                        // we are in an l2l-shipping, but the src-dst-communication is not far enough along to start the
+                        // shipment. Call takeSnapshotImpl anyways, to make sure a snap is created if it needs to be
+                        takeSnapshotsImpl(snapVlm, apiCallRc, null, null, false);
+                    }
+                    else
+                    {
+                        takeSnapshotsImpl(snapVlm, apiCallRc, remoteName, backupShipMapper.getService(remote), false);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Only call this directly if you're sure that's what you need!
+     *
+     * @param snapVlm
+     * @param apiCallRc
+     * @param s3orLinRemoteName
+     *     - This has to be the name of either an S3Remote or a LinstorRemote. It is only allowed to be null if a normal
+     *     snap create is happening.
+     * @param service
+     *     - This is only allowed to be null if a normal snap create is happening.
+     * @param isTarget
+     *
+     * @throws StorageException
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     */
+    private void takeSnapshotsImpl(
         LAYER_SNAP_DATA snapVlm,
-        ApiCallRcImpl apiCallRc
+        ApiCallRcImpl apiCallRc,
+        @Nullable String s3orLinRemoteName,
+        @Nullable AbsBackupShippingService service,
+        boolean isTarget
     )
         throws StorageException, AccessDeniedException, DatabaseException
     {
+        boolean remoteNameSet = s3orLinRemoteName != null;
+        boolean serviceNameSet = service != null;
+        if (remoteNameSet != serviceNameSet)
+        {
+            throw new ImplementationError("remoteName and service need to either both be set or both be null");
+        }
+
         @Nullable LAYER_DATA vlmData = getVlmData(snapVlm);
         Snapshot snap = snapVlm.getVolume().getAbsResource();
-        StateFlags<Snapshot.Flags> snapFlags = snap.getFlags();
-        StateFlags<SnapshotDefinition.Flags> snapDfnFlags = snap.getSnapshotDefinition().getFlags();
-        /*
-         * backupShippingService might be null if the snapshot does not have the
-         * ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE
-         * property set
-         * but in the cases where backupShippingService is null, the checked flags should
-         * also be unset, preventing NPE
-         */
-        @Nullable AbsBackupShippingService backupShippingService = backupShipMapper.getService(snapVlm);
+        SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
+        @Nullable String remoteNameToUse = isTarget ? null : s3orLinRemoteName;
+        boolean shipping = BackupShippingUtils.hasShippingStatus(
+            snapDfn,
+            remoteNameToUse,
+            InternalApiConsts.VALUE_SHIPPING,
+            storDriverAccCtx
+        );
+        boolean prepShip = BackupShippingUtils.hasShippingStatus(
+            snapDfn,
+            remoteNameToUse,
+            InternalApiConsts.VALUE_PREPARE_SHIPPING,
+            storDriverAccCtx
+        );
+        boolean aborting = BackupShippingUtils.hasShippingStatus(
+            snapDfn,
+            remoteNameToUse,
+            InternalApiConsts.VALUE_ABORTING,
+            storDriverAccCtx
+        );
+        boolean prepAbort = BackupShippingUtils.hasShippingStatus(
+            snapDfn,
+            remoteNameToUse,
+            InternalApiConsts.VALUE_PREPARE_ABORT,
+            storDriverAccCtx
+        );
         if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
         {
-            if (vlmData == null && !snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
+            if (vlmData == null && !isTarget)
             {
                 throw new StorageException(
                     String.format(
@@ -998,20 +1118,23 @@ public abstract class AbsStorageProvider<
 
             if (!snapshotExists(snapVlm, true))
             {
-                errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
-                if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
+                if (isTarget && (shipping || prepShip))
                 {
                     try
                     {
+                        errorReporter.logTrace(
+                            "Starting receive for snapshot %s from remote %s",
+                            snapVlm.toString(),
+                            s3orLinRemoteName
+                        );
                         updateGrossSize(snapVlm); // this should round snapshots up to the ALLOCATION_GRANULARITY
                         // that is needed if a backup was created / uploaded with a larger ALLOCATION_GRANULARITY
                         // than we have here locally. The controller should have already re-calculated the property
                         // so we only need to apply and use it.
 
-                        createLvForBackupIfNeeded(snapVlm);
+                        createLvForBackupIfNeeded(snapVlm, s3orLinRemoteName, isTarget);
                         waitForSnapIfNeeded(snapVlm);
-                        startBackupRestore(snapVlm);
+                        startBackupRestore(snapVlm, service);
                     }
                     catch (InvalidNameException exc)
                     {
@@ -1020,20 +1143,20 @@ public abstract class AbsStorageProvider<
                 }
                 else
                 {
+                    errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
                     createSnapshot(vlmData, snapVlm, true);
                     copySizes(vlmData, snapVlm);
 
                     addSnapCreatedMsg(snapVlm, apiCallRc);
                 }
             }
-            if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE) &&
-                snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING) &&
-                !snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPED))
+            if (!isTarget && shipping)
             {
+                errorReporter.logTrace("Starting sending of snapshot %s to remote %s", snapVlm.toString(), s3orLinRemoteName);
                 try
                 {
                     waitForSnapIfNeeded(snapVlm);
-                    startBackupShipping(snapVlm);
+                    startBackupShipping(snapVlm, service, s3orLinRemoteName, isTarget);
                 }
                 catch (InvalidNameException exc)
                 {
@@ -1043,10 +1166,15 @@ public abstract class AbsStorageProvider<
         }
         else
         {
-            if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT) &&
-                backupShippingService != null)
+            if (aborting)
             {
-                backupShippingService.abort(snapVlm, true);
+                errorReporter.logTrace(
+                    "Aborting shipment of snapshot %s %s remote %s",
+                    snapVlm.toString(),
+                    isTarget ? "from" : "to",
+                    s3orLinRemoteName
+                );
+                service.abort(snapVlm, s3orLinRemoteName, true);
             }
 
             /*
@@ -1062,40 +1190,39 @@ public abstract class AbsStorageProvider<
              * return false in case of ZFS. So if the backup-restore attempt fails in case of ZFS, the next devMgr cycle
              * will retry the backup-restore from the "takeSnapshot && !snapshotExists" case above.
              */
-            if (snapshotExists(snapVlm, false) &&
-                snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
+            if (snapshotExists(snapVlm, false) && isTarget && shipping)
             {
-                if (backupShippingService == null)
+                boolean alreadyStarted = service.alreadyStarted(snapVlm, s3orLinRemoteName);
+                boolean alreadyFinished = service.alreadyFinished(snapVlm, s3orLinRemoteName, isTarget);
+                if (!alreadyStarted && !alreadyFinished)
                 {
-                    throw new ImplementationError(
-                        "Backup shipping service unexpectedly null for Snapshot: " + snapVlm.getRscLayerObject()
-                            .getAbsResource()
-                            .getVolume(snapVlm.getVlmNr())
+                    errorReporter.logTrace(
+                        "Retry starting receive for snapshot %s from remote %s",
+                        snapVlm.toString(),
+                        s3orLinRemoteName
                     );
-                }
-                else
-                {
-                    if (!backupShippingService.alreadyStarted(snapVlm) &&
-                        !backupShippingService.alreadyFinished(snapVlm))
+                    try
                     {
-                        try
-                        {
-                            startBackupRestore(snapVlm);
-                        }
-                        catch (InvalidNameException exc)
-                        {
-                            throw new ImplementationError(exc);
-                        }
+                        startBackupRestore(snapVlm, service);
+                    }
+                    catch (InvalidNameException exc)
+                    {
+                        throw new ImplementationError(exc);
                     }
                 }
             }
         }
         // do either way, but after take-snapshot, so that daemon does already exist
-        if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.PREPARE_SHIPPING_ABORT) &&
-            backupShippingService != null && !backupShippingService.alreadyFinished(snapVlm))
+
+        if (prepAbort && !service.alreadyFinished(snapVlm, s3orLinRemoteName, isTarget))
         {
-            backupShippingService.setPrepareAbort(snap);
+            errorReporter.logTrace(
+                "Prepare abort for shipment of snapshot %s %s remote %s",
+                snapVlm.toString(),
+                isTarget ? "from" : "to",
+                s3orLinRemoteName
+            );
+            service.setPrepareAbort(snap, s3orLinRemoteName);
         }
     }
 
@@ -1204,7 +1331,8 @@ public abstract class AbsStorageProvider<
         return ret;
     }
 
-    protected void createLvForBackupIfNeeded(LAYER_SNAP_DATA snapVlm) throws StorageException
+    protected void createLvForBackupIfNeeded(LAYER_SNAP_DATA snapVlm, String remoteName, boolean isTarget)
+        throws StorageException
     {
         // do nothing, override if needed
     }
@@ -1266,13 +1394,28 @@ public abstract class AbsStorageProvider<
         return prevSnapVlmData;
     }
 
-    protected @Nullable LAYER_SNAP_DATA getPreviousSnapvlmData(LAYER_SNAP_DATA snapVlm, Snapshot snap)
+    protected @Nullable LAYER_SNAP_DATA getPreviousSnapvlmData(
+        LAYER_SNAP_DATA snapVlm,
+        Snapshot snap,
+        String remoteName,
+        boolean isTarget
+    )
         throws InvalidKeyException, AccessDeniedException, InvalidNameException
     {
         LAYER_SNAP_DATA prevSnapVlmData = null;
 
-        String prevSnapName = snap.getSnapProps(storDriverAccCtx)
-            .getProp(InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        String namespc;
+        if (isTarget)
+        {
+            namespc = BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC;
+        }
+        else
+        {
+            namespc = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName;
+        }
+        String prevSnapName = snap.getSnapshotDefinition()
+            .getSnapDfnProps(storDriverAccCtx)
+            .getProp(InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, namespc);
         if (prevSnapName != null)
         {
             SnapshotDefinition prevSnapDfn = snap.getResourceDefinition()
@@ -1303,19 +1446,30 @@ public abstract class AbsStorageProvider<
         return prevSnapVlmData;
     }
 
-    protected void startBackupShipping(LAYER_SNAP_DATA snapVlmData)
+    protected void startBackupShipping(
+        LAYER_SNAP_DATA snapVlmData,
+        AbsBackupShippingService service,
+        String s3orLinRemoteName,
+        boolean isTarget
+    )
         throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-        LAYER_SNAP_DATA prevSnapVlmData = getPreviousSnapvlmData(snapVlmData, snapVlm.getAbsResource());
-        backupShipMapper.getService(snapVlmData).sendBackup(
+        LAYER_SNAP_DATA prevSnapVlmData = getPreviousSnapvlmData(
+            snapVlmData,
+            snapVlm.getAbsResource(),
+            s3orLinRemoteName,
+            isTarget
+        );
+        service.sendBackup(
             snapVlm.getSnapshotName().displayValue,
             snapVlm.getResourceName().displayValue,
             snapVlmData.getRscLayerObject().getResourceNameSuffix(),
             snapVlm.getVolumeNumber().value,
             getBackupShippingSendingCommandImpl(prevSnapVlmData, snapVlmData),
             prevSnapVlmData,
-            snapVlmData
+            snapVlmData,
+            s3orLinRemoteName
         );
     }
 
@@ -1631,10 +1785,10 @@ public abstract class AbsStorageProvider<
         return restoreSnapshotName;
     }
 
-    private void startBackupRestore(LAYER_SNAP_DATA snapVlmData)
+    private void startBackupRestore(LAYER_SNAP_DATA snapVlmData, AbsBackupShippingService service)
         throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException, DatabaseException
     {
-        backupShipMapper.getService(snapVlmData).restoreBackup(
+        service.restoreBackup(
             getBackupShippingReceivingCommandImpl(snapVlmData),
             snapVlmData
         );

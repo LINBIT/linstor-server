@@ -897,9 +897,9 @@ public class StltApiCallHandler
 
     }
 
-    public void backupShippingFinished(String rscName, String snapName)
+    public void backupShippingFinished(String rscName, String snapName, String remoteName)
     {
-        backupShippingMgr.removeSnapFromStartedShipments(rscName, snapName);
+        backupShippingMgr.removeSnapFromStartedShipments(rscName, snapName, remoteName);
     }
 
     public byte[] listErrorReports(

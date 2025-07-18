@@ -15,6 +15,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -206,6 +207,7 @@ public class CtrlBackupL2LDstApiCallHandler
                 // if baseSnap not null => incremental sync
                 if (incrementalBaseSnap != null)
                 {
+                    // this prop already has the namespace Backup/Target included in the key, no worries there
                     String srcSnapDfnUuid = incrementalBaseSnap.getSnapshotDefinition()
                         .getSnapDfnProps(apiCtx)
                         .getProp(
@@ -470,7 +472,14 @@ public class CtrlBackupL2LDstApiCallHandler
                 SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapName, true);
 
                 return ctrlSatelliteUpdateCaller.updateSatellites(stltRemote)
-                    .concatWith(backupHelper.startStltCleanup(peerProvider.get(), rscName, snapName))
+                    .concatWith(
+                        backupHelper.startStltCleanup(
+                            peerProvider.get(),
+                            rscName,
+                            snapName,
+                            stltRemote.getLinstorRemoteName().displayValue
+                        )
+                    )
                     .concatWith(
                         ctrlSatelliteUpdateCaller.updateSatellites(
                             snapDfn,
@@ -685,7 +694,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     true,
                     responses,
                     data.getSrcL2LRemoteName(),
-                    data.getStltRemote().getName().value,
+                    data.getStltRemote().getName().displayValue,
                     data.getSrcL2LRemoteUrl(),
                     netIf.getAddress(apiCtx).getAddress(),
                     ports,
@@ -763,10 +772,15 @@ public class CtrlBackupL2LDstApiCallHandler
                 {
                     try
                     {
-                        snapDfn.getFlags().enableFlags(apiCtx, SnapshotDefinition.Flags.PREPARE_SHIPPING_ABORT);
+                        snapDfn.getSnapDfnProps(apiCtx)
+                            .setProp(
+                                InternalApiConsts.KEY_SHIPPING_STATUS,
+                                InternalApiConsts.VALUE_PREPARE_ABORT,
+                                BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
+                            );
                         snapsToUpdate.add(snapDfn);
                     }
-                    catch (AccessDeniedException exc)
+                    catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
                     {
                         throw new ImplementationError(exc);
                     }

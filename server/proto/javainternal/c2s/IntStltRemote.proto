@@ -13,4 +13,5 @@ message IntStltRemote
     string               target_ip = 4;
     map<string, sint32>  target_ports = 5;
     bool                 use_zstd = 6;
+    string               lin_remote = 7;
 }

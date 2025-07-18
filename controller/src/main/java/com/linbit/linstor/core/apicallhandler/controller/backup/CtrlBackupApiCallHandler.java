@@ -24,6 +24,7 @@ import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVlmS3Pojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVolumePojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.backupshipping.BackupConsts;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.backupshipping.S3MetafileNameInfo;
 import com.linbit.linstor.backupshipping.S3VolumeNameInfo;
 import com.linbit.linstor.core.BackupInfoManager;
@@ -57,6 +58,8 @@ import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
@@ -79,7 +82,6 @@ import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -103,6 +105,8 @@ import reactor.util.function.Tuple2;
 @Singleton
 public class CtrlBackupApiCallHandler
 {
+    private static final String KEY_DST = "DST";
+    private static final String KEY_SRC = "SRC";
     private final Provider<AccessContext> peerAccCtx;
     private final AccessContext sysCtx;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -752,7 +756,7 @@ public class CtrlBackupApiCallHandler
                     }
                     SnapshotDefinition snapDfn = backupHelper.loadSnapDfnIfExists(info.rscName, info.snapName);
 
-                    BackupApi back = getBackupFromVolumeKey(info, s3keys, linstorBackupsS3Keys, snapDfn);
+                    BackupApi back = getBackupFromVolumeKey(info, s3keys, linstorBackupsS3Keys, snapDfn, remoteNameRef);
 
                     retIdToBackupsApiMap.put(s3key, back);
                     linstorBackupsS3Keys.add(s3key);
@@ -783,15 +787,15 @@ public class CtrlBackupApiCallHandler
                     // Doesn't match the requested snapshot name, skip it.
                     continue;
                 }
-
+                String backupNamespc = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteNameRef;
                 String s3Suffix = snapDfn.getSnapDfnProps(peerCtx)
                     .getProp(
                     ApiConsts.KEY_BACKUP_S3_SUFFIX,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        backupNamespc
                 );
 
                 String backupTimeRaw = snapDfn.getSnapDfnProps(peerCtx)
-                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, backupNamespc);
 
                 LocalDateTime backupTime = TimeUtils.millisToDate(Long.parseLong(backupTimeRaw));
 
@@ -821,7 +825,8 @@ public class CtrlBackupApiCallHandler
                         firstFutureInfo,
                         futureS3Keys,
                         linstorBackupsS3Keys,
-                        snapDfn
+                        snapDfn,
+                        remoteNameRef
                     );
 
                     retIdToBackupsApiMap.put(firstFutureInfo.toString(), back);
@@ -933,7 +938,8 @@ public class CtrlBackupApiCallHandler
         S3VolumeNameInfo info,
         Set<String> s3keys,
         Set<String> usedKeys,
-        SnapshotDefinition snapDfn
+        SnapshotDefinition snapDfn,
+        String remoteName
     )
     {
         Boolean shipping;
@@ -979,25 +985,59 @@ public class CtrlBackupApiCallHandler
                 }
             }
 
+            String srcNamespc = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName;
+            String dstNamespc = BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC;
             // Determine backup status based on snapshot definition
-            if (snapDfn != null && snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.BACKUP))
+            if (
+                snapDfn != null && !snapDfn.getSnapDfnProps(peerCtx)
+                    .getNamespaceOrEmpty(ApiConsts.NAMESPC_BACKUP_SHIPPING)
+                    .isEmpty()
+            )
             {
-                String ts = snapDfn.getSnapDfnProps(peerCtx)
-                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                Props snapDfnProps = snapDfn.getSnapDfnProps(peerCtx);
+                String ts = snapDfnProps.getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, srcNamespc);
                 if (ts == null || ts.isEmpty())
                 {
-                    throw new ImplementationError(
-                        "Snapshot " + snapDfn.getName().displayValue +
-                            " has the BACKUP-flag set, but does not have a required internal property set."
-                    );
+                    ts = snapDfnProps.getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, dstNamespc);
+                    if (ts == null || ts.isEmpty())
+                    {
+                        throw new ImplementationError(
+                            "Snapshot " + snapDfn.getName().displayValue +
+                                " has the BACKUP-flag set, but does not have a required internal property set."
+                        );
+                    }
                 }
-                boolean isShipping = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPING);
-                boolean isShipped = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPED);
+                boolean targetShipping = BackupShippingUtils.hasShippingStatus(
+                    snapDfn,
+                    null,
+                    InternalApiConsts.VALUE_SHIPPING,
+                    peerCtx
+                );
+                boolean targetShipped = BackupShippingUtils.hasShippingStatus(
+                    snapDfn,
+                    null,
+                    InternalApiConsts.VALUE_SUCCESS,
+                    peerCtx
+                );
+                boolean sourceShipping = BackupShippingUtils.hasShippingStatus(
+                    snapDfn,
+                    remoteName,
+                    InternalApiConsts.VALUE_SHIPPING,
+                    peerCtx
+                );
+                boolean sourceShipped = BackupShippingUtils.hasShippingStatus(
+                    snapDfn,
+                    remoteName,
+                    InternalApiConsts.VALUE_SUCCESS,
+                    peerCtx
+                );
+                boolean isShipping = targetShipping || sourceShipping;
+                boolean isShipped = targetShipped || sourceShipped;
                 if (isShipping || isShipped)
                 {
                     for (Snapshot snap : snapDfn.getAllSnapshots(peerCtx))
                     {
-                        if (snap.getFlags().isSet(peerCtx, Snapshot.Flags.BACKUP_SOURCE))
+                        if (sourceShipping || sourceShipped)
                         {
                             nodeName = snap.getNodeName().displayValue;
                         }
@@ -1072,7 +1112,7 @@ public class CtrlBackupApiCallHandler
         boolean createPrm,
         String remoteNameRef
     )
-        throws AccessDeniedException, DatabaseException, InvalidNameException
+        throws AccessDeniedException, InvalidNameException
     {
         Flux<ApiCallRc> flux = Flux.empty();
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
@@ -1082,7 +1122,7 @@ public class CtrlBackupApiCallHandler
         {
             backupInfoMgr.deleteFromQueue(snapDfn, remote);
         }
-        Set<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn);
+        Set<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn, remote);
         if (!snapDfns.isEmpty())
         {
             boolean restore = restorePrm;
@@ -1093,58 +1133,48 @@ public class CtrlBackupApiCallHandler
                 create = true;
             }
 
-            Set<SnapshotDefinition> snapDfnsToUpdateOnlyShipping = new HashSet<>();
-            Set<SnapshotDefinition> snapDfnsToUpdateShippingAbort = new HashSet<>();
+            Map<String, Set<SnapshotDefinition>> snapDfnsToUpdateShippingPrepare = new HashMap<>();
+            Map<String, Set<SnapshotDefinition>> snapDfnsToUpdateShippingAbort = new HashMap<>();
+            snapDfnsToUpdateShippingPrepare.put(KEY_SRC, new HashSet<>());
+            snapDfnsToUpdateShippingPrepare.put(KEY_DST, new HashSet<>());
+            snapDfnsToUpdateShippingAbort.put(KEY_SRC, new HashSet<>());
+            snapDfnsToUpdateShippingAbort.put(KEY_DST, new HashSet<>());
             List<PairNonNull<String, String>> stltRemoteAndSnapNamesToUpdateShippingAbort = new ArrayList<>();
             for (SnapshotDefinition snapDfn : snapDfns)
             {
-                Collection<Snapshot> snaps = snapDfn.getAllSnapshots(peerAccCtx.get());
-                boolean abort = false;
-                boolean isSnapDfnSource = false;
-                boolean isSnapDfnTarget = false;
-                for (Snapshot snap : snaps)
+                boolean isSnapDfnSource = InternalApiConsts.VALUE_SHIPPING.equals(
+                    BackupShippingUtils.getSourceShippingStatus(snapDfn, remoteNameRef, peerAccCtx.get())
+                );
+                boolean isSnapDfnTarget = InternalApiConsts.VALUE_SHIPPING.equals(
+                    BackupShippingUtils.getTargetShippingStatus(snapDfn, peerAccCtx.get())
+                );
+                boolean abort = isSnapDfnSource && create || isSnapDfnTarget && restore;
+                if (isSnapDfnSource && create)
                 {
-                    boolean isSnapSource = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
-                    isSnapDfnSource |= isSnapSource;
-                    boolean crt = isSnapSource && create;
-                    boolean isSnapTarget = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
-                    isSnapDfnTarget |= isSnapTarget;
-                    boolean rst = isSnapTarget && restore;
-                    if (crt)
-                    {
-                        String remoteName = snap.getSnapProps(peerAccCtx.get())
-                            .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                        crt = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
-                        if (crt)
-                        {
-                            // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
-                            // this set will not be used anyway, so no need to check for that
-                            stltRemoteAndSnapNamesToUpdateShippingAbort.add(
-                                new PairNonNull<>(remoteName, snap.getSnapshotName().displayValue)
-                            );
-                        }
-                    }
-                    if (rst)
-                    {
-                        String remoteName = snap.getSnapProps(peerAccCtx.get())
-                            .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                        rst = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
-                        if (rst)
-                        {
-                            // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
-                            // this set will not be used anyway, so no need to check for that
-                            stltRemoteAndSnapNamesToUpdateShippingAbort.add(
-                                new PairNonNull<>(remoteName, snap.getSnapshotName().displayValue)
-                            );
-                        }
-                    }
-                    if (crt || rst)
-                    {
-                        abort = true;
-                        // there should always be only one snapshot of any given snapDfn that is actually shipping, so
-                        // once we found that one, we can stop looking at any others
-                        break;
-                    }
+                    String remoteName = snapDfn.getSnapDfnProps(peerAccCtx.get())
+                        .getProp(
+                            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                            BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" +
+                                remoteNameRef
+                        );
+                    // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
+                    // this set will not be used anyway, so no need to check for that
+                    stltRemoteAndSnapNamesToUpdateShippingAbort.add(
+                        new PairNonNull<>(remoteName, snapDfn.getName().displayValue)
+                    );
+                }
+                else if (isSnapDfnTarget && restore)
+                {
+                    String remoteName = snapDfn.getSnapDfnProps(peerAccCtx.get())
+                        .getProp(
+                            InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                            BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
+                        );
+                    // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
+                    // this set will not be used anyway, so no need to check for that
+                    stltRemoteAndSnapNamesToUpdateShippingAbort.add(
+                        new PairNonNull<>(remoteName, snapDfn.getName().displayValue)
+                    );
                 }
                 if (!isSnapDfnSource && create && !isSnapDfnTarget)
                 {
@@ -1152,11 +1182,33 @@ public class CtrlBackupApiCallHandler
                     // BACKUP_SOURCE is set in a later transaction than SHIPPING, therefore we need to remove the
                     // SHIPPING flag if we are aborting creates (otherwise the snap is stuck unable to be aborted or
                     // deleted)
-                    snapDfnsToUpdateOnlyShipping.add(snapDfn);
+                    if (
+                        InternalApiConsts.VALUE_PREPARE_SHIPPING.equals(
+                            BackupShippingUtils.getSourceShippingStatus(snapDfn, remoteNameRef, peerAccCtx.get())
+                        )
+                    )
+                    {
+                        snapDfnsToUpdateShippingPrepare.get(KEY_SRC).add(snapDfn);
+                    }
+                    else if (
+                        InternalApiConsts.VALUE_PREPARE_SHIPPING.equals(
+                            BackupShippingUtils.getTargetShippingStatus(snapDfn, peerAccCtx.get())
+                        )
+                    )
+                    {
+                        snapDfnsToUpdateShippingPrepare.get(KEY_DST).add(snapDfn);
+                    }
                 }
                 if (abort)
                 {
-                    snapDfnsToUpdateShippingAbort.add(snapDfn);
+                    if (isSnapDfnSource)
+                    {
+                        snapDfnsToUpdateShippingAbort.get(KEY_SRC).add(snapDfn);
+                    }
+                    else
+                    {
+                        snapDfnsToUpdateShippingAbort.get(KEY_DST).add(snapDfn);
+                    }
                 }
             }
             if (!snapDfnsToUpdateShippingAbort.isEmpty() && !(remote instanceof S3Remote))
@@ -1194,9 +1246,10 @@ public class CtrlBackupApiCallHandler
             }
             flux = flux.concatWith(
                 setFlagsAndAbort(
-                    snapDfnsToUpdateOnlyShipping,
+                    snapDfnsToUpdateShippingPrepare,
                     snapDfnsToUpdateShippingAbort,
                     rscNameRef,
+                    remoteNameRef,
                     create,
                     restore
                 )
@@ -1224,9 +1277,10 @@ public class CtrlBackupApiCallHandler
     }
 
     private Flux<ApiCallRc> setFlagsAndAbort(
-        Set<SnapshotDefinition> snapDfnsToUpdateOnlyShipping,
-        Set<SnapshotDefinition> snapDfnsToUpdateShippingAbort,
+        Map<String, Set<SnapshotDefinition>> snapDfnsToUpdateShippingPrepare,
+        Map<String, Set<SnapshotDefinition>> snapDfnsToUpdateShippingAbort,
         String rscName,
+        String remoteName,
         boolean create,
         boolean restore
     )
@@ -1235,9 +1289,10 @@ public class CtrlBackupApiCallHandler
             "set flags and abort backup",
             lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
             () -> setFlagsAndAbortInTransaction(
-                snapDfnsToUpdateOnlyShipping,
+                snapDfnsToUpdateShippingPrepare,
                 snapDfnsToUpdateShippingAbort,
                 rscName,
+                remoteName,
                 create,
                 restore
             )
@@ -1245,26 +1300,64 @@ public class CtrlBackupApiCallHandler
     }
 
     private Flux<ApiCallRc> setFlagsAndAbortInTransaction(
-        Set<SnapshotDefinition> snapDfnsToUpdateOnlyShipping,
-        Set<SnapshotDefinition> snapDfnsToUpdateShippingAbort,
+        Map<String, Set<SnapshotDefinition>> snapDfnsToUpdateShippingPrepare,
+        Map<String, Set<SnapshotDefinition>> snapDfnsToUpdateShippingAbort,
         String rscName,
+        String remoteName,
         boolean create,
         boolean restore
-    ) throws AccessDeniedException, DatabaseException
+    ) throws AccessDeniedException, DatabaseException, InvalidKeyException, InvalidValueException
     {
-        for (SnapshotDefinition snapDfn : snapDfnsToUpdateOnlyShipping)
+        String srcNamespace = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName;
+        String dstNamespace = BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC;
+        for (SnapshotDefinition snapDfn : snapDfnsToUpdateShippingPrepare.get(KEY_SRC))
         {
-            snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+            // these snapDfns are still in VALUE_SHIPPING_PREPARE and therefore no action needs to be taken except
+            // updating the status
+            snapDfn.getSnapDfnProps(peerAccCtx.get())
+                .setProp(
+                    InternalApiConsts.KEY_SHIPPING_STATUS,
+                    InternalApiConsts.VALUE_ABORTED,
+                    srcNamespace
+                );
         }
-        for (SnapshotDefinition snapDfn : snapDfnsToUpdateShippingAbort)
+        for (SnapshotDefinition snapDfn : snapDfnsToUpdateShippingPrepare.get(KEY_DST))
         {
-            snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
-            snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT);
+            // these snapDfns are still in VALUE_SHIPPING_PREPARE and therefore no action needs to be taken except
+            // updating the status
+            snapDfn.getSnapDfnProps(peerAccCtx.get())
+                .setProp(
+                    InternalApiConsts.KEY_SHIPPING_STATUS,
+                    InternalApiConsts.VALUE_ABORTED,
+                    dstNamespace
+                );
+        }
+        for (SnapshotDefinition snapDfn : snapDfnsToUpdateShippingAbort.get(KEY_SRC))
+        {
+            // these snapDfns actually need to be aborted, so set VALUE_ABORTING to trigger corresponding actions
+            snapDfn.getSnapDfnProps(peerAccCtx.get())
+                .setProp(
+                    InternalApiConsts.KEY_SHIPPING_STATUS,
+                    InternalApiConsts.VALUE_ABORTING,
+                    srcNamespace
+                );
+        }
+        for (SnapshotDefinition snapDfn : snapDfnsToUpdateShippingAbort.get(KEY_DST))
+        {
+            // these snapDfns actually need to be aborted, so set VALUE_ABORTING to trigger corresponding actions
+            snapDfn.getSnapDfnProps(peerAccCtx.get())
+                .setProp(
+                    InternalApiConsts.KEY_SHIPPING_STATUS,
+                    InternalApiConsts.VALUE_ABORTING,
+                    dstNamespace
+                );
         }
         ctrlTransactionHelper.commit();
 
-        Set<SnapshotDefinition> snapDfnsToUpdate = new HashSet<>(snapDfnsToUpdateOnlyShipping);
-        snapDfnsToUpdate.addAll(snapDfnsToUpdateShippingAbort);
+        Set<SnapshotDefinition> snapDfnsToUpdate = new HashSet<>(snapDfnsToUpdateShippingPrepare.get(KEY_SRC));
+        snapDfnsToUpdate.addAll(snapDfnsToUpdateShippingPrepare.get(KEY_DST));
+        snapDfnsToUpdate.addAll(snapDfnsToUpdateShippingAbort.get(KEY_SRC));
+        snapDfnsToUpdate.addAll(snapDfnsToUpdateShippingAbort.get(KEY_DST));
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = Flux.empty();
         for (SnapshotDefinition snapDfn : snapDfnsToUpdate)
         {

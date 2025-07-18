@@ -117,6 +117,7 @@ public class ApplyRemote implements ApiCall
         return new StltRemotePojo(
             ProtoUuidUtils.deserialize(proto.getUuid()),
             proto.getName(),
+            proto.getLinRemote(),
             proto.getFlags(),
             proto.getTargetIp(),
             new TreeMap<>(proto.getTargetPortsMap()),

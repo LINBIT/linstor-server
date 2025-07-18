@@ -6,6 +6,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -631,7 +632,7 @@ public class ZfsProvider
     {
         Snapshot snap = snapVlm.getVolume().getAbsResource();
         // snapshot will be created by "zfs receive" command
-        if (!snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET))
+        if (!BackupShippingUtils.isBackupTarget(snap.getSnapshotDefinition(), storDriverAccCtx))
         {
             ZfsCommands.createSnapshot(
                 extCmdFactory.create(),

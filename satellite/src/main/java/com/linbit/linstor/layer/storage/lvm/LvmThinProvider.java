@@ -175,7 +175,7 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void createLvForBackupIfNeeded(LvmData<Snapshot> snapVlm)
+    protected void createLvForBackupIfNeeded(LvmData<Snapshot> snapVlm, String remoteName, boolean isTarget)
         throws StorageException
     {
         try
@@ -186,7 +186,9 @@ public class LvmThinProvider extends LvmProvider
 
             LvmData<Snapshot> prevSnapData = getPreviousSnapvlmData(
                 snapVlm,
-                snapVlm.getRscLayerObject().getAbsResource()
+                snapVlm.getRscLayerObject().getAbsResource(),
+                remoteName,
+                isTarget
             );
             if (prevSnapData != null)
             {

@@ -532,7 +532,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 ctrlSecObjs.getCryptHash(),
                 ctrlSecObjs.getCryptSalt(),
                 Collections.emptyMap(),
-                null
+                null,
+                data.getLinstorRemote().getName().displayValue
             );
 
             NodeName srcSendingNodeName = data.getSrcSnapshot().getNodeName();
@@ -546,14 +547,15 @@ public class CtrlBackupL2LSrcApiCallHandler
             ExtToolsInfo zstd = extToolsMgr.getExtToolInfo(ExtTools.ZSTD);
             data.setUseZstd(zstd != null && zstd.isSupported());
 
-            data.setMetaDataPojo(metaDataPojo);
-            data.getMetaDataPojo()
-                .getRscDfn()
+            // this prop already has the namespace Backup/Target included in the key, no worries there
+            // also, it needs to be a target-prop even though we set it on the source-side
+            metaDataPojo.getRscDfn()
                 .getSnapDfnProps()
                 .put(
                     InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID,
                     data.getSrcSnapshot().getSnapshotDefinition().getUuid().toString()
             );
+            data.setMetaDataPojo(metaDataPojo);
             // tell target cluster "Hey! Listen!"
             flux = Flux.merge(
                 restClient.sendBackupRequest(data, peerAccCtx.get())
@@ -638,9 +640,17 @@ public class CtrlBackupL2LSrcApiCallHandler
                 stltRemote.useZstd(accCtx, responseRef.useZstd && data.isUseZstd());
                 ctrlTransactionHelper.commit();
                 flux = ctrlSatelliteUpdateCaller.updateSatellites(stltRemote);
+                String propsNamespc = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + data.getLinstorRemote()
+                    .getName();
 
                 Snapshot snap = data.getSrcSnapshot();
-                snap.getFlags().enableFlags(accCtx, Snapshot.Flags.BACKUP_SOURCE);
+                snap.getSnapshotDefinition()
+                    .getSnapDfnProps(peerAccCtx.get())
+                    .setProp(
+                        InternalApiConsts.KEY_SHIPPING_STATUS,
+                        InternalApiConsts.VALUE_SHIPPING,
+                        propsNamespc
+                    );
                 snap.setTakeSnapshot(accCtx, true); // needed by source-satellite to actually start sending
                 SnapshotDefinition prevSnapDfn = null;
                 if (
@@ -673,11 +683,12 @@ public class CtrlBackupL2LSrcApiCallHandler
                     data.getLinstorRemote().getName().displayValue,
                     data.getScheduleName()
                 );
-                snap.getSnapProps(peerAccCtx.get())
+                snap.getSnapshotDefinition()
+                    .getSnapDfnProps(peerAccCtx.get())
                     .setProp(
                         InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                         stltRemote.getName().displayValue,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        propsNamespc
                     );
                 ctrlTransactionHelper.commit();
                 flux = flux.concatWith(
@@ -784,13 +795,18 @@ public class CtrlBackupL2LSrcApiCallHandler
     private Flux<ApiCallRc> startQueuesInTransaction(
         BackupShippingSrcData data,
         StltRemoteCleanupTask task
-    ) throws AccessDeniedException, DatabaseException
+    ) throws AccessDeniedException, DatabaseException, InvalidKeyException, InvalidValueException
     {
         SnapshotDefinition snapDfn = null;
         if (data.getSrcSnapshot() != null && !data.getSrcSnapshot().isDeleted())
         {
             snapDfn = data.getSrcSnapshot().getSnapshotDefinition();
-            snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+            // snapDfn.getSnapDfnProps(peerAccCtx.get())
+            // .setProp(
+            // InternalApiConsts.KEY_SHIPPING_STATUS,
+            // InternalApiConsts.VALUE_QUEUED,
+            // BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + data.getLinstorRemote().getName()
+            // );
         }
         taskScheduleService.rescheduleAt(task, Task.END_TASK);
         ctrlTransactionHelper.commit();

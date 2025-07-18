@@ -3,18 +3,19 @@ package com.linbit.linstor.systemstarter;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
-import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.RetryResourcesTask;
@@ -23,6 +24,8 @@ import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import java.util.Iterator;
 
 @Singleton
 public class PreConnectInitializer implements StartupInitializer
@@ -70,57 +73,59 @@ public class PreConnectInitializer implements StartupInitializer
             {
                 for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(sysCtx))
                 {
-                    if (
-                        snapDfn.getFlags().isSomeSet(
-                            sysCtx,
-                            SnapshotDefinition.Flags.SHIPPING,
-                            SnapshotDefinition.Flags.SHIPPING_CLEANUP
-                        )
-                    )
+                    if (BackupShippingUtils.isAnyShippingInProgress(snapDfn, sysCtx))
                     {
-                        if (!snapDfn.getFlags().isSet(sysCtx, SnapshotDefinition.Flags.BACKUP))
+                        @Nullable Props backupProps = snapDfn.getSnapDfnProps(sysCtx)
+                            .getNamespace(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        // this should not be able to be null, since there is at least one shipping in progress, but
+                        // check anyways
+                        if (backupProps != null)
                         {
-                            snapDfn.getFlags().enableFlags(sysCtx, SnapshotDefinition.Flags.DELETE);
-                            for (Snapshot snap : snapDfn.getAllSnapshots(sysCtx))
+                            @Nullable Props dstProps = backupProps.getNamespace(InternalApiConsts.KEY_BACKUP_TARGET);
+                            if (
+                                dstProps != null && BackupShippingUtils.hasShippingStatus(
+                                    snapDfn,
+                                    null,
+                                    InternalApiConsts.VALUE_SHIPPING,
+                                    sysCtx
+                                )
+                            )
                             {
-                                snap.getFlags().enableFlags(sysCtx, Snapshot.Flags.DELETE);
-
-                                Resource rsc = rscDfn.getResource(sysCtx, snap.getNodeName());
-                                if (rsc != null)
+                                dstProps.setProp(
+                                    InternalApiConsts.KEY_SHIPPING_STATUS,
+                                    InternalApiConsts.VALUE_ABORTED
+                                );
+                            }
+                            else
+                            {
+                                @Nullable Props srcProps = backupProps.getNamespace(
+                                    InternalApiConsts.KEY_BACKUP_SOURCE
+                                );
+                                // again, it should not be possible for this to be null
+                                if (srcProps != null)
                                 {
-                                    retryResourceTask.add(
-                                        rsc,
-                                        snapDelApiCallHandler
-                                            .deleteSnapshotsOnNodes(rscDfn.getName(), snapDfn.getName())
-                                    );
+                                    Iterator<String> namespcIter = srcProps.iterateNamespaces();
+                                    while (namespcIter.hasNext())
+                                    {
+                                        String remoteName = namespcIter.next();
+                                        if (
+                                            BackupShippingUtils.hasShippingStatus(
+                                                snapDfn,
+                                                remoteName,
+                                                InternalApiConsts.VALUE_SHIPPING,
+                                                sysCtx
+                                            )
+                                        )
+                                        {
+                                            srcProps.setProp(
+                                                InternalApiConsts.KEY_SHIPPING_STATUS,
+                                                InternalApiConsts.VALUE_ABORTED,
+                                                remoteName
+                                            );
+                                        }
+                                    }
                                 }
                             }
-                        }
-                        else
-                        {
-                            snapDfn.getFlags().disableFlags(sysCtx, SnapshotDefinition.Flags.SHIPPING);
-                            snapDfn.getFlags().enableFlags(sysCtx, SnapshotDefinition.Flags.SHIPPING_ABORT);
-                            for (Snapshot snap : snapDfn.getAllSnapshots(sysCtx))
-                            {
-                                String key = null;
-                                if (snap.getFlags().isSet(sysCtx, Snapshot.Flags.BACKUP_SOURCE))
-                                {
-                                    // if the snapshot is the source, the remote is the target
-                                    key = InternalApiConsts.KEY_BACKUP_TARGET_REMOTE;
-                                }
-                                else if (snap.getFlags().isSet(sysCtx, Snapshot.Flags.BACKUP_TARGET))
-                                {
-                                    key = InternalApiConsts.KEY_BACKUP_SRC_REMOTE;
-                                }
-
-                                if (key != null)
-                                {
-                                    snap.getSnapProps(sysCtx)
-                                        .removeProp(key, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                                }
-                            }
-                            // no need to do something similar to the retryTask-stuff above, since full-sync will happen
-                            // next anyways
                         }
                     }
                 }

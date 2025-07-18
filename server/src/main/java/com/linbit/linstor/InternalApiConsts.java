@@ -165,7 +165,7 @@ public class InternalApiConsts
 
     public static final String KEY_BACKUP_L2L_SRC_CLUSTER_UUID = "Backup/FromClusterUUID";
     public static final String KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH = "Backup/FromClusterName";
-    public static final String KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID = "Backup/SourceSnapDfnUUID";
+    public static final String KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID = "Backup/Target/SourceSnapDfnUUID";
 
     public static final String NAMSPC_BACKUP_SRC_STOR_POOL_KINDS = "Backup/SourceStorPoolKinds";
     public static final String NAMESPC_SCHEDULE = "Schedule";
@@ -181,6 +181,22 @@ public class InternalApiConsts
     public static final String KEY_SCHEDULE_DST_RSC_GRP = "TargetResourceGroup";
     public static final String KEY_SCHEDULE_DST_RSC_NAME = "TargetResourceName";
     public static final String KEY_SCHEDULE_DST_RSC_GRP_FORCE = "ForceResourceGroup";
+
+    public static final String KEY_BACKUP_TARGET = "Target";
+    public static final String KEY_BACKUP_SOURCE = "Source";
+    public static final String KEY_SHIPPING_STATUS = "ShippingStatus";
+    public static final String VALUE_SHIPPING = "Shipping";
+    public static final String VALUE_PREPARE_SHIPPING = "Prepare Shipping";
+    public static final String VALUE_PREPARE_ABORT = "Prepare Abort";
+    public static final String VALUE_ABORTING = "Aborting";
+    public static final String VALUE_ABORTED = "Aborted";
+    public static final String VALUE_SUCCESS = "Success";
+    public static final String VALUE_FAILED = "Failed";
+    public static final String KEY_SHIPPING_ERROR_REPORT = "ShippingErrorReport";
+    public static final String KEY_ON_SUCCESS = "OnSuccess";
+    public static final String VALUE_RESTORE = "Restore";
+    public static final String VALUE_FORCE_RESTORE = "Force Restore";
+    public static final String KEY_SHIPPING_NODE = "ShippingNode";
 
     /*
      * Cluster

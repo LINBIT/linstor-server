@@ -8,13 +8,13 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupShippingAbortHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
@@ -25,7 +25,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Schedule;
-import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
@@ -37,6 +36,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.StltRemoteCleanupTask;
@@ -127,7 +127,8 @@ public class CtrlBackupShippingSentInternalCallHandler
     public Flux<ApiCallRc> shippingSent(
         String rscNameRef,
         String snapNameRef,
-        boolean successRef
+        boolean successRef,
+        String remoteName
     )
     {
         return scopeRunner
@@ -137,7 +138,7 @@ public class CtrlBackupShippingSentInternalCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> shippingSentInTransaction(rscNameRef, snapNameRef, successRef)
+                () -> shippingSentInTransaction(rscNameRef, snapNameRef, successRef, remoteName)
             );
     }
 
@@ -148,7 +149,12 @@ public class CtrlBackupShippingSentInternalCallHandler
      * gets started on time and all backups and snaps that go over the limit are deleted.
      * Finally starts new shipments from the queue if applicable.
      */
-    private Flux<ApiCallRc> shippingSentInTransaction(String rscNameRef, String snapNameRef, boolean successRef)
+    private Flux<ApiCallRc> shippingSentInTransaction(
+        String rscNameRef,
+        String snapNameRef,
+        boolean successRef,
+        String remoteName
+    )
         throws IOException
     {
         errorReporter.logInfo(
@@ -168,10 +174,19 @@ public class CtrlBackupShippingSentInternalCallHandler
                 Pair<Flux<ApiCallRc>, AbsRemote> handleResult;
                 boolean forceSkip = false;
                 boolean doStltCleanup = false;
-                if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
+                Props snapDfnProps = snapDfn.getSnapDfnProps(peerAccCtx.get());
+                String propsNamespc = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName;
+                if (
+                    !successRef && BackupShippingUtils.hasShippingStatus(
+                        snapDfn,
+                        remoteName,
+                        InternalApiConsts.VALUE_ABORTING,
+                        peerAccCtx.get()
+                    )
+                )
                 {
                     // handle abort - no flag/prop cleanup needed
-                    handleResult = handleBackupAbort(snapDfn, nodeName, successRef);
+                    handleResult = handleBackupAbort(snapDfn, remoteName, successRef);
                     forceSkip = true;
                 }
                 else
@@ -181,11 +196,22 @@ public class CtrlBackupShippingSentInternalCallHandler
                         backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef)
                     );
                     doStltCleanup = true;
-                    handleResult = cleanupFlagsNProps(snapDfn, nodeName, successRef);
-                    snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+                    handleResult = cleanupFlagsNProps(snapDfn, successRef, remoteName);
                     if (successRef)
                     {
-                        snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                        snapDfnProps.setProp(
+                            InternalApiConsts.KEY_SHIPPING_STATUS,
+                            InternalApiConsts.VALUE_SUCCESS,
+                            propsNamespc
+                        );
+                    }
+                    else
+                    {
+                        snapDfnProps.setProp(
+                            InternalApiConsts.KEY_SHIPPING_STATUS,
+                            InternalApiConsts.VALUE_FAILED,
+                            propsNamespc
+                        );
                     }
                 }
                 ctrlTransactionHelper.commit();
@@ -204,7 +230,8 @@ public class CtrlBackupShippingSentInternalCallHandler
                             doStltCleanupCopyForEffectivelyFinal ? backupHelper.startStltCleanup(
                                 peerProvider.get(),
                                 rscNameRef,
-                                snapNameRef
+                                snapNameRef,
+                                remoteName
                             ) : Flux.empty()
                         )
                     )
@@ -282,88 +309,81 @@ public class CtrlBackupShippingSentInternalCallHandler
     }
 
     /**
+     * @param snapDfn
+     * @param successRef
+     * @param remoteNameRef
+     *     - name of either an S3Remote or LinstorRemote
+     *
      * @return Pair&lt;Flux, S3Remote/StltRemote&gt;
      */
     private Pair<Flux<ApiCallRc>, AbsRemote> cleanupFlagsNProps(
         SnapshotDefinition snapDfn,
-        NodeName nodeName,
-        boolean successRef
+        boolean successRef,
+        String remoteNameRef
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException, InvalidNameException
     {
-        Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
         AbsRemote remote;
-        if (snap != null && !snap.isDeleted())
-        {
-            String remoteName = snap.getSnapProps(peerAccCtx.get())
-                .removeProp(
-                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
-            snap.getFlags().disableFlags(sysCtx, Snapshot.Flags.BACKUP_SOURCE);
-            AbsRemote tmpRemote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-            // no need to update rscDfn since this only sets a prop the stlt does not care about
-            // also, this method returns the linstorRemote if it got a stltRemote
-            remote = getRemoteForScheduleAndCleanupFlux(
-                tmpRemote,
-                snapDfn.getResourceDefinition(),
-                snapDfn.getName().displayValue,
-                successRef
+        // get the target-remote-name - either of a S3Remote or StltRemote
+        String remoteName = snapDfn.getSnapDfnProps(peerAccCtx.get())
+            .getProp(
+                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteNameRef
             );
-        }
-        else
-        {
-            remote = null;
-        }
+        AbsRemote tmpRemote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+        // no need to update rscDfn since this only sets a prop the stlt does not care about
+        // also, this method returns the linstorRemote if it got a stltRemote
+        remote = getRemoteForScheduleAndCleanupFlux(
+            tmpRemote,
+            snapDfn.getResourceDefinition(),
+            snapDfn.getName().displayValue,
+            successRef
+        );
         return new Pair<>(Flux.empty(), remote);
     }
 
     /**
+     * @param snapDfn
+     * @param remoteNameRef
+     *     - name of either an S3Remote or LinstorRemote
+     * @param successRef
+     *
      * @return Pair&lt;Flux, S3Remote/StltRemote&gt;
      */
     private Pair<Flux<ApiCallRc>, AbsRemote> handleBackupAbort(
         SnapshotDefinition snapDfn,
-        NodeName nodeName,
+        String remoteNameStr,
         boolean successRef
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException, InvalidNameException
     {
         AbsRemote remote;
-        // re-enable shipping-flag to make sure the abort-logic gets triggered later on
-        snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
         ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
         String snapNameStr = snapDfn.getName().displayValue;
         ctrlTransactionHelper.commit();
+        // get the target-remote-name - either of a S3Remote or StltRemote
+        String remoteName = snapDfn.getSnapDfnProps(peerAccCtx.get())
+            .getProp(
+                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteNameStr
+            );
+        AbsRemote tmpRemote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
         Flux<ApiCallRc> flux = ctrlSnapShipAbortHandler
-            .abortBackupShippingPrivileged(snapDfn, false)
+            .abortBackupShippingPrivileged(snapDfn, tmpRemote instanceof S3Remote)
             .concatWith(
                 backupHelper.startStltCleanup(
                     peerProvider.get(),
                     rscDfn.getName().displayValue,
-                    snapNameStr
+                    snapNameStr,
+                    remoteNameStr
                 )
             );
-        Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
-        if (snap != null && !snap.isDeleted())
-        {
-            // no idea how snap could be null or deleted here, but keep check just in case
-            String remoteName = snap.getSnapProps(peerAccCtx.get())
-                .removeProp(
-                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
-            AbsRemote tmpRemote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-            // no need to update rscDfn since this only sets a prop the stlt does not care about
-            // also, this method returns the linstorRemote if it got a stltRemote
-            remote = getRemoteForScheduleAndCleanupFlux(
-                tmpRemote,
-                rscDfn,
-                snapNameStr,
-                successRef
-            );
-        }
-        else
-        {
-            remote = null;
-        }
+        // no need to update rscDfn since this only sets a prop the stlt does not care about
+        // also, this method returns the linstorRemote if it got a stltRemote
+        remote = getRemoteForScheduleAndCleanupFlux(
+            tmpRemote,
+            rscDfn,
+            snapNameStr,
+            successRef
+        );
         return new Pair<>(flux, remote);
     }
 
@@ -436,7 +456,7 @@ public class CtrlBackupShippingSentInternalCallHandler
                         .setProp(
                             InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
                             snapName,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" +
+                            BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" +
                                 linstorRemote.getName().displayValue
                         );
                 }
@@ -449,7 +469,7 @@ public class CtrlBackupShippingSentInternalCallHandler
                         .setProp(
                             InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
                             snapName,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remote.getName().displayValue
+                            BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remote.getName().displayValue
                         );
                 }
             }

@@ -8,6 +8,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
@@ -287,10 +288,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 ));
             }
 
-            if (
-                isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPING) ||
-                    isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPING_CLEANUP)
-            )
+            if (BackupShippingUtils.isAnyShippingInProgress(fromSnapshotDfn, peerAccCtx.get()))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

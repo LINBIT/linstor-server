@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -42,6 +43,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class BackupShippingUtils
 {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    public static final String BACKUP_TARGET_PROPS_NAMESPC = ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" +
+        InternalApiConsts.KEY_BACKUP_TARGET;
+    public static final String BACKUP_SOURCE_PROPS_NAMESPC = ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" +
+        InternalApiConsts.KEY_BACKUP_SOURCE;
 
     private BackupShippingUtils()
     {
@@ -56,7 +61,8 @@ public class BackupShippingUtils
         byte[] hash,
         byte[] salt,
         Map<Integer, List<BackupMetaInfoPojo>> backupsRef,
-        String basedOnMetaNameRef
+        String basedOnMetaNameRef,
+        String remoteName
     )
         throws AccessDeniedException, JsonProcessingException, ParseException
     {
@@ -69,7 +75,8 @@ public class BackupShippingUtils
                 hash,
                 salt,
                 backupsRef,
-                basedOnMetaNameRef
+                basedOnMetaNameRef,
+                remoteName
             )
         );
     }
@@ -82,7 +89,8 @@ public class BackupShippingUtils
         byte[] hash,
         byte[] salt,
         Map<Integer, List<BackupMetaInfoPojo>> backupsRef,
-        @Nullable String basedOnMetaNameRef
+        @Nullable String basedOnMetaNameRef,
+        String remoteName
     )
         throws AccessDeniedException, ParseException
     {
@@ -95,7 +103,7 @@ public class BackupShippingUtils
         String startTime = snapDfn.getSnapDfnProps(accCtx)
             .getProp(
                 InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName
             );
         long startTimestamp = Long.parseLong(startTime);
 
@@ -209,5 +217,186 @@ public class BackupShippingUtils
     public static String defaultEmpty(String str)
     {
         return (str == null) ? "" : str;
+    }
+
+    public static boolean isAnyShippingInProgress(SnapshotDefinition snapDfn, AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        boolean ret = false;
+        // first check if the snapDfn is a backup-target in progress, since this is faster
+        ReadOnlyProps snapDfnTarget = snapDfn.getSnapDfnProps(accCtx)
+            .getNamespaceOrEmpty(BACKUP_TARGET_PROPS_NAMESPC);
+        @Nullable String targetStatus = snapDfnTarget
+            .getProp(InternalApiConsts.KEY_SHIPPING_STATUS);
+        ret = InternalApiConsts.VALUE_SHIPPING.equals(targetStatus);
+        if (!ret)
+        {
+            // since we don't have an in-progress target, check for any in-progress source
+            ReadOnlyProps snapDfnSource = snapDfn.getSnapDfnProps(accCtx)
+                .getNamespaceOrEmpty(BACKUP_SOURCE_PROPS_NAMESPC);
+            Iterator<String> namespcIter = snapDfnSource.iterateNamespaces();
+            while (namespcIter.hasNext() && !ret)
+            {
+                String tmpRemoteName = namespcIter.next();
+                @Nullable String sourceStatus = snapDfnSource
+                    .getNamespaceOrEmpty(tmpRemoteName)
+                    .getProp(InternalApiConsts.KEY_SHIPPING_STATUS);
+                ret = InternalApiConsts.VALUE_SHIPPING.equals(sourceStatus);
+            }
+        }
+        return ret;
+    }
+
+    public static boolean isAnyAbortInProgress(SnapshotDefinition snapDfn, AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        boolean ret = false;
+        // first check if the snapDfn is a backup-target in progress, since this is faster
+        ReadOnlyProps snapDfnTarget = snapDfn.getSnapDfnProps(accCtx)
+            .getNamespaceOrEmpty(BACKUP_TARGET_PROPS_NAMESPC);
+        @Nullable String targetStatus = snapDfnTarget
+            .getProp(InternalApiConsts.KEY_SHIPPING_STATUS);
+        ret = InternalApiConsts.VALUE_ABORTING.equals(targetStatus);
+        if (!ret)
+        {
+            // since we don't have an in-progress target, check for any in-progress source
+            ReadOnlyProps snapDfnSource = snapDfn.getSnapDfnProps(accCtx)
+                .getNamespaceOrEmpty(BACKUP_SOURCE_PROPS_NAMESPC);
+            Iterator<String> namespcIter = snapDfnSource.iterateNamespaces();
+            while (namespcIter.hasNext() && !ret)
+            {
+                String tmpRemoteName = namespcIter.next();
+                @Nullable String sourceStatus = snapDfnSource
+                    .getNamespaceOrEmpty(tmpRemoteName)
+                    .getProp(InternalApiConsts.KEY_SHIPPING_STATUS);
+                ret = InternalApiConsts.VALUE_ABORTING.equals(sourceStatus);
+            }
+        }
+        return ret;
+    }
+
+    public static @Nullable String getSourceShippingStatus(
+        SnapshotDefinition snapDfn,
+        String remoteName,
+        AccessContext accCtx
+    ) throws InvalidKeyException, AccessDeniedException
+    {
+        return snapDfn.getSnapDfnProps(accCtx)
+            .getNamespaceOrEmpty(BACKUP_SOURCE_PROPS_NAMESPC)
+            .getProp(InternalApiConsts.KEY_SHIPPING_STATUS, remoteName);
+    }
+
+    public static @Nullable String getTargetShippingStatus(
+        SnapshotDefinition snapDfn,
+        AccessContext accCtx
+    ) throws InvalidKeyException, AccessDeniedException
+    {
+        return snapDfn.getSnapDfnProps(accCtx)
+            .getProp(
+                InternalApiConsts.KEY_SHIPPING_STATUS,
+                BACKUP_TARGET_PROPS_NAMESPC
+            );
+    }
+
+    public static boolean isReceivingFromRemote(
+        SnapshotDefinition snapDfn,
+        String remoteName,
+        AccessContext accCtx
+    ) throws InvalidKeyException, AccessDeniedException
+    {
+        return remoteName.equals(getBackupSrcRemote(snapDfn, accCtx));
+    }
+
+    public static boolean isBackupTarget(SnapshotDefinition snapDfn, AccessContext accCtx) throws AccessDeniedException
+    {
+        /*
+         * a snap is a current backup-target if it has the backup-target namespc, but not the backup-source namespc,
+         * since you can ship a snap that has previously been received, but you can't receive into an existing snap
+         */
+        ReadOnlyProps backupProps = snapDfn.getSnapDfnProps(accCtx)
+            .getNamespaceOrEmpty(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        return backupProps.getNamespace(InternalApiConsts.KEY_BACKUP_TARGET) != null &&
+            backupProps.getNamespace(InternalApiConsts.KEY_BACKUP_SOURCE) == null;
+    }
+
+    /**
+     * This method gets the src-remote from which a backup-target will receive the shipment.
+     * This will return the name of either an S3Remote or a StltRemote
+     *
+     * @param snapDfn
+     * @param accCtx
+     *
+     * @return
+     *
+     * @throws AccessDeniedException
+     * @throws InvalidKeyException
+     */
+    public static String getBackupSrcRemote(SnapshotDefinition snapDfn, AccessContext accCtx)
+        throws InvalidKeyException, AccessDeniedException
+    {
+        return snapDfn.getSnapDfnProps(accCtx)
+            .getProp(
+                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                BACKUP_TARGET_PROPS_NAMESPC
+            );
+    }
+
+    /**
+     * This method gets the dst-remote to which a backup-source will send the shipment.
+     * This will return the name of either an S3Remote or a StltRemote
+     *
+     * @param snapDfn
+     * @param remoteName
+     *     - this has to be the name of an S3Remote or a LinstorRemote
+     * @param accCtx
+     *
+     * @return
+     *
+     * @throws AccessDeniedException
+     * @throws InvalidKeyException
+     */
+    public static String getBackupDstRemote(SnapshotDefinition snapDfn, String remoteName, AccessContext accCtx)
+        throws InvalidKeyException, AccessDeniedException
+    {
+        return snapDfn.getSnapDfnProps(accCtx)
+            .getProp(
+                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName
+            );
+    }
+
+    /**
+     * fetches the shipping status from the props and compares it to the status given
+     *
+     * @param snapDfn
+     *     - the snapDfn to check
+     * @param remoteName
+     *     - nullable, if given, BACKUP_SOURCE namespace is checked, else BACKUP_TARGET
+     * @param status
+     *     - the status to check for
+     * @param accCtx
+     *
+     * @return
+     *
+     * @throws AccessDeniedException
+     * @throws InvalidKeyException
+     */
+    public static boolean hasShippingStatus(
+        SnapshotDefinition snapDfn,
+        @Nullable String remoteName,
+        String status,
+        AccessContext accCtx
+    ) throws InvalidKeyException, AccessDeniedException
+    {
+        boolean ret = false;
+        if (remoteName != null)
+        {
+            ret = status.equals(getSourceShippingStatus(snapDfn, remoteName, accCtx));
+        }
+        else
+        {
+            ret = status.equals(getTargetShippingStatus(snapDfn, accCtx));
+        }
+        return ret;
     }
 }

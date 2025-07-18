@@ -40,7 +40,8 @@ public class NotifyBackupShippingSent implements ApiCallReactive
         return ctrlBackupShippingSentHandler.shippingSent(
             ship.getRscName(),
             ship.getSnapName(),
-            ship.getSuccess()
+            ship.getSuccess(),
+            ship.getRemoteName()
         ).thenMany(Flux.<byte[]>empty());
     }
 }

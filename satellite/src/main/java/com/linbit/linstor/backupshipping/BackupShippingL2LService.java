@@ -195,16 +195,18 @@ public class BackupShippingL2LService extends AbsBackupShippingService
     protected void postAllBackupPartsRegistered(Snapshot snap, ShippingInfo info)
     {
         String remoteName = "";
-        synchronized (snap)
+        Object syncObj = snap;
+        synchronized (syncObj)
         {
             try
             {
-                if (snap.getFlags().isSet(accCtx, Snapshot.Flags.BACKUP_TARGET))
+                if (BackupShippingUtils.isBackupTarget(snap.getSnapshotDefinition(), accCtx))
                 {
-                    remoteName = snap.getSnapProps(accCtx)
+                    remoteName = snap.getSnapshotDefinition()
+                        .getSnapDfnProps(accCtx)
                         .getProp(
                             InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                            BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
                         );
                     if (remoteName == null || remoteName.isEmpty())
                     {

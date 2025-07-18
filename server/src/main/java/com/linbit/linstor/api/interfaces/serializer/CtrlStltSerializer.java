@@ -151,7 +151,8 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder notifyBackupShipped(
             SnapshotDefinition.Key snapKey,
             boolean successRef,
-            Set<Integer> ports
+            Set<Integer> ports,
+            String remoteName
         );
 
         CtrlStltSerializerBuilder notifyBackupShippingId(
@@ -175,7 +176,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             String nodeName
         );
 
-        CtrlStltSerializerBuilder notifyBackupShippingFinished(String rscName, String snapName);
+        CtrlStltSerializerBuilder notifyBackupShippingFinished(String rscName, String snapName, String remoteName);
 
         CtrlStltSerializerBuilder requestControllerUpdate();
         CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);

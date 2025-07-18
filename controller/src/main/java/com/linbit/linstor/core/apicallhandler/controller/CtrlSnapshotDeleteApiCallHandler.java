@@ -10,6 +10,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -317,9 +318,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         boolean shipping = false;
         try
         {
-            shipping = snapshotDfnRef.getFlags()
-                .isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP) &&
-                !snapshotDfnRef.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING_ABORT);
+            shipping = BackupShippingUtils.isAnyShippingInProgress(snapshotDfnRef, peerAccCtx.get());
         }
         catch (AccessDeniedException exc)
         {

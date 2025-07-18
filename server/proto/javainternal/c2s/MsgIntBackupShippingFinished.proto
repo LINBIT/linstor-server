@@ -7,4 +7,5 @@ message MsgIntBackupShippingFinished
 {
     string rsc_name = 2;
     string snap_name = 3;
+    string remote_name = 4;
 }

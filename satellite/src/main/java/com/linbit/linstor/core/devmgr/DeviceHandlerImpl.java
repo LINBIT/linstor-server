@@ -14,6 +14,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltExternalFileHandler;
@@ -29,6 +30,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
@@ -51,6 +53,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -718,6 +721,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         for (Snapshot snap : snapshots)
         {
             @Nullable ApiCallRcImpl apiCallRc;
+            SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
             try
             {
                 Resource rsc = snap.getResourceDefinition().getResource(wrkCtx, snap.getNodeName());
@@ -749,7 +753,51 @@ public class DeviceHandlerImpl implements DeviceHandler
                     {
                         // start the backup-shipping-daemons if necessary
                         snapListNotifyApplied.add(snap);
-                        backupShippingManager.allBackupPartsRegistered(snap);
+                        if (
+                            BackupShippingUtils.isBackupTarget(snapDfn, wrkCtx) &&
+                                BackupShippingUtils.hasShippingStatus(
+                                    snapDfn,
+                                    null,
+                                    InternalApiConsts.VALUE_SHIPPING,
+                                    wrkCtx
+                                )
+                        )
+                        {
+                            @Nullable String srcRemoteName = snapDfn.getSnapDfnProps(wrkCtx)
+                                .getProp(
+                                    InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                                    BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
+                                );
+                            if (srcRemoteName != null)
+                            {
+                                backupShippingManager.allBackupPartsRegistered(snap, srcRemoteName);
+                            }
+                        }
+                        else
+                        {
+                            ReadOnlyProps srcProps = snapDfn.getSnapDfnProps(wrkCtx)
+                                .getNamespaceOrEmpty(BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC);
+                            Iterator<String> namespcIter = srcProps.iterateNamespaces();
+                            while (namespcIter.hasNext())
+                            {
+                                String remoteName = namespcIter.next();
+                                String dstRemoteName = srcProps.getProp(
+                                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                                    remoteName
+                                );
+                                if (
+                                    BackupShippingUtils.hasShippingStatus(
+                                        snapDfn,
+                                        remoteName,
+                                        InternalApiConsts.VALUE_SHIPPING,
+                                        wrkCtx
+                                    )
+                                )
+                                {
+                                    backupShippingManager.allBackupPartsRegistered(snap, dstRemoteName);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -804,7 +852,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 );
             }
             notificationListenerProvider.get()
-                .notifySnapshotDispatchResponse(snap.getSnapshotDefinition().getSnapDfnKey(), apiCallRc);
+                .notifySnapshotDispatchResponse(snapDfn.getSnapDfnKey(), apiCallRc);
         }
     }
 
