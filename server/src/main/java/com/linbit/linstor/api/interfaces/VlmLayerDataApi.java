@@ -51,7 +51,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @Type(value = WritecacheVlmPojo.class, name = "writecache"),
         @Type(value = BCacheVlmPojo.class, name = "bcache"),
         @Type(value = EbsVlmPojo.class, name = "ebs")
-    // remoteSPDK and Exos are missing as we cannot ship backups from those
+    // remoteSPDK is missing as we cannot ship backups from it
     // since we have no direct access to the snapshots
     }
 )

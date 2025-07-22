@@ -4,7 +4,6 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.storage.EbsInitiatorDriverKind;
 import com.linbit.linstor.storage.EbsTargetDriverKind;
-import com.linbit.linstor.storage.ExosDriverKind;
 import com.linbit.linstor.storage.FileDriverKind;
 import com.linbit.linstor.storage.FileThinDriverKind;
 import com.linbit.linstor.storage.LvmDriverKind;
@@ -134,20 +133,6 @@ public enum DeviceProviderKind
         true,
         false,
         new RemoteSpdkDriverKind()
-    ),
-    @Deprecated(forRemoval = true)
-    EXOS(
-        false,
-        false,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        new ExosDriverKind(),
-        ExtTools.LSSCSI, ExtTools.SAS_PHY, ExtTools.SAS_DEVICE
     ),
     EBS_INIT(
         false,
@@ -331,7 +316,7 @@ public enum DeviceProviderKind
                 allowed = kind2.equals(FILE) || kind2.equals(FILE_THIN) || kind2.equals(DISKLESS);
                 break;
             case LVM:
-                allowed = kind2.equals(LVM) || kind2.equals(EXOS) ||
+                allowed = kind2.equals(LVM) ||
                     kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
                 allowedWithRecentEnoughDrbdVersion = kind2.equals(LVM_THIN) ||
                     kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
@@ -353,9 +338,6 @@ public enum DeviceProviderKind
                 allowed = kind2.equals(ZFS) || kind2.equals(ZFS_THIN) ||
                     kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
                 allowedWithRecentEnoughDrbdVersion = kind2.equals(LVM) || kind2.equals(LVM_THIN);
-                break;
-            case EXOS:
-                allowed = kind2.equals(EXOS) || kind2.equals(LVM);
                 break;
             case EBS_INIT: // fall-through
             case EBS_TARGET:

@@ -48,7 +48,6 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
-import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
@@ -401,31 +400,6 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         fileData.setDevicePath(vlmPojoRef.getDevicePath());
         fileData.setUsableSize(vlmPojoRef.getUsableSize());
         fileData.setDiscGran(vlmPojoRef.getDiscGran());
-    }
-
-    @Deprecated(forRemoval = true)
-    @Override
-    protected VlmProviderObject<Resource> createExosData(
-        AbsVolume<Resource> vlm,
-        StorageRscData<Resource> storRscData,
-        VlmLayerDataApi vlmDataApi,
-        StorPool storPoolRef
-    )
-        throws DatabaseException
-    {
-        throw new ImplementationError("Received unknown Exos storage volume from satellite");
-    }
-
-    @Deprecated(forRemoval = true)
-    @Override
-    protected void mergeExosData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
-        throws DatabaseException
-    {
-        ExosData<Resource> exosData = (ExosData<Resource>) vlmDataRef;
-        exosData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
-        exosData.setDevicePath(vlmPojoRef.getDevicePath());
-        exosData.setUsableSize(vlmPojoRef.getUsableSize());
-        exosData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override

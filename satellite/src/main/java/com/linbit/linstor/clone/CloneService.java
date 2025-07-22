@@ -283,7 +283,6 @@ public class CloneService implements SystemService
                     case EBS_TARGET:
                     case REMOTE_SPDK:
                     case STORAGE_SPACES:
-                    case EXOS:
                     case STORAGE_SPACES_THIN:
                     case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                     default:
@@ -321,7 +320,6 @@ public class CloneService implements SystemService
                     case EBS_TARGET:
                     case REMOTE_SPDK:
                     case STORAGE_SPACES:
-                    case EXOS:
                     case STORAGE_SPACES_THIN:
                     case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                     default:

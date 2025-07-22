@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed possible "attempt to replace active transaction Mgr" when updating free space
 - Fixed race condition while cleaning up after cloning for ZFS resources
 
+### Removed
+
+- EXOS support
+
 ## [1.31.3] - 2025-07-10
 
 ### Changed

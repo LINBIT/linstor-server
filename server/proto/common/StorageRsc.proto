@@ -31,7 +31,9 @@ message StorageVlm
     optional FileVlm             file = 14;
     optional FileThinVlm         file_thin = 15;
     optional SpdkVlm             spdk = 16;
-    optional ExosVlm             exos = 17;
+    
+    //  ExosVlm, deleted, proto-id: 17
+    
     optional RemoteSpdkVlm       remote_spdk = 18;
     optional EbsVlm              ebs = 19;
     optional StorageSpacesVlm    storage_spaces = 21;
@@ -86,12 +88,6 @@ message FileVlm
 
 message FileThinVlm
 {
-    // currently no special payload
-}
-
-message ExosVlm
-{
-    option deprecated = true;
     // currently no special payload
 }
 

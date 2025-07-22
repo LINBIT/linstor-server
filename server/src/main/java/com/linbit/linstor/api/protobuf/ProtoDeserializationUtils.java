@@ -164,9 +164,6 @@ public class ProtoDeserializationUtils
                 case REMOTE_SPDK:
                     kind = DeviceProviderKind.REMOTE_SPDK;
                     break;
-                case EXOS:
-                    kind = DeviceProviderKind.EXOS;
-                    break;
                 case EBS_INIT:
                     kind = DeviceProviderKind.EBS_INIT;
                     break;

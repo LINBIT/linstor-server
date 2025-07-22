@@ -1524,7 +1524,6 @@ public class DeviceHandlerImpl implements DeviceHandler
                 case ZFS_THIN: // fall-through
                 case EBS_INIT: // fall-through
                 case EBS_TARGET: // fall-through
-                case EXOS: // fall-through
                 case STORAGE_SPACES: // fall-through
                 case STORAGE_SPACES_THIN:
                     layer = storageLayer;

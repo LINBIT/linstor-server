@@ -14,7 +14,6 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.api.rest.v1.Exos;
 import com.linbit.linstor.compat.CompatibilityUtils;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
@@ -371,10 +370,6 @@ public class CtrlRscCrtApiHelper
             {
                 DeviceProviderKind devProviderKind = storPool.getDeviceProviderKind();
                 isStorPoolDiskless = !devProviderKind.hasBackingDevice();
-                if (devProviderKind.equals(DeviceProviderKind.EXOS))
-                {
-                    Exos.addDeprecationWarning(responses);
-                }
             }
 
             boolean isDisklessSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DISKLESS);
@@ -613,8 +608,6 @@ public class CtrlRscCrtApiHelper
                                 case REMOTE_SPDK: // fall-through
                                 case EBS_INIT: // fall-through
                                 case EBS_TARGET: // fall-through
-                                case EXOS:
-                                    // fall-through
                                 case STORAGE_SPACES:
                                     hasFatStorPool = true;
                                     break;

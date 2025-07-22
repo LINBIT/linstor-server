@@ -133,7 +133,6 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(createSpdkLocalPool(devicePaths, poolName));
                 break;
 
-            case EXOS: // for now, fall-through, might change in future
             case REMOTE_SPDK: // for now, fall-through, might change in future
             case EBS_INIT: // for now, fall-through, might change in future
             case EBS_TARGET: // for now, fall-through, might change in future
@@ -529,7 +528,6 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(deleteSPDKPool(devicePaths, poolName));
                 break;
 
-            case EXOS: // for now, fall-through, might change in future
             case REMOTE_SPDK: // for now, fall-through, might change in future
             case EBS_INIT: // for now, fall-through, might change in future
             case EBS_TARGET: // for now, fall-through, might change in future
@@ -579,7 +577,6 @@ public class DevicePoolHandler
                     }
                     break;
 
-                case EXOS: // for now, fall-through, might change in future
                 case REMOTE_SPDK: // for now, fall-through, might change in future
                 case EBS_INIT: // for now, fall-through, might change in future
                 case EBS_TARGET: // for now, fall-through, might change in future

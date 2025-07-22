@@ -15,11 +15,13 @@ enum ProviderType
     FILE = 8;
     FILE_THIN = 9;
     SPDK = 10;
-    // 11, openflex_target, deleted
-    EXOS = 12 [deprecated = true];
+    
     REMOTE_SPDK = 13;
     EBS_INIT = 14;
     EBS_TARGET = 15;
     STORAGE_SPACES = 16;
     STORAGE_SPACES_THIN = 17;
+    
+    // 11, openflex_target, deleted
+    // 12, exos, deleted
 }

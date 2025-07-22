@@ -513,7 +513,6 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             case DISKLESS:
             case EBS_INIT:
             case EBS_TARGET:
-            case EXOS:
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             case FILE:
             case FILE_THIN:

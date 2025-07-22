@@ -23,7 +23,6 @@ import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
-import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
@@ -267,16 +266,6 @@ public class LayerStorageVlmDbDriver
                     absVlmRef,
                     storageRscDataRef,
                     providerKindRef,
-                    storPoolRef,
-                    this,
-                    transObjFactory,
-                    transMgrProvider
-                );
-                break;
-            case EXOS:
-                vlmProviderObj = new ExosData<>(
-                    absVlmRef,
-                    storageRscDataRef,
                     storPoolRef,
                     this,
                     transObjFactory,

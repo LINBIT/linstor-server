@@ -420,7 +420,6 @@ public class StorPool extends AbsCoreObj<StorPool>
                 override = Double.POSITIVE_INFINITY;
                 break;
             case EBS_TARGET:
-            case EXOS:
             case FILE:
             case LVM:
             case REMOTE_SPDK:

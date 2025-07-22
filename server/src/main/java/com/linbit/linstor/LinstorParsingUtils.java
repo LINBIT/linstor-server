@@ -431,10 +431,6 @@ public class LinstorParsingUtils
             case "REMOTE_SPDK":
                 kind = DeviceProviderKind.REMOTE_SPDK;
                 break;
-            case "EXOS":
-            case "EXOS_TARGET":
-                kind = DeviceProviderKind.EXOS;
-                break;
             case "EBS_TARGET":
                 kind = DeviceProviderKind.EBS_TARGET;
                 break;

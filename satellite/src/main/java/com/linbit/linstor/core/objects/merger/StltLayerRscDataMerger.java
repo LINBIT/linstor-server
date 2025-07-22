@@ -60,7 +60,6 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -665,31 +664,6 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         // The local usable size is going to be recalculated (and will override the pojo's value),
         // whereas the remote usable sizes will be used AbsStorageProvider#getSmallestCommonUsableStorageSize
         vlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
-    }
-
-    @Deprecated(forRemoval = true)
-    @Override
-    protected VlmProviderObject<Resource> createExosData(
-        AbsVolume<Resource> vlmRef,
-        StorageRscData<Resource> storRscDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        ExosData<Resource> exosData = layerDataFactory.createExosData(vlmRef, storRscDataRef, storPoolRef);
-        exosData.updateShortName(apiCtx);
-        return exosData;
-    }
-
-    @Deprecated(forRemoval = true)
-    @Override
-    protected void mergeExosData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
-        throws DatabaseException
-    {
-        // ignoring allocatedSize
-        // ignoring devicePath
-        // ignoring usableSize
     }
 
     @Override

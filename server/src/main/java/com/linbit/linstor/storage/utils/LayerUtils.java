@@ -52,7 +52,7 @@ public class LayerUtils
      * TODO: This check needs to be extended by giving a (or multiple?) storage pools as some layer-combinations are
      * only allowed with specific DeviceProviderKinds.
      * For example 'nvme,luks,storage' is only allowed if Linstor is actually in full control of the storage, like LVM
-     * or ZFS but NOT with (remote-)SPDK, OpenFlex, EXOS, etc...
+     * or ZFS but NOT with (remote-)SPDK, etc...
      */
     public static boolean isLayerKindStackAllowed(List<DeviceLayerKind> kindList)
     {

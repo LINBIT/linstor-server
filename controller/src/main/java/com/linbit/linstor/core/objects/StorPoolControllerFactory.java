@@ -134,7 +134,6 @@ public class StorPoolControllerFactory
                 case EBS_TARGET:
                     dfltAllocGran = ALLOC_GRAN_1GIB_IN_KIB;
                     break;
-                case EXOS: // fall-through
                 case LVM: // fall-through
                 case LVM_THIN:
                     dfltAllocGran = ALLOC_GRAN_4MIB_IN_KIB;

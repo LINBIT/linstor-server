@@ -31,10 +31,6 @@ import java.util.regex.Pattern;
 // purposely not singleton and not injectable
 public class NameShortener
 {
-    public static final String OPENFLEX = "OpenFlex";
-    @Deprecated(forRemoval = true)
-    public static final String EXOS = "Exos";
-
     /**
      * The property namespace used for lookup of already shortened name
      */

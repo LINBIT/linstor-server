@@ -1,14 +1,11 @@
 # Changelog
 
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
+
 ## [unreleased]
 
 ### Added
- - Add /v1/resource-definitions/{resource}/snapshots/{snapshot} PUT for modifying snapshots
-
-## [1.26.0]
-
-### Added
+  - Add /v1/resource-definitions/{resource}/snapshots/{snapshot} PUT for modifying snapshots
   - Added DrbdResource.tcp_ports
   - Added ResourceCreate.drbd_tcp_port_count
   - Added ResourceCreate.drbd_tcp_ports
@@ -21,6 +18,20 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
 ### Deprecated
   - ResourceConnection.port
+
+### Removed
+  - Removed EXOS:
+    - /v1/vendor/seagate/exos/defaults
+    - /v1/vendor/seagate/exos/enclosures
+    - /v1/vendor/seagate/exos/enclosures/{enclosure}
+    - /v1/vendor/seagate/exos/{enclosure}/events
+    - /v1/vendor/seagate/exos/map
+    - components/schemas/ExosDefaults
+    - components/schemas/ExosDefaultsModify
+    - components/schemas/ExosEnclosureHealth
+    - components/schemas/ExosEnclosure
+    - components/schemas/ExosEnclosureEvent
+    - components/schemas/ExosConnectionMap
 
 ## [1.25.1]
 

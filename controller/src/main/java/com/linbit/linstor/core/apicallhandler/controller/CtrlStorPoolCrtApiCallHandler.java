@@ -19,7 +19,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.exos.ExosEnclosurePingTask;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
@@ -61,7 +60,6 @@ public class CtrlStorPoolCrtApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
     private final StorPoolHelper storPoolHelper;
-    private final ExosEnclosurePingTask exosPingTask;
     private final CtrlApiDataLoader dataLoader;
 
     @Inject
@@ -76,7 +74,6 @@ public class CtrlStorPoolCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        ExosEnclosurePingTask exosPingTaskRef,
         CtrlApiDataLoader dataLoaderRef,
         ErrorReporter errorReporterRef
     )
@@ -91,7 +88,6 @@ public class CtrlStorPoolCrtApiCallHandler
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
-        exosPingTask = exosPingTaskRef;
         dataLoader = dataLoaderRef;
         errorReporter = errorReporterRef;
     }
@@ -154,28 +150,6 @@ public class CtrlStorPoolCrtApiCallHandler
             String modifiedNameStr = sharedStorPoolNameStr;
             switch (deviceProviderKindRef)
             {
-                case EXOS:
-                {
-                    // exos always needs this
-                    String enclosureName = storPoolPropsMap.get(
-                        ApiConsts.NAMESPC_EXOS + "/" + ApiConsts.KEY_STOR_POOL_EXOS_ENCLOSURE
-                    );
-                    String poolSn = storPoolPropsMap.get(
-                        ApiConsts.NAMESPC_EXOS + "/" + ApiConsts.KEY_STOR_POOL_EXOS_POOL_SN
-                    );
-                    modifiedNameStr = enclosureName + "_" + poolSn;
-
-                    if (exosPingTask.getClient(enclosureName) == null)
-                    {
-                        throw new ApiRcException(
-                            ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_NOT_FOUND_EXOS_ENCLOSURE,
-                                "The given EXOS enclosure " + enclosureName + " was not registered yet."
-                            )
-                        );
-                    }
-                    break;
-                }
                 case EBS_INIT:
                 {
                     String ebsRemoteName = storPoolPropsMap.get(

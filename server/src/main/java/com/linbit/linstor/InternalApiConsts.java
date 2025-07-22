@@ -132,14 +132,6 @@ public class InternalApiConsts
     public static final String KEY_SNAPSHOT_SHIPPING_NEXT_ID = "SnapshotShippingNextId";
 
     /*
-     * Exos
-     */
-    public static final String NAMESPC_EXOS = "StorDriver/Exos";
-    public static final String NAMESPC_EXOS_MAP = NAMESPC_EXOS + "/Map";
-    public static final String EXOS_LUN = "Lun";
-    public static final String EXOS_PORT = "Port";
-
-    /*
      * Backup shipping
      */
     public static final String API_NOTIFY_BACKUP_SHIPPING_RECEIVED = "BackupShippingReceived";

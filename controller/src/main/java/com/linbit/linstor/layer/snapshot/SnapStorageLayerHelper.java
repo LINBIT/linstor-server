@@ -27,7 +27,6 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -149,11 +148,6 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
             case REMOTE_SPDK:
                 snapVlmData = layerDataFactory.createSpdkData(snapVlmRef, snapDataRef, providerKind, storPool);
                 break;
-            case EXOS:
-                ExosData<Snapshot> exosSnapData = layerDataFactory.createExosData(snapVlmRef, snapDataRef, storPool);
-                exosSnapData.updateShortName(apiCtx);
-                snapVlmData = exosSnapData;
-                break;
             case EBS_INIT:
             case EBS_TARGET:
                 snapVlmData = layerDataFactory.createEbsData(snapVlmRef, snapDataRef, storPool);
@@ -272,9 +266,6 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
             case SPDK:
             case REMOTE_SPDK:
                 snapVlmData = layerDataFactory.createSpdkData(snapVlmRef, snapDataRef, providerKind, storPool);
-                break;
-            case EXOS:
-                snapVlmData = layerDataFactory.createExosData(snapVlmRef, snapDataRef, storPool);
                 break;
             case EBS_INIT:
             case EBS_TARGET:

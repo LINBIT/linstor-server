@@ -5,7 +5,6 @@ import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.storage.diskless.DisklessProvider;
 import com.linbit.linstor.layer.storage.ebs.EbsInitiatorProvider;
 import com.linbit.linstor.layer.storage.ebs.EbsTargetProvider;
-import com.linbit.linstor.layer.storage.exos.ExosProvider;
 import com.linbit.linstor.layer.storage.file.FileProvider;
 import com.linbit.linstor.layer.storage.file.FileThinProvider;
 import com.linbit.linstor.layer.storage.lvm.LvmProvider;
@@ -36,7 +35,6 @@ public class DeviceProviderMapper
     private final FileThinProvider fileThinProvider;
     private final SpdkLocalProvider spdkLocalProvider;
     private final SpdkRemoteProvider spdkRemoteProvider;
-    private final ExosProvider exosProvider;
     private final EbsInitiatorProvider ebsInitProvider;
     private final EbsTargetProvider ebsTargetProvider;
     private final StorageSpacesProvider storageSpacesProvider;
@@ -54,7 +52,6 @@ public class DeviceProviderMapper
         FileThinProvider fileThinProviderRef,
         SpdkLocalProvider spdkLocalProviderRef,
         SpdkRemoteProvider spdkRemoteProviderRef,
-        ExosProvider exosProviderRef,
         EbsInitiatorProvider ebsInitProviderRef,
         EbsTargetProvider ebsTargetProviderRef,
         StorageSpacesProvider storageSpacesProviderRef,
@@ -70,7 +67,6 @@ public class DeviceProviderMapper
         fileThinProvider = fileThinProviderRef;
         spdkLocalProvider = spdkLocalProviderRef;
         spdkRemoteProvider = spdkRemoteProviderRef;
-        exosProvider = exosProviderRef;
         ebsInitProvider = ebsInitProviderRef;
         ebsTargetProvider = ebsTargetProviderRef;
         storageSpacesProvider = storageSpacesProviderRef;
@@ -86,7 +82,6 @@ public class DeviceProviderMapper
             fileThinProvider,
             spdkLocalProvider,
             spdkRemoteProvider,
-            exosProvider,
             ebsInitProvider,
             ebsTargetProvider,
             storageSpacesProvider,
@@ -135,9 +130,6 @@ public class DeviceProviderMapper
                 break;
             case REMOTE_SPDK:
                 devProvider = spdkRemoteProvider;
-                break;
-            case EXOS:
-                devProvider = exosProvider;
                 break;
             case EBS_INIT:
                 devProvider = ebsInitProvider;

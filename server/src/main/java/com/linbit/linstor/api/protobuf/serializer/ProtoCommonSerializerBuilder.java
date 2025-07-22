@@ -106,7 +106,6 @@ import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.proto.common.StorageRscOuterClass;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.DisklessVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.EbsVlm;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.ExosVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmThinVlm;
@@ -1399,9 +1398,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case REMOTE_SPDK:
                 type = ProviderType.REMOTE_SPDK;
                 break;
-            case EXOS:
-                type = ProviderType.EXOS;
-                break;
             case EBS_INIT:
                 type = ProviderType.EBS_INIT;
                 break;
@@ -2087,9 +2083,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case REMOTE_SPDK:
                     builder.setRemoteSpdk(RemoteSpdkVlm.newBuilder().build());
-                    break;
-                case EXOS:
-                    builder.setExos(ExosVlm.newBuilder().build());
                     break;
                 case EBS_INIT: // fall-through
                 case EBS_TARGET:

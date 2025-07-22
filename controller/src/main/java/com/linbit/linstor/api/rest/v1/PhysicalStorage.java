@@ -197,7 +197,6 @@ public class PhysicalStorage
                 map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME, pool);
                 break;
 
-            case EXOS: // fall-through for now
             case EBS_INIT: // fall-through
             case EBS_TARGET: // fall-through
             case DISKLESS: // fall-through

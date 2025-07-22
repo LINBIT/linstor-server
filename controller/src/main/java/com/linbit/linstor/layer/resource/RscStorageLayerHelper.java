@@ -47,16 +47,13 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
-import com.linbit.linstor.utils.NameShortener;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.PairNonNull;
 
@@ -81,9 +78,6 @@ public class RscStorageLayerHelper extends
 >
 {
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
-    @Deprecated(forRemoval = true)
-    private final NameShortener exosNameShortener;
-    private final ExosMappingManager exosMapMgr;
     private final CtrlSecurityObjects secObjs;
     private final RemoteMap remoteMap;
 
@@ -95,8 +89,6 @@ public class RscStorageLayerHelper extends
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL)  DynamicNumberPool layerRscIdPoolRef,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
-        @Named(NameShortener.EXOS) NameShortener exosNameShortenerRef,
-        ExosMappingManager exosMapMgrRef,
         CtrlSecurityObjects secObjsRef,
         RemoteMap remoteMapRef
     )
@@ -114,8 +106,6 @@ public class RscStorageLayerHelper extends
             rscLayerDataFactory
         );
         storPoolResolveHelper = storPoolResolveHelperRef;
-        exosNameShortener = exosNameShortenerRef;
-        exosMapMgr = exosMapMgrRef;
         secObjs = secObjsRef;
         remoteMap = remoteMapRef;
     }
@@ -305,26 +295,6 @@ public class RscStorageLayerHelper extends
                         );
                     }
                     vlmData = layerDataFactory.createSpdkData(vlm, rscData, kind, storPool);
-                    break;
-                case EXOS:
-                    exosNameShortener.shorten(
-                        vlmDfn,
-                        storPool.getSharedStorPoolName().displayValue,
-                        rscData.getResourceNameSuffix(),
-                        false
-                    );
-                    try
-                    {
-                        exosMapMgr.findFreeExosPortAndLun(storPool, vlm);
-                    }
-                    catch (InvalidKeyException | InvalidValueException exc)
-                    {
-                        throw new ImplementationError(exc);
-                    }
-
-                    ExosData<Resource> exosData = layerDataFactory.createExosData(vlm, rscData, storPool);
-                    exosData.updateShortName(apiCtx);
-                    vlmData = exosData;
                     break;
                 case EBS_TARGET:
                     vlmData = layerDataFactory.createEbsData(
@@ -844,17 +814,6 @@ public class RscStorageLayerHelper extends
             case SPDK:
             case REMOTE_SPDK:
                 vlmData = layerDataFactory.createSpdkData(vlmRef, storRscData, providerKind, storPool);
-                break;
-            case EXOS:
-                exosNameShortener.shorten(
-                    vlmRef.getVolumeDefinition(),
-                    storPool.getSharedStorPoolName().displayValue,
-                    storRscData.getResourceNameSuffix(),
-                    false
-                );
-                ExosData<Resource> exosData = layerDataFactory.createExosData(vlmRef, storRscData, storPool);
-                exosData.updateShortName(apiCtx);
-                vlmData = exosData;
                 break;
             case EBS_INIT:
             case EBS_TARGET:

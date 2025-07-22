@@ -78,7 +78,6 @@ public interface StorPoolApi
             case ZFS_THIN: // fall-through
             case FILE_THIN: // fall-through
             case FILE: // fall-through
-            case EXOS: // fall-through
             case EBS_INIT: // fall-through
             case EBS_TARGET: // fall-through
             case LVM:

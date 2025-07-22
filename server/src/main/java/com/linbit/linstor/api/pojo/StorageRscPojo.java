@@ -12,7 +12,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.DISKLESS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.EBS_INIT;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.EXOS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
@@ -863,40 +862,6 @@ public class StorageRscPojo implements RscLayerDataApi
         }
     }
 
-    @Deprecated(forRemoval = true)
-    public static class ExosVlmPojo extends AbsVlmProviderPojo
-    {
-        public ExosVlmPojo(
-            int vlmNrRef,
-            String devicePathRef,
-            long allocatedSizeRef,
-            long usableSizeRef,
-            @Nullable Long snapAllocatedSizeRef,
-            @Nullable Long snapUsableSizeRef,
-            String diskStateRef,
-            long discGranRef,
-            StorPoolApi storPoolApiRef,
-            boolean existsRef
-        )
-        {
-            super(
-                vlmNrRef,
-                devicePathRef,
-                allocatedSizeRef,
-                usableSizeRef,
-                snapAllocatedSizeRef,
-                snapUsableSizeRef,
-                diskStateRef,
-                discGranRef,
-                storPoolApiRef,
-                EXOS,
-                existsRef,
-                null
-            );
-        }
-    }
-
-    @Deprecated(forRemoval = true)
     public static class EbsVlmPojo extends AbsVlmProviderPojo
     {
         public EbsVlmPojo(

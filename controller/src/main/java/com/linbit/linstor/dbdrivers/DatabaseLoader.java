@@ -94,7 +94,6 @@ import com.linbit.linstor.security.SecDatabaseLoader;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
@@ -184,7 +183,6 @@ public class DatabaseLoader implements DatabaseDriver
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
     private final VolumeGroupCtrlDatabaseDriver vlmGrpDriver;
-    private final ExosMappingManager exosMappingMgr;
     private final ExternalFileMap extFileMap;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
     private final RemoteMap remoteMap;
@@ -231,7 +229,6 @@ public class DatabaseLoader implements DatabaseDriver
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
         CoreModule.KeyValueStoreMap keyValueStoreMapRef,
-        ExosMappingManager exosMappingMgrRef,
         CoreModule.ExternalFileMap extFileMapRef,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
         CoreModule.RemoteMap remoteMapRef,
@@ -278,7 +275,6 @@ public class DatabaseLoader implements DatabaseDriver
         storPoolDfnMap = storPoolDfnMapRef;
         freeSpaceMgrMap = freeSpaceMgrMapRef;
         keyValueStoreMap = keyValueStoreMapRef;
-        exosMappingMgr = exosMappingMgrRef;
         extFileMap = extFileMapRef;
         storPoolResolveHelper = storPoolResolveHelperRef;
         remoteMap = remoteMapRef;
@@ -653,7 +649,6 @@ public class DatabaseLoader implements DatabaseDriver
             }
 
             AbsRscLayerHelper.databaseLoadingFinished();
-            exosMappingMgr.allocateAfterDbLoad();
 
             propsDriver.clearCache();
         }

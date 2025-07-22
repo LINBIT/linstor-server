@@ -552,7 +552,6 @@ public class CtrlNodeApiCallHandler
                 .buildPropsChangedListeners(peerAccCtx.get(), node, specialPropFluxes);
 
             List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
-            prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EXOS);
             prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
             Props props = ctrlPropsHelper.getProps(node);

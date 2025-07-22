@@ -23,7 +23,6 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.EbsVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.ExosVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
@@ -672,20 +671,6 @@ public class ProtoLayerUtils
                     exists
                 );
                 break;
-            case EXOS:
-                ret = new ExosVlmPojo(
-                    vlmNr,
-                    devicePath,
-                    allocatedSize,
-                    usableSize,
-                    null,
-                    null,
-                    diskState,
-                    discGran,
-                    storPoolApi,
-                    exists
-                );
-                break;
             case EBS_INIT:
             case EBS_TARGET:
                 ret = new EbsVlmPojo(
@@ -728,7 +713,6 @@ public class ProtoLayerUtils
             case FILE_THIN: // fall-through
             case EBS_INIT: // fall-through
             case EBS_TARGET: // fall-through
-            case EXOS:
             case STORAGE_SPACES:
             case STORAGE_SPACES_THIN:
                 vlmDfnApi = null;

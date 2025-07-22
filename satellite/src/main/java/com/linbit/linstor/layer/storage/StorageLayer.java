@@ -481,7 +481,6 @@ public class StorageLayer implements DeviceLayer
                 case FILE_THIN: // fail through
                 case SPDK: // fail through
                 case REMOTE_SPDK: // fail through
-                case EXOS: // fail through
                 case EBS_INIT: // fail through
                 case EBS_TARGET: // fail through
                 case STORAGE_SPACES: // fail through
@@ -521,7 +520,6 @@ public class StorageLayer implements DeviceLayer
             case FILE_THIN: // fail through
             case SPDK: // fail through
             case REMOTE_SPDK: // fail through
-            case EXOS: // fail through
             case EBS_INIT: // fail through
             case EBS_TARGET: // fail through
             case STORAGE_SPACES: // fail through
@@ -551,7 +549,6 @@ public class StorageLayer implements DeviceLayer
             case FILE_THIN: // fail through
             case SPDK: // fail through
             case REMOTE_SPDK: // fail through
-            case EXOS: // fail through
             case EBS_INIT: // fail through
             case EBS_TARGET: // fail through
             case STORAGE_SPACES: // fail through

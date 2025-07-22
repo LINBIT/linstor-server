@@ -22,7 +22,6 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModul
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlConfigModule;
 import com.linbit.linstor.core.ebs.EbsStatusManagerService;
-import com.linbit.linstor.core.exos.ExosEnclosurePingTask;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
@@ -166,7 +165,6 @@ public final class Controller
     private final WhitelistProps whitelistProps;
 
     private final RetryResourcesTask retryResourcesTask;
-    private final ExosEnclosurePingTask exosPingTask;
 
     private final CtrlConfig ctrlCfg;
 
@@ -202,7 +200,6 @@ public final class Controller
         AutoSnapshotTask autoSnapshotTaskRef,
         AutoDiskfulTask autoDiskfulTaskRef,
         BalanceResourcesTask balanceResourcesTaskRef,
-        ExosEnclosurePingTask exosPingTaskRef,
         QsiClearCacheTask qsiClearCacheRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
@@ -238,7 +235,6 @@ public final class Controller
         autoSnapshotTask = autoSnapshotTaskRef;
         autoDiskfulTask = autoDiskfulTaskRef;
         balanceResourcesTask = balanceResourcesTaskRef;
-        exosPingTask = exosPingTaskRef;
         qsiClearCache = qsiClearCacheRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
@@ -303,7 +299,6 @@ public final class Controller
             taskScheduleService.addTask(autoDiskfulTask);
             taskScheduleService.addTask(balanceResourcesTask);
             taskScheduleService.addTask(updateSpaceInfoTask);
-            taskScheduleService.addTask(exosPingTask);
             taskScheduleService.addTask(qsiClearCache);
 
             systemServicesMap.put(controllerDb.getInstanceName(), controllerDb);

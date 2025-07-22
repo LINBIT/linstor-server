@@ -346,24 +346,6 @@ public class CtrlSnapLayerDataMerger extends AbsLayerRscDataMerger<Snapshot>
     }
 
     @Override
-    protected VlmProviderObject<Snapshot> createExosData(
-        AbsVolume<Snapshot> vlmRef,
-        StorageRscData<Snapshot> storRscDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    ) throws DatabaseException, AccessDeniedException
-    {
-        throw new ImplementationError("Received unknown Exos storage snapshot volume from satellite");
-    }
-
-    @Override
-    protected void mergeExosData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Snapshot> vlmDataRef)
-        throws DatabaseException
-    {
-        mergeVlmProviderObject(vlmPojoRef, vlmDataRef);
-    }
-
-    @Override
     protected VlmProviderObject<Snapshot> createEbsData(
         AbsVolume<Snapshot> vlmRef,
         StorageRscData<Snapshot> storRscDataRef,

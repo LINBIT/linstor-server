@@ -46,7 +46,6 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
-import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
@@ -465,20 +464,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
                 else
                 {
                     mergeSpdkVlmData(vlmPojo, vlmData);
-                }
-                break;
-            case EXOS:
-                if (vlmData == null || !(vlmData instanceof ExosData))
-                {
-                    if (vlmData != null)
-                    {
-                        removeStorageVlm(storRscData, vlmNr);
-                    }
-                    vlmData = createExosData(vlm, storRscData, vlmPojo, storPool);
-                }
-                else
-                {
-                    mergeExosData(vlmPojo, vlmData);
                 }
                 break;
             case EBS_INIT: // fall-through
@@ -982,19 +967,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         throws AccessDeniedException, DatabaseException;
 
     protected abstract void putVlmData(StorageRscData<RSC> storRscDataRef, VlmProviderObject<RSC> vlmDataRef);
-
-    @Deprecated(forRemoval = true)
-    protected abstract VlmProviderObject<RSC> createExosData(
-        AbsVolume<RSC> vlm,
-        StorageRscData<RSC> storRscData,
-        VlmLayerDataApi vlmPojo,
-        StorPool storPool
-    )
-        throws DatabaseException, AccessDeniedException;
-
-    @Deprecated(forRemoval = true)
-    protected abstract void mergeExosData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)
-        throws DatabaseException;
 
     protected abstract VlmProviderObject<RSC> createEbsData(
         AbsVolume<RSC> vlm,

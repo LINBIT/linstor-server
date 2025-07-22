@@ -852,12 +852,6 @@ public class CtrlConfApiCallHandler
             }
             List<String> ignoredKeys = new ArrayList<>();
             ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
-            /*
-             * StorDriver/Exos/<EnclosureName>/<ExosCtrlName>/ ... must be ignored.
-             * on ctrl level only.
-             * on other levels whitelisting is active
-             */
-            ignoredKeys.add(ApiConsts.NAMESPC_EXOS + "/");
             ignoredKeys.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
             if (fullKey.startsWith(ApiConsts.NAMESPC_CLUSTER_REMOTE))
@@ -1463,12 +1457,6 @@ public class CtrlConfApiCallHandler
             }
             List<String> ignoredKeys = new ArrayList<>();
             ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
-            /*
-             * StorDriver/Exos/<EnclosureName>/<ExosCtrlName>/ ... must be ignored.
-             * on ctrl level only.
-             * on other levels whitelisting is active
-             */
-            ignoredKeys.add(ApiConsts.NAMESPC_EXOS + "/");
             ignoredKeys.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
             boolean isPropWhitelisted = whitelistProps.isAllowed(
