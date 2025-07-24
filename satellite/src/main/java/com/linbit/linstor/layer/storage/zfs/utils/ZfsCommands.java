@@ -10,11 +10,13 @@ import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.storage.utils.Commands.genericExecutor;
+import static com.linbit.linstor.storage.utils.Commands.genericExecutorLimiter;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -24,30 +26,29 @@ public class ZfsCommands
 
     public static OutputData list(ExtCmd extCmd, Collection<String> datasets) throws StorageException
     {
-        return genericExecutor(
+        return genericExecutorLimiter(
             extCmd,
-            StringUtils.concat(
-                new String[] {
-                    "zfs",
-                    "list",
-                    "-r",   // recursive
-                    "-H",   // no headers, single tab instead of spaces
-                    "-p",   // sizes in bytes
-                    // columns: name, referred space, available space, type, extent size, origin, clones
-                    "-o", "name,refer,volsize,type,volblocksize,origin,clones",
-                    "-t", "volume,snapshot"
-                },
-                datasets
-            ),
+            new String[] {
+                "zfs",
+                "list",
+                "-r",   // recursive
+                "-H",   // no headers, single tab instead of spaces
+                "-p",   // sizes in bytes
+                // columns: name, referred space, available space, type, extent size, origin, clones
+                "-o", "name,refer,volsize,type,volblocksize,origin,clones",
+                "-t", "volume,snapshot"
+            },
+            datasets,
             "Failed to list zfs volumes",
-            "Failed to query 'zfs' info"
+            "Failed to query 'zfs' info",
+            Collections.singletonList(1)
         );
     }
 
     public static OutputData getExtentSize(ExtCmd extCmd, String zpool, String identifier) throws StorageException
     {
         String fullQualifiedId;
-        if (identifier == null || identifier.trim().isEmpty())
+        if (identifier.trim().isEmpty())
         {
             fullQualifiedId = zpool;
         }

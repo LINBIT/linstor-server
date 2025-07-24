@@ -80,7 +80,7 @@ public class ZfsUtils
 
         // will be filled in updateStates method
         public final List<ZfsInfo> snapshots = new ArrayList<>();
-        public final List<ZfsInfo> clones = new ArrayList<>();
+        public final List<String> clones = new ArrayList<>();
 
         // properties, will be filled after object is initialized
         public boolean markedForDeletion = false;
@@ -93,7 +93,7 @@ public class ZfsUtils
             long allocatedSizeRef,
             long usableSizeRef,
             @Nullable Long volBlockSizeRef,
-            String originStrRef,
+            @Nullable String originStrRef,
             String[] clonesArrRef
         )
             throws StorageException
@@ -108,6 +108,8 @@ public class ZfsUtils
             volBlockSize = volBlockSizeRef;
             originStr = originStrRef;
             clonesStrArr = clonesArrRef;
+
+            clones.addAll(Arrays.asList(clonesStrArr));
         }
     }
 
@@ -171,6 +173,7 @@ public class ZfsUtils
     public static HashMap<String, ZfsInfo> getZfsList(
         final ExtCmdFactory extCmdFactoryRef,
         Collection<String> datasets,
+        Collection<String> poolDatasets,
         DeviceProviderKind kindRef,
         Map<String, BiConsumer<ZfsInfo, String>> zfsPropertiesWithSetters
     )
@@ -182,7 +185,7 @@ public class ZfsUtils
             Map<String, String> properties = getZfsLocalProperty(
                 extCmdFactoryRef.create(),
                 entry.getKey(),
-                datasets,
+                poolDatasets,
                 Function.identity()
             );
 
@@ -210,8 +213,7 @@ public class ZfsUtils
         final String stdOut = new String(output.stdoutData);
 
         final HashMap<String, ZfsInfo> infoByIdentifier = new HashMap<>();
-        final HashMap<String, ArrayList<ZfsInfo>> unprocessedSnapshots = new HashMap<>();
-        final HashMap<String, ArrayList<ZfsInfo>> unprocessedZvols = new HashMap<>();
+        final HashMap<String, ArrayList<String>> unprocessedZvols = new HashMap<>();
 
         final String[] lines = stdOut.split("\n");
         final int expectedColCount = 7;
@@ -270,9 +272,8 @@ public class ZfsUtils
 
                         if (type.equals(ZFS_TYPE_VOLUME) || type.equals(ZFS_TYPE_SNAPSHOT))
                         {
-                            String allocateByteSizeStr = allocatedSizeStr;
                             long allocatedSize = SizeConv.convert(
-                                StorageUtils.parseDecimalAsLong(allocateByteSizeStr.trim()),
+                                StorageUtils.parseDecimalAsLong(allocatedSizeStr.trim()),
                                 SizeUnit.UNIT_B,
                                 SizeUnit.UNIT_KiB
                             );
@@ -320,16 +321,11 @@ public class ZfsUtils
                             {
                                 String baseZvolIdentifier = identifier.substring(0, identifier.indexOf("@"));
                                 @Nullable ZfsInfo baseZvolInfo = infoByIdentifier.get(baseZvolIdentifier);
-                                if (baseZvolInfo == null)
-                                {
-                                    unprocessedSnapshots
-                                        .computeIfAbsent(baseZvolIdentifier, ignored -> new ArrayList<>())
-                                        .add(state);
-                                }
-                                else
+                                if (baseZvolInfo != null)
                                 {
                                     // technically we are only storing "<baseZvol> has snapshot <state>" but not
                                     // "<state> is snapshot of <baseZvol>"
+                                    // snapshots are always listed after the base resource
                                     baseZvolInfo.snapshots.add(state);
                                 }
                             }
@@ -341,13 +337,13 @@ public class ZfsUtils
                                     if (baseSnapInfo == null)
                                     {
                                         unprocessedZvols.computeIfAbsent(state.originStr, ignored -> new ArrayList<>())
-                                            .add(state);
+                                            .add(state.originStr);
                                     }
                                     else
                                     {
                                         // technically we are only storing "<baseSnap> has clone <state>" but not
                                         // "<clone> is clone of <baseSnap>"
-                                        baseSnapInfo.clones.add(state);
+                                        baseSnapInfo.clones.add(state.originStr);
                                     }
                                 }
                             }
@@ -360,69 +356,20 @@ public class ZfsUtils
                 // we could not parse a number so we ignore the whole line
             }
         }
-        for (Map.Entry<String, ArrayList<ZfsInfo>> unprocessedSnapshot : unprocessedSnapshots.entrySet())
-        {
-            String baseZvolIdentifier = unprocessedSnapshot.getKey();
-            ArrayList<ZfsInfo> snapshots = unprocessedSnapshot.getValue();
-            @Nullable ZfsInfo baseZvolInfo = infoByIdentifier.get(baseZvolIdentifier);
-            if (baseZvolInfo == null)
-            {
-                StringBuilder errorMsgBuilder = new StringBuilder(baseZvolIdentifier)
-                    .append(" not found, but has ");
-                if (snapshots.size() == 1)
-                {
-                    errorMsgBuilder.append("a snapshot");
-                }
-                else
-                {
-                    errorMsgBuilder.append("snapshots");
-                }
-                errorMsgBuilder.append(":");
-                for (ZfsInfo snap : snapshots)
-                {
-                    errorMsgBuilder.append("\n * ")
-                        .append(snap.poolName)
-                        .append(File.separator)
-                        .append(snap.identifier);
-                }
-                throw new StorageException(errorMsgBuilder.toString());
-            }
-            else
-            {
-                baseZvolInfo.snapshots.addAll(snapshots);
-            }
-        }
-        for (Map.Entry<String, ArrayList<ZfsInfo>> unprocessedZvol : unprocessedZvols.entrySet())
+        for (Map.Entry<String, ArrayList<String>> unprocessedZvol : unprocessedZvols.entrySet())
         {
             String baseSnapIdentifier = unprocessedZvol.getKey();
-            ArrayList<ZfsInfo> zvols = unprocessedZvol.getValue();
+            ArrayList<String> zvolStrs = unprocessedZvol.getValue();
             @Nullable ZfsInfo baseSnapInfo = infoByIdentifier.get(baseSnapIdentifier);
-            if (baseSnapInfo == null)
+            if (baseSnapInfo != null)
             {
-                StringBuilder errorMsgBuilder = new StringBuilder(baseSnapIdentifier).append(
-                    " not found, but has "
-                );
-                if (zvols.size() == 1)
-                {
-                    errorMsgBuilder.append("a clone");
-                }
-                else
-                {
-                    errorMsgBuilder.append("clones");
-                }
-                errorMsgBuilder.append(":");
-                for (ZfsInfo zvol : zvols)
-                {
-                    errorMsgBuilder.append("\n * ")
-                        .append(zvol.poolName)
-                        .append(File.separator)
-                        .append(zvol.identifier);
-                }
-                throw new StorageException(errorMsgBuilder.toString());
-            }
-            else
-            {
-                baseSnapInfo.clones.addAll(zvols);
+                /*
+                 * If the baseSnapInfo is null it means that we (the clone) are processed while our baseSnap
+                 * is not being processed.
+                 * This is fine. We still needed to use this unprocessed Zvols set since our baseSnap could
+                 * have been later in the output of "zfs list" then we are
+                 */
+                baseSnapInfo.clones.addAll(zvolStrs);
             }
         }
         return infoByIdentifier;
@@ -502,7 +449,7 @@ public class ZfsUtils
         OutputData outputData = ZfsCommands.create(
             extCmd,
             poolName,
-            "LINSTOR_dry_run_" + UUID.randomUUID().toString(),
+            "LINSTOR_dry_run_" + UUID.randomUUID(),
             1,
             true,
             "-n", // dry-run

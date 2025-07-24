@@ -144,15 +144,17 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         throws StorageException
     {
         Set<String> dataSets = getDataSets(vlmDataListRef, snapVlmsRef);
+        Set<String> poolDataSets = getZPoolDataSets(vlmDataListRef, snapVlmsRef);
         return ZfsUtils.getZfsList(
             extCmdFactory,
             dataSets,
+            poolDataSets,
             kind,
             DFLT_ZFS_LIST_WITH_PROPS_SETTER
         );
     }
 
-    private Set<String> getDataSets(List<ZfsData<Resource>> vlmDataListRef, List<ZfsData<Snapshot>> snapVlmsRef)
+    private Set<String> getZPoolDataSets(List<ZfsData<Resource>> vlmDataListRef, List<ZfsData<Snapshot>> snapVlmsRef)
     {
         List<ZfsData<?>> combinedList = new ArrayList<>();
         combinedList.addAll(vlmDataListRef);
@@ -163,6 +165,24 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         {
             dataSets.add(getZPool(data.getStorPool()));
         }
+
+        return dataSets;
+    }
+
+    private Set<String> getDataSets(List<ZfsData<Resource>> vlmDataListRef, List<ZfsData<Snapshot>> snapVlmsRef)
+    {
+
+        Set<String> dataSets = new HashSet<>();
+        for (ZfsData<Resource> data : vlmDataListRef)
+        {
+            dataSets.add(String.format("%s/%s", getZPool(data.getStorPool()), asLvIdentifier(data)));
+        }
+        for (ZfsData<Snapshot> data : snapVlmsRef)
+        {
+            final String snapIdentifier = asSnapLvIdentifierPrivileged(data);
+            dataSets.add(String.format("%s/%s", getZPool(data.getStorPool()), getBaseLvIdentifier(snapIdentifier)));
+            dataSets.add(String.format("%s/%s", getZPool(data.getStorPool()), snapIdentifier));
+        }
         return dataSets;
     }
 
@@ -171,6 +191,18 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         throws AccessDeniedException
     {
         return asSnapLvIdentifier(snapVlmDataRef, false);
+    }
+
+    protected String asSnapLvIdentifierPrivileged(ZfsData<Snapshot> snapVlmDataRef)
+    {
+        try
+        {
+            return asSnapLvIdentifier(snapVlmDataRef, false);
+        }
+        catch (AccessDeniedException ignored)
+        {
+        }
+        return "";
     }
 
     private String asSnapLvIdentifier(ZfsData<Snapshot> snapVlmDataRef, boolean forTakeSnapshotRef)
@@ -550,6 +582,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         {
             HashMap<String, ZfsInfo> zfsList = ZfsUtils.getZfsList(
                 extCmdFactory,
+                Collections.singleton(fullQualifiedIdentifierRef),
                 Collections.singleton(fullQualifiedIdentifierRef),
                 kind,
                 DFLT_ZFS_LIST_WITH_PROPS_SETTER
@@ -1069,18 +1102,21 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         throws StorageException, AccessDeniedException
     {
         Map<ReadOnlyVlmProviderInfo, Long> ret = new HashMap<>();
-        Set<String> zfsDatasets = new HashSet<>();
+        Set<String> dataSets = new HashSet<>();
+        Set<String> poolDataSets = new HashSet<>();
 
         for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
         {
             ReadOnlyStorPool roStorPool = roVlmProvInfo.getReadOnlyStorPool();
-            String zpool = getZPool(roStorPool);
-            zfsDatasets.add(zpool);
+            @Nullable String zpool = getZPool(roStorPool);
+            poolDataSets.add(zpool);
+            dataSets.add(String.format("%s/%s", zpool, roVlmProvInfo.getIdentifier()));
         }
 
         HashMap<String, ZfsInfo> zfsListMap = ZfsUtils.getZfsList(
             extCmdFactory,
-            zfsDatasets,
+            dataSets,
+            poolDataSets,
             kind,
             Collections.emptyMap()
         );

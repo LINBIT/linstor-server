@@ -13,11 +13,13 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.ShellUtils;
 import com.linbit.utils.StringUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Commands
 {
@@ -41,6 +43,7 @@ public class Commands
 
     public static final RetryHandler NO_RETRY = new NoRetryHandler();
     public static final RetryHandler SKIP_EXIT_CODE_CHECK = new SkipExitCodeRetryHandler();
+    public static final int ARGUMENT_LIMIT = 1000;
 
     public static OutputData genericExecutor(
         ExtCmd extCmd,
@@ -125,6 +128,51 @@ public class Commands
         }
 
         return outData;
+    }
+
+    /**
+     * Uses the varArgs collection to do looped execution of the given command and concat all output into a single
+     * OutputData object. This only works well if the output doesn't have any header or footer data.
+     * @param extCmd
+     * @param command
+     * @param varArgs
+     * @param failMsgExitCode
+     * @param failMsgExc
+     * @param allowExitCodes
+     * @return Combined OutputData object of each execution.
+     * @throws StorageException
+     */
+    public static OutputData genericExecutorLimiter(
+        ExtCmd extCmd,
+        String[] command,
+        Collection<String> varArgs,
+        @Nullable String failMsgExitCode,
+        @Nullable String failMsgExc,
+        List<Integer> allowExitCodes
+    )
+        throws StorageException
+    {
+        int loops = (varArgs.size() / ARGUMENT_LIMIT) + 1;
+        ByteArrayOutputStream stdOutData = new ByteArrayOutputStream();
+        ByteArrayOutputStream stdErrData = new ByteArrayOutputStream();
+        for (long i = 0; i < loops; ++i)
+        {
+            String[] curCmd = StringUtils.concat(
+                command,
+                varArgs.stream().skip(ARGUMENT_LIMIT * i).limit(ARGUMENT_LIMIT).collect(Collectors.toList()));
+            OutputData data = genericExecutor(extCmd, curCmd, failMsgExitCode, failMsgExc, NO_RETRY, allowExitCodes);
+
+            try
+            {
+                stdOutData.write(data.stdoutData);
+                stdErrData.write(data.stderrData);
+            }
+            catch (IOException ioExc)
+            {
+                throw new StorageException("Unable to concat extCmd output data: " + ioExc.getMessage());
+            }
+        }
+        return new OutputData(command, stdOutData.toByteArray(), stdErrData.toByteArray(), 0);
     }
 
     public static OutputData wipeFs(
