@@ -392,7 +392,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgIntApplyRsc.newBuilder()
-                .setRsc(rscSerializerHelper.buildIntResource(localResource))
+                .setRsc(rscSerializerHelper.buildIntResource(localResource, true))
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
                 .build()
@@ -492,7 +492,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgIntApplySnapshot.newBuilder()
-                .setSnapshot(snapshotSerializerHelper.buildSnapshotMsg(snapshot))
+                .setSnapshot(snapshotSerializerHelper.buildSnapshotMsg(snapshot, true))
                 .setFullSyncId(fullSyncId)
                 .setUpdateId(updateId)
                 .build()
@@ -577,12 +577,12 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 if (rsc.iterateVolumes().hasNext())
                 {
-                    serializedRscs.add(rscSerializerHelper.buildIntResource(rsc));
+                    serializedRscs.add(rscSerializerHelper.buildIntResource(rsc, false));
                 }
             }
             for (Snapshot snapshot : snapshots)
             {
-                serializedSnapshots.add(snapshotSerializerHelper.buildSnapshotMsg(snapshot));
+                serializedSnapshots.add(snapshotSerializerHelper.buildSnapshotMsg(snapshot, false));
             }
             for (ExternalFile extFile : externalFiles)
             {
@@ -869,7 +869,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setLayerObject(
                     ProtoCommonSerializerBuilder.LayerObjectSerializer.serializeLayerObject(
                         resource.getLayerData(serializerCtx),
-                        serializerCtx
+                        serializerCtx,
+                        true
                     )
                 )
                 .putAllRscProps(resource.getProps(serializerCtx).map());
@@ -902,7 +903,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                     snapName,
                     ProtoCommonSerializerBuilder.LayerObjectSerializer.serializeLayerObject(
                         snap.getLayerData(serializerCtx),
-                        serializerCtx
+                        serializerCtx,
+                        true
                     )
                 );
 
@@ -1107,7 +1109,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgRscFailed.Builder builder = MsgRscFailed.newBuilder()
-                .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, resource))
+                .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, resource, true))
                 .addAllResponses(ProtoCommonSerializerBuilder.serializeApiCallRc(apiCallRc));
 
             builder.putAllSnapStorageLayerObjects(createSnapLayerMap(resource))
@@ -1138,7 +1140,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 snapName,
                 ProtoCommonSerializerBuilder.LayerObjectSerializer.serializeLayerObject(
                     snap.getLayerData(serializerCtx),
-                    serializerCtx
+                    serializerCtx,
+                    true
                 )
             );
         }
@@ -1155,7 +1158,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgSnapshotRollbackResult.newBuilder()
-                .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, rscRef))
+                .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, rscRef, true))
                 .addAllResponses(ProtoCommonSerializerBuilder.serializeApiCallRc(apiCallRcRef))
                 .setSuccess(successRef)
                 .build()
@@ -1672,7 +1675,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     private class ResourceSerializerHelper
     {
-        private IntRsc buildIntResource(Resource localResource)
+        private IntRsc buildIntResource(Resource localResource, boolean includeOptionalFieldsRef)
             throws AccessDeniedException
         {
             List<Resource> otherResources = new ArrayList<>();
@@ -1689,9 +1692,15 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             ResourceDefinition rscDfn = localResource.getResourceDefinition();
 
             return IntRsc.newBuilder()
-                .setLocalRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, localResource))
+                .setLocalRsc(
+                    ProtoCommonSerializerBuilder.serializeResource(
+                        serializerCtx,
+                        localResource,
+                        includeOptionalFieldsRef
+                    )
+                )
                 .setRscDfn(ProtoCommonSerializerBuilder.serializeResourceDefinition(serializerCtx, rscDfn))
-                .addAllOtherResources(buildOtherResources(otherResources))
+                .addAllOtherResources(buildOtherResources(otherResources, includeOptionalFieldsRef))
                 .addAllRscConnections(
                     ProtoCommonSerializerBuilder.serializeResourceConnections(
                         serializerCtx,
@@ -1701,7 +1710,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .build();
         }
 
-        private List<IntOtherRsc> buildOtherResources(List<Resource> otherResources)
+        private List<IntOtherRsc> buildOtherResources(List<Resource> otherResources, boolean includeOptionalFieldsRef)
             throws AccessDeniedException
         {
             List<IntOtherRsc> list = new ArrayList<>();
@@ -1713,10 +1722,13 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setNode(
                             ProtoCommonSerializerBuilder.serializeNode(
                                 serializerCtx,
-                                rsc.getNode()
+                                rsc.getNode(),
+                                includeOptionalFieldsRef
                             )
                         )
-                        .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, rsc))
+                        .setRsc(
+                            ProtoCommonSerializerBuilder.serializeResource(serializerCtx, rsc, includeOptionalFieldsRef)
+                        )
                         .build()
                 );
             }
@@ -1727,7 +1739,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     private class SnapshotSerializerHelper
     {
-        private IntSnapshot buildSnapshotMsg(Snapshot snapshot)
+        private IntSnapshot buildSnapshotMsg(Snapshot snapshot, boolean includeOptionalFieldsRef)
             throws AccessDeniedException
         {
             SnapshotDefinition snapshotDfn = snapshot.getSnapshotDefinition();
@@ -1793,7 +1805,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setTakeSnapshot(snapshot.getTakeSnapshot(serializerCtx))
                 .setLayerObject(
                     LayerObjectSerializer.serializeLayerObject(
-                        snapshot.getApiData(serializerCtx, null, null).getLayerData()
+                        snapshot.getApiData(serializerCtx, null, null).getLayerData(),
+                        includeOptionalFieldsRef
                     )
                 )
                 .build();

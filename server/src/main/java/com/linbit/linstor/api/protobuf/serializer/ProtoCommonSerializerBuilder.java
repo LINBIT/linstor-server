@@ -1044,23 +1044,28 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
     public static NodeOuterClass.Node serializeNode(
         AccessContext accCtx,
-        Node node
+        Node node,
+        boolean includeOptionalFieldsRef
     )
         throws AccessDeniedException
     {
         Map<String, String> nodeProps = node.getProps(accCtx).map();
-        return NodeOuterClass.Node.newBuilder()
+        NodeOuterClass.Node.Builder nodeBuilder = NodeOuterClass.Node.newBuilder()
             .setUuid(node.getUuid().toString())
             .setName(node.getName().displayValue)
-            .setType(node.getNodeType(accCtx).name())
-            .putAllProps(nodeProps)
-            .addAllNetInterfaces(
-                serializeNetInterfaces(
-                    accCtx,
-                    node.streamNetInterfaces(accCtx).collect(Collectors.toList())
-                )
-            )
-            .build();
+            .setType(node.getNodeType(accCtx).name());
+        if (includeOptionalFieldsRef)
+        {
+            nodeBuilder
+                .putAllProps(nodeProps)
+                .addAllNetInterfaces(
+                    serializeNetInterfaces(
+                        accCtx,
+                        node.streamNetInterfaces(accCtx).collect(Collectors.toList())
+                    )
+                );
+        }
+        return nodeBuilder.build();
     }
 
     public static List<NetInterfaceOuterClass.NetInterface> serializeNetInterfaces(
@@ -1239,7 +1244,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
     public static RscOuterClass.Rsc serializeResource(
         AccessContext accCtx,
-        Resource rsc
+        Resource rsc,
+        boolean includeOptionalFielsRef
     )
         throws AccessDeniedException
     {
@@ -1252,12 +1258,15 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .putAllProps(rsc.getProps(accCtx).map())
             .addAllRscFlags(Resource.Flags.toStringList(rsc.getStateFlags().getFlagsBits(accCtx)))
             .addAllVlms(serializeVolumeList(accCtx, rsc.streamVolumes().collect(Collectors.toList())))
-            .setLayerObject(LayerObjectSerializer.serializeLayerObject(rsc.getLayerData(accCtx), accCtx))
+            .setLayerObject(
+                LayerObjectSerializer.serializeLayerObject(rsc.getLayerData(accCtx), accCtx, includeOptionalFielsRef)
+            )
             .build();
     }
 
     public static RscOuterClass.Rsc serializeResource(
-        ResourceApi rscApi
+        ResourceApi rscApi,
+        boolean includeOptionalFielsRef
     )
     {
         return RscOuterClass.Rsc.newBuilder()
@@ -1274,7 +1283,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 )
             )
             .addAllVlms(serializeVolumeList(rscApi.getVlmList()))
-            .setLayerObject(LayerObjectSerializer.serializeLayerObject(rscApi.getLayerData()))
+            .setLayerObject(LayerObjectSerializer.serializeLayerObject(rscApi.getLayerData(), includeOptionalFielsRef))
             .build();
     }
 
@@ -1418,7 +1427,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     public static StorPoolOuterClass.StorPool serializeStorPool(
-        final StorPoolApi apiStorPool
+        final StorPoolApi apiStorPool,
+        final boolean includeOptionalFieldsRef
     )
     {
         StorPoolOuterClass.StorPool.Builder storPoolBld = StorPoolOuterClass.StorPool.newBuilder()
@@ -1428,25 +1438,29 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNodeUuid(apiStorPool.getNodeUuid().toString())
             .setStorPoolDfnUuid(apiStorPool.getStorPoolDfnUuid().toString())
             .setProviderKind(asProviderType(apiStorPool.getDeviceProviderKind()))
-            .putAllProps(apiStorPool.getStorPoolProps())
-            .putAllStorPoolDfnProps(apiStorPool.getStorPoolDfnProps())
-            .putAllStaticTraits(apiStorPool.getStorPoolStaticTraits())
             .setFreeSpaceMgrName(apiStorPool.getFreeSpaceManagerName())
-            .setIsPmem(apiStorPool.isPmem())
-            .setIsVdo(apiStorPool.isVDO())
             .setOversubscriptionRatio(apiStorPool.getOversubscriptionRatio())
             .setIsExternalLocking(apiStorPool.isExternalLocking());
-        if (apiStorPool.getFreeCapacity().isPresent())
+
+        if (includeOptionalFieldsRef)
         {
-            storPoolBld.setFreeSpace(
-                StorPoolFreeSpace.newBuilder()
-                    .setStorPoolName(apiStorPool.getStorPoolName())
-                    .setStorPoolUuid(apiStorPool.getStorPoolUuid().toString())
-                    .setFreeCapacity(apiStorPool.getFreeCapacity().get())
-                    .setTotalCapacity(apiStorPool.getTotalCapacity().get()
-                )
-                .build()
-            );
+            storPoolBld
+                .putAllProps(apiStorPool.getStorPoolProps())
+                .putAllStorPoolDfnProps(apiStorPool.getStorPoolDfnProps())
+                .putAllStaticTraits(apiStorPool.getStorPoolStaticTraits())
+                .setIsPmem(apiStorPool.isPmem())
+                .setIsVdo(apiStorPool.isVDO());
+            if (apiStorPool.getFreeCapacity().isPresent())
+            {
+                storPoolBld.setFreeSpace(
+                    StorPoolFreeSpace.newBuilder()
+                        .setStorPoolName(apiStorPool.getStorPoolName())
+                        .setStorPoolUuid(apiStorPool.getStorPoolUuid().toString())
+                        .setFreeCapacity(apiStorPool.getFreeCapacity().get())
+                        .setTotalCapacity(apiStorPool.getTotalCapacity().get())
+                        .build()
+                );
+            }
         }
 
         return storPoolBld.build();
@@ -1758,15 +1772,17 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
         public static RscLayerDataOuterClass.RscLayerData serializeLayerObject(
             AbsRscLayerObject<?> layerData,
-            AccessContext accCtx
+            AccessContext accCtx,
+            boolean includeOptionalFieldsRef
         )
             throws AccessDeniedException
         {
-            return serializeLayerObject(layerData.asPojo(accCtx));
+            return serializeLayerObject(layerData.asPojo(accCtx), includeOptionalFieldsRef);
         }
 
         public static RscLayerDataOuterClass.RscLayerData serializeLayerObject(
-            RscLayerDataApi rscLayerPojo
+            RscLayerDataApi rscLayerPojo,
+            boolean includeOptionalFieldsRef
         )
         {
             RscLayerData.Builder builder = RscLayerData.newBuilder();
@@ -1774,7 +1790,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             List<RscLayerData> serializedChildren = new ArrayList<>();
             for (RscLayerDataApi childRscObj : rscLayerPojo.getChildren())
             {
-                serializedChildren.add(serializeLayerObject(childRscObj));
+                serializedChildren.add(serializeLayerObject(childRscObj, includeOptionalFieldsRef));
             }
             builder
                 .setId(rscLayerPojo.getId())
@@ -1789,7 +1805,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     builder.setLuks(buildLuksRscData((LuksRscPojo) rscLayerPojo));
                     break;
                 case STORAGE:
-                    builder.setStorage(buildStorageRscData((StorageRscPojo) rscLayerPojo));
+                    builder.setStorage(buildStorageRscData((StorageRscPojo) rscLayerPojo, includeOptionalFieldsRef));
                     break;
                 case NVME:
                     builder.setNvme(buildNvmeRscData((NvmeRscPojo) rscLayerPojo));
@@ -2004,12 +2020,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .build();
         }
 
-        private static StorageRsc buildStorageRscData(StorageRscPojo rscLayerPojoRef)
+        private static StorageRsc buildStorageRscData(StorageRscPojo rscLayerPojoRef, boolean includeOptionalFieldsRef)
         {
             List<StorageVlm> storageVlms = new ArrayList<>();
             for (VlmLayerDataApi vlmPojo : rscLayerPojoRef.getVolumeList())
             {
-                StorageVlm storageVlm = buildStorageVlm(vlmPojo);
+                StorageVlm storageVlm = buildStorageVlm(vlmPojo, includeOptionalFieldsRef);
                 storageVlms.add(storageVlm);
             }
             return StorageRsc.newBuilder()
@@ -2017,7 +2033,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .build();
         }
 
-        private static StorageVlm buildStorageVlm(VlmLayerDataApi vlmPojo) throws ImplementationError
+        private static StorageVlm buildStorageVlm(VlmLayerDataApi vlmPojo, boolean inludeOptionalFieldsRef)
+            throws ImplementationError
         {
             StorageVlm.Builder builder = StorageVlm.newBuilder()
                 .setVlmNr(vlmPojo.getVlmNr())
@@ -2025,7 +2042,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setUsableSize(vlmPojo.getUsableSize())
                 .setDiscGran(vlmPojo.getDiscGran())
                 .setExists(vlmPojo.exists())
-                .setStoragePool(serializeStorPool(vlmPojo.getStorPoolApi()));
+                .setStoragePool(serializeStorPool(vlmPojo.getStorPoolApi(), inludeOptionalFieldsRef));
             if (vlmPojo.getDevicePath() != null)
             {
                 builder.setDevicePath(vlmPojo.getDevicePath());
