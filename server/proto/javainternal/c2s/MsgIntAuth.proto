@@ -2,14 +2,16 @@ syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.c2s;
 
+import "common/ids/Uuid.proto";
+
 // Internal message containing the satellite's node and a (maybe encrypted) shared secret
 message MsgIntAuth
 {
     // Satellite's node uuid
-    string node_uuid     = 1;
+    common.ids.Uuid node_uuid     = 1;
     // Satellite's node name
-    string node_name     = 2;
-    bytes  shared_secret = 3;
+    string          node_name     = 2;
+    bytes           shared_secret = 3;
     // Controller's uuid
-    string ctrl_uuid     = 4;
+    common.ids.Uuid ctrl_uuid     = 4;
 }

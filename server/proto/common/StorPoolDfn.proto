@@ -2,10 +2,12 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
+import "common/ids/Uuid.proto";
+
 // Storage pool definition
 message StorPoolDfn
 {
-    optional string uuid = 1;
+    optional common.ids.Uuid uuid = 1;
     required string stor_pool_name = 2;
     map<string, string> props = 3;
 }

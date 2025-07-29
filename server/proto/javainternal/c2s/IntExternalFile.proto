@@ -2,12 +2,14 @@ syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.c2s;
 
+import "common/ids/Uuid.proto";
+
 // Internal message containing a external file
 message IntExternalFile
 {
-    string  uuid = 1;
-    string  name = 2;
-    sint64  flags = 3;
-    bytes   content_checksum = 4;
-    bytes   content = 5;            // optional, only included if requested by satellite
+    common.ids.Uuid uuid = 1;
+    string          name = 2;
+    sint64          flags = 3;
+    bytes           content_checksum = 4;
+    bytes           content = 5;            // optional, only included if requested by satellite
 }

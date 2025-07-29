@@ -44,7 +44,7 @@ public class ChangedExternalFile implements ApiCallReactive
     {
         IntObjectId nodeId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String extFileStr = nodeId.getName();
-        UUID extFileUuid = UUID.fromString(nodeId.getUuid());
+        UUID extFileUuid = ProtoUuidUtils.deserialize(nodeId.getUuid());
 
         ExternalFileName extFileName;
         try

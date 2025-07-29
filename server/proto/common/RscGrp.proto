@@ -3,11 +3,12 @@ syntax = "proto2";
 package com.linbit.linstor.proto.common;
 
 import "common/VlmGrp.proto";
+import "common/ids/Uuid.proto";
 
 // Content of a resource group. Used in both, request and response messages
 message RscGrp
 {
-    optional string uuid = 1;
+    optional common.ids.Uuid uuid = 1;
     required string name = 2;
 
     optional string description = 3;

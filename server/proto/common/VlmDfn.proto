@@ -5,11 +5,12 @@ package com.linbit.linstor.proto.common;
 import "common/DrbdRsc.proto";
 import "common/StorageRsc.proto";
 import "common/LayerType.proto";
+import "common/ids/Uuid.proto";
 
 // Volume definition
 message VlmDfn
 {
-    optional string vlm_dfn_uuid = 1;
+    optional common.ids.Uuid vlm_dfn_uuid = 1;
 
     // null for automatic assignment
     optional sint32 vlm_nr = 2;

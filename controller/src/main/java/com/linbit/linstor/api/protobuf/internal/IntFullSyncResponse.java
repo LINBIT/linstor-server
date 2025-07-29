@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -33,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
@@ -106,7 +106,7 @@ public class IntFullSyncResponse implements ApiCallReactive
             {
                 capacityInfoPojoList.add(
                     new CapacityInfoPojo(
-                        UUID.fromString(protoFreeSpace.getStorPoolUuid()),
+                        ProtoUuidUtils.deserialize(protoFreeSpace.getStorPoolUuid()),
                         protoFreeSpace.getStorPoolName(),
                         protoFreeSpace.getFreeCapacity(),
                         protoFreeSpace.getTotalCapacity(),

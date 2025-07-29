@@ -3,11 +3,12 @@ syntax = "proto2";
 package com.linbit.linstor.proto.common;
 
 import "common/ApiCallResponse.proto";
+import "common/ids/Uuid.proto";
 
 // Free space of a storage pool
 message StorPoolFreeSpace
 {
-    required string  stor_pool_uuid  = 1;
+    required common.ids.Uuid stor_pool_uuid  = 1;
     required string  stor_pool_name  = 2;
     required uint64  free_capacity   = 3;
     required uint64  total_capacity  = 4;

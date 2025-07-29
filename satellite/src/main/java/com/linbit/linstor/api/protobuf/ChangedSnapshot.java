@@ -46,7 +46,7 @@ public class ChangedSnapshot implements ApiCallReactive
         IntObjectId rscId = IntObjectId.parseDelimitedFrom(msgDataIn);
         IntObjectId snapshotId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String rscNameStr = rscId.getName();
-        UUID snapshotUuid = UUID.fromString(snapshotId.getUuid());
+        UUID snapshotUuid = ProtoUuidUtils.deserialize(snapshotId.getUuid());
         String snapshotNameStr = snapshotId.getName();
 
         ResourceName rscName;

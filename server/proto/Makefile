@@ -1,6 +1,6 @@
 # protobuf
-COMMONSRC=$(wildcard ./*.proto)  $(wildcard ./common/*.proto) $(wildcard ./eventdata/*.proto)  $(wildcard ./requests/*.proto) $(wildcard ./responses/*.proto)
-JAVASRC=$(wildcard ./javainternal/*.proto) $(wildcard ./javainternal/c2s/*.proto) $(wildcard ./javainternal/s2c/*.proto)
+COMMONSRC=$(wildcard ./*.proto) $(shell find ./{common,eventdata,requests,responses} -type f -name "*.proto" )
+JAVASRC=$(shell find ./{javainternal,misc} -type f -name "*.proto" )
 COMMONNOEND=$(COMMONSRC:.proto=)
 JAVANOEND=$(COMMONNOEND) $(JAVASRC:.proto=)
 JAVABASEOUT=../generated-src

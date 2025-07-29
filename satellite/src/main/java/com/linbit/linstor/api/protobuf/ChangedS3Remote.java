@@ -44,7 +44,7 @@ public class ChangedS3Remote implements ApiCallReactive
     {
         IntObjectId remoteId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String remoteStr = remoteId.getName();
-        UUID remoteUuid = UUID.fromString(remoteId.getUuid());
+        UUID remoteUuid = ProtoUuidUtils.deserialize(remoteId.getUuid());
 
         RemoteName remoteName;
         try

@@ -19,7 +19,6 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
 import java.util.function.Function;
 
 import reactor.core.publisher.Flux;
@@ -61,7 +60,7 @@ public class ChangedData implements ApiCallReactive
             for (MsgIntChangedDataOuterClass.ChangedResource protoRsc : protoData.getRscsList())
             {
                 atomicUpdateHolder.putRsc(
-                    UUID.fromString(protoRsc.getUuid()),
+                    ProtoUuidUtils.deserialize(protoRsc.getUuid()),
                     localNodeName,
                     new ResourceName(protoRsc.getName())
                 );
@@ -69,7 +68,7 @@ public class ChangedData implements ApiCallReactive
             for (MsgIntChangedDataOuterClass.ChangedSnapshot protoSnap : protoData.getSnapsList())
             {
                 atomicUpdateHolder.putSnap(
-                    UUID.fromString(protoSnap.getUuid()),
+                    ProtoUuidUtils.deserialize(protoSnap.getUuid()),
                     new ResourceName(protoSnap.getRscName()),
                     new SnapshotName(protoSnap.getSnapName())
                 );

@@ -4,15 +4,16 @@ package com.linbit.linstor.proto.common;
 
 import "common/RscLayerData.proto";
 import "common/Vlm.proto";
+import "common/ids/Uuid.proto";
 
 // Resource
 message Rsc
 {
-    optional string uuid = 1;
+    optional common.ids.Uuid uuid = 1;
     required string name = 2;
-    optional string node_uuid = 3;
+    optional common.ids.Uuid node_uuid = 3;
     required string node_name = 4;
-    optional string rsc_dfn_uuid = 5;
+    optional common.ids.Uuid rsc_dfn_uuid = 5;
     map<string, string> props = 6;
     repeated string rsc_flags = 7;
     repeated Vlm vlms = 8;

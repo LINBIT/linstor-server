@@ -4,12 +4,13 @@ package com.linbit.linstor.proto.javainternal.c2s;
 
 import "common/RscLayerData.proto";
 import "common/RscGrp.proto";
+import "common/ids/Uuid.proto";
 
 // Internal message containing an in-progress snapshot
 message IntSnapshot
 {
     string                            rsc_name          = 1;
-    string                            rsc_dfn_uuid      = 2;
+    common.ids.Uuid                   rsc_dfn_uuid      = 2;
     sint32                            rsc_dfn_port      = 3;
     sint64                            rsc_dfn_flags     = 4;
     string                            rsc_dfn_secret    = 5;
@@ -17,8 +18,8 @@ message IntSnapshot
     map<string, string>               rsc_dfn_props     = 7;
     bool                              rsc_dfn_down      = 19;
     string                            snapshot_name     = 8;
-    string                            snapshot_dfn_uuid = 9;
-    string                            snapshot_uuid     = 10;
+    common.ids.Uuid                   snapshot_dfn_uuid = 9;
+    common.ids.Uuid                   snapshot_uuid     = 10;
     repeated SnapshotVlmDfn           snapshot_vlm_dfns = 11;
     sint64                            snapshot_dfn_flags = 12;
     map<string, string>               snapshot_dfn_props = 20;
@@ -38,10 +39,10 @@ message IntSnapshot
 
 message SnapshotVlmDfn
 {
-    string snapshot_vlm_dfn_uuid = 1;
-    sint32 vlm_nr = 2;
-    int64 vlm_size = 3;
-    sint64 flags = 4;
+    common.ids.Uuid     snapshot_vlm_dfn_uuid = 1;
+    sint32              vlm_nr = 2;
+    int64               vlm_size = 3;
+    sint64              flags = 4;
     map<string, string> snapshot_vlm_dfn_props = 5;
     map<string, string> vlm_dfn_props = 6;
 
@@ -50,12 +51,12 @@ message SnapshotVlmDfn
 
 message SnapshotVlm
 {
-    string snapshot_vlm_uuid = 1;
-    string snapshot_vlm_dfn_uuid = 2;
-    sint32 vlm_nr = 3;
+    common.ids.Uuid     snapshot_vlm_uuid = 1;
+    common.ids.Uuid     snapshot_vlm_dfn_uuid = 2;
+    sint32              vlm_nr = 3;
     map<string, string> snapshot_vlm_props = 5;
     map<string, string> vlm_props = 7;
-    string state = 6;
+    string              state = 6;
 
     // next id: 8
 }

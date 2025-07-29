@@ -2,6 +2,7 @@ package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.NodeInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
@@ -9,9 +10,9 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyNodeSuccessOuterClas
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_NOTIFY_NODE_APPLIED,
@@ -37,6 +38,9 @@ public class NotifyNodeApplied implements ApiCall
     {
         IntObjectId intObjectId = MsgIntApplyNodeSuccess.parseDelimitedFrom(msgDataIn).getNodeId();
 
-        nodeInternalCallHandler.handleNodeRequest(UUID.fromString(intObjectId.getUuid()), intObjectId.getName());
+        nodeInternalCallHandler.handleNodeRequest(
+            ProtoUuidUtils.deserialize(intObjectId.getUuid()),
+            intObjectId.getName()
+        );
     }
 }

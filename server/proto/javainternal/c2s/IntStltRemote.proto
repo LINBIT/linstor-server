@@ -2,10 +2,12 @@ syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.c2s;
 
+import "common/ids/Uuid.proto";
+
 // Internal message containing a satellite remote
 message IntStltRemote
 {
-    string               uuid = 1;
+    common.ids.Uuid      uuid = 1;
     string               name = 2;
     sint64               flags = 3;
     string               target_ip = 4;

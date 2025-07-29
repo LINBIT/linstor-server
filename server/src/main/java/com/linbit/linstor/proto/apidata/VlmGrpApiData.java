@@ -1,6 +1,7 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass;
@@ -42,7 +43,7 @@ public class VlmGrpApiData implements VolumeGroupApi
         UUID uuid = null;
         if (vlmGrp.hasUuid())
         {
-            uuid = UUID.fromString(vlmGrp.getUuid());
+            uuid = ProtoUuidUtils.deserialize(vlmGrp.getUuid());
         }
         return uuid;
     }

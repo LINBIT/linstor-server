@@ -44,7 +44,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
@@ -291,11 +290,11 @@ public class ProtoDeserializationUtils
     public static StorPoolApi parseStorPool(StorPoolOuterClass.StorPool storPoolProto, long fullSyncId, long updateId)
     {
         return new StorPoolPojo(
-            UUID.fromString(storPoolProto.getStorPoolUuid()),
-            UUID.fromString(storPoolProto.getNodeUuid()),
+            ProtoUuidUtils.deserialize(storPoolProto.getStorPoolUuid()),
+            ProtoUuidUtils.deserialize(storPoolProto.getNodeUuid()),
             storPoolProto.getNodeName(),
             storPoolProto.getStorPoolName(),
-            UUID.fromString(storPoolProto.getStorPoolDfnUuid()),
+            ProtoUuidUtils.deserialize(storPoolProto.getStorPoolDfnUuid()),
             parseDeviceProviderKind(storPoolProto.getProviderKind()),
             storPoolProto.getPropsMap(),
             storPoolProto.getStorPoolDfnPropsMap(),
@@ -331,7 +330,7 @@ public class ProtoDeserializationUtils
     public static RscGrpPojo parseRscGrp(RscGrp rscGrpProto)
     {
         return new RscGrpPojo(
-            UUID.fromString(rscGrpProto.getUuid()),
+            ProtoUuidUtils.deserialize(rscGrpProto.getUuid()),
             rscGrpProto.getName(),
             rscGrpProto.getDescription(),
             rscGrpProto.getRscDfnPropsMap(),
@@ -355,7 +354,7 @@ public class ProtoDeserializationUtils
     public static VlmGrpPojo parseVlmGrp(VlmGrp vlmGrpProto)
     {
         return new VlmGrpPojo(
-            UUID.fromString(vlmGrpProto.getUuid()),
+            ProtoUuidUtils.deserialize(vlmGrpProto.getUuid()),
             vlmGrpProto.getVlmNr(),
             vlmGrpProto.getVlmDfnPropsMap(),
             FlagsHelper.fromStringList(VolumeGroup.Flags.class, vlmGrpProto.getFlagsList())

@@ -3,6 +3,7 @@ package com.linbit.linstor.proto.apidata;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
@@ -50,7 +51,7 @@ public class VlmDfnApiData implements VolumeDefinitionApi
     @Override
     public UUID getUuid()
     {
-        return UUID.fromString(vlmDfn.getVlmDfnUuid());
+        return ProtoUuidUtils.deserialize(vlmDfn.getVlmDfnUuid());
     }
 
     @Override

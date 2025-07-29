@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_APPLY_STOR_POOL,
@@ -66,11 +65,11 @@ public class ApplyStorPool implements ApiCall
         StorPoolDfnOuterClass.StorPoolDfn protoStorPoolDfn = intStorPool.getStorPoolDfn();
 
         return new StorPoolPojo(
-            UUID.fromString(protoStorPool.getStorPoolUuid()),
-            UUID.fromString(protoStorPool.getNodeUuid()),
+            ProtoUuidUtils.deserialize(protoStorPool.getStorPoolUuid()),
+            ProtoUuidUtils.deserialize(protoStorPool.getNodeUuid()),
             nodeName,
             protoStorPool.getStorPoolName(),
-            UUID.fromString(protoStorPool.getStorPoolDfnUuid()),
+            ProtoUuidUtils.deserialize(protoStorPool.getStorPoolDfnUuid()),
             ProtoDeserializationUtils.parseDeviceProviderKind(protoStorPool.getProviderKind()),
             protoStorPool.getPropsMap(),
             protoStorPoolDfn.getPropsMap(),

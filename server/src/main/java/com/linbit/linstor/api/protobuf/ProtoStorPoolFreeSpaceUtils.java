@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 
 public class ProtoStorPoolFreeSpaceUtils
 {
@@ -24,7 +23,7 @@ public class ProtoStorPoolFreeSpaceUtils
             StorPoolInfo storPoolInfo = entry.getKey();
             list.add(
                 StorPoolFreeSpace.newBuilder()
-                    .setStorPoolUuid(storPoolInfo.getUuid().toString())
+                    .setStorPoolUuid(ProtoUuidUtils.serialize(storPoolInfo.getUuid()))
                     .setStorPoolName(storPoolInfo.getName().displayValue)
                     .setFreeCapacity(entry.getValue().freeCapacity)
                     .setTotalCapacity(entry.getValue().totalCapacity)
@@ -41,7 +40,7 @@ public class ProtoStorPoolFreeSpaceUtils
         {
             list.add(
                 new CapacityInfoPojo(
-                    UUID.fromString(protoFreeSpace.getStorPoolUuid()),
+                    ProtoUuidUtils.deserialize(protoFreeSpace.getStorPoolUuid()),
                     protoFreeSpace.getStorPoolName(),
                     protoFreeSpace.getFreeCapacity(),
                     protoFreeSpace.getTotalCapacity(),

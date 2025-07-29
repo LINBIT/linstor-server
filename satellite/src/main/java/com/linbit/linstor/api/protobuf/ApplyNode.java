@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_APPLY_NODE,
@@ -53,7 +52,7 @@ public class ApplyNode implements ApiCall
     static NodePojo asNodePojo(IntNode nodeMsg, long fullSyncId, long updateId)
     {
         return new NodePojo(
-            UUID.fromString(nodeMsg.getUuid()),
+            ProtoUuidUtils.deserialize(nodeMsg.getUuid()),
             nodeMsg.getName(),
             nodeMsg.getType(),
             nodeMsg.getFlags(),
@@ -86,7 +85,7 @@ public class ApplyNode implements ApiCall
         {
             netIfs.add(
                 new NetInterfacePojo(
-                    UUID.fromString(netIf.getUuid()),
+                    ProtoUuidUtils.deserialize(netIf.getUuid()),
                     netIf.getName(),
                     netIf.getAddr(),
                     netIf.getStltConnPort(),
@@ -109,7 +108,7 @@ public class ApplyNode implements ApiCall
         {
             nodeConns.add(
                 new NodeConnPojo(
-                    UUID.fromString(nodeConn.getUuid()),
+                    ProtoUuidUtils.deserialize(nodeConn.getUuid()),
                     localNodeNameRef,
                     asNodePojo(nodeConn.getOtherNode(), fullSyncId, updateId),
                     nodeConn.getPropsMap()

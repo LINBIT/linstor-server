@@ -1,20 +1,20 @@
 package com.linbit.linstor.api.protobuf.internal;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_NOTIFY_STOR_POOL_APPLIED,
@@ -46,7 +46,7 @@ public class NotifyStorPoolApplied implements ApiCall
             storPoolName,
             supportsSnapshots,
             new CapacityInfoPojo(
-                UUID.fromString(protoFreeSpace.getStorPoolUuid()),
+                ProtoUuidUtils.deserialize(protoFreeSpace.getStorPoolUuid()),
                 protoFreeSpace.getStorPoolName(),
                 protoFreeSpace.getFreeCapacity(),
                 protoFreeSpace.getTotalCapacity(),

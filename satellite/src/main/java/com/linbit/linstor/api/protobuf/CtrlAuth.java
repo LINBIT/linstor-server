@@ -75,13 +75,13 @@ public class CtrlAuth implements ApiCall
         // TODO: implement authentication
         MsgIntAuth auth = MsgIntAuth.parseDelimitedFrom(msgDataIn);
         String nodeName = auth.getNodeName();
-        UUID nodeUuid = UUID.fromString(auth.getNodeUuid());
+        UUID nodeUuid = ProtoUuidUtils.deserialize(auth.getNodeUuid());
 
         Peer controllerPeer = controllerPeerProvider.get();
         UUID ctrlUuid = null;
-        if (auth.getCtrlUuid() != null && !auth.getCtrlUuid().isBlank())
+        if (auth.getCtrlUuid() != null)
         {
-            ctrlUuid = UUID.fromString(auth.getCtrlUuid());
+            ctrlUuid = ProtoUuidUtils.deserialize(auth.getCtrlUuid());
         }
         if (ctrlUuid == null)
         {

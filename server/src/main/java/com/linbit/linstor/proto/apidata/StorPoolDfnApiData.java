@@ -1,6 +1,7 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 
@@ -26,7 +27,7 @@ public class StorPoolDfnApiData implements StorPoolDefinitionApi
         UUID uuid = null;
         if (storPoolDfn.hasUuid())
         {
-            uuid = UUID.fromString(storPoolDfn.getUuid());
+            uuid = ProtoUuidUtils.deserialize(storPoolDfn.getUuid());
         }
         return uuid;
     }

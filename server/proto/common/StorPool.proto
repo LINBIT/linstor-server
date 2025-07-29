@@ -4,14 +4,15 @@ package com.linbit.linstor.proto.common;
 
 import "common/StorPoolFreeSpace.proto";
 import "common/ProviderType.proto";
+import "common/ids/Uuid.proto";
 
 // Storage Pool
 message StorPool
 {
-    optional string stor_pool_uuid = 1;
-    optional string node_uuid = 2;
+    optional common.ids.Uuid stor_pool_uuid = 1;
+    optional common.ids.Uuid node_uuid = 2;
     required string node_name = 3;
-    optional string stor_pool_dfn_uuid = 4;
+    optional common.ids.Uuid stor_pool_dfn_uuid = 4;
     required string stor_pool_name = 5;
     required ProviderType provider_kind = 6;
     map<string, string> props = 7;

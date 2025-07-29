@@ -5,6 +5,7 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
@@ -41,7 +42,7 @@ public class RscDfnApiData implements ResourceDefinitionApi
         UUID uuid = null;
         if (rscDfn.hasRscDfnUuid())
         {
-            uuid = UUID.fromString(rscDfn.getRscDfnUuid());
+            uuid = ProtoUuidUtils.deserialize(rscDfn.getRscDfnUuid());
         }
         return uuid;
     }

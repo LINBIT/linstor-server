@@ -2,15 +2,17 @@ syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.c2s;
 
+import "common/ids/Uuid.proto";
+
 // Internal message containing a s3 remote
 message IntS3Remote
 {
-    string  uuid = 1;
-    string  name = 2;
-    sint64  flags = 3;
-    string  endpoint = 4;
-    string  bucket = 5;
-    string  region = 6;
-    bytes   access_key = 7;
-    bytes   secret_key = 8;
+    common.ids.Uuid uuid = 1;
+    string          name = 2;
+    sint64          flags = 3;
+    string          endpoint = 4;
+    string          bucket = 5;
+    string          region = 6;
+    bytes           access_key = 7;
+    bytes           secret_key = 8;
 }

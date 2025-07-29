@@ -44,7 +44,7 @@ public class ChangedStorPool implements ApiCallReactive
     {
         IntObjectId storPoolId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String storPoolNameStr = storPoolId.getName();
-        UUID storPoolUuid = UUID.fromString(storPoolId.getUuid());
+        UUID storPoolUuid = ProtoUuidUtils.deserialize(storPoolId.getUuid());
 
         StorPoolName storPoolName;
         try

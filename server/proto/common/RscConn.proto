@@ -2,15 +2,17 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
+import "common/ids/Uuid.proto";
+
 // Resource connection
 message RscConn
 {
-    optional string rsc_conn_uuid = 1;
+    optional common.ids.Uuid rsc_conn_uuid = 1;
     required string node_name_1 = 2;
     required string node_name_2 = 3;
     required string rsc_name = 4;
-    optional string rsc_1_uuid = 5;
-    optional string rsc_2_uuid = 6;
+    optional common.ids.Uuid rsc_1_uuid = 5;
+    optional common.ids.Uuid rsc_2_uuid = 6;
     map<string, string> rsc_conn_props = 7;
     repeated string rsc_conn_flags = 8;
     optional sint32 drbd_proxy_port_source = 9;

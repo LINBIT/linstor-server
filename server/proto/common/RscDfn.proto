@@ -6,11 +6,12 @@ import "common/RscGrp.proto";
 import "common/VlmDfn.proto";
 import "common/DrbdRsc.proto";
 import "common/LayerType.proto";
+import "common/ids/Uuid.proto";
 
 // Resource definition
 message RscDfn
 {
-    optional string rsc_dfn_uuid = 1;
+    optional common.ids.Uuid rsc_dfn_uuid = 1;
     // "" if creating with external_name
     required string rsc_name = 2;
     repeated string rsc_dfn_flags = 5;

@@ -4,6 +4,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.EffectivePropertiesPojo;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.Resource;
@@ -38,7 +39,7 @@ public class RscApiData implements ResourceApi
     @Override
     public @Nullable UUID getUuid()
     {
-        return rsc.hasUuid() ? UUID.fromString(rsc.getUuid()) : null;
+        return rsc.hasUuid() ? ProtoUuidUtils.deserialize(rsc.getUuid()) : null;
     }
 
     @Override
@@ -50,7 +51,7 @@ public class RscApiData implements ResourceApi
     @Override
     public @Nullable UUID getNodeUuid()
     {
-        return rsc.hasNodeUuid() ? UUID.fromString(rsc.getNodeUuid()) : null;
+        return rsc.hasNodeUuid() ? ProtoUuidUtils.deserialize(rsc.getNodeUuid()) : null;
     }
 
     @Override
@@ -62,7 +63,7 @@ public class RscApiData implements ResourceApi
     @Override
     public @Nullable UUID getRscDfnUuid()
     {
-        return rsc.hasRscDfnUuid() ? UUID.fromString(rsc.getRscDfnUuid()) : null;
+        return rsc.hasRscDfnUuid() ? ProtoUuidUtils.deserialize(rsc.getRscDfnUuid()) : null;
     }
 
     @Override

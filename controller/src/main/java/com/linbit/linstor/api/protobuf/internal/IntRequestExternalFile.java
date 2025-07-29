@@ -2,6 +2,7 @@ package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.ExternalFileInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
@@ -34,7 +35,7 @@ public class IntRequestExternalFile implements ApiCall
         throws IOException
     {
         IntObjectId extFileId = IntObjectId.parseDelimitedFrom(msgDataIn);
-        UUID extFileUuid = UUID.fromString(extFileId.getUuid());
+        UUID extFileUuid = ProtoUuidUtils.deserialize(extFileId.getUuid());
         String extFileNameStr = extFileId.getName();
 
         externalFilesInternalCallHandler.handleExternalFileRequest(extFileUuid, extFileNameStr);

@@ -48,7 +48,7 @@ public class ChangedRsc implements ApiCallReactive
     {
         IntObjectId rscId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String rscNameStr = rscId.getName();
-        UUID rscUuid = UUID.fromString(rscId.getUuid());
+        UUID rscUuid = ProtoUuidUtils.deserialize(rscId.getUuid());
 
         ResourceName rscName;
         try

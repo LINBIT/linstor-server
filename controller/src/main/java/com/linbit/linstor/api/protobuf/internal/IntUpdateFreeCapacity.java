@@ -4,6 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
@@ -11,10 +12,10 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ProtobufApiCall(
@@ -44,7 +45,7 @@ public class IntUpdateFreeCapacity implements ApiCall
         storPoolInternalCallHandler.updateRealFreeSpace(
             freeSpaceProto.stream().map(
                 proto -> new CapacityInfoPojo(
-                    UUID.fromString(proto.getStorPoolUuid()),
+                    ProtoUuidUtils.deserialize(proto.getStorPoolUuid()),
                     proto.getStorPoolName(),
                     proto.getFreeCapacity(),
                     proto.getTotalCapacity(),

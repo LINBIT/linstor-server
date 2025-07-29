@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common.ids;
+
+message Uuid
+{
+    required sint64 most_significant_bits = 1;
+    required sint64 least_significant_bits = 2;
+}

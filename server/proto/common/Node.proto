@@ -3,6 +3,7 @@ syntax = "proto2";
 package com.linbit.linstor.proto.common;
 
 import "common/NetInterface.proto";
+import "common/ids/Uuid.proto";
 
 message Node
 {
@@ -19,7 +20,7 @@ message Node
         OTHER_CONTROLLER = 8;
     }
 
-    optional string uuid = 1;
+    optional common.ids.Uuid uuid = 1;
     required string name = 2;
     required string type = 3;
     map<string, string> props = 4;

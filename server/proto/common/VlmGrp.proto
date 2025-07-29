@@ -2,10 +2,12 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
+import "common/ids/Uuid.proto";
+
 // Content of a volume group. Used in both, request and response messages
 message VlmGrp
 {
-    optional string uuid = 1;
+    optional common.ids.Uuid uuid = 1;
     // null for automatic assignment
     optional sint32 vlm_nr = 2;
     map<string, string> vlm_dfn_props = 3;

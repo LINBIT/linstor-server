@@ -84,6 +84,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -1748,7 +1749,7 @@ public class DrbdLayer implements DeviceLayer
                 // save DrbdPrimarySetOn so that subsequently added nodes do not request to be primary
                 sendRequestPrimaryResource(
                     rscDfn.getName().getDisplayName(), // intentionally not suffixedRscName
-                    rsc.getUuid().toString(),
+                    rsc.getUuid(),
                     alreadyInitialized
                 );
             }
@@ -1909,7 +1910,7 @@ public class DrbdLayer implements DeviceLayer
 
     private void sendRequestPrimaryResource(
         final String rscName,
-        final String rscUuid,
+        final UUID rscUuid,
         boolean alreadyInitialized
     )
     {

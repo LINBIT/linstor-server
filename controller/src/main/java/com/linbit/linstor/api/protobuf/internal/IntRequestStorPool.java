@@ -1,13 +1,14 @@
 package com.linbit.linstor.api.protobuf.internal;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +35,7 @@ public class IntRequestStorPool implements ApiCall
         throws IOException
     {
         IntObjectId storPoolId = IntObjectId.parseDelimitedFrom(msgDataIn);
-        UUID storPoolUuid = UUID.fromString(storPoolId.getUuid());
+        UUID storPoolUuid = ProtoUuidUtils.deserialize(storPoolId.getUuid());
         String storPoolName = storPoolId.getName();
 
         storPoolInternalCallHandler.handleStorPoolRequest(storPoolUuid, storPoolName);

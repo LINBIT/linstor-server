@@ -2,11 +2,13 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
+import "common/ids/Uuid.proto";
+
 // Volume
 message Vlm
 {
-    optional string vlm_uuid = 1;
-    optional string vlm_dfn_uuid = 2;
+    optional common.ids.Uuid vlm_uuid = 1;
+    optional common.ids.Uuid vlm_dfn_uuid = 2;
     required sint32 vlm_nr = 3;
     repeated string vlm_flags = 4;
     map<string, string> vlm_props = 5;

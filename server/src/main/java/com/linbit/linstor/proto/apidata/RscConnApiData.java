@@ -1,6 +1,7 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
@@ -20,7 +21,7 @@ public class RscConnApiData implements ResourceConnectionApi
     @Override
     public @Nullable UUID getUuid()
     {
-        return rscConnProto.hasRscConnUuid() ? UUID.fromString(rscConnProto.getRscConnUuid()) : null;
+        return rscConnProto.hasRscConnUuid() ? ProtoUuidUtils.deserialize(rscConnProto.getRscConnUuid()) : null;
     }
 
     @Override
@@ -75,7 +76,7 @@ public class RscConnApiData implements ResourceConnectionApi
         rscConnBld.setNodeName2(apiResourceConn.getTargetNodeName());
         rscConnBld.setRscName(apiResourceConn.getResourceName());
         rscConnBld.putAllRscConnProps(apiResourceConn.getProps());
-        rscConnBld.setRscConnUuid(apiResourceConn.getUuid().toString());
+        rscConnBld.setRscConnUuid(ProtoUuidUtils.serialize(apiResourceConn.getUuid()));
         rscConnBld.addAllRscConnFlags(ResourceConnection.Flags.toStringList(apiResourceConn.getFlags()));
         if (apiResourceConn.getDrbdProxyPortSource() != null)
         {

@@ -4,6 +4,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
@@ -28,13 +29,13 @@ public class VlmApiData implements VolumeApi
     @Override
     public @Nullable UUID getVlmUuid()
     {
-        return vlm.hasVlmUuid() ? UUID.fromString(vlm.getVlmUuid()) : null;
+        return vlm.hasVlmUuid() ? ProtoUuidUtils.deserialize(vlm.getVlmUuid()) : null;
     }
 
     @Override
     public @Nullable UUID getVlmDfnUuid()
     {
-        return vlm.hasVlmDfnUuid() ? UUID.fromString(vlm.getVlmDfnUuid()) : null;
+        return vlm.hasVlmDfnUuid() ? ProtoUuidUtils.deserialize(vlm.getVlmDfnUuid()) : null;
     }
 
     @Override
@@ -98,8 +99,8 @@ public class VlmApiData implements VolumeApi
     public static Vlm toVlmProto(final VolumeApi vlmApi)
     {
         Vlm.Builder builder = Vlm.newBuilder();
-        builder.setVlmUuid(vlmApi.getVlmUuid().toString());
-        builder.setVlmDfnUuid(vlmApi.getVlmDfnUuid().toString());
+        builder.setVlmUuid(ProtoUuidUtils.serialize(vlmApi.getVlmUuid()));
+        builder.setVlmDfnUuid(ProtoUuidUtils.serialize(vlmApi.getVlmDfnUuid()));
         builder.setVlmNr(vlmApi.getVlmNr());
         if (vlmApi.getDevicePath() != null)
         {

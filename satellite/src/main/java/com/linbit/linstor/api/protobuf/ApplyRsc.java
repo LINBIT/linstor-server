@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ProtobufApiCall(
@@ -100,7 +99,7 @@ public class ApplyRsc implements ApiCall
         );
 
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
-            UUID.fromString(rscDfn.getRscDfnUuid()),
+            ProtoUuidUtils.deserialize(rscDfn.getRscDfnUuid()),
             ProtoDeserializationUtils.parseRscGrp(rscDfn.getRscGrp()),
             rscDfn.getRscName(),
             rscDfn.getExternalName().toByteArray(),
@@ -120,9 +119,9 @@ public class ApplyRsc implements ApiCall
         return new RscPojo(
             localRsc.getName(),
             localRsc.getNodeName(),
-            UUID.fromString(localRsc.getNodeUuid()),
+            ProtoUuidUtils.deserialize(localRsc.getNodeUuid()),
             rscDfnPojo,
-            UUID.fromString(localRsc.getUuid()),
+            ProtoUuidUtils.deserialize(localRsc.getUuid()),
             FlagsHelper.fromStringList(Resource.Flags.class, localRsc.getRscFlagsList()),
             localRsc.getPropsMap(),
             localVlms,
@@ -143,7 +142,7 @@ public class ApplyRsc implements ApiCall
         {
             list.add(
                 new VlmDfnPojo(
-                    UUID.fromString(vlmDfn.getVlmDfnUuid()),
+                    ProtoUuidUtils.deserialize(vlmDfn.getVlmDfnUuid()),
                     vlmDfn.getVlmNr(),
                     vlmDfn.getVlmSize(),
                     FlagsHelper.fromStringList(VolumeDefinition.Flags.class, vlmDfn.getVlmFlagsList()),
@@ -162,8 +161,8 @@ public class ApplyRsc implements ApiCall
         {
             list.add(
                 new VlmPojo(
-                    UUID.fromString(vol.getVlmDfnUuid()),
-                    UUID.fromString(vol.getVlmUuid()),
+                    ProtoUuidUtils.deserialize(vol.getVlmDfnUuid()),
+                    ProtoUuidUtils.deserialize(vol.getVlmUuid()),
                     vol.getDevicePath(),
                     vol.getVlmNr(),
                     Volume.Flags.fromStringList(vol.getVlmFlagsList()),
@@ -191,7 +190,7 @@ public class ApplyRsc implements ApiCall
         return rscConnections.stream()
             .map(
                 rscConnData -> new RscConnPojo(
-                    UUID.fromString(rscConnData.getRscConnUuid()),
+                    ProtoUuidUtils.deserialize(rscConnData.getRscConnUuid()),
                     rscConnData.getNodeName1(),
                     rscConnData.getNodeName2(),
                     rscName,
@@ -222,12 +221,12 @@ public class ApplyRsc implements ApiCall
             list.add(
                 new OtherRscPojo(
                     protoNode.getName(),
-                    UUID.fromString(protoNode.getUuid()),
+                    ProtoUuidUtils.deserialize(protoNode.getUuid()),
                     protoNode.getType(),
                     FlagsHelper.fromStringList(Node.Flags.class, protoNode.getFlagsList()),
                     protoNode.getPropsMap(),
                     extractNetIfs(protoNode),
-                    UUID.fromString(protoRsc.getUuid()),
+                    ProtoUuidUtils.deserialize(protoRsc.getUuid()),
                     FlagsHelper.fromStringList(Resource.Flags.class, protoRsc.getRscFlagsList()),
                     protoRsc.getPropsMap(),
                     extractRawVolumes(
@@ -254,7 +253,7 @@ public class ApplyRsc implements ApiCall
         {
             list.add(
                 new OtherNodeNetInterfacePojo(
-                    UUID.fromString(protoNetInterface.getUuid()),
+                    ProtoUuidUtils.deserialize(protoNetInterface.getUuid()),
                     protoNetInterface.getName(),
                     protoNetInterface.getAddress()
                 )

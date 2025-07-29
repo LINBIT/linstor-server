@@ -1,6 +1,7 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 
@@ -27,7 +28,7 @@ public class NetInterfaceApiData implements NetInterfaceApi
         UUID ifUuid = null;
         if (netInterface.hasUuid())
         {
-            ifUuid = UUID.fromString(netInterface.getUuid());
+            ifUuid = ProtoUuidUtils.deserialize(netInterface.getUuid());
         }
         return ifUuid;
     }
@@ -68,7 +69,7 @@ public class NetInterfaceApiData implements NetInterfaceApi
             final NetInterfaceApi netInterApi)
     {
         NetInterfaceOuterClass.NetInterface.Builder bld = NetInterfaceOuterClass.NetInterface.newBuilder();
-        bld.setUuid(netInterApi.getUuid().toString());
+        bld.setUuid(ProtoUuidUtils.serialize(netInterApi.getUuid()));
         bld.setName(netInterApi.getName());
         bld.setAddress(netInterApi.getAddress());
         @Nullable StltConn stltConn = netInterApi.getStltConn();

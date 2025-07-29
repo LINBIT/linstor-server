@@ -19,7 +19,6 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.TreeMap;
-import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_APPLY_REMOTE,
@@ -84,7 +83,7 @@ public class ApplyRemote implements ApiCall
     static S3RemotePojo asS3RemotePojo(IntS3Remote proto, long fullSyncId, long updateId)
     {
         return new S3RemotePojo(
-            UUID.fromString(proto.getUuid()),
+            ProtoUuidUtils.deserialize(proto.getUuid()),
             proto.getName(),
             proto.getFlags(),
             proto.getEndpoint(),
@@ -100,7 +99,7 @@ public class ApplyRemote implements ApiCall
     static EbsRemotePojo asEbsRemotePojo(IntEbsRemote proto, long fullSyncId, long updateId)
     {
         return new EbsRemotePojo(
-            UUID.fromString(proto.getUuid()),
+            ProtoUuidUtils.deserialize(proto.getUuid()),
             proto.getName(),
             proto.getFlags(),
             proto.getUrl(),
@@ -116,7 +115,7 @@ public class ApplyRemote implements ApiCall
     static StltRemotePojo asStltRemotePojo(IntStltRemote proto, long fullSyncId, long updateId)
     {
         return new StltRemotePojo(
-            UUID.fromString(proto.getUuid()),
+            ProtoUuidUtils.deserialize(proto.getUuid()),
             proto.getName(),
             proto.getFlags(),
             proto.getTargetIp(),

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ProtobufApiCall(
@@ -60,7 +59,7 @@ public class ApplySnapshot implements ApiCall
         List<SnapshotVolumeDefinitionApi> snapshotVlmDfns =
             snapshot.getSnapshotVlmDfnsList().stream()
                 .map(snapshotVlmDfn -> new SnapshotVlmDfnPojo(
-                    UUID.fromString(snapshotVlmDfn.getSnapshotVlmDfnUuid()),
+                    ProtoUuidUtils.deserialize(snapshotVlmDfn.getSnapshotVlmDfnUuid()),
                     snapshotVlmDfn.getVlmNr(),
                     snapshotVlmDfn.getVlmSize(),
                     snapshotVlmDfn.getFlags(),
@@ -72,8 +71,8 @@ public class ApplySnapshot implements ApiCall
         List<SnapshotVolumeApi> snapshotVlms =
             snapshot.getSnapshotVlmsList().stream()
                 .map(snapshotVlm -> new SnapshotVlmPojo(
-                    UUID.fromString(snapshotVlm.getSnapshotVlmDfnUuid()),
-                    UUID.fromString(snapshotVlm.getSnapshotVlmUuid()),
+                    ProtoUuidUtils.deserialize(snapshotVlm.getSnapshotVlmDfnUuid()),
+                    ProtoUuidUtils.deserialize(snapshotVlm.getSnapshotVlmUuid()),
                     snapshotVlm.getVlmNr(),
                     snapshotVlm.getSnapshotVlmPropsMap(),
                     snapshotVlm.getVlmPropsMap(),
@@ -89,7 +88,7 @@ public class ApplySnapshot implements ApiCall
         return new SnapshotPojo(
             new SnapshotDfnPojo(
                 new RscDfnPojo(
-                    UUID.fromString(snapshot.getRscDfnUuid()),
+                    ProtoUuidUtils.deserialize(snapshot.getRscDfnUuid()),
                     ProtoDeserializationUtils.parseRscGrp(snapshot.getRscGrp()),
                     snapshot.getRscName(),
                     null,
@@ -98,7 +97,7 @@ public class ApplySnapshot implements ApiCall
                     null,
                     Collections.emptyList()
                 ),
-                UUID.fromString(snapshot.getSnapshotDfnUuid()),
+                ProtoUuidUtils.deserialize(snapshot.getSnapshotDfnUuid()),
                 snapshot.getSnapshotName(),
                 snapshotVlmDfns,
                 snapshot.getSnapshotDfnFlags(),
@@ -107,7 +106,7 @@ public class ApplySnapshot implements ApiCall
                 Collections.emptyList(),
                 Collections.emptyList()
             ),
-            UUID.fromString(snapshot.getSnapshotUuid()),
+            ProtoUuidUtils.deserialize(snapshot.getSnapshotUuid()),
             snapshot.getFlags(),
             snapshot.getSuspendResource(),
             snapshot.getTakeSnapshot(),

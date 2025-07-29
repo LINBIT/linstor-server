@@ -7,6 +7,7 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.controller.internal.helpers.AtomicUpdateSatelliteData;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -45,7 +46,6 @@ import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntCont
 import com.linbit.linstor.proto.javainternal.c2s.IntEbsRemoteOuterClass.IntEbsRemote;
 import com.linbit.linstor.proto.javainternal.c2s.IntExternalFileOuterClass.IntExternalFile;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
-import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf.Builder;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNodeConn;
 import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntOtherRsc;
@@ -174,10 +174,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgIntAuthOuterClass.MsgIntAuth.newBuilder()
-                .setNodeUuid(nodeUuid.toString())
+                .setNodeUuid(ProtoUuidUtils.serialize(nodeUuid))
                 .setNodeName(nodeName)
                 .setSharedSecret(ByteString.copyFrom(sharedSecret))
-                .setCtrlUuid(ctrlUuid.toString())
+                .setCtrlUuid(ProtoUuidUtils.serialize(ctrlUuid))
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -230,7 +230,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 builder.addRscs(
                     ChangedResource.newBuilder()
-                        .setUuid(rscDfn.getUuid().toString())
+                        .setUuid(ProtoUuidUtils.serialize(rscDfn.getUuid()))
                         .setName(rscDfn.getName().displayValue)
                         .build()
                 );
@@ -239,7 +239,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 builder.addSnaps(
                     ChangedSnapshot.newBuilder()
-                        .setUuid(snapDfn.getUuid().toString())
+                        .setUuid(ProtoUuidUtils.serialize(snapDfn.getUuid()))
                         .setRscName(snapDfn.getResourceName().displayValue)
                         .setSnapName(snapDfn.getName().displayValue)
                         .build()
@@ -775,13 +775,13 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
      * Satellite -> Controller
      */
     @Override
-    public ProtoCtrlStltSerializerBuilder primaryRequest(String rscName, String rscUuid, boolean alreadyInitialized)
+    public ProtoCtrlStltSerializerBuilder primaryRequest(String rscName, UUID rscUuid, boolean alreadyInitialized)
     {
         try
         {
             MsgIntPrimaryOuterClass.MsgIntPrimary.newBuilder()
                 .setRscName(rscName)
-                .setRscUuid(rscUuid)
+                .setRscUuid(ProtoUuidUtils.serialize(rscUuid))
                 .setAlreadyInitialized(alreadyInitialized)
                 .build()
                 .writeDelimitedTo(baos);
@@ -801,7 +801,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             MsgIntApplyNodeSuccessOuterClass.MsgIntApplyNodeSuccess.newBuilder()
                 .setNodeId(
                     IntObjectId.newBuilder()
-                        .setUuid(node.getUuid().toString())
+                        .setUuid(ProtoUuidUtils.serialize(node.getUuid()))
                         .setName(node.getName().displayValue)
                         .build()
                 )
@@ -862,7 +862,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             MsgIntApplyRscSuccess.Builder builder = MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess.newBuilder()
                 .setRscId(
                     IntObjectId.newBuilder()
-                        .setUuid(resource.getUuid().toString())
+                        .setUuid(ProtoUuidUtils.serialize(resource.getUuid()))
                         .setName(resource.getResourceDefinition().getName().displayValue)
                         .build()
                 )
@@ -1271,7 +1271,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 SpaceInfo spaceInfo = entry.getValue();
                 freeSpaces.add(
                     StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.newBuilder()
-                        .setStorPoolUuid(storPool.getUuid().toString())
+                        .setStorPoolUuid(ProtoUuidUtils.serialize(storPool.getUuid()))
                         .setStorPoolName(storPool.getName().displayValue)
                         .setFreeCapacity(spaceInfo.freeCapacity)
                         .setTotalCapacity(spaceInfo.totalCapacity)
@@ -1304,7 +1304,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setStorPoolName(storPool.getName().displayValue)
                 .setFreeSpace(
                     StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.newBuilder()
-                        .setStorPoolUuid(storPool.getUuid().toString())
+                        .setStorPoolUuid(ProtoUuidUtils.serialize(storPool.getUuid()))
                         .setStorPoolName(storPool.getName().displayValue)
                         .setFreeCapacity(spaceInfo.freeCapacity)
                         .setTotalCapacity(spaceInfo.totalCapacity)
@@ -1475,7 +1475,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             IntObjectId.Builder msgBuilder = IntObjectId.newBuilder();
             if (objUuid != null)
             {
-                msgBuilder.setUuid(objUuid.toString());
+                msgBuilder.setUuid(ProtoUuidUtils.serialize(objUuid));
             }
             msgBuilder
                 .setName(objName)
@@ -1504,7 +1504,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             throws AccessDeniedException
         {
             return IntNode.newBuilder()
-                .setUuid(node.getUuid().toString())
+                .setUuid(ProtoUuidUtils.serialize(node.getUuid()))
                 .setName(node.getName().displayValue)
                 .setFlags(node.getFlags().getFlagsBits(serializerCtx))
                 .setType(node.getNodeType(serializerCtx).name())
@@ -1525,8 +1525,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             ArrayList<IntNetIf> netIfs = new ArrayList<>();
             for (NetInterface netIf : node.streamNetInterfaces(serializerCtx).collect(toList()))
             {
-                Builder builder = IntNetIf.newBuilder()
-                    .setUuid(netIf.getUuid().toString())
+                IntNetIf.Builder builder = IntNetIf.newBuilder()
+                    .setUuid(ProtoUuidUtils.serialize(netIf.getUuid()))
                     .setName(netIf.getName().displayValue)
                     .setAddr(netIf.getAddress(serializerCtx).getAddress());
                 if (netIf.getStltConnPort(serializerCtx) != null)
@@ -1554,7 +1554,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 {
                     nodeConns.add(
                         IntNodeConn.newBuilder()
-                            .setUuid(nodeConnection.getUuid().toString())
+                            .setUuid(ProtoUuidUtils.serialize(nodeConnection.getUuid()))
                             .setOtherNode(buildNodeMsg(otherNode, Collections.emptyList()))
                             .putAllProps(nodeConnection.getProps(serializerCtx).map())
                             .build()
@@ -1571,7 +1571,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             throws AccessDeniedException
         {
             IntExternalFile.Builder builder = IntExternalFile.newBuilder()
-                .setUuid(extFile.getUuid().toString())
+                .setUuid(ProtoUuidUtils.serialize(extFile.getUuid()))
                 .setName(extFile.getName().extFileName)
                 .setFlags(extFile.getFlags().getFlagsBits(serializerCtx))
                 .setContentChecksum(ByteString.copyFrom(extFile.getContentCheckSum(serializerCtx)));
@@ -1590,7 +1590,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             throws AccessDeniedException
         {
             IntS3Remote.Builder builder = IntS3Remote.newBuilder()
-                .setUuid(s3remote.getUuid().toString())
+                .setUuid(ProtoUuidUtils.serialize(s3remote.getUuid()))
                 .setName(s3remote.getName().displayValue)
                 .setFlags(s3remote.getFlags().getFlagsBits(serializerCtx))
                 .setEndpoint(s3remote.getUrl(serializerCtx))
@@ -1606,7 +1606,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             throws AccessDeniedException
         {
             IntEbsRemote.Builder builder = IntEbsRemote.newBuilder()
-                .setUuid(ebsremote.getUuid().toString())
+                .setUuid(ProtoUuidUtils.serialize(ebsremote.getUuid()))
                 .setName(ebsremote.getName().displayValue)
                 .setFlags(ebsremote.getFlags().getFlagsBits(serializerCtx))
                 .setUrl(ebsremote.getUrl(serializerCtx).toString())
@@ -1622,7 +1622,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             throws AccessDeniedException
         {
             IntStltRemote.Builder builder = IntStltRemote.newBuilder()
-                .setUuid(stltremote.getUuid().toString())
+                .setUuid(ProtoUuidUtils.serialize(stltremote.getUuid()))
                 .setName(stltremote.getName().displayValue)
                 .setFlags(stltremote.getFlags().getFlagsBits(serializerCtx));
 
@@ -1753,7 +1753,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 snapshotVlmDfns.add(
                     IntSnapshotOuterClass.SnapshotVlmDfn.newBuilder()
-                        .setSnapshotVlmDfnUuid(snapshotVolumeDefinition.getUuid().toString())
+                        .setSnapshotVlmDfnUuid(ProtoUuidUtils.serialize(snapshotVolumeDefinition.getUuid()))
                         .setVlmNr(snapshotVolumeDefinition.getVolumeNumber().value)
                         .setVlmSize(snapshotVolumeDefinition.getVolumeSize(serializerCtx))
                         .setFlags(snapshotVolumeDefinition.getFlags().getFlagsBits(serializerCtx))
@@ -1770,8 +1770,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 SnapshotVolume snapshotVolume = snapVlmIt.next();
                 IntSnapshotOuterClass.SnapshotVlm.Builder builder = IntSnapshotOuterClass.SnapshotVlm
                     .newBuilder()
-                    .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
-                    .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
+                    .setSnapshotVlmUuid(ProtoUuidUtils.serialize(snapshotVolume.getUuid()))
+                    .setSnapshotVlmDfnUuid(ProtoUuidUtils.serialize(snapshotDfn.getUuid()))
                     .setVlmNr(snapshotVolume.getVolumeNumber().value)
                     .putAllSnapshotVlmProps(snapshotVolume.getSnapVlmProps(serializerCtx).map())
                     .putAllVlmProps(snapshotVolume.getVlmProps(serializerCtx).map());
@@ -1786,13 +1786,13 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             return IntSnapshot.newBuilder()
                 .setNodeName(snapshot.getNodeName().displayValue)
                 .setRscName(rscDfn.getName().displayValue)
-                .setRscDfnUuid(rscDfn.getUuid().toString())
+                .setRscDfnUuid(ProtoUuidUtils.serialize(rscDfn.getUuid()))
                 .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
                 .setRscGrp(serializeResourceGroup(serializerCtx, rscDfn.getResourceGroup()))
                 .putAllRscDfnProps(rscDfn.getProps(serializerCtx).map())
-                .setSnapshotUuid(snapshot.getUuid().toString())
+                .setSnapshotUuid(ProtoUuidUtils.serialize(snapshot.getUuid()))
                 .setSnapshotName(snapshotDfn.getName().displayValue)
-                .setSnapshotDfnUuid(snapshotDfn.getUuid().toString())
+                .setSnapshotDfnUuid(ProtoUuidUtils.serialize(snapshotDfn.getUuid()))
                 .addAllSnapshotVlmDfns(snapshotVlmDfns)
                 .setSnapshotDfnFlags(snapshotDfn.getFlags().getFlagsBits(serializerCtx))
                 .putAllSnapshotDfnProps(snapshotDfn.getSnapDfnProps(serializerCtx).map())
@@ -1820,7 +1820,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         StorPoolInfo storPoolInfo = entry.getKey();
 
         StorPoolFreeSpace.Builder freeSpaceBuilder = StorPoolFreeSpace.newBuilder()
-            .setStorPoolUuid(storPoolInfo.getUuid().toString())
+            .setStorPoolUuid(ProtoUuidUtils.serialize(storPoolInfo.getUuid()))
             .setStorPoolName(storPoolInfo.getName().displayValue);
 
         entry.getValue().consume(

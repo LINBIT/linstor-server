@@ -2,6 +2,7 @@ package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtoUuidUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.RemoteInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
@@ -34,7 +35,7 @@ public class IntRequestRemote implements ApiCall
         throws IOException
     {
         IntObjectId remoteId = IntObjectId.parseDelimitedFrom(msgDataIn);
-        UUID remoteUuid = UUID.fromString(remoteId.getUuid());
+        UUID remoteUuid = ProtoUuidUtils.deserialize(remoteId.getUuid());
         String remoteNameStr = remoteId.getName();
 
         remoteInternalCallHandler.handleRemoteRequest(remoteUuid, remoteNameStr);

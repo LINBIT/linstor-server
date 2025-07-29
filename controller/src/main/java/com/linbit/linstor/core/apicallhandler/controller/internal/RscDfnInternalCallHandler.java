@@ -147,7 +147,7 @@ public class RscDfnInternalCallHandler
                     currentPeer.sendMessage(
                         ctrlStltSerializer
                             .onewayBuilder(InternalApiConsts.API_PRIMARY_RSC)
-                            .primaryRequest(rscNameStr, res.getUuid().toString(), false)
+                            .primaryRequest(rscNameStr, res.getUuid(), false)
                             .build()
                     );
                 }

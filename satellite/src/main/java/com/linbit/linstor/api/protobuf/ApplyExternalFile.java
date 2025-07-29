@@ -12,7 +12,6 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_APPLY_EXTERNAL_FILE,
@@ -48,7 +47,7 @@ public class ApplyExternalFile implements ApiCall
     static ExternalFilePojo asExternalFilePojo(IntExternalFile proto, long fullSyncId, long updateId)
     {
         return new ExternalFilePojo(
-            UUID.fromString(proto.getUuid()),
+            ProtoUuidUtils.deserialize(proto.getUuid()),
             proto.getName(),
             proto.getFlags(),
             proto.getContent().toByteArray(),

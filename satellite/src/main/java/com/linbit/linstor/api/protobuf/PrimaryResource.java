@@ -10,7 +10,6 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
 
 /**
  *
@@ -38,7 +37,7 @@ public class PrimaryResource implements ApiCall
         MsgIntPrimary msgReqPrimary = MsgIntPrimary.parseDelimitedFrom(msgDataIn);
         apiCallHandler.handlePrimaryResource(
             msgReqPrimary.getRscName(),
-            UUID.fromString(msgReqPrimary.getRscUuid())
+            ProtoUuidUtils.deserialize(msgReqPrimary.getRscUuid())
         );
     }
 }

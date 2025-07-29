@@ -44,7 +44,7 @@ public class ChangedNode implements ApiCallReactive
     {
         IntObjectId nodeId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String nodeNameStr = nodeId.getName();
-        UUID nodeUuid = UUID.fromString(nodeId.getUuid());
+        UUID nodeUuid = ProtoUuidUtils.deserialize(nodeId.getUuid());
 
         NodeName nodeName;
         try

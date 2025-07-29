@@ -2,9 +2,11 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
+import "common/ids/Uuid.proto";
+
 message NetInterface
 {
-    optional string uuid = 1;
+    optional common.ids.Uuid uuid = 1;
     required string name = 2;
     required string address = 3;
     // 4 & 5 - port & encryption type, moved into StltConn

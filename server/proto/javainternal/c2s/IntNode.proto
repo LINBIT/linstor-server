@@ -2,10 +2,12 @@ syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.c2s;
 
+import "common/ids/Uuid.proto";
+
 // Internal message containing a node
 message IntNode
 {
-    string                      uuid = 1;
+    common.ids.Uuid             uuid = 1;
     string                      name = 2;
     sint64                      flags = 3;
     string                      type = 4;
@@ -17,16 +19,16 @@ message IntNode
 
 message IntNetIf
 {
-    string  uuid = 1;
-    string  name = 2;
-    string  addr = 3;
-    sint32  stlt_conn_port = 4;
-    string  stlt_conn_encr_type = 5;
+    common.ids.Uuid uuid = 1;
+    string          name = 2;
+    string          addr = 3;
+    sint32          stlt_conn_port = 4;
+    string          stlt_conn_encr_type = 5;
 }
 
 message IntNodeConn
 {
-    string                      uuid = 1;
+    common.ids.Uuid             uuid = 1;
     // other_node will not include node_connections (any, not even this) to prevent
     // recursive node-chaining
     IntNode                     other_node = 2;

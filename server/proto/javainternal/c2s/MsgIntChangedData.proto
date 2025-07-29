@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.s2c;
 
+import "common/ids/Uuid.proto";
+
 // Internal message containing IDs of data (node(s), resource(s), ...) that should be
 // updated atomically
 message MsgIntChangedData
@@ -15,14 +17,14 @@ message MsgIntChangedData
 message ChangedResource
 {
     string name = 1;
-    string uuid = 2;
+    common.ids.Uuid uuid = 2;
 }
 
 message ChangedSnapshot
 {
     string rsc_name = 1;
     string snap_name = 2;
-    string uuid = 3;
+    common.ids.Uuid uuid = 3;
 }
 
 // TODO add node, storpool, etc...
