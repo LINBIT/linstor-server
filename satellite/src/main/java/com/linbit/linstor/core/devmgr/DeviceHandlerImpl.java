@@ -19,7 +19,6 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltExternalFileHandler;
 import com.linbit.linstor.core.SysFsHandler;
 import com.linbit.linstor.core.UdevHandler;
-import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -64,7 +63,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.utils.SetUtils;
-import com.linbit.utils.Either;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
@@ -1145,43 +1143,24 @@ public class DeviceHandlerImpl implements DeviceHandler
     private void notifyResourcesApplied(List<Resource> rscListNotifyApplied) throws ImplementationError
     {
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        try
+        // TODO: rework API answer
+        /*
+         * Instead of sending single change, request and applied / deleted messages per
+         * resource, the controller and satellite should use one message containing
+         * multiple resources.
+         * The final message regarding applied and/or deleted resource can so also contain
+         * the new free spaces of the affected storage pools
+         */
+
+        for (Resource rsc : rscListNotifyApplied)
         {
-            Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap = storageLayer
-                .getFreeSpaceOfAccessedStoagePools();
-
-            Map<StorPoolInfo, SpaceInfo> spaceInfoMap = new TreeMap<>();
-
-            spaceInfoQueryMap.forEach(
-                (storPool, either) -> either.consume(
-                    spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
-                    apiRcException -> errorReporter.reportError(apiRcException.getCause())
-                )
+            ctrlPeer.sendMessage(
+                interComSerializer
+                    .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
+                    .notifyResourceApplied(rsc)
+                    .build(),
+                InternalApiConsts.API_NOTIFY_RSC_APPLIED
             );
-
-            // TODO: rework API answer
-            /*
-             * Instead of sending single change, request and applied / deleted messages per
-             * resource, the controller and satellite should use one message containing
-             * multiple resources.
-             * The final message regarding applied and/or deleted resource can so also contain
-             * the new free spaces of the affected storage pools
-             */
-
-            for (Resource rsc : rscListNotifyApplied)
-            {
-                ctrlPeer.sendMessage(
-                    interComSerializer
-                        .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
-                        .notifyResourceApplied(rsc, spaceInfoMap)
-                        .build(),
-                    InternalApiConsts.API_NOTIFY_RSC_APPLIED
-                );
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
         }
     }
 

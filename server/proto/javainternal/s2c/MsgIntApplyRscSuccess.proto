@@ -9,20 +9,19 @@ import "javainternal/IntObjectId.proto";
 message MsgIntApplyRscSuccess
 {
     IntObjectId rsc_id = 1;
-    repeated common.StorPoolFreeSpace free_space = 2;
-    common.RscLayerData layer_object = 3;
+    common.RscLayerData layer_object = 2;
 
     // <key, value>
-    map<string, string> rsc_props = 4;
+    map<string, string> rsc_props = 3;
     // <vlm_nr, <key, value>>
-    map<sint32, Props> vlm_props = 5;
+    map<sint32, Props> vlm_props = 4;
     // <snap_name, <key, value>>
-    map<string, Props> snap_props = 6;
+    map<string, Props> snap_props = 5;
     // <snap_name, <vlm_nr, <key, value>>
-    map<string, SnapVlmProps> snap_vlm_props = 7;
+    map<string, SnapVlmProps> snap_vlm_props = 6;
     // <snap_name, snap-layer-data>
-    map<string, common.RscLayerData> snap_storage_layer_objects = 8;
-    //next id 9
+    map<string, common.RscLayerData> snap_storage_layer_objects = 7;
+    //next id 8
 }
 
 message Props

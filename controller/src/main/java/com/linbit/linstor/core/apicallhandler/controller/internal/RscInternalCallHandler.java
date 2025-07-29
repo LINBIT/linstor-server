@@ -3,14 +3,12 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.CtrlSnapLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
@@ -19,7 +17,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.ebs.EbsStatusManagerService;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
@@ -61,12 +58,9 @@ import javax.inject.Provider;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class RscInternalCallHandler
 {
@@ -206,8 +200,7 @@ public class RscInternalCallHandler
         Map<Integer, Map<String, String>> vlmPropsRef,
         Map<String, Map<String, String>> snapPropsRef,
         Map<String, Map<Integer, Map<String, String>>> snapVlmPropsRef,
-        Map<String, RscLayerDataApi> snapLayersRef,
-        List<CapacityInfoPojo> capacityInfos
+        Map<String, RscLayerDataApi> snapLayersRef
     )
     {
         try (
@@ -228,12 +221,6 @@ public class RscInternalCallHandler
             boolean updateSatellite = false;
 
             NodeName nodeName = peer.get().getNode().getName();
-            Map<StorPoolName, CapacityInfoPojo> storPoolToCapacityInfoMap = capacityInfos.stream().collect(
-                Collectors.toMap(
-                    freeSpacePojo -> LinstorParsingUtils.asStorPoolName(freeSpacePojo.getStorPoolName()),
-                    Function.identity()
-                )
-            );
             ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, new ResourceName(resourceName));
             Resource rsc = rscDfn.getResource(apiCtx, nodeName);
 
@@ -334,26 +321,12 @@ public class RscInternalCallHandler
                         {
                             StorPool storPool = vlmProviderObject.getStorPool();
 
-                            CapacityInfoPojo capacityInfo =
-                                storPoolToCapacityInfoMap.get(storPool.getName());
-
                             storPool.getFreeSpaceTracker().vlmCreationFinished(
                                 apiCtx,
                                 vlmProviderObject,
-                                capacityInfo == null ? null : capacityInfo.getFreeCapacity(),
-                                    capacityInfo == null ? null : capacityInfo.getTotalCapacity()
+                                null,
+                                null
                                 );
-
-                            if (capacityInfo == null && !storPool.getDeviceProviderKind().usesThinProvisioning())
-                            {
-                                errorReporter.logWarning(
-                                    String.format(
-                                        "No freespace info for storage pool '%s' on node: %s",
-                                        storPool.getName().value,
-                                        nodeName.displayValue
-                                    )
-                                );
-                            }
                         }
                     }
                 }

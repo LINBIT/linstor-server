@@ -4,7 +4,6 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
-import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.RscInternalCallHandler;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
@@ -92,10 +91,7 @@ public class NotifyResourceApplied implements ApiCall
             vlmProps,
             snapProps,
             snapVlmProps,
-            snapLayers,
-            ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
-                msgIntAppliedRsc.getFreeSpaceList()
-            )
+            snapLayers
         );
     }
 }

@@ -32,7 +32,6 @@ import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.apicallhandler.StltNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.StltSnapshotApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
 import com.linbit.linstor.core.identifier.ExternalFileName;
@@ -74,7 +73,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
-import com.linbit.utils.Either;
 
 import static com.linbit.linstor.api.ApiConsts.MODIFIED;
 
@@ -1922,25 +1920,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         // Send applySuccess notification to the controller
 
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap = apiCallHandlerUtils.getSpaceInfo(
-            false
-        );
-
-        Map<StorPoolInfo, SpaceInfo> spaceInfoMap = new TreeMap<>();
-
-        spaceInfoQueryMap.forEach(
-            (storPool, either) -> either.consume(
-                spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
-                apiRcException ->
-                {
-                } // reported while creating
-            )
-        );
 
         ctrlPeer.sendMessage(
             interComSerializer
                 .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
-                .notifyResourceApplied(rsc, spaceInfoMap)
+                .notifyResourceApplied(rsc)
                 .build(),
             InternalApiConsts.API_NOTIFY_RSC_APPLIED
         );

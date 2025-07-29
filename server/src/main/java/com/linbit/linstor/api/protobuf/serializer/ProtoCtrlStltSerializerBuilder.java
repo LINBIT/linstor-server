@@ -7,7 +7,6 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
-import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.controller.internal.helpers.AtomicUpdateSatelliteData;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -855,8 +854,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     @Override
     public ProtoCtrlStltSerializerBuilder notifyResourceApplied(
-        Resource resource,
-        Map<StorPoolInfo, SpaceInfo> freeSpaceMap
+        Resource resource
     )
     {
         try
@@ -867,9 +865,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setUuid(resource.getUuid().toString())
                         .setName(resource.getResourceDefinition().getName().displayValue)
                         .build()
-                )
-                .addAllFreeSpace(
-                    ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
                 )
                 .setLayerObject(
                     ProtoCommonSerializerBuilder.LayerObjectSerializer.serializeLayerObject(
