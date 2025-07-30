@@ -16,7 +16,7 @@ import java.sql.Statement;
 public class Migration_2020_06_03_ConsolidatePoolProperty extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         SQLUtils.runSql(
             connection,

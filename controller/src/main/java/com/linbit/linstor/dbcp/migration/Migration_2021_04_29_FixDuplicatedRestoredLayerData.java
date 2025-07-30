@@ -31,7 +31,7 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
      */
 
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProductRef) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProductRef) throws Exception
     {
         try
             (

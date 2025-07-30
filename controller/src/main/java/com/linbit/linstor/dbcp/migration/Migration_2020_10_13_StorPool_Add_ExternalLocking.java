@@ -21,7 +21,7 @@ public class Migration_2020_10_13_StorPool_Add_ExternalLocking extends LinstorMi
     private static final boolean DFLT_VALUE = false;
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         if (!MigrationUtils.columnExists(connection, TBL_STOR_POOL, NEW_CLM))
         {

@@ -2,14 +2,14 @@ package com.linbit.linstor.dbcp;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
-import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbdrivers.DatabaseConstantsGenerator;
 import com.linbit.linstor.dbdrivers.DatabaseConstantsGenerator.GeneratedCrdJavaClass;
 import com.linbit.linstor.dbdrivers.DatabaseConstantsGenerator.GeneratedCrdResult;
 import com.linbit.linstor.dbdrivers.DatabaseConstantsGenerator.GeneratedResources;
+import com.linbit.linstor.dbdrivers.H2DatabaseInfo;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
-
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -38,7 +37,6 @@ import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.flywaydb.core.Flyway;
 
 @SuppressFBWarnings
 public class GenerateSql
@@ -67,21 +65,21 @@ public class GenerateSql
         {
             initJclCrypto();
 
-            Flyway flyway = Flyway.configure()
-                .schemas(DATABASE_SCHEMA_NAME)
-                .dataSource(dataSource)
-                .table("FLYWAY_SCHEMA_HISTORY")
-                // When migrations are added in branches they can be applied in different orders
-                .outOfOrder(true)
-                // Pass the DB type to the migrations
-                .placeholders(Map.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, "h2"))
-                .locations(LinstorMigration.class.getPackage().getName().replace(".", "/"))
-                .load();
+            Connection conn = dataSource.getConnection();
+            ErrorReporter errorLog = new StdErrorReporter(
+                "linstor-db",
+                Paths.get("/tmp/"),
+                true,
+                "",
+                "DEBUG",
+                "DEBUG",
+                () -> null
+            );
+            DbMigrater migrater = new DbMigrater(errorLog);
+            var dbInfo = new H2DatabaseInfo();
+            migrater.migrate(conn, dbInfo, false);
 
-            flyway.baseline();
-            flyway.migrate();
-
-            DatabaseConstantsGenerator gen = new DatabaseConstantsGenerator(dataSource.getConnection());
+            DatabaseConstantsGenerator gen = new DatabaseConstantsGenerator(conn);
             String gitRoot = getGitRoot();
             String genDbTablesJavaCode = renderGeneratedDatabaseTables(gen, gitRoot);
             renderGeneratedKubernetesCustomResourceDefinitions(gen, gitRoot, genDbTablesJavaCode);

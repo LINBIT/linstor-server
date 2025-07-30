@@ -13,7 +13,7 @@ import java.sql.Connection;
 public class Migration_2025_03_18_Fix_Satellite_Capacity_NodeName extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         SQLUtils.runSql(
             conRef,

@@ -14,7 +14,7 @@ import java.sql.Connection;
 public class Migration_2020_09_30_SpaceTracking extends LinstorMigration
 {
     @Override
-    protected void migrate(final Connection dbConn, final DbProduct product)
+    public void migrate(final Connection dbConn, final DbProduct product)
         throws Exception
     {
         final String sqlScript = MigrationUtils.loadResource("2020_09_30_spacetracking.sql");

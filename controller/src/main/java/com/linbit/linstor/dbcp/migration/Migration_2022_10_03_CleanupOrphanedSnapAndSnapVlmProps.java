@@ -33,7 +33,7 @@ public class Migration_2022_10_03_CleanupOrphanedSnapAndSnapVlmProps extends Lin
     private static final String SNAP_VLM_NR = "VLM_NR";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         try (
             PreparedStatement propsStmt = connection.prepareStatement(

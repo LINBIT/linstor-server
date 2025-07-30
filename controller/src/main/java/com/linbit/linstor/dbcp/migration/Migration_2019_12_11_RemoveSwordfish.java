@@ -12,7 +12,7 @@ import java.sql.Connection;
 public class Migration_2019_12_11_RemoveSwordfish extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection connectionRef, DbProduct dbProductRef) throws Exception
+    public void migrate(Connection connectionRef, DbProduct dbProductRef) throws Exception
     {
         SQLUtils.runSql(connectionRef, "DROP TABLE LAYER_SWORDFISH_VOLUME_DEFINITIONS");
         // swordfish was not supported for a long time, and most likely already broken in many places

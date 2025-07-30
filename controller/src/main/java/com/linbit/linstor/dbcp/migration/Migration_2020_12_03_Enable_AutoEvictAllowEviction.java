@@ -18,7 +18,7 @@ public class Migration_2020_12_03_Enable_AutoEvictAllowEviction extends LinstorM
     private static final String PROP_VALUE = "PROP_VALUE";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         SQLUtils.runSql(
             connection,

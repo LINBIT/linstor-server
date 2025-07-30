@@ -62,7 +62,8 @@ public class DbConnectionPoolInitializer implements DbInitializer
             dbConnPool.initializeDataSource(connectionUrl);
             if (enableMigrationOnInit)
             {
-                dbConnPool.migrate(dbType, !ctrlCfg.isDbVersionCheckDisabled());
+                var dbInfo = DatabaseDriverInfo.createDriverInfo(dbType);
+                dbConnPool.migrate(dbInfo, !ctrlCfg.isDbVersionCheckDisabled());
 
                 // testDbConnection requires a "LINSTOR" schema, which only exists after migration is done.
                 testDbConnection();

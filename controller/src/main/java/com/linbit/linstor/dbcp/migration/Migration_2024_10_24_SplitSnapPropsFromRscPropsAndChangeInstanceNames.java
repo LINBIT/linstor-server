@@ -34,7 +34,7 @@ public class Migration_2024_10_24_SplitSnapPropsFromRscPropsAndChangeInstanceNam
     private static final int SEPARATOR_COUNT_FOR_SNAPSHOTS = 4;
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         try (
             PreparedStatement selectStmt = conRef.prepareStatement(SELECT_STMT);

@@ -12,7 +12,7 @@ import java.sql.Connection;
 public class Migration_2022_01_24_SpaceTrackingV2 extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection dbCon, DatabaseInfo.DbProduct dbProductRef) throws Exception
+    public void migrate(Connection dbCon, DatabaseInfo.DbProduct dbProductRef) throws Exception
     {
         final String statements = MigrationUtils.loadResource("2022_01_16_SpaceTrackingV2.sql");
         SQLUtils.runSql(dbCon, MigrationUtils.replaceTypesByDialect(dbProductRef, statements));

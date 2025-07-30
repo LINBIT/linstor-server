@@ -32,7 +32,7 @@ public class Migration_2020_10_22_Add_INACTIVE_PERMANENTLY extends LinstorMigrat
         "WHERE NODE_NAME = ? AND RESOURCE_NAME = ?";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         // in 1.9.0 all resources that are inactive AND have DRBD in the stack
         // can no longer be reactivated.

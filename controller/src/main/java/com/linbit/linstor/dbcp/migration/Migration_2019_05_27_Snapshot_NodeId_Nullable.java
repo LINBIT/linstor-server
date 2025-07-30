@@ -21,7 +21,7 @@ public class Migration_2019_05_27_Snapshot_NodeId_Nullable extends LinstorMigrat
     private static final String S_NODE_ID = "NODE_ID";
 
     @Override
-    protected void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
         // I could not figure out how to check if this update
         // was already applied...

@@ -38,7 +38,7 @@ public class Migration_2021_05_03_FixVarcharToTextUpgrade2 extends LinstorMigrat
      * wrote byte[] to them instead of Strings. Reading those values causes exceptions
      */
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProductRef) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProductRef) throws Exception
     {
         final ObjectMapper objMapper = new ObjectMapper();
         try

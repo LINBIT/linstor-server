@@ -13,7 +13,7 @@ import java.sql.Connection;
 public class Migration_2020_03_24_CacheVlmData extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         if (!MigrationUtils.tableExists(dbCon, "LAYER_CACHE_VOLUMES"))
         {

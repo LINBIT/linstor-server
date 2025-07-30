@@ -18,7 +18,7 @@ import java.sql.Connection;
 public class Migration_2019_07_09_DrbdVlm_ExtMetaStorPool extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
         if (!MigrationUtils.tableExists(connection, "LAYER_DRBD_VOLUMES"))
         {

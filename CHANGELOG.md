@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Do not delete known Linstor drbd res files, LS_KEEP_RES is now obsolete
 - Increase max packet size 16M -> 64M
 - Increased timeout for tar during sos-report to an hour
+- Removed flywaydb dependency and do migrations (as with other "db"s) ourselves
 
 ### Fixed
 

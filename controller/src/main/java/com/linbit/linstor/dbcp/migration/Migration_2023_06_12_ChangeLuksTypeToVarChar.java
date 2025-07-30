@@ -24,7 +24,7 @@ public class Migration_2023_06_12_ChangeLuksTypeToVarChar extends LinstorMigrati
     private static final String CLM_ENCRYPTED_PASSWORD = "ENCRYPTED_PASSWORD";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         List<LuksVlm> vlms = new ArrayList<>();
         try (

@@ -27,7 +27,7 @@ public class Migration_2023_06_19_ChangeFSMNameDelimiter extends LinstorMigratio
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         try (
             PreparedStatement delObjProt = connection.prepareStatement(

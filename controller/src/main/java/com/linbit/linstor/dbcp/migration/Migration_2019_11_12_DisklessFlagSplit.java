@@ -29,7 +29,7 @@ public class Migration_2019_11_12_DisklessFlagSplit extends LinstorMigration
     private static final String KIND_NVME = "NVME";
 
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         String selectRscs =
             "SELECT " +

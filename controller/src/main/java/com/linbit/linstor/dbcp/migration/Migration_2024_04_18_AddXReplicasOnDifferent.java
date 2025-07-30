@@ -17,7 +17,7 @@ public class Migration_2024_04_18_AddXReplicasOnDifferent extends LinstorMigrati
     private static final String AFTER_CLM = "REPLICAS_ON_DIFFERENT";
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         SQLUtils.executeStatement(
             conRef,

@@ -13,7 +13,7 @@ import java.sql.Connection;
 public class Migration_2019_11_04_WritecacheVlmData extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         if (!MigrationUtils.tableExists(dbCon, "LAYER_WRITECACHE_VOLUMES"))
         {

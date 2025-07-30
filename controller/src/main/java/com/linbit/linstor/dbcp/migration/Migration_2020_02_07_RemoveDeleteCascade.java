@@ -16,7 +16,7 @@ import java.util.List;
 public class Migration_2020_02_07_RemoveDeleteCascade extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         removeCascadeConstraint(
             connection,

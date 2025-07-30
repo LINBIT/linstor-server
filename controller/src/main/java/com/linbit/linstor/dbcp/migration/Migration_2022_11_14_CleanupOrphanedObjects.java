@@ -42,7 +42,7 @@ public class Migration_2022_11_14_CleanupOrphanedObjects extends LinstorMigratio
     public static final String PROPS_INSTANCE = "PROPS_INSTANCE";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         cleanupStorPoolDfnsWithNoStorPools(connection);
         cleanupSnapshotDfnSecObjects(connection);

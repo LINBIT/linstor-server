@@ -13,7 +13,7 @@ import java.sql.PreparedStatement;
 public class Migration_2019_10_01_AutoQuorumAndTieBreaker extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         try (
             PreparedStatement stmt = dbCon.prepareStatement(

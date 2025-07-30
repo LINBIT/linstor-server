@@ -77,6 +77,62 @@ public class DatabaseInfo
             }
             return dspName;
         }
+
+        public String dbType()
+        {
+            String dspName;
+            switch (this)
+            {
+                case UNKNOWN:
+                    dspName = "unknown";
+                    break;
+                case H2:
+                    dspName = "h2";
+                    break;
+                case DERBY:
+                    dspName = "derby";
+                    break;
+                case DB2:
+                    dspName = "db2";
+                    break;
+                case DB2_I:
+                    dspName = "db2/i";
+                    break;
+                case DB2_Z:
+                    dspName = "db2/z";
+                    break;
+                case POSTGRESQL:
+                    dspName = "postgresql";
+                    break;
+                case ORACLE_RDBMS:
+                    dspName = "oracle";
+                    break;
+                case MSFT_SQLSERVER:
+                    dspName = "mssql";
+                    break;
+                case MYSQL:
+                    dspName = "mysql";
+                    break;
+                case MARIADB:
+                    dspName = "mariadb";
+                    break;
+                case INFORMIX:
+                    dspName = "informix";
+                    break;
+                case ASE:
+                    dspName = "sybase";
+                    break;
+                case ETCD:
+                    dspName = "etcd";
+                    break;
+                default:
+                    throw new ImplementationError(
+                        "Missing case statement for enum " + name() + " (" + ordinal() + ") in class " +
+                            getClass().getCanonicalName()
+                    );
+            }
+            return dspName;
+        }
     }
 
     public static final int[] H2_MIN_VERSION = {1, 2};

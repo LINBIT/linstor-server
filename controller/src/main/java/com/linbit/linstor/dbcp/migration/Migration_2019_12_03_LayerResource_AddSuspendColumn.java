@@ -13,7 +13,7 @@ import java.sql.Connection;
 public class Migration_2019_12_03_LayerResource_AddSuspendColumn extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         if (!MigrationUtils.columnExists(dbCon, "LAYER_RESOURCE_IDS", "LAYER_RESOURCE_SUSPENDED"))
         {

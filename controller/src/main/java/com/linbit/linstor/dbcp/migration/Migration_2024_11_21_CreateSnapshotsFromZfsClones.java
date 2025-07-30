@@ -35,7 +35,7 @@ public class Migration_2024_11_21_CreateSnapshotsFromZfsClones extends LinstorMi
                                      DeviceProviderKind.ZFS.name() + "')";
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         try (
             PreparedStatement selectStmt = conRef.prepareStatement(SQL_SELECT_NODES);

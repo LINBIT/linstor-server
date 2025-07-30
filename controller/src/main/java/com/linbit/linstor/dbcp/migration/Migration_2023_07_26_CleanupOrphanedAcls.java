@@ -46,7 +46,7 @@ public class Migration_2023_07_26_CleanupOrphanedAcls extends LinstorMigration
     private static final String CLM_ROLE_NAME = "ROLE_NAME";
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         TreeSet<String> neededObjPaths = new TreeSet<>();
 

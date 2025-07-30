@@ -159,7 +159,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
     private int nextLRI = -1;
 
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         /*
          * currently we have the following tables that have resource name as (partial) primary key:

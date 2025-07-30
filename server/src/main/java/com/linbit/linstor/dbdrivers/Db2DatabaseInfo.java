@@ -22,12 +22,6 @@ public class Db2DatabaseInfo implements DatabaseDriverInfo
     }
 
     @Override
-    public String isolationStatement()
-    {
-        return "SET ISOLATION SERIALIZABLE";
-    }
-
-    @Override
     public String prepareInit(String initSQL)
     {
         return initSQL;

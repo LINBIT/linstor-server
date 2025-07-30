@@ -25,7 +25,7 @@ public interface ControllerDatabase extends SystemService
     /**
      * Version is an object since ETCD and K8s do have int values, but SQL operates with String versions.
      */
-    void preImportMigrateToVersion(String dbType, Object version) throws DatabaseException;
+    void preImportMigrateToVersion(String dbType, Object version) throws InitializationException, DatabaseException;
 
     /**
      * Close all DB connections the calling thread had not closed yet.

@@ -8,10 +8,8 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerSQLDatabase;
-import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.ClassPathLoader;
 import com.linbit.linstor.core.cfg.CtrlConfig;
@@ -19,17 +17,8 @@ import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbcp.migration.Migration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.utils.StringUtils;
 
-import static com.linbit.linstor.DatabaseInfo.DB2_MIN_VERSION;
-import static com.linbit.linstor.DatabaseInfo.DERBY_MIN_VERSION;
-import static com.linbit.linstor.DatabaseInfo.H2_MIN_VERSION;
-import static com.linbit.linstor.DatabaseInfo.INFORMIX_MIN_VERSION;
-import static com.linbit.linstor.DatabaseInfo.MARIADB_MIN_VERSION;
-import static com.linbit.linstor.DatabaseInfo.MYSQL_MIN_VERSION;
-import static com.linbit.linstor.DatabaseInfo.POSTGRES_MIN_VERSION;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
 
@@ -37,7 +26,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -48,7 +36,6 @@ import java.util.Properties;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
@@ -57,9 +44,6 @@ import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.configuration.Configuration;
-import org.flywaydb.core.api.configuration.FluentConfiguration;
 
 /**
  * JDBC pool
@@ -71,7 +55,6 @@ public class DbConnectionPool implements ControllerSQLDatabase
 {
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "SQL database connection pool service";
-    private static final String SCHEMA_HISTORY_TABLE_NAME = "FLYWAY_SCHEMA_HISTORY";
 
     private int dbTimeout = ControllerDatabase.DEFAULT_TIMEOUT;
     private int dbMaxOpen = ControllerSQLDatabase.DEFAULT_MAX_OPEN_STMT;
@@ -163,11 +146,11 @@ public class DbConnectionPool implements ControllerSQLDatabase
     public Connection getConnection()
         throws SQLException
     {
-        Connection dbConn = null;
+        @Nullable Connection dbConn = null;
         if (dataSource != null)
         {
             dbConn = dataSource.getConnection();
-            List<Connection> connections = threadLocalConnections.get();
+            @Nullable List<Connection> connections = threadLocalConnections.get();
             if (connections == null)
             {
                 connections = new ArrayList<>();
@@ -223,19 +206,30 @@ public class DbConnectionPool implements ControllerSQLDatabase
     @Override
     public void migrate(String dbType) throws InitializationException
     {
-        migrate(dbType, false);
+        var dbMigrater = new DbMigrater(errorLog);
+        var dbInfo = DatabaseDriverInfo.createDriverInfo(dbType);
+        try (Connection conn = dataSource.getConnection())
+        {
+            dbMigrater.migrate(conn, dbInfo, false);
+        }
+        catch (SQLException exc)
+        {
+            throw new InitializationException(exc);
+        }
     }
 
-    public void migrate(String dbType, boolean withStartupVer) throws InitializationException
+    public void migrate(DatabaseDriverInfo dbInfo, boolean withStartupVer)
+        throws InitializationException
     {
-        setTransactionIsolation(dbType);
-
-        if (withStartupVer)
+        var dbMigrater = new DbMigrater(errorLog);
+        try (Connection conn = dataSource.getConnection())
         {
-            checkMinVersion();
+            dbMigrater.migrate(conn, dbInfo, withStartupVer);
         }
-
-        buildMigrations(dbType).migrate();
+        catch (SQLException exc)
+        {
+            throw new InitializationException(exc);
+        }
     }
 
     public String getCurrentVersion()
@@ -262,156 +256,35 @@ public class DbConnectionPool implements ControllerSQLDatabase
     }
 
     @Override
-    public void preImportMigrateToVersion(String dbTypeRef, Object versionRef) throws DatabaseException
+    public void preImportMigrateToVersion(String dbTypeRef, Object versionRef)
+        throws InitializationException, DatabaseException
     {
-        getFlywayConfig(dbTypeRef).target((String) versionRef).load().migrate();
+        var dbMigrater = new DbMigrater(errorLog);
+        var dbInfo = DatabaseDriverInfo.createDriverInfo(dbTypeRef);
+        try (Connection conn = dataSource.getConnection())
+        {
+            dbMigrater.setSchema(conn, dbInfo);
+            dbMigrater.migrateToVersion(conn, dbInfo, (String) versionRef);
+        }
+        catch (SQLException exc)
+        {
+            throw new DatabaseException(exc);
+        }
     }
 
     @Override
     public boolean needsMigration(String dbType)
     {
-        int pending = buildMigrations(dbType)
-            .info()
-            .pending()
-            .length;
-        return pending > 0;
-    }
-
-    private Flyway buildMigrations(String dbType)
-    {
-        return getFlywayConfig(dbType).load();
-    }
-
-    private FluentConfiguration getFlywayConfig(String dbType)
-    {
-        return Flyway.configure()
-            .schemas(DATABASE_SCHEMA_NAME)
-            .dataSource(dataSource)
-            .table(SCHEMA_HISTORY_TABLE_NAME)
-            // When migrations are added in branches they can be applied in different orders
-            .outOfOrder(true)
-            // Pass the DB type to the migrations
-            .placeholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, dbType))
-            .locations(LinstorMigration.class.getPackage().getName().replaceAll("\\.", "/"))
-            .ignoreFutureMigrations(false);
-    }
-
-    private void checkMinVersion() throws InitializationException
-    {
-        try
+        var dbMigrater = new DbMigrater(errorLog);
+        try (Connection conn = getConnection())
         {
-            DatabaseMetaData databaseMetaData = new org.flywaydb.core.api.migration.Context()
-            {
-                @Override
-                public Configuration getConfiguration()
-                {
-                    return null;
-                }
-
-                @Override
-                public Connection getConnection()
-                {
-                    Connection ret;
-                    try
-                    {
-                        ret = dataSource.getConnection();
-                    }
-                    catch (SQLException sqlExc)
-                    {
-                        throw new LinStorDBRuntimeException("Failed to set transaction isolation", sqlExc);
-                    }
-                    return ret;
-                }
-            }
-                .getConnection().getMetaData();
-
-            String dbProductName = databaseMetaData.getDatabaseProductName();
-            String dbProductVersion = databaseMetaData.getDatabaseProductVersion();
-
-            // check if minimum version requirements of certain databases are satisfied
-            int[] dbProductMinVersion = null;
-            final DatabaseInfo.DbProduct dbProd = DatabaseInfo.getDbProduct(dbProductName, dbProductVersion);
-            switch (dbProd)
-            {
-                case H2:
-                    dbProductMinVersion = H2_MIN_VERSION;
-                    break;
-                case DERBY:
-                    dbProductMinVersion = DERBY_MIN_VERSION;
-                    break;
-                case DB2:
-                    dbProductMinVersion = DB2_MIN_VERSION;
-                    break;
-                case POSTGRESQL:
-                    dbProductMinVersion = POSTGRES_MIN_VERSION;
-                    break;
-                case MYSQL:
-                    dbProductMinVersion = MYSQL_MIN_VERSION;
-                    break;
-                case MARIADB:
-                    dbProductMinVersion = MARIADB_MIN_VERSION;
-                    break;
-                case INFORMIX:
-                    dbProductMinVersion = INFORMIX_MIN_VERSION;
-                    break;
-                case ASE: // fall-through
-                case DB2_I: // fall-through
-                case DB2_Z: // fall-through
-                case ETCD: // fall-through
-                case MSFT_SQLSERVER: // fall-through
-                case ORACLE_RDBMS: // fall-through
-                case UNKNOWN: // fall-through
-                default:
-                    // currently no other databases with minimum version requirement
-                    break;
-            }
-
-            if (dbProductMinVersion != null)
-            {
-                final String[] versionNumberSplit = dbProductVersion.split("\\s");
-                if (versionNumberSplit.length > 0)
-                {
-                    String[] currVersionSplit = versionNumberSplit[0].split("\\.");
-                    int currVersionMajor = Integer.parseInt(currVersionSplit[0]);
-                    int currVersionMinor = Integer.parseInt(currVersionSplit[1]);
-                    int minVersionMajor = dbProductMinVersion[0];
-                    int minVersionMinor = dbProductMinVersion[1];
-
-                    if (
-                        currVersionMajor < minVersionMajor ||
-                            currVersionMajor == minVersionMajor && currVersionMinor < minVersionMinor
-                    )
-                    {
-                        throw new InitializationException(
-                            StringUtils.join(
-                                "",
-                                "Currently installed version (",
-                                currVersionMajor + "." + currVersionMinor,
-                                ") of database '", dbProductName,
-                                "' is older than the required minimum version (",
-                                minVersionMajor + "." + minVersionMinor, ")!"
-                            )
-                        );
-                    }
-                    else
-                    {
-                        // Everything is fine so we can proceed with the migration process
-                        errorLog.logInfo("SQL database is %s %s", dbProd.displayName(), dbProductVersion);
-                    }
-                }
-                else
-                {
-                    throw new InitializationException(
-                        "Failed to verify minimal database version! You can try to run linstor-controller without " +
-                        "database version check"
-                    );
-                }
-            }
+            return dbMigrater.needsMigration(conn, dbType);
         }
         catch (SQLException sqlExc)
         {
-            throw new InitializationException("Failed to verify minimal database version!", sqlExc);
+            errorLog.logError("Error getting db connection: " + sqlExc);
         }
+        return true;
     }
 
     @Override
@@ -550,22 +423,6 @@ public class DbConnectionPool implements ControllerSQLDatabase
         {
             // this method also closes the connection
             returnConnection(conn);
-        }
-    }
-
-    private void setTransactionIsolation(String dbType)
-    {
-        try
-        {
-            try (Connection connection = dataSource.getConnection())
-            {
-                DatabaseDriverInfo databaseInfo = DatabaseDriverInfo.createDriverInfo(dbType);
-                SQLUtils.executeStatement(connection, databaseInfo.isolationStatement());
-            }
-        }
-        catch (SQLException exc)
-        {
-            throw new LinStorDBRuntimeException("Failed to set transaction isolation", exc);
         }
     }
 }

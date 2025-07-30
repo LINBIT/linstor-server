@@ -12,7 +12,7 @@ import java.sql.Connection;
 public class Migration_2019_10_31_SnapRestoreDeleteProps2 extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         SQLUtils.runSql(
             dbCon,

@@ -18,7 +18,7 @@ public class Migration_2021_06_25_GenerateClusterId extends LinstorMigration
     private static final String PROP_VALUE = "PROP_VALUE";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         String propKey = "Cluster/LocalID";
         String clusterId = UUID.randomUUID().toString();

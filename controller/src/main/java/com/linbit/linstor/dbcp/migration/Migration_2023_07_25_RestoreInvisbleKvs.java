@@ -38,7 +38,7 @@ public class Migration_2023_07_25_RestoreInvisbleKvs extends LinstorMigration
     private static final String PROP_INSTANCE_PREFIX = "/KEYVALUESTORES/";
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         try (
             PreparedStatement selectPropsStmt = conRef.prepareStatement(

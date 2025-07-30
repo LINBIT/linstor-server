@@ -13,7 +13,7 @@ import java.sql.Connection;
 public class Migration_2023_11_21_DropOpenflexTables extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         if (MigrationUtils.tableExists(connection, "LAYER_OPENFLEX_RESOURCE_DEFINITIONS"))
         {

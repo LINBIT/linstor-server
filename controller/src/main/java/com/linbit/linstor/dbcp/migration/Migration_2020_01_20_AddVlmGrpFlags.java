@@ -12,7 +12,7 @@ import java.sql.Connection;
 public class Migration_2020_01_20_AddVlmGrpFlags extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection connectionRef, DbProduct dbProductRef) throws Exception
+    public void migrate(Connection connectionRef, DbProduct dbProductRef) throws Exception
     {
         SQLUtils.runSql(
             connectionRef,

@@ -64,7 +64,7 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
     private static final String LAYER_KIND_STORAGE = "STORAGE";
 
     @Override
-    protected void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
         Set<RscKey> rscKeysWithLayerData = new HashSet<>();
         int nextLayerResourceId = -1;

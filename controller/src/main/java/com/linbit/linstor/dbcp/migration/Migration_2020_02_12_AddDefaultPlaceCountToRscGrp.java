@@ -13,7 +13,7 @@ import java.sql.PreparedStatement;
 public class Migration_2020_02_12_AddDefaultPlaceCountToRscGrp extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         String updateStmtStr =
             " UPDATE RESOURCE_GROUPS " +

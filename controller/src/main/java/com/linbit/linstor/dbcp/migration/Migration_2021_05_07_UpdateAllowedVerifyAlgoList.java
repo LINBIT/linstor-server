@@ -19,7 +19,7 @@ public class Migration_2021_05_07_UpdateAllowedVerifyAlgoList extends LinstorMig
     private static final String PROP_VALUE = "PROP_VALUE";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         final String propKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/auto-verify-algo-allowed-list";
         SQLUtils.runSql(

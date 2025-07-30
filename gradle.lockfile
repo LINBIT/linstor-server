@@ -126,7 +126,6 @@ org.apache.httpcomponents:httpcore:4.4.13=compileClasspath,runtimeClasspath
 org.checkerframework:checker-qual:3.43.0=compileClasspath
 org.checkerframework:checker-qual:3.49.3=runtimeClasspath
 org.codehaus.mojo:animal-sniffer-annotations:1.24=compileClasspath,runtimeClasspath
-org.flywaydb:flyway-core:7.15.0=runtimeClasspath
 org.glassfish.grizzly:grizzly-framework:4.0.2=runtimeClasspath
 org.glassfish.grizzly:grizzly-http-server:4.0.2=runtimeClasspath
 org.glassfish.grizzly:grizzly-http-servlet:2.4.4=runtimeClasspath

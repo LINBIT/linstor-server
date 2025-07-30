@@ -18,7 +18,7 @@ public class Migration_2020_08_20_Enable_AutoDiskfulAllowCleanup extends Linstor
     private static final String PROP_VALUE = "PROP_VALUE";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         SQLUtils.runSql(
             connection,

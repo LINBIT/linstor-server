@@ -41,7 +41,7 @@ public class Migration_2022_03_23_RenameNetComProps extends LinstorMigration
     }
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         try (
             ResultSet resultSet = connection.createStatement(

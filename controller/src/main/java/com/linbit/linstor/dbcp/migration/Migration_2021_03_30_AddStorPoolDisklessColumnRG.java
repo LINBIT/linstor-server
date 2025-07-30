@@ -32,7 +32,7 @@ public class Migration_2021_03_30_AddStorPoolDisklessColumnRG extends LinstorMig
     private static final String COL_NAME_POOL_NAME_DISKLESS = "POOL_NAME_DISKLESS";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         /*
          * MariaDB (and maybe others too) only allow a maximum row sizes up to 64k.

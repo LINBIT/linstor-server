@@ -59,7 +59,7 @@ public class Migration_2024_12_18_SplitSnapPropsFixes extends LinstorMigration
     }
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         try (
             PreparedStatement selectStmt = conRef.prepareStatement(SELECT_STMT);

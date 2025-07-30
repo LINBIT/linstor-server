@@ -57,7 +57,7 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
                "VLM_NR = ?;";
 
     @Override
-    protected void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
         Map<Triple<String, String, String>, Integer> layerIds = new HashMap<>();
 

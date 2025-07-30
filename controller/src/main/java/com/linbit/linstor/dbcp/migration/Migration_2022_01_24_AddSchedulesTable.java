@@ -12,7 +12,7 @@ import java.sql.Connection;
 public class Migration_2022_01_24_AddSchedulesTable extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         SQLUtils.runSql(
             connection,

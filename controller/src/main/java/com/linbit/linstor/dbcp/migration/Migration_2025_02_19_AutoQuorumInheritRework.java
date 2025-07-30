@@ -33,7 +33,7 @@ public class Migration_2025_02_19_AutoQuorumInheritRework extends LinstorMigrati
 
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         try (
             PreparedStatement selectAutoQuorumProp = conRef.prepareStatement(SELECT_AUTO_QUORUM_PROP);

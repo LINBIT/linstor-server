@@ -23,7 +23,7 @@ public class Migration_2022_01_25_DropCachePoolNotNullConstraints extends Linsto
     private static final String POOL_NAME_META = "POOL_NAME_META";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         List<String> dropNotNullStatements = Arrays.asList(
             MigrationUtils.dropColumnConstraintNotNull(dbProduct, TBL_BCACHE_VLMS, NODE_NAME, "VARCHAR(255)"),

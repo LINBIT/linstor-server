@@ -17,7 +17,7 @@ import java.sql.Connection;
 public class Migration_2019_09_09_ExtNameFix extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         // Transform zero-length external names into NULL entries
         SQLUtils.runSql(dbCon, "UPDATE RESOURCE_DEFINITIONS " +

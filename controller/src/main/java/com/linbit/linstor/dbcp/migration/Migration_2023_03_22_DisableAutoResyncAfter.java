@@ -18,7 +18,7 @@ public class Migration_2023_03_22_DisableAutoResyncAfter extends LinstorMigratio
     private final static String KEY_AUTO_RESYNC_AFTER = ApiConsts.NAMESPC_DRBD_OPTIONS + "/auto-resync-after-disable";
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         ResultSet rs = connection.createStatement().executeQuery(
             "SELECT 1 FROM " + TBL_PROPS_CONTAINERS + " WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='" +

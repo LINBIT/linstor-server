@@ -19,7 +19,7 @@ import java.sql.Connection;
 public class Migration_2019_07_23_ResourceGroups extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         if (!MigrationUtils.tableExists(connection, "RESOURCE_GROUPS"))
         {

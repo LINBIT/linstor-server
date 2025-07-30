@@ -13,7 +13,7 @@ public class Migration_2021_04_14_AddRemotesTable extends LinstorMigration
 {
 
     @Override
-    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
+    public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         SQLUtils.runSql(
             connection,

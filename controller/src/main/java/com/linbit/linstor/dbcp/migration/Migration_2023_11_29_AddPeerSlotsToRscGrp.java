@@ -17,7 +17,7 @@ public class Migration_2023_11_29_AddPeerSlotsToRscGrp extends LinstorMigration
     private static final String AFTER_CLM = "DISKLESS_ON_REMAINING";
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         SQLUtils.executeStatement(
             conRef,

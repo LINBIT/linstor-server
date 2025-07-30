@@ -348,8 +348,6 @@ project(':controller') {
         // prometheus client library
         implementation group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.16.0'
 
-        implementation group: 'org.flywaydb', name: 'flyway-core', version: '7.15.0'
-
         runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.1.4'
         runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
     }

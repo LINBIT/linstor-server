@@ -14,7 +14,7 @@ import java.sql.ResultSet;
 public class Migration_2019_12_04_RemoveOrphanedResourceLayerIds extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         try
         (

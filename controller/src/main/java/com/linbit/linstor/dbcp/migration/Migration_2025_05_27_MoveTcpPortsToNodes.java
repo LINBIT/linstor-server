@@ -72,7 +72,7 @@ public class Migration_2025_05_27_MoveTcpPortsToNodes extends LinstorMigration
     private static final int UPD_RSC_CONN_PORT_DST_RSC_NAME_IDX = 4;
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         HashMap<RscDfnKey, Integer> tcpPortMap = getTcpPortMap(conRef);
 

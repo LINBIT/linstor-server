@@ -60,7 +60,7 @@ public class Migration_2025_01_29_SplitSnapPropsMoreFixes extends LinstorMigrati
     private static final int DELETE_NEW_INSTANCE_NAME_PROPS_INSTANCE_ID = 1;
 
     @Override
-    protected void migrate(Connection conRef, DbProduct dbProduct) throws Exception
+    public void migrate(Connection conRef, DbProduct dbProduct) throws Exception
     {
         try (
             PreparedStatement selectStmt = conRef.prepareStatement(SELECT_STMT);

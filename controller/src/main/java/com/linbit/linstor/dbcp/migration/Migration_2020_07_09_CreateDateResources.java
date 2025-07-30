@@ -13,7 +13,7 @@ import java.sql.Connection;
 public class Migration_2020_07_09_CreateDateResources extends LinstorMigration
 {
     @Override
-    protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
+    public void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
         if (!MigrationUtils.columnExists(dbCon, "RESOURCES", "CREATE_TIMESTAMP"))
         {
