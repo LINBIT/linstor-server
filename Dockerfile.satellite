@@ -18,7 +18,7 @@ RUN useradd -m -g makepkg makepkg # !lbbuild
 RUN yum install -y sudo # !lbbuild
 RUN usermod -a -G wheel makepkg # !lbbuild
 
-RUN yum install -y rpm-build wget unzip which make git java-1.11.0-openjdk-devel python2 && yum clean all -y # !lbbuild
+RUN yum install -y rpm-build wget unzip which make git python3 java-11-openjdk-devel python2 && yum clean all -y # !lbbuild
 RUN rpm -e --nodeps fakesystemd && yum install -y systemd && yum clean all -y || true # !lbbuild
 
 # one can not comment COPY
