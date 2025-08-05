@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.storage.utils;
 
 import com.linbit.extproc.ExtCmd;
+import com.linbit.extproc.LineParserDaemon;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.StorageException;
@@ -59,15 +60,20 @@ public class LsBlkUtils
         return fields;
     }
 
+    static LsBlkEntry parseLsblkLine(String line)
+    {
+        return new LsBlkEntry(splitFields(line.trim()));
+    }
+
     static List<LsBlkEntry> parseLsblkOutput(String lsblkOutput)
     {
         ArrayList<LsBlkEntry> lsBlkEntries = new ArrayList<>();
         for (String line : lsblkOutput.split("\n"))
         {
-            List<String> fields = splitFields(line.trim());
-            if (fields.size() > 0)
+            LsBlkEntry entry = parseLsblkLine(line);
+            if (!entry.getName().isEmpty())
             {
-                lsBlkEntries.add(new LsBlkEntry(fields));
+                lsBlkEntries.add(entry);
             }
         }
         return lsBlkEntries;
@@ -90,18 +96,33 @@ public class LsBlkUtils
                 .map(LsBlkEntry.LsBlkFields::toString)
                 .collect(Collectors.joining(","))
         };
+
         if (devicePathRef != null)
         {
             command = StringUtils.concat(command, devicePathRef);
         }
-        ExtCmd.OutputData outputData = Commands.genericExecutor(
-            extCmd.setSaveWithoutSharedLocks(true),
-            command,
-            "Failed execute lsblk",
-            "Failed to execute lsblk"
-        );
 
-        return parseLsblkOutput(new String(outputData.stdoutData, StandardCharsets.UTF_8));
+        final var lsBlkEntries = new ArrayList<LsBlkEntry>();
+        var daemon = new LineParserDaemon(
+            extCmd.getLogger(),
+            new ThreadGroup("lsblk_extcmd"),
+            "lsblk_parser",
+            command,
+            line -> {
+                LsBlkEntry entry = parseLsblkLine(line);
+                if (!entry.getName().isEmpty())
+                {
+                    lsBlkEntries.add(entry);
+                }
+            }
+        );
+        daemon.start();
+        if (daemon.waitDone() != 0)
+        {
+            throw new StorageException("Error executing lsblk.");
+        }
+
+        return lsBlkEntries;
     }
 
     public static boolean parentIsVDO(ExtCmd extCmd, List<String> devicePathList)
@@ -119,11 +140,11 @@ public class LsBlkUtils
             while (devicePathIter.hasNext() && vdoFlag)
             {
                 final String devicePath = devicePathIter.next();
-                LsBlkEntry dev = getLsBlkEntryByName(entries, devicePath);
+                @Nullable LsBlkEntry dev = getLsBlkEntryByName(entries, devicePath);
                 vdoFlag = dev != null;
                 if (vdoFlag)
                 {
-                    LsBlkEntry parent = getLsBlkEntryByName(entries, dev.getParentName());
+                    @Nullable LsBlkEntry parent = getLsBlkEntryByName(entries, dev.getParentName());
                     vdoFlag = parent != null;
                     if (vdoFlag)
                     {
@@ -135,15 +156,15 @@ public class LsBlkUtils
         return vdoFlag;
     }
 
-    private static LsBlkEntry getLsBlkEntryByName(final List<LsBlkEntry> entries, final String name)
+    private static @Nullable LsBlkEntry getLsBlkEntryByName(final List<LsBlkEntry> entries, final String name)
     {
-        LsBlkEntry selectedEntry = null;
+        @Nullable LsBlkEntry selectedEntry = null;
         Iterator<LsBlkEntry> entryIter = entries.iterator();
         while (entryIter.hasNext() && selectedEntry == null)
         {
             final LsBlkEntry entry = entryIter.next();
             final String entryName = entry.getName();
-            if (entryName != null && entryName.equals(name))
+            if (entryName.equals(name))
             {
                 selectedEntry = entry;
             }

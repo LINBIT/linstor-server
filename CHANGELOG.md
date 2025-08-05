@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ask drbdadm for resources that need to be adjusted instead of adjusting everything all the time
 - Snapshots are now automatically deleted during a "node delete" action (only from deleting node, not the peers)
 - zfs list: will now mostly only ask for the devices it wants to check instead of a global zfs list
+- lsblk output is now parsed with streaming
 
 ### Fixed
 

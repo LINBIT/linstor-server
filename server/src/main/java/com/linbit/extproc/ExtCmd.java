@@ -34,7 +34,7 @@ public class ExtCmd extends ChildProcessHandler
 
     private @Nullable OutputReceiver outReceiver;
     private @Nullable OutputReceiver errReceiver;
-    private ErrorReporter   errLog;
+    private final ErrorReporter errLog;
     private long            startTime;
 
     private @Nullable String[] execCommand;
@@ -46,6 +46,7 @@ public class ExtCmd extends ChildProcessHandler
     public ExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
     {
         super(timer);
+        execCommand = null;
         conditionsWithDescriptions = new HashMap<>();
         outReceiver = null;
         errReceiver = null;
@@ -218,6 +219,11 @@ public class ExtCmd extends ChildProcessHandler
     {
         logExecution = logRef;
         return this;
+    }
+
+    public ErrorReporter getLogger()
+    {
+        return errLog;
     }
 
     public static class OutputData
