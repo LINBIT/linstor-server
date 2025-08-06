@@ -382,7 +382,10 @@ public class ResourceDefinitions
                     requestData.use_zfs_clone,
                     requestData.volume_passphrases,
                     requestData.layer_list,
-                    requestData.resource_group
+                    requestData.resource_group,
+                    requestData.override_props,
+                    new HashSet<>(requestData.delete_props),
+                    new HashSet<>(requestData.delete_namespaces)
                 );
 
             requestHelper.doFlux(

@@ -15,6 +15,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Added ResourceConnection.drbd_proxy_port_b
   - Added DrbdProxyEnable.port_src
   - Added DrbdProxyEnable.port_target
+  - Added ResourceDefinitionCloneRequest.override_props and ResourceDefinitionCloneRequest.delete_props
 
 ### Deprecated
   - ResourceConnection.port

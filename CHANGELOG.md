@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Allow setting properties on snapshot definitions
+- Added override_props, delete_props and delete_namespaces to the clone resource-definition endpoint
 
 ### Changed
 

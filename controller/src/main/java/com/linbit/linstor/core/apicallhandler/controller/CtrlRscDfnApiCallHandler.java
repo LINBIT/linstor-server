@@ -506,7 +506,7 @@ public class CtrlRscDfnApiCallHandler
                 );
             }
 
-            if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
+            if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty() || !deletePropNamespaces.isEmpty())
             {
                 Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
 
@@ -825,10 +825,13 @@ public class CtrlRscDfnApiCallHandler
         String srcRscName,
         String clonedRscName,
         @Nullable byte[] clonedExtName,
-        Boolean useZfsClone,
+        @Nullable Boolean useZfsClone,
         @Nullable List<String> volumePassphrases,
         @Nullable List<String> layerList,
-        @Nullable String intoRscGrpName
+        @Nullable String intoRscGrpName,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deleteNamespaces
     )
     {
         ResponseContext context = makeResourceDefinitionContext(
@@ -844,7 +847,8 @@ public class CtrlRscDfnApiCallHandler
                         lockGuardFactory.buildDeferred(LockGuardFactory.LockType.WRITE, NODES_MAP, RSC_DFN_MAP),
                         () -> cloneRscDfnInTransaction(
                             srcRscName, clonedRscName, clonedExtName, useZfsClone,
-                            volumePassphrases, layerList, context, thinFreeCapacities, intoRscGrpName)
+                            volumePassphrases, layerList, context, thinFreeCapacities, intoRscGrpName,
+                            overrideProps, deletePropKeys, deleteNamespaces)
                     )
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
     }
@@ -1267,12 +1271,15 @@ public class CtrlRscDfnApiCallHandler
         String srcRscName,
         String clonedRscName,
         byte[] clonedExtName,
-        Boolean useZfsClone,
+        @Nullable Boolean useZfsClone,
         @Nullable List<String> volumePassphrases,
         @Nullable List<String> layerList,
         ResponseContext context,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        @Nullable String intoRscGrpName)
+        @Nullable String intoRscGrpName,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deleteNamespaces)
     {
         Flux<ApiCallRc> flux;
 
@@ -1296,9 +1303,53 @@ public class CtrlRscDfnApiCallHandler
                 payload,
                 rscGrpName);
 
-            Map<String, String> clonedRscDfnProps = clonedRscDfn.getProps(peerAccCtx.get()).map();
-            clonedRscDfnProps.putAll(srcRscDfn.getProps(peerAccCtx.get()).map());
-            clonedRscDfnProps.put(InternalApiConsts.KEY_CLONED_FROM, srcRscDfn.getName().displayValue);
+            Props clonedRscDfnProps = clonedRscDfn.getProps(peerAccCtx.get());
+            Map<String, String> clonedRscDfnPropsMap = clonedRscDfnProps.map();
+            clonedRscDfnPropsMap.putAll(srcRscDfn.getProps(peerAccCtx.get()).map());
+            clonedRscDfnPropsMap.put(InternalApiConsts.KEY_CLONED_FROM, srcRscDfn.getName().displayValue);
+
+            if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty() || !deleteNamespaces.isEmpty())
+            {
+                List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+                prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
+                // ExactSize check
+                @Nullable String exactSizeValue = overrideProps.get(
+                    ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE
+                );
+                if (Boolean.parseBoolean(exactSizeValue))
+                {
+                    String msg = String.format(
+                        "The property '%s/%s' cannot be set to True while there are currently deployed resources(%d).",
+                        ApiConsts.NAMESPC_DRBD_OPTIONS,
+                        ApiConsts.KEY_DRBD_EXACT_SIZE,
+                        srcRscDfn.getResourceCount());
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_PROP,
+                            msg,
+                            true
+                        )
+                    );
+                }
+
+                ctrlPropsHelper.fillProperties(
+                    responses,
+                    LinStorObject.RSC_DFN,
+                    overrideProps,
+                    clonedRscDfnProps,
+                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN,
+                    prefixesIgnoringWhitelistCheck
+                );
+                ctrlPropsHelper.remove(
+                    responses,
+                    LinStorObject.RSC_DFN,
+                    clonedRscDfnProps,
+                    deletePropKeys,
+                    deleteNamespaces,
+                    prefixesIgnoringWhitelistCheck
+                );
+            }
 
             final ReadOnlyProps rscGrpProps = srcRscDfn.getResourceGroup().getProps(peerAccCtx.get());
             PriorityProps rscGrpPrioProps = new PriorityProps(
@@ -1308,7 +1359,7 @@ public class CtrlRscDfnApiCallHandler
             boolean finalZfsClone = useZfsClone != null ? useZfsClone : StringUtils.propTrueOrYes(propUseZfsClone);
             if (finalZfsClone)
             {
-                clonedRscDfnProps.put(InternalApiConsts.KEY_USE_ZFS_CLONE, "true");
+                clonedRscDfnPropsMap.put(InternalApiConsts.KEY_USE_ZFS_CLONE, "true");
             }
             clonedRscDfn.getFlags().enableFlags(peerAccCtx.get(), ResourceDefinition.Flags.CLONING);
 

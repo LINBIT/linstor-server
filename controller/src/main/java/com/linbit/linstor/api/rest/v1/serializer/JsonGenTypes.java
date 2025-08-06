@@ -1868,6 +1868,9 @@ public class JsonGenTypes
          * Place clone into the given resource group and use storage pools of this group.
          */
         public @Nullable String resource_group;
+        public Map<String, String> override_props = Collections.emptyMap();
+        public List<String> delete_props = Collections.emptyList();
+        public List<String> delete_namespaces = Collections.emptyList();
     }
 
     /**

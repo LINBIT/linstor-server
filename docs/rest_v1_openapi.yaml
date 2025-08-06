@@ -8624,6 +8624,16 @@ components:
         resource_group:
           type: string
           description: Place clone into the given resource group and use storage pools of this group.
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
     ResourceDefinitionCloneStarted:
       type: object
       description: Clone request started object
