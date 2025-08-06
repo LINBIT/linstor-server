@@ -123,9 +123,10 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         drbdVlmDbDriver = drbdVlmDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
 
+        TreeSet<TcpPortNumber> rscPortsBackingSet = new TreeSet<>();
         rscPorts = transObjFactory.createTransactionPrimitiveSet(
             this,
-            new TreeSet<>(),
+            rscPortsBackingSet,
             drbdRscDbDriver.getTcpPortDriver()
         );
 
@@ -145,7 +146,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         final @Nullable Integer tmpPortCount;
         if (rsc instanceof Resource)
         {
-            initPorts(portListRef, portCountRef);
+            initPorts(portListRef, portCountRef, rscPortsBackingSet);
             tmpPortCount = null;
         }
         else
@@ -164,7 +165,8 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
 
     private void initPorts(
         @Nullable Collection<TcpPortNumber> portListRef,
-        @Nullable Integer portCountRef
+        @Nullable Integer portCountRef,
+        Set<TcpPortNumber> rscPortsBackingSetRef
     )
         throws ValueInUseException, ImplementationError, ValueOutOfRangeException, ExhaustedPoolException
     {
@@ -183,7 +185,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
                 preferredNewPortsRef.addAll(peer.rscPorts);
             }
         }
-        setPorts(portListRef, preferredNewPortsRef, portCountRef);
+        setPorts(portListRef, preferredNewPortsRef, portCountRef, rscPortsBackingSetRef);
     }
 
     @Override
@@ -264,13 +266,14 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     public void setPorts(@Nullable Collection<TcpPortNumber> portsRef)
         throws ValueInUseException, ImplementationError, ValueOutOfRangeException, ExhaustedPoolException
     {
-        setPorts(portsRef, null, null);
+        setPorts(portsRef, null, null, rscPorts);
     }
 
     private void setPorts(
         @Nullable Collection<TcpPortNumber> fixedNewPortsRef,
         @Nullable Collection<TcpPortNumber> preferredNewPortsRef,
-        @Nullable Integer expectedPortCountRef
+        @Nullable Integer expectedPortCountRef,
+        Set<TcpPortNumber> targetTcpPortsSetRef
     )
         throws ValueInUseException, ImplementationError, ValueOutOfRangeException, ExhaustedPoolException
     {
@@ -292,12 +295,12 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
                 expPortCount = 1;
             }
 
-            Set<TcpPortNumber> portsToDeallocate = new HashSet<>(rscPorts);
+            Set<TcpPortNumber> portsToDeallocate = new HashSet<>(targetTcpPortsSetRef);
             if (fixedNewPortsRef != null)
             {
                 for (TcpPortNumber fixedNewPort : fixedNewPortsRef)
                 {
-                    if (rscPorts.contains(fixedNewPort))
+                    if (targetTcpPortsSetRef.contains(fixedNewPort))
                     {
                         portsToDeallocate.remove(fixedNewPort);
                     }
@@ -305,13 +308,13 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
                     {
                         tcpPortPool.allocate(fixedNewPort.value);
                         allocatedNumbers.add(fixedNewPort.value);
-                        rscPorts.add(fixedNewPort);
+                        targetTcpPortsSetRef.add(fixedNewPort);
                     }
                 }
             }
             for (TcpPortNumber port : portsToDeallocate)
             {
-                rscPorts.remove(port);
+                targetTcpPortsSetRef.remove(port);
                 tcpPortPool.deallocate(port.value);
                 deallocatedNumbers.add(port.value);
             }
@@ -319,21 +322,21 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             if (preferredNewPortsRef != null)
             {
                 Iterator<TcpPortNumber> iterator = preferredNewPortsRef.iterator();
-                while (iterator.hasNext() && rscPorts.size() < expPortCount)
+                while (iterator.hasNext() && targetTcpPortsSetRef.size() < expPortCount)
                 {
                     TcpPortNumber prefTcpPort = iterator.next();
                     if (tcpPortPool.tryAllocate(prefTcpPort.value))
                     {
                         allocatedNumbers.add(prefTcpPort.value);
-                        rscPorts.add(prefTcpPort);
+                        targetTcpPortsSetRef.add(prefTcpPort);
                     }
                 }
             }
 
-            while (rscPorts.size() < expPortCount)
+            while (targetTcpPortsSetRef.size() < expPortCount)
             {
                 int autoAllocate = tcpPortPool.autoAllocate();
-                rscPorts.add(new TcpPortNumber(autoAllocate));
+                targetTcpPortsSetRef.add(new TcpPortNumber(autoAllocate));
                 allocatedNumbers.add(autoAllocate);
             }
         }
