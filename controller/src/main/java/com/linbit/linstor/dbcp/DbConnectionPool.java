@@ -382,7 +382,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
                     else
                     {
                         // Everything is fine so we can proceed with the migration process
-                        errorLog.logInfo("SQL database is %s", dbProd.displayName());
+                        errorLog.logInfo("SQL database is %s %s", dbProd.displayName(), dbProductVersion);
                     }
                 }
                 else

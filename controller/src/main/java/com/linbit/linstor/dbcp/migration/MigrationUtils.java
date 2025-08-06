@@ -176,7 +176,8 @@ public class MigrationUtils
         DbProduct dbProductRef,
         String tbl,
         String oldClm,
-        String newClm
+        String newClm,
+        String clmDfn
     )
     {
         StringBuilder sql = new StringBuilder();
@@ -193,6 +194,10 @@ public class MigrationUtils
             case DB2_Z:
             case MARIADB:
             case MYSQL:
+                sql.append("ALTER TABLE ").append(tbl)
+                    .append(" CHANGE COLUMN ").append(oldClm).append(" ")
+                    .append(newClm).append(" ").append(clmDfn);
+                break;
             case ORACLE_RDBMS:
             case POSTGRESQL:
                 sql.append("ALTER TABLE ").append(tbl)

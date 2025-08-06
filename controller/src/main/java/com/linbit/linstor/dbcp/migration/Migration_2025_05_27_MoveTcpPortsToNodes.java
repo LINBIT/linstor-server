@@ -108,7 +108,8 @@ public class Migration_2025_05_27_MoveTcpPortsToNodes extends LinstorMigration
                 dbProduct,
                 TBL_RSC_CONS,
                 CLM_RENAME_FROM_TCP_PORT,
-                CLM_RENAME_TO_TCP_PORT
+                CLM_RENAME_TO_TCP_PORT,
+                "INTEGER"
             )
         );
 
