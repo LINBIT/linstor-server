@@ -2956,6 +2956,11 @@ paths:
                 $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnapshotRollback'
   /v1/resource-groups:
     get:
       tags:
@@ -7834,6 +7839,19 @@ components:
           type: object
           additionalProperties:
             type: string
+    SnapshotRollback:
+      type: object
+      properties:
+        zfs_rollback_strategy:
+          type: string
+          enum:
+            - "rollback"
+            - "clone"
+            - "dynamic"
+          description: |
+            "'rollback' will try to use 'zfs rollback' (fail fast if more recent snapshots exist). 'clone' renames the "
+            "original ZVOL and creates a clone from the given snapshot with the original ZVOLs name. 'dynamic' chooses "
+            "'rollback' if possible, 'clone' otherwise. This overrides possibly existing properties"
     BackupList:
       type: object
       properties:

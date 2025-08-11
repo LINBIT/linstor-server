@@ -30,6 +30,7 @@ import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedLis
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ZfsRollbackStrategy;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -984,6 +985,8 @@ public class CtrlConfApiCallHandler
                         case BackupConsts.CONCURRENT_BACKUPS_KEY:
                             // fall-through
                         case ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND:
+                            // fall-through
+                        case ZfsRollbackStrategy.FULL_KEY_USE_ZFS_ROLLBACK_PROP:
                             // no need to update stlts
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             break;

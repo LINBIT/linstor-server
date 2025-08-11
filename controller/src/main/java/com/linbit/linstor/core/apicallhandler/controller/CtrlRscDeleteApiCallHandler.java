@@ -68,7 +68,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListener
 {
-    private static final String PROP_KEY_ZFS_RENAME_SUFFIX = InternalApiConsts.NAMESPC_INTERNAL + "/" +
+    public static final String PROP_KEY_ZFS_RENAME_SUFFIX = InternalApiConsts.NAMESPC_INTERNAL + "/" +
         ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + InternalApiConsts.KEY_ZFS_RENAME_SUFFIX;
 
     private final ErrorReporter errorReporter;

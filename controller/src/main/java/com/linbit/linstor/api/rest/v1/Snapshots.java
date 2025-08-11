@@ -138,7 +138,7 @@ public class Snapshots
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
-        String jsonData
+        @Nullable String jsonData
     )
     {
         try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))

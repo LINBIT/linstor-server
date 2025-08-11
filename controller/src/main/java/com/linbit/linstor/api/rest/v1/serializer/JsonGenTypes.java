@@ -1328,6 +1328,17 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SnapshotRollback
+    {
+        /**
+         * "'rollback' will try to use 'zfs rollback' (fail fast if more recent snapshots exist). 'clone' renames the "
+         * "original ZVOL and creates a clone from the given snapshot with the original ZVOLs name. 'dynamic' chooses "
+         * "'rollback' if possible, 'clone' otherwise. This overrides possibly existing properties"
+         */
+        public @Nullable String zfs_rollback_strategy;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class BackupList
     {
         /**

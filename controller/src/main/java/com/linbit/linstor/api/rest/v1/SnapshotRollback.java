@@ -1,7 +1,9 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotRollbackApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -14,6 +16,9 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 
+import java.io.IOException;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
@@ -23,6 +28,7 @@ public class SnapshotRollback
 {
     private final RequestHelper requestHelper;
     private final CtrlSnapshotRollbackApiCallHandler ctrlSnapshotRollbackApiCallHandler;
+    private final ObjectMapper objectMapper;
 
     @Inject
     public SnapshotRollback(
@@ -32,6 +38,8 @@ public class SnapshotRollback
     {
         requestHelper = requestHelperRef;
         ctrlSnapshotRollbackApiCallHandler = ctrlSnapshotRollbackApiCallHandlerRef;
+
+        objectMapper = new ObjectMapper();
     }
 
     @POST
@@ -40,12 +48,26 @@ public class SnapshotRollback
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
-        @PathParam("snapName") String snapName
+        @PathParam("snapName") String snapName,
+        @Nullable String jsonData
     )
     {
         try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
-            Flux<ApiCallRc> flux = ctrlSnapshotRollbackApiCallHandler.rollbackSnapshot(rscName, snapName);
+            JsonGenTypes.SnapshotRollback data;
+            if (jsonData != null && !jsonData.isEmpty())
+            {
+                data = objectMapper.readValue(jsonData, JsonGenTypes.SnapshotRollback.class);
+            }
+            else
+            {
+                data = new JsonGenTypes.SnapshotRollback();
+            }
+            Flux<ApiCallRc> flux = ctrlSnapshotRollbackApiCallHandler.rollbackSnapshot(
+                rscName,
+                snapName,
+                data.zfs_rollback_strategy
+            );
 
             requestHelper.doFlux(
                 ApiConsts.API_ROLLBACK_SNAPSHOT,
@@ -53,6 +75,10 @@ public class SnapshotRollback
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(flux)
             );
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 }

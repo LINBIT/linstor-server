@@ -14,6 +14,8 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.mgr.SnapshotRollbackManager;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ZfsChecks;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ZfsRollbackStrategy;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -30,7 +32,9 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -49,7 +53,10 @@ import com.linbit.locks.LockGuardFactory.LockType;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
+import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -74,21 +81,34 @@ import reactor.util.function.Tuple2;
 /**
  * Rolls a resource back to a snapshot state.
  * <p>
- *      Rollback proceeds as follows:
- *      <ol>
- *          <li>Create a SAFETY_SNAP snapshot on all nodes with a diskful resource.
- *              <p>If this step fails, the SAFETY_SNAP is removed again.</p>
+ *      Since 1.32.0 we re-introduced the old rollback behavior. Depending on
+ *      {@value ZfsRollbackStrategy#FULL_KEY_USE_ZFS_ROLLBACK_PROP}, either the old rollback is performed or the new.
+ *      <ul>
+ *          <li>Old behavior:
+ *              <p>Only applicable for ZFS resources</p>
+ *              <p>Simply set the {@value ApiConsts#KEY_RSC_ROLLBACK_TARGET} property which leads to
+ *                  <code>zfs rollback ...</code> command</p>
  *          </li>
- *          <li>All resources will be deleted (via {@link CtrlRscDfnTruncateApiCallHandler}, i.e. diskless first)
- *              <p>If this step fails, SAFTEY_SNAP will be restored on the diskful nodes that were successfully deleted.
- *                  Other resources are undeleted.</p>
+ *          <li>New behavior:
+ *              <p>Forced for LVM, optional for ZFS</p>
+ *              <ol>
+ *                  <li>Create a SAFETY_SNAP snapshot on all nodes with a diskful resource.
+ *                      <p>If this step fails, the SAFETY_SNAP is removed again.</p>
+ *                  </li>
+ *                  <li>All resources will be deleted (via {@link CtrlRscDfnTruncateApiCallHandler}, i.e. diskless
+ *                      first)
+ *                      <p>If this step fails, SAFTEY_SNAP will be restored on the diskful nodes that were
+ *                          successfully deleted. Other resources are undeleted.</p>
+ *                  </li>
+ *                  <li>The given snapshot will be restored on the nodes that have the snapshot (which might be
+ *                      different nodes then we just deleted the resources from)
+ *                      <p>If this step fails, all existing resources (i.e. those which successfully performed a
+ *                          resource, if any) will be deleted an all nodes will restore back to SAFETY_SNAP.</p>
+ *                  </li>
+ *                  <li>SAFETY_SNAP will be deleted</li>
+ *              </ol>
  *          </li>
- *          <li>The given snapshot will be restored on the nodes that have the snapshot (which might be different nodes
- *              then we just deleted the resources from)
- *              <p>If this step fails, all existing resources (i.e. those which successfully performed a resource, if
- *                  any) will be deleted an all nodes will restore back to SAFETY_SNAP.</p>
- *          <li>SAFETY_SNAP will be deleted</li>
- *      </ol>
+ *      </ul>
  * </p>
  */
 @Singleton
@@ -116,6 +136,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private final CtrlSnapshotCrtHelper ctrlSnapCrtHelper;
     private final CtrlRscMakeAvailableApiCallHandler ctrlRscMakeAvailableApiCallHandler;
     private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
+    private final ZfsChecks zfsChecks;
 
     @Inject
     public CtrlSnapshotRollbackApiCallHandler(
@@ -138,7 +159,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         CtrlSnapshotRestoreApiCallHandler ctrlSnapRstApiCallHandlerRef,
         CtrlSnapshotCrtHelper ctrlSnapCrtHelperRef,
         CtrlRscMakeAvailableApiCallHandler ctrlRscMakeAvailableApiCallHandlerRef,
-        CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef
+        CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
+        ZfsChecks zfsChecksRef
     )
     {
         apiCtx = apiCtxRef;
@@ -161,6 +183,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         ctrlSnapCrtHelper = ctrlSnapCrtHelperRef;
         ctrlRscMakeAvailableApiCallHandler = ctrlRscMakeAvailableApiCallHandlerRef;
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
+        zfsChecks = zfsChecksRef;
     }
 
     @Override
@@ -187,8 +210,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
         for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(apiCtx))
         {
-            if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SAFETY_SNAPSHOT)
-                && snapshotDfn.getFlags().isUnset(apiCtx, SnapshotDefinition.Flags.DELETE))
+            if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SAFETY_SNAPSHOT) &&
+                snapshotDfn.getFlags().isUnset(apiCtx, SnapshotDefinition.Flags.DELETE))
             {
                 fluxes.add(recoverFailedRollback(rscDfn, snapshotDfn));
             }
@@ -197,7 +220,11 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         return fluxes;
     }
 
-    public Flux<ApiCallRc> rollbackSnapshot(String rscNameStr, String snapshotNameStr)
+    public Flux<ApiCallRc> rollbackSnapshot(
+        String rscNameStr,
+        String snapshotNameStr,
+        @Nullable String zfsRollbackStrategyRef
+    )
     {
         ResponseContext context = makeSnapshotContext(
             ApiOperation.makeModifyOperation(),
@@ -213,54 +240,103 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> prepareRollbackInTransaction(rscNameStr, snapshotNameStr)
+                () -> prepareRollbackInTransaction(rscNameStr, snapshotNameStr, zfsRollbackStrategyRef)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> prepareRollbackInTransaction(String rscNameStr, String snapshotNameStr)
+    private Flux<ApiCallRc> prepareRollbackInTransaction(
+        String rscNameStr,
+        String snapshotNameStr,
+        @Nullable String zfsRollbackStrategyRef
+    )
     {
         SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameStr, snapshotNameStr, true);
         ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
+        boolean useOldRollback = zfsChecks.useOldRollback(snapshotDfn, zfsRollbackStrategyRef);
+
         ResourceName rscName = rscDfn.getName();
-        SnapshotName snapName = snapshotDfn.getName();
         ensureNoBackupRestoreRunning(rscDfn);
         ensureNoScheduleActive(rscNameStr);
         ctrlSnapshotHelper.ensureSnapshotSuccessful(snapshotDfn);
         ensureAllSatellitesConnected(rscDfn);
         ensureNoResourcesInUse(rscDfn);
-        Map<NodeName, Boolean> rscNodes = currentRscNodeDisks(rscDfn);
 
-        ApiCallRcImpl responses = new ApiCallRcImpl();
+        Flux<ApiCallRc> retFlux;
+
         try
         {
-            SnapshotDefinition safetySnapDfn = ctrlSnapCrtHelper.createSnapshots(
-                Collections.emptyList(),
-                rscName,
-                new SnapshotName(SAFETY_SNAP_PREFIX + UUID.randomUUID()),
-                Collections.emptyMap(),
-                responses
-            );
-            safetySnapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SAFETY_SNAPSHOT);
-            ctrlTransactionHelper.commit();
-            return ctrlSnapshotCrtHandler.postCreateSnapshot(safetySnapDfn, false)
-                .concatWith(Flux.<ApiCallRc>just(responses))
-                .concatWith(
-                    deleteRscs(rscDfn.getName())
-                        .onErrorResume(
-                            exc -> rollbackToSafetySnap(snapshotDfn, false).concatWith(Flux.error(exc))
-                        )
-                )
-                .concatWith(
-                    restoreSnap(rscDfn, snapshotDfn)
-                        .onErrorResume(
-                            exc -> rollbackToSafetySnap(snapshotDfn, true).concatWith(Flux.error(exc))
-                        )
-                )
-                .concatWith(deleteSafetySnap(null, rscDfn))
-                .concatWith(recreateResources(rscNameStr, rscNodes))
-                .onErrorResume(exc -> deleteSafetySnap(exc, rscDfn));
+            if (useOldRollback)
+            {
+                // old mechanic, "rollback via 'zfs rollback'". Currently only possibly in ZFS case
+                zfsChecks.ensureMostRecentSnapshot(snapshotDfn);
+                ensureSnapshotsForAllVolumes(snapshotDfn);
+                ensureNoEbsInitiator(snapshotDfn);
+                ensureSnapshotsForAllVolumes(snapshotDfn);
+
+                markDown(rscDfn);
+
+                ctrlTransactionHelper.commit();
+                SnapshotName snapshotName = snapshotDfn.getName();
+                ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.MODIFIED,
+                        firstLetterCaps(getSnapshotDfnDescriptionInline(rscName, snapshotName)) +
+                            " marked down for rollback."
+                    )
+                );
+                Flux<ApiCallRc> nextStep = startRollback(rscName, snapshotName);
+                retFlux = Flux
+                    .just(responses)
+                    .concatWith(
+                        ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), nextStep)
+                            .transform(
+                                updateResponses -> CtrlResponseUtils.combineResponses(
+                                    errorReporter,
+                                    updateResponses,
+                                    rscName,
+                                    "Deactivated resource {1} on {0} for rollback"
+                                )
+                            )
+                            .onErrorResume(exception -> reactivateRscDfn(rscName, exception))
+                    )
+                    .concatWith(nextStep)
+                    .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
+            }
+            else
+            {
+                // new mechanic, "rollback via restore"
+                Map<NodeName, Boolean> rscNodes = currentRscNodeDisks(rscDfn);
+
+                ApiCallRcImpl responses = new ApiCallRcImpl();
+                SnapshotDefinition safetySnapDfn = ctrlSnapCrtHelper.createSnapshots(
+                    Collections.emptyList(),
+                    rscName,
+                    new SnapshotName(SAFETY_SNAP_PREFIX + UUID.randomUUID()),
+                    Collections.emptyMap(),
+                    responses
+                );
+                safetySnapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SAFETY_SNAPSHOT);
+                ctrlTransactionHelper.commit();
+                retFlux = ctrlSnapshotCrtHandler.postCreateSnapshot(safetySnapDfn, false)
+                    .concatWith(Flux.<ApiCallRc>just(responses))
+                    .concatWith(
+                        deleteRscs(rscDfn.getName())
+                            .onErrorResume(
+                                exc -> rollbackToSafetySnap(snapshotDfn, false).concatWith(Flux.error(exc))
+                            )
+                    )
+                    .concatWith(
+                        restoreSnap(rscDfn, snapshotDfn)
+                            .onErrorResume(
+                                exc -> rollbackToSafetySnap(snapshotDfn, true).concatWith(Flux.error(exc))
+                            )
+                    )
+                    .concatWith(deleteSafetySnap(null, rscDfn))
+                    .concatWith(recreateResources(rscNameStr, rscNodes))
+                    .onErrorResume(exc -> deleteSafetySnap(exc, rscDfn));
+            }
         }
         catch (AccessDeniedException accDenyExc)
         {
@@ -278,6 +354,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         {
             throw new ImplementationError(exc);
         }
+        return retFlux;
     }
 
     private Flux<ApiCallRc> recoverFailedRollback(ResourceDefinition rscDfn, SnapshotDefinition snapshotDfn)
@@ -918,5 +995,185 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             );
         }
         return props;
+    }
+
+    /*
+     * ***********
+     * Methods for old snapshot rollback behavior
+     * ***********
+     */
+
+    private boolean allVolumesHaveSnapshots(SnapshotDefinition snapDfnRef)
+    {
+        boolean ret = true;
+        Iterator<Resource> rscIter = ctrlSnapshotHelper.iterateResource(snapDfnRef.getResourceDefinition());
+        while (ret && rscIter.hasNext())
+        {
+            Resource rsc = rscIter.next();
+            if (!isDiskless(rsc))
+            {
+                Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(rsc.getNode(), snapDfnRef);
+                Iterator<Volume> vlmIter = rsc.iterateVolumes();
+                while (ret && vlmIter.hasNext())
+                {
+                    Volume vlm = vlmIter.next();
+                    @Nullable SnapshotVolume snapVlm = snapshot.getVolume(vlm.getVolumeNumber());
+                    if (snapVlm == null)
+                    {
+                        ret = false;
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
+    private void ensureNoEbsInitiator(SnapshotDefinition snapDfnRef)
+    {
+        Iterator<Resource> rscIter = ctrlSnapshotHelper.iterateResource(snapDfnRef.getResourceDefinition());
+        while (rscIter.hasNext())
+        {
+            Resource rsc = rscIter.next();
+            if (isEbsInitiator(rsc))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        "Cannot rollback EBS volume while attached."
+                    )
+                        .setCorrection("Delete the EBS initiator resource(s) first")
+                        .setSkipErrorReport(true)
+                );
+            }
+        }
+    }
+
+    private void ensureSnapshotsForAllVolumes(SnapshotDefinition snapDfnRef)
+    {
+        if (!allVolumesHaveSnapshots(snapDfnRef))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT,
+                    "Some volumes were not captured by the snapshot. Cannot rollback."
+                )
+                    .setSkipErrorReport(true)
+            );
+        }
+    }
+
+    private boolean isEbsInitiator(Resource rsc)
+    {
+        boolean ebsInit;
+        try
+        {
+            AccessContext accCtx = peerAccCtx.get();
+            ebsInit = rsc.isEbsInitiator(accCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check if " + getRscDescriptionInline(rsc) + " is an EBS initiator",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return ebsInit;
+    }
+
+
+
+    private void markDown(ResourceDefinition rscDfn)
+    {
+        try
+        {
+            Map<String, DrbdRscDfnData<Resource>> drbdRscDfnDataMap = rscDfn.getLayerData(
+                peerAccCtx.get(),
+                DeviceLayerKind.DRBD
+            );
+            for (DrbdRscDfnData<Resource> drbdRscDfnData : drbdRscDfnDataMap.values())
+            {
+                drbdRscDfnData.setDown(true);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "mark " + getRscDfnDescriptionInline(rscDfn) + " down",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
+    }
+
+    private Flux<ApiCallRc> reactivateRscDfn(ResourceName rscName, Throwable exception)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Reactivate resources due to failed deactivation",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> reactivateRscDfnInTransaction(rscName, exception)
+            );
+    }
+
+    private Flux<ApiCallRc> reactivateRscDfnInTransaction(
+        ResourceName rscName,
+        Throwable exception
+    )
+    {
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
+        unmarkDownPrivileged(rscDfn);
+        ctrlTransactionHelper.commit();
+        Flux<ApiCallRc> nextStep = Flux.error(exception);
+        return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
+            // ensure that the individual node update fluxes are subscribed to, but ignore the responses
+            .flatMap(Tuple2::getT2)
+            .thenMany(Flux.<ApiCallRc>empty())
+            .concatWith(
+                Flux.just(
+                    ApiCallRcImpl.singletonApiCallRc(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.MODIFIED,
+                            "Rollback of '" + rscName + "' aborted due to error deactivating"
+                        )
+                    )
+                )
+            )
+            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
+            .concatWith(nextStep);
+    }
+
+    private Flux<ApiCallRc> startRollback(ResourceName rscName, SnapshotName snapshotName)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Initiate rollback",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> startRollbackInTransaction(rscName, snapshotName)
+            );
+    }
+
+    private Flux<ApiCallRc> startRollbackInTransaction(ResourceName rscName, SnapshotName snapshotName)
+    {
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
+        ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
+        Iterator<Resource> rscIter = iterateResourcePrivileged(rscDfn);
+        while (rscIter.hasNext())
+        {
+            Resource rsc = rscIter.next();
+            getProps(rsc).map().put(ApiConsts.KEY_RSC_ROLLBACK_TARGET, snapshotName.displayValue);
+        }
+        ctrlTransactionHelper.commit();
+        return updateForRollback(rscName);
     }
 }
