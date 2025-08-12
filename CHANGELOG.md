@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow setting properties on snapshot definitions
 - Added override_props, delete_props and delete_namespaces to the clone resource-definition endpoint
 - Added property "StorDriver/Zfs/RollbackStrategy" to allow for old "zfs rollback" behavior
+- Added property "StorDriver/Zfs/DeleteStrategy" to fail instead of rename ZVOLs if dependent snapshots exist
 
 ### Changed
 

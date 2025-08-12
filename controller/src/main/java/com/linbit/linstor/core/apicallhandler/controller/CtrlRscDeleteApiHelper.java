@@ -25,6 +25,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -56,6 +57,10 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlRscDeleteApiHelper
 {
+    public static final String FULL_KEY_ZFS_DELETE_STRATEGY = ApiConsts.NAMESPC_STORAGE_DRIVER +
+        ReadOnlyProps.PATH_SEPARATOR + ApiConsts.NAMESPC_ZFS +
+        ReadOnlyProps.PATH_SEPARATOR + ApiConsts.KEY_ZFS_DELETE_STRATEGY;
+
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;

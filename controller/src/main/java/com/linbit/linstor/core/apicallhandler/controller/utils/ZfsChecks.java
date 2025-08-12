@@ -3,7 +3,9 @@ package com.linbit.linstor.core.apicallhandler.controller.utils;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
@@ -15,8 +17,11 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -26,6 +31,10 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 @Singleton
 public class ZfsChecks
@@ -193,10 +202,35 @@ public class ZfsChecks
         return allSnapsZfs;
     }
 
+    public boolean hasZfs(ResourceDefinition rscDfnRef) throws AccessDeniedException
+    {
+        return hasZfs(rscDfnRef, apiCtx);
+    }
+
+    public static boolean hasZfs(ResourceDefinition rscDfnRef, AccessContext accCtxRef) throws AccessDeniedException
+    {
+        boolean ret = false;
+        for (Resource rsc : rscDfnRef.getDiskfulResources(accCtxRef))
+        {
+            if (isZfs(rsc, accCtxRef))
+            {
+                ret = true;
+                break;
+            }
+        }
+        return ret;
+    }
+
     public <RSC extends AbsResource<RSC>> boolean isZfs(RSC absRscRef) throws AccessDeniedException
     {
+        return isZfs(absRscRef, apiCtx);
+    }
+
+    public static <RSC extends AbsResource<RSC>> boolean isZfs(RSC absRscRef, AccessContext accCtx)
+        throws AccessDeniedException
+    {
         boolean ret = true;
-        for (StorPool sp : LayerVlmUtils.getStorPools(absRscRef, apiCtx, true))
+        for (StorPool sp : LayerVlmUtils.getStorPools(absRscRef, accCtx, true))
         {
             DeviceProviderKind kind = sp.getDeviceProviderKind();
             if (kind != DeviceProviderKind.ZFS && kind != DeviceProviderKind.ZFS_THIN)
@@ -272,5 +306,184 @@ public class ZfsChecks
                 ).setSkipErrorReport(true)
             );
         }
+    }
+
+    public static ZfsDeleteStrategy getDeleteStrategy(
+        VolumeDefinition vlmDfnRef,
+        ReadOnlyProps ctrlPropsRef,
+        AccessContext accCtxRef
+    )
+        throws InvalidKeyException, AccessDeniedException
+    {
+        return getDeleteStrategy(vlmDfnRef.getResourceDefinition(), ctrlPropsRef, accCtxRef);
+    }
+
+    public ZfsDeleteStrategy getDeleteStrategy(ResourceDefinition rscDfnRef)
+    {
+        try
+        {
+            return getDeleteStrategy(rscDfnRef, ctrlPropsHelper.getCtrlPropsForView(apiCtx), apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    public static ZfsDeleteStrategy getDeleteStrategy(
+        ResourceDefinition rscDfnRef,
+        ReadOnlyProps ctrlPropsRef,
+        AccessContext accCtxRef
+    )
+        throws AccessDeniedException
+    {
+        ZfsDeleteStrategy strat = ZfsDeleteStrategy.getStrat(rscDfnRef, ctrlPropsRef, accCtxRef);
+        switch (strat)
+        {
+            case DELETE:
+                if (!rscDfnRef.getSnapshotDfns(accCtxRef).isEmpty())
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                            "Cannot use " + strat + " strategy since the resource definition '" + rscDfnRef.getName() +
+                                "' still has snapshots"
+                        ).setSkipErrorReport(true)
+                    );
+                }
+                break;
+            case DYNAMIC:
+                strat = rscDfnRef.getSnapshotDfns(accCtxRef).isEmpty() ?
+                    ZfsDeleteStrategy.DELETE :
+                    ZfsDeleteStrategy.RENAME;
+                break;
+            case RENAME:
+                // noop, delete via rename is always possible
+                break;
+            default:
+                throw new ImplementationError("Strategy '" + strat + "' not implemented");
+        }
+        return strat;
+    }
+
+    public void ensureNoDependentSnapshots(Resource rscRef)
+    {
+        try
+        {
+            if (getDeleteStrategy(rscRef.getResourceDefinition()) == ZfsDeleteStrategy.DELETE)
+            {
+                ensureNoDependentSnapshots(rscRef, apiCtx, true);
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    public static ApiCallRc ensureNoDependentSnapshots(Resource rscRef, AccessContext accCtx, boolean throwApiExc)
+        throws AccessDeniedException
+    {
+        ApiCallRcImpl ret = new ApiCallRcImpl();
+        if (isZfs(rscRef, accCtx))
+        {
+            for (SnapshotDefinition snapshotDfn : rscRef.getResourceDefinition().getSnapshotDfns(accCtx))
+            {
+                @Nullable Snapshot snapshot = snapshotDfn.getSnapshot(accCtx, rscRef.getNode().getName());
+                if (snapshot != null)
+                {
+                    Iterator<SnapshotVolume> snapVlmIt = snapshot.iterateVolumes();
+                    while (snapVlmIt.hasNext())
+                    {
+                        SnapshotVolume snapshotVlm = snapVlmIt.next();
+                        Set<StorPool> storPoolSet = LayerVlmUtils.getStorPoolSet(snapshotVlm, accCtx, true);
+                        for (StorPool storPool : storPoolSet)
+                        {
+                            if (storPool.getDeviceProviderKind().isSnapshotDependent())
+                            {
+                                ApiCallRcEntry simpleEntry = ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                                    "Resource '" + rscRef.getResourceDefinition().getName() +
+                                        "' cannot be deleted because volume " +
+                                        snapshotVlm.getVolumeNumber() + " has dependent snapshot '" +
+                                        snapshot.getSnapshotName() + "'"
+                                );
+                                if (throwApiExc)
+                                {
+                                    throw new ApiRcException(simpleEntry);
+                                }
+                                else
+                                {
+                                    ret.add(simpleEntry);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
+    public void ensureNoDependentSnapshots(VolumeDefinition vlmDfnRef)
+    {
+        try
+        {
+            if (getDeleteStrategy(vlmDfnRef.getResourceDefinition()) == ZfsDeleteStrategy.DELETE)
+            {
+                ensureNoDependentSnapshots(vlmDfnRef, apiCtx, true);
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    public static ApiCallRc ensureNoDependentSnapshots(
+        VolumeDefinition vlmDfnRef,
+        AccessContext accCtxRef,
+        boolean throwApiExcRef
+    )
+        throws AccessDeniedException
+    {
+        ApiCallRc ret = new ApiCallRcImpl();
+        if (hasZfs(vlmDfnRef.getResourceDefinition(), accCtxRef))
+        {
+            ResourceDefinition rscDfn = vlmDfnRef.getResourceDefinition();
+            for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(accCtxRef))
+            {
+                for (Snapshot snapshot : snapshotDfn.getAllSnapshots(accCtxRef))
+                {
+                    SnapshotVolume snapshotVlm = snapshot.getVolume(vlmDfnRef.getVolumeNumber());
+                    if (snapshotVlm != null)
+                    {
+                        Map<String, StorPool> storPoolMap = LayerVlmUtils.getStorPoolMap(snapshotVlm, accCtxRef);
+                        for (StorPool storPool : storPoolMap.values())
+                        {
+                            if (storPool.getDeviceProviderKind().isSnapshotDependent())
+                            {
+                                ApiCallRcEntry simpleEntry = ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                                    "Volume definition " + vlmDfnRef.getVolumeNumber() + " of '" + rscDfn.getName() +
+                                        "' cannot be deleted because dependent snapshot '" +
+                                        snapshot.getSnapshotName() +
+                                        "' is present on node '" + snapshot.getNodeName() + "'"
+                                );
+                                if (throwApiExcRef)
+                                {
+                                    throw new ApiRcException(simpleEntry);
+                                }
+                                else
+                                {
+                                    ret.add(simpleEntry);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return ret;
     }
 }

@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ZfsChecks;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -28,7 +29,6 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -45,7 +45,6 @@ import com.linbit.locks.LockGuard;
 import com.linbit.utils.TimeUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
@@ -86,6 +85,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
     private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
+    private final ZfsChecks zfsChecks;
 
     @Inject
     public CtrlRscDeleteApiCallHandler(
@@ -103,7 +103,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
         Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        ZfsChecks zfsChecksRef
     )
     {
         apiCtx = apiCtxRef;
@@ -121,6 +122,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
         errorReporter = errorReporterRef;
+        zfsChecks = zfsChecksRef;
     }
 
     @Override
@@ -241,6 +243,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
         ctrlRscDeleteApiHelper.ensureNotInUse(rsc);
         ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc);
+        zfsChecks.ensureNoDependentSnapshots(rsc);
 
         AccessContext accCtx = peerAccCtx.get();
 
@@ -525,48 +528,5 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         }
 
         return isSet;
-    }
-
-    private void failIfDependentSnapshot(Resource rsc)
-    {
-        try
-        {
-            for (SnapshotDefinition snapshotDfn : rsc.getResourceDefinition().getSnapshotDfns(peerAccCtx.get()))
-            {
-                Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getNode().getName());
-                if (snapshot != null)
-                {
-                    Iterator<SnapshotVolume> snapVlmIt = snapshot.iterateVolumes();
-                    while (snapVlmIt.hasNext())
-                    {
-                        SnapshotVolume snapshotVlm = snapVlmIt.next();
-                        Set<StorPool> storPoolSet = LayerVlmUtils.getStorPoolSet(snapshotVlm, apiCtx, true);
-                        for (StorPool storPool : storPoolSet)
-                        {
-                            if (storPool.getDeviceProviderKind().isSnapshotDependent())
-                            {
-                                throw new ApiRcException(
-                                    ApiCallRcImpl.simpleEntry(
-                                        ApiConsts.FAIL_EXISTS_SNAPSHOT,
-                                        "Resource '" + rsc.getResourceDefinition().getName() +
-                                            "' cannot be deleted because volume " +
-                                            snapshotVlm.getVolumeNumber() + " has dependent snapshot '" +
-                                            snapshot.getSnapshotName() + "'"
-                                    )
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "check for dependent snapshots of " + getRscDescriptionInline(rsc),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
-            );
-        }
     }
 }
