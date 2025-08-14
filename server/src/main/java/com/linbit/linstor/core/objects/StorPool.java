@@ -81,6 +81,7 @@ public class StorPool extends AbsCoreObj<StorPool>
 
     private final TransactionSimpleObject<StorPool, Boolean> isPmem;
     private final TransactionSimpleObject<StorPool, Boolean> isVDO;
+    private boolean isVDOWasSet = false;
 
     private ApiCallRcImpl reports;
 
@@ -238,15 +239,16 @@ public class StorPool extends AbsCoreObj<StorPool>
         isPmem.set(pmemRef);
     }
 
-    public boolean isVDO()
+    public @Nullable Boolean isVDO()
     {
         checkDeleted();
-        return isVDO.get();
+        return isVDOWasSet ? isVDO.get() : null;
     }
 
     public void setVDO(boolean vdo) throws DatabaseException
     {
         checkDeleted();
+        isVDOWasSet = true;
         isVDO.set(vdo);
     }
 

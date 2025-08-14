@@ -128,23 +128,23 @@ public class LsBlkUtils
     public static boolean parentIsVDO(ExtCmd extCmd, List<String> devicePathList)
         throws StorageException
     {
-        // TODO: If possible, it would make sense time-complexity-wise to call the lsblk method
-        //       only once for multiple calls of this method, and have it create a map of
-        //       names to LsBlkEntry items, so this method could perform a map lookup rather
-        //       than having to recreate and then iterate the list twice for each call.
+        // calling lsblk for each device is more efficient than calling it once, and search through all entries
+        // lsblk output can get quite large because it lists the same entry multiple times for each disk/array
+        // it is part of.
         boolean vdoFlag = !devicePathList.isEmpty();
         if (vdoFlag)
         {
-            List<LsBlkEntry> entries = lsblk(extCmd);
             Iterator<String> devicePathIter = devicePathList.iterator();
             while (devicePathIter.hasNext() && vdoFlag)
             {
                 final String devicePath = devicePathIter.next();
+                List<LsBlkEntry> entries = lsblk(extCmd, devicePath);
                 @Nullable LsBlkEntry dev = getLsBlkEntryByName(entries, devicePath);
                 vdoFlag = dev != null;
-                if (vdoFlag)
+                if (vdoFlag && !dev.getParentName().isEmpty())
                 {
-                    @Nullable LsBlkEntry parent = getLsBlkEntryByName(entries, dev.getParentName());
+                    List<LsBlkEntry> entriesParent = lsblk(extCmd, dev.getParentName());
+                    @Nullable LsBlkEntry parent = getLsBlkEntryByName(entriesParent, dev.getParentName());
                     vdoFlag = parent != null;
                     if (vdoFlag)
                     {

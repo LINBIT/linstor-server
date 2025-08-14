@@ -132,7 +132,7 @@ public class DrbdLayerUtils
                         drbdVlmDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
                     )
                         .stream()
-                        .allMatch(prov -> prov.getStorPool().isVDO());
+                        .allMatch(prov -> Boolean.TRUE.equals(prov.getStorPool().isVDO()));
                 }
             }
         }

@@ -731,7 +731,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         {
             storPoolRef.setPmem(true);
         }
-        storPoolRef.setVDO(LsBlkUtils.parentIsVDO(extCmdFactory.create(), pvs));
+        if (storPoolRef.isVDO() == null)
+        {
+            storPoolRef.setVDO(LsBlkUtils.parentIsVDO(extCmdFactory.create(), pvs));
+        }
         checkExtentSize(storPoolRef, ret);
 
         return ret;
