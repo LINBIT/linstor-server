@@ -1,3 +1,9 @@
+linstor-server (1.32.0~rc.2-1) experimental; urgency=medium
+
+  * drbdlayer: fix missing device path if adjust wasn't necessary
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 18 Aug 2025 10:58:18 +0000
+
 linstor-server (1.32.0~rc.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
