@@ -2,7 +2,7 @@
 
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
-## [unreleased]
+## [1.26.0]
 
 ### Added
   - Add /v1/resource-definitions/{resource}/snapshots/{snapshot} PUT for modifying snapshots

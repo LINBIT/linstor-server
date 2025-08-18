@@ -1,7 +1,7 @@
 ARG BUILDER=registry.access.redhat.com/ubi8/ubi
 FROM $BUILDER as builder
 
-ENV LINSTOR_VERSION 1.31.3
+ENV LINSTOR_VERSION 1.32.0-rc.1
 
 ENV LINSTOR_TGZNAME linstor-server
 ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
@@ -49,7 +49,7 @@ MAINTAINER Roland Kammerer <roland.kammerer@linbit.com>
 RUN echo "skip_missing_names_on_install=no" >> /etc/yum.conf
 
 # ENV can not be shared between builder and "main"
-ENV LINSTOR_VERSION 1.31.3
+ENV LINSTOR_VERSION 1.32.0-rc.1
 ARG release=1
 
 LABEL name="linstor-controller" \

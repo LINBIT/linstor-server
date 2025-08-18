@@ -1,3 +1,103 @@
+linstor-server (1.32.0~rc.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * Add NonNullByDefault annotation
+  * props: fix some nullable annotations
+  * rscmakeavail: @Nullable cleanup
+  * snap/rollback: allow rollback if no local snapshot
+  * Add an example satellite toml configuration file
+  * gradle: third party library updates
+  * lvmthin: create read-only snapshots
+  * fullsync-notifier: Fix order of resourcdDefinitionConnected listener n [...]
+  * snapshot/rollback: fix .safety-snap cleanup if rollback interrupted
+  * merge v1.31.2 changelog and versions
+  * DivergentUuidsExc: will now trigger a System.exit(70)
+  * ctrpropshelper: improve output invalid key/value messages
+  * applifemanager: survive non root user starts
+  * Restart Satellite service on exit code 70 (critical error)
+  * gradlew: switch to version 8.14.2
+  * gitlab: add sbom build step
+  * response-utils: fix typo
+  * Not connected errors are now treated as warnings
+  * merge v1.31.3 changelog and versions
+  * gitlab-ci: remove bundle use and use files in docker image
+  * drbdlayer: improve notadjustedmsg
+  * drbdlayer: cache drbdsetup status
+  * DevMgr: No res-file conf-test, but instead restore the backup on failure
+  * devicelayers: make DeviceLayers comparable
+  * drbdlayer: optimize drbdadm adjust call by asking drbd for changes
+  * SnapshotDfn: allow properties on create and modify
+  * zfs-list: only(mostly) ask for interesting devices
+  * freespace: do not gather and send freespace on each resource applied
+  * migration: fix tcp port migration for older {maria,mysql}db
+  * rscdfn-clone: added property operations on clone
+  * lsblk: Parse output with a line streaming output parser
+  * parentIsVDO: only ask PV member devices and only run once
+  * make/proto: simplify proto generation
+
+  [ Johanna Kucera ]
+  * Add @Nullable where needed
+  * Remove javax.annotation.Nullable and Nonnull uses
+  * merge request review changes
+  * Update the gitlab-MR-template
+  * Make WorkerPool injectable
+  * Give AbsLayerSizeCalculator a generic type
+  * PairNonNull
+  * TripleNonNull
+  * Add PairNonNull where applicable
+  * Use BackupSnapshotObj instead of Pair<Flux<ApiCallRc>, Snapshot>
+  * Suppress FB Warnings
+  * remove nullchecks
+  * remove unused code
+  * Snapshot,Rollback: fix error handling and vlmDfn-changes
+  * Prevent VlmDfn UUID mismatch
+  * Ensure zfs-vlm-suffix is set correctly during vlmDfn delete
+  * LayerIgnoreReason: fix problems with ignore-reason and skip-disk
+
+  [ Gabor Hernadi ]
+  * ApplyDelStorPool: Do not prematurely delete StorPoolDfn
+  * K8s,Migration_01: Add dummy context
+  * K8s,Migrations: Introduce MigrationContext
+  * DbDrivers: Introduce AbsProtectedDatabaseDriver
+  * AutoplaceTarget: Fixed bugs
+  * AppLifeCycleMgr: Fixed deadlock during shutdown
+  * Toggle-Disk: Properly remove device for non DRBD layers
+  * Node,del: Fixed AccessToDeleted node after deleting offline node
+  * Snap,create: fix typo
+  * DevHandler: Improve trace log message
+  * Snap,create: Fix allVolumesUpToDate method
+  * FreeSpace,locks: Fixed locks when updating FreeSpace
+  * Clone,ZFS,copy: Fix race condition during cleanup
+  * GenCrd: Cleanup
+  * Drbd: Move TCP port from RscDfn to Rsc
+  * Node,del: Fix incorrect snapshot-exists check
+  * DrbdRscData: Init ports into backing set
+  * Exos: Removed
+  * FullSync: Reduce proto size
+  * FullSync: Replace UUID type from String to 2 longs
+  * Backup: Only set RESTORE_TARGET if restoring is planned
+  * Autoplacer: Only count sharedSpNames when the resource counts
+  * Backup,ship: Always remove RESTORE_TARGET after the last shipment
+  * Backup,ship: Allow force-restore with diskless peers
+  * Remove snapshot shipping.
+  * Snap,rollback: Introduce property for old rollback behavior
+  * Zfs,delete: Add strategy to switch from delete vs rename
+
+  [ Moritz Wanzenböck ]
+  * skip even more error reports for missing objects
+  * ci: check-openapi in MR pipeline
+  * schedules: skip error reports for invalid crons
+  * ci: always generate a CVE scan report
+  * ci: remove redundant global before_script
+
+  [ Christoph Böhmwalder ]
+  * gradle: reorder buildscript block for better compat
+
+  [ Robert Altnoeder ]
+  * Move shell related string functions to new class ShellUtils
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 18 Aug 2025 08:49:51 +0000
+
 linstor-server (1.31.3-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
