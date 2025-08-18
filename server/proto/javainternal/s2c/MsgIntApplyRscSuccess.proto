@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.s2c;
-import "common/StorPoolFreeSpace.proto";
 import "common/RscLayerData.proto";
 import "javainternal/IntObjectId.proto";
 

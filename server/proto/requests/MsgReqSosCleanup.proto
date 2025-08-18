@@ -2,8 +2,6 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.responses;
 
-import "responses/File.proto";
-
 // Issues the satellite to delete the temporary sos-directory
 // Requested by: InternalApiConsts.API_REQ_SOS_REPORT_CLEANUP
 message MsgReqSosCleanup

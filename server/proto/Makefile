@@ -1,8 +1,6 @@
 # protobuf
-COMMONSRC=$(wildcard ./*.proto) $(shell find ./{common,eventdata,requests,responses} -type f -name "*.proto" )
-JAVASRC=$(shell find ./{javainternal,misc} -type f -name "*.proto" )
-COMMONNOEND=$(COMMONSRC:.proto=)
-JAVANOEND=$(COMMONNOEND) $(JAVASRC:.proto=)
+JAVASRC=$(shell find . -type f -name "*.proto" )
+JAVANOEND=$(JAVASRC:.proto=)
 JAVABASEOUT=../generated-src
 JAVAOUT=$(JAVABASEOUT)/com/linbit
 JAVASUFF=OuterClass.java

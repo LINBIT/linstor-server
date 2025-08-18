@@ -2,8 +2,6 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.responses;
 
-import "responses/File.proto";
-
 // Contains the index of the gathered SOS report.
 // Requested by: MsgReqSosReport, ApiConsts.API_REQ_SOS_REPORT
 message MsgSosReportListReply
