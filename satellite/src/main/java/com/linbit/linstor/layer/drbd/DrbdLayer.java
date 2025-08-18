@@ -768,27 +768,7 @@ public class DrbdLayer implements DeviceLayer
 
                     drbdRscData.setAdjustRequired(false);
 
-                    // set device paths
-                    for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
-                    {
-                        StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
-                        if (vlmFlags.isSomeSet(
-                            workerCtx,
-                            Volume.Flags.DELETE,
-                            Volume.Flags.DRBD_DELETE,
-                            Volume.Flags.CLONING
-                        ))
-                        {
-                            // `drbdadm adjust` just deleted that volume or an exception was thrown.
-                            drbdVlmData.setExists(false);
-                        }
-                        else
-                        {
-                            drbdVlmData.setExists(true);
-                            drbdVlmData.setDevicePath(generateDevicePath(drbdVlmData));
-                            drbdVlmData.setSizeState(Size.AS_EXPECTED);
-                        }
-                    }
+                    setDevicePaths(drbdRscData);
                     condInitialOrSkipSync(drbdRscData);
                 }
                 catch (ExtCmdFailedException exc)
@@ -800,7 +780,36 @@ public class DrbdLayer implements DeviceLayer
                 }
             }
         }
+        else
+        {
+            setDevicePaths(drbdRscData);
+        }
         return contProcess;
+    }
+
+    private void setDevicePaths(DrbdRscData<Resource> drbdRscData) throws AccessDeniedException, DatabaseException
+    {
+        // set device paths
+        for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+        {
+            StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
+            if (vlmFlags.isSomeSet(
+                workerCtx,
+                Volume.Flags.DELETE,
+                Volume.Flags.DRBD_DELETE,
+                Volume.Flags.CLONING
+            ))
+            {
+                // `drbdadm adjust` just deleted that volume or an exception was thrown.
+                drbdVlmData.setExists(false);
+            }
+            else
+            {
+                drbdVlmData.setExists(true);
+                drbdVlmData.setDevicePath(generateDevicePath(drbdVlmData));
+                drbdVlmData.setSizeState(Size.AS_EXPECTED);
+            }
+        }
     }
 
     private void recoverAfterSkipdisk(DrbdRscData<Resource> drbdRscData)
