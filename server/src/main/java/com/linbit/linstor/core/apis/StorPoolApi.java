@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.apis;
 
-import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
@@ -63,8 +62,6 @@ public interface StorPoolApi
     ApiCallRc getReports();
     @JsonIgnore
     Boolean isPmem();
-    @JsonIgnore
-    @Nullable Boolean isVDO();
 
     boolean isExternalLocking();
 

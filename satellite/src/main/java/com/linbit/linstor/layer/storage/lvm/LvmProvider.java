@@ -30,7 +30,6 @@ import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.VgsInfo;
-import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -730,10 +729,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         if (PmemUtils.supportsDax(extCmdFactory.create(), pvs))
         {
             storPoolRef.setPmem(true);
-        }
-        if (storPoolRef.isVDO() == null)
-        {
-            storPoolRef.setVDO(LsBlkUtils.parentIsVDO(extCmdFactory.create(), pvs));
         }
         checkExtentSize(storPoolRef, ret);
 

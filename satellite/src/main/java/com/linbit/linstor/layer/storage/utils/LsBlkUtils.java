@@ -11,7 +11,6 @@ import com.linbit.utils.StringUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -123,53 +122,6 @@ public class LsBlkUtils
         }
 
         return lsBlkEntries;
-    }
-
-    public static boolean parentIsVDO(ExtCmd extCmd, List<String> devicePathList)
-        throws StorageException
-    {
-        // calling lsblk for each device is more efficient than calling it once, and search through all entries
-        // lsblk output can get quite large because it lists the same entry multiple times for each disk/array
-        // it is part of.
-        boolean vdoFlag = !devicePathList.isEmpty();
-        if (vdoFlag)
-        {
-            Iterator<String> devicePathIter = devicePathList.iterator();
-            while (devicePathIter.hasNext() && vdoFlag)
-            {
-                final String devicePath = devicePathIter.next();
-                List<LsBlkEntry> entries = lsblk(extCmd, devicePath);
-                @Nullable LsBlkEntry dev = getLsBlkEntryByName(entries, devicePath);
-                vdoFlag = dev != null;
-                if (vdoFlag && !dev.getParentName().isEmpty())
-                {
-                    List<LsBlkEntry> entriesParent = lsblk(extCmd, dev.getParentName());
-                    @Nullable LsBlkEntry parent = getLsBlkEntryByName(entriesParent, dev.getParentName());
-                    vdoFlag = parent != null;
-                    if (vdoFlag)
-                    {
-                        vdoFlag = parent.getFsType().equalsIgnoreCase("vdo");
-                    }
-                }
-            }
-        }
-        return vdoFlag;
-    }
-
-    private static @Nullable LsBlkEntry getLsBlkEntryByName(final List<LsBlkEntry> entries, final String name)
-    {
-        @Nullable LsBlkEntry selectedEntry = null;
-        Iterator<LsBlkEntry> entryIter = entries.iterator();
-        while (entryIter.hasNext() && selectedEntry == null)
-        {
-            final LsBlkEntry entry = entryIter.next();
-            final String entryName = entry.getName();
-            if (entryName.equals(name))
-            {
-                selectedEntry = entry;
-            }
-        }
-        return selectedEntry;
     }
 
     /**

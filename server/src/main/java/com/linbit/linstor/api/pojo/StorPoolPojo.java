@@ -53,8 +53,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     @JsonIgnore
     private final @Nullable Boolean isPmem;
     @JsonIgnore
-    private final @Nullable Boolean isVDO;
-    @JsonIgnore
     private final @Nullable boolean externalLocking;
 
     public StorPoolPojo(
@@ -77,7 +75,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         final @Nullable Double maxTotalCapacityOversubscriptionRatioRef,
         final @Nullable ApiCallRc reportsRef,
         final @Nullable Boolean isPmemRef,
-        final @Nullable Boolean isVDORef,
         final boolean isExternalLockingRef
     )
     {
@@ -100,7 +97,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         maxTotalCapacityOversubscriptionRatio = maxTotalCapacityOversubscriptionRatioRef;
         reports = reportsRef;
         isPmem = isPmemRef;
-        isVDO = isVDORef;
         externalLocking = isExternalLockingRef;
     }
 
@@ -129,7 +125,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         maxTotalCapacityOversubscriptionRatio = null;
         reports = null;
         isPmem = null;
-        isVDO = null;
 
         externalLocking = false;
     }
@@ -244,12 +239,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     public @Nullable Boolean isPmem()
     {
         return isPmem;
-    }
-
-    @Override
-    public @Nullable Boolean isVDO()
-    {
-        return isVDO;
     }
 
     @Override

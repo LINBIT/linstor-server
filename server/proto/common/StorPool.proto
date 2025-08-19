@@ -22,7 +22,6 @@ message StorPool
     required string free_space_mgr_name = 11;
     // 12: snapshot_supported, unnecessary since provider_kind contains this information
     optional bool is_pmem = 13;
-    optional bool is_vdo = 14;
-    required bool is_external_locking = 15;
-    required double oversubscription_ratio = 16;
+    required bool is_external_locking = 14;
+    required double oversubscription_ratio = 15;
 }

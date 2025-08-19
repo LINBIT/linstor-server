@@ -80,8 +80,6 @@ public class StorPool extends AbsCoreObj<StorPool>
     private final TransactionSimpleObject<StorPool, Boolean> supportsSnapshots;
 
     private final TransactionSimpleObject<StorPool, Boolean> isPmem;
-    private final TransactionSimpleObject<StorPool, Boolean> isVDO;
-    private boolean isVDOWasSet = false;
 
     private ApiCallRcImpl reports;
 
@@ -131,7 +129,6 @@ public class StorPool extends AbsCoreObj<StorPool>
             null
         );
         isPmem = transObjFactory.createTransactionSimpleObject(this, false, null);
-        isVDO = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         reports = new ApiCallRcImpl();
 
@@ -237,19 +234,6 @@ public class StorPool extends AbsCoreObj<StorPool>
     {
         checkDeleted();
         isPmem.set(pmemRef);
-    }
-
-    public @Nullable Boolean isVDO()
-    {
-        checkDeleted();
-        return isVDOWasSet ? isVDO.get() : null;
-    }
-
-    public void setVDO(boolean vdo) throws DatabaseException
-    {
-        checkDeleted();
-        isVDOWasSet = true;
-        isVDO.set(vdo);
     }
 
     public void putSnapshotVolume(AccessContext accCtx, VlmProviderObject<Snapshot> vlmProviderObj)
@@ -555,7 +539,6 @@ public class StorPool extends AbsCoreObj<StorPool>
             maxTotalCapacityOversubscriptionRatioRef,
             getReports(),
             isPmem.get(),
-            isVDO.get(),
             externalLocking
         );
     }

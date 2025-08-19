@@ -125,15 +125,6 @@ public class DrbdLayerUtils
                     .stream()
                     .map(VlmProviderObject::getProviderKind)
                     .allMatch(kind -> kind == DeviceProviderKind.ZFS || kind == DeviceProviderKind.ZFS_THIN);
-
-                if (!skipInitSync)
-                {
-                    skipInitSync = VolumeUtils.getStorageDevices(
-                        drbdVlmDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
-                    )
-                        .stream()
-                        .allMatch(prov -> Boolean.TRUE.equals(prov.getStorPool().isVDO()));
-                }
             }
         }
         return skipInitSync;

@@ -10,5 +10,4 @@ message MsgIntApplyStorPoolSuccess
     common.StorPoolFreeSpace free_space = 2;
     bool supports_snapshots = 3;
     bool is_pmem = 4;
-    bool is_vdo = 5;
 }

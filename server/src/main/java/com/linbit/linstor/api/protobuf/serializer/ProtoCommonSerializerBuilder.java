@@ -1355,7 +1355,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .putAllStorPoolDfnProps(storPool.getDefinition(accCtx).getProps(accCtx).map())
             .putAllStaticTraits(storPool.getDeviceProviderKind().getStorageDriverKind().getStaticTraits())
             .setIsPmem(storPool.isPmem())
-            .setIsVdo(Boolean.TRUE.equals(storPool.isVDO()))
             .setOversubscriptionRatio(storPool.getOversubscriptionRatio(accCtx, null))
             // no need to serialize storPool.
             .setIsExternalLocking(storPool.isExternalLocking());
@@ -1449,8 +1448,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .putAllProps(apiStorPool.getStorPoolProps())
                 .putAllStorPoolDfnProps(apiStorPool.getStorPoolDfnProps())
                 .putAllStaticTraits(apiStorPool.getStorPoolStaticTraits())
-                .setIsPmem(apiStorPool.isPmem())
-                .setIsVdo(Boolean.TRUE.equals(apiStorPool.isVDO()));
+                .setIsPmem(apiStorPool.isPmem());
             if (apiStorPool.getFreeCapacity().isPresent())
             {
                 storPoolBld.setFreeSpace(

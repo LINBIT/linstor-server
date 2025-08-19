@@ -318,7 +318,6 @@ public class ProtoDeserializationUtils
             null, // same as above
             null,
             storPoolProto.getIsPmem(),
-            storPoolProto.getIsVdo(),
             storPoolProto.getIsExternalLocking()
         );
     }
