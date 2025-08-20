@@ -480,256 +480,268 @@ public class DrbdLayer implements DeviceLayer
         boolean contProcess = true;
         updateRequiresAdjust(drbdRscData);
 
-        if (drbdRscData.isAdjustRequired())
-        {
-            /*
-             *  we have to split here into several steps:
-             *  - first we have to detach all volumes marked for deletion and delete the DRBD-volumes
-             *  - call the underlying layer's process method
-             *  - create metaData for new volumes
-             *  -- check which volumes are new
-             *  -- render all res files
-             *  -- create-md only for new volumes (create-md needs already valid .res files)
-             *  - adjust all remaining and newly created volumes
-             *  - resume IO if allowed by all snapshots
-             */
+        /*
+         * we have to split here into several steps:
+         * - first we have to detach all volumes marked for deletion and delete the DRBD-volumes
+         * - call the underlying layer's process method
+         * - create metaData for new volumes
+         * -- check which volumes are new
+         * -- render all res files
+         * -- create-md only for new volumes (create-md needs already valid .res files)
+         * - adjust all remaining and newly created volumes
+         * - resume IO if allowed by all snapshots
+         */
 
-            if (Platform.isWindows())
+        if (Platform.isWindows())
+        {
+            for (TcpPortNumber port : drbdRscData.getTcpPortList())
             {
-                for (TcpPortNumber port : drbdRscData.getTcpPortList())
+                windowsFirewall.openPort(port.value);
+            }
+        }
+
+        updateResourceToCurrentDrbdState(drbdRscData);
+
+        List<DrbdVlmData<Resource>> checkMetaData = detachVolumesIfNecessary(drbdRscData);
+
+        shrinkVolumesIfNecessary(drbdRscData);
+
+        final boolean skipDisk = drbdRscData.isSkipDiskEnabled(workerCtx, stltCfgAccessor.getReadonlyProps());
+
+        if (!childAlreadyProcessed && !skipDisk)
+        {
+            contProcess = processChild(drbdRscData, apiCallRc);
+        }
+
+        if (contProcess)
+        {
+            for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+            {
+                // only continue if either both flags (RESIZE + DRBD_RESIZE) are set or none of them
+                if (areBothResizeFlagsSet(drbdVlmData))
                 {
-                    windowsFirewall.openPort(port.value);
+                    contProcess = true;
+                    drbdRscData.setAdjustRequired(true);
+                }
+                else
+                {
+                    contProcess = false;
                 }
             }
 
-            updateResourceToCurrentDrbdState(drbdRscData);
-
-            List<DrbdVlmData<Resource>> checkMetaData = detachVolumesIfNecessary(drbdRscData);
-
-            shrinkVolumesIfNecessary(drbdRscData);
-
-            final boolean skipDisk = drbdRscData.isSkipDiskEnabled(workerCtx, stltCfgAccessor.getReadonlyProps());
-
-            if (!childAlreadyProcessed && !skipDisk)
+            if (contProcess)
             {
-                contProcess = processChild(drbdRscData, apiCallRc);
+                for (DrbdRscData<Resource> peer : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
+                {
+                    if (!drbdRscData.equals(peer))
+                    {
+                        for (DrbdVlmData<Resource> peerVlm : peer.getVlmLayerObjects().values())
+                        {
+                            if (isFlagSet(peerVlm, Volume.Flags.DRBD_RESIZE) &&
+                                !isFlagSet(peerVlm, Volume.Flags.RESIZE))
+                            {
+                                // if a peer is currently shrinking, don't do anything
+                                contProcess = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (contProcess)
+        {
+            // hasMetaData needs to be run after child-resource processed
+            List<DrbdVlmData<Resource>> createMetaData = new ArrayList<>();
+            if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx) && !skipDisk)
+            {
+                // do not try to create meta data while the resource is diskless or skipDisk is enabled
+                for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
+                {
+                    if (!hasMetaData(drbdVlmData) || needsNewMetaData(drbdVlmData, drbdSetupStatus))
+                    {
+                        createMetaData.add(drbdVlmData);
+                    }
+                }
             }
 
-            if (contProcess)
+            // The .res file might not have been generated in the prepare method since it was
+            // missing information from the child-layers. Now that we have processed them, we
+            // need to make sure the .res file exists in all circumstances.
+            regenerateResFile(drbdRscData);
+
+            // createMetaData needs rendered resFile
+            for (DrbdVlmData<Resource> drbdVlmData : createMetaData)
+            {
+                createMetaData(drbdVlmData);
+            }
+
+            try
             {
                 for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
-                    // only continue if either both flags (RESIZE + DRBD_RESIZE) are set or none of them
-                    contProcess &= areBothResizeFlagsSet(drbdVlmData);
-                }
-
-                if (contProcess)
-                {
-                    for (DrbdRscData<Resource> peer : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
+                    if (needsResize(drbdVlmData) && drbdVlmData.getSizeState().equals(Size.TOO_SMALL))
                     {
-                        if (!drbdRscData.equals(peer))
-                        {
-                            for (DrbdVlmData<Resource> peerVlm : peer.getVlmLayerObjects().values())
-                            {
-                                if (isFlagSet(peerVlm, Volume.Flags.DRBD_RESIZE) &&
-                                    !isFlagSet(peerVlm, Volume.Flags.RESIZE))
-                                {
-                                    // if a peer is currently shrinking, don't do anything
-                                    contProcess = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (contProcess)
-            {
-                // hasMetaData needs to be run after child-resource processed
-                List<DrbdVlmData<Resource>> createMetaData = new ArrayList<>();
-                if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx) && !skipDisk)
-                {
-                    // do not try to create meta data while the resource is diskless or skipDisk is enabled
-                    for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
-                    {
-                        if (
-                            !hasMetaData(drbdVlmData) || needsNewMetaData(drbdVlmData, drbdSetupStatus)
-                        )
-                        {
-                            createMetaData.add(drbdVlmData);
-                        }
+                        drbdUtils.resize(
+                            drbdVlmData,
+                            // TODO: not sure if we should "--assume-clean" if data device is only partially
+                            // thinly backed
+                            VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false),
+                            null
+                        );
+                        errorReporter.logInfo(
+                            "DRBD resized %s/%d",
+                            drbdRscData.getSuffixedResourceName(),
+                            drbdVlmData.getVlmNr().getValue()
+                        );
+                        drbdRscData.setAdjustRequired(true);
                     }
                 }
 
-                // The .res file might not have been generated in the prepare method since it was
-                // missing information from the child-layers. Now that we have processed them, we
-                // need to make sure the .res file exists in all circumstances.
-                regenerateResFile(drbdRscData);
-
-                // createMetaData needs rendered resFile
-                for (DrbdVlmData<Resource> drbdVlmData : createMetaData)
+                for (DrbdRscData<Resource> otherRsc : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
                 {
-                    createMetaData(drbdVlmData);
-                }
-
-                try
-                {
-                    for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                    StateFlags<Flags> otherRscFlags = otherRsc.getAbsResource().getStateFlags();
+                    if (!otherRsc.equals(drbdRscData) && // skip local rsc
+                        /* also call forget-peer for diskless-peers */
+                        otherRscFlags.isSomeSet(workerCtx, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE))
                     {
-                        if (needsResize(drbdVlmData) && drbdVlmData.getSizeState().equals(Size.TOO_SMALL))
-                        {
-                            drbdUtils.resize(
-                                drbdVlmData,
-                                // TODO: not sure if we should "--assume-clean" if data device is only partially
-                                // thinly backed
-                                VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false),
-                                null
-                            );
-                            errorReporter.logInfo("DRBD resized %s/%d",
-                                drbdRscData.getSuffixedResourceName(), drbdVlmData.getVlmNr().getValue());
-                        }
-                    }
-
-                    for (DrbdRscData<Resource> otherRsc : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
-                    {
-                        StateFlags<Flags> otherRscFlags = otherRsc.getAbsResource().getStateFlags();
-                        if (!otherRsc.equals(drbdRscData) && // skip local rsc
-                            /* also call forget-peer for diskless-peers */
-                            otherRscFlags.isSomeSet(workerCtx, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE))
+                        /*
+                         * If a peer is getting deleted, we issue a forget-peer (which requires
+                         * a del-peer) so that the bitmap of that peer is reset to day0
+                         *
+                         * This gets important if a new node is created with a never seen node-id but we
+                         * simply ran out of unused peer-slots (as those are already bound to old node-ids)
+                         */
+                        ExtCmdFailedException delPeerExc = null;
+                        try
                         {
                             /*
-                             * If a peer is getting deleted, we issue a forget-peer (which requires
-                             * a del-peer) so that the bitmap of that peer is reset to day0
-                             *
-                             * This gets important if a new node is created with a never seen node-id but we
-                             * simply ran out of unused peer-slots (as those are already bound to old node-ids)
+                             * "drbdadm del-peer ..." only updates the kernel (using "drbdsetup") but does not need
+                             * metadata - can therefore also be used for diskless peers as well as during skipDisk
                              */
-                            ExtCmdFailedException delPeerExc = null;
-                            try
-                            {
-                                /*
-                                 * "drbdadm del-peer ..." only updates the kernel (using "drbdsetup") but does not need
-                                 * metadata - can therefore also be used for diskless peers as well as during skipDisk
-                                 */
 
-                                /*
-                                 * Race condition:
-                                 * If two linstor-resources are deleted concurrently, and one is much
-                                 * faster than the other, the slower will get an "unknown connection"
-                                 * from the drbd-utils when executing the del-peer command.
-                                 * In that case, we will still try the forget-peer.
-                                 * If the forget-peer command succeeds, ignore the exception of the failed
-                                 * del-peer command.
-                                 * If the forget-peer command also failed we ignore that exception and
-                                 * re-throw the del-peer's exception as there could be a different reason
-                                 * for the del-peer to have failed than this race-condition
-                                 */
-                                drbdUtils.deletePeer(otherRsc);
-                            }
-                            catch (ExtCmdFailedException exc)
+                            /*
+                             * Race condition:
+                             * If two linstor-resources are deleted concurrently, and one is much
+                             * faster than the other, the slower will get an "unknown connection"
+                             * from the drbd-utils when executing the del-peer command.
+                             * In that case, we will still try the forget-peer.
+                             * If the forget-peer command succeeds, ignore the exception of the failed
+                             * del-peer command.
+                             * If the forget-peer command also failed we ignore that exception and
+                             * re-throw the del-peer's exception as there could be a different reason
+                             * for the del-peer to have failed than this race-condition
+                             */
+                            drbdUtils.deletePeer(otherRsc);
+                            drbdRscData.setAdjustRequired(true);
+                        }
+                        catch (ExtCmdFailedException exc)
+                        {
+                            delPeerExc = exc;
+                        }
+                        if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx))
+                        {
+                            if (!skipDisk)
                             {
-                                delPeerExc = exc;
-                            }
-                            if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx))
-                            {
-                                if (!skipDisk)
+                                try
                                 {
-                                    try
+                                    drbdUtils.forgetPeer(otherRsc);
+                                    drbdRscData.setAdjustRequired(true);
+                                }
+                                catch (ExtCmdFailedException forgetPeerExc)
+                                {
+                                    if (!otherRsc.getAbsResource().isDrbdDiskless(workerCtx))
                                     {
-                                        drbdUtils.forgetPeer(otherRsc);
-                                    }
-                                    catch (ExtCmdFailedException forgetPeerExc)
-                                    {
-                                        if (!otherRsc.getAbsResource().isDrbdDiskless(workerCtx))
+                                        /*
+                                         * let us check our current version of the events2 stream.
+                                         * if the peer we just tried to delete does not exist, we should be fine
+                                         */
+                                        try
                                         {
-                                            /*
-                                             * let us check our current version of the events2 stream.
-                                             * if the peer we just tried to delete does not exist, we should be fine
-                                             */
-                                            try
+                                            DrbdResource drbdRscState = drbdState.getDrbdResource(
+                                                drbdRscData.getSuffixedResourceName()
+                                            );
+                                            if (drbdRscState != null)
                                             {
-                                                DrbdResource drbdRscState = drbdState.getDrbdResource(
-                                                    drbdRscData.getSuffixedResourceName()
+                                                // we might not even have started this resource -> no peer we could
+                                                // forget about
+                                                DrbdConnection peerConnection = drbdRscState.getConnection(
+                                                    otherRsc.getAbsResource().getNode().getName().displayValue
                                                 );
-                                                if (drbdRscState != null)
+                                                if (peerConnection != null)
                                                 {
-                                                    // we might not even have started this resource -> no peer we could
-                                                    // forget about
-                                                    DrbdConnection peerConnection = drbdRscState.getConnection(
-                                                        otherRsc.getAbsResource().getNode().getName().displayValue
+                                                    throw delPeerExc != null ? delPeerExc : forgetPeerExc;
+                                                }
+                                                else
+                                                {
+                                                    // ignore the exceptions, the peer does not seem to exist
+                                                    // anymore
+                                                    errorReporter.logDebug(
+                                                        "del-peer and forget-peer failed, but we also failed " +
+                                                            "to find the specific peer. noop"
                                                     );
-                                                    if (peerConnection != null)
-                                                    {
-                                                        throw delPeerExc != null ? delPeerExc : forgetPeerExc;
-                                                    }
-                                                    else
-                                                    {
-                                                        // ignore the exceptions, the peer does not seem to exist
-                                                        // anymore
-                                                        errorReporter.logDebug(
-                                                            "del-peer and forget-peer failed, but we also failed " +
-                                                                "to find the specific peer. noop"
-                                                        );
-                                                    }
                                                 }
                                             }
-                                            catch (NoInitialStateException exc)
-                                            {
-                                                throw new ImplementationError(exc);
-                                            }
                                         }
-                                        else
+                                        catch (NoInitialStateException exc)
                                         {
-                                            /*
-                                             * instead of throwing any exception when the peer resource is diskless
-                                             * (which might happen with older DRBD versions), we simply log a warning to
-                                             * leave some trace of this behavior
-                                             */
-                                            errorReporter.logDebug(
-                                                "Ignoring error caused by forget-peer for a diskless resource"
-                                            );
+                                            throw new ImplementationError(exc);
                                         }
+                                    }
+                                    else
+                                    {
+                                        /*
+                                         * instead of throwing any exception when the peer resource is diskless
+                                         * (which might happen with older DRBD versions), we simply log a warning to
+                                         * leave some trace of this behavior
+                                         */
+                                        errorReporter.logDebug(
+                                            "Ignoring error caused by forget-peer for a diskless resource"
+                                        );
                                     }
                                 }
-                                else
+                            }
+                            else
+                            {
+                                /*
+                                 * we cannot call "drbdadm forget-peer" right now as that would also need to update
+                                 * metadata. Since skipDisk is currently enabled, we cannot access the metadata
+                                 * right now.
+                                 * Instead, we store the node-id in ApiConsts.NAMESPC_STLT+ "/" +
+                                 * InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET property so that a "forget-peer"
+                                 * is executed later while we can confirm the deletion of the peer-resource in the
+                                 * meantime
+                                 */
+                                Props rscProps = drbdRscData.getAbsResource().getProps(workerCtx);
+                                try
                                 {
-                                    /*
-                                     * we cannot call "drbdadm forget-peer" right now as that would also need to update
-                                     * metadata. Since skipDisk is currently enabled, we cannot access the metadata
-                                     * right now.
-                                     * Instead, we store the node-id in ApiConsts.NAMESPC_STLT+ "/" +
-                                     * InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET property so that a "forget-peer"
-                                     * is executed later while we can confirm the deletion of the peer-resource in the
-                                     * meantime
-                                     */
-                                    Props rscProps = drbdRscData.getAbsResource().getProps(workerCtx);
-                                    try
-                                    {
-                                        String oldIds = rscProps.getPropWithDefault(
-                                            InternalApiConsts.KEY_DRBD_NODE_IDS_TO_RESET,
-                                            ApiConsts.NAMESPC_STLT + "/" + InternalApiConsts.NAMESPC_DRBD,
-                                            ""
-                                        );
-                                        String updatedIds = oldIds.isBlank() ?
-                                            "" :
-                                            oldIds + InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR;
-                                        updatedIds += Integer.toString(otherRsc.getNodeId().value);
-                                        rscProps.setProp(
-                                            InternalApiConsts.KEY_DRBD_NODE_IDS_TO_RESET,
-                                            updatedIds,
-                                            ApiConsts.NAMESPC_STLT + "/" + InternalApiConsts.NAMESPC_DRBD
-                                        );
-                                    }
-                                    catch (InvalidKeyException | InvalidValueException exc)
-                                    {
-                                        throw new ImplementationError(exc);
-                                    }
+                                    String oldIds = rscProps.getPropWithDefault(
+                                        InternalApiConsts.KEY_DRBD_NODE_IDS_TO_RESET,
+                                        ApiConsts.NAMESPC_STLT + "/" + InternalApiConsts.NAMESPC_DRBD,
+                                        ""
+                                    );
+                                    String updatedIds = oldIds.isBlank() ?
+                                        "" :
+                                        oldIds + InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR;
+                                    updatedIds += Integer.toString(otherRsc.getNodeId().value);
+                                    rscProps.setProp(
+                                        InternalApiConsts.KEY_DRBD_NODE_IDS_TO_RESET,
+                                        updatedIds,
+                                        ApiConsts.NAMESPC_STLT + "/" + InternalApiConsts.NAMESPC_DRBD
+                                    );
+                                }
+                                catch (InvalidKeyException | InvalidValueException exc)
+                                {
+                                    throw new ImplementationError(exc);
                                 }
                             }
                         }
                     }
+                }
 
+                if (drbdRscData.isAdjustRequired())
+                {
                     try
                     {
                         drbdUtils.adjust(
@@ -744,45 +756,41 @@ public class DrbdLayer implements DeviceLayer
                         restoreBackupResFile(drbdRscData);
                         throw extCmdExc;
                     }
+                }
 
-                    if (
-                        drbdRscData.getAbsResource().getStateFlags()
-                            .isSet(workerCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT) &&
-                            !DrbdLayerUtils.isForceInitialSyncSet(workerCtx, drbdRscData)
-                    )
-                    {
-                        /*
-                         * If forceInitialSync is set, we already created new metadata, so no resetting needed.
-                         *
-                         * Basically a similar scenario as "we have the current peer and ALL other peers were removed".
-                         * See delete-case's forget-peer comment
-                         */
-                        String ids = drbdRscData.getAbsResource().getResourceDefinition().getProps(workerCtx).getProp(
+                if (drbdRscData.getAbsResource()
+                    .getStateFlags()
+                    .isSet(workerCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT) &&
+                    !DrbdLayerUtils.isForceInitialSyncSet(workerCtx, drbdRscData))
+                {
+                    /*
+                     * If forceInitialSync is set, we already created new metadata, so no resetting needed.
+                     *
+                     * Basically a similar scenario as "we have the current peer and ALL other peers were removed".
+                     * See delete-case's forget-peer comment
+                     */
+                    String ids = drbdRscData.getAbsResource()
+                        .getResourceDefinition()
+                        .getProps(workerCtx)
+                        .getProp(
                             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
-                        forgetPeersCleanup(drbdRscData, ids);
-                    }
-
-                    recoverAfterSkipdisk(drbdRscData);
-
-                    drbdRscData.setAdjustRequired(false);
-
-                    setDevicePaths(drbdRscData);
-                    condInitialOrSkipSync(drbdRscData);
+                    forgetPeersCleanup(drbdRscData, ids);
                 }
-                catch (ExtCmdFailedException exc)
-                {
-                    throw new ResourceException(
-                        String.format("Failed to adjust DRBD resource %s", drbdRscData.getSuffixedResourceName()),
-                        exc
-                    );
-                }
+
+                recoverAfterSkipdisk(drbdRscData);
+
+                setDevicePaths(drbdRscData);
+                condInitialOrSkipSync(drbdRscData);
             }
-        }
-        else
-        {
-            setDevicePaths(drbdRscData);
+            catch (ExtCmdFailedException exc)
+            {
+                throw new ResourceException(
+                    String.format("Failed to adjust DRBD resource %s", drbdRscData.getSuffixedResourceName()),
+                    exc
+                );
+            }
         }
         return contProcess;
     }
@@ -855,6 +863,7 @@ public class DrbdLayer implements DeviceLayer
                 try
                 {
                     drbdUtils.forgetPeer(drbdRscData.getSuffixedResourceName(), nodeId);
+                    drbdRscData.setAdjustRequired(true);
                 }
                 catch (ExtCmdFailedException exc)
                 {
@@ -863,12 +872,15 @@ public class DrbdLayer implements DeviceLayer
             }
         }
 
-        drbdUtils.adjust(
-            drbdRscData,
-            false,
-            false,
-            false
-        );
+        if (drbdRscData.isAdjustRequired())
+        {
+            drbdUtils.adjust(
+                drbdRscData,
+                false,
+                false,
+                false
+            );
+        }
     }
 
     private boolean needsNewMetaData(DrbdVlmData<Resource> drbdVlmData, @Nullable String drbdSetupStatusOut)
@@ -998,6 +1010,11 @@ public class DrbdLayer implements DeviceLayer
                 detachDrbdVolume(drbdVlmData, true);
                 drbdVlmData.setExists(false);
             }
+
+            if (!volumesToDelete.isEmpty() || !volumesToMakeDiskless.isEmpty() || !checkMetaData.isEmpty())
+            {
+                drbdRscData.setAdjustRequired(true);
+            }
         }
         return checkMetaData;
     }
@@ -1048,6 +1065,7 @@ public class DrbdLayer implements DeviceLayer
                         );
                         // DO NOT set size.AS_EXPECTED as we most likely want to grow a little
                         // bit again once the layers below finished shrinking
+                        drbdRscData.setAdjustRequired(true);
                     }
                 }
             }

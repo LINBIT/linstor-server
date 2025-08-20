@@ -133,6 +133,8 @@ public class DrbdAdm
         // execute(Arrays.asList("drbdsetup", "show", drbdRscData.getSuffixedResourceName()));
         execute(command);
         // execute(Arrays.asList("drbdsetup", "show", drbdRscData.getSuffixedResourceName()));
+
+        drbdRscData.setAdjustRequired(false);
     }
 
     /**

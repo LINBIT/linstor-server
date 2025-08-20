@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Drbd: Fixed bug with introduced drbdadm optimization
+
 ### Removed
 
 - parentIsVDO wasn't working anymore at all, as lsblk didn't report correctly and is not used anymore with LVM-thin on VDO
