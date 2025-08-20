@@ -398,6 +398,7 @@ public class ScheduleBackupService implements SystemService
             {
                 String prefNode = null;
                 Map<String, String> renameStorpoolMap = new HashMap<>();
+                @Nullable String dstRscName = null;
                 @Nullable String dstRscGrp = null;
                 boolean forceRscGrp = false;
                 boolean forceRestore = false;
@@ -420,6 +421,7 @@ public class ScheduleBackupService implements SystemService
                         renameStorpoolMap.put(prop.getKey(), prop.getValue());
                     }
                     prefNode = prioProps.getProp(InternalApiConsts.KEY_SCHEDULE_PREF_NODE, namespace);
+                    dstRscName = prioProps.getProp(InternalApiConsts.KEY_SCHEDULE_DST_RSC_NAME, namespace);
                     dstRscGrp = prioProps.getProp(InternalApiConsts.KEY_SCHEDULE_DST_RSC_GRP, namespace);
                     @Nullable String forceRscGrpStr = prioProps.getProp(
                         InternalApiConsts.KEY_SCHEDULE_DST_RSC_GRP_FORCE,
@@ -433,8 +435,9 @@ public class ScheduleBackupService implements SystemService
                     // key for prefNode is {remoteName}/{scheduleName}/KEY_FORCE_RESTORE
                     forceRestore = Boolean.parseBoolean(
                         prioProps.getProp(
-                            remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue +
-                                ReadOnlyProps.PATH_SEPARATOR + InternalApiConsts.KEY_FORCE_RESTORE,
+                            remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                                schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                                InternalApiConsts.KEY_FORCE_RESTORE,
                             InternalApiConsts.NAMESPC_SCHEDULE
                         )
                     );
@@ -467,6 +470,7 @@ public class ScheduleBackupService implements SystemService
                     infoPair,
                     now.toEpochSecond() * 1000,
                     renameStorpoolMap,
+                    dstRscName,
                     dstRscGrp,
                     forceRscGrp
                 );
@@ -823,6 +827,7 @@ public class ScheduleBackupService implements SystemService
                 null,
                 null,
                 null,
+                null,
                 false
             ),
             false
@@ -947,6 +952,7 @@ public class ScheduleBackupService implements SystemService
         public final ResourceDefinition rscDfn;
         public final boolean lastInc;
         public final @Nullable Map<String, String> storpoolRenameMap;
+        public final @Nullable String dstRscName;
         public final @Nullable String dstRscGrp;
         public final boolean forceRscGrp;
 
@@ -963,6 +969,7 @@ public class ScheduleBackupService implements SystemService
             PairNonNull<Long, Boolean> timeoutAndTypeRef,
             @Nullable Long timeoutAndTypeCalculatedFromRef,
             @Nullable Map<String, String> storpoolRenameMapRef,
+            @Nullable String dstRscNameRef,
             @Nullable String dstRscGrpRef,
             boolean forceRscGrpRef
         )
@@ -973,6 +980,7 @@ public class ScheduleBackupService implements SystemService
             lastInc = lastIncRef;
             timeoutAndType = timeoutAndTypeRef;
             storpoolRenameMap = storpoolRenameMapRef;
+            dstRscName = dstRscNameRef;
             dstRscGrp = dstRscGrpRef;
             forceRscGrp = forceRscGrpRef;
 

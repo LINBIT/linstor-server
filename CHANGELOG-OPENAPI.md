@@ -17,6 +17,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Added DrbdProxyEnable.port_target
   - Added ResourceDefinitionCloneRequest.override_props and ResourceDefinitionCloneRequest.delete_props
   - Added components/schemas/SnapshotRollback
+  - Added BackupSchedule.dst_rsc_name
 
 ### Deprecated
   - ResourceConnection.port

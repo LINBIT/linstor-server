@@ -453,6 +453,7 @@ public class Backups
                     data.dst_stor_pool,
                     data.stor_pool_rename,
                     data.dst_rsc_grp,
+                    data.dst_rsc_name,
                     data.force_restore,
                     data.force_mv_rsc_grp
                 );

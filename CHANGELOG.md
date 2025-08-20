@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Backup,schedule: Add --target-resource-definition. Only usable in combination with "--rd RD"
+
 ### Fixed
 
 - Drbd: Fixed bug with introduced drbdadm optimization

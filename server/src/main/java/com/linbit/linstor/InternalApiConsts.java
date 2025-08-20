@@ -177,6 +177,7 @@ public class InternalApiConsts
     public static final String KEY_BACKUP_SRC_NODE = "SrcNode";
     public static final String KEY_RENAME_STORPOOL_MAP = "RenameStorpoolMap";
     public static final String KEY_SCHEDULE_DST_RSC_GRP = "TargetResourceGroup";
+    public static final String KEY_SCHEDULE_DST_RSC_NAME = "TargetResourceName";
     public static final String KEY_SCHEDULE_DST_RSC_GRP_FORCE = "ForceResourceGroup";
 
     /*

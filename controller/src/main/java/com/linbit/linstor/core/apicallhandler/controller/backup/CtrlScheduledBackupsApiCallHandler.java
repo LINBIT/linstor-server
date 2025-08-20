@@ -503,14 +503,15 @@ public class CtrlScheduledBackupsApiCallHandler
      * Also allows the client to set a prefNode
      */
     public Flux<ApiCallRc> enableSchedule(
-        String rscNameRef,
-        String grpNameRef,
+        @Nullable String rscNameRef,
+        @Nullable String grpNameRef,
         String remoteNameRef,
         String scheduleNameRef,
-        String nodeNameRef,
-        String dstStorPool,
+        @Nullable String nodeNameRef,
+        @Nullable String dstStorPool,
         Map<String, String> storpoolRename,
         @Nullable String dstRscGrpRef,
+        @Nullable String dstRscNameRef,
         boolean forceRestoreRef,
         boolean forceRscGrpRef
     )
@@ -529,6 +530,7 @@ public class CtrlScheduledBackupsApiCallHandler
                 dstStorPool,
                 storpoolRename,
                 dstRscGrpRef,
+                dstRscNameRef,
                 true,
                 forceRestoreRef,
                 forceRscGrpRef
@@ -540,11 +542,11 @@ public class CtrlScheduledBackupsApiCallHandler
      * Called by the client to disable a remote-schedule-pair on rscDfn, rscGrp, or ctrl level.
      */
     public Flux<ApiCallRc> disableSchedule(
-        String rscNameRef,
-        String grpNameRef,
+        @Nullable String rscNameRef,
+        @Nullable String grpNameRef,
         String remoteNameRef,
         String scheduleNameRef,
-        String nodeNameRef
+        @Nullable String nodeNameRef
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -561,6 +563,7 @@ public class CtrlScheduledBackupsApiCallHandler
                 null,
                 null,
                 null,
+                null,
                 false,
                 false,
                 false
@@ -572,22 +575,23 @@ public class CtrlScheduledBackupsApiCallHandler
      * Sets the correct props to enable or disable the given remote-schedule-pair on rscDfn, rscGrp, or ctrl level
      */
     private Flux<ApiCallRc> setScheduleInTransaction(
-        String rscNameRef,
-        String grpNameRef,
+        @Nullable String rscNameRef,
+        @Nullable String grpNameRef,
         String remoteNameRef,
         String scheduleNameRef,
-        String nodeNameRef,
+        @Nullable String nodeNameRef,
         @Nullable String dstStorPool,
         @Nullable Map<String, String> storpoolRename,
         @Nullable String dstRscGrpRef,
+        @Nullable String dstRscNameRef,
         boolean add,
         boolean forceRestore,
         boolean forceRscGrp
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
+        ApiCallRcImpl response = new ApiCallRcImpl();
         AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
         Schedule schedule = ctrlApiDataLoader.loadSchedule(scheduleNameRef, true);
-        String msg = "";
         List<ResourceDefinition> rscDfnsToCheck = new ArrayList<>();
         Map<String, String> renameMap = new HashMap<>();
         if (storpoolRename != null)
@@ -634,6 +638,14 @@ public class CtrlScheduledBackupsApiCallHandler
                     );
                 }
             }
+            if (dstRscNameRef != null && !dstRscNameRef.isEmpty())
+            {
+                propsRef.setProp(
+                    InternalApiConsts.KEY_SCHEDULE_DST_RSC_NAME,
+                    dstRscNameRef,
+                    namespace
+                );
+            }
             for (Entry<String, String> renameEntry : renameMap.entrySet())
             {
                 propsRef.setProp(
@@ -651,8 +663,6 @@ public class CtrlScheduledBackupsApiCallHandler
                 );
             }
             rscDfnsToCheck.add(rscDfn);
-            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully " + (add ? "enabled" : "disabled") +
-                " for resource definition '" + rscNameRef + "' to remote '" + remoteNameRef + "'.";
         }
         else if (grpNameRef != null && !grpNameRef.isEmpty())
         {
@@ -687,9 +697,17 @@ public class CtrlScheduledBackupsApiCallHandler
                     namespace
                 );
             }
+            if (dstRscNameRef != null && !dstRscNameRef.isEmpty())
+            {
+                response.add(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.WARN_INVLD_CONF,
+                        "target resource definition is only usable in combiantion with --rd, but not --rg. " +
+                            "Ignoring target resource definition parameter!"
+                    )
+                );
+            }
             rscDfnsToCheck.addAll(rscGrp.getRscDfns(peerAccCtx.get()));
-            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully " + (add ? "enabled" : "disabled") +
-                " for resource group '" + grpNameRef + "' to remote '" + remoteNameRef + "'.";
         }
         else
         {
@@ -726,23 +744,67 @@ public class CtrlScheduledBackupsApiCallHandler
                     namespace
                 );
             }
+            if (dstRscNameRef != null && !dstRscNameRef.isEmpty())
+            {
+                response.add(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.WARN_INVLD_CONF,
+                        "target resource definition is only usable in combiantion with --rd, " +
+                            "but not on controller level. Ignoring target resource definition parameter!"
+                    )
+                );
+            }
             rscDfnsToCheck.addAll(rscDfnRepo.getMapForView(peerAccCtx.get()).values());
-            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully " + (add ? "enabled" : "disabled") +
-                " on controller to remote '" + remoteNameRef + "'.";
         }
         ctrlTransactionHelper.commit();
         addOrRemoveTasks(schedule, remote, rscDfnsToCheck);
         // no update stlt, since schedule information is of no concern to the stlts
-        ApiCallRcImpl response = new ApiCallRcImpl();
         response.addEntry(
             ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.MODIFIED,
-                    msg
+                    buildSuccessMessage(
+                        scheduleNameRef,
+                        (add ? "enabled" : "disabled"),
+                        rscNameRef,
+                        grpNameRef,
+                        remoteNameRef
+                    )
                 )
                 .build()
         );
-        return Flux.<ApiCallRc> just(response);
+        return Flux.<ApiCallRc>just(response);
+    }
+
+    private String buildSuccessMessage(
+        String scheduleNameRef,
+        String actionRef,
+        @Nullable String rscNameRef,
+        @Nullable String rscGrpNameRef,
+        String remoteNameRef
+    )
+    {
+        StringBuilder sb = new StringBuilder("Backup shipping schedule '")
+            .append(scheduleNameRef)
+            .append("' sucessfully ")
+            .append(actionRef);
+        if (rscNameRef != null)
+        {
+            sb.append(" for resource definition '").append(rscNameRef).append("'");
+        }
+        else if (rscGrpNameRef != null)
+        {
+            sb.append(" for resource group '").append(rscGrpNameRef).append("'");
+        }
+        else
+        {
+            sb.append(" on controller");
+        }
+        sb.append(" to remote '")
+            .append(remoteNameRef)
+            .append("'.")
+            .toString();
+        return sb.toString();
     }
 
     /**
@@ -818,7 +880,6 @@ public class CtrlScheduledBackupsApiCallHandler
     {
         AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
         Schedule schedule = ctrlApiDataLoader.loadSchedule(scheduleNameRef, true);
-        String msg = "";
         List<ResourceDefinition> rscDfnsToCheck = new ArrayList<>();
         if (rscNameRef != null && !rscNameRef.isEmpty())
         {
@@ -837,8 +898,6 @@ public class CtrlScheduledBackupsApiCallHandler
                     InternalApiConsts.KEY_SCHEDULE_PREF_NODE
             );
             rscDfnsToCheck.add(rscDfn);
-            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully deleted for resource definition '" +
-                rscNameRef + "' to remote '" + remoteNameRef + "'.";
         }
         else if (grpNameRef != null && !grpNameRef.isEmpty())
         {
@@ -857,8 +916,6 @@ public class CtrlScheduledBackupsApiCallHandler
                     InternalApiConsts.KEY_SCHEDULE_PREF_NODE
             );
             rscDfnsToCheck.addAll(rscGrp.getRscDfns(peerAccCtx.get()));
-            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully deleted for resource group '" +
-                grpNameRef + "' to remote '" + remoteNameRef + "'.";
         }
         else
         {
@@ -877,8 +934,6 @@ public class CtrlScheduledBackupsApiCallHandler
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
             rscDfnsToCheck.addAll(rscDfnRepo.getMapForView(peerAccCtx.get()).values());
-            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully deleted on controller to remote '" +
-                remoteNameRef + "'.";
         }
         ctrlTransactionHelper.commit();
         addOrRemoveTasks(schedule, remote, rscDfnsToCheck);
@@ -888,7 +943,7 @@ public class CtrlScheduledBackupsApiCallHandler
             ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.DELETED,
-                    msg
+                    buildSuccessMessage(scheduleNameRef, "deleted", rscNameRef, grpNameRef, remoteNameRef)
                 )
                 .build()
         );

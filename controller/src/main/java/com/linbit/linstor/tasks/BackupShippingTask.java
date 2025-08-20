@@ -86,7 +86,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
                     nodeName,
                     rscName,
                     conf.remote.getName().displayValue,
-                    rscName,
+                    conf.dstRscName == null ? rscName : conf.dstRscName,
                     null,
                     null,
                     null,

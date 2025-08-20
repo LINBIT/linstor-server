@@ -8142,6 +8142,9 @@ components:
           default: false
         dst_rsc_grp:
           type: string
+        dst_rsc_name:
+          type: string
+          description: only usable in combination with 'rsc_name'
         force_mv_rsc_grp:
           type: boolean
           default: false

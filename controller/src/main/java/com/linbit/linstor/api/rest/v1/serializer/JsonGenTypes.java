@@ -1512,6 +1512,10 @@ public class JsonGenTypes
         public boolean force_restore = false;
         public @Nullable String dst_rsc_grp;
         /**
+         * only usable in combination with 'rsc_name'
+         */
+        public @Nullable String dst_rsc_name;
+        /**
          * If the destination resource-definition exists and has resources, the force_mv_rsc_grp must be used in order
          * to change the resource-group of the destination resource-definition. This is a safety-option to prevent
          * unexpected autoplace-actions for example performed by the BalanceResourceTask.
