@@ -286,7 +286,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                             " marked down for rollback."
                     )
                 );
-                Flux<ApiCallRc> nextStep = startRollback(rscName, snapshotName);
+                Flux<ApiCallRc> nextStep = resetVlmDfns(rscDfn, snapshotDfn)
+                    .concatWith(startRollback(rscName, snapshotName));
                 retFlux = Flux
                     .just(responses)
                     .concatWith(

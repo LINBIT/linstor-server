@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Drbd: Fixed bug with introduced drbdadm optimization
+- Backup,restore: Properly set SnapVlmDfn size to avoid issues after rollback/restore
 
 ### Removed
 

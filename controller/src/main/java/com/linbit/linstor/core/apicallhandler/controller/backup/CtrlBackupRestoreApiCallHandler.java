@@ -1030,6 +1030,9 @@ public class CtrlBackupRestoreApiCallHandler
             totalSize += vlmDfnMetaEntry.getValue().getSize();
 
             SnapshotVolumeDefinition snapVlmDfn = snapshotCrtHelper.createSnapshotVlmDfnData(snapDfn, vlmDfn);
+            // createSnapshotVlmDfnData took the current vlmDfn's size when creating. We have to override that with the
+            // size we are about to receive so we can properly use this snapshot later for restore/rollback operations
+            snapVlmDfn.setVolumeSize(sysCtx, vlmDfnMetaEntry.getValue().getSize());
             PropsUtils.resetProps(vlmDfnMetaProps, snapVlmDfn.getVlmDfnPropsForChange(peerAccCtx.get()));
             PropsUtils.resetProps(
                 vlmDfnMetaEntry.getValue().getSnapVlmDfnProps(),
