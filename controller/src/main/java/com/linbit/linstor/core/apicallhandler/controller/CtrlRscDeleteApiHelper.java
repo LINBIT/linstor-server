@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -72,6 +73,7 @@ public class CtrlRscDeleteApiHelper
     private final ScheduleBackupService scheduleService;
     private final RetryResourcesTask retryRscTask;
     private final Provider<CtrlRscAutoHelper> rscAutoHelperProvider;
+    private final CtrlMinIoSizeHelper minIoSizeHelper;
 
     @Inject
     public CtrlRscDeleteApiHelper(
@@ -85,7 +87,8 @@ public class CtrlRscDeleteApiHelper
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScheduleBackupService scheduleServiceRef,
         RetryResourcesTask retryRscTaskRef,
-        Provider<CtrlRscAutoHelper> rscAutoHelperProviderRef
+        Provider<CtrlRscAutoHelper> rscAutoHelperProviderRef,
+        CtrlMinIoSizeHelper ctrlMinIoSizeHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -99,6 +102,7 @@ public class CtrlRscDeleteApiHelper
         scheduleService = scheduleServiceRef;
         retryRscTask = retryRscTaskRef;
         rscAutoHelperProvider = rscAutoHelperProviderRef;
+        minIoSizeHelper = ctrlMinIoSizeHelperRef;
     }
 
     public void markDeletedWithVolumes(Resource rsc)
@@ -289,6 +293,41 @@ public class CtrlRscDeleteApiHelper
                         )
                         .getFlux()
                 );
+
+                // maybe we should create an auto-helper from this..
+                if (rscDfn.getResourceCount() == 0)
+                {
+                    try
+                    {
+                        Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(apiCtx);
+                        while (vlmDfnIt.hasNext())
+                        {
+                            VolumeDefinition vlmDfn = vlmDfnIt.next();
+                            if (minIoSizeHelper.isAutoMinIoSize(vlmDfn, apiCtx))
+                            {
+                                errorReporter.logDebug(
+                                    "updateVolumeMinIoSize: Last resource deleted. Unsetting property " +
+                                        "namespace = \"%s\", key = \"%s\" ",
+                                    ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
+                                    InternalApiConsts.KEY_DRBD_BLOCK_SIZE
+                                );
+                                vlmDfn.getProps(apiCtx)
+                                    .removeProp(
+                                        InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
+                                        ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                                    );
+                            }
+                        }
+                    }
+                    catch (AccessDeniedException | InvalidKeyException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
+                    catch (DatabaseException exc)
+                    {
+                        throw new ApiDatabaseException(exc);
+                    }
+                }
             }
 
             ctrlTransactionHelper.commit();
