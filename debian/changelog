@@ -1,3 +1,16 @@
+linstor-server (1.32.0~rc.3-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * storage: remove parentIsVDO
+  * gradle: use postgresql 42.7.7
+
+  [ Gabor Hernadi ]
+  * Drbd: Fix adjust improvement
+  * Backup,Ship: Set SnapVlmDfn size
+  * Added --target-resource-name for 'backup schedule enable'
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 26 Aug 2025 13:32:14 +0000
+
 linstor-server (1.32.0~rc.2-1) experimental; urgency=medium
 
   * drbdlayer: fix missing device path if adjust wasn't necessary

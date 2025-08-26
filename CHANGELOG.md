@@ -8,13 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.32.0-rc.3] - 2025-08-26
+
 ### Added
 
 - Backup,schedule: Add --target-resource-definition. Only usable in combination with "--rd RD"
 
 ### Fixed
 
-- Drbd: Fixed bug with introduced drbdadm optimization
+- Drbd: Fixed bug with introduced drbdadm optimization (resize)
 - Backup,restore: Properly set SnapVlmDfn size to avoid issues after rollback/restore
 
 ### Removed
