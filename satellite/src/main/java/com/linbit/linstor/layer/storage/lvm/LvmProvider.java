@@ -453,15 +453,24 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected void deleteLvImpl(LvmData<Resource> vlmData, String oldLvmId)
         throws StorageException, DatabaseException, AccessDeniedException
     {
-        String devicePath = vlmData.getDevicePath();
-        String volumeGroup = vlmData.getVolumeGroup();
+        /*
+         * The devicePath can be null either when cleaning up a failed clone (cloning might still be set,
+         * which prevents the devicePath from being set) or if the resource is inactive,
+         * or maybe even if the LV (or VG) is inactive and therefore 'lvs'
+         * simply does not return any device path for the given LV
+         */
+        @Nullable String devicePath = vlmData.getDevicePath();
+        @Nullable String volumeGroup = vlmData.getVolumeGroup();
 
         if (true)
         {
-            wipeHandler.quickWipe(devicePath);
+            if (devicePath != null)
+            {
+                wipeHandler.quickWipe(devicePath);
+            }
             LvmUtils.execWithRetry(
                 extCmdFactory,
-                Collections.singleton(vlmData.getVolumeGroup()),
+                Collections.singleton(volumeGroup),
                 config -> LvmCommands.delete(
                     extCmdFactory.create(),
                     volumeGroup,
