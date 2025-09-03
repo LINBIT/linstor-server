@@ -174,8 +174,22 @@ public class DbConnectionPool implements ControllerSQLDatabase
                 threadLocalConnections.set(connections);
             }
             connections.add(dbConn);
-            dbConn.setAutoCommit(false);
             dbConn.setSchema(DATABASE_SCHEMA_NAME);
+            // setSchema must be called before we enable explicit transactions with setAutoCommit(false):
+            // In postgresql SET SCHEMA already "activates" the transaction and could collide with other
+            // getConnection() attempts and so we should keep the below order:
+            // t1: any ApiCall
+            // t1: (auto-start tx;) set schema; (auto-commit;)
+            // t1: (implicit start tx;) insert...
+            // t2: nodeupdate ApiCall
+            // t2: (auto-start tx;) set schema; (auto-commit;)
+
+            // t1: commit tx;
+            // t2: (implicit start tx;) insert ...
+            // Otherwise, postgresql might throw such an error:
+            // could not serialize access due to read/write dependencies among transactions
+
+            dbConn.setAutoCommit(false);
         }
 
         if (dbConn == null)
