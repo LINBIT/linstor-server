@@ -117,10 +117,10 @@ public class ScopeRunner
         MDC.setContextMap(logContextMap);
         String apiCallName = subscriberContext.get(ApiModule.API_CALL_NAME);
         AccessContext accCtx = subscriberContext.get(AccessContext.class);
-        Peer peer = subscriberContext.getOrDefault(Peer.class, null);
-        Long apiCallId = subscriberContext.getOrDefault(ApiModule.API_CALL_ID, null);
+        @Nullable Peer peer = subscriberContext.getOrDefault(Peer.class, null);
+        @Nullable Long apiCallId = subscriberContext.getOrDefault(ApiModule.API_CALL_ID, null);
 
-        Flux<T> ret;
+        @Nullable Flux<T> ret;
 
         String peerDescription;
         if (peer == null)
@@ -150,11 +150,12 @@ public class ScopeRunner
         errorLog.logTrace(
             "%s%s '%s' scope '%s' start", peerDescription, apiCallDescription, apiCallName, scopeDescription);
 
-        TransactionMgr transMgr = transactional ? transactionMgrGenerator.startTransaction() : null;
-
-        Exception caughtExc = null;
-        ImplementationError caughtImplError = null;
+        @Nullable Exception caughtExc = null;
+        @Nullable ImplementationError caughtImplError = null;
         lockGuard.lock();
+        // start transaction after locks are acquired
+        // this should prevent threads already altering the transaction and maybe produce unserializable transactions
+        @Nullable TransactionMgr transMgr = transactional ? transactionMgrGenerator.startTransaction() : null;
         try (LinStorScope.ScopeAutoCloseable close = apiCallScope.enter())
         {
             apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), accCtx);

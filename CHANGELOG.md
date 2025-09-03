@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved INFO logging on auto-diskful and delete resources
 - Try to keep tiebreaker on auto-diskful delete excessive resources
 
+### Fixed
+
+- ScopeRunner: start DB transaction after scope locks are acquired
+
 ## [1.32.0-rc.3] - 2025-08-26
 
 ### Added
