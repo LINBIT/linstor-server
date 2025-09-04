@@ -56,10 +56,10 @@ public class Autoplacer
         long rscSize
     )
     {
-        Set<StorPool> selection = null;
+        @Nullable Set<StorPool> selection = null;
         try
         {
-            Resource.Flags disklessType = Resource.Flags.valueOfOrNull(selectFilter.getDisklessType());
+            @Nullable Resource.Flags disklessType = Resource.Flags.valueOfOrNull(selectFilter.getDisklessType());
 
             long start = System.currentTimeMillis();
             ArrayList<StorPool> availableStorPools = filter.listAvailableStorPools(disklessType == null);
@@ -89,7 +89,7 @@ public class Autoplacer
 
             // 3: actual selection of storage pools
             long startSelection = System.currentTimeMillis();
-            Set<StorPoolWithScore> selectionWithScores = selector.select(
+            @Nullable Set<StorPoolWithScore> selectionWithScores = selector.select(
                 selectFilter,
                 rscDfnRef,
                 storPoolsWithScoreList

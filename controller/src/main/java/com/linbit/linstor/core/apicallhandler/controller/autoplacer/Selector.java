@@ -57,7 +57,7 @@ class Selector
         sysCfgRepo = sysCfgRepoRef;
     }
 
-    public Set<StorPoolWithScore> select(
+    public @Nullable Set<StorPoolWithScore> select(
         AutoSelectFilterApi selectFilterRef,
         @Nullable ResourceDefinition rscDfnRef,
         Collection<StorPoolWithScore> storPoolWithScores
@@ -205,7 +205,7 @@ class Selector
             }
         }
 
-        Set<StorPoolWithScore> selectionResult = null;
+        @Nullable Set<StorPoolWithScore> selectionResult = null;
 
         Set<StorPoolWithScore> currentSelection;
         int startIdx = 0;

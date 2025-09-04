@@ -312,6 +312,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
 
+        errorReporter.logInfo(
+            "Toggle Disk on %s/%s %s", nodeNameStr, rscNameStr, removeDisk ? "removing disk" : "adding disk");
+
         Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
 
         if (hasDiskAddRequested(rsc))

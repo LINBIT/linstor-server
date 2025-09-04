@@ -210,6 +210,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             );
         }
 
+        errorReporter.logInfo("Activate resource if last before delete resource %s/%s", nodeNameStr, rscNameStr);
+
         ctrlRscDeleteApiHelper.ensureNotInUse(rsc);
         ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc);
 
@@ -241,6 +243,9 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             );
         }
 
+        errorReporter.logInfo(
+            "Deleting resource %s/%s keeping tiebreaker %b", nodeNameStr, rscNameStr, keepTiebreakerRef);
+
         ctrlRscDeleteApiHelper.ensureNotInUse(rsc);
         ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc);
         zfsChecks.ensureNoDependentSnapshots(rsc);
@@ -250,7 +255,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         Flux<ApiCallRc> flux;
         try
         {
-            ResourceDefinition rscDfn = rsc.getResourceDefinition();
             Set<SnapshotDefinition> snapDfnsToUpdate = CtrlRscDeleteApiCallHandler.handleZfsRenameIfNeeded(apiCtx, rsc);
 
             if (LayerUtils.hasLayer(rsc.getLayerData(accCtx), DeviceLayerKind.DRBD))

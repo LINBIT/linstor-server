@@ -293,6 +293,8 @@ public class CtrlRscDeleteApiHelper
 
             ctrlTransactionHelper.commit();
 
+            errorReporter.logInfo("Resource deleted %s/%s", nodeNames, rscName);
+
             flux = Flux.<ApiCallRc>just(apiCallRc)
                 .concatWith(autoFlux);
         }
@@ -328,6 +330,7 @@ public class CtrlRscDeleteApiHelper
                 )
                 .setCause("Resource is mounted/in use.")
                 .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.", rscName, nodeName))
+                .setSkipErrorReport(true)
                 .build();
             resp.addEntry(err);
             if (throwApiExc)
@@ -367,6 +370,7 @@ public class CtrlRscDeleteApiHelper
                     )
                     .setCause("Resource still has diskless users.")
                     .setCorrection("Before deleting this resource, delete the diskless resources attached to it.")
+                    .setSkipErrorReport(true)
                     .build();
 
                 resp.addEntry(err);

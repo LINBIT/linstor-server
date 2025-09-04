@@ -28,6 +28,7 @@ import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -151,11 +152,11 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
             {
                 if (rsc.getStateFlags().isSet(sysCtx, Resource.Flags.DRBD_DISKLESS))
                 {
-                    String autoDiskful = getPrioProps(rsc)
+                    @Nullable String autoDiskful = getPrioProps(rsc)
                         .getProp(ApiConsts.KEY_DRBD_AUTO_DISKFUL, ApiConsts.NAMESPC_DRBD_OPTIONS);
-                    SatelliteResourceState rscStates = rsc.getNode().getPeer(sysCtx)
+                    @Nullable SatelliteResourceState rscStates = rsc.getNode().getPeer(sysCtx)
                             .getSatelliteState().getResourceStates().get(rsc.getResourceDefinition().getName());
-                    Boolean isPrimary = rscStates != null ? rscStates.isInUse() : null;
+                    @Nullable Boolean isPrimary = rscStates != null ? rscStates.isInUse() : null;
 
                     boolean enableAutoDiskful = autoDiskful != null && isPrimary != null && isPrimary;
                     synchronized (configSet)
@@ -353,7 +354,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                         !rscFlags.isSet(sysCtx, Resource.Flags.DISK_ADDING)
                 )
                 {
-                    Set<StorPool> autoPlace;
+                    @Nullable Set<StorPool> autoPlace;
                     try (LinStorScope.ScopeAutoCloseable close = linstorScope.enter())
                     {
                         ResourceDefinition rscDfn = rsc.getResourceDefinition();
@@ -434,7 +435,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                     resourceStateEvent.get(),
                     ObjectIdentifier.resource(rsc.getNode().getName(), rsc.getResourceDefinition().getName())
                 )
-                    .skipUntil(usage -> usage.getUpToDate())
+                    .skipUntil(ResourceState::getUpToDate)
                     .next()
                     .thenMany(
                         scopeRunner.fluxInTransactionalScope(
@@ -453,16 +454,16 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         throws InvalidKeyException, AccessDeniedException
     {
         Flux<ApiCallRc> retFlux;
-        Resource excessRsc = getExcessRsc(rsc);
+        @Nullable Resource excessRsc = getExcessRsc(rsc);
 
         if (excessRsc == null)
         {
-            errorReporter.logDebug("Could not find resource to automatically cleanup after auto-diskful.");
+            errorReporter.logWarning("Could not find resource to automatically cleanup after auto-diskful.");
             retFlux = Flux.empty();
         }
         else
         {
-            errorReporter.logDebug(
+            errorReporter.logInfo(
                 "Deleting excess %s after auto-diskful of %s",
                 CtrlRscApiCallHandler.getRscDescription(excessRsc),
                 CtrlRscApiCallHandler.getRscDescription(rsc)
@@ -557,7 +558,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         return sum;
     }
 
-    private class AutoDiskfulConfig implements Comparable<AutoDiskfulConfig>
+    private static class AutoDiskfulConfig implements Comparable<AutoDiskfulConfig>
     {
         final long disklessPrimarySince;
         final Resource rsc;

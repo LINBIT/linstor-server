@@ -98,7 +98,7 @@ public class PriorityProps
     public Pair<String, ReadOnlyProps> getPropAndContainer(String key, @Nullable String namespace)
         throws InvalidKeyException
     {
-        String value = null;
+        @Nullable String value = null;
         @Nullable ReadOnlyProps container = null;
         for (PairNonNull<ReadOnlyProps, String> pair : propList)
         {
@@ -117,7 +117,7 @@ public class PriorityProps
         return new Pair<>(value, container);
     }
 
-    public String getProp(String key, String namespace) throws InvalidKeyException
+    public @Nullable String getProp(String key, @Nullable String namespace) throws InvalidKeyException
     {
         return getPropAndContainer(key, namespace).objA;
     }
