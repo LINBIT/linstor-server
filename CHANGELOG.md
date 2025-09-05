@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SQL: SET SCHEMA statement triggered an early transaction start before any data was manipulated
 - ScopeRunner: start DB transaction after scope locks are acquired
 - mkfs: also use nodiscard for thick volumes, as a fullsync is done anyway
+- replication-state-events: ignore events for nodes that are currently unknown
 
 ## [1.32.0-rc.3] - 2025-08-26
 

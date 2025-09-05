@@ -1,7 +1,6 @@
 package com.linbit.linstor.event.handler.protobuf.controller;
 
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -49,24 +48,26 @@ public class ReplicationStateEventHandler implements EventHandler
         nodeRepo = nodeRepositoryRef;
     }
 
-    static NodeName getMappedName(NodeRepository nodeRepo, AccessContext sysCtx, String peerName)
+    /**
+     * Returns the mapped nodename from the uname/peer name
+     *
+     * It is possible that the uname node name isn't yet known, as the first node gets an event containing a node
+     * that has not authenticated/connected yet. We ignore such node events for now as they will be published
+     * once connected.
+     * @param nodeRepo
+     * @param sysCtx
+     * @param peerName
+     * @return The Linstor node name or null if not found in uname map.
+     */
+    static @Nullable NodeName getMappedName(NodeRepository nodeRepo, AccessContext sysCtx, String peerName)
     {
-        NodeName ret;
+        @Nullable NodeName ret = null;
         try
         {
-            @Nullable NodeName mappedName = nodeRepo.getUname(sysCtx, peerName);
-            if (mappedName == null)
-            {
-                ret = LinstorParsingUtils.asNodeName("notfound." + peerName);
-            }
-            else
-            {
-                ret = mappedName;
-            }
+            ret = nodeRepo.getUname(sysCtx, peerName);
         }
         catch (AccessDeniedException ignored)
         {
-            ret = LinstorParsingUtils.asNodeName("accden." + peerName);
         }
         return ret;
     }
@@ -80,23 +81,26 @@ public class ReplicationStateEventHandler implements EventHandler
             EventReplicationStateOuterClass.EventReplicationState eventReplicationState =
                 EventReplicationStateOuterClass.EventReplicationState.parseDelimitedFrom(eventDataIn);
 
-            NodeName mappedName = getMappedName(nodeRepo, sysCtx, eventReplicationState.getPeerName());
-            PairNonNull<String, ReplState> replicationState = eventReplicationState.getReplicationState().isEmpty() ?
-                new PairNonNull<>(mappedName.displayValue, ReplState.UNKNOWN) :
-                new PairNonNull<>(
-                    mappedName.displayValue,
-                    ReplState.parseReplState(eventReplicationState.getReplicationState()));
-            satelliteStateHelper.onSatelliteState(
-                eventIdentifier.getNodeName(),
-                satelliteState -> satelliteState.setOnVolume(
-                    eventIdentifier.getResourceName(),
-                    eventIdentifier.getVolumeNumber(),
-                    SatelliteVolumeState::setReplicationState,
-                    replicationState
-                )
-            );
-            replicationStateEvent.get()
-                .forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, replicationState);
+            @Nullable NodeName mappedName = getMappedName(nodeRepo, sysCtx, eventReplicationState.getPeerName());
+            if (mappedName != null)
+            {
+                PairNonNull<String, ReplState> replicationState = eventReplicationState.getReplicationState().isEmpty() ?
+                    new PairNonNull<>(mappedName.displayValue, ReplState.UNKNOWN) :
+                    new PairNonNull<>(
+                        mappedName.displayValue,
+                        ReplState.parseReplState(eventReplicationState.getReplicationState()));
+                satelliteStateHelper.onSatelliteState(
+                    eventIdentifier.getNodeName(),
+                    satelliteState -> satelliteState.setOnVolume(
+                        eventIdentifier.getResourceName(),
+                        eventIdentifier.getVolumeNumber(),
+                        SatelliteVolumeState::setReplicationState,
+                        replicationState
+                    )
+                );
+                replicationStateEvent.get()
+                    .forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, replicationState);
+            }
         }
         else
         {

@@ -1,6 +1,7 @@
 package com.linbit.linstor.event.handler.protobuf.controller;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -58,25 +59,28 @@ public class DonePercentageEventHandler implements EventHandler
             EventDonePercentageOuterClass.EventDonePercentage eventDonePercentage =
                 EventDonePercentageOuterClass.EventDonePercentage.parseDelimitedFrom(eventDataIn);
 
-            NodeName mappedName = getMappedName(nodeRepo, sysCtx, eventDonePercentage.getPeerName());
-            PairNonNull<String, Optional<Float>> donePercentage = eventDonePercentage.hasDonePercentage() ?
-                new PairNonNull<>(mappedName.displayValue, Optional.of(eventDonePercentage.getDonePercentage())) :
-                new PairNonNull<>(mappedName.displayValue, Optional.empty());
-            satelliteStateHelper.onSatelliteState(
-                eventIdentifier.getNodeName(),
-                satelliteState -> satelliteState.setOnVolume(
-                    eventIdentifier.getResourceName(),
-                    eventIdentifier.getVolumeNumber(),
-                    SatelliteVolumeState::setDonePercentage,
-                    donePercentage
-                )
-            );
-            donePercentageEvent.get()
-                .forwardEvent(
-                    eventIdentifier.getObjectIdentifier(),
-                    eventAction,
-                    donePercentage
+            @Nullable NodeName mappedName = getMappedName(nodeRepo, sysCtx, eventDonePercentage.getPeerName());
+            if (mappedName != null)
+            {
+                PairNonNull<String, Optional<Float>> donePercentage = eventDonePercentage.hasDonePercentage() ?
+                    new PairNonNull<>(mappedName.displayValue, Optional.of(eventDonePercentage.getDonePercentage())) :
+                    new PairNonNull<>(mappedName.displayValue, Optional.empty());
+                satelliteStateHelper.onSatelliteState(
+                    eventIdentifier.getNodeName(),
+                    satelliteState -> satelliteState.setOnVolume(
+                        eventIdentifier.getResourceName(),
+                        eventIdentifier.getVolumeNumber(),
+                        SatelliteVolumeState::setDonePercentage,
+                        donePercentage
+                    )
                 );
+                donePercentageEvent.get()
+                    .forwardEvent(
+                        eventIdentifier.getObjectIdentifier(),
+                        eventAction,
+                        donePercentage
+                    );
+            }
         }
         else
         {
