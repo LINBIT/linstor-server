@@ -470,7 +470,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
             );
             retFlux = rscDeleteApiCallHandler.deleteResource(
                 excessRsc.getNode().getName().displayValue,
-                excessRsc.getResourceDefinition().getName().displayValue
+                excessRsc.getResourceDefinition().getName().displayValue,
+                true
             ).contextWrite(
                 Context.of(
                     ApiModule.API_CALL_NAME,
