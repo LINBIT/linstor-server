@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
@@ -71,7 +72,7 @@ public class MkfsUtils
         String devicePath
     ) throws StorageException
     {
-        String filesys = null;
+        @Nullable String filesys = null;
         try
         {
             ExtCmd.OutputData outData = extCmd.exec("blkid", "-o", "export", devicePath);
@@ -117,7 +118,7 @@ public class MkfsUtils
                     rscGrp.getProps(wrkCtx)
                 );
 
-                final String fsType = prioProps.getProp(ApiConsts.KEY_FS_TYPE, ApiConsts.NAMESPC_FILESYSTEM);
+                final @Nullable String fsType = prioProps.getProp(ApiConsts.KEY_FS_TYPE, ApiConsts.NAMESPC_FILESYSTEM);
                 if (fsType != null)
                 {
                     VlmProviderObject<Resource> vlmProviderObject = rsc.getLayerData(wrkCtx).getVlmProviderObject(
@@ -128,7 +129,7 @@ public class MkfsUtils
                         extCmdFactory.create(),
                         devicePath
                     );
-                    if (!optFsType.isPresent())
+                    if (optFsType.isEmpty())
                     {
                         String mkfsParametes = prioProps.getProp(
                             ApiConsts.KEY_FS_MKFSPARAMETERS,
@@ -136,8 +137,10 @@ public class MkfsUtils
                             ""
                         );
 
-                        String mkfsUser = prioProps.getProp(ApiConsts.KEY_FS_USER, ApiConsts.NAMESPC_FILESYSTEM);
-                        String mkfsGroup = prioProps.getProp(ApiConsts.KEY_FS_GROUP, ApiConsts.NAMESPC_FILESYSTEM);
+                        @Nullable String mkfsUser = prioProps.getProp(
+                            ApiConsts.KEY_FS_USER, ApiConsts.NAMESPC_FILESYSTEM);
+                        @Nullable String mkfsGroup = prioProps.getProp(
+                            ApiConsts.KEY_FS_GROUP, ApiConsts.NAMESPC_FILESYSTEM);
 
                         if (mkfsUser != null || mkfsGroup != null)
                         {
@@ -153,17 +156,12 @@ public class MkfsUtils
 
                         if (fsType.equals(ApiConsts.VAL_FS_TYPE_EXT4))
                         {
-                            mkfsParametes += " -F"; // -F force
-                            if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject, false) ||
-                                VolumeUtils.isVolumeZfs(vlmProviderObject, false))
-                            {
-                                mkfsParametes += " -E nodiscard";
-                            }
+                            mkfsParametes += " -F -E nodiscard"; // -F force, -E additional options
 
                             if (mkfsUser != null && mkfsGroup != null)
                             {
-                                Long mkfsUID = getUserId(extCmdFactory, mkfsUser);
-                                Long mkfsGID = getGroupId(extCmdFactory, mkfsGroup);
+                                long mkfsUID = getUserId(extCmdFactory, mkfsUser);
+                                long mkfsGID = getGroupId(extCmdFactory, mkfsGroup);
 
                                 mkfsParametes += " -E root_owner=" + mkfsUID + ":" + mkfsGID;
                             }
@@ -173,14 +171,9 @@ public class MkfsUtils
                         else
                         if (fsType.equals(ApiConsts.VAL_FS_TYPE_XFS))
                         {
-                            mkfsParametes += " -f"; // -f force
-                            if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject, false) ||
-                                VolumeUtils.isVolumeZfs(vlmProviderObject, false))
-                            {
-                                mkfsParametes += " -K"; // -K no discard
-                            }
+                            mkfsParametes += " -f -K"; // -f force, -K no discard
 
-                            File tempFile = null;
+                            @Nullable File tempFile = null;
                             if (mkfsUser != null && mkfsGroup != null)
                             {
                                 try
@@ -189,8 +182,8 @@ public class MkfsUtils
                                         "linstor",
                                         "xfs_proto_" + rsc.getResourceDefinition().getName().displayValue
                                     );
-                                    Long mkfsUID = getUserId(extCmdFactory, mkfsUser);
-                                    Long mkfsGID = getGroupId(extCmdFactory, mkfsGroup);
+                                    long mkfsUID = getUserId(extCmdFactory, mkfsUser);
+                                    long mkfsGID = getGroupId(extCmdFactory, mkfsGroup);
                                     Files.write(
                                         tempFile.toPath(),
                                         ("/generated/by/linstor 13 42 d--777 " + mkfsUID + " " + mkfsGID + "\n")
