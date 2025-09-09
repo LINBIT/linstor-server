@@ -72,6 +72,7 @@ import javax.inject.Singleton;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -140,9 +141,9 @@ public class CtrlBackupCreateApiCallHandler
 
     public Flux<ApiCallRc> createBackup(
         String rscNameRef,
-        String snapNameRef,
+        @Nullable String snapNameRef,
         String remoteNameRef,
-        String nodeNameRef,
+        @Nullable String nodeNameRef,
         @Nullable String scheduleNameRef,
         boolean incremental,
         boolean runInBackgroundRef
@@ -190,7 +191,7 @@ public class CtrlBackupCreateApiCallHandler
     BackupSnapshotObj backupSnapshot(
         String rscNameRef,
         String remoteName,
-        String nodeName,
+        @Nullable String nodeName,
         @Nullable String snapNameRef,
         LocalDateTime nowRef,
         boolean allowIncremental,
@@ -231,13 +232,41 @@ public class CtrlBackupCreateApiCallHandler
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
             AbsRemote remote;
             SnapshotDefinition prevSnapDfn = null;
+            @Nullable SnapshotDefinition snapDfn = rscDfn.getSnapshotDfn(sysCtx, new SnapshotName(snapName));
+            if (
+                snapDfn != null && (snapDfn.getFlags()
+                    .isSomeSet(
+                        sysCtx,
+                        SnapshotDefinition.Flags.DELETE,
+                        SnapshotDefinition.Flags.FAILED_DEPLOYMENT,
+                        SnapshotDefinition.Flags.FAILED_DISCONNECT
+                    ) || snapDfn.getCreationTime() == null)
+            )
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_REMOTE_NAME,
+                        "The given snapshot was not successful and can therefore not be shipped",
+                        true
+                    )
+                );
+            }
+            boolean shipExistingSnap = snapDfn != null;
             if (remoteTypeRef.equals(RemoteType.S3))
             {
                 // check if encryption is possible
                 backupHelper.getLocalMasterKey();
 
                 remote = backupHelper.getS3Remote(remoteName);
-                prevSnapDfn = getIncrementalBase(rscDfn, remote, allowIncremental, false);
+                if (shipExistingSnap)
+                {
+                    prevSnapDfn = getIncrementalBaseForExistingSnap(rscDfn, remote, snapDfn, allowIncremental);
+
+                }
+                else
+                {
+                    prevSnapDfn = getIncrementalBase(rscDfn, remote, allowIncremental, false);
+                }
             }
             else if (remoteTypeRef.equals(RemoteType.LINSTOR))
             {
@@ -256,15 +285,18 @@ public class CtrlBackupCreateApiCallHandler
                 throw new ImplementationError("remote type " + remoteTypeRef + " not allowed");
             }
 
-            SnapshotDefinition snapDfn = snapCrtHelper
-                .createSnapshots(
-                    Collections.emptyList(),
-                    rscDfn.getName(),
-                    LinstorParsingUtils.asSnapshotName(snapName),
-                    Collections.emptyMap(),
-                    responses
-                );
-            setBackupSnapDfnFlagsAndProps(snapDfn, scheduleNameRef, nowRef, remoteName);
+            if (!shipExistingSnap)
+            {
+                snapDfn = snapCrtHelper
+                    .createSnapshots(
+                        Collections.emptyList(),
+                        rscDfn.getName(),
+                        LinstorParsingUtils.asSnapshotName(snapName),
+                        Collections.emptyMap(),
+                        responses
+                    );
+            }
+            setBackupSnapDfnProps(snapDfn, scheduleNameRef, nowRef, remoteName);
             /*
              * See if the previous snap has already finished shipping. If it hasn't, the current snap must be queued to
              * prevent two consecutive shippings from happening at the same time
@@ -313,14 +345,16 @@ public class CtrlBackupCreateApiCallHandler
                 // only do this for s3, l2l does it on its own later on
                 setIncrementalDependentProps(snapDfn, prevSnapDfn, remoteName, scheduleNameRef);
                 // this is used to determine the prevSnap for s3
-                // nur für auto-namen setzen
-                rscDfn.getProps(peerAccCtx.get())
-                    .setProp(
-                        InternalApiConsts.KEY_BACKUP_LAST_STARTED_OR_QUEUED,
-                        snapName,
-                        BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" +
-                            remote.getName().displayValue
-                    );
+                if (!shipExistingSnap)
+                {
+                    rscDfn.getProps(peerAccCtx.get())
+                        .setProp(
+                            InternalApiConsts.KEY_BACKUP_LAST_STARTED_OR_QUEUED,
+                            snapName,
+                            BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" +
+                                remote.getName().displayValue
+                        );
+                }
             }
             ctrlTransactionHelper.commit();
 
@@ -355,6 +389,50 @@ public class CtrlBackupCreateApiCallHandler
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private @Nullable SnapshotDefinition getIncrementalBaseForExistingSnap(
+        ResourceDefinition rscDfn,
+        AbsRemote remote,
+        SnapshotDefinition snapDfn,
+        boolean allowIncremental
+    ) throws AccessDeniedException
+    {
+        SnapshotDefinition prevSnapDfn = null;
+        if (allowIncremental)
+        {
+            Date crtTime = snapDfn.getCreationTime();
+            Date prevCrtTime = null;
+            for (SnapshotDefinition dfn : rscDfn.getSnapshotDfns(sysCtx))
+            {
+                Date curCrtTime = dfn.getCreationTime();
+                if (
+                    curCrtTime != null && curCrtTime.before(crtTime) &&
+                        (prevCrtTime == null || curCrtTime.after(prevCrtTime))
+                )
+                {
+                    prevCrtTime = curCrtTime;
+                    prevSnapDfn = dfn;
+                }
+            }
+            Set<String> s3Keys = backupHelper.getAllS3Keys((S3Remote) remote, rscDfn.getName().displayValue);
+            if (
+                prevSnapDfn != null && backupHelper.getLatestBackup(
+                    s3Keys,
+                    prevSnapDfn.getName().displayValue
+                ) == null
+            )
+            {
+                errorReporter.logWarning(
+                    "Could not create an incremental backup for resource %s as the previous backup " +
+                        "created by snapshot %s has already been deleted. Creating a full backup instead.",
+                    rscDfn.getName(),
+                    prevSnapDfn.getName()
+                );
+                prevSnapDfn = null;
+            }
+        }
+        return prevSnapDfn;
     }
 
     Flux<ApiCallRc> startShipping(
@@ -683,7 +761,7 @@ public class CtrlBackupCreateApiCallHandler
         return chosenNode;
     }
 
-    private void setBackupSnapDfnFlagsAndProps(
+    private void setBackupSnapDfnProps(
         SnapshotDefinition snapDfn,
         @Nullable String scheduleNameRef,
         LocalDateTime nowRef,

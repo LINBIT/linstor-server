@@ -18,7 +18,7 @@ info:
     ```
 
     After setting this properties restart the controller and the new values should be used.
-  version: 1.26.0
+  version: 1.26.1
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -7988,6 +7988,8 @@ components:
           type: string
         incremental:
           type: boolean
+        dst_snap_name:
+          type: string
     BackupAbort:
       type: object
       required:
@@ -7999,6 +8001,8 @@ components:
           type: boolean
         create:
           type: boolean
+        snapshot:
+          type: string
     BackupShip:
       type: object
       required:
@@ -8039,6 +8043,10 @@ components:
             If the destination resource-definition exists and has resources, the force_mv_rsc_grp must be used in order
             to change the resource-group of the destination resource-definition. This is a safety-option to prevent
             unexpected autoplace-actions for example performed by the BalanceResourceTask.
+        src_snap_name:
+          type: string
+        dst_snap_name:
+          type: string
     BackupInfo:
       type: object
       required:

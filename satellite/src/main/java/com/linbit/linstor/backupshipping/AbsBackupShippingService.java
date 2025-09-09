@@ -423,7 +423,7 @@ public abstract class AbsBackupShippingService implements SystemService
                 .getLinstorRemoteName() : s3orStltRemote.getName();
             if (!alreadyStarted(snapVlmData, s3orLinRemoteName.displayValue))
             {
-                killIfRunning(sendRecvCommand);
+                // killIfRunning(sendRecvCommand);
 
                 Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
                 PairNonNull<Snapshot, RemoteName> shipKey = getShipKey(s3orLinRemoteName.displayValue, snap);

@@ -120,7 +120,15 @@ public class Backups
             JsonGenTypes.BackupCreate data = objectMapper.readValue(jsonData, JsonGenTypes.BackupCreate.class);
             boolean incremental = data.incremental != null && data.incremental;
             responses = backupCrtApiCallHandler
-                .createBackup(data.rsc_name, data.snap_name, remoteName, data.node_name, null, incremental, false);
+                .createBackup(
+                    data.rsc_name,
+                    data.snap_name,
+                    remoteName,
+                    data.node_name,
+                    null,
+                    incremental,
+                    false
+                );
             requestHelper.doFlux(
                 ApiConsts.API_CRT_BACKUP,
                 request,
@@ -358,6 +366,7 @@ public class Backups
                 data.dst_stor_pool,
                 data.stor_pool_rename,
                 data.dst_rsc_grp,
+                data.src_snap_name,
                 data.download_only,
                 data.force_restore,
                 null,

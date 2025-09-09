@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.26.0";
+    public static final String REST_API_VERSION = "1.26.1";
 
     /**
      * Common api reply structure
@@ -1426,6 +1426,7 @@ public class JsonGenTypes
         public @Nullable String node_name;
         public @Nullable String snap_name;
         public @Nullable Boolean incremental;
+        public @Nullable String dst_snap_name;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1434,6 +1435,7 @@ public class JsonGenTypes
         public String rsc_name;
         public @Nullable Boolean restore;
         public @Nullable Boolean create;
+        public @Nullable String snapshot;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1456,6 +1458,8 @@ public class JsonGenTypes
          * unexpected autoplace-actions for example performed by the BalanceResourceTask.
          */
         public boolean force_mv_rsc_grp = false;
+        public @Nullable String src_snap_name;
+        public @Nullable String dst_snap_name;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

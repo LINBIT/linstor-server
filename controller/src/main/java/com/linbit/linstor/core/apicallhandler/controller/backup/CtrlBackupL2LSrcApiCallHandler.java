@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.backup;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
@@ -34,6 +35,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -71,6 +73,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -176,6 +179,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String dstStorPoolRef,
         @Nullable Map<String, String> storPoolRenameRef,
         @Nullable String dstRscGrpNameRef,
+        @Nullable String srcSnapNameRef,
         boolean downloadOnly,
         boolean forceRestore,
         @Nullable String scheduleNameRef,
@@ -199,6 +203,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                 dstStorPoolRef,
                 storPoolRenameRef,
                 dstRscGrpNameRef,
+                srcSnapNameRef,
                 downloadOnly,
                 forceRestore,
                 scheduleNameRef,
@@ -219,13 +224,14 @@ public class CtrlBackupL2LSrcApiCallHandler
         String dstStorPoolRef,
         Map<String, String> storPoolRenameRef,
         @Nullable String dstRscGrpRef,
+        @Nullable String srcSnapNameRef,
         boolean downloadOnly,
         boolean forceRestore,
         @Nullable String scheduleNameRef,
         boolean allowIncremental,
         boolean runInBackgroundRef,
         boolean forceRscGrp
-    )
+    ) throws AccessDeniedException, InvalidNameException
     {
         AbsRemote remote = ctrlApiDataLoader.loadRemote(linstorRemoteNameRef, true);
 
@@ -252,17 +258,54 @@ public class CtrlBackupL2LSrcApiCallHandler
             throw new ImplementationError(exc);
         }
         // build list of possible base snapshots for incremental shipping
-        // TODO: sort into two sets - one "snap to ship + older", other "newer than snap to ship" - second group will be
-        // empty for now, preparation for shipping specific snap
         Set<String> srcSnapDfnUuids = new HashSet<>();
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(srcRscNameRef, true);
+        SnapshotDefinition snapDfnToShip = null;
+        Date crtTime = null;
+        if (srcSnapNameRef != null)
+        {
+            snapDfnToShip = rscDfn.getSnapshotDfn(sysCtx, new SnapshotName(srcSnapNameRef));
+            if (snapDfnToShip != null)
+            {
+                crtTime = snapDfnToShip.getCreationTime();
+                if (
+                    snapDfnToShip.getFlags()
+                        .isSomeSet(
+                            sysCtx,
+                            SnapshotDefinition.Flags.DELETE,
+                            SnapshotDefinition.Flags.FAILED_DEPLOYMENT,
+                            SnapshotDefinition.Flags.FAILED_DISCONNECT
+                        ) || crtTime == null
+                )
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_REMOTE_NAME,
+                            "The given snapshot was not successful and can therefore not be shipped",
+                            true
+                        )
+                    );
+                }
+            }
+        }
         try
         {
             for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(sysCtx))
             {
                 if (!snapDfn.getAllSnapshots(sysCtx).isEmpty())
                 {
-                    srcSnapDfnUuids.add(snapDfn.getUuid().toString());
+                    if (crtTime != null)
+                    {
+                        Date curCrtTime = snapDfn.getCreationTime();
+                        if (curCrtTime != null && curCrtTime.before(crtTime))
+                        {
+                            srcSnapDfnUuids.add(snapDfn.getUuid().toString());
+                        }
+                    }
+                    else
+                    {
+                        srcSnapDfnUuids.add(snapDfn.getUuid().toString());
+                    }
                 }
             }
         }
@@ -275,7 +318,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             );
         }
         LocalDateTime now = LocalDateTime.now();
-        String backupName = BackupShippingUtils.generateBackupName(now);
+        String backupName = snapDfnToShip == null ? BackupShippingUtils.generateBackupName(now) : srcSnapNameRef;
         Map<String, String> storPoolRenameMap = new HashMap<>();
         if (storPoolRenameRef != null)
         {
