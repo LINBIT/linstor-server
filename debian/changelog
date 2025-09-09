@@ -1,3 +1,15 @@
+linstor-server (1.32.0-1) experimental; urgency=medium
+
+  * logging: improved INFO log on auto-diskful and delete rsc
+  * autodiskful: keep tiebreaker on delete
+  * ScopeRunner: start DB transaction after scope locks are acquired
+  * db/sql: SET SCHEMA triggered an early transaction start
+  * mkfsutils: always use nodiscard
+  * events: ignore events for node names that are currently unknown
+  * lvmprovider: do not try to wipefs with null devicePath
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 09 Sep 2025 07:25:47 +0000
+
 linstor-server (1.32.0~rc.3-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
