@@ -18,6 +18,10 @@ variables:
   DISTRIBUTIONS: ubuntu-focal,ubuntu-jammy,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,rhel10.0,debian-bookworm
 
 cache:
+  key:
+    files:
+      - build.gradle
+      - gradle.lockfile
   paths:
     - .gradle/wrapper
     - .gradle/caches
@@ -207,6 +211,8 @@ test:
     - if: '$CI_COMMIT_BRANCH == "master"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
   script:
+    - export GRADLE_USER_HOME=`pwd`/.gradle
+    - ./gradlew getProtoc
     - ./gradlew -PversionOverride= checkstyleMain
     - ./gradlew -PversionOverride= assemble
     - JAVA_OPTS="-ea" ./gradlew -PversionOverride= -PCoverageReport=true test
@@ -243,6 +249,7 @@ deploy-nexus-master:
   before_script:
     - curl -sSL $LINBIT_REGISTRY_URL/repository/lbbuild/lbbuildctl-latest -o /usr/local/bin/lbbuildctl
     - chmod +x /usr/local/bin/lbbuildctl
+    - export GRADLE_USER_HOME=`pwd`/.gradle
   extends: .upload_nexus
   script:
     - !reference [.upload_nexus, script]
@@ -260,6 +267,7 @@ deploy-nexus:
   before_script:
     - curl -sSL $LINBIT_REGISTRY_URL/repository/lbbuild/lbbuildctl-latest -o /usr/local/bin/lbbuildctl
     - chmod +x /usr/local/bin/lbbuildctl
+    - export GRADLE_USER_HOME=`pwd`/.gradle
   extends: .upload_nexus
 
 test-e2e-all:
@@ -318,6 +326,7 @@ sbom:
     - if: $CI_COMMIT_BRANCH == 'jenkins'
   stage: build
   before_script:
+    - export GRADLE_USER_HOME=`pwd`/.gradle
     - git init build-helpers -q -b unused
     - git -C build-helpers fetch -q --depth 1 $CI_SERVER_PROTOCOL://gitlab-ci-token:${CI_JOB_TOKEN}@$CI_SERVER_HOST:$CI_SERVER_PORT/linbit/build-helpers.git $BUILD_HELPERS_VERSION
     - git -C build-helpers checkout -q $BUILD_HELPERS_VERSION
