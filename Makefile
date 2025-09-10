@@ -38,10 +38,7 @@ DEBVERSION = $(shell echo $(VERSION) | sed -e 's/-/~/g')
 	@echo controller/jar.deps >> .filelist
 	@echo satellite/jar.deps >> .filelist
 	@echo jclcrypto/jar.deps >> .filelist
-	@echo server/libs >> .filelist
-	@echo controller/libs >> .filelist
-	@echo satellite/libs >> .filelist
-	@echo jclcrypto/libs >> .filelist
+	@echo .gradlehome >> .filelist
 	@echo gradlew >> .filelist
 	@echo gradle/wrapper/gradle-wrapper.jar >> .filelist
 	@echo gradle/wrapper/gradle-wrapper.properties >> .filelist
@@ -76,7 +73,7 @@ prepare_release: tarball
 release: prepare_release
 
 debrelease:
-	make tarball PRESERVE_DEBIAN=1 KEEPNAME=1
+	$(MAKE) tarball PRESERVE_DEBIAN=1 KEEPNAME=1
 
 .PHONY: check-all-committed
 check-all-committed:
@@ -103,22 +100,19 @@ gen-java: getprotc
 	@./gradlew generateJava
 	@echo "generated java sources"
 
-.PHONY: copytolibs
-copytolibs:
-	./gradlew --console plain copytolibs
-
 server/jar.deps: build.gradle
 	./gradlew -q showServerRuntimeLibs > $@
 ifneq ("$(wildcard libs/server-st.jar)","")
 	echo "/usr/share/linstor-server/lib/server-st.jar" >> $@
 endif
 
-controller/jar.deps satellite/jar.deps jclcrypto/jar.deps: build.gradle copytolibs
-	./scripts/diffcopy.py -n ./controller/libs/runtimeClasspath ./server/libs/runtimeClasspath /usr/share/linstor-server/lib > controller/jar.deps
+controller/jar.deps satellite/jar.deps jclcrypto/jar.deps: build.gradle
+	@./gradlew installdist
+	./scripts/diffcopy.py -n ./controller/build/install/controller/lib ./server/build/install/server/lib /usr/share/linstor-server/lib > controller/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' controller/jar.deps
-	./scripts/diffcopy.py -n ./satellite/libs/runtimeClasspath ./server/libs/runtimeClasspath /usr/share/linstor-server/lib > satellite/jar.deps
+	./scripts/diffcopy.py -n ./satellite/build/install/satellite/lib ./server/build/install/server/lib /usr/share/linstor-server/lib > satellite/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' satellite/jar.deps
-	./scripts/diffcopy.py -n ./jclcrypto/libs/runtimeClasspath ./server/libs/runtimeClasspath /usr/share/linstor-server/lib > jclcrypto/jar.deps
+	./scripts/diffcopy.py -n ./jclcrypto/build/install/jclcrypto/lib ./server/build/install/server/lib /usr/share/linstor-server/lib > jclcrypto/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' jclcrypto/jar.deps
 ifneq ("$(wildcard libs/controller-st.jar)","")
 	echo "/usr/share/linstor-server/lib/controller-st.jar" >> controller/jar.deps
@@ -130,8 +124,9 @@ ifneq ("$(wildcard libs/jclcrypto-st.jar)","")
 	echo "/usr/share/linstor-server/lib/jclcrypto-st.jar" >> jclcrypto/jar.deps
 endif
 
-
 tarball: check-all-committed check-submods versioninfo gen-java server/jar.deps controller/jar.deps satellite/jar.deps jclcrypto/jar.deps .filelist
+	@./gradlew --no-daemon --gradle-user-home .gradlehome downloadDependencies
+	rm -Rf .gradlehome/wrapper .gradlehome/native .gradlehome/.tmp .gradlehome/caches/[0-9]*
 	$(MAKE) tgz
 
 versioninfo:

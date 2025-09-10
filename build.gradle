@@ -43,108 +43,98 @@ subprojects {
         options.release = 11
     }
 
-    dependencies {
-        if (gradle.startParameter.isOffline()) {
-            implementation fileTree(dir: "libs/compileClasspath")
-            runtimeOnly fileTree(dir: "libs/runtimeClasspath")
-            testImplementation fileTree(dir: "libs/compileClasspath")
-            testRuntimeOnly fileTree(dir: "libs/runtimeClasspath")
-        }
-    }
-
     repositories {
         mavenCentral()
+    }
 
-        flatDir {
-            dirs 'libs/compileClasspath', 'libs/runtimeClasspath'
-        }
+    installDist {
+        duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     }
 }
 
 project(':server') {
     apply plugin: 'java-library'
+    apply plugin: 'java-library-distribution'
 
     dependencies {
-        if (!gradle.startParameter.isOffline()) {
-            api group: 'com.google.inject', name: 'guice', version: '6.0.0' // upgrade to 7.0 would require switch to jakarta namespace
-            api group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '6.0.0'
+        api group: 'com.google.inject', name: 'guice', version: '6.0.0' // upgrade to 7.0 would require switch to jakarta namespace
+        api group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '6.0.0'
 
-//            compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
-            api group: 'com.google.protobuf', name: 'protobuf-java', version: '4.' + protobufVersion
+//      compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
+        api group: 'com.google.protobuf', name: 'protobuf-java', version: '4.' + protobufVersion
 
-            api 'io.sentry:sentry:5.6.1'
-            api 'info.picocli:picocli:4.7.7'
+        api 'io.sentry:sentry:5.6.1'
+        api 'info.picocli:picocli:4.7.7'
 
-            // project-reactor
-            api platform('io.projectreactor:reactor-bom:2023.0.18')
-            // add dependencies without a version number
-            api 'io.projectreactor:reactor-core'
+        // project-reactor
+        api platform('io.projectreactor:reactor-bom:2023.0.18')
+        // add dependencies without a version number
+        api 'io.projectreactor:reactor-core'
 
-            compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
-            api group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.14'
-            api 'org.apache.httpcomponents.client5:httpclient5:5.4.4'
-            api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.18.+'
-            api 'com.fasterxml.jackson.core:jackson-databind:2.18.+'
+        compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
+        api group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.14'
+        api 'org.apache.httpcomponents.client5:httpclient5:5.4.4'
+        api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.18.+'
+        api 'com.fasterxml.jackson.core:jackson-databind:2.18.+'
 
-            api group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.13.0'
-            api group: 'org.apache.commons', name: 'commons-pool2', version: '2.12.1'
-            api group: 'com.h2database', name: 'h2', version: '1.4.197'
+        api group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.13.0'
+        api group: 'org.apache.commons', name: 'commons-pool2', version: '2.12.1'
+        api group: 'com.h2database', name: 'h2', version: '1.4.197'
 
-            // prometheus client
-            api group: 'io.prometheus', name: 'simpleclient_common', version: '0.16.0'
+        // prometheus client
+        api group: 'io.prometheus', name: 'simpleclient_common', version: '0.16.0'
 
-            api platform('com.amazonaws:aws-java-sdk-bom:1.12.784') // switching to awssdk 2.x needs some more work
-            api 'com.amazonaws:aws-java-sdk-s3'
-            api 'com.amazonaws:aws-java-sdk-ebs'
-            api 'com.amazonaws:aws-java-sdk-ec2'
+        api platform('com.amazonaws:aws-java-sdk-bom:1.12.784') // switching to awssdk 2.x needs some more work
+        api 'com.amazonaws:aws-java-sdk-s3'
+        api 'com.amazonaws:aws-java-sdk-ebs'
+        api 'com.amazonaws:aws-java-sdk-ec2'
 
-            api group: 'com.cronutils', name: 'cron-utils', version: cronVersion
+        api group: 'com.cronutils', name: 'cron-utils', version: cronVersion
 
-            // toml parsing library
-            api group: 'io.hotmoka', name: 'toml4j', version: '0.7.3'
+        // toml parsing library
+        api group: 'io.hotmoka', name: 'toml4j', version: '0.7.3'
 
-            // this needs to be moved to the controller, once we have refactored
-            // our interfaces requiring this to be here
-            api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.24'
-            constraints {
-                api('io.netty:netty-transport-native-epoll:4.1.118.Final') {
-                    because('to have the same version with newer libs')
-                }
-                api('io.netty:netty-codec:4.1.118.Final') {
-                    because('to have the same version with newer libs')
-                }
-                api('io.netty:netty-codec-http:4.1.118.Final') {
-                    because('to have the same version with newer libs')
-                }
-                api('io.netty:netty-codec-http2:4.1.118.Final') {
-                    because('to have the same version with newer libs')
-                }
-                api('io.netty:netty-handler:4.1.118.Final') {
-                    because('to have the same version with newer libs')
-                }
-                runtimeOnly('io.grpc:grpc-netty:1.72.0') {
-                    because('newer protobuf version')
-                }
-                api('io.grpc:grpc-protobuf:1.72.0') {
-                    because('newer protobuf version')
-                }
-                api('io.grpc:grpc-stub:1.72.0') {
-                    because('newer protobuf version')
-                }
-                api('io.grpc:grpc-netty:1.72.0') {
-                    because('newer protobuf version')
-                }
-                api('com.google.code.gson:gson:2.11.0') {
-                    because('newer protobuf version')
-                }
+        // this needs to be moved to the controller, once we have refactored
+        // our interfaces requiring this to be here
+        api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.24'
+        constraints {
+            api('io.netty:netty-transport-native-epoll:4.1.118.Final') {
+                because('to have the same version with newer libs')
             }
-
-            api group: 'io.fabric8', name: 'kubernetes-client', version: '7.3.1'
-            
-            api group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.8.4'
-
-            testImplementation(platform('org.junit:junit-bom:5.13.0'))
+            api('io.netty:netty-codec:4.1.118.Final') {
+                because('to have the same version with newer libs')
+            }
+            api('io.netty:netty-codec-http:4.1.118.Final') {
+                because('to have the same version with newer libs')
+            }
+            api('io.netty:netty-codec-http2:4.1.118.Final') {
+                because('to have the same version with newer libs')
+            }
+            api('io.netty:netty-handler:4.1.118.Final') {
+                because('to have the same version with newer libs')
+            }
+            runtimeOnly('io.grpc:grpc-netty:1.72.0') {
+                because('newer protobuf version')
+            }
+            api('io.grpc:grpc-protobuf:1.72.0') {
+                because('newer protobuf version')
+            }
+            api('io.grpc:grpc-stub:1.72.0') {
+                because('newer protobuf version')
+            }
+            api('io.grpc:grpc-netty:1.72.0') {
+                because('newer protobuf version')
+            }
+            api('com.google.code.gson:gson:2.11.0') {
+                because('newer protobuf version')
+            }
         }
+
+        api group: 'io.fabric8', name: 'kubernetes-client', version: '7.3.1'
+
+        api group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.8.4'
+
+        testImplementation(platform('org.junit:junit-bom:5.13.0'))
     }
 
     sourceSets {
@@ -273,10 +263,6 @@ project(':satellite') {
         }
     }
 
-    installDist {
-        duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
-    }
-
     startScripts.enabled = false
     tasks.register('SatelliteStartup', CreateStartScripts) {
         mainClass = 'com.linbit.linstor.core.Satellite'
@@ -305,6 +291,7 @@ project(':satellite') {
 
 project(':jclcrypto') {
     apply plugin: 'java-library'
+    apply plugin: 'java-library-distribution'
 
     dependencies {
         implementation project(':server')
@@ -338,29 +325,21 @@ project(':controller') {
         implementation project(':server'), project(':jclcrypto')
         testImplementation project(':server'), project(':jclcrypto')
 
-        if (gradle.startParameter.isOffline()) {
-            compileOnly fileTree(dir: "libs/compileOnly")
-            implementation fileTree(dir: "libs/implementation")
-            runtimeOnly fileTree(dir: "libs/runtimeOnly")
-            testCompileOnly fileTree(dir: "libs/testCompileOnly")
-            testImplementation fileTree(dir: "libs/testImplementation")
-        } else {
-            // rest libs (grizzly http(s), jersey(rest))
-            implementation 'org.glassfish.grizzly:grizzly-http-server:4.0.2'
-            implementation 'org.glassfish.hk2:guice-bridge:2.6.1'
-            implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
-            implementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: jerseyVersion
-            implementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-servlet', version: jerseyVersion
-            implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-sse', version: jerseyVersion
+        // rest libs (grizzly http(s), jersey(rest))
+        implementation 'org.glassfish.grizzly:grizzly-http-server:4.0.2'
+        implementation 'org.glassfish.hk2:guice-bridge:2.6.1'
+        implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
+        implementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: jerseyVersion
+        implementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-servlet', version: jerseyVersion
+        implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-sse', version: jerseyVersion
 
-            // prometheus client library
-            implementation group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.16.0'
+        // prometheus client library
+        implementation group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.16.0'
 
-            implementation group: 'org.flywaydb', name: 'flyway-core', version: '7.15.0'
+        implementation group: 'org.flywaydb', name: 'flyway-core', version: '7.15.0'
 
-            runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.1.4'
-            runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
-        }
+        runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.1.4'
+        runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
     }
 
     sourceSets {
@@ -377,10 +356,6 @@ project(':controller') {
                 srcDirs = ["src/test/java"]
             }
         }
-    }
-
-    installDist {
-        duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     }
 
     startScripts.enabled = false
@@ -443,15 +418,6 @@ project(':controller') {
     }
 }
 
-repositories
-{
-    mavenCentral()
-
-    flatDir {
-        dirs 'libs/compileClasspath', 'libs/runtimeClasspath'
-    }
-}
-
 sourceSets {
     test {
         java {
@@ -505,6 +471,10 @@ private excludedClassFilesForReport(classDirectories) {
                 ]
         )
     }))
+}
+
+repositories {
+    mavenCentral()
 }
 
 dependencies {
@@ -645,81 +615,22 @@ clean {
     dependsOn cleanTestCommands
 }
 
-/////////////////////////// Dependency resolution ///////////////////////////
-tasks.register('resolveDependencies') {
-    doLast {
-        project.rootProject.allprojects.each { subProject ->
-            subProject.buildscript.configurations.each { configuration ->
-                resolveConfiguration(configuration)
-            }
-            subProject.configurations.each { configuration ->
-                resolveConfiguration(configuration)
-            }
-        }
-    }
-}
-
-static void resolveConfiguration(configuration) {
-    def nonResolveableConfigurations =
-            ['apiElements', 'implementation', 'runtimeElements', 'runtimeOnly', 'testImplementation',
-             'testRuntimeOnly', 'generatedImplementation', 'generatedRuntimeOnly']
-
-    if (!nonResolveableConfigurations.contains(configuration.getName())) {
-        configuration.resolve()
-    }
-}
-
-tasks.register('deleteLibs', Delete) {
-    doLast {
-        subprojects.each { prj ->
-            delete "${prj.name}/libs"
-        }
-        delete "${projectDir}/libs"
-    }
-}
-
-tasks.register('copyToLibs') {
-    dependsOn 'deleteLibs'
-    doLast {
-        ['compileClasspath', 'runtimeClasspath'].each { scope ->
-            copy {
-                from configurations.getByName(scope).files
-                into "libs"
-            }
-        }
-        subprojects.each { prj ->
-            ['compileClasspath', 'runtimeClasspath'].each { scope ->
-                mkdir "${prj.name}/libs/${scope}"
-                prj.configurations.getByName(scope).files.each { f ->
-                    if (f.getName().equals("j2objc-annotations-2.8.jar")) {
-                        // for some reason j2objc gets included as runtime dep, which it isn't
-                        // neither do we need it for compile time
-                        return
-                    }
-                    if (file("libs/" + f.getName()).exists()) {
-                        ant.symlink(resource: "../../../libs/" + f.getName(), link: "${prj.name}/libs/${scope}/${f.getName()}")
-                    } else {
-                        copy {
-                            from f
-                            into "${prj.name}/libs/${scope}"
-                        }
-                    }
-                }
-            }
-        }
-        copy {
-            from buildscript.configurations.classpath
-            into "${projectDir}/libs/plugins"
-        }
-    }
-}
-
 // this task is needed for RPM packaging
 // it creates a list of dependency jars needed for the server project
 tasks.register('showServerRuntimeLibs') {
     doLast {
         project(':server').configurations.getByName('runtimeClasspath').files.each { f ->
             print('/usr/share/linstor-server/lib/' + f.getName().toString() + '\n')
+        }
+    }
+}
+
+tasks.register('downloadDependencies') {
+    doLast {
+        subprojects.each { prj ->
+            ['compileClasspath', 'runtimeClasspath'].each { scope ->
+                prj.configurations.getByName(scope).resolve()
+            }
         }
     }
 }

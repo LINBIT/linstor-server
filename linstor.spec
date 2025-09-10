@@ -4,7 +4,7 @@ Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
 %define GRADLE_TASKS installdist
-%define GRADLE_FLAGS --offline --gradle-user-home /tmp --no-daemon --exclude-task generateJava
+%define GRADLE_FLAGS --offline --gradle-user-home .gradlehome --no-daemon --exclude-task generateJava
 %define LS_PREFIX /usr/share/linstor-server
 %define FIREWALLD_SERVICES /usr/lib/firewalld/services
 %define FILE_VERSION %(echo %{version} | sed -e 's/~/\-/')
@@ -51,11 +51,12 @@ for p in server satellite controller jclcrypto; do echo "%{LS_PREFIX}/.$p" >> "%
 
 %install
 mkdir -p %{buildroot}/%{LS_PREFIX}
-cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/lib %{buildroot}/%{LS_PREFIX}
+cp -r %{_builddir}/%{NAME_VERS}/controller/build/install/controller/lib %{buildroot}/%{LS_PREFIX}
+cp -r %{_builddir}/%{NAME_VERS}/satellite/build/install/satellite/lib %{buildroot}/%{LS_PREFIX}
+cp -r %{_builddir}/%{NAME_VERS}/server/build/install/server/lib %{buildroot}/%{LS_PREFIX}
 if [ -f "%{_builddir}/%{NAME_VERS}/libs/server-st.jar" ]; then cp "%{_builddir}/%{NAME_VERS}/libs/server-st.jar" %{buildroot}/%{LS_PREFIX}/lib; fi
 if [ -f "%{_builddir}/%{NAME_VERS}/libs/controller-st.jar" ]; then cp "%{_builddir}/%{NAME_VERS}/libs/controller-st.jar" %{buildroot}/%{LS_PREFIX}/lib; fi
 if [ -f "%{_builddir}/%{NAME_VERS}/libs/satellite-st.jar" ]; then cp "%{_builddir}/%{NAME_VERS}/libs/satellite-st.jar" %{buildroot}/%{LS_PREFIX}/lib; fi
-rm %{buildroot}/%{LS_PREFIX}/lib/%{NAME_VERS}.jar
 mkdir -p %{buildroot}/%{LS_PREFIX}/lib/conf
 cp %{_builddir}/%{NAME_VERS}/server/logback.xml %{buildroot}/%{LS_PREFIX}/lib/conf
 mkdir -p %{buildroot}/%{LS_PREFIX}/bin

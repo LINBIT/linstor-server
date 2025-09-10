@@ -3,7 +3,7 @@
 JAVA_HOME=/usr/lib/jvm/default-java
 
 GRADLE_TASKS = installdist
-GRADLE_FLAGS = --offline --gradle-user-home debian/.gradlehome --no-daemon --exclude-task generateJava
+GRADLE_FLAGS = --offline --gradle-user-home .gradlehome --no-daemon --exclude-task generateJava
 LS_PREFIX=/usr/share/linstor-server
 
 %:
@@ -21,7 +21,7 @@ override_dh_install:
 	mkdir -p $(CURDIR)/debian/linstor-common/$(LS_PREFIX)
 	mkdir -p $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib
 	mkdir -p $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib/conf
-	cp $(CURDIR)/server/libs/runtimeClasspath/* $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib
+	cp $(CURDIR)/server/build/install/server/lib/* $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib
 	cp $(CURDIR)/server/logback.xml $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib/conf
 	cp $(CURDIR)/server/build/libs/server-*.jar $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib
 	cp -r $(CURDIR)/jclcrypto/build/libs/jclcrypto-*.jar $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib
@@ -40,7 +40,7 @@ override_dh_install:
 	rm $(CURDIR)/controller/build/install/controller/lib/jclcrypto*.jar $(CURDIR)/controller/build/install/controller/lib/server-*.jar # comes already in linstor-common
 	# for some reason install/lib/*.jars are 755
 	chmod 644 $(CURDIR)/controller/build/install/controller/lib/*.jar
-	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/controller/build/install/controller/lib $(CURDIR)/server/libs/runtimeClasspath/ $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib
+	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/controller/build/install/controller/lib $(CURDIR)/server/build/install/server/lib $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib
 	cp $(CURDIR)/scripts/postinstall.sh $(CURDIR)/debian/linstor-controller.postinst
 	# satellite
 	cp $(CURDIR)/scripts/linstor-satellite.service $(CURDIR)/debian/
@@ -57,7 +57,7 @@ override_dh_install:
 	rm $(CURDIR)/satellite/build/install/satellite/lib/jclcrypto*.jar $(CURDIR)/satellite/build/install/satellite/lib/server-*.jar # comes already in linstor-common
 	# for some reason install/lib/*.jars are 755
 	chmod 644 $(CURDIR)/controller/build/install/controller/lib/*.jar
-	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/satellite/build/install/satellite/lib $(CURDIR)/server/libs/runtimeClasspath/ $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
+	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/satellite/build/install/satellite/lib $(CURDIR)/server/build/install/server/lib $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
 	dh_install
 
 .PHONY: override_jh_depends
