@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.core.objects.AuthTokenDbDriver;
 import com.linbit.linstor.core.objects.ExternalFileDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.LayerBCacheRscDbDriver;
@@ -42,6 +43,7 @@ import com.linbit.linstor.core.objects.remotes.LinstorRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.S3RemoteDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
+import com.linbit.linstor.dbdrivers.interfaces.AuthTokenCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
@@ -228,6 +230,7 @@ public class TestDbModule extends AbstractModule
         bind(EbsRemoteDatabaseDriver.class).to(EbsRemoteDbDriver.class);
         bind(ScheduleCtrlDatabaseDriver.class).to(ScheduleDbDriver.class);
         bind(ScheduleDatabaseDriver.class).to(ScheduleDbDriver.class);
+        bind(AuthTokenCtrlDatabaseDriver.class).to(AuthTokenDbDriver.class);
 
         bind(KeyValueStoreCtrlDatabaseDriver.class).to(KeyValueStoreDbDriver.class);
         bind(KeyValueStoreDatabaseDriver.class).to(KeyValueStoreDbDriver.class);

@@ -18,6 +18,7 @@ spec:
             properties:
               entry_date:
                 type: "integer"
+                format: "int64"
   - name: "v1-31-1"
     served: true
     storage: false

@@ -29,6 +29,7 @@ spec:
                 format: "int64"
               create_timestamp:
                 type: "integer"
+                format: "int64"
   - name: "v1-31-1"
     served: true
     storage: false

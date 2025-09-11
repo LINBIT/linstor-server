@@ -1,6 +1,5 @@
 package com.linbit.locks;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 
@@ -64,7 +63,8 @@ public class LockGuardFactory
         RSC_GRP_MAP(6),
         EXT_FILE_MAP(7),
         REMOTE_MAP(8),
-        SCHEDULE_MAP(9);
+        SCHEDULE_MAP(9),
+        AUTH_TOKEN_MAP(10);
 
         public final int lockIdx;
 
@@ -90,6 +90,7 @@ public class LockGuardFactory
     private final ReadWriteLock extFileMapLock;
     private final ReadWriteLock remoteMapLock;
     private final ReadWriteLock scheduleMapLock;
+    private final ReadWriteLock authTokenMapLock;
 
     @Inject
     public LockGuardFactory(
@@ -102,7 +103,8 @@ public class LockGuardFactory
         @Named(CoreModule.RSC_GROUP_MAP_LOCK) ReadWriteLock rscGrpMapLockRef,
         @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock extFileMapLockRef,
         @Named(CoreModule.REMOTE_MAP_LOCK) ReadWriteLock remoteMapLockRef,
-        @Named(CoreModule.SCHEDULE_MAP_LOCK) ReadWriteLock scheduleMapLockRef
+        @Named(CoreModule.SCHEDULE_MAP_LOCK) ReadWriteLock scheduleMapLockRef,
+        @Named(CoreModule.AUTH_TOKEN_MAP_LOCK) ReadWriteLock authTokenMapLockRef
     )
     {
         reconfigurationLock = reconfigurationLockRef;
@@ -115,6 +117,7 @@ public class LockGuardFactory
         extFileMapLock = extFileMapLockRef;
         remoteMapLock = remoteMapLockRef;
         scheduleMapLock = scheduleMapLockRef;
+        authTokenMapLock = authTokenMapLockRef;
     }
 
     public LockGuardBuilder create()
@@ -170,7 +173,7 @@ public class LockGuardFactory
             case EXT_FILE_MAP -> extFileMapLock;
             case REMOTE_MAP -> remoteMapLock;
             case SCHEDULE_MAP -> scheduleMapLock;
-            default -> throw new ImplementationError("Unknown lock identifier " + lockId.name());
+            case AUTH_TOKEN_MAP -> authTokenMapLock;
         };
     }
 

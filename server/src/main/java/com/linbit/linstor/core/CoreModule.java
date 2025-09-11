@@ -58,6 +58,7 @@ public class CoreModule extends AbstractModule
     public static final String EXT_FILE_MAP_LOCK = "extFileMapLock";
     public static final String REMOTE_MAP_LOCK = "remoteMapLock";
     public static final String SCHEDULE_MAP_LOCK = "scheduleMapLock";
+    public static final String AUTH_TOKEN_MAP_LOCK = "authTokenMapLock";
 
     @Override
     protected void configure()
@@ -103,6 +104,8 @@ public class CoreModule extends AbstractModule
         bind(ReadWriteLock.class).annotatedWith(Names.named(REMOTE_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(SCHEDULE_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(AUTH_TOKEN_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
     }
 

@@ -1605,7 +1605,7 @@ public final class DatabaseConstantsGenerator
     {
         return switch (clmRef.sqlType)
         {
-            case "BIGINT", "DATE" -> "int64";
+            case "BIGINT", "DATE", "TIMESTAMP" -> "int64";
             case "INTEGER" -> "int32";
             case "BLOB" -> "byte"; // base64 encoded
             default -> null; // no special format

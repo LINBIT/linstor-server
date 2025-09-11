@@ -2,6 +2,8 @@ package com.linbit.linstor;
 
 import com.linbit.WorkerPool;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.core.repository.AuthTokenProtectionRepository;
+import com.linbit.linstor.core.repository.AuthTokenRepository;
 import com.linbit.linstor.core.repository.ExternalFileProtectionRepository;
 import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.core.repository.FreeSpaceMgrProtectionRepository;
@@ -43,6 +45,7 @@ public class ControllerLinstorModule extends AbstractModule
         bind(ExternalFileRepository.class).to(ExternalFileProtectionRepository.class);
         bind(RemoteRepository.class).to(RemoteProtectionRepository.class);
         bind(ScheduleRepository.class).to(ScheduleProtectionRepository.class);
+        bind(AuthTokenRepository.class).to(AuthTokenProtectionRepository.class);
     }
 
     @Provides

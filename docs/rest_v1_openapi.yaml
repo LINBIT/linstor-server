@@ -4232,6 +4232,87 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ControllerVersion'
+  /v1/controller/auth/initialize-token-auth:
+    post:
+      summary: initialize the token authentication
+      operationId: controllerAuthTokenInitialize
+      description: enables token auth and creates a first token and creates tokens on each satellite
+      tags:
+        - developers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitAuthTokenRequest'
+      responses:
+        '201':
+          description: auth token initialized response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+  /v1/controller/auth/token:
+    get:
+      summary: list all current API auth tokens
+      operationId: controllerAuthTokenList
+      description: give a list of all current API auth tokens with information
+      tags:
+        - developers
+      responses:
+        '200':
+          description: token list response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenListResponse'
+    post:
+      summary: create a new API token
+      operationId: controllerAuthTokenCreate
+      description: create a new API token and enable token auth
+      tags:
+        - developers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuthToken'
+      responses:
+        '201':
+          description: auth token created response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+  /v1/controller/auth/token/{authtokenid}:
+    parameters:
+      - $ref: '#/components/parameters/AuthTokenId'
+    put:
+      summary: disables/enables an api token
+      operationId: controllerAuthTokenModify
+      tags:
+        - developers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifyAuthToken'
+      responses:
+        '200':
+          description: auth token successful modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+    delete:
+      summary: revoke an API auth token
+      operationId: controllerAuthTokenRevoke
+      description: revoke an auth token
+      tags:
+        - developers
+      responses:
+        '200':
+          description: auth token successful revoked
+
   /v1/resource-definitions/{resource}/drbd-proxy:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -6054,6 +6135,13 @@ components:
       example: '%2Fetc%2Fsome.conf'
       schema:
         type: string
+    AuthTokenId:
+      name: authtokenid
+      in: path
+      required: true
+      description: Auth token ID
+      schema:
+        type: integer
 
   responses:
     InvalidInput:
@@ -8931,3 +9019,82 @@ components:
         count:
           type: integer
           format: int64
+
+    AuthToken:
+      type: object
+      required:
+        - id
+        - created_at
+        - description
+        - is_active
+        - is_user_token
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+          default: true
+        deleted_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        description:
+          type: string
+        ip_filter:
+          type: string
+        is_user_token:
+          type: boolean
+          default: true
+    AuthTokenListResponse:
+      type: object
+      required:
+        - count
+        - list
+      properties:
+        count:
+          type: integer
+          format: int64
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthToken'
+    CreateAuthToken:
+      type: object
+      required:
+        - description
+      properties:
+        description:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        ip_filter:
+          type: string
+    ModifyAuthToken:
+      type: object
+      properties:
+        description:
+          type: string
+        ip_filter:
+          type: string
+        is_active:
+          type: boolean
+    InitAuthTokenRequest:
+      type: object
+      required:
+        - only_satellites
+      properties:
+        only_satellites:
+          type: boolean
+          default: false
+        description:
+          type: string
+          default: init-client
+        no_https:
+          type: boolean
+          default: false

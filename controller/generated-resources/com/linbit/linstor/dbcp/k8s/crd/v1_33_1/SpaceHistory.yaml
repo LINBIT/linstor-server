@@ -18,6 +18,7 @@ spec:
             properties:
               entry_date:
                 type: "integer"
+                format: "int64"
               capacity:
                 type: "string"
                 format: "byte"

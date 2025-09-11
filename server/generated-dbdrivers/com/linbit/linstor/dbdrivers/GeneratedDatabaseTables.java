@@ -16,6 +16,56 @@ public class GeneratedDatabaseTables
     // Schema name
     public static final String DATABASE_SCHEMA_NAME = "LINSTOR";
 
+    public static class AuthTokens implements DatabaseTable
+    {
+        private AuthTokens()
+        {
+        }
+
+        // Primary Key
+        public static final ColumnImpl ID = new ColumnImpl("ID", Types.INTEGER, true, false);
+
+        public static final ColumnImpl TOKEN_HASH = new ColumnImpl("TOKEN_HASH", Types.CHAR, false, false);
+        public static final ColumnImpl DESCRIPTION = new ColumnImpl("DESCRIPTION", Types.CLOB, false, false);
+        public static final ColumnImpl IS_ACTIVE = new ColumnImpl("IS_ACTIVE", Types.BOOLEAN, false, false);
+        public static final ColumnImpl CREATED_AT = new ColumnImpl("CREATED_AT", Types.TIMESTAMP, false, false);
+        public static final ColumnImpl DELETED_AT = new ColumnImpl("DELETED_AT", Types.TIMESTAMP, false, true);
+        public static final ColumnImpl EXPIRES_AT = new ColumnImpl("EXPIRES_AT", Types.TIMESTAMP, false, true);
+        public static final ColumnImpl IP_FILTER = new ColumnImpl("IP_FILTER", Types.VARCHAR, false, true);
+        public static final ColumnImpl IS_USER_TOKEN = new ColumnImpl("IS_USER_TOKEN", Types.BOOLEAN, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            ID,
+            TOKEN_HASH,
+            DESCRIPTION,
+            IS_ACTIVE,
+            CREATED_AT,
+            DELETED_AT,
+            EXPIRES_AT,
+            IP_FILTER,
+            IS_USER_TOKEN
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "AUTH_TOKENS";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table AUTH_TOKENS";
+        }
+    }
+
     public static class EbsRemotes implements DatabaseTable
     {
         private EbsRemotes()
@@ -1854,6 +1904,7 @@ public class GeneratedDatabaseTables
     }
 
     public static final DatabaseTable[] ALL_TABLES; // initialized in static block
+    public static final AuthTokens AUTH_TOKENS = new AuthTokens();
     public static final EbsRemotes EBS_REMOTES = new EbsRemotes();
     public static final Files FILES = new Files();
     public static final KeyValueStore KEY_VALUE_STORE = new KeyValueStore();
@@ -1901,6 +1952,7 @@ public class GeneratedDatabaseTables
     static
     {
         ALL_TABLES = new DatabaseTable[] {
+            AUTH_TOKENS,
             EBS_REMOTES,
             FILES,
             KEY_VALUE_STORE,
@@ -1946,6 +1998,15 @@ public class GeneratedDatabaseTables
             VOLUME_GROUPS
         };
 
+        AuthTokens.ID.table = AUTH_TOKENS;
+        AuthTokens.TOKEN_HASH.table = AUTH_TOKENS;
+        AuthTokens.DESCRIPTION.table = AUTH_TOKENS;
+        AuthTokens.IS_ACTIVE.table = AUTH_TOKENS;
+        AuthTokens.CREATED_AT.table = AUTH_TOKENS;
+        AuthTokens.DELETED_AT.table = AUTH_TOKENS;
+        AuthTokens.EXPIRES_AT.table = AUTH_TOKENS;
+        AuthTokens.IP_FILTER.table = AUTH_TOKENS;
+        AuthTokens.IS_USER_TOKEN.table = AUTH_TOKENS;
         EbsRemotes.UUID.table = EBS_REMOTES;
         EbsRemotes.NAME.table = EBS_REMOTES;
         EbsRemotes.DSP_NAME.table = EBS_REMOTES;
@@ -2242,6 +2303,8 @@ public class GeneratedDatabaseTables
     {
         switch (value.toUpperCase())
         {
+            case "AUTH_TOKENS":
+                return AUTH_TOKENS;
             case "EBS_REMOTES":
                 return EBS_REMOTES;
             case "FILES":

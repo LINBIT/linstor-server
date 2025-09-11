@@ -70,6 +70,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgInt
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySharedStorPoolLocksOuterClass.MsgIntApplySharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyAuthTokenOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntBackupShippingFinishedOuterClass.MsgIntBackupShippingFinished;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
@@ -177,6 +178,23 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setNodeName(nodeName)
                 .setSharedSecret(ByteString.copyFrom(sharedSecret))
                 .setCtrlUuid(ProtoUuidUtils.serialize(ctrlUuid))
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public ProtoCtrlStltSerializerBuilder authTokenMessage(String authToken)
+    {
+        try
+        {
+            MsgIntApplyAuthTokenOuterClass.MsgIntApplyAuthToken.newBuilder()
+                .setAuthToken(authToken)
                 .build()
                 .writeDelimitedTo(baos);
         }

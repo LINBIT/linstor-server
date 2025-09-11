@@ -12,6 +12,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlAuthHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
@@ -49,6 +50,7 @@ public class CtrlAuthResponseApiCallHandler
     private final AccessContext sysCtx;
 
     private final CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandler;
+    private final CtrlAuthHandler ctrlAuthHandler;
     private final ReconnectorTask reconnectorTask;
     private final LockGuardFactory lockGuardFactory;
     private final ScopeRunner scopeRunner;
@@ -60,6 +62,7 @@ public class CtrlAuthResponseApiCallHandler
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext sysCtxRef,
         CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandlerRef,
+        CtrlAuthHandler ctrlAuthHandlerRef,
         ReconnectorTask reconnectorTaskRef,
         LockGuardFactory lockGuardFactoryRef,
         ScopeRunner scopeRunnerRef,
@@ -70,6 +73,7 @@ public class CtrlAuthResponseApiCallHandler
         errorReporter = errorReporterRef;
         sysCtx = sysCtxRef;
         ctrlFullSyncApiCallHandler = ctrlFullSyncApiCallHandlerRef;
+        ctrlAuthHandler = ctrlAuthHandlerRef;
         reconnectorTask = reconnectorTaskRef;
         lockGuardFactory = lockGuardFactoryRef;
         scopeRunner = scopeRunnerRef;
@@ -96,7 +100,11 @@ public class CtrlAuthResponseApiCallHandler
     {
         return scopeRunner.fluxInTransactionalScope(
             "authResponse",
-            lockGuardFactory.buildDeferred(LockGuardFactory.LockType.WRITE, LockGuardFactory.LockObj.NODES_MAP),
+            lockGuardFactory.buildDeferred(
+                LockGuardFactory.LockType.WRITE,
+                LockGuardFactory.LockObj.NODES_MAP,
+                LockGuardFactory.LockObj.AUTH_TOKEN_MAP
+            ),
             () -> authResponseInTransaction(
                 peer,
                 success,
@@ -271,6 +279,12 @@ public class CtrlAuthResponseApiCallHandler
                     errorReporter.reportError(exc);
                 }
                 errorReporter.logInfo("Satellite '" + node.getName() + "' authenticated");
+
+                // Send auth token to satellite if token auth is enabled
+                if (ctrlAuthHandler.isTokenAuthEnabled())
+                {
+                    ctrlAuthHandler.ensureAndSendSatelliteToken(node);
+                }
 
                 flux = ctrlFullSyncApiCallHandler.sendFullSync(
                     node,

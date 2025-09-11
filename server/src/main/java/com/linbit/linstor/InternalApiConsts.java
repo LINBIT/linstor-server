@@ -62,6 +62,8 @@ public class InternalApiConsts
     public static final String API_APPLY_SHARED_STOR_POOL_LOCKS = "ApplySharedStorPoolLocks";
     public static final String API_NOTIFY_DEV_MGR_RUN_COMPLETED = "NotifyDevMgrRunCompleted";
 
+    public static final String API_APPLY_AUTH_TOKEN = "IntApplyAuthToken";
+
     public static final String API_CRYPT_KEY = "cryptKey";
 
     public static final String API_REQUEST_THIN_FREE_SPACE = "RequestThinFreeSpace";

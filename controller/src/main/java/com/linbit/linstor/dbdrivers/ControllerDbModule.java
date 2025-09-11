@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.ControllerSQLDatabase;
+import com.linbit.linstor.core.objects.AuthTokenDbDriver;
 import com.linbit.linstor.core.objects.ExternalFileDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.LayerBCacheRscDbDriver;
@@ -48,6 +49,7 @@ import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrdInitializer;
+import com.linbit.linstor.dbdrivers.interfaces.AuthTokenCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
@@ -231,6 +233,7 @@ public class ControllerDbModule extends AbstractModule
         bind(EbsRemoteDatabaseDriver.class).to(EbsRemoteDbDriver.class);
         bind(ScheduleCtrlDatabaseDriver.class).to(ScheduleDbDriver.class);
         bind(ScheduleDatabaseDriver.class).to(ScheduleDbDriver.class);
+        bind(AuthTokenCtrlDatabaseDriver.class).to(AuthTokenDbDriver.class);
 
         bind(LayerResourceIdCtrlDatabaseDriver.class).to(LayerResourceIdDbDriver.class);
         bind(LayerResourceIdDatabaseDriver.class).to(LayerResourceIdDbDriver.class);

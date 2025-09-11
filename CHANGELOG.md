@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added optional alternative suffixes for external files
 - Added status check (current path + content as expected) for external files
 - Added property "Rest/AutoHTTPs", if enabled will automatically create a SSL certificate and re-start SSL server
+- Added token authentication API and implementation, if enabled only allows Authentication Bearer token access
 
 ### Changed
 

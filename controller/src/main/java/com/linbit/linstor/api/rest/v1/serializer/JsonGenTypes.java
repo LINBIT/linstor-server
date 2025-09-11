@@ -2095,6 +2095,50 @@ public class JsonGenTypes
         public long count;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class AuthToken
+    {
+        public int id;
+        public String created_at;
+        public boolean is_active = true;
+        public @Nullable String deleted_at;
+        public @Nullable String expires_at;
+        public String description;
+        public @Nullable String ip_filter;
+        public boolean is_user_token = true;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class AuthTokenListResponse
+    {
+        public long count;
+        public List<AuthToken> list = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CreateAuthToken
+    {
+        public String description;
+        public @Nullable String expires_at;
+        public @Nullable String ip_filter;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ModifyAuthToken
+    {
+        public @Nullable String description;
+        public @Nullable String ip_filter;
+        public @Nullable Boolean is_active;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class InitAuthTokenRequest
+    {
+        public boolean only_satellites = false;
+        public String description = "init-client";
+        public boolean no_https = false;
+    }
+
     private JsonGenTypes()
     {
     }

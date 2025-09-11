@@ -45,9 +45,12 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.http.CompressionConfig;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.HttpServerFilter;
+import org.glassfish.grizzly.http.server.HttpServerProbe;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.http.server.Response;
@@ -435,12 +438,34 @@ public class GrizzlyHttpService implements SystemService
         }
     }
 
+    @SuppressWarnings("rawtypes")
+    private void installRemoteAddrProbe(HttpServer httpServerRef)
+    {
+        httpServerRef.getServerConfiguration().getMonitoringConfig().getWebServerConfig()
+            .addProbes(new HttpServerProbe.Adapter()
+            {
+                @Override
+                public void onRequestReceiveEvent(
+                    HttpServerFilter filter,
+                    Connection connection,
+                    Request request
+                )
+                {
+                    request.setAttribute(
+                        AuthenticationFilter.REMOTE_ADDR_PROPERTY,
+                        request.getRemoteAddr()
+                    );
+                }
+            });
+    }
+
     private void enableFeatures(HttpServer httpServerRef)
     {
         enableCompression(httpServerRef);
         addUiStaticHandler(httpServerRef);
         httpServerRef.getHttpHandler().setAllowEncodedSlash(true);
         httpServerRef.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
+        installRemoteAddrProbe(httpServerRef);
     }
 
     private void registerExceptionMappers(ResourceConfig resourceConfig)

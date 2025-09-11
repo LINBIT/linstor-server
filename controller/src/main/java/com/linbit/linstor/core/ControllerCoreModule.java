@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.objects.AuthToken;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -31,6 +32,7 @@ public class ControllerCoreModule extends AbstractModule
             .toInstance(LinStor.CONTROLLER_MODULE);
 
         bind(FreeSpaceMgrMap.class).to(FreeSpaceMgrMapImpl.class);
+        bind(AuthTokenMap.class).to(AuthTokenMapImpl.class);
     }
 
     @Provides
@@ -63,6 +65,21 @@ public class ControllerCoreModule extends AbstractModule
     {
         @Inject
         public FreeSpaceMgrMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(null, new TreeMap<>(), null, transMgrProvider);
+        }
+    }
+
+    public interface AuthTokenMap extends Map<Integer, AuthToken>
+    {
+    }
+
+    @Singleton
+    public static class AuthTokenMapImpl
+        extends TransactionMap<Void, Integer, AuthToken> implements AuthTokenMap
+    {
+        @Inject
+        public AuthTokenMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
             super(null, new TreeMap<>(), null, transMgrProvider);
         }

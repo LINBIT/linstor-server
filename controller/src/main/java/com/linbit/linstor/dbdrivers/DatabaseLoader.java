@@ -32,6 +32,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsLayerRscDataDbDriver.ParentObjects;
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AuthToken;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
@@ -57,6 +58,7 @@ import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
+import com.linbit.linstor.dbdrivers.interfaces.AuthTokenCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver;
@@ -173,6 +175,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final EbsRemoteCtrlDatabaseDriver ebsRemoteDriver;
     private final ScheduleCtrlDatabaseDriver scheduleDriver;
     private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
+    private final AuthTokenCtrlDatabaseDriver authTokenDriver;
 
     private final Props ctrlConf;
     private final Props stltConf;
@@ -183,6 +186,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
+    private final ControllerCoreModule.AuthTokenMap authTokenMap;
     private final VolumeGroupCtrlDatabaseDriver vlmGrpDriver;
     private final ExternalFileMap extFileMap;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
@@ -220,6 +224,7 @@ public class DatabaseLoader implements DatabaseDriver
         LinstorRemoteCtrlDatabaseDriver linstorRemoteDriverRef,
         EbsRemoteCtrlDatabaseDriver ebsRemoteDriverRef,
         ScheduleCtrlDatabaseDriver scheduleDriverRef,
+        AuthTokenCtrlDatabaseDriver authTokenDriverRef,
         Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
@@ -229,6 +234,7 @@ public class DatabaseLoader implements DatabaseDriver
         CoreModule.ResourceDefinitionMapExtName rscDfnMapExtNameRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
+        ControllerCoreModule.AuthTokenMap authTokenMapRef,
         CoreModule.KeyValueStoreMap keyValueStoreMapRef,
         CoreModule.ExternalFileMap extFileMapRef,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
@@ -268,6 +274,7 @@ public class DatabaseLoader implements DatabaseDriver
         ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
         ctrlConf = ctrlConfRef;
         stltConf = stltConfRef;
+        authTokenDriver = authTokenDriverRef;
 
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
@@ -280,6 +287,7 @@ public class DatabaseLoader implements DatabaseDriver
         storPoolResolveHelper = storPoolResolveHelperRef;
         remoteMap = remoteMapRef;
         scheduleMap = scheduleMapRef;
+        authTokenMap = authTokenMapRef;
 
         ArrayList<DeviceLayerKind> layerKindsWithoutDriver = new ArrayList<>();
         for (DeviceLayerKind kind : DeviceLayerKind.values())
@@ -648,6 +656,12 @@ public class DatabaseLoader implements DatabaseDriver
                     }
                 }
             }
+
+            // load auth-tokens
+            Map<AuthToken, AuthToken.InitMaps> loadedAuthTokensMap = authTokenDriver.loadAll(null);
+            Map<Integer, AuthToken> tmpAuthTokenMap =
+                mapByName(loadedAuthTokensMap, AuthToken::getId);
+            authTokenMap.putAll(tmpAuthTokenMap);
 
             AbsRscLayerHelper.databaseLoadingFinished();
 

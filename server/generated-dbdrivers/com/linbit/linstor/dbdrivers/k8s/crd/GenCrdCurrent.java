@@ -59,6 +59,8 @@ public class GenCrdCurrent
 
     static
     {
+        JSON_ID_TO_TYPE_CLASS_LUT.put("AuthTokens", AuthTokens.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("AuthTokensSpec", AuthTokensSpec.class);
         JSON_ID_TO_TYPE_CLASS_LUT.put("EbsRemotes", EbsRemotes.class);
         JSON_ID_TO_TYPE_CLASS_LUT.put("EbsRemotesSpec", EbsRemotesSpec.class);
         JSON_ID_TO_TYPE_CLASS_LUT.put("Files", Files.class);
@@ -158,6 +160,8 @@ public class GenCrdCurrent
     {
         switch (table.getName())
         {
+            case "AUTH_TOKENS":
+                return (Class<CRD>) AuthTokens.class;
             case "EBS_REMOTES":
                 return (Class<CRD>) EbsRemotes.class;
             case "FILES":
@@ -255,6 +259,8 @@ public class GenCrdCurrent
     {
         switch (spec.getDatabaseTable().getName())
         {
+            case "AUTH_TOKENS":
+                return (CRD) new AuthTokens((AuthTokensSpec) spec);
             case "EBS_REMOTES":
                 return (CRD) new EbsRemotes((EbsRemotesSpec) spec);
             case "FILES":
@@ -354,6 +360,8 @@ public class GenCrdCurrent
     {
         switch (table.getName())
         {
+            case "AUTH_TOKENS":
+                return (Class<SPEC>) AuthTokensSpec.class;
             case "EBS_REMOTES":
                 return (Class<SPEC>) EbsRemotesSpec.class;
             case "FILES":
@@ -454,6 +462,8 @@ public class GenCrdCurrent
     {
         switch (tableRef.getName())
         {
+            case "AUTH_TOKENS":
+                return (SPEC) AuthTokensSpec.fromRawParameters(rawDataMapRef);
             case "EBS_REMOTES":
                 return (SPEC) EbsRemotesSpec.fromRawParameters(rawDataMapRef);
             case "FILES":
@@ -556,6 +566,20 @@ public class GenCrdCurrent
     {
         switch (table.getName())
         {
+            case "AUTH_TOKENS":
+            {
+                return (CRD) new AuthTokensSpec(
+                    (int) setters.get(GeneratedDatabaseTables.AuthTokens.ID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.AuthTokens.TOKEN_HASH).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.AuthTokens.DESCRIPTION).accept(data),
+                    (boolean) setters.get(GeneratedDatabaseTables.AuthTokens.IS_ACTIVE).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.AuthTokens.CREATED_AT).accept(data),
+                    (Long) setters.get(GeneratedDatabaseTables.AuthTokens.DELETED_AT).accept(data),
+                    (Long) setters.get(GeneratedDatabaseTables.AuthTokens.EXPIRES_AT).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.AuthTokens.IP_FILTER).accept(data),
+                    (boolean) setters.get(GeneratedDatabaseTables.AuthTokens.IS_USER_TOKEN).accept(data)
+                ).getCrd();
+            }
             case "EBS_REMOTES":
             {
                 return (CRD) new EbsRemotesSpec(
@@ -1012,6 +1036,8 @@ public class GenCrdCurrent
     {
         switch (dbTable.getName())
         {
+            case "AUTH_TOKENS":
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_33_1/AuthTokens.yaml";
             case "EBS_REMOTES":
                 return "/com/linbit/linstor/dbcp/k8s/crd/v1_33_1/EbsRemotes.yaml";
             case "FILES":
@@ -1108,6 +1134,8 @@ public class GenCrdCurrent
     {
         switch (dbTable.getName())
         {
+            case "AUTH_TOKENS":
+                return "authtokens";
             case "EBS_REMOTES":
                 return "ebsremotes";
             case "FILES":
@@ -1223,6 +1251,222 @@ public class GenCrdCurrent
         return new K8sCrdMigrationContext(createTxMgrContext(), createSchemaUpdateContext());
     }
 
+    public static AuthTokens createAuthTokens(
+        int id,
+        String tokenHash,
+        String description,
+        boolean isActive,
+        long createdAt,
+        Long deletedAt,
+        Long expiresAt,
+        String ipFilter,
+        boolean isUserToken
+    )
+    {
+        return new AuthTokens(
+            new AuthTokensSpec(
+                id,
+                tokenHash,
+                description,
+                isActive,
+                createdAt,
+                deletedAt,
+                expiresAt,
+                ipFilter,
+                isUserToken
+            )
+        );
+    }
+
+    @LinstorData(
+        tableName = "AUTH_TOKENS"
+    )
+    @JsonInclude(Include.NON_NULL)
+    public static class AuthTokensSpec implements LinstorSpec<AuthTokens, AuthTokensSpec>
+    {
+        @JsonIgnore private static final long serialVersionUID = 7150264152963970274L;
+        @JsonIgnore private static final String PK_FORMAT = "%d";
+
+        @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private @Nullable AuthTokens parentCrd;
+
+        @JsonProperty("id") public final int id; // PK
+        @JsonProperty("token_hash") public final String tokenHash;
+        @JsonProperty("description") public final String description;
+        @JsonProperty("is_active") public final boolean isActive;
+        @JsonProperty("created_at") public final long createdAt;
+        @JsonProperty("deleted_at") public final Long deletedAt;
+        @JsonProperty("expires_at") public final Long expiresAt;
+        @JsonProperty("ip_filter") public final String ipFilter;
+        @JsonProperty("is_user_token") public final boolean isUserToken;
+
+        @JsonIgnore
+        public static AuthTokensSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new AuthTokensSpec(
+                rawParamsRef.get(GeneratedDatabaseTables.AuthTokens.ID),
+                rawParamsRef.get(GeneratedDatabaseTables.AuthTokens.TOKEN_HASH),
+                rawParamsRef.get(GeneratedDatabaseTables.AuthTokens.DESCRIPTION),
+                rawParamsRef.get(GeneratedDatabaseTables.AuthTokens.IS_ACTIVE),
+                rawParamsRef.get(GeneratedDatabaseTables.AuthTokens.CREATED_AT),
+                rawParamsRef.get(GeneratedDatabaseTables.AuthTokens.DELETED_AT),
+                rawParamsRef.get(GeneratedDatabaseTables.AuthTokens.EXPIRES_AT),
+                rawParamsRef.get(GeneratedDatabaseTables.AuthTokens.IP_FILTER),
+                rawParamsRef.get(GeneratedDatabaseTables.AuthTokens.IS_USER_TOKEN)
+            );
+        }
+
+        @JsonCreator
+        public AuthTokensSpec(
+            @JsonProperty("id") int idRef,
+            @JsonProperty("token_hash") String tokenHashRef,
+            @JsonProperty("description") String descriptionRef,
+            @JsonProperty("is_active") boolean isActiveRef,
+            @JsonProperty("created_at") long createdAtRef,
+            @JsonProperty("deleted_at") Long deletedAtRef,
+            @JsonProperty("expires_at") Long expiresAtRef,
+            @JsonProperty("ip_filter") String ipFilterRef,
+            @JsonProperty("is_user_token") boolean isUserTokenRef
+        )
+        {
+            id = idRef;
+            tokenHash = tokenHashRef;
+            description = descriptionRef;
+            isActive = isActiveRef;
+            createdAt = createdAtRef;
+            deletedAt = deletedAtRef;
+            expiresAt = expiresAtRef;
+            ipFilter = ipFilterRef;
+            isUserToken = isUserTokenRef;
+
+            formattedPrimaryKey = String.format(
+                AuthTokensSpec.PK_FORMAT,
+                id
+            );
+        }
+
+        @JsonIgnore
+        @Override
+        public AuthTokens getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new AuthTokens(this);
+            }
+            return parentCrd;
+        }
+
+        @JsonIgnore
+        @Override
+        public Map<String, Object> asRawParameters()
+        {
+            Map<String, Object> ret = new TreeMap<>();
+            ret.put("ID", id);
+            ret.put("TOKEN_HASH", tokenHash);
+            ret.put("DESCRIPTION", description);
+            ret.put("IS_ACTIVE", isActive);
+            ret.put("CREATED_AT", createdAt);
+            ret.put("DELETED_AT", deletedAt);
+            ret.put("EXPIRES_AT", expiresAt);
+            ret.put("IP_FILTER", ipFilter);
+            ret.put("IS_USER_TOKEN", isUserToken);
+            return ret;
+        }
+
+        @JsonIgnore
+        @Override
+        @Nullable
+        public Object getByColumn(String clmNameStr)
+        {
+            switch (clmNameStr)
+            {
+                case "ID":
+                    return id;
+                case "TOKEN_HASH":
+                    return tokenHash;
+                case "DESCRIPTION":
+                    return description;
+                case "IS_ACTIVE":
+                    return isActive;
+                case "CREATED_AT":
+                    return createdAt;
+                case "DELETED_AT":
+                    return deletedAt;
+                case "EXPIRES_AT":
+                    return expiresAt;
+                case "IP_FILTER":
+                    return ipFilter;
+                case "IS_USER_TOKEN":
+                    return isUserToken;
+                default:
+                    throw new ImplementationError("Unknown database column. Table: AUTH_TOKENS, Column: " + clmNameStr);
+            }
+        }
+
+        @JsonIgnore
+        @Override
+        public final String getLinstorKey()
+        {
+            return formattedPrimaryKey;
+        }
+
+        @Override
+        @JsonIgnore
+        public DatabaseTable getDatabaseTable()
+        {
+            return GeneratedDatabaseTables.AUTH_TOKENS;
+        }
+    }
+
+    @Version(GenCrdCurrent.VERSION)
+    @Group(GenCrdCurrent.GROUP)
+    @Plural("authtokens")
+    @Singular("authtokens")
+    public static class AuthTokens extends CustomResource<AuthTokensSpec, Void> implements LinstorCrd<AuthTokensSpec>
+    {
+        private static final long serialVersionUID = 3111824018260720413L;
+        @Nullable String k8sKey = null;
+
+        @JsonCreator
+        public AuthTokens()
+        {
+        }
+
+        public AuthTokens(AuthTokensSpec spec)
+        {
+            setMetadata(new ObjectMetaBuilder().withName(deriveKey(spec.getLinstorKey())).build());
+            setSpec(spec);
+        }
+
+        @Override
+        public void setSpec(AuthTokensSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
+        public void setMetadata(ObjectMeta metadataRef)
+        {
+            super.setMetadata(metadataRef);
+            k8sKey = metadataRef.getName();
+        }
+
+        @Override
+        @JsonIgnore
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        @JsonIgnore
+        public @Nullable String getK8sKey()
+        {
+            return k8sKey;
+        }
+    }
+
     public static EbsRemotes createEbsRemotes(
         String uuid,
         String name,
@@ -1256,7 +1500,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class EbsRemotesSpec implements LinstorSpec<EbsRemotes, EbsRemotesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 7150264152963970274L;
+        @JsonIgnore private static final long serialVersionUID = -5940382353845052032L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -1396,7 +1640,7 @@ public class GenCrdCurrent
     @Singular("ebsremotes")
     public static class EbsRemotes extends CustomResource<EbsRemotesSpec, Void> implements LinstorCrd<EbsRemotesSpec>
     {
-        private static final long serialVersionUID = 3111824018260720413L;
+        private static final long serialVersionUID = 462724094919274335L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -1466,7 +1710,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class FilesSpec implements LinstorSpec<Files, FilesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -5940382353845052032L;
+        @JsonIgnore private static final long serialVersionUID = 7241274523282524671L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -1585,7 +1829,7 @@ public class GenCrdCurrent
     @Singular("files")
     public static class Files extends CustomResource<FilesSpec, Void> implements LinstorCrd<FilesSpec>
     {
-        private static final long serialVersionUID = 462724094919274335L;
+        private static final long serialVersionUID = -7692106291273418564L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -1649,7 +1893,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class KeyValueStoreSpec implements LinstorSpec<KeyValueStore, KeyValueStoreSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 7241274523282524671L;
+        @JsonIgnore private static final long serialVersionUID = -52561563590940602L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -1747,7 +1991,7 @@ public class GenCrdCurrent
     @Singular("keyvaluestore")
     public static class KeyValueStore extends CustomResource<KeyValueStoreSpec, Void> implements LinstorCrd<KeyValueStoreSpec>
     {
-        private static final long serialVersionUID = -7692106291273418564L;
+        private static final long serialVersionUID = 7218511279016853191L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -1815,7 +2059,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerBcacheVolumesSpec implements LinstorSpec<LayerBcacheVolumes, LayerBcacheVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -52561563590940602L;
+        @JsonIgnore private static final long serialVersionUID = -7617865750541145104L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -1928,7 +2172,7 @@ public class GenCrdCurrent
     @Singular("layerbcachevolumes")
     public static class LayerBcacheVolumes extends CustomResource<LayerBcacheVolumesSpec, Void> implements LinstorCrd<LayerBcacheVolumesSpec>
     {
-        private static final long serialVersionUID = 7218511279016853191L;
+        private static final long serialVersionUID = -8315958835075830971L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -1996,7 +2240,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerCacheVolumesSpec implements LinstorSpec<LayerCacheVolumes, LayerCacheVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -7617865750541145104L;
+        @JsonIgnore private static final long serialVersionUID = -799967834127175652L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2109,7 +2353,7 @@ public class GenCrdCurrent
     @Singular("layercachevolumes")
     public static class LayerCacheVolumes extends CustomResource<LayerCacheVolumesSpec, Void> implements LinstorCrd<LayerCacheVolumesSpec>
     {
-        private static final long serialVersionUID = -8315958835075830971L;
+        private static final long serialVersionUID = -8883911122206682588L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -2181,7 +2425,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourcesSpec implements LinstorSpec<LayerDrbdResources, LayerDrbdResourcesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -799967834127175652L;
+        @JsonIgnore private static final long serialVersionUID = -4562655782380559744L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2307,7 +2551,7 @@ public class GenCrdCurrent
     @Singular("layerdrbdresources")
     public static class LayerDrbdResources extends CustomResource<LayerDrbdResourcesSpec, Void> implements LinstorCrd<LayerDrbdResourcesSpec>
     {
-        private static final long serialVersionUID = -8883911122206682588L;
+        private static final long serialVersionUID = -8144893727073262420L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -2383,7 +2627,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourceDefinitionsSpec implements LinstorSpec<LayerDrbdResourceDefinitions, LayerDrbdResourceDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -4562655782380559744L;
+        @JsonIgnore private static final long serialVersionUID = -3260905580026229820L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2525,7 +2769,7 @@ public class GenCrdCurrent
     @Singular("layerdrbdresourcedefinitions")
     public static class LayerDrbdResourceDefinitions extends CustomResource<LayerDrbdResourceDefinitionsSpec, Void> implements LinstorCrd<LayerDrbdResourceDefinitionsSpec>
     {
-        private static final long serialVersionUID = -8144893727073262420L;
+        private static final long serialVersionUID = 7300049764512457715L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -2591,7 +2835,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumesSpec implements LinstorSpec<LayerDrbdVolumes, LayerDrbdVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3260905580026229820L;
+        @JsonIgnore private static final long serialVersionUID = -7582048073109206771L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2697,7 +2941,7 @@ public class GenCrdCurrent
     @Singular("layerdrbdvolumes")
     public static class LayerDrbdVolumes extends CustomResource<LayerDrbdVolumesSpec, Void> implements LinstorCrd<LayerDrbdVolumesSpec>
     {
-        private static final long serialVersionUID = 7300049764512457715L;
+        private static final long serialVersionUID = -3300532566369171818L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -2765,7 +3009,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumeDefinitionsSpec implements LinstorSpec<LayerDrbdVolumeDefinitions, LayerDrbdVolumeDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -7582048073109206771L;
+        @JsonIgnore private static final long serialVersionUID = 2115853680529214167L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2880,7 +3124,7 @@ public class GenCrdCurrent
     @Singular("layerdrbdvolumedefinitions")
     public static class LayerDrbdVolumeDefinitions extends CustomResource<LayerDrbdVolumeDefinitionsSpec, Void> implements LinstorCrd<LayerDrbdVolumeDefinitionsSpec>
     {
-        private static final long serialVersionUID = -3300532566369171818L;
+        private static final long serialVersionUID = 346525501241132453L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -2944,7 +3188,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerLuksVolumesSpec implements LinstorSpec<LayerLuksVolumes, LayerLuksVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 2115853680529214167L;
+        @JsonIgnore private static final long serialVersionUID = -6664016498657956601L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3043,7 +3287,7 @@ public class GenCrdCurrent
     @Singular("layerluksvolumes")
     public static class LayerLuksVolumes extends CustomResource<LayerLuksVolumesSpec, Void> implements LinstorCrd<LayerLuksVolumesSpec>
     {
-        private static final long serialVersionUID = 346525501241132453L;
+        private static final long serialVersionUID = 3469523296361579743L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -3117,7 +3361,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerResourceIdsSpec implements LinstorSpec<LayerResourceIds, LayerResourceIdsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -6664016498657956601L;
+        @JsonIgnore private static final long serialVersionUID = -2770783045965235136L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3250,7 +3494,7 @@ public class GenCrdCurrent
     @Singular("layerresourceids")
     public static class LayerResourceIds extends CustomResource<LayerResourceIdsSpec, Void> implements LinstorCrd<LayerResourceIdsSpec>
     {
-        private static final long serialVersionUID = 3469523296361579743L;
+        private static final long serialVersionUID = -3338106799578871266L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -3318,7 +3562,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerStorageVolumesSpec implements LinstorSpec<LayerStorageVolumes, LayerStorageVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -2770783045965235136L;
+        @JsonIgnore private static final long serialVersionUID = -3598193156839179148L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3431,7 +3675,7 @@ public class GenCrdCurrent
     @Singular("layerstoragevolumes")
     public static class LayerStorageVolumes extends CustomResource<LayerStorageVolumesSpec, Void> implements LinstorCrd<LayerStorageVolumesSpec>
     {
-        private static final long serialVersionUID = -3338106799578871266L;
+        private static final long serialVersionUID = 4328911720370157588L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -3497,7 +3741,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerWritecacheVolumesSpec implements LinstorSpec<LayerWritecacheVolumes, LayerWritecacheVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3598193156839179148L;
+        @JsonIgnore private static final long serialVersionUID = 5859483825842537662L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3603,7 +3847,7 @@ public class GenCrdCurrent
     @Singular("layerwritecachevolumes")
     public static class LayerWritecacheVolumes extends CustomResource<LayerWritecacheVolumesSpec, Void> implements LinstorCrd<LayerWritecacheVolumesSpec>
     {
-        private static final long serialVersionUID = 4328911720370157588L;
+        private static final long serialVersionUID = 7064730831174467639L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -3675,7 +3919,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LinstorRemotesSpec implements LinstorSpec<LinstorRemotes, LinstorRemotesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 5859483825842537662L;
+        @JsonIgnore private static final long serialVersionUID = 1093270462819058799L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3801,7 +4045,7 @@ public class GenCrdCurrent
     @Singular("linstorremotes")
     public static class LinstorRemotes extends CustomResource<LinstorRemotesSpec, Void> implements LinstorCrd<LinstorRemotesSpec>
     {
-        private static final long serialVersionUID = 7064730831174467639L;
+        private static final long serialVersionUID = -8386621229322862598L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -3869,7 +4113,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class NodesSpec implements LinstorSpec<Nodes, NodesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 1093270462819058799L;
+        @JsonIgnore private static final long serialVersionUID = -3639540362246290074L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3981,7 +4225,7 @@ public class GenCrdCurrent
     @Singular("nodes")
     public static class Nodes extends CustomResource<NodesSpec, Void> implements LinstorCrd<NodesSpec>
     {
-        private static final long serialVersionUID = -8386621229322862598L;
+        private static final long serialVersionUID = -7839083229137142467L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -4045,7 +4289,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class NodeConnectionsSpec implements LinstorSpec<NodeConnections, NodeConnectionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3639540362246290074L;
+        @JsonIgnore private static final long serialVersionUID = -2354721140071628891L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4144,7 +4388,7 @@ public class GenCrdCurrent
     @Singular("nodeconnections")
     public static class NodeConnections extends CustomResource<NodeConnectionsSpec, Void> implements LinstorCrd<NodeConnectionsSpec>
     {
-        private static final long serialVersionUID = -7839083229137142467L;
+        private static final long serialVersionUID = 8505682528310703621L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -4216,7 +4460,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class NodeNetInterfacesSpec implements LinstorSpec<NodeNetInterfaces, NodeNetInterfacesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -2354721140071628891L;
+        @JsonIgnore private static final long serialVersionUID = 5027264287934927391L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4343,7 +4587,7 @@ public class GenCrdCurrent
     @Singular("nodenetinterfaces")
     public static class NodeNetInterfaces extends CustomResource<NodeNetInterfacesSpec, Void> implements LinstorCrd<NodeNetInterfacesSpec>
     {
-        private static final long serialVersionUID = 8505682528310703621L;
+        private static final long serialVersionUID = -6179491581451831441L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -4415,7 +4659,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class NodeStorPoolSpec implements LinstorSpec<NodeStorPool, NodeStorPoolSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 5027264287934927391L;
+        @JsonIgnore private static final long serialVersionUID = 6603228528460051670L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4542,7 +4786,7 @@ public class GenCrdCurrent
     @Singular("nodestorpool")
     public static class NodeStorPool extends CustomResource<NodeStorPoolSpec, Void> implements LinstorCrd<NodeStorPoolSpec>
     {
-        private static final long serialVersionUID = -6179491581451831441L;
+        private static final long serialVersionUID = -8314974476523687967L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -4606,7 +4850,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class PropsContainersSpec implements LinstorSpec<PropsContainers, PropsContainersSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 6603228528460051670L;
+        @JsonIgnore private static final long serialVersionUID = -6671698423276472283L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4705,7 +4949,7 @@ public class GenCrdCurrent
     @Singular("propscontainers")
     public static class PropsContainers extends CustomResource<PropsContainersSpec, Void> implements LinstorCrd<PropsContainersSpec>
     {
-        private static final long serialVersionUID = -8314974476523687967L;
+        private static final long serialVersionUID = -3195984715561373565L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -4775,7 +5019,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class ResourcesSpec implements LinstorSpec<Resources, ResourcesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -6671698423276472283L;
+        @JsonIgnore private static final long serialVersionUID = 2149954958406067546L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4896,7 +5140,7 @@ public class GenCrdCurrent
     @Singular("resources")
     public static class Resources extends CustomResource<ResourcesSpec, Void> implements LinstorCrd<ResourcesSpec>
     {
-        private static final long serialVersionUID = -3195984715561373565L;
+        private static final long serialVersionUID = -2955473671641427475L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -4970,7 +5214,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class ResourceConnectionsSpec implements LinstorSpec<ResourceConnections, ResourceConnectionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 2149954958406067546L;
+        @JsonIgnore private static final long serialVersionUID = -3101133451443956601L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -5106,7 +5350,7 @@ public class GenCrdCurrent
     @Singular("resourceconnections")
     public static class ResourceConnections extends CustomResource<ResourceConnectionsSpec, Void> implements LinstorCrd<ResourceConnectionsSpec>
     {
-        private static final long serialVersionUID = -2955473671641427475L;
+        private static final long serialVersionUID = 7805591159152242721L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -5184,7 +5428,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class ResourceDefinitionsSpec implements LinstorSpec<ResourceDefinitions, ResourceDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3101133451443956601L;
+        @JsonIgnore private static final long serialVersionUID = 5311430601324366745L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -5332,7 +5576,7 @@ public class GenCrdCurrent
     @Singular("resourcedefinitions")
     public static class ResourceDefinitions extends CustomResource<ResourceDefinitionsSpec, Void> implements LinstorCrd<ResourceDefinitionsSpec>
     {
-        private static final long serialVersionUID = 7805591159152242721L;
+        private static final long serialVersionUID = 8011999037924274619L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -5424,7 +5668,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class ResourceGroupsSpec implements LinstorSpec<ResourceGroups, ResourceGroupsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 5311430601324366745L;
+        @JsonIgnore private static final long serialVersionUID = -7236458668603458903L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -5620,7 +5864,7 @@ public class GenCrdCurrent
     @Singular("resourcegroups")
     public static class ResourceGroups extends CustomResource<ResourceGroupsSpec, Void> implements LinstorCrd<ResourceGroupsSpec>
     {
-        private static final long serialVersionUID = 8011999037924274619L;
+        private static final long serialVersionUID = -3298705064587375001L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -5696,7 +5940,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class S3RemotesSpec implements LinstorSpec<S3Remotes, S3RemotesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -7236458668603458903L;
+        @JsonIgnore private static final long serialVersionUID = 6983976189017827730L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -5836,7 +6080,7 @@ public class GenCrdCurrent
     @Singular("s3remotes")
     public static class S3Remotes extends CustomResource<S3RemotesSpec, Void> implements LinstorCrd<S3RemotesSpec>
     {
-        private static final long serialVersionUID = -3298705064587375001L;
+        private static final long serialVersionUID = 8107918011044153490L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -5904,7 +6148,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SatellitesCapacitySpec implements LinstorSpec<SatellitesCapacity, SatellitesCapacitySpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 6983976189017827730L;
+        @JsonIgnore private static final long serialVersionUID = -5990047722514453821L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6016,7 +6260,7 @@ public class GenCrdCurrent
     @Singular("satellitescapacity")
     public static class SatellitesCapacity extends CustomResource<SatellitesCapacitySpec, Void> implements LinstorCrd<SatellitesCapacitySpec>
     {
-        private static final long serialVersionUID = 8107918011044153490L;
+        private static final long serialVersionUID = 1685611268814753379L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -6094,7 +6338,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SchedulesSpec implements LinstorSpec<Schedules, SchedulesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -5990047722514453821L;
+        @JsonIgnore private static final long serialVersionUID = 294955565740566357L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6241,7 +6485,7 @@ public class GenCrdCurrent
     @Singular("schedules")
     public static class Schedules extends CustomResource<SchedulesSpec, Void> implements LinstorCrd<SchedulesSpec>
     {
-        private static final long serialVersionUID = 1685611268814753379L;
+        private static final long serialVersionUID = 5574122629702759916L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -6303,7 +6547,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecAccessTypesSpec implements LinstorSpec<SecAccessTypes, SecAccessTypesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 294955565740566357L;
+        @JsonIgnore private static final long serialVersionUID = 9113472516934785119L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6394,7 +6638,7 @@ public class GenCrdCurrent
     @Singular("secaccesstypes")
     public static class SecAccessTypes extends CustomResource<SecAccessTypesSpec, Void> implements LinstorCrd<SecAccessTypesSpec>
     {
-        private static final long serialVersionUID = 5574122629702759916L;
+        private static final long serialVersionUID = -2996450776866879332L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -6458,7 +6702,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecAclMapSpec implements LinstorSpec<SecAclMap, SecAclMapSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 9113472516934785119L;
+        @JsonIgnore private static final long serialVersionUID = -1839703120106569335L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6557,7 +6801,7 @@ public class GenCrdCurrent
     @Singular("secaclmap")
     public static class SecAclMap extends CustomResource<SecAclMapSpec, Void> implements LinstorCrd<SecAclMapSpec>
     {
-        private static final long serialVersionUID = -2996450776866879332L;
+        private static final long serialVersionUID = -8656645778892516872L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -6621,7 +6865,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecConfigurationSpec implements LinstorSpec<SecConfiguration, SecConfigurationSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -1839703120106569335L;
+        @JsonIgnore private static final long serialVersionUID = -3275012267658837793L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6719,7 +6963,7 @@ public class GenCrdCurrent
     @Singular("secconfiguration")
     public static class SecConfiguration extends CustomResource<SecConfigurationSpec, Void> implements LinstorCrd<SecConfigurationSpec>
     {
-        private static final long serialVersionUID = -8656645778892516872L;
+        private static final long serialVersionUID = -7828842943774382710L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -6781,7 +7025,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecDfltRolesSpec implements LinstorSpec<SecDfltRoles, SecDfltRolesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3275012267658837793L;
+        @JsonIgnore private static final long serialVersionUID = -2331265744021600281L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6872,7 +7116,7 @@ public class GenCrdCurrent
     @Singular("secdfltroles")
     public static class SecDfltRoles extends CustomResource<SecDfltRolesSpec, Void> implements LinstorCrd<SecDfltRolesSpec>
     {
-        private static final long serialVersionUID = -7828842943774382710L;
+        private static final long serialVersionUID = 8787308842980331545L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -6942,7 +7186,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecIdentitiesSpec implements LinstorSpec<SecIdentities, SecIdentitiesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -2331265744021600281L;
+        @JsonIgnore private static final long serialVersionUID = -1799020647797190156L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7061,7 +7305,7 @@ public class GenCrdCurrent
     @Singular("secidentities")
     public static class SecIdentities extends CustomResource<SecIdentitiesSpec, Void> implements LinstorCrd<SecIdentitiesSpec>
     {
-        private static final long serialVersionUID = 8787308842980331545L;
+        private static final long serialVersionUID = -8596240815516030951L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -7123,7 +7367,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecIdRoleMapSpec implements LinstorSpec<SecIdRoleMap, SecIdRoleMapSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -1799020647797190156L;
+        @JsonIgnore private static final long serialVersionUID = 3829280378043493308L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7215,7 +7459,7 @@ public class GenCrdCurrent
     @Singular("secidrolemap")
     public static class SecIdRoleMap extends CustomResource<SecIdRoleMapSpec, Void> implements LinstorCrd<SecIdRoleMapSpec>
     {
-        private static final long serialVersionUID = -8596240815516030951L;
+        private static final long serialVersionUID = 5836981486445015397L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -7281,7 +7525,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecObjectProtectionSpec implements LinstorSpec<SecObjectProtection, SecObjectProtectionSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 3829280378043493308L;
+        @JsonIgnore private static final long serialVersionUID = -330753960682676184L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7386,7 +7630,7 @@ public class GenCrdCurrent
     @Singular("secobjectprotection")
     public static class SecObjectProtection extends CustomResource<SecObjectProtectionSpec, Void> implements LinstorCrd<SecObjectProtectionSpec>
     {
-        private static final long serialVersionUID = 5836981486445015397L;
+        private static final long serialVersionUID = 8938385767183157291L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -7454,7 +7698,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecRolesSpec implements LinstorSpec<SecRoles, SecRolesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -330753960682676184L;
+        @JsonIgnore private static final long serialVersionUID = -1456736002768576917L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7566,7 +7810,7 @@ public class GenCrdCurrent
     @Singular("secroles")
     public static class SecRoles extends CustomResource<SecRolesSpec, Void> implements LinstorCrd<SecRolesSpec>
     {
-        private static final long serialVersionUID = 8938385767183157291L;
+        private static final long serialVersionUID = -6750995311485630682L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -7630,7 +7874,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecTypesSpec implements LinstorSpec<SecTypes, SecTypesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -1456736002768576917L;
+        @JsonIgnore private static final long serialVersionUID = -4959386193113567914L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7728,7 +7972,7 @@ public class GenCrdCurrent
     @Singular("sectypes")
     public static class SecTypes extends CustomResource<SecTypesSpec, Void> implements LinstorCrd<SecTypesSpec>
     {
-        private static final long serialVersionUID = -6750995311485630682L;
+        private static final long serialVersionUID = 4201716625207450899L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -7792,7 +8036,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecTypeRulesSpec implements LinstorSpec<SecTypeRules, SecTypeRulesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -4959386193113567914L;
+        @JsonIgnore private static final long serialVersionUID = 3402268602501185513L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7891,7 +8135,7 @@ public class GenCrdCurrent
     @Singular("sectyperules")
     public static class SecTypeRules extends CustomResource<SecTypeRulesSpec, Void> implements LinstorCrd<SecTypeRulesSpec>
     {
-        private static final long serialVersionUID = 4201716625207450899L;
+        private static final long serialVersionUID = 368492050352031069L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -7953,7 +8197,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SpaceHistorySpec implements LinstorSpec<SpaceHistory, SpaceHistorySpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 3402268602501185513L;
+        @JsonIgnore private static final long serialVersionUID = -189747177196945620L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8044,7 +8288,7 @@ public class GenCrdCurrent
     @Singular("spacehistory")
     public static class SpaceHistory extends CustomResource<SpaceHistorySpec, Void> implements LinstorCrd<SpaceHistorySpec>
     {
-        private static final long serialVersionUID = 368492050352031069L;
+        private static final long serialVersionUID = -6349121552194643942L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -8108,7 +8352,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class StorPoolDefinitionsSpec implements LinstorSpec<StorPoolDefinitions, StorPoolDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -189747177196945620L;
+        @JsonIgnore private static final long serialVersionUID = -6629643101790872257L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8206,7 +8450,7 @@ public class GenCrdCurrent
     @Singular("storpooldefinitions")
     public static class StorPoolDefinitions extends CustomResource<StorPoolDefinitionsSpec, Void> implements LinstorCrd<StorPoolDefinitionsSpec>
     {
-        private static final long serialVersionUID = -6349121552194643942L;
+        private static final long serialVersionUID = -1172322732360915654L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -8266,7 +8510,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class TrackingDateSpec implements LinstorSpec<TrackingDate, TrackingDateSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -6629643101790872257L;
+        @JsonIgnore private static final long serialVersionUID = 3732639199983945136L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8351,7 +8595,7 @@ public class GenCrdCurrent
     @Singular("trackingdate")
     public static class TrackingDate extends CustomResource<TrackingDateSpec, Void> implements LinstorCrd<TrackingDateSpec>
     {
-        private static final long serialVersionUID = -1172322732360915654L;
+        private static final long serialVersionUID = -1945581954199204099L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -8421,7 +8665,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class VolumesSpec implements LinstorSpec<Volumes, VolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 3732639199983945136L;
+        @JsonIgnore private static final long serialVersionUID = -4103461241494421748L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8543,7 +8787,7 @@ public class GenCrdCurrent
     @Singular("volumes")
     public static class Volumes extends CustomResource<VolumesSpec, Void> implements LinstorCrd<VolumesSpec>
     {
-        private static final long serialVersionUID = -1945581954199204099L;
+        private static final long serialVersionUID = -5962847540925982811L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -8613,7 +8857,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class VolumeConnectionsSpec implements LinstorSpec<VolumeConnections, VolumeConnectionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -4103461241494421748L;
+        @JsonIgnore private static final long serialVersionUID = -2962639190537039432L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8736,7 +8980,7 @@ public class GenCrdCurrent
     @Singular("volumeconnections")
     public static class VolumeConnections extends CustomResource<VolumeConnectionsSpec, Void> implements LinstorCrd<VolumeConnectionsSpec>
     {
-        private static final long serialVersionUID = -5962847540925982811L;
+        private static final long serialVersionUID = -2086450451975727507L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -8806,7 +9050,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class VolumeDefinitionsSpec implements LinstorSpec<VolumeDefinitions, VolumeDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -2962639190537039432L;
+        @JsonIgnore private static final long serialVersionUID = 6018761052579104769L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8927,7 +9171,7 @@ public class GenCrdCurrent
     @Singular("volumedefinitions")
     public static class VolumeDefinitions extends CustomResource<VolumeDefinitionsSpec, Void> implements LinstorCrd<VolumeDefinitionsSpec>
     {
-        private static final long serialVersionUID = -2086450451975727507L;
+        private static final long serialVersionUID = -6800037249193162823L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
@@ -8993,7 +9237,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class VolumeGroupsSpec implements LinstorSpec<VolumeGroups, VolumeGroupsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 6018761052579104769L;
+        @JsonIgnore private static final long serialVersionUID = 1524450185249069936L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -9099,7 +9343,7 @@ public class GenCrdCurrent
     @Singular("volumegroups")
     public static class VolumeGroups extends CustomResource<VolumeGroupsSpec, Void> implements LinstorCrd<VolumeGroupsSpec>
     {
-        private static final long serialVersionUID = -6800037249193162823L;
+        private static final long serialVersionUID = -1451115146531017586L;
         @Nullable String k8sKey = null;
 
         @JsonCreator
