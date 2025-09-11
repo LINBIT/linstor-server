@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ETCD, TcpPort migration: Do not delete old port from LAYER_DRBD_RESOURCE_DEFINITION
 - ETCD, TcpPort migration: Fix incorrect nullcheck
 - Rsc,list: JSON now contains .layer_object.drbd.connections after reconnect
+- Fixed incorrect props_instance for Volume properties within a SnapshotVolume
 
 ## [1.32.0] - 2025-09-09
 

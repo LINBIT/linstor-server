@@ -89,7 +89,7 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
                 snapshotRef.getResourceName(),
                 snapshotRef.getSnapshotName(),
                 snapshotVolumeDefinitionRef.getVolumeNumber(),
-                false
+                true
             ),
             toStringImpl(),
             LinStorObject.VLM
