@@ -220,7 +220,8 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 }
                 else
                 {
-                    if (isFlagSet(tieBreaker, Resource.Flags.DRBD_DELETE))
+                    if (isFlagSet(tieBreaker, Resource.Flags.DRBD_DELETE) &&
+                        tieBreaker.getNode().getFlags().isUnset(peerCtx.get(), Node.Flags.EVACUATE))
                     {
                         // user requested to delete tiebreaker.
                         if (ctx.keepTiebreaker)

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- node evacuate: if the node had the tiebreaker, tiebreaker creation was accidentally disabled
+
 ## [1.32.0] - 2025-09-09
 
 ### Changed
