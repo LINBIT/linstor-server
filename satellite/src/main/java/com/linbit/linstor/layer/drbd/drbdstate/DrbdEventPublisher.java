@@ -185,6 +185,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
             }
             else
             {
+                connectionStateChanged(resource, connection, connection.getState(), connection.getState());
                 triggerReplicationStateEvent(resource, volume);
                 triggerDonePercentageEvent(resource, volume);
             }

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - node evacuate: if the node had the tiebreaker, tiebreaker creation was accidentally disabled
 - ETCD, TcpPort migration: Do not delete old port from LAYER_DRBD_RESOURCE_DEFINITION
 - ETCD, TcpPort migration: Fix incorrect nullcheck
+- Rsc,list: JSON now contains .layer_object.drbd.connections after reconnect
 
 ## [1.32.0] - 2025-09-09
 
