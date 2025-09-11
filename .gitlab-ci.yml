@@ -16,6 +16,7 @@ variables:
     description: How often to repeat each run
   RUNNER_TAG_LIBVIRT: "libvirt"
   DISTRIBUTIONS: ubuntu-focal,ubuntu-jammy,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,rhel10.0,debian-bookworm
+  GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
 
 cache:
   key:
@@ -71,7 +72,6 @@ workflow:
     - cd ..
     - rm -Rf linstor-spacetracking
 # normal linstor build
-    - LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
     - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
     - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
@@ -211,7 +211,6 @@ test:
     - if: '$CI_COMMIT_BRANCH == "master"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
   script:
-    - export GRADLE_USER_HOME=`pwd`/.gradle
     - ./gradlew getProtoc
     - ./gradlew -PversionOverride= checkstyleMain
     - ./gradlew -PversionOverride= assemble
@@ -249,15 +248,9 @@ deploy-nexus-master:
   before_script:
     - curl -sSL $LINBIT_REGISTRY_URL/repository/lbbuild/lbbuildctl-latest -o /usr/local/bin/lbbuildctl
     - chmod +x /usr/local/bin/lbbuildctl
-    - export GRADLE_USER_HOME=`pwd`/.gradle
+  variables:
+    LINSTOR_VERSION: 1.99.0.latest
   extends: .upload_nexus
-  script:
-    - !reference [.upload_nexus, script]
-    - LINSTOR_VERSION=1.99.0.latest
-    - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
-    - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
-    - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
-    - lbbuildctl build linstor-server --arch amd64 --ci -v "$LINSTOR_VERSION" -l -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL -d $DISTRIBUTIONS
 
 deploy-nexus:
   stage: deploy
@@ -267,7 +260,8 @@ deploy-nexus:
   before_script:
     - curl -sSL $LINBIT_REGISTRY_URL/repository/lbbuild/lbbuildctl-latest -o /usr/local/bin/lbbuildctl
     - chmod +x /usr/local/bin/lbbuildctl
-    - export GRADLE_USER_HOME=`pwd`/.gradle
+  variables:
+    LINSTOR_VERSION: 1.99.0.$CI_COMMIT_SHORT_SHA
   extends: .upload_nexus
 
 test-e2e-all:
@@ -326,7 +320,6 @@ sbom:
     - if: $CI_COMMIT_BRANCH == 'jenkins'
   stage: build
   before_script:
-    - export GRADLE_USER_HOME=`pwd`/.gradle
     - git init build-helpers -q -b unused
     - git -C build-helpers fetch -q --depth 1 $CI_SERVER_PROTOCOL://gitlab-ci-token:${CI_JOB_TOKEN}@$CI_SERVER_HOST:$CI_SERVER_PORT/linbit/build-helpers.git $BUILD_HELPERS_VERSION
     - git -C build-helpers checkout -q $BUILD_HELPERS_VERSION
