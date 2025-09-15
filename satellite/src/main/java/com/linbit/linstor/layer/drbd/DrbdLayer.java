@@ -523,6 +523,10 @@ public class DrbdLayer implements DeviceLayer
                     contProcess = true;
                     drbdRscData.setAdjustRequired(true);
                 }
+                else if (isNeitherResizeFlagsSet(drbdVlmData))
+                {
+                    contProcess = true;
+                }
                 else
                 {
                     contProcess = false;
@@ -575,6 +579,7 @@ public class DrbdLayer implements DeviceLayer
             for (DrbdVlmData<Resource> drbdVlmData : createMetaData)
             {
                 createMetaData(drbdVlmData);
+                drbdRscData.setAdjustRequired(true);
             }
 
             try
@@ -898,9 +903,15 @@ public class DrbdLayer implements DeviceLayer
     private boolean areBothResizeFlagsSet(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException
     {
         StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
-        return vlmFlags.isSet(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE) ||
-            vlmFlags.isUnset(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE);
+        return vlmFlags.isSet(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE);
     }
+
+    private boolean isNeitherResizeFlagsSet(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException
+    {
+        StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
+        return vlmFlags.isUnset(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE);
+    }
+
 
     private boolean isFlagSet(DrbdVlmData<Resource> drbdVlmData, Volume.Flags... flagsRef) throws AccessDeniedException
     {
@@ -1011,7 +1022,7 @@ public class DrbdLayer implements DeviceLayer
                 drbdVlmData.setExists(false);
             }
 
-            if (!volumesToDelete.isEmpty() || !volumesToMakeDiskless.isEmpty() || !checkMetaData.isEmpty())
+            if (!volumesToDelete.isEmpty() || !volumesToMakeDiskless.isEmpty())
             {
                 drbdRscData.setAdjustRequired(true);
             }
@@ -1514,11 +1525,6 @@ public class DrbdLayer implements DeviceLayer
         throws AccessDeniedException
     {
         Resource localResource = drbdRscData.getAbsResource();
-
-        // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
-        //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
-        //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
-        drbdRscData.setAdjustRequired(true);
 
         boolean isRscDisklessFlagSet = localResource.getStateFlags().isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
 
