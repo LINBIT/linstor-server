@@ -13,6 +13,8 @@ import java.util.Map.Entry;
 )
 public class Migration_42_MoveTcpPortsToNodes extends BaseEtcdMigration
 {
+    private static final String ETCD_VALUE_NULL = ":null";
+
     @Override
     public void migrate(EtcdTransaction tx, final String prefix) throws Exception
     {
@@ -47,7 +49,7 @@ public class Migration_42_MoveTcpPortsToNodes extends BaseEtcdMigration
 
                 // should never be null, but ... just to be sure
                 @Nullable String tcpPortStr = entry.getValue();
-                if (tcpPortStr != null)
+                if (tcpPortStr != null && !tcpPortStr.equals(ETCD_VALUE_NULL))
                 {
                     tcpPortMap.put(rscName, Integer.parseInt(tcpPortStr));
                 }
@@ -68,7 +70,6 @@ public class Migration_42_MoveTcpPortsToNodes extends BaseEtcdMigration
         Map<String, String> result = tx.get(prefixedDbTableStr);
         for (Entry<String, String> entry : result.entrySet())
         {
-            final String key = entry.getKey();
             String combinedPkAndColumn = entry.getKey().substring(prefixedTblKeyLen);
             int idxOfLastSeparator = combinedPkAndColumn.lastIndexOf("/");
             String combinedPk = combinedPkAndColumn.substring(0, idxOfLastSeparator);
