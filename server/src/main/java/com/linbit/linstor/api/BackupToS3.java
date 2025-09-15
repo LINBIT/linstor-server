@@ -124,9 +124,10 @@ public class BackupToS3
         String bucket = remote.getBucket(accCtx);
         boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);
 
-        // make the buffer size (part size) as big as possible, without going over the limit of Integer.MAX_VALUE
-        // while making sure to stay above the minimum part size of 5 MB and below 10000 parts
-        long bufferSize = Math.max(5 << 20, (long) (Math.ceil((maxSize * 1024) / 10000.0) + 1.0));
+        // make the buffer size (part size) as small as possible, without going over the limit of Integer.MAX_VALUE
+        // while making sure to stay above the minimum part size of 5 MB and below 1000 parts.
+        // we want small buffers in order to keep RAM usage low even with multiple concurrent uploads.
+        long bufferSize = Math.max(5 << 20, (long) (Math.ceil((maxSize * 1024) / 1000.0) + 1.0));
         if (bufferSize > Integer.MAX_VALUE)
         {
             throw new StorageException(

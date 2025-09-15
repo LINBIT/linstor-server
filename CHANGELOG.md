@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- S3: Reduce max-parts from 10.000 to 1.000 to better support non-AWS S3 implementations
+
 ### Fixed
 
 - node evacuate: if the node had the tiebreaker, tiebreaker creation was accidentally disabled
