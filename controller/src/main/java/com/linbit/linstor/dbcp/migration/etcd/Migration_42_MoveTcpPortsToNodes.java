@@ -52,8 +52,7 @@ public class Migration_42_MoveTcpPortsToNodes extends BaseEtcdMigration
                     tcpPortMap.put(rscName, Integer.parseInt(tcpPortStr));
                 }
 
-                // delete the old prefix+"LAYER_DRBD_RESOURCE_DEFINITIONS/TCP_PORT" entry
-                tx.delete(key);
+                // do not delete the entry. TCP_PORT from LAYER_DRBD_RD will still be used as a fallback/default
             }
         }
         return tcpPortMap;
