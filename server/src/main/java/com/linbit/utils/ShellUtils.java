@@ -2,8 +2,12 @@ package com.linbit.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -108,5 +112,89 @@ public class ShellUtils
             "joinShellQuote.strings contains null: " + StringUtils.join(Arrays.asList(strings));
 
         return StringUtils.join(" ", Arrays.stream(strings).map(ShellUtils::shellQuote).toArray());
+    }
+
+    /**
+     * Return an argument list excluding specified arguments
+     *
+     * @param commandArgs List of command line arguments
+     * @param excludeArgs Arguments to remove from the command line arguments
+     * @return List of command line arguments excluding the specified arguments
+     */
+    public static List<String> excludeArguments(List<String> commandArgs, ExcludeArgsEntry... excludeArgs)
+    {
+        Map<String, ExcludeArgsEntry> excludeArgsMap = new TreeMap<>();
+        for (ExcludeArgsEntry entry : excludeArgs)
+        {
+            excludeArgsMap.put(entry.name, entry);
+        }
+
+        List<String> argList = null;
+
+        int pos = 0;
+        final Iterator<String> cmdArgIter = commandArgs.iterator();
+        while (cmdArgIter.hasNext())
+        {
+            final String cmdArg = cmdArgIter.next();
+            final ExcludeArgsEntry entry = excludeArgsMap.get(cmdArg);
+            if (entry != null)
+            {
+                // Exclude the current argument and any following arguments
+                // according to the entry's skipCount
+
+                // If no modified output list exists, construct it now
+                if (argList == null)
+                {
+                    argList = new LinkedList<>();
+                    int idx = 0;
+                    for (String copyArg : commandArgs)
+                    {
+                        if (idx < pos)
+                        {
+                            argList.add(copyArg);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                        ++idx;
+                    }
+                }
+
+                for (int ctr = 0; ctr < entry.skipCount && cmdArgIter.hasNext(); ++ctr)
+                {
+                    cmdArgIter.next(); // Discard element
+                }
+            }
+            else
+            {
+                if (argList != null)
+                {
+                    argList.add(cmdArg);
+                }
+            }
+
+            ++pos;
+        }
+
+        // Return a modified argument list if one exists, otherwise return the original argument list
+        return argList != null ? argList : commandArgs;
+    }
+
+    public static class ExcludeArgsEntry
+    {
+        public final String     name;
+        public final int        skipCount;
+
+        public ExcludeArgsEntry(final String argName, final int argSkipCount)
+        {
+            if (argName == null)
+            {
+                throw new IllegalArgumentException();
+            }
+
+            name = argName;
+            skipCount = argSkipCount;
+        }
     }
 }
