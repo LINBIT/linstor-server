@@ -1,3 +1,22 @@
+linstor-server (1.32.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * building: use the gradle cache for offline building
+  * gradle: use lockfile and gitlab caches
+  * gitlab-ci: use variables for GRADLE_USER_HOME and better deploy-nexus-master
+  * evacute/tiebreaker: Fixed disabling of auto-tiebreaker on node evacuate
+  * make: fix make release
+
+  [ Gabor Hernadi ]
+  * ETCD: Do not delete default port on LAYER_DRBD_RD
+  * ETCD: Properly handle null TCP ports during migration
+  * Drbd: Send existing connections after stlt reconnect
+  * Snap,props: Fixed wrong props_instance
+  * S3: Reduce multipart max part count from 10k to 1k
+  * Drbd: Adjust optimizations fixes
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 16 Sep 2025 09:01:57 +0000
+
 linstor-server (1.32.0-1) experimental; urgency=medium
 
   * logging: improved INFO log on auto-diskful and delete rsc
