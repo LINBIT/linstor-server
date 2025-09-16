@@ -127,6 +127,7 @@ endif
 tarball: check-all-committed check-submods versioninfo gen-java server/jar.deps controller/jar.deps satellite/jar.deps jclcrypto/jar.deps .filelist
 	@./gradlew --no-daemon --gradle-user-home .gradlehome downloadDependencies
 	rm -Rf .gradlehome/wrapper .gradlehome/native .gradlehome/.tmp .gradlehome/caches/[0-9]*
+	mkdir -p ./libs
 	$(MAKE) tgz
 
 versioninfo:
