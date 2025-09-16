@@ -80,6 +80,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1640,7 +1641,10 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(namespace, passphrase);
+                byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(
+                    namespace,
+                    passphrase.getBytes(StandardCharsets.UTF_8)
+                );
                 flux = encHelper.setCryptKey(decryptedMasterKey, namespace, true);
                 // setCryptKey might have changed volatileRscData (ignoreReason, etc..)
                 transMgrProvider.get().commit();
@@ -1770,7 +1774,7 @@ public class CtrlConfApiCallHandler
                     // this is the initial passphrase
                     byte[] masterKey = encHelper.generateSecret();
                     encHelper.setPassphraseImpl(
-                        newPassphrase,
+                        newPassphrase.getBytes(StandardCharsets.UTF_8),
                         masterKey,
                         peerAccCtx.get()
                     );
@@ -1826,9 +1830,13 @@ public class CtrlConfApiCallHandler
                 {
                     byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(
                         namespace,
-                        oldPassphrase
+                        oldPassphrase.getBytes(StandardCharsets.UTF_8)
                     );
-                    encHelper.setPassphraseImpl(newPassphrase, decryptedMasterKey, peerAccCtx.get());
+                    encHelper.setPassphraseImpl(
+                        newPassphrase.getBytes(StandardCharsets.UTF_8),
+                        decryptedMasterKey,
+                        peerAccCtx.get()
+                    );
                     ResponseUtils.reportSuccessStatic(
                         "Crypt passphrase updated",
                         null, // details

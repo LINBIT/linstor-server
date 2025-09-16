@@ -1,6 +1,7 @@
 package com.linbit.linstor.systemstarter;
 
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.LinStorScope;
@@ -16,6 +17,11 @@ import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
 import javax.inject.Singleton;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import com.google.inject.Inject;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
@@ -23,6 +29,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class PassphraseInitializer implements StartupInitializer
 {
+    private static final String SYSTEMD_CREDS_LINSTOR_MASTERPASSPHRASE_FILENAME = "linstor-masterpassphrase";
     private final ErrorReporter errorReporter;
     private CtrlConfig ctrlCfg;
     private EncryptionHelper encHelper;
@@ -52,58 +59,75 @@ public class PassphraseInitializer implements StartupInitializer
     @Override
     public void initialize() throws SystemServiceStartException
     {
-        TransactionMgr txMgr = transactionMgrGenerator.startTransaction();
-        try (LinStorScope.ScopeAutoCloseable close = apiCallScope.enter())
+        // check if there is something to initialize
+        @Nullable byte[] masterPassphrase = getMasterPassphraseByToml();
+        if (masterPassphrase == null)
         {
-            TransactionMgrUtil.seedTransactionMgr(apiCallScope, txMgr);
-            ReadOnlyProps namespace = encHelper.getEncryptedNamespace(accCtx);
-            if (namespace == null || namespace.isEmpty())
-            {
-                byte[] masterKey = encHelper.generateSecret();
-                encHelper.setPassphraseImpl(
-                    ctrlCfg.getMasterPassphrase(),
-                    masterKey,
-                    accCtx
-                );
-                // setPassphraseImpl sets the props in this namespace; to ensure they are there, get it again
-                namespace = encHelper.getEncryptedNamespace(accCtx);
+            masterPassphrase = getMasterPassphraseBySystemdCredentials();
+        }
 
-                // we can ignore the returned flux since we should be running during startup before any
-                // node-connection-attempts
-                setCryptKey(masterKey, namespace);
-            }
-            else
-            {
-                byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(namespace, ctrlCfg.getMasterPassphrase());
-                setCryptKey(decryptedMasterKey, namespace);
-            }
-            // setCryptKey could have changed voaltileRscData (ignoreReasons, etc...)
-            txMgr.commit();
-        }
-        catch (Exception exc)
+        if (masterPassphrase != null)
         {
-            throw new SystemServiceStartException("Automatic injection of passphrase failed", exc, true);
-        }
-        finally
-        {
-            if (txMgr.isDirty())
+            TransactionMgr txMgr = transactionMgrGenerator.startTransaction();
+            try (LinStorScope.ScopeAutoCloseable close = apiCallScope.enter())
             {
-                try
+                TransactionMgrUtil.seedTransactionMgr(apiCallScope, txMgr);
+                ReadOnlyProps namespace = encHelper.getEncryptedNamespace(accCtx);
+                if (namespace == null || namespace.isEmpty())
                 {
-                    txMgr.rollback();
-                }
-                catch (TransactionException dbExc)
-                {
-                    errorReporter.reportError(
-                        Level.ERROR,
-                        dbExc,
-                        accCtx,
-                        null,
-                        "A database error occurred while trying to rollback"
+                    byte[] masterKey = encHelper.generateSecret();
+                    encHelper.setPassphraseImpl(
+                        masterPassphrase,
+                        masterKey,
+                        accCtx
                     );
+                    // setPassphraseImpl sets the props in this namespace; to ensure they are there, get it again
+                    namespace = encHelper.getEncryptedNamespace(accCtx);
+
+                    // we can ignore the returned flux since we should be running during startup before any
+                    // node-connection-attempts
+                    setCryptKey(masterKey, namespace);
                 }
+                else
+                {
+                    byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(
+                        namespace,
+                        masterPassphrase
+                    );
+                    setCryptKey(decryptedMasterKey, namespace);
+                }
+                // setCryptKey could have changed voaltileRscData (ignoreReasons, etc...)
+                txMgr.commit();
             }
-            txMgr.returnConnection();
+            catch (Exception exc)
+            {
+                throw new SystemServiceStartException("Automatic injection of passphrase failed", exc, true);
+            }
+            finally
+            {
+                if (txMgr.isDirty())
+                {
+                    try
+                    {
+                        txMgr.rollback();
+                    }
+                    catch (TransactionException dbExc)
+                    {
+                        errorReporter.reportError(
+                            Level.ERROR,
+                            dbExc,
+                            accCtx,
+                            null,
+                            "A database error occurred while trying to rollback"
+                        );
+                    }
+                }
+                txMgr.returnConnection();
+            }
+        }
+        else
+        {
+            errorReporter.logInfo("No masterpassphrase provided");
         }
     }
 
@@ -115,5 +139,41 @@ public class PassphraseInitializer implements StartupInitializer
             false // do not update satellites before Auth (-> leads to unauthorized message -> error on stlt)
             // cryptKey is part of the FullSync anyways
         );
+    }
+
+    private @Nullable byte[] getMasterPassphraseByToml()
+    {
+        @Nullable byte[] ret = null;
+        @Nullable String masterPassphrase = ctrlCfg.getMasterPassphrase();
+        if (masterPassphrase != null)
+        {
+            errorReporter.logInfo("Using masterpassphrase provided by config (toml file or env)");
+            ret = masterPassphrase.getBytes(StandardCharsets.UTF_8);
+        }
+        return ret;
+    }
+
+    private @Nullable byte[] getMasterPassphraseBySystemdCredentials() throws SystemServiceStartException
+    {
+        @Nullable byte[] ret = null;
+        @Nullable String credentialsDir = System.getenv("CREDENTIALS_DIRECTORY");
+        if (credentialsDir != null)
+        {
+            errorReporter.logInfo("Using masterpassphrase provided by systemd-creds");
+            try
+            {
+                ret = Files.readAllBytes(Paths.get(credentialsDir, SYSTEMD_CREDS_LINSTOR_MASTERPASSPHRASE_FILENAME));
+            }
+            catch (IOException exc)
+            {
+                throw new SystemServiceStartException(
+                    "Failed to read masterpassphrase from systemd-creds file '" +
+                        SYSTEMD_CREDS_LINSTOR_MASTERPASSPHRASE_FILENAME + "'",
+                    exc,
+                    true
+                );
+            }
+        }
+        return ret;
     }
 }

@@ -49,7 +49,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -168,7 +167,7 @@ public class EncryptionHelper
         return exists;
     }
 
-    public void setPassphraseImpl(String newPassphrase, byte[] masterKey, AccessContext peerAccCtxRef)
+    public void setPassphraseImpl(byte[] newPassphrase, byte[] masterKey, AccessContext peerAccCtxRef)
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException, LinStorException
     {
         Props ctrlConf = systemConfRepository.getCtrlConfForChange(peerAccCtxRef);
@@ -177,7 +176,7 @@ public class EncryptionHelper
         // and store the encrypted key, the salt and a hash of the length padded key in the database
         byte[] salt = secretGen.generateSecret(MASTER_KEY_SALT_BYTES);
         ByteArrayCipher cipher = cryptoProvider.createCipherWithPassword(
-            newPassphrase.getBytes(StandardCharsets.UTF_8),
+            newPassphrase,
             salt
         );
 
@@ -194,7 +193,7 @@ public class EncryptionHelper
         transMgrProvider.get().commit();
     }
 
-    public byte[] getDecryptedMasterKey(ReadOnlyProps namespace, String oldPassphrase)
+    public byte[] getDecryptedMasterKey(ReadOnlyProps namespace, byte[] oldPassphrase)
         throws InvalidKeyException, LinStorException
     {
         return getDecryptedMasterKey(
@@ -209,7 +208,7 @@ public class EncryptionHelper
         String masterHashBase64,
         String encKeyBase64,
         String passSaltBase64,
-        String passphraseUtf8
+        byte[] passphraseUtf8
     )
         throws LinStorException
     {
@@ -222,7 +221,7 @@ public class EncryptionHelper
             Base64.decode(masterHashBase64),
             Base64.decode(encKeyBase64),
             Base64.decode(passSaltBase64),
-            passphraseUtf8.getBytes(StandardCharsets.UTF_8)
+            passphraseUtf8
         );
     }
 

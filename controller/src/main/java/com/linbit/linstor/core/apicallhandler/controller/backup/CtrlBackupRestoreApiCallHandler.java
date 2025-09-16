@@ -643,7 +643,7 @@ public class CtrlBackupRestoreApiCallHandler
         Node node,
         String targetRscName,
         @Nullable String dstRscGrpRef,
-        String passphrase,
+        @Nullable String passphrase,
         S3Remote remote,
         Set<String> s3keys,
         BackupMetaDataPojo metadata,
@@ -693,7 +693,7 @@ public class CtrlBackupRestoreApiCallHandler
                     luksInfo.getMasterCryptHash(),
                     luksInfo.getMasterPassword(),
                     luksInfo.getMasterCryptSalt(),
-                    passphrase
+                    passphrase.getBytes(StandardCharsets.UTF_8)
                 );
             }
             catch (MissingKeyPropertyException exc)
@@ -1780,7 +1780,7 @@ public class CtrlBackupRestoreApiCallHandler
                             luksInfo.getMasterCryptHash(),
                             luksInfo.getMasterPassword(),
                             luksInfo.getMasterCryptSalt(),
-                            new String(remotePassphrase, StandardCharsets.UTF_8)
+                            remotePassphrase
                         );
                     }
                     catch (LinStorException exc)
