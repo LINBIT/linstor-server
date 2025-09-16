@@ -15,6 +15,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.Luks;
+import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -64,10 +65,10 @@ public class CryptSetupCommands implements Luks
 
     @Override
     public String createLuksDevice(
-        String dev,
-        byte[] cryptKey,
-        String identifier,
-        List<String> additionalOptions
+        final String dev,
+        final byte[] cryptKey,
+        final String identifier,
+        final List<String> additionalOptions
     )
         throws StorageException
     {
@@ -75,9 +76,14 @@ public class CryptSetupCommands implements Luks
         {
             final ExtCmd extCommand = extCmdFactory.create();
 
+            List<String> checkedAdditionalOptions = ShellUtils.excludeArguments(
+                additionalOptions,
+                new ShellUtils.ExcludeArgsEntry("--pbkdf-memory", 1)
+            );
+
             ArrayList<String> command = new ArrayList<>();
             command.add(CRYPTSETUP);
-            command.addAll(additionalOptions);
+            command.addAll(checkedAdditionalOptions);
             command.add("-q");
             command.add("luksFormat");
             if (version.greaterOrEqual(V2_0_0))
@@ -124,20 +130,27 @@ public class CryptSetupCommands implements Luks
 
     @Override
     public void openLuksDevice(
-        String dev,
-        String targetIdentifier,
-        byte[] cryptKey,
-        boolean readOnly,
-        List<String> additionalOptions
+        final String dev,
+        final String targetIdentifier,
+        final byte[] cryptKey,
+        final boolean readOnly,
+        final List<String> additionalOptions
     )
         throws StorageException
     {
         try
         {
             final ExtCmd extCommand = extCmdFactory.create();
+
+            List<String> checkedAdditionalOptions = ShellUtils.excludeArguments(
+                additionalOptions,
+                new ShellUtils.ExcludeArgsEntry("--tries", 1),
+                new ShellUtils.ExcludeArgsEntry("--readonly", 0)
+            );
+
             List<String> cmd = new ArrayList<>(10);
             cmd.add(CRYPTSETUP);
-            cmd.addAll(additionalOptions);
+            cmd.addAll(checkedAdditionalOptions);
             cmd.add("open");
             cmd.add("--tries");
             cmd.add("1");
