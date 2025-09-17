@@ -50,6 +50,7 @@ import com.linbit.linstor.utils.PropsUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -72,7 +73,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
@@ -115,6 +115,7 @@ import reactor.util.function.Tuple2;
 public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnectionListener
 {
     private static final String SAFETY_SNAP_PREFIX = "safety-snap-";
+    private static final int SAFETY_SNAP_SUFFIX_ID_LEN = 10;
 
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
@@ -311,10 +312,11 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                 Map<NodeName, Boolean> rscNodes = currentRscNodeDisks(rscDfn);
 
                 ApiCallRcImpl responses = new ApiCallRcImpl();
+
                 SnapshotDefinition safetySnapDfn = ctrlSnapCrtHelper.createSnapshots(
                     Collections.emptyList(),
                     rscName,
-                    new SnapshotName(SAFETY_SNAP_PREFIX + UUID.randomUUID()),
+                    new SnapshotName(SAFETY_SNAP_PREFIX + StringUtils.randomAlphaNumString(SAFETY_SNAP_SUFFIX_ID_LEN)),
                     Collections.emptyMap(),
                     responses
                 );

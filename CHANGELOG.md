@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- safety-snap: shorten safety-snap id length, to stay in LVM name limit
+
 ## [1.32.1] - 2025-09-16
 
 ### Changed

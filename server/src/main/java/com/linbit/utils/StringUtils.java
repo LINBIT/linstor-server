@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.StringJoiner;
 
 /**
@@ -16,6 +17,9 @@ import java.util.StringJoiner;
  */
 public class StringUtils
 {
+    private static final char[] ALPHA_NUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+        .toCharArray();
+
     /**
      * Joins a collection into a string with the given delimeter.
      * @param col collection to join.
@@ -142,6 +146,34 @@ public class StringUtils
     public static boolean propFalseOrNull(@Nullable String propValue)
     {
         return propValue == null || "false".equalsIgnoreCase(propValue);
+    }
+
+    /**
+     * Create a random string from candidateChars
+     * @param candidateChars chars to take in the random string
+     * @param length length of the resulting string
+     * @return random string
+     */
+    public static String randomString(char[] candidateChars, int length)
+    {
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < length; i++)
+        {
+            sb.append(candidateChars[random.nextInt(candidateChars.length)]);
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Create a random string with only alphanumeric[a-zA-Z0-9] characters.
+     * @param length length of the resulting string
+     * @return random string
+     */
+    public static String randomAlphaNumString(int length)
+    {
+        return randomString(ALPHA_NUM, length);
     }
 
     /**
