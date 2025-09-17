@@ -83,9 +83,9 @@ public class CryptSetupCommands implements Luks
 
             ArrayList<String> command = new ArrayList<>();
             command.add(CRYPTSETUP);
-            command.addAll(checkedAdditionalOptions);
             command.add("-q");
             command.add("luksFormat");
+            command.addAll(checkedAdditionalOptions);
             if (version.greaterOrEqual(V2_0_0))
             {
                 command.add("--pbkdf-memory");
@@ -150,8 +150,8 @@ public class CryptSetupCommands implements Luks
 
             List<String> cmd = new ArrayList<>(10);
             cmd.add(CRYPTSETUP);
-            cmd.addAll(checkedAdditionalOptions);
             cmd.add("open");
+            cmd.addAll(checkedAdditionalOptions);
             cmd.add("--tries");
             cmd.add("1");
             if (readOnly)
