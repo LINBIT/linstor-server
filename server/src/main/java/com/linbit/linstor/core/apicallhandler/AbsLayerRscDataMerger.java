@@ -149,9 +149,18 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         );
         // rscLayerObject.setSuspendIo(rscLayerDataPojo.getSuspend());
 
-        for (RscLayerDataApi childRscPojo : rscLayerDataPojo.getChildren())
+        boolean merge = true;
+        if (rscLayerObject.getRscLayerId() != rscLayerDataPojo.getId() &&
+            wasRscLayerDataRecentlyReplaced(rscLayerObject, rscLayerDataPojo))
         {
-            merge(rsc, childRscPojo, rscLayerObject, remoteResourceRef);
+            merge = false;
+        }
+        if (merge)
+        {
+            for (RscLayerDataApi childRscPojo : rscLayerDataPojo.getChildren())
+            {
+                merge(rsc, childRscPojo, rscLayerObject, remoteResourceRef);
+            }
         }
     }
 
@@ -182,60 +191,73 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             drbdRscData = findChild(parent, rscDataPojo.getId());
         }
 
-        if (drbdRscData == null)
+        boolean merge = true;
+        if (drbdRscData != null && drbdRscData.getRscLayerId() != rscDataPojo.getId() &&
+            wasRscLayerDataRecentlyReplaced(drbdRscData, rscDataPojo))
         {
-            drbdRscData = createDrbdRscData(rsc, rscDataPojo, parent, drbdRscPojo, drbdRscDfnData);
+            merge = false;
         }
-        else
+        if (merge)
         {
-            mergeDrbdRscData(parent, drbdRscPojo, drbdRscData);
-        }
-
-        HashSet<VolumeNumber> drbdVlmDataToDelete = new HashSet<>(drbdRscData.getVlmLayerObjects().keySet());
-        // do not iterate over rsc.volumes as those might have changed in the meantime
-        // see gitlab 368
-        for (DrbdVlmPojo drbdVlmPojo : drbdRscPojo.getVolumeList())
-        {
-            VolumeNumber vlmNr = new VolumeNumber(drbdVlmPojo.getVlmNr());
-            AbsVolume<RSC> vlm = rsc.getVolume(vlmNr);
-            if (vlm == null)
+            if (drbdRscData == null)
             {
-                removeDrbdVlm(drbdRscData, vlmNr);
+                drbdRscData = createDrbdRscData(rsc, rscDataPojo, parent, drbdRscPojo, drbdRscDfnData);
             }
             else
             {
-                drbdVlmDataToDelete.remove(vlmNr);
-                restoreDrbdVlm(vlm, drbdRscData, drbdVlmPojo);
+                mergeDrbdRscData(parent, drbdRscPojo, drbdRscData);
             }
-        }
-        for (VolumeNumber vlmNrToDelete : drbdVlmDataToDelete)
-        {
-            removeDrbdVlm(drbdRscData, vlmNrToDelete);
-        }
 
-        // it is possible (i.e. during a toggle disk) that we need to delete a child (i.e. ".meta") while keeping /
-        // converting another child (i.e. from LVM/ZFS to Diskless)
-        HashSet<Integer> childRscIdsToKeep = new HashSet<>();
-        for (RscLayerDataApi pojoChild : pojoChildren)
-        {
-            childRscIdsToKeep.add(pojoChild.getId());
-        }
-        ArrayList<AbsRscLayerObject<RSC>> childrenToDelete = new ArrayList<>();
-        for (AbsRscLayerObject<RSC> child : drbdRscData.getChildren())
-        {
-            if (!childRscIdsToKeep.contains(child.getRscLayerId()))
+            HashSet<VolumeNumber> drbdVlmDataToDelete = new HashSet<>(drbdRscData.getVlmLayerObjects().keySet());
+            // do not iterate over rsc.volumes as those might have changed in the meantime
+            // see gitlab 368
+            for (DrbdVlmPojo drbdVlmPojo : drbdRscPojo.getVolumeList())
             {
-                childrenToDelete.add(child);
+                VolumeNumber vlmNr = new VolumeNumber(drbdVlmPojo.getVlmNr());
+                AbsVolume<RSC> vlm = rsc.getVolume(vlmNr);
+                if (vlm == null)
+                {
+                    removeDrbdVlm(drbdRscData, vlmNr);
+                }
+                else
+                {
+                    drbdVlmDataToDelete.remove(vlmNr);
+                    restoreDrbdVlm(vlm, drbdRscData, drbdVlmPojo);
+                }
+            }
+            for (VolumeNumber vlmNrToDelete : drbdVlmDataToDelete)
+            {
+                removeDrbdVlm(drbdRscData, vlmNrToDelete);
+            }
+
+            // it is possible (i.e. during a toggle disk) that we need to delete a child (i.e. ".meta") while keeping /
+            // converting another child (i.e. from LVM/ZFS to Diskless)
+            HashSet<Integer> childRscIdsToKeep = new HashSet<>();
+            for (RscLayerDataApi pojoChild : pojoChildren)
+            {
+                childRscIdsToKeep.add(pojoChild.getId());
+            }
+            ArrayList<AbsRscLayerObject<RSC>> childrenToDelete = new ArrayList<>();
+            for (AbsRscLayerObject<RSC> child : drbdRscData.getChildren())
+            {
+                if (!childRscIdsToKeep.contains(child.getRscLayerId()))
+                {
+                    childrenToDelete.add(child);
+                }
+            }
+            for (AbsRscLayerObject<RSC> childToDelete : childrenToDelete)
+            {
+                childToDelete.delete(apiCtx);
+                drbdRscData.getChildren().remove(childToDelete);
             }
         }
-        for (AbsRscLayerObject<RSC> childToDelete : childrenToDelete)
-        {
-            childToDelete.delete(apiCtx);
-            drbdRscData.getChildren().remove(childToDelete);
-        }
-
         return drbdRscData;
     }
+
+    protected abstract boolean wasRscLayerDataRecentlyReplaced(
+        AbsRscLayerObject<RSC> rscLayerObjectRef,
+        RscLayerDataApi rscDataPojoRef
+    );
 
     private void restoreDrbdVlm(
         AbsVolume<RSC> vlm,

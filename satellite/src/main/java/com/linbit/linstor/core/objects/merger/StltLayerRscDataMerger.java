@@ -1082,4 +1082,13 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     {
         // no-op
     }
+
+    @Override
+    protected boolean wasRscLayerDataRecentlyReplaced(
+        AbsRscLayerObject<Resource> drbdRscDataRef,
+        RscLayerDataApi rscDataPojoRef
+    )
+    {
+        return false;
+    }
 }

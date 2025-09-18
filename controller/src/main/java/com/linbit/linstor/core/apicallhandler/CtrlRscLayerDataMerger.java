@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.BCacheRscPojo;
@@ -58,13 +59,19 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
+import com.linbit.utils.TimedCache;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Optional;
+
 @Singleton
 public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
 {
+    // entries are kept for one hour
+    private final TimedCache<Integer, Optional<Integer>> replacedLayerIdCache = new TimedCache<>(1 * 60 * 60 * 1000L);
+
     @Inject
     public CtrlRscLayerDataMerger(
         @ApiContext AccessContext apiCtxRef,
@@ -646,5 +653,97 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         ebsData.setDevicePath(vlmPojoRef.getDevicePath());
         ebsData.setUsableSize(vlmPojoRef.getUsableSize());
         ebsData.setDiscGran(vlmPojoRef.getDiscGran());
+    }
+
+    /**
+     * There is an inherent race condition during a toggle disk. Imagine the following scenario:
+     * <ul>
+     *  <li>Setup:
+     *   <ul>
+     *    <li>We have a resource with DrbdRscData and a StorageRscData as a child. Let us assume that this
+     *        StorageRscData has an LvmData as a volume</li>
+     *    <li>We are about to toggle disk this resource into a diskless. That will eventually cause the DrbdRscData
+     *        as well as the StorageRscData to be replaced with a new DrbdRscData and a new StorageRscData but this
+     *        time the latter will have a DisklessData as a volume.</li>
+     *   </ul>
+     *  </li>
+     *  <li>Scenario:
+     *   <ul>
+     *    <li>We are skipping the first few "updateSatellite" calls where the satellites are prepared for the toggle-
+     *        disk event.</li>
+     *    <li>The controller just sent out the "updateSatellite" that is the very last update that still contains
+     *        the LvmData. Let us call this "update1" for now. In a usual scenario once the satellite answers
+     *        the controller will throw away the old layer data of the resource and replace it with the newly created
+     *        layer data that contains a DisklessData instead of the LvmData. But we are not there yet in this
+     *        scenario.</li>
+     *    <li>While the controller is waiting for the satellite's response (to "update1"), an asynchronous event
+     *        (second client or another LINSTOR internal task, or something else) runs an operation that also requires
+     *        another "updateSatellite". Let us call this "update2".</li>
+     *    <li>The controller will eventually receive the expected response for "update1". Such a response from the
+     *        satellite also contains the layer data the satellite used for the just applied operation. That
+     *        means in our case that this layer data has a reference to the StorageRscData containing the
+     *        LvmData. This is expected. The controller now performs the next step of the toggle disk scenario which
+     *        is to replace the old layer data with a new one containing a DisklessVlm and sends out another
+     *        "updateSatellite" (we could call this "update3" but we do not care about this update since an the error
+     *        we describe here will occur before we could receive a response to "update3").</li>
+     *    <li>Eventually the controller will also receive the response for "update2". Just as before the "update2"
+     *        also contains the layer data the satellite operated on. In this case it is still the old StorageRscData
+     *        with the LvmData. The controller however no longer knows about this layer data. This is how the
+     *        {@link #createStorageRscData(Resource, AbsRscLayerObject, StorageRscPojo)} gets called with the old
+     *        ID (which is not found) and throws an "Received unknown storage resource from satellite"
+     *        ImplementationError.</li>
+     *   </ul>
+     *  </li>
+     *  <li>Solution:<br/>
+     *      When the controller is throwing away the old layer data it has to remember the old LayerRscId and call
+     *      {@link #replacedLayerRscId(Integer, int)} with those two IDs. This replacement is remembered for a given
+     *      time and when a satellite response is referring to an old ID, we can use this method her to detect this
+     *      scenario and conclude that it is safe to ignore this update for now since there should also be a second
+     *      "updateSatellite" in flight that will be responded using the correct layer data.
+     *  </li>
+     * </ul>
+     * @param rscLayerObjectRef
+     * @param rscDataPojoRef
+     * @return Iff we are aware that we just threw away some old RscLayerData but a satellite might still refer to that.
+     */
+    @Override
+    protected boolean wasRscLayerDataRecentlyReplaced(
+        AbsRscLayerObject<Resource> rscDataRef,
+        RscLayerDataApi rscDataPojoRef
+    )
+    {
+        boolean ret = false;
+        @Nullable Optional<Integer> optReplacedByNewId;
+        int oldId = rscDataPojoRef.getId();
+        optReplacedByNewId = replacedLayerIdCache.get(oldId);
+        if (optReplacedByNewId != null)
+        {
+            if (optReplacedByNewId.isEmpty())
+            {
+                ret = true;
+            }
+            else
+            {
+                int replacedByNewId = optReplacedByNewId.get();
+                ret = replacedByNewId == rscDataRef.getRscLayerId();
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Needs to be called if a RscLayerData is replaced with new RscLayerData for the scenario described in
+     * {@link #wasRscLayerDataRecentlyReplaced(AbsRscLayerObject, RscLayerDataApi)}
+     *
+     * @param oldLayerRscIdRef The old LayerRscId that was/is being deleted
+     * @param layerRscIdRef The new LayerRscId if known. If an old layer-data was replaced with an entirely different
+     *   layer-structure such that no one to one mapping between old and new layerRscId is possible, just pass
+     *   <code>null</code> here and all <code>oldLayerRscId</code> is ignored, regardless what the new LayerRscId
+     *   is.
+     */
+    @SuppressWarnings("javadoc")
+    public void replacedLayerRscId(int oldLayerRscIdRef, @Nullable Integer layerRscIdRef)
+    {
+        replacedLayerIdCache.put(oldLayerRscIdRef, Optional.ofNullable(layerRscIdRef));
     }
 }

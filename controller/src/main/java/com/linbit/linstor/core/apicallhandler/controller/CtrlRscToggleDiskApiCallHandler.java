@@ -650,6 +650,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         if (!drbdRscDataSet.isEmpty())
         {
             DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) drbdRscDataSet.iterator().next();
+            payload.drbdRsc.replacingOldLayerRscId = drbdRscData.getRscLayerId();
             payload.drbdRsc.nodeId = drbdRscData.getNodeId().value;
         }
     }

@@ -38,6 +38,8 @@ public class LayerPayload
 
     public class DrbdRscPayload
     {
+        /** only for internal usage, do not let users set this! */
+        public @Nullable Integer replacingOldLayerRscId;
         public @Nullable Integer nodeId;
         public @Nullable Set<Integer> tcpPorts;
         public @Nullable Integer portCount;

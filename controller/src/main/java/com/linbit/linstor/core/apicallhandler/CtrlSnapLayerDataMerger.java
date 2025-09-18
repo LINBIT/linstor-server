@@ -548,4 +548,12 @@ public class CtrlSnapLayerDataMerger extends AbsLayerRscDataMerger<Snapshot>
         // ignored
     }
 
+    @Override
+    protected boolean wasRscLayerDataRecentlyReplaced(
+        AbsRscLayerObject<Snapshot> drbdRscDataRef,
+        RscLayerDataApi rscDataPojoRef
+    )
+    {
+        return false;
+    }
 }

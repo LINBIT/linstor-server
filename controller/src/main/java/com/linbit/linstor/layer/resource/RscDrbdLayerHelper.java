@@ -18,6 +18,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -97,6 +98,7 @@ public class RscDrbdLayerHelper extends
     private final Provider<RscNvmeLayerHelper> nvmeHelperProvider;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
     private final RemoteMap remoteMap;
+    private final CtrlRscLayerDataMerger ctrlRscLayerDataMerger;
 
     @Inject
     RscDrbdLayerHelper(
@@ -110,7 +112,8 @@ public class RscDrbdLayerHelper extends
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
         ModularCryptoProvider cryptoProviderRef,
-        RemoteMap remoteMapRef
+        RemoteMap remoteMapRef,
+        CtrlRscLayerDataMerger ctrlRscLayerDataMergerRef
     )
     {
         super(
@@ -131,6 +134,7 @@ public class RscDrbdLayerHelper extends
         storPoolResolveHelper = storPoolResolveHelperRef;
         cryptoProvider = cryptoProviderRef;
         remoteMap = remoteMapRef;
+        ctrlRscLayerDataMerger = ctrlRscLayerDataMergerRef;
     }
 
     @Override
@@ -272,8 +276,15 @@ public class RscDrbdLayerHelper extends
             initFlags |= DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue;
         }
 
+        int layerRscId = layerRscIdPool.autoAllocate();
+        @Nullable Integer oldLayerRscId = payloadRef.drbdRsc.replacingOldLayerRscId;
+        if (oldLayerRscId != null)
+        {
+            ctrlRscLayerDataMerger.replacedLayerRscId(oldLayerRscId, layerRscId);
+        }
+
         return layerDataFactory.createDrbdRscData(
-            layerRscIdPool.autoAllocate(),
+            layerRscId,
             rscRef,
             rscNameSuffixRef,
             parentObjectRef,
