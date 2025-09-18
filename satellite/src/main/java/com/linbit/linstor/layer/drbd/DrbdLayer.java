@@ -1574,6 +1574,30 @@ public class DrbdLayer implements DeviceLayer
     }
 
     /**
+     * Compares the contents of 2 res files if they are equal
+     * Starts comparing, after finding the 'resources "' section, because Linstor generates a header with date.
+     * @param resA String content of first res file to compare
+     * @param resB String content of second res file to compare
+     * @return true if real res file content is the same
+     */
+    private boolean isResFileEqual(String resA, String resB)
+    {
+        boolean equal;
+        int beginA = resA.indexOf("resource \"");
+        int beginB = resB.indexOf("resource \"");
+
+        if (beginA >= 0 && beginB >= 0)
+        {
+            equal = resA.substring(beginA).equals(resB.substring(beginB));
+        }
+        else
+        {
+            throw new ImplementationError("isResFileEqual should only be used for DRBD res files.");
+        }
+        return equal;
+    }
+
+    /**
      * Writes a new resfile if the content really changed.
      *
      * @param drbdRscData
@@ -1608,7 +1632,7 @@ public class DrbdLayer implements DeviceLayer
             drbdVersion
         ).build();
 
-        String onDiskContent = "";
+        String onDiskContent = "resource \"i\"{}";
         if (drbdRscData.resFileExists())
         {
             try
@@ -1626,7 +1650,7 @@ public class DrbdLayer implements DeviceLayer
             }
         }
 
-        if (!onDiskContent.equals(content))
+        if (!isResFileEqual(onDiskContent, content))
         {
             try (FileOutputStream resFileOut = new FileOutputStream(tmpResFile.toFile()))
             {
