@@ -2,15 +2,16 @@ package com.linbit.utils;
 
 import com.linbit.linstor.annotation.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.TreeMap;
 
 public class TimedCache<KEY, VALUE>
 {
-    private final Map<KEY, PairNonNull<VALUE, Long>> map = new HashMap<>();
+    private final Map<KEY, PairNonNull<VALUE, Long>> mapKV = new HashMap<>();
+    private final TreeMap<Long, List<KEY>> mapTime = new TreeMap<>();
     private long maxCacheTimeInMs;
 
     public TimedCache(long maxCacheTimeInMsRef)
@@ -33,22 +34,36 @@ public class TimedCache<KEY, VALUE>
         maxCacheTimeInMs = maxCacheTimeRef;
         if (purgeOutdatedEntriesRef)
         {
-            synchronized (map)
+            synchronized (mapKV)
             {
-                final long now = System.currentTimeMillis();
-                List<KEY> keysToRemove = new ArrayList<>();
-                for (Entry<KEY, PairNonNull<VALUE, Long>> entry : map.entrySet())
-                {
-                    if (!isEntryValid(now, entry.getValue().objB, maxCacheTimeRef))
-                    {
-                        keysToRemove.add(entry.getKey());
-                    }
-                }
-                for (KEY keyToRemove : keysToRemove)
-                {
-                    map.remove(keyToRemove);
-                }
+                purgeOld();
             }
+        }
+    }
+
+    private void purgeOld()
+    {
+        purgeOld(System.currentTimeMillis(), maxCacheTimeInMs);
+    }
+
+    private void purgeOld(long nowRef)
+    {
+        purgeOld(nowRef, maxCacheTimeInMs);
+    }
+
+    private void purgeOld(long nowRef, long maxCacheTimeRef)
+    {
+        final long purgeTime = nowRef - maxCacheTimeRef;
+
+        @Nullable Long floorKey = mapTime.floorKey(purgeTime);
+        while (floorKey != null)
+        {
+            List<KEY> keysToRemove = mapTime.remove(floorKey);
+            for (KEY keyToRemove : keysToRemove)
+            {
+                mapKV.remove(keyToRemove);
+            }
+            floorKey = mapTime.floorKey(purgeTime);
         }
     }
 
@@ -65,9 +80,9 @@ public class TimedCache<KEY, VALUE>
     public @Nullable VALUE get(KEY keyRef, long maxCacheTimeRef, long nowRef)
     {
         @Nullable VALUE ret = null;
-        synchronized (map)
+        synchronized (mapKV)
         {
-            @Nullable PairNonNull<VALUE, Long> pair = map.get(keyRef);
+            @Nullable PairNonNull<VALUE, Long> pair = mapKV.get(keyRef);
             if (pair != null)
             {
                 long createdTimestamp = pair.objB;
@@ -75,8 +90,7 @@ public class TimedCache<KEY, VALUE>
                 {
                     ret = pair.objA;
                 }
-                // technically we could remove the key from the map, but usually if we have a cache-miss a corresponding
-                // lvs/vgs is called shortly after which will then again populate this map with the given key
+                purgeOld(nowRef);
             }
             return ret;
         }
@@ -95,18 +109,58 @@ public class TimedCache<KEY, VALUE>
     public @Nullable VALUE put(KEY keyRef, VALUE valueRef, long nowRef)
     {
         @Nullable PairNonNull<VALUE, Long> oldPair;
-        synchronized (map)
+        synchronized (mapKV)
         {
-            oldPair = map.put(keyRef, new PairNonNull<>(valueRef, nowRef));
+            oldPair = mapKV.put(keyRef, new PairNonNull<>(valueRef, nowRef));
+            if (oldPair != null)
+            {
+                long oldTime = oldPair.objB;
+                // keyList could have been purged already via get or size call
+                @Nullable List<KEY> keyList = mapTime.get(oldTime);
+                if (keyList != null)
+                {
+                    keyList.remove(keyRef);
+                    if (keyList.isEmpty())
+                    {
+                        mapTime.remove(oldTime);
+                    }
+                }
+            }
+            mapTime.computeIfAbsent(nowRef, ignore -> new LinkedList<>())
+                .add(keyRef);
+            purgeOld(nowRef);
         }
         return oldPair == null ? null : oldPair.objA;
     }
 
     public void clear()
     {
-        synchronized (map)
+        synchronized (mapKV)
         {
-            map.clear();
+            mapKV.clear();
+            mapTime.clear();
+        }
+    }
+
+    public int size()
+    {
+        return size(true);
+    }
+
+    public int size(boolean purgeOldRef)
+    {
+        return size(purgeOldRef, System.currentTimeMillis());
+    }
+
+    public int size(boolean purgeOldRef, long nowRef)
+    {
+        synchronized (mapKV)
+        {
+            if (purgeOldRef)
+            {
+                purgeOld(nowRef);
+            }
+            return mapKV.size();
         }
     }
 }
