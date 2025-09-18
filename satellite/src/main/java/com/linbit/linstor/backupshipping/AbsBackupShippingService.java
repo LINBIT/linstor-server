@@ -1,12 +1,10 @@
 package com.linbit.linstor.backupshipping;
 
-import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
-import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
@@ -423,8 +421,6 @@ public abstract class AbsBackupShippingService implements SystemService
                 .getLinstorRemoteName() : s3orStltRemote.getName();
             if (!alreadyStarted(snapVlmData, s3orLinRemoteName.displayValue))
             {
-                // killIfRunning(sendRecvCommand);
-
                 Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
                 PairNonNull<Snapshot, RemoteName> shipKey = getShipKey(s3orLinRemoteName.displayValue, snap);
                 ShippingInfo info = shippingInfoMap.computeIfAbsent(shipKey, key -> new ShippingInfo());
@@ -872,35 +868,6 @@ public abstract class AbsBackupShippingService implements SystemService
         catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
-        }
-    }
-
-    private void killIfRunning(String cmdToKill) throws StorageException
-    {
-        try
-        {
-            OutputData outputData = extCmdFactory.create().exec(
-                "bash",
-                "-c",
-                "ps ax -o pid,command | grep '" + cmdToKill + "' | grep -v grep"
-            );
-            if (outputData.exitCode == 0) // != 0 means grep didnt find anything
-            {
-                String out = new String(outputData.stdoutData);
-                String[] lines = out.split("\n");
-                for (String line : lines)
-                {
-                    final String lineTrimmed = line.trim(); // ps prints a trailing space
-                    String pid = lineTrimmed.substring(0, lineTrimmed.indexOf(" "));
-                    // extCmdFactory.create().exec("pkill", "-9", "--parent", pid);
-                    extCmdFactory.create().exec("kill", pid);
-                }
-                Thread.sleep(500); // wait a bit so not just the process is killed but also the socket is closed
-            }
-        }
-        catch (ChildProcessTimeoutException | IOException | InterruptedException exc)
-        {
-            throw new StorageException("Failed to determine if command is still running: " + cmdToKill, exc);
         }
     }
 
