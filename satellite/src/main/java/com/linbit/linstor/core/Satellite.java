@@ -282,9 +282,7 @@ public final class Satellite
     }
 
     /**
-     * Adds /var/lib/drbd.d/ include to drbd.conf and ensures the /var/lib/drbd.d
-     * directory exists and removes any *.res file from it excluding .res files
-     * matching the regex from the "--keep-res" command line argument
+     * Adds /var/lib/drbd.d/ include to drbd.conf and ensures the /var/lib/drbd.d directory exists
      */
     private void ensureDrbdConfigSetup()
     {

@@ -91,8 +91,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.function.Function;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.event.Level;
@@ -139,11 +138,11 @@ public class StltApiCallHandler
     private final EventBroker eventBroker;
     private final DeviceProviderMapper deviceProviderMapper;
 
-    private WhitelistPropsReconfigurator whiteListPropsReconfigurator;
+    private final WhitelistPropsReconfigurator whiteListPropsReconfigurator;
 
     private final Provider<Long> apiCallId;
-    private DrbdStateTracker drbdStateTracker;
-    private DrbdEventPublisher drbdEventPublisher;
+    private final DrbdStateTracker drbdStateTracker;
+    private final DrbdEventPublisher drbdEventPublisher;
     private final BackupShippingMgr backupShippingMgr;
     private final StltApiCallHandlerUtils stltApiCallHandlerUtils;
     private final StltMigrationHandler stltMigrationHandler;
@@ -346,7 +345,7 @@ public class StltApiCallHandler
                 // first delete all kind of stuff
                 stltApiCallHandlerUtils.clearCoreMaps();
                 stltApiCallHandlerUtils.clearCaches();
-                deleteOldResFiles(); // new res files should be (re-)generated in the next devMgrCycle
+                deleteUnknownResFiles(resources); // new res files should be (re-)generated in the next devMgrCycle
 
                 // now start to (re-) create linstor objects received from controller
                 for (NodePojo node : nodes)
@@ -553,7 +552,7 @@ public class StltApiCallHandler
          */
 
         boolean triggerEvent = forceEventTrigger;
-        DrbdResource drbdResource = drbdStateTracker.getResource(rsc.getName());
+        @Nullable DrbdResource drbdResource = drbdStateTracker.getResource(rsc.getName());
         if (drbdResource != null && !drbdResource.isKnownByLinstor())
         {
             drbdResource.setKnownByLinstor(true);
@@ -615,7 +614,7 @@ public class StltApiCallHandler
             // local nodename needed by openflex driver
             stltConf.setProp(LinStor.KEY_NODE_NAME, controllerPeerConnector.getLocalNodeName().displayValue);
 
-            String extCmdWaitToStr = stltConf.getProp(ApiConsts.KEY_EXT_CMD_WAIT_TO);
+            @Nullable String extCmdWaitToStr = stltConf.getProp(ApiConsts.KEY_EXT_CMD_WAIT_TO);
             if (extCmdWaitToStr != null)
             {
                 ChildProcessHandler.dfltWaitTimeout = Long.parseLong(extCmdWaitToStr);
@@ -671,7 +670,7 @@ public class StltApiCallHandler
     {
         try
         {
-            Node localNode = controllerPeerConnector.getLocalNode();
+            @Nullable Node localNode = controllerPeerConnector.getLocalNode();
             if (localNode != null)
             {
                 for (StorPoolDefinition spd : storPoolDfnMap.values())
@@ -956,27 +955,15 @@ public class StltApiCallHandler
     }
 
 
-    private void deleteOldResFiles()
+    private void deleteUnknownResFiles(Set<RscPojo> resourcesToKeep)
     {
         try
         {
             Path varDrbdPath = Paths.get(platformStlt.sysRoot() + LinStor.CONFIG_PATH);
 
-            final Pattern keepResPattern = stltCfg.getDrbdKeepResPattern();
-            Function<Path, Boolean> keepFunc;
-            if (keepResPattern != null)
-            {
-                errorReporter.logInfo(
-                    "Removing res files from " + varDrbdPath + ", keeping files matching regex: " +
-                        keepResPattern.pattern()
-                );
-                keepFunc = (path) -> keepResPattern.matcher(path.getFileName().toString()).find();
-            }
-            else
-            {
-                errorReporter.logInfo("Removing all res files from " + varDrbdPath);
-                keepFunc = (path) -> false;
-            }
+            Set<String> namesToKeep = resourcesToKeep.stream()
+                .map(rscPojo -> rscPojo.getName() + ".res")
+                .collect(Collectors.toSet());
             try (Stream<Path> files = Files.list(varDrbdPath))
             {
                 files.filter(path -> path.toString().endsWith(".res"))
@@ -985,9 +972,14 @@ public class StltApiCallHandler
                         {
                             try
                             {
-                                if (!keepFunc.apply(filteredPathName))
+                                if (!namesToKeep.contains(filteredPathName.getFileName().toString()))
                                 {
+                                    errorReporter.logWarning("Removing unknown res file %s", filteredPathName);
                                     Files.delete(filteredPathName);
+                                }
+                                else
+                                {
+                                    errorReporter.logDebug("Keeping known res file %s", filteredPathName);
                                 }
                             }
                             catch (IOException ioExc)
@@ -1026,8 +1018,8 @@ public class StltApiCallHandler
     private class ApplyControllerData implements ApplyData
     {
         private final Map<String, String> satelliteProps;
-        private long fullSyncId;
-        private long updateId;
+        private final long fullSyncId;
+        private final long updateId;
 
         ApplyControllerData(Map<String, String> satellitePropsRef, long fullSyncIdRef, long updateIdRef)
         {
@@ -1063,10 +1055,10 @@ public class StltApiCallHandler
 
     private class ApplyNode implements ApplyData
     {
-        private @Nullable NodePojo nodePojo;
-        private @Nullable String deletedNodeName;
-        private long fullSyncId;
-        private long updateId;
+        private final @Nullable NodePojo nodePojo;
+        private final @Nullable String deletedNodeName;
+        private final long fullSyncId;
+        private final long updateId;
 
         ApplyNode(NodePojo nodePojoRef)
         {
@@ -1117,8 +1109,8 @@ public class StltApiCallHandler
     {
         private @Nullable RscPojo rscPojo;
         private @Nullable String deletedRscName;
-        private long fullSyncId;
-        private long updateId;
+        private final long fullSyncId;
+        private final long updateId;
 
         ApplyRscData(RscPojo rscPojoRef)
         {
@@ -1177,8 +1169,8 @@ public class StltApiCallHandler
     {
         private @Nullable StorPoolPojo storPoolPojo;
         private @Nullable String deletedStorPoolName;
-        private long fullSyncId;
-        private long updateId;
+        private final long fullSyncId;
+        private final long updateId;
 
         ApplyStorPool(StorPoolPojo storPoolPojoRef)
         {
