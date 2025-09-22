@@ -1084,11 +1084,12 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
-    protected boolean wasRscLayerDataRecentlyReplaced(
+    protected MismatchIdMergeStrategy getMismatchRscLayerIdMergeStrategy(
         AbsRscLayerObject<Resource> drbdRscDataRef,
         RscLayerDataApi rscDataPojoRef
     )
     {
-        return false;
+        // satellite always force-merges
+        return MismatchIdMergeStrategy.FORCE_MERGE;
     }
 }

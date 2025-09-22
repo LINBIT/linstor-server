@@ -150,10 +150,42 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         // rscLayerObject.setSuspendIo(rscLayerDataPojo.getSuspend());
 
         boolean merge = true;
-        if (rscLayerObject.getRscLayerId() != rscLayerDataPojo.getId() &&
-            wasRscLayerDataRecentlyReplaced(rscLayerObject, rscLayerDataPojo))
+        if (rscLayerObject.getRscLayerId() != rscLayerDataPojo.getId())
         {
-            merge = false;
+            /*
+             * TODO: this if only covers cases where the entire layer tree gets replaced with a new tree.
+             * If only a sub-tree should be swapped, we would need to include a similar check in all layer-specific
+             * merge methods. Instead of doing that, it might be easier to rework this merging code to be a bit more
+             * abstract/generic so that the different layers can reuse/share more code.
+             * Since currently we only swap entire trees instead of sub-trees and that only during a toggle-disk event,
+             * a similar if does exist in the DrbdLayer related code but not in others
+             */
+            MismatchIdMergeStrategy strategy = getMismatchRscLayerIdMergeStrategy(rscLayerObject, rscLayerDataPojo);
+            switch (strategy) {
+                case FORCE_MERGE:
+                    merge = true;
+                    if (parent == null)
+                    {
+                        // if we are in FORCE_MERGE strategy and our parent is null, which means that we are the
+                        // rootRscData object, we also need to update the resource object accordingly.
+                        rsc.setLayerData(apiCtx, rscLayerObject);
+                    }
+                    break;
+                case SKIP_MERGE:
+                    merge = false;
+                    break;
+                default:
+                    throw new ImplementationError(
+                        String.format(
+                            "unimplemented strategy case: %s. Pojo ID: %d (%s), rscLayerObject ID: %d(%s)",
+                            strategy.name(),
+                            rscLayerDataPojo.getId(),
+                            rscLayerDataPojo.getLayerKind(),
+                            rscLayerObject.getRscLayerId(),
+                            rscLayerObject.getLayerKind()
+                        )
+                    );
+            }
         }
         if (merge)
         {
@@ -192,10 +224,34 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         }
 
         boolean merge = true;
-        if (drbdRscData != null && drbdRscData.getRscLayerId() != rscDataPojo.getId() &&
-            wasRscLayerDataRecentlyReplaced(drbdRscData, rscDataPojo))
+        if (drbdRscData != null && drbdRscData.getRscLayerId() != rscDataPojo.getId())
         {
-            merge = false;
+            // TODO: see TODO/comment in merge method
+            MismatchIdMergeStrategy strategy = getMismatchRscLayerIdMergeStrategy(drbdRscData, rscDataPojo);
+            switch (strategy)
+            {
+                case FORCE_MERGE:
+                    /*
+                     * if the IDs are not equal and we also did not replace this DrbdRscData recently, just pretend that
+                     * this object was not found and let the implementation of this abstract class create a new
+                     * DrbdRscData.
+                     * Either way this will only be done on the satellite, since the controller's implementation of
+                     * createDrbdRscData throws an ImplementationError (as expected).
+                     */
+                    // for this ^ we have to delete drbdRscData to properly free the allocated TCP port(s) from the
+                    // NumberPool
+                    drbdRscData.delete(apiCtx);
+                    drbdRscData = null;
+                    break;
+                case SKIP_MERGE:
+                    merge = false;
+                    break;
+                default:
+                    throw new ImplementationError(
+                        "unimplemented strategy case: " + strategy + ". Pojo ID: " + rscDataPojo.getId() +
+                            " drbdRscData ID: " + drbdRscData.getRscLayerId()
+                    );
+            }
         }
         if (merge)
         {
@@ -254,7 +310,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         return drbdRscData;
     }
 
-    protected abstract boolean wasRscLayerDataRecentlyReplaced(
+    protected abstract MismatchIdMergeStrategy getMismatchRscLayerIdMergeStrategy(
         AbsRscLayerObject<RSC> rscLayerObjectRef,
         RscLayerDataApi rscDataPojoRef
     );
@@ -1122,4 +1178,10 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
 
     protected abstract void updateParent(AbsRscLayerObject<RSC> rscDataRef, AbsRscLayerObject<RSC> parentRef)
         throws DatabaseException;
+
+    protected enum MismatchIdMergeStrategy
+    {
+        FORCE_MERGE,
+        SKIP_MERGE
+    }
 }

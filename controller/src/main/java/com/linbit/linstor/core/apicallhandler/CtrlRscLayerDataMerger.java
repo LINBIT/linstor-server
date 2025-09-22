@@ -702,17 +702,22 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
      *      "updateSatellite" in flight that will be responded using the correct layer data.
      *  </li>
      * </ul>
+     *
+     * Since we are on the controller here, we currently never return {@link MismatchIdMergeStrategy#FORCE_MERGE} since
+     * that would imply that the satellite is allowed to change the structure of the layer-data including the IDs which
+     * is (currently) strictly controlled by the controller.
+     *
      * @param rscLayerObjectRef
      * @param rscDataPojoRef
      * @return Iff we are aware that we just threw away some old RscLayerData but a satellite might still refer to that.
      */
     @Override
-    protected boolean wasRscLayerDataRecentlyReplaced(
+    protected MismatchIdMergeStrategy getMismatchRscLayerIdMergeStrategy(
         AbsRscLayerObject<Resource> rscDataRef,
         RscLayerDataApi rscDataPojoRef
     )
     {
-        boolean ret = false;
+        MismatchIdMergeStrategy ret;
         @Nullable Optional<Integer> optReplacedByNewId;
         int oldId = rscDataPojoRef.getId();
         optReplacedByNewId = replacedLayerIdCache.get(oldId);
@@ -720,20 +725,37 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         {
             if (optReplacedByNewId.isEmpty())
             {
-                ret = true;
+                ret = MismatchIdMergeStrategy.SKIP_MERGE;
             }
             else
             {
                 int replacedByNewId = optReplacedByNewId.get();
-                ret = replacedByNewId == rscDataRef.getRscLayerId();
+                if (replacedByNewId == rscDataRef.getRscLayerId())
+                {
+                    ret = MismatchIdMergeStrategy.SKIP_MERGE;
+                }
+                else
+                {
+                    throw new ImplementationError(
+                        "Detected unexpected mismatching RscLayerId from satellite. Local ID:" +
+                            rscDataRef.getRscLayerId() + ", ID from satellite: " + rscDataPojoRef.getId()
+                        );
+                }
             }
+        }
+        else
+        {
+            throw new ImplementationError(
+                "Detected unexpected mismatching RscLayerId from satellite. Local ID:" + rscDataRef.getRscLayerId() +
+                    ", ID from satellite: " + rscDataPojoRef.getId()
+            );
         }
         return ret;
     }
 
     /**
      * Needs to be called if a RscLayerData is replaced with new RscLayerData for the scenario described in
-     * {@link #wasRscLayerDataRecentlyReplaced(AbsRscLayerObject, RscLayerDataApi)}
+     * {@link #getMismatchRscLayerIdMergeStrategy(AbsRscLayerObject, RscLayerDataApi)}
      *
      * @param oldLayerRscIdRef The old LayerRscId that was/is being deleted
      * @param layerRscIdRef The new LayerRscId if known. If an old layer-data was replaced with an entirely different

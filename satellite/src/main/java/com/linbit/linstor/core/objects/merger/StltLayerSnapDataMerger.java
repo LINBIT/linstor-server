@@ -1014,12 +1014,12 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     }
 
     @Override
-    protected boolean wasRscLayerDataRecentlyReplaced(
+    protected MismatchIdMergeStrategy getMismatchRscLayerIdMergeStrategy(
         AbsRscLayerObject<Snapshot> drbdRscDataRef,
         RscLayerDataApi rscDataPojoRef
     )
     {
-        return false;
+        return MismatchIdMergeStrategy.FORCE_MERGE;
     }
 
 }
