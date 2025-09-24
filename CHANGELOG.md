@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Encryption: Added systemd-creds support for masterpassphrase.
 - DRBD: Added Linstor/Drbd/auto-block-size
 - Backup: allow shipment of already existing snapshots
+- Node,evacuate: Added --target and --do-not-target options
 
 ### Changed
 

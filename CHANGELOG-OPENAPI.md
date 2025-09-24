@@ -9,6 +9,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Added PhysicalStorageCreate.vg_create_arguments.
   - Added PhysicalStorageCreate.lv_create_arguments.
   - Added PhysicalStorageCreate.zpool_create_arguments.
+  - Added RequestBody for /v1/nodes/{node}/evacuate to support target and do_not_target options
 
 ## [1.26.0]
 

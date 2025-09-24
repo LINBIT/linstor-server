@@ -97,6 +97,7 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.CollectionUtils;
 import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
@@ -1574,7 +1575,11 @@ public class CtrlNodeApiCallHandler
         );
     }
 
-    public Flux<ApiCallRc> evacuateNode(String nodeNameRef)
+    public Flux<ApiCallRc> evacuateNode(
+        String nodeNameRef,
+        @Nullable List<String> allowedTargetNodeNameStrListRef,
+        @Nullable List<String> prohibitedNodeNamesStrListRef
+    )
     {
         ResponseContext context = makeNodeContext(
             ApiOperation.makeModifyOperation(),
@@ -1590,13 +1595,23 @@ public class CtrlNodeApiCallHandler
                 () -> scopeRunner.fluxInTransactionalScope(
                     "Evacuate node (" + nodeNameRef + "): Find new storage pools",
                     lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
-                    () -> evacuateNodeInTrasaction(context, nodeNameRef)
+                    () -> evacuateNodeInTrasaction(
+                        context,
+                        nodeNameRef,
+                        allowedTargetNodeNameStrListRef,
+                        prohibitedNodeNamesStrListRef
+                    )
                 )
             )
         );
     }
 
-    private Flux<ApiCallRc> evacuateNodeInTrasaction(ResponseContext contextRef, String nodeNameEvacuateSourceStrRef)
+    private Flux<ApiCallRc> evacuateNodeInTrasaction(
+        ResponseContext contextRef,
+        String nodeNameEvacuateSourceStrRef,
+        @Nullable List<String> allowedTargetNodeNameStrListRef,
+        @Nullable List<String> prohibitedNodeNamesStrListRef
+    )
     {
         Flux<ApiCallRc> flux;
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -1690,7 +1705,11 @@ public class CtrlNodeApiCallHandler
                                     @Nullable Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeNameEvacuateSource);
                                     if (snap != null)
                                     {
-                                        StorPool sp = getStorPoolForEvacuation(rscDfn);
+                                        StorPool sp = getStorPoolForEvacuation(
+                                            rscDfn,
+                                            allowedTargetNodeNameStrListRef,
+                                            prohibitedNodeNamesStrListRef
+                                        );
                                         if (sp == null)
                                         {
                                             sp = getStorPoolForCopySnaps(rscDfn, snapDfn);
@@ -1735,7 +1754,11 @@ public class CtrlNodeApiCallHandler
                         }
                         else
                         {
-                            StorPool sp = getStorPoolForEvacuation(rscDfn);
+                            StorPool sp = getStorPoolForEvacuation(
+                                rscDfn,
+                                allowedTargetNodeNameStrListRef,
+                                prohibitedNodeNamesStrListRef
+                            );
                             if (sp == null)
                             {
                                 apiCallRc.addEntry(
@@ -1831,7 +1854,11 @@ public class CtrlNodeApiCallHandler
                             @Nullable Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeNameEvacuateSource);
                             if (snap != null)
                             {
-                                StorPool sp = getStorPoolForEvacuation(rscDfn);
+                                StorPool sp = getStorPoolForEvacuation(
+                                    rscDfn,
+                                    allowedTargetNodeNameStrListRef,
+                                    prohibitedNodeNamesStrListRef
+                                );
                                 if (sp == null)
                                 {
                                     sp = getStorPoolForCopySnaps(rscDfn, snapDfn);
@@ -1923,11 +1950,20 @@ public class CtrlNodeApiCallHandler
         return ret;
     }
 
-    private @Nullable StorPool getStorPoolForEvacuation(ResourceDefinition rscDfn) throws AccessDeniedException
+    private @Nullable StorPool getStorPoolForEvacuation(
+        ResourceDefinition rscDfn,
+        @Nullable List<String> allowedTargetNodeNameStrListRef,
+        @Nullable List<String> prohibitedNodeNamesStrListRef
+    )
+        throws AccessDeniedException
     {
         AccessContext peerCtx = peerAccCtx.get();
 
-        Set<StorPool> storPoolSet = null;
+        @Nullable Set<StorPool> storPoolSet = null;
+        List<String> allowedNodeNames = getAllowedNodeNamesStr(
+            allowedTargetNodeNameStrListRef,
+            prohibitedNodeNamesStrListRef
+        );
 
         // first try to toggle disk if possible
         Set<Resource> disklessRscSet = ResourceUtils.filterResourcesDrbdDiskless(rscDfn, peerCtx);
@@ -1938,6 +1974,9 @@ public class CtrlNodeApiCallHandler
             List<String> disklessNodeNameStrList = disklessRscSet.stream()
                 .map(rsc -> rsc.getNode().getName().displayValue)
                 .collect(Collectors.toList());
+
+            disklessNodeNameStrList.retainAll(allowedNodeNames);
+
             storPoolSet = autoplacer.autoPlace(
                 AutoSelectFilterPojo.merge(
                     new AutoSelectFilterBuilder()
@@ -1951,12 +1990,17 @@ public class CtrlNodeApiCallHandler
             );
         }
 
+        AutoSelectFilterPojo autoSelectNodeNameFilter = new AutoSelectFilterBuilder()
+            .setNodeNameList(allowedNodeNames)
+            .build();
+
         if (storPoolSet == null || storPoolSet.isEmpty())
         {
             errorReporter.logTrace("searching for diskful replacements to fulfill replCt");
             // no storage pool found for toggle disk. find any other storage pool
             storPoolSet = autoplacer.autoPlace(
                 AutoSelectFilterPojo.merge(
+                    autoSelectNodeNameFilter,
                     rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
                 ),
                 rscDfn,
@@ -1971,6 +2015,7 @@ public class CtrlNodeApiCallHandler
             // node to keep the current replica count
             storPoolSet = autoplacer.autoPlace(
                 AutoSelectFilterPojo.merge(
+                    autoSelectNodeNameFilter,
                     new AutoSelectFilterBuilder()
                         .setPlaceCount(rscDfn.getResourceCount()) // EVACUATE flag already set, therefore that rsc will
                                                                   // not count -> effectively "+1" while overriding the
@@ -1983,7 +2028,7 @@ public class CtrlNodeApiCallHandler
             );
         }
 
-        StorPool ret = null;
+        @Nullable StorPool ret = null;
         if (storPoolSet != null && !storPoolSet.isEmpty())
         {
             ret = storPoolSet.iterator().next();
@@ -2018,5 +2063,50 @@ public class CtrlNodeApiCallHandler
             rscSize
         );
         return storPoolSet != null && !storPoolSet.isEmpty() ? storPoolSet.iterator().next() : null;
+    }
+
+    private List<String> getAllowedNodeNamesStr(
+        @Nullable List<String> allowedTargetNodeNameStrListRef,
+        @Nullable List<String> prohibitedNodeNamesStrListRef
+    )
+    {
+        List<String> ret = new ArrayList<>();
+        try
+        {
+            if (!CollectionUtils.isEmpty(allowedTargetNodeNameStrListRef))
+            {
+                if (!CollectionUtils.isEmpty(prohibitedNodeNamesStrListRef))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_CONF,
+                            "Must not use --target and --do-not-target in the same request"
+                        )
+                    );
+                }
+                for (NodeName nodeName : nodeRepository.getMapForView(apiCtx).keySet())
+                {
+                    if (CollectionUtils.contains(nodeName, allowedTargetNodeNameStrListRef))
+                    {
+                        ret.add(nodeName.displayValue);
+                    }
+                }
+            }
+            else
+            {
+                for (NodeName nodeName : nodeRepository.getMapForView(apiCtx).keySet())
+                {
+                    if (!CollectionUtils.contains(nodeName, prohibitedNodeNamesStrListRef))
+                    {
+                        ret.add(nodeName.displayValue);
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
     }
 }

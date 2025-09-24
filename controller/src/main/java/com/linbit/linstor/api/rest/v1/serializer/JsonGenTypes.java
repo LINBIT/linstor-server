@@ -105,6 +105,19 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class NodeEvacuate
+    {
+        /**
+         * List of nodes that are allowed to be used as evacuation-target
+         */
+        public List<String> target = Collections.emptyList();
+        /**
+         * List of nodes that are prohibited to be used as evacuation-target
+         */
+        public List<String> do_not_target = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class NetInterface
     {
         public String name;

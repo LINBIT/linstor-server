@@ -363,16 +363,37 @@ public class Nodes
     public void evacuateNode(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
-        @PathParam("nodeName") String nodeName
+        @PathParam("nodeName") String nodeName,
+        @Nullable String jsonData
     )
     {
-        final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.evacuateNode(nodeName);
-        requestHelper.doFlux(
-            ApiConsts.API_NODE_EVACUATE,
-            request,
-            asyncResponse,
-            ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
-        );
+        try
+        {
+            JsonGenTypes.NodeEvacuate data;
+            if (jsonData != null && !jsonData.isEmpty())
+            {
+                data = objectMapper.readValue(jsonData, JsonGenTypes.NodeEvacuate.class);
+            }
+            else
+            {
+                data = new JsonGenTypes.NodeEvacuate();
+            }
+            final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.evacuateNode(
+                nodeName,
+                data.target,
+                data.do_not_target
+            );
+            requestHelper.doFlux(
+                ApiConsts.API_NODE_EVACUATE,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK)
+            );
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 
     @GET

@@ -946,6 +946,11 @@ paths:
                 $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeEvacuate'
   /v1/nodes/ebs:
     post:
       tags:
@@ -6172,6 +6177,19 @@ components:
           type: boolean
         delete_snapshots:
           type: boolean
+    NodeEvacuate:
+      type: object
+      properties:
+        target:
+          type: array
+          items:
+            type: string
+          description: List of nodes that are allowed to be used as evacuation-target
+        do_not_target:
+          type: array
+          items:
+            type: string
+          description: List of nodes that are prohibited to be used as evacuation-target
     NetInterface:
       type: object
       required:
