@@ -441,7 +441,9 @@ public class CtrlRscGrpApiCallHandler
         HashSet<String> deletePropKeysRef,
         HashSet<String> deleteNamespacesRef,
         AutoSelectFilterApi autoApiRef,
-        @Nullable Short peerSlotsRef
+        @Nullable Short peerSlotsRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -470,6 +472,8 @@ public class CtrlRscGrpApiCallHandler
                     deleteNamespacesRef,
                     autoApiRef,
                     peerSlotsRef,
+                    copyAllSnapsRef,
+                    snapNamesToCopyRef,
                     context
                 ),
                 MDC.getCopyOfContextMap()
@@ -485,6 +489,8 @@ public class CtrlRscGrpApiCallHandler
         HashSet<String> deleteNamespacesRef,
         @Nullable AutoSelectFilterApi autoApiRef,
         @Nullable Short peerSlotsRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef,
         ResponseContext context
     )
     {
@@ -595,7 +601,9 @@ public class CtrlRscGrpApiCallHandler
                             reRunAutoPlace = reRunAutoPlace.concatWith(
                                 ctrlRscAutoPlaceApiCallHandler.autoPlace(
                                     rscDfn.getName().displayValue,
-                                    autoApiRef
+                                    autoApiRef,
+                                    copyAllSnapsRef,
+                                    snapNamesToCopyRef
                                 )
                             );
                         }
@@ -1120,6 +1128,8 @@ public class CtrlRscGrpApiCallHandler
                      */
                     rscDfn.getName().displayValue,
                     autoSelectFilterPojo,
+                    false,
+                    null,
                     contextRef
                 );
             }
@@ -1400,7 +1410,9 @@ public class CtrlRscGrpApiCallHandler
 
     public Flux<ApiCallRc> adjust(
         String rscGrpNameRef,
-        @Nullable AutoSelectFilterApi adjustAutoSelectFilterRef
+        @Nullable AutoSelectFilterApi adjustAutoSelectFilterRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -1429,13 +1441,19 @@ public class CtrlRscGrpApiCallHandler
                 () -> adjustInTransaction(
                     rscGrpNameRef,
                     adjustAutoSelectFilterRef,
+                    copyAllSnapsRef,
+                    snapNamesToCopyRef,
                     context
                 )
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    public Flux<ApiCallRc> adjustAll(AutoSelectFilterApi adjustAutoSelectFilterRef)
+    public Flux<ApiCallRc> adjustAll(
+        AutoSelectFilterApi adjustAutoSelectFilterRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef
+    )
     {
         Map<String, String> objRefs = new TreeMap<>();
 
@@ -1461,6 +1479,8 @@ public class CtrlRscGrpApiCallHandler
                 ),
                 () -> adjustAllInTransaction(
                     adjustAutoSelectFilterRef,
+                    copyAllSnapsRef,
+                    snapNamesToCopyRef,
                     context
                 )
             )
@@ -1469,6 +1489,8 @@ public class CtrlRscGrpApiCallHandler
 
     private Flux<ApiCallRc> adjustAllInTransaction(
         AutoSelectFilterApi adjustAutoSelectFilterRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef,
         ResponseContext contextRef
     )
     {
@@ -1478,7 +1500,13 @@ public class CtrlRscGrpApiCallHandler
             for (ResourceGroup rg : resourceGroupRepository.getMapForView(peerAccCtx.get()).values())
             {
                 ret = ret.concatWith(
-                    adjustInTransaction(rg.getName().displayValue, adjustAutoSelectFilterRef, contextRef)
+                    adjustInTransaction(
+                        rg.getName().displayValue,
+                        adjustAutoSelectFilterRef,
+                        copyAllSnapsRef,
+                        snapNamesToCopyRef,
+                        contextRef
+                    )
                 );
             }
         }
@@ -1496,6 +1524,8 @@ public class CtrlRscGrpApiCallHandler
     private Flux<ApiCallRc> adjustInTransaction(
         String rscGrpNameRef,
         @Nullable AutoSelectFilterApi adjustAutoSelectFilterRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef,
         ResponseContext contextRef
     )
     {
@@ -1516,6 +1546,8 @@ public class CtrlRscGrpApiCallHandler
                     ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
                         rscDfn.getName().displayValue,
                         autoPlaceConfig,
+                        copyAllSnapsRef,
+                        snapNamesToCopyRef,
                         contextRef
                     )
                 );

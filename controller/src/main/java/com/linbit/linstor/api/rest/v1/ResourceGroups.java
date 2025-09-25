@@ -218,14 +218,16 @@ public class ResourceGroups
             );
             AutoSelectFilterApi modifyAutoSelectFilter = selectFilterToApi(modifyData.select_filter);
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.modify(
-                    rscGrpName,
-                    modifyData.description,
-                    modifyData.override_props,
-                    new HashSet<>(modifyData.delete_props),
-                    new HashSet<>(modifyData.delete_namespaces),
-                    modifyAutoSelectFilter,
-                    parsePeerSlots(modifyData.peer_slots)
-                );
+                rscGrpName,
+                modifyData.description,
+                modifyData.override_props,
+                new HashSet<>(modifyData.delete_props),
+                new HashSet<>(modifyData.delete_namespaces),
+                modifyAutoSelectFilter,
+                parsePeerSlots(modifyData.peer_slots),
+                modifyData.copy_all_snaps != null && modifyData.copy_all_snaps,
+                modifyData.snap_names
+            );
 
             requestHelper.doFlux(
                 ApiConsts.API_MOD_RSC_GRP,
@@ -459,7 +461,12 @@ public class ResourceGroups
             }
             AutoSelectFilterApi adjustAutoSelectFilter = selectFilterToApi(data.select_filter);
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler
-                .adjust(rscGrpName, adjustAutoSelectFilter);
+                .adjust(
+                    rscGrpName,
+                    adjustAutoSelectFilter,
+                    data.copy_all_snaps != null && data.copy_all_snaps,
+                    data.snap_names
+                );
 
             requestHelper.doFlux(
                 ApiConsts.API_ADJUST_RSC_GRP,
@@ -497,7 +504,11 @@ public class ResourceGroups
                 data = new JsonGenTypes.ResourceGroupAdjust();
             }
             AutoSelectFilterApi adjustAutoSelectFilter = selectFilterToApi(data.select_filter);
-            Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.adjustAll(adjustAutoSelectFilter);
+            Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.adjustAll(
+                adjustAutoSelectFilter,
+                data.copy_all_snaps != null && data.copy_all_snaps,
+                data.snap_names
+            );
 
             requestHelper.doFlux(
                 ApiConsts.API_ADJUST_RSC_GRP,

@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.CopySnapsHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -55,6 +56,7 @@ public class CtrlRscCrtApiCallHandler
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscAutoHelper autoHelper;
+    private final CopySnapsHelper copySnapHelper;
 
     @Inject
     public CtrlRscCrtApiCallHandler(
@@ -64,7 +66,8 @@ public class CtrlRscCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
-        CtrlRscAutoHelper autoHelperRef
+        CtrlRscAutoHelper autoHelperRef,
+        CopySnapsHelper copySnapHelperRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -74,11 +77,14 @@ public class CtrlRscCrtApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         autoHelper = autoHelperRef;
+        copySnapHelper = copySnapHelperRef;
     }
 
     public Flux<ApiCallRc> createResource(
         List<ResourceWithPayloadApi> rscApiList,
-        @Nullable DiskfulBy diskfulByRef
+        @Nullable DiskfulBy diskfulByRef,
+        boolean copyAllSnaps,
+        List<String> snapNames
     )
     {
         List<String> rscNames = rscApiList.stream()
@@ -120,7 +126,14 @@ public class CtrlRscCrtApiCallHandler
                             LockType.WRITE,
                             LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP
                         ),
-                        () -> createResourceInTransaction(rscApiList, context, thinFreeCapacities, diskfulByRef),
+                        () -> createResourceInTransaction(
+                            rscApiList,
+                            context,
+                            thinFreeCapacities,
+                            diskfulByRef,
+                            copyAllSnaps,
+                            snapNames
+                        ),
                         logContextMap
                     )
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
@@ -130,15 +143,20 @@ public class CtrlRscCrtApiCallHandler
     }
 
     /**
-     * @param rscApiList Resources to create; at least one; all must belong to the same resource definition
+     * @param rscApiList
+     *     Resources to create; at least one; all must belong to the same resource definition
      * @param diskfulByRef
+     * @param snapNamesToCopyRef
+     * @param copyAllSnapsRef
      * @param layerStackStrListRef
      */
     private Flux<ApiCallRc> createResourceInTransaction(
         List<ResourceWithPayloadApi> rscApiList,
         ResponseContext context,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        @Nullable DiskfulBy diskfulByRef
+        @Nullable DiskfulBy diskfulByRef,
+        boolean copyAllSnapsRef,
+        List<String> snapNamesToCopyRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -204,6 +222,7 @@ public class CtrlRscCrtApiCallHandler
         return Flux.<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
             .concatWith(Flux.merge(autoFlux))
+            .concatWith(copySnapHelper.getCopyFlux(deployedResources, copyAllSnapsRef, snapNamesToCopyRef, context))
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))

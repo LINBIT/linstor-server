@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -48,7 +49,6 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.UuidUtils;
 
-import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -555,7 +555,8 @@ public class CtrlRemoteApiCallHandler
         );
     }
 
-    private URL createUrlWithDefaults(String urlRef)
+
+    public static URL createUrlWithDefaults(String urlRef)
     {
         URL url;
 

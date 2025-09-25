@@ -296,6 +296,7 @@ public class Backups
             JsonGenTypes.BackupAbort data = objectMapper.readValue(jsonData, JsonGenTypes.BackupAbort.class);
             Flux<ApiCallRc> deleteFlux = backupApiCallHandler.backupAbort(
                 data.rsc_name,
+                data.snapshot,
                 data.restore != null && data.restore,
                 data.create != null && data.create,
                 remoteName

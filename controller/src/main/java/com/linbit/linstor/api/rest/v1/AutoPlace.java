@@ -62,7 +62,9 @@ public class AutoPlace
 
             Flux<ApiCallRc> flux = ctrlRscAutoPlaceApiCallHandler.autoPlace(
                 rscName,
-                new Json.AutoSelectFilterData(autoPlaceRequest.select_filter)
+                new Json.AutoSelectFilterData(autoPlaceRequest.select_filter),
+                autoPlaceRequest.copy_all_snaps != null && autoPlaceRequest.copy_all_snaps,
+                autoPlaceRequest.snap_names
             );
 
             requestHelper.doFlux(

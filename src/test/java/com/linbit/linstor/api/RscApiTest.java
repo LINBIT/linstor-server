@@ -222,7 +222,9 @@ public class RscApiTest extends ApiTestBase
                             .build()
                     )
                 ),
-                Resource.DiskfulBy.USER
+                Resource.DiskfulBy.USER,
+                false,
+                null
             )
             .contextWrite(contextWrite()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;

@@ -3066,7 +3066,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     {
                         return portCount;
                     }
-                }
+                },
+                false,
+                null
             ).contextWrite(contextWrite()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }

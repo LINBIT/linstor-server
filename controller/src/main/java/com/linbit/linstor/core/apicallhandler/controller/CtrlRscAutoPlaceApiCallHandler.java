@@ -17,6 +17,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.CopySnapsHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -78,6 +79,7 @@ public class CtrlRscAutoPlaceApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<CtrlRscAutoHelper> autoHelperProvider;
+    private final CopySnapsHelper copySnapHelper;
 
     @Inject
     public CtrlRscAutoPlaceApiCallHandler(
@@ -93,7 +95,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<CtrlRscAutoHelper> autoHelperProviderRef
+        Provider<CtrlRscAutoHelper> autoHelperProviderRef,
+        CopySnapsHelper copySnapHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -109,11 +112,14 @@ public class CtrlRscAutoPlaceApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         autoHelperProvider = autoHelperProviderRef;
+        copySnapHelper = copySnapHelperRef;
     }
 
     public Flux<ApiCallRc> autoPlace(
         String rscNameStr,
-        AutoSelectFilterApi selectFilter
+        AutoSelectFilterApi selectFilter,
+        boolean copyAllSnapsRef,
+        List<String> snapNamesToCopyRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -141,6 +147,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                 () -> autoPlaceInTransaction(
                     rscNameStr,
                     selectFilter,
+                    copyAllSnapsRef,
+                    snapNamesToCopyRef,
                     context
                 )
                 )
@@ -151,6 +159,8 @@ public class CtrlRscAutoPlaceApiCallHandler
     Flux<ApiCallRc> autoPlaceInTransaction(
         String rscNameStr,
         @Nullable AutoSelectFilterApi selectFilterRef,
+        boolean copyAllSnapsRef,
+        List<String> snapNamesToCopyRef,
         ResponseContext context
     )
     {
@@ -306,7 +316,10 @@ public class CtrlRscAutoPlaceApiCallHandler
                     ctrlRscCrtApiHelper.deployResources(context, deployedResources.objB);
                 deploymentResponses = Flux.merge(deployedResources.objA)
                     .concatWith(deploymentResponses)
-                    .concatWith(autoFlux);
+                    .concatWith(autoFlux)
+                    .concatWith(
+                        copySnapHelper.getCopyFlux(deployedResources.objB, copyAllSnapsRef, snapNamesToCopyRef, context)
+                    );
             }
             else
             {

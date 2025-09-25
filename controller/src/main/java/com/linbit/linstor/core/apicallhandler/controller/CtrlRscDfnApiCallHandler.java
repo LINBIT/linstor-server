@@ -602,7 +602,9 @@ public class CtrlRscDfnApiCallHandler
                     autoFlux = autoFlux.concatWith(
                         ctrlRscAutoPlaceApiCallHandler.autoPlace(
                             rscDfn.getName().displayValue,
-                            rscGrp.getAutoPlaceConfig().getApiData()
+                            rscGrp.getAutoPlaceConfig().getApiData(),
+                            false,
+                            null
                         )
                     );
                 }

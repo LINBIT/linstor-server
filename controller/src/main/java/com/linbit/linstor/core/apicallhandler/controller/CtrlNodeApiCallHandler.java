@@ -1714,7 +1714,9 @@ public class CtrlNodeApiCallHandler
                                 createOrToggleDiskFlux = ctrlRscCrtApiCallHandler
                                     .createResource(
                                         Collections.singletonList(createRscPojo),
-                                        Resource.DiskfulBy.AUTO_PLACER
+                                        Resource.DiskfulBy.AUTO_PLACER,
+                                        true, // TODO: evac-prop to copy all snaps
+                                        null
                                     );
                             }
                             fluxList.add(

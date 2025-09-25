@@ -484,6 +484,8 @@ public class JsonGenTypes
         public @Nullable Integer drbd_node_id;
         public @Nullable Integer drbd_tcp_port_count;
         public List<Integer> drbd_tcp_ports = Collections.emptyList();
+        public List<String> snap_names = Collections.emptyList();
+        public @Nullable Boolean copy_all_snaps;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -495,6 +497,8 @@ public class JsonGenTypes
          */
         public boolean diskful = false;
         public List<Integer> drbd_tcp_ports = Collections.emptyList();
+        public List<String> snap_names = Collections.emptyList();
+        public @Nullable Boolean copy_all_snaps;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -728,6 +732,8 @@ public class JsonGenTypes
         public List<String> delete_namespaces = Collections.emptyList();
         public @Nullable AutoSelectFilter select_filter;
         public @Nullable Integer peer_slots;
+        public List<String> snap_names = Collections.emptyList();
+        public @Nullable Boolean copy_all_snaps;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -800,6 +806,8 @@ public class JsonGenTypes
     public static class ResourceGroupAdjust
     {
         public @Nullable AutoSelectFilter select_filter;
+        public List<String> snap_names = Collections.emptyList();
+        public @Nullable Boolean copy_all_snaps;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -808,6 +816,8 @@ public class JsonGenTypes
         public boolean diskless_on_remaining = false;
         public AutoSelectFilter select_filter = new AutoSelectFilter();
         public @Nullable List<String> layer_list = null;
+        public List<String> snap_names = Collections.emptyList();
+        public @Nullable Boolean copy_all_snaps;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -6718,6 +6718,12 @@ components:
           items:
             type: integer
             format: int32
+        snap_names:
+          type: array
+          items:
+            type: string
+        copy_all_snaps:
+          type: boolean
     ResourceMakeAvailable:
       type: object
       properties:
@@ -6734,6 +6740,12 @@ components:
           items:
             type: integer
             format: int32
+        snap_names:
+          type: array
+          items:
+            type: string
+        copy_all_snaps:
+          type: boolean
     ResourceModify:
       type: object
       properties:
@@ -7034,6 +7046,12 @@ components:
         peer_slots:
           type: integer
           format: int32
+        snap_names:
+          type: array
+          items:
+            type: string
+        copy_all_snaps:
+          type: boolean
     ResourceGroupSpawn:
       type: object
       properties:
@@ -7123,6 +7141,12 @@ components:
       properties:
         select_filter:
           $ref: '#/components/schemas/AutoSelectFilter'
+        snap_names:
+          type: array
+          items:
+            type: string
+        copy_all_snaps:
+          type: boolean
     AutoPlaceRequest:
       type: object
       required:
@@ -7138,6 +7162,12 @@ components:
           items:
             $ref: '#/components/schemas/LayerType'
           default: null
+        snap_names:
+          type: array
+          items:
+            type: string
+        copy_all_snaps:
+          type: boolean
     AutoSelectFilter:
       # do not add defaults
       type: object

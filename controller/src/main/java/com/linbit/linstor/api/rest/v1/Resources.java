@@ -214,9 +214,13 @@ public class Resources
                 .map(resourceCreateData -> new ResourceWithPayload(resourceCreateData, rscName))
                 .collect(Collectors.toList());
 
+            @Nullable Boolean copyAllSnaps = rscList.get(0).copy_all_snaps;
             Flux<ApiCallRc> flux = ctrlRscCrtApiCallHandler.createResource(
                 rscWithPayloadApiList,
-                Resource.DiskfulBy.USER
+                Resource.DiskfulBy.USER,
+                copyAllSnaps != null && copyAllSnaps,
+                rscList.get(0).snap_names
+
             );
 
             requestHelper.doFlux(
@@ -334,7 +338,9 @@ public class Resources
                     rscNameRef,
                     rscData.layer_list,
                     rscData.diskful,
-                    rscData.drbd_tcp_ports
+                    rscData.drbd_tcp_ports,
+                    rscData.copy_all_snaps != null && rscData.copy_all_snaps,
+                    rscData.snap_names
                 );
             requestHelper.doFlux(
                 ApiConsts.API_MAKE_RSC_AVAIL,

@@ -170,7 +170,7 @@ public class CtrlBackupL2LSrcApiCallHandler
      * also do a bunch of checks to ensure the shipping is possible in the first place
      */
     public Flux<ApiCallRc> shipBackup(
-        String srcNodeNameRef,
+        @Nullable String srcNodeNameRef,
         String srcRscNameRef,
         String linstorRemoteNameRef,
         String dstRscNameRef,
@@ -215,7 +215,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     private Flux<ApiCallRc> shipBackupInTransaction(
-        String srcNodeNameRef,
+        @Nullable String srcNodeNameRef,
         String srcRscNameRef,
         String linstorRemoteNameRef,
         String dstRscNameRef,

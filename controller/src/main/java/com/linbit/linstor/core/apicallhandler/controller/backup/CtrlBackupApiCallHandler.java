@@ -1093,12 +1093,18 @@ public class CtrlBackupApiCallHandler
         );
     }
 
-    public Flux<ApiCallRc> backupAbort(String rscNameRef, boolean restore, boolean create, String remoteNameRef)
+    public Flux<ApiCallRc> backupAbort(
+        String rscNameRef,
+        @Nullable String snapNameRef,
+        boolean restore,
+        boolean create,
+        String remoteNameRef
+    )
     {
         return scopeRunner.fluxInTransactionalScope(
             "prepare for abort backup",
             lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
-            () -> backupAbortInTransaction(rscNameRef, restore, create, remoteNameRef)
+            () -> backupAbortInTransaction(rscNameRef, snapNameRef, restore, create, remoteNameRef)
         );
     }
 
@@ -1108,6 +1114,7 @@ public class CtrlBackupApiCallHandler
      */
     private Flux<ApiCallRc> backupAbortInTransaction(
         String rscNameRef,
+        @Nullable String snapNameRef,
         boolean restorePrm,
         boolean createPrm,
         String remoteNameRef
@@ -1120,7 +1127,10 @@ public class CtrlBackupApiCallHandler
         // immediately remove any queued snapshots
         for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
         {
-            backupInfoMgr.deleteFromQueue(snapDfn, remote);
+            if (snapNameRef == null || snapDfn.getName().displayValue.equals(snapNameRef))
+            {
+                backupInfoMgr.deleteFromQueue(snapDfn, remote);
+            }
         }
         Set<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn, remote);
         if (!snapDfns.isEmpty())
@@ -1142,72 +1152,75 @@ public class CtrlBackupApiCallHandler
             List<PairNonNull<String, String>> stltRemoteAndSnapNamesToUpdateShippingAbort = new ArrayList<>();
             for (SnapshotDefinition snapDfn : snapDfns)
             {
-                boolean isSnapDfnSource = InternalApiConsts.VALUE_SHIPPING.equals(
-                    BackupShippingUtils.getSourceShippingStatus(snapDfn, remoteNameRef, peerAccCtx.get())
-                );
-                boolean isSnapDfnTarget = InternalApiConsts.VALUE_SHIPPING.equals(
-                    BackupShippingUtils.getTargetShippingStatus(snapDfn, peerAccCtx.get())
-                );
-                boolean abort = isSnapDfnSource && create || isSnapDfnTarget && restore;
-                if (isSnapDfnSource && create)
+                if (snapNameRef == null || snapDfn.getName().displayValue.equals(snapNameRef))
                 {
-                    String remoteName = snapDfn.getSnapDfnProps(peerAccCtx.get())
-                        .getProp(
-                            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                            BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" +
-                                remoteNameRef
-                        );
-                    // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
-                    // this set will not be used anyway, so no need to check for that
-                    stltRemoteAndSnapNamesToUpdateShippingAbort.add(
-                        new PairNonNull<>(remoteName, snapDfn.getName().displayValue)
+                    boolean isSnapDfnSource = InternalApiConsts.VALUE_SHIPPING.equals(
+                        BackupShippingUtils.getSourceShippingStatus(snapDfn, remoteNameRef, peerAccCtx.get())
                     );
-                }
-                else if (isSnapDfnTarget && restore)
-                {
-                    String remoteName = snapDfn.getSnapDfnProps(peerAccCtx.get())
-                        .getProp(
-                            InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                            BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
-                        );
-                    // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
-                    // this set will not be used anyway, so no need to check for that
-                    stltRemoteAndSnapNamesToUpdateShippingAbort.add(
-                        new PairNonNull<>(remoteName, snapDfn.getName().displayValue)
+                    boolean isSnapDfnTarget = InternalApiConsts.VALUE_SHIPPING.equals(
+                        BackupShippingUtils.getTargetShippingStatus(snapDfn, peerAccCtx.get())
                     );
-                }
-                if (!isSnapDfnSource && create && !isSnapDfnTarget)
-                {
-                    // this can happen for l2l-shipments if the target-cluster fails to start the receive, since
-                    // BACKUP_SOURCE is set in a later transaction than SHIPPING, therefore we need to remove the
-                    // SHIPPING flag if we are aborting creates (otherwise the snap is stuck unable to be aborted or
-                    // deleted)
-                    if (
-                        InternalApiConsts.VALUE_PREPARE_SHIPPING.equals(
-                            BackupShippingUtils.getSourceShippingStatus(snapDfn, remoteNameRef, peerAccCtx.get())
+                    boolean abort = isSnapDfnSource && create || isSnapDfnTarget && restore;
+                    if (isSnapDfnSource && create)
+                    {
+                        String remoteName = snapDfn.getSnapDfnProps(peerAccCtx.get())
+                            .getProp(
+                                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                                BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" +
+                                    remoteNameRef
+                            );
+                        // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
+                        // this set will not be used anyway, so no need to check for that
+                        stltRemoteAndSnapNamesToUpdateShippingAbort.add(
+                            new PairNonNull<>(remoteName, snapDfn.getName().displayValue)
+                        );
+                    }
+                    else if (isSnapDfnTarget && restore)
+                    {
+                        String remoteName = snapDfn.getSnapDfnProps(peerAccCtx.get())
+                            .getProp(
+                                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                                BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
+                            );
+                        // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
+                        // this set will not be used anyway, so no need to check for that
+                        stltRemoteAndSnapNamesToUpdateShippingAbort.add(
+                            new PairNonNull<>(remoteName, snapDfn.getName().displayValue)
+                        );
+                    }
+                    if (!isSnapDfnSource && create && !isSnapDfnTarget)
+                    {
+                        // this can happen for l2l-shipments if the target-cluster fails to start the receive, since
+                        // BACKUP_SOURCE is set in a later transaction than SHIPPING, therefore we need to remove the
+                        // SHIPPING flag if we are aborting creates (otherwise the snap is stuck unable to be aborted or
+                        // deleted)
+                        if (
+                            InternalApiConsts.VALUE_PREPARE_SHIPPING.equals(
+                                BackupShippingUtils.getSourceShippingStatus(snapDfn, remoteNameRef, peerAccCtx.get())
+                            )
                         )
-                    )
-                    {
-                        snapDfnsToUpdateShippingPrepare.get(KEY_SRC).add(snapDfn);
-                    }
-                    else if (
-                        InternalApiConsts.VALUE_PREPARE_SHIPPING.equals(
-                            BackupShippingUtils.getTargetShippingStatus(snapDfn, peerAccCtx.get())
+                        {
+                            snapDfnsToUpdateShippingPrepare.get(KEY_SRC).add(snapDfn);
+                        }
+                        else if (
+                            InternalApiConsts.VALUE_PREPARE_SHIPPING.equals(
+                                BackupShippingUtils.getTargetShippingStatus(snapDfn, peerAccCtx.get())
+                            )
                         )
-                    )
-                    {
-                        snapDfnsToUpdateShippingPrepare.get(KEY_DST).add(snapDfn);
+                        {
+                            snapDfnsToUpdateShippingPrepare.get(KEY_DST).add(snapDfn);
+                        }
                     }
-                }
-                if (abort)
-                {
-                    if (isSnapDfnSource)
+                    if (abort)
                     {
-                        snapDfnsToUpdateShippingAbort.get(KEY_SRC).add(snapDfn);
-                    }
-                    else
-                    {
-                        snapDfnsToUpdateShippingAbort.get(KEY_DST).add(snapDfn);
+                        if (isSnapDfnSource)
+                        {
+                            snapDfnsToUpdateShippingAbort.get(KEY_SRC).add(snapDfn);
+                        }
+                        else
+                        {
+                            snapDfnsToUpdateShippingAbort.get(KEY_DST).add(snapDfn);
+                        }
                     }
                 }
             }

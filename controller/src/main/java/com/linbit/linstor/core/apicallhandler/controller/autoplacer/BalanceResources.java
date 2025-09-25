@@ -447,7 +447,9 @@ public class BalanceResources
             flux = flux.concatWith(
                 ctrlRscAutoPlaceApiCallHandler.autoPlace(
                     rscDfn.getName().displayValue,
-                    rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+                    rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),
+                    false,
+                    null
                 )
             );
         }

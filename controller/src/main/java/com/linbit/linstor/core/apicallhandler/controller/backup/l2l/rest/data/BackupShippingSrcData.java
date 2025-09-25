@@ -20,7 +20,7 @@ public class BackupShippingSrcData
     private final Map<String, String> storPoolRename;
 
     private @Nullable Snapshot srcSnapshot;
-    private String srcNodeName;
+    private @Nullable String srcNodeName;
     private @Nullable BackupMetaDataPojo metaDataPojo;
     private String dstNodeName;
     private String dstNetIfName;
@@ -40,7 +40,7 @@ public class BackupShippingSrcData
 
     public BackupShippingSrcData(
         String srcClusterIdRef,
-        String srcNodeNameRef,
+        @Nullable String srcNodeNameRef,
         String srcRscNameRef,
         String srcBackupNameRef,
         LocalDateTime nowRef,
@@ -117,7 +117,7 @@ public class BackupShippingSrcData
         return srcSnapshot;
     }
 
-    public String getSrcNodeName()
+    public @Nullable String getSrcNodeName()
     {
         return srcNodeName;
     }

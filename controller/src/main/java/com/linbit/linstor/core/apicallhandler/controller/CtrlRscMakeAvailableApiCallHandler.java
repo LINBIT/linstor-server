@@ -139,7 +139,9 @@ public class CtrlRscMakeAvailableApiCallHandler
         String rscNameRef,
         List<String> layerStackRef,
         boolean diskfulRef,
-        @Nullable List<Integer> drbdTcpPortsRef
+        @Nullable List<Integer> drbdTcpPortsRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef
     )
     {
         ResponseContext context = makeContext(nodeNameRef, rscNameRef);
@@ -158,6 +160,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                     layerStackRef,
                     diskfulRef,
                     drbdTcpPortsRef,
+                copyAllSnapsRef,
+                snapNamesToCopyRef,
                     context
                 )
             )
@@ -170,6 +174,8 @@ public class CtrlRscMakeAvailableApiCallHandler
         @Nullable List<String> layerStackRef,
         boolean diskfulRequestedRef,
         @Nullable List<Integer> drbdTcpPortsRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef,
         ResponseContext contextRef
     )
     {
@@ -329,14 +335,24 @@ public class CtrlRscMakeAvailableApiCallHandler
                             ),
                             () -> ctrlRscCrtApiCallHandler.createResource(
                                 Collections.singletonList(createRscPojo),
-                                Resource.DiskfulBy.MAKE_AVAILABLE
+                                Resource.DiskfulBy.MAKE_AVAILABLE,
+                                copyAllSnapsRef,
+                                snapNamesToCopyRef
                             )
                         )
                     )
                 ).onErrorResume(
                     error -> abortDeactivateOldRsc(activeRsc, null)
                         .concatWith(
-                            placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRequestedRef, drbdTcpPortsRef)
+                            placeAnywhere(
+                                nodeNameRef,
+                                rscDfn,
+                                layerStack,
+                                diskfulRequestedRef,
+                                drbdTcpPortsRef,
+                                copyAllSnapsRef,
+                                snapNamesToCopyRef
+                            )
                         )
                 );
             }
@@ -353,7 +369,15 @@ public class CtrlRscMakeAvailableApiCallHandler
                             LockObj.RSC_DFN_MAP,
                             LockObj.STOR_POOL_DFN_MAP
                         ),
-                        () -> placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRequestedRef, drbdTcpPortsRef)
+                        () -> placeAnywhere(
+                            nodeNameRef,
+                            rscDfn,
+                            layerStack,
+                            diskfulRequestedRef,
+                            drbdTcpPortsRef,
+                            copyAllSnapsRef,
+                            snapNamesToCopyRef
+                        )
                     )
                 );
             }
@@ -540,7 +564,9 @@ public class CtrlRscMakeAvailableApiCallHandler
         ResourceDefinition rscDfnRef,
         List<DeviceLayerKind> layerStackRef,
         boolean diskfulRef,
-        @Nullable List<Integer> drbdTcpPortsRef
+        @Nullable List<Integer> drbdTcpPortsRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef
     )
     {
         ResponseContext context = makeContext(nodeNameRef, rscDfnRef.getName().displayValue);
@@ -558,7 +584,9 @@ public class CtrlRscMakeAvailableApiCallHandler
                 rscDfnRef,
                 layerStackRef,
                 diskfulRef,
-                drbdTcpPortsRef
+                drbdTcpPortsRef,
+                copyAllSnapsRef,
+                snapNamesToCopyRef
             )
         )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -569,7 +597,9 @@ public class CtrlRscMakeAvailableApiCallHandler
         ResourceDefinition rscDfn,
         List<DeviceLayerKind> layerStack,
         boolean diskfulRef,
-        @Nullable List<Integer> drbdTcpPortsRef
+        @Nullable List<Integer> drbdTcpPortsRef,
+        boolean copyAllSnapsRef,
+        @Nullable List<String> snapNamesToCopyRef
     )
     {
         AutoSelectFilterPojo autoSelect = null;
@@ -746,7 +776,9 @@ public class CtrlRscMakeAvailableApiCallHandler
         ctrlTransactionHelper.commit();
         return ctrlRscCrtApiCallHandler.createResource(
             Collections.singletonList(createRscPojo),
-            Resource.DiskfulBy.MAKE_AVAILABLE
+            Resource.DiskfulBy.MAKE_AVAILABLE,
+            copyAllSnapsRef,
+            snapNamesToCopyRef
         );
     }
 
