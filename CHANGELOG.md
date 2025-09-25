@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - safety-snap: shorten safety-snap id length, to stay in LVM name limit
 
+### Fixed
+
+- Fixed potential deadlock on the controller introduced with 1.32.0
+
 ## [1.32.1] - 2025-09-16
 
 ### Changed

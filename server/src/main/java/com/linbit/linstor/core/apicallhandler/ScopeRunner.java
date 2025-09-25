@@ -152,10 +152,11 @@ public class ScopeRunner
 
         @Nullable Exception caughtExc = null;
         @Nullable ImplementationError caughtImplError = null;
-        lockGuard.lock();
-        // start transaction after locks are acquired
-        // this should prevent threads already altering the transaction and maybe produce unserializable transactions
+        // start transaction before locks are acquired, just as all other calls do. Some calls simply cannot reverse
+        // the order. The database issues should be able to be avoided using the setAutoCommit described in
+        // f068f9b839a6f18f08d5e84a7fdaa71a4fd13d6f
         @Nullable TransactionMgr transMgr = transactional ? transactionMgrGenerator.startTransaction() : null;
+        lockGuard.lock();
         try (LinStorScope.ScopeAutoCloseable close = apiCallScope.enter())
         {
             apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), accCtx);
