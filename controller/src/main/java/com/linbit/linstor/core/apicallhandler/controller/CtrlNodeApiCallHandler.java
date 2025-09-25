@@ -8,6 +8,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
@@ -1711,12 +1712,17 @@ public class CtrlNodeApiCallHandler
                                     null,
                                     null
                                 );
+                                PriorityProps prioProps = new PriorityProps(
+                                    sp.getNode().getProps(apiCtx),
+                                    ctrlPropsHelper.getCtrlPropsForView()
+                                );
+                                String copyAllSnapsStr = prioProps.getProp(ApiConsts.KEY_COPY_ALL_SNAPS_ON_EVAC);
                                 createOrToggleDiskFlux = ctrlRscCrtApiCallHandler
                                     .createResource(
                                         Collections.singletonList(createRscPojo),
                                         Resource.DiskfulBy.AUTO_PLACER,
-                                        true, // TODO: evac-prop to copy all snaps
-                                        null
+                                        copyAllSnapsStr == null || Boolean.parseBoolean(copyAllSnapsStr),
+                                        Collections.emptyList()
                                     );
                             }
                             fluxList.add(

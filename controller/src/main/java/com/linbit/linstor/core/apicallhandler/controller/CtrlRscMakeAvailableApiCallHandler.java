@@ -141,7 +141,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         boolean diskfulRef,
         @Nullable List<Integer> drbdTcpPortsRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef
     )
     {
         ResponseContext context = makeContext(nodeNameRef, rscNameRef);
@@ -175,7 +175,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         boolean diskfulRequestedRef,
         @Nullable List<Integer> drbdTcpPortsRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef,
+        List<String> snapNamesToCopyRef,
         ResponseContext contextRef
     )
     {
@@ -566,7 +566,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         boolean diskfulRef,
         @Nullable List<Integer> drbdTcpPortsRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef
     )
     {
         ResponseContext context = makeContext(nodeNameRef, rscDfnRef.getName().displayValue);
@@ -599,7 +599,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         boolean diskfulRef,
         @Nullable List<Integer> drbdTcpPortsRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef
     )
     {
         AutoSelectFilterPojo autoSelect = null;

@@ -2101,7 +2101,12 @@ public class CtrlBackupRestoreApiCallHandler
                                 )
                                     // restore the diskless resources again...
                                     .concatWith(
-                                        ctrlRscCrtApiCallHandler.createResource(disklessRscApiList, null, false, null)
+                                        ctrlRscCrtApiCallHandler.createResource(
+                                            disklessRscApiList,
+                                            null,
+                                            false,
+                                            Collections.emptyList()
+                                        )
                                     );
                             }
                             else

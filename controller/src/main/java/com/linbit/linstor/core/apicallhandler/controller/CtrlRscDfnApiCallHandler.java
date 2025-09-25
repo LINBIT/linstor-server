@@ -604,7 +604,7 @@ public class CtrlRscDfnApiCallHandler
                             rscDfn.getName().displayValue,
                             rscGrp.getAutoPlaceConfig().getApiData(),
                             false,
-                            null
+                            Collections.emptyList()
                         )
                     );
                 }

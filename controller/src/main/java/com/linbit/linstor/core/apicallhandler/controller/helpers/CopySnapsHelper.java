@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -86,7 +87,7 @@ public class CopySnapsHelper
     public Flux<ApiCallRc> getCopyFlux(
         Set<Resource> deployedResourcesRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef,
+        List<String> snapNamesToCopyRef,
         ResponseContext context
     )
     {
@@ -105,21 +106,15 @@ public class CopySnapsHelper
     private Flux<ApiCallRc> getCopyFluxInTransaction(
         Set<Resource> deployedResourcesRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef
     )
     {
         Flux<ApiCallRc> ret = Flux.empty();
         try
         {
-            // TODO: overwrite boolean with prop
-            if (!copyAllSnapsRef && snapNamesToCopyRef == null)
-            {
-                throw new ImplementationError(
-                    "snapNamesToCopy needs to have at least one element if copyAllSnaps is false"
-                );
-            }
+            boolean copyAllSnaps = copyAllSnapsRef;
             Set<String> upperSnapNames = new HashSet<>();
-            if (snapNamesToCopyRef != null)
+            if (!snapNamesToCopyRef.isEmpty())
             {
                 for (String snapName : snapNamesToCopyRef)
                 {
@@ -131,9 +126,19 @@ public class CopySnapsHelper
             for (Resource rsc : deployedResourcesRef)
             {
                 ResourceDefinition rscDfn = rsc.getResourceDefinition();
+                PriorityProps prioProps = new PriorityProps(
+                    rscDfn.getProps(apiCtx),
+                    rscDfn.getResourceGroup().getProps(apiCtx),
+                    systemConfRepository.getCtrlConfForView(apiCtx)
+                );
+                String copyAllSnapsStr = prioProps.getProp(ApiConsts.KEY_COPY_ALL_SNAPS);
+                if (copyAllSnapsStr != null)
+                {
+                    copyAllSnaps = Boolean.parseBoolean(copyAllSnapsStr);
+                }
                 for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(apiCtx))
                 {
-                    if (copyAllSnapsRef || upperSnapNames.contains(snapDfn.getName().value))
+                    if (copyAllSnaps || upperSnapNames.contains(snapDfn.getName().value))
                     {
                         String rscName = rscDfn.getName().displayValue;
                         ret = ret.concatWith(

@@ -44,6 +44,7 @@ import javax.inject.Singleton;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -449,7 +450,7 @@ public class BalanceResources
                     rscDfn.getName().displayValue,
                     rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),
                     false,
-                    null
+                    Collections.emptyList()
                 )
             );
         }

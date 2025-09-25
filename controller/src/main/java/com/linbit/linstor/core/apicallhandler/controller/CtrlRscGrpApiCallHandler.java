@@ -443,7 +443,7 @@ public class CtrlRscGrpApiCallHandler
         AutoSelectFilterApi autoApiRef,
         @Nullable Short peerSlotsRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -490,7 +490,7 @@ public class CtrlRscGrpApiCallHandler
         @Nullable AutoSelectFilterApi autoApiRef,
         @Nullable Short peerSlotsRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef,
+        List<String> snapNamesToCopyRef,
         ResponseContext context
     )
     {
@@ -1129,7 +1129,7 @@ public class CtrlRscGrpApiCallHandler
                     rscDfn.getName().displayValue,
                     autoSelectFilterPojo,
                     false,
-                    null,
+                    Collections.emptyList(),
                     contextRef
                 );
             }
@@ -1412,7 +1412,7 @@ public class CtrlRscGrpApiCallHandler
         String rscGrpNameRef,
         @Nullable AutoSelectFilterApi adjustAutoSelectFilterRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -1452,7 +1452,7 @@ public class CtrlRscGrpApiCallHandler
     public Flux<ApiCallRc> adjustAll(
         AutoSelectFilterApi adjustAutoSelectFilterRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -1490,7 +1490,7 @@ public class CtrlRscGrpApiCallHandler
     private Flux<ApiCallRc> adjustAllInTransaction(
         AutoSelectFilterApi adjustAutoSelectFilterRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef,
+        List<String> snapNamesToCopyRef,
         ResponseContext contextRef
     )
     {
@@ -1525,7 +1525,7 @@ public class CtrlRscGrpApiCallHandler
         String rscGrpNameRef,
         @Nullable AutoSelectFilterApi adjustAutoSelectFilterRef,
         boolean copyAllSnapsRef,
-        @Nullable List<String> snapNamesToCopyRef,
+        List<String> snapNamesToCopyRef,
         ResponseContext contextRef
     )
     {

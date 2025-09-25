@@ -3068,7 +3068,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     }
                 },
                 false,
-                null
+                Collections.emptyList()
             ).contextWrite(contextWrite()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }
