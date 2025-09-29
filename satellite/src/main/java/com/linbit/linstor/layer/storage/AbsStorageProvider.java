@@ -310,7 +310,7 @@ public abstract class AbsStorageProvider<
                 if (!cloneService.isRunning(
                         vlmData.getRscLayerObject().getResourceName(),
                         vlmData.getVlmNr(),
-                        vlmData.getRscLayerObject().getResourceNameSuffix()))
+                        vlmData.getRscLayerObject().getResourceNameSuffix()) || !vlmShouldExist)
                 {
                     errorReporter.logTrace("Lv %s found", lvId);
                     @Nullable String parentTypeMarkedForDeletion = getParentTypeNameInDeletingState(vlmData);
