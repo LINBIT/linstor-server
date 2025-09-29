@@ -337,10 +337,11 @@ public class ResourceDefinitions
             .map(
                 apiCallRcList ->
                 {
-                    Response.ResponseBuilder builder = Response.status(Response.Status.CREATED);
                     ApiCallRcImpl flatApiCallRc = new ApiCallRcImpl(
                         apiCallRcList.stream().flatMap(Collection::stream).collect(Collectors.toList())
                     );
+                    Response.ResponseBuilder builder = Response.status(flatApiCallRc.hasErrors() ?
+                        Response.Status.INTERNAL_SERVER_ERROR : Response.Status.CREATED);
                     String reportedCloneName = StringUtils.isEmpty(clonedName) ? "__invalid_name__" : clonedName;
                     try
                     {

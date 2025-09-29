@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed potential deadlock on the controller introduced with 1.32.0
+- Clone api: errors are now indicated with HTTP status code 500
 
 ## [1.32.1] - 2025-09-16
 
