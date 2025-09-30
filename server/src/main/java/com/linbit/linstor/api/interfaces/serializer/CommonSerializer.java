@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public interface CommonSerializer
 {
@@ -56,7 +55,6 @@ public interface CommonSerializer
             @Nullable String stltOverrideNodeName,
             boolean remoteSpdk,
             boolean ebs,
-            @Nullable Pattern drbdKeepResPattern,
             String netBindAddress,
             Integer netPort,
             String netType,

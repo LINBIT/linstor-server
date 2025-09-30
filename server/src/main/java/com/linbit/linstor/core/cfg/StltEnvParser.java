@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 public class StltEnvParser
 {
-    public static final String LS_KEEP_RES = "LS_KEEP_RES";
     public static final String LS_PLAIN_PORT_OVERRIDE = "LS_PLAIN_PORT_OVERRIDE";
     public static final String LS_OVERRIDE_NODE_NAME = "LS_OVERRIDE_NODE_NAME";
     public static final String LS_BIND_ADDRESS = "LS_BIND_ADDRESS";
@@ -28,7 +27,6 @@ public class StltEnvParser
         // System.out.println(entry.getKey() + ": " + entry.getValue());
         // }
 
-        cfg.setDrbdKeepResPattern(getEnv(LS_KEEP_RES));
         cfg.setNetPort(getEnv(LS_PLAIN_PORT_OVERRIDE, Integer::parseInt));
         cfg.setNetBindAddress(getEnv(LS_BIND_ADDRESS));
         cfg.setStltOverrideNodeName(getEnv(LS_OVERRIDE_NODE_NAME));

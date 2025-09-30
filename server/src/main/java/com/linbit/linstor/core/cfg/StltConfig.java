@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import com.moandjiezana.toml.Toml;
 
@@ -18,8 +17,6 @@ public class StltConfig extends LinstorConfig
     private @Nullable String stltOverrideNodeName;
     private boolean remoteSpdk;
     private boolean ebs;
-
-    private @Nullable Pattern drbdKeepResPattern;
 
     private @Nullable String netBindAddress;
     private @Nullable Integer netPort;
@@ -112,27 +109,6 @@ public class StltConfig extends LinstorConfig
     public void setEbs(boolean ebsRef)
     {
         ebs = ebsRef;
-    }
-
-    public @Nullable Pattern getDrbdKeepResPattern()
-    {
-        return drbdKeepResPattern;
-    }
-
-    public void setDrbdKeepResPattern(@Nullable String drbdKeepResPatternRef)
-    {
-        if (drbdKeepResPatternRef != null)
-        {
-            setDrbdKeepResPattern(Pattern.compile(drbdKeepResPatternRef));
-        }
-    }
-
-    public void setDrbdKeepResPattern(@Nullable Pattern drbdKeepResPatternRef)
-    {
-        if (drbdKeepResPatternRef != null)
-        {
-            drbdKeepResPattern = drbdKeepResPatternRef;
-        }
     }
 
     public @Nullable String getNetBindAddress()

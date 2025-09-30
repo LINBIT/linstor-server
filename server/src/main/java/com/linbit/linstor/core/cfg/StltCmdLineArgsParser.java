@@ -47,8 +47,9 @@ class StltCmdLineArgsParser
     @CommandLine.Option(
         names = {"-k", "--keep-res"},
         description =
-            "if this regex matches a file of a drbd resource file created by linstor, the " +
-            "matched file will NOT be deleted"
+            "DEPRECATED: if this regex matches a file of a drbd resource file created by linstor, the " +
+            "matched file will NOT be deleted",
+        hideParamSyntax = true
     )
     private @Nullable String keepResourceRegex;
 
@@ -128,7 +129,6 @@ class StltCmdLineArgsParser
 
         stltCfg.setLogPrintStackTrace(linArgParser.printStackTrace);
         stltCfg.setDebugConsoleEnable(linArgParser.debugConsole);
-        stltCfg.setDrbdKeepResPattern(linArgParser.keepResourceRegex);
         stltCfg.setNetPort(linArgParser.plainPort);
         stltCfg.setNetBindAddress(linArgParser.bindAddress);
         stltCfg.setStltOverrideNodeName(linArgParser.nodeName);

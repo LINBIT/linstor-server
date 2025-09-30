@@ -171,7 +171,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
@@ -327,7 +326,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         @Nullable String stltOverrideNodeNamePrm,
         boolean remoteSpdk,
         boolean ebs,
-        @Nullable Pattern drbdKeepResPatternPrm,
         String netBindAddress,
         Integer netPort,
         String netType,
@@ -341,8 +339,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 logLevel : logLevelLinstorPrm;
 
             String stltOverrideNodeName = stltOverrideNodeNamePrm != null ? stltOverrideNodeNamePrm : "";
-
-            Pattern drbdKeepResPattern = drbdKeepResPatternPrm != null ? drbdKeepResPatternPrm : Pattern.compile("");
 
             MsgIntAuthResponse.newBuilder()
                 .setSuccess(true)
@@ -363,7 +359,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                         stltOverrideNodeName,
                         remoteSpdk,
                         ebs,
-                        drbdKeepResPattern,
                         netBindAddress,
                         netPort,
                         netType,
@@ -831,7 +826,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         String stltOverrideNodeName,
         boolean remoteSpdk,
         boolean ebs,
-        Pattern drbdKeepResPattern,
         String netBindAddress,
         Integer netPort,
         String netType,
@@ -848,7 +842,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setStltOverrideNodeName(stltOverrideNodeName)
             .setRemoteSpdk(remoteSpdk)
             .setEbs(ebs)
-            .setDrbdKeepResPattern(drbdKeepResPattern.toString())
             .setNetBindAddress(netBindAddress)
             .setNetPort(netPort)
             .setNetType(netType)

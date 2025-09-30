@@ -570,7 +570,6 @@ public class Nodes
                         stltConfig.remote_spdk = stltConf.isRemoteSpdk();
                         stltConfig.ebs = stltConf.isEbs();
                         stltConfig.special_satellite = stltConf.isRemoteSpdk() || stltConf.isEbs();
-                        stltConfig.drbd_keep_res_pattern = stltConf.getDrbdKeepResPattern().toString();
                         stltConfig.net = new JsonGenTypes.SatelliteConfigNet();
                         stltConfig.net.bind_address = stltConf.getNetBindAddress();
                         stltConfig.net.port = stltConf.getNetPort();
