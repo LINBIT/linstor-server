@@ -1,3 +1,16 @@
+linstor-server (1.32.2-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * safety-snap: shorten suffix id, to stay in LVM name limit
+  * clone-api: errors now return HTTP status code 500, instead of 201
+  * clone: Fix deleting failed clone resources
+  * drbdlayer: fix drbd res file unnecessary rewrite
+
+  [ Gabor Hernadi ]
+  * ScopeRunner: partial revert of f068f9b839a6f18f08d5e84a7fdaa71a4fd13d6f
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 01 Oct 2025 06:14:43 +0000
+
 linstor-server (1.32.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
