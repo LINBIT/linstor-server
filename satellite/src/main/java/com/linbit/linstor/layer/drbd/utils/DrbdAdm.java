@@ -557,20 +557,18 @@ public class DrbdAdm
     public void resumeIo(DrbdRscData<Resource> drbdRscData)
         throws ExtCmdFailedException
     {
-        if (drbdRscData.resFileExists())
+        execute(DRBDADM_UTIL, "resume-io", drbdRscData.getSuffixedResourceName());
+    }
+
+    public void resumeIoOnMinorNr(DrbdRscData<Resource> drbdRscData) throws ExtCmdFailedException
+    {
+        for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
         {
-            execute(DRBDADM_UTIL, "resume-io", drbdRscData.getSuffixedResourceName());
-        }
-        else
-        {
-            for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
-            {
-                execute(
-                    DRBDSETUP_UTIL,
-                    "resume-io",
-                    Integer.toString(drbdVlmData.getVlmDfnLayerObject().getMinorNr().value)
-                );
-            }
+            execute(
+                DRBDSETUP_UTIL,
+                "resume-io",
+                Integer.toString(drbdVlmData.getVlmDfnLayerObject().getMinorNr().value)
+            );
         }
     }
 

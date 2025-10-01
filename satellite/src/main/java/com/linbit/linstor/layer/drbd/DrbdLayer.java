@@ -433,7 +433,6 @@ public class DrbdLayer implements DeviceLayer
             Path resFile = asResourceFile(drbdRscData, false, false);
             errorReporter.logTrace("Ensuring .res file is deleted: %s ", resFile);
             Files.deleteIfExists(resFile);
-            drbdRscData.setResFileExists(false);
 
             drbdRscData.setExists(false);
             for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
@@ -1099,7 +1098,16 @@ public class DrbdLayer implements DeviceLayer
     @Override
     public void resumeIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException
     {
-        drbdUtils.resumeIo((DrbdRscData<Resource>) rscDataRef);
+        var drbdRscDataRef = (DrbdRscData<Resource>) rscDataRef;
+        Path resFile = asResourceFile(drbdRscDataRef, false, false);
+        if (Files.exists(resFile))
+        {
+            drbdUtils.resumeIo(drbdRscDataRef);
+        }
+        else
+        {
+            drbdUtils.resumeIoOnMinorNr(drbdRscDataRef);
+        }
     }
 
     @Override
@@ -1633,7 +1641,7 @@ public class DrbdLayer implements DeviceLayer
         ).build();
 
         String onDiskContent = "resource \"i\"{}";
-        if (drbdRscData.resFileExists())
+        if (Files.exists(resFile))
         {
             try
             {
@@ -1642,7 +1650,6 @@ public class DrbdLayer implements DeviceLayer
             catch (NoSuchFileException nsfe)
             {
                 errorReporter.logWarning("Expected resource file %s did not exist. Rewriting...", resFile.toString());
-                drbdRscData.setResFileExists(false);
             }
             catch (IOException exc)
             {
@@ -1684,7 +1691,6 @@ public class DrbdLayer implements DeviceLayer
                     resFile,
                     StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
                 );
-                drbdRscData.setResFileExists(true);
                 fileWritten = true;
             }
             catch (IOException ioExc)

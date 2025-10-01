@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Removed keep_res regular expression pattern from options
+- Instead of caching if a DRBD .res file exists, actually check if the file exists
 
 ## [1.32.2] - 2025-10-01
 
