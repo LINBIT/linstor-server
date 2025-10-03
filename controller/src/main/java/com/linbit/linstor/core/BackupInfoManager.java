@@ -3,8 +3,10 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingDstData;
@@ -43,8 +45,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 
 @Singleton
 public class BackupInfoManager
@@ -69,6 +74,9 @@ public class BackupInfoManager
     // uses uploadQueues as sync-object
     private final TreeSet<QueueItem> prevNodeUndecidedQueue;
     private final Map<StltRemote, CleanupData> cleanupDataMap;
+    private final Map<PairNonNull<SnapshotDefinition, String>, List<FluxSink<ApiCallRc>>> waitForSnapSentMap;
+    private final Map<Snapshot, List<FluxSink<ApiCallRc>>> waitForSnapReceiveMap;
+
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
     private final ResourceDefinitionMap rscDfnMap;
@@ -94,6 +102,8 @@ public class BackupInfoManager
         uploadQueues = new BidirectionalMultiMap<>();
         prevNodeUndecidedQueue = new TreeSet<>();
         cleanupDataMap = new HashMap<>();
+        waitForSnapSentMap = new HashMap<>();
+        waitForSnapReceiveMap = new HashMap<>();
     }
 
     public boolean addAllRestoreEntries(
@@ -921,6 +931,142 @@ public class BackupInfoManager
         }
     }
 
+    public Flux<ApiCallRc> registerWaitForShipSentDoneFlux(SnapshotDefinition snapDfnRef, String remoteRef)
+    {
+        return registerWaitForShipDoneFlux(waitForSnapSentMap, new PairNonNull<>(snapDfnRef, remoteRef));
+    }
+
+    public Flux<ApiCallRc> registerWaitForShipReceiveDoneFlux(Snapshot snapRef)
+    {
+        return registerWaitForShipDoneFlux(waitForSnapReceiveMap, snapRef);
+    }
+
+    private <KEY> Flux<ApiCallRc> registerWaitForShipDoneFlux(
+        Map<KEY, List<FluxSink<ApiCallRc>>> fluxSinkMap,
+        KEY keyRef
+    )
+    {
+        return Flux.create(sink ->
+        {
+            // dummy snycObject just to keep code analyzers silent about "not syncing on parameters.
+            // this "map" parameter is always a private class variable, so this class has full control over it
+            final Object syncObj = fluxSinkMap;
+            synchronized (syncObj)
+            {
+                sink.onDispose(() ->
+                {
+                    synchronized (syncObj)
+                    {
+                        @Nullable List<FluxSink<ApiCallRc>> list = fluxSinkMap.get(keyRef);
+                        if (list != null)
+                        {
+                            list.remove(sink);
+                            if (list.isEmpty())
+                            {
+                                fluxSinkMap.remove(keyRef);
+                            }
+                        }
+                    }
+                });
+                fluxSinkMap.computeIfAbsent(keyRef, ignored -> new ArrayList<>())
+                    .add(sink);
+            }
+        });
+    }
+
+    public Flux<ApiCallRc> completeWaitForShipSentDoneFlux(SnapshotDefinition snapDfnRef, String remoteNameRef)
+    {
+        return completeWaitFlux(waitForSnapSentMap, new PairNonNull<>(snapDfnRef, remoteNameRef));
+    }
+    public Flux<ApiCallRc> completeWaitForShipReceiveDoneFlux(Snapshot snapRef)
+    {
+        return completeWaitFlux(waitForSnapReceiveMap, snapRef);
+    }
+
+    public Flux<ApiCallRc> errorWaitForShipSentDoneFlux(SnapshotDefinition snapDfnRef, String remoteNameRef)
+    {
+        return errorWaitForFlux(waitForSnapSentMap, new PairNonNull<>(snapDfnRef, remoteNameRef));
+    }
+
+    public Flux<ApiCallRc> errorWaitForShipReceiveDoneFlux(Snapshot snapRef)
+    {
+        return errorWaitForFlux(waitForSnapReceiveMap, snapRef);
+    }
+
+    private <KEY> Flux<ApiCallRc> errorWaitForFlux(Map<KEY, List<FluxSink<ApiCallRc>>> fluxSinkMap, KEY keyRef)
+    {
+        return finishWaitingSink(
+            fluxSinkMap,
+            keyRef,
+            sink -> sink.error(
+                new ShipmentFailedException(
+                    "shipment of snapshot " + keyRef + " during node evacuate failed"
+                )
+            )
+        );
+    }
+
+    private <KEY> Flux<ApiCallRc> completeWaitFlux(Map<KEY, List<FluxSink<ApiCallRc>>> fluxSinkMap, KEY keyRef)
+    {
+        return finishWaitingSink(
+            fluxSinkMap,
+            keyRef,
+            FluxSink::complete
+        );
+    }
+
+    private <KEY> Flux<ApiCallRc> finishWaitingSink(
+        Map<KEY, List<FluxSink<ApiCallRc>>> fluxSinkMap,
+        KEY keyRef,
+        Consumer<FluxSink<ApiCallRc>> consumerRef
+    )
+    {
+        Flux<ApiCallRc> ret;
+        // dummy snycObject just to keep code analyzers silent about "not syncing on parameters.
+        // this "map" parameter is always a private class variable, so this class has full control over it
+        final Object syncObj = fluxSinkMap;
+        synchronized (syncObj)
+        {
+            @Nullable List<FluxSink<ApiCallRc>> sinkList = fluxSinkMap.remove(keyRef);
+            if (sinkList != null)
+            {
+                ret = Flux.create(innerSink ->
+                {
+                    // we have a race-condition while evacuating that the shipment is sent but not
+                    // fully finished (i.e. the BackupInfoManager was not informed yet that the shipment
+                    // was fully received). When node evacuate then tries to continue to delete the
+                    // source-snapshot, we run into a "please wait until shipment is finished" error.
+                    try
+                    {
+                        // sorry for this. a better way would be to register the the "finished receiving" flux
+                        // but in the node evacuate context that is a bit cumbersome to figure out since
+                        // autoplacer might be involved or the shipment might even be queued.
+
+                        // on the other hand, it should not really matter that much if a shipment that can
+                        // easily take multiple minutes to finish waits 2 more seconds before it is getting
+                        // deleted...
+                        Thread.sleep(2_000);
+                    }
+                    catch (InterruptedException exc)
+                    {
+                        Thread.currentThread().interrupt();
+                        exc.printStackTrace();
+                    }
+                    for (FluxSink<ApiCallRc> sink : sinkList)
+                    {
+                        consumerRef.accept(sink);
+                    }
+                    innerSink.complete();
+                });
+            }
+            else
+            {
+                ret = Flux.empty();
+            }
+        }
+        return ret;
+    }
+
     public class QueueItem implements Comparable<QueueItem>
     {
         public final SnapshotDefinition snapDfn;
@@ -1095,6 +1241,14 @@ public class BackupInfoManager
     public static class AbortL2LInfo
     {
         // no special data needed (for now?)
+    }
+
+    public static class ShipmentFailedException extends LinStorException
+    {
+        public ShipmentFailedException(String messageRef)
+        {
+            super(messageRef);
+        }
     }
 
     public static class CleanupData

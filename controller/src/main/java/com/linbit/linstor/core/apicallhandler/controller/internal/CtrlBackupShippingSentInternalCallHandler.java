@@ -263,6 +263,16 @@ public class CtrlBackupShippingSentInternalCallHandler
                         scheduleName
                     )
                 );
+
+                if (successRef)
+                {
+                    ret = ret.concatWith(backupInfoMgr.completeWaitForShipSentDoneFlux(snapDfn, remoteName));
+                }
+                else
+                {
+                    ret = ret.concatWith(backupInfoMgr.errorWaitForShipSentDoneFlux(snapDfn, remoteName));
+                }
+
                 if (remoteForSchedule instanceof S3Remote)
                 {
                     // s3 case does not have and need a stltRemote

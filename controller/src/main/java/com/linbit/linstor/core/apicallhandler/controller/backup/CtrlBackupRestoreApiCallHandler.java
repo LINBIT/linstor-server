@@ -1916,7 +1916,7 @@ public class CtrlBackupRestoreApiCallHandler
                 AccessContext peerCtx = peerAccCtx.get();
 
                 NodeName nodeName = peerProvider.get().getNode().getName();
-                Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeName);
+                @Nullable Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeName);
                 boolean deletingSnap = false;
 
                 Props snapDfnProps = snapDfn.getSnapDfnProps(peerAccCtx.get());
@@ -1931,6 +1931,7 @@ public class CtrlBackupRestoreApiCallHandler
                 );
                 @Nullable String onSuccess = backupTargetProps == null ? null :
                     backupTargetProps.getProp(InternalApiConsts.KEY_ON_SUCCESS);
+
                 if (snap != null && !snap.isDeleted())
                 {
                     Props snapProps = snap.getSnapshotDefinition().getSnapDfnProps(peerCtx);
@@ -2224,6 +2225,19 @@ public class CtrlBackupRestoreApiCallHandler
                     }
                 }
                 ctrlTransactionHelper.commit();
+
+                Flux<ApiCallRc> notifyWaitingFluxes = Flux.empty();
+                if (snap != null)
+                {
+                    if (successRef)
+                    {
+                        notifyWaitingFluxes = backupInfoMgr.completeWaitForShipReceiveDoneFlux(snap);
+                    }
+                    else
+                    {
+                        notifyWaitingFluxes = backupInfoMgr.errorWaitForShipReceiveDoneFlux(snap);
+                    }
+                }
                 flux = flux.concatWith(
                     backupHelper.startStltCleanup(
                         peerProvider.get(),
@@ -2233,7 +2247,8 @@ public class CtrlBackupRestoreApiCallHandler
                             ((StltRemote) remote).getLinstorRemoteName().displayValue :
                             srcRemoteName
                     )
-                );
+                )
+                    .concatWith(notifyWaitingFluxes);
             }
             catch (AccessDeniedException | InvalidKeyException | InvalidNameException | InvalidValueException exc)
             {
