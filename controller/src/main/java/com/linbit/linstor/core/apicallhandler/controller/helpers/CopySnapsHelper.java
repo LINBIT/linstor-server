@@ -189,34 +189,57 @@ public class CopySnapsHelper
      * @throws LinStorDataAlreadyExistsException
      * @throws DatabaseException
      */
-    private LinstorRemote getOrCreateLocalRemote() throws InvalidKeyException, AccessDeniedException,
-        InvalidNameException, LinStorDataAlreadyExistsException, DatabaseException
+    private LinstorRemote getOrCreateLocalRemote() throws DatabaseException
     {
-        RemoteName remoteName = new RemoteName(LOCAL_REMOTE);
-        @Nullable AbsRemote localRemote = remoteRepository.get(apiCtx, remoteName);
         @Nullable LinstorRemote ret = null;
-        if (localRemote == null)
+        try
         {
-            @Nullable String clusterIdStr = systemConfRepository.getCtrlConfForView(apiCtx)
-                .getProp(
-                    InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
-                    ApiConsts.NAMESPC_CLUSTER
-                );
-            if (clusterIdStr == null)
+            RemoteName remoteName = new RemoteName(LOCAL_REMOTE);
+            @Nullable AbsRemote localRemote = remoteRepository.get(apiCtx, remoteName);
+            if (localRemote == null)
             {
-                throw new ImplementationError("cluster-id is not allowed to be null");
+                @Nullable String clusterIdStr = systemConfRepository.getCtrlConfForView(apiCtx)
+                    .getProp(
+                        InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
+                        ApiConsts.NAMESPC_CLUSTER
+                    );
+
+                if (clusterIdStr == null)
+                {
+                    throw new ImplementationError("cluster-id is not allowed to be null");
+                }
+                final UUID localClusterUuid = UUID.fromString(clusterIdStr);
+                for (AbsRemote remote : remoteRepository.getMapForView(apiCtx).values())
+                {
+                    if (remote instanceof LinstorRemote)
+                    {
+                        LinstorRemote linstorRemote = (LinstorRemote) remote;
+                        if (localClusterUuid.equals(linstorRemote.getClusterId(apiCtx)))
+                        {
+                            ret = linstorRemote;
+                        }
+                    }
+                }
+                if (ret == null)
+                {
+                    ret = linstorRemoteFactory.create(
+                        apiCtx,
+                        remoteName,
+                        CtrlRemoteApiCallHandler.createUrlWithDefaults(LOCALHOST),
+                        null,
+                        localClusterUuid
+                    );
+                    remoteRepository.put(apiCtx, ret);
+                }
             }
-            ret = linstorRemoteFactory.create(
-                apiCtx,
-                remoteName,
-                CtrlRemoteApiCallHandler.createUrlWithDefaults(LOCALHOST),
-                null,
-                UUID.fromString(clusterIdStr)
-            );
+            else
+            {
+                ret = (LinstorRemote) localRemote;
+            }
         }
-        else
+        catch (LinStorDataAlreadyExistsException | AccessDeniedException | InvalidNameException exc)
         {
-            ret = (LinstorRemote) localRemote;
+            throw new ImplementationError(exc);
         }
         return ret;
     }
