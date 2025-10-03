@@ -9,16 +9,24 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.BackgroundRunner;
+import com.linbit.linstor.core.BackgroundRunner.RunConfig;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
@@ -26,6 +34,7 @@ import com.linbit.linstor.core.objects.remotes.LinstorRemoteControllerFactory;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -34,8 +43,10 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -58,6 +69,10 @@ public class CopySnapsHelper
     private final ResponseConverter responseConverter;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlBackupL2LSrcApiCallHandler backupSrcApiHandler;
+    private final BackupInfoManager backupInfoMgr;
+    private final CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandler;
+    private final BackgroundRunner backgroundRunner;
+    private Provider<Peer> peerProvider;
 
     @Inject
     public CopySnapsHelper(
@@ -69,7 +84,11 @@ public class CopySnapsHelper
         ScopeRunner scopeRunnerRef,
         ResponseConverter responseConverterRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlBackupL2LSrcApiCallHandler backupSrcApiHandlerRef
+        CtrlBackupL2LSrcApiCallHandler backupSrcApiHandlerRef,
+        BackupInfoManager backupInfoMgrRef,
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef,
+        BackgroundRunner backgroundRunnerRef,
+        Provider<Peer> peerProviderRef
     )
     {
         systemConfRepository = systemConfRepositoryRef;
@@ -81,7 +100,112 @@ public class CopySnapsHelper
         responseConverter = responseConverterRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         backupSrcApiHandler = backupSrcApiHandlerRef;
+        backupInfoMgr = backupInfoMgrRef;
+        ctrlSnapshotDeleteApiCallHandler = ctrlSnapshotDeleteApiCallHandlerRef;
+        backgroundRunner = backgroundRunnerRef;
+        peerProvider = peerProviderRef;
+    }
 
+    /**
+     * Returns a pair of fluxes. ObjA will be the flux that starts the shipment while objB will be the flux
+     * that gets completed once the shipment finishes.
+     *
+     * @param rscNameRef
+     * @param dstNodeNameRef
+     * @param snapDfnRef
+     * @return
+     */
+    public Flux<ApiCallRc> getCopyFlux(
+        SnapshotDefinition snapDfnRef,
+        String dstNodeNameRef,
+        ResponseContext context
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "CopySnapshot",
+            lockGuardFactory.buildDeferred(
+                LockType.WRITE,
+                LockObj.REMOTE_MAP,
+                LockObj.NODES_MAP,
+                LockObj.RSC_DFN_MAP
+            ),
+            () -> getCopyFluxInTransaction(
+                snapDfnRef,
+                dstNodeNameRef,
+                true
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> getCopyFluxInTransaction(
+        SnapshotDefinition snapDfnRef,
+        String dstNodeNameRef,
+        boolean runlocalRemoteExistsCheckRef
+    )
+    {
+        if (runlocalRemoteExistsCheckRef)
+        {
+            try
+            {
+                getOrCreateLocalRemote(); // just ensure the local remote exists
+            }
+            catch (DatabaseException exc)
+            {
+                throw new ApiDatabaseException(exc);
+            }
+        }
+        String rscNameRef = snapDfnRef.getResourceName().displayValue;
+
+        return backupSrcApiHandler.shipBackup(
+            null,
+            rscNameRef,
+            LOCAL_REMOTE,
+            rscNameRef,
+            dstNodeNameRef,
+            null,
+            null,
+            null,
+            null,
+            snapDfnRef.getName().displayValue,
+            true,
+            false,
+            null,
+            true,
+            true,
+            false
+        );
+    }
+
+    public void deleteSnapAfterShipmentSent(Snapshot snapToDeleteRef)
+    {
+
+        // this flux is just a side-effect to cleanup once the shipment is done.
+        // we DO NOT want to wait with the initial flux until the entire shipment is finished.
+        final NodeName nodeName = snapToDeleteRef.getNodeName();
+        final ResourceName rscName = snapToDeleteRef.getResourceName();
+        final SnapshotName snapName = snapToDeleteRef.getSnapshotName();
+
+        RunConfig<ApiCallRc> runCfg = new RunConfig<>(
+            String.format(
+                "Cleanup snapshot '%s' of resource '%s' of node %s after copy",
+                snapName.displayValue,
+                rscName.displayValue,
+                nodeName.displayValue
+            ),
+            getWaitForShipToLocalhostDoneFlux(snapToDeleteRef.getSnapshotDefinition())
+                .concatWith(
+                    ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(
+                        rscName.displayValue,
+                        snapName.displayValue,
+                        Collections.singletonList(nodeName.displayValue)
+                    )
+                ),
+            apiCtx,
+            Collections.emptyList(),
+            true
+        );
+        runCfg.putSubscriberContext(Peer.class, peerProvider.get());
+        backgroundRunner.runInBackground(runCfg);
     }
 
     public Flux<ApiCallRc> getCopyFlux(
@@ -99,14 +223,20 @@ public class CopySnapsHelper
                 LockObj.NODES_MAP,
                 LockObj.RSC_DFN_MAP
             ),
-            () -> getCopyFluxInTransaction(deployedResourcesRef, copyAllSnapsRef, snapNamesToCopyRef)
+            () -> getCopyFluxInTransaction(
+                deployedResourcesRef,
+                copyAllSnapsRef,
+                snapNamesToCopyRef,
+                context
+            )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
     private Flux<ApiCallRc> getCopyFluxInTransaction(
         Set<Resource> deployedResourcesRef,
         boolean copyAllSnapsRef,
-        List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef,
+        ResponseContext context
     )
     {
         Flux<ApiCallRc> ret = Flux.empty();
@@ -136,38 +266,23 @@ public class CopySnapsHelper
                 {
                     copyAllSnaps = Boolean.parseBoolean(copyAllSnapsStr);
                 }
+                String targetNodeNameStr = rsc.getNode().getName().displayValue;
                 for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(apiCtx))
                 {
                     if (copyAllSnaps || upperSnapNames.contains(snapDfn.getName().value))
                     {
-                        String rscName = rscDfn.getName().displayValue;
                         ret = ret.concatWith(
-                            backupSrcApiHandler.shipBackup(
-                                null,
-                                rscName,
-                                LOCAL_REMOTE,
-                                rscName,
-                                rsc.getNode().getName().displayValue,
-                                null,
-                                null,
-                                null,
-                                null,
-                                snapDfn.getName().displayValue,
-                                true,
-                                false,
-                                null,
-                                true,
-                                true,
-                                false
+                            getCopyFlux(
+                                snapDfn,
+                                targetNodeNameStr,
+                                context
                             )
                         );
                     }
                 }
             }
         }
-        catch (
-            InvalidKeyException | InvalidNameException | AccessDeniedException | LinStorDataAlreadyExistsException exc
-        )
+        catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -242,5 +357,39 @@ public class CopySnapsHelper
             throw new ImplementationError(exc);
         }
         return ret;
+    }
+
+    public Flux<ApiCallRc> getWaitForShipToLocalhostDoneFlux(SnapshotDefinition snapDfnRef)
+    {
+        return getWaitForShipToLocalhostDoneFlux(snapDfnRef, true);
+    }
+
+    public Flux<ApiCallRc> getWaitForShipToLocalhostDoneFlux(
+        SnapshotDefinition snapDfnRef,
+        boolean runLocalRemoteExistsCheckRef
+    )
+    {
+        if (runLocalRemoteExistsCheckRef)
+        {
+            try
+            {
+                getOrCreateLocalRemote();
+            }
+            catch (DatabaseException exc)
+            {
+                throw new ApiDatabaseException(exc);
+            }
+        }
+        return getWaitForShipDoneFlux(snapDfnRef, LOCAL_REMOTE);
+    }
+
+    public Flux<ApiCallRc> getWaitForShipDoneFlux(SnapshotDefinition snapDfnRef, String remoteNameStrRef)
+    {
+        return backupInfoMgr.registerWaitForShipSentDoneFlux(snapDfnRef, remoteNameStrRef);
+    }
+
+    public Flux<ApiCallRc> getWaitForShipReceiveDoneFlux(Snapshot snapRef)
+    {
+        return backupInfoMgr.registerWaitForShipReceiveDoneFlux(snapRef);
     }
 }
