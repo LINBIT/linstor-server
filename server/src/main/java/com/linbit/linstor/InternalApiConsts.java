@@ -193,6 +193,7 @@ public class InternalApiConsts
     public static final String VALUE_ABORTED = "Aborted";
     public static final String VALUE_SUCCESS = "Success";
     public static final String VALUE_FAILED = "Failed";
+    public static final String VALUE_UPLOADING_METADATA = "Uploading Metadata";
     public static final String KEY_SHIPPING_ERROR_REPORT = "ShippingErrorReport";
     public static final String KEY_ON_SUCCESS = "OnSuccess";
     public static final String VALUE_RESTORE = "Restore";

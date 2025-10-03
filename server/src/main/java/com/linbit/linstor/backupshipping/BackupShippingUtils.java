@@ -33,6 +33,7 @@ import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -145,8 +146,7 @@ public class BackupShippingUtils
         }
 
         RscDfnMetaPojo rscDfnRef = new RscDfnMetaPojo(
-            // wrap in new hashmap, otherwise the pojo contains the actual propsContainer
-            new HashMap<>(snapDfn.getSnapDfnProps(accCtx).map()),
+            getSnapDfnProps(snapDfn.getSnapDfnProps(accCtx)),
             rscDfnPropsRef,
             rscDfnFlagsRef,
             vlmDfnsRef
@@ -208,6 +208,32 @@ public class BackupShippingUtils
             clusterId,
             snapDfn.getUuid().toString()
         );
+    }
+
+    /**
+     * This method not just returns a wrapped HashMap around the props container (which is necessary to avoid
+     * race-conditions while we are serializing and another thread might want to update the props), but also makes
+     * sure to replace all {@value InternalApiConsts#KEY_SHIPPING_STATUS}'s value  with
+     * {@value InternalApiConsts#VALUE_UPLOADING_METADATA} (see {@link InternalApiConsts#VALUE_UPLOADING_METADATA})
+     * in order to prevent confusion on the satellite when restoring this snapshot again.
+     */
+    private static Map<String, String> getSnapDfnProps(ReadOnlyProps roSnapDfnPropsRef)
+    {
+        HashMap<String, String> snapDfnProps = new HashMap<>(roSnapDfnPropsRef.map());
+        HashSet<String> keys = new HashSet<>();
+        final String backupShippingNamespace = ApiConsts.NAMESPC_BACKUP_SHIPPING + "/";
+        for (String key : snapDfnProps.keySet())
+        {
+            if (key.startsWith(backupShippingNamespace) && key.endsWith(InternalApiConsts.KEY_SHIPPING_STATUS))
+            {
+                keys.add(key);
+            }
+        }
+        for (String key : keys)
+        {
+            snapDfnProps.put(key, InternalApiConsts.VALUE_UPLOADING_METADATA);
+        }
+        return snapDfnProps;
     }
 
     public static String generateBackupName(LocalDateTime now)

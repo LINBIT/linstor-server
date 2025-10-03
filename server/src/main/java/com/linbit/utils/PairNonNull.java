@@ -47,4 +47,10 @@ public class PairNonNull<A, B> implements Comparable<PairNonNull<A, B>>
         }
         return eq;
     }
+
+    @Override
+    public String toString()
+    {
+        return "PairNonNull [objA=" + objA + ", objB=" + objB + "]";
+    }
 }
