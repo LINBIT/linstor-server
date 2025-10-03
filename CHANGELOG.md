@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed flywaydb dependency and do migrations (as with other "db"s) ourselves
 - ReconnectorTask: changed logging levels and added more logging
 - API: do not store error reports if required remote parameters are missing
+- Node evacuate: By default node evacuate also evacuates existing snapshots
 
 ### Fixed
 
@@ -34,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DRBD: recreate ext-metadata after backing disk needed to be re-created
 - Fixed a bug where a failed clone leads to AccessToDeletedData bug
 - Cache: Properly flush to origin device when suspending
+- Fixed toggle-disk bug when evacuation target has already diskless resource
 
 ## [1.32.3] - 2025-10-13
 

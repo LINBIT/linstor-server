@@ -34,6 +34,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.Propert
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.CopySnapsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
@@ -66,6 +67,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
@@ -115,6 +117,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -167,6 +170,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlRscAutoHelper ctrlRscAutoHelper;
     private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProvider;
+    private final CopySnapsHelper copySnapsHelper;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -205,7 +209,8 @@ public class CtrlNodeApiCallHandler
         CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef,
         CtrlRscAutoHelper ctrlRscAutoHelperRef,
         CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
-        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProviderRef
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProviderRef,
+        CopySnapsHelper copySnapsHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -244,6 +249,7 @@ public class CtrlNodeApiCallHandler
         ctrlRscAutoHelper = ctrlRscAutoHelperRef;
         ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
         propsChangeListenerBuilderProvider = propsChangeListenerBuilderProviderRef;
+        copySnapsHelper = copySnapsHelperRef;
     }
 
     Node createNodeImpl(
@@ -1601,7 +1607,14 @@ public class CtrlNodeApiCallHandler
             AccessContext peerCtx = peerAccCtx.get();
             nodeToEvacuate.getFlags().enableFlags(peerCtx, Node.Flags.EVACUATE);
 
-            List<ResourceDefinition> affectedRscDfnList = new ArrayList<>();
+            PriorityProps prioProps = new PriorityProps(
+                nodeToEvacuate.getProps(apiCtx),
+                ctrlPropsHelper.getCtrlPropsForView()
+            );
+            @Nullable String copyAllSnapsStr = prioProps.getProp(ApiConsts.KEY_COPY_ALL_SNAPS_ON_EVAC);
+            boolean copyAllSnaps = copyAllSnapsStr == null || Boolean.parseBoolean(copyAllSnapsStr);
+
+            LinkedHashSet<ResourceDefinition> affectedRscDfnList = new LinkedHashSet<>();
             Iterator<Resource> rscIt = nodeToEvacuate.iterateResources(peerCtx);
             while (rscIt.hasNext())
             {
@@ -1609,6 +1622,20 @@ public class CtrlNodeApiCallHandler
                 rsc.getStateFlags().enableFlags(peerCtx, Resource.Flags.EVACUATE);
                 rsc.getProps(peerAccCtx.get()).map().put(ApiConsts.KEY_RSC_MIGRATE_FROM, nodeNameEvacuateSource.value);
                 affectedRscDfnList.add(rsc.getResourceDefinition());
+            }
+
+            if (copyAllSnaps)
+            {
+                /*
+                 * If we want to evacuate all snapshots, we first register a "post-ship delete snapshot"-flux
+                 * and in the later cases (create target rsc, toggle-disk target rsc, no target rsc at all) we also make
+                 * sure to properly start the shipments.
+                 */
+                for (Snapshot snap : nodeToEvacuate.getSnapshots(peerCtx))
+                {
+                    affectedRscDfnList.add(snap.getResourceDefinition());
+                    copySnapsHelper.deleteSnapAfterShipmentSent(snap);
+                }
             }
 
             List<Flux<ApiCallRc>> fluxList = new ArrayList<>();
@@ -1627,114 +1654,153 @@ public class CtrlNodeApiCallHandler
                 }
                 else
                 {
-                    Resource rscToEvacuate = rscDfn.getResource(peerCtx, nodeNameEvacuateSource);
-                    StateFlags<Flags> rscToEvacFlags = rscToEvacuate.getStateFlags();
-                    boolean justDeleteRscToEvac = rscToEvacFlags.isSet(peerCtx, Resource.Flags.DRBD_DISKLESS);
-
-                    if (!justDeleteRscToEvac)
+                    // rscToEvac might be null if we have added the RD from a snapshot
+                    @Nullable Resource rscToEvacuate = rscDfn.getResource(peerCtx, nodeNameEvacuateSource);
+                    if (rscToEvacuate != null)
                     {
-                        // no use to keep a non-UpToDate resource that should be evacuated
-                        justDeleteRscToEvac = !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(
-                            apiCtx,
-                            rscToEvacuate
-                        );
-                    }
+                        StateFlags<Flags> rscToEvacFlags = rscToEvacuate.getStateFlags();
+                        boolean justDeleteRscToEvac = rscToEvacFlags.isSet(peerCtx, Resource.Flags.DRBD_DISKLESS);
 
-                    if (!justDeleteRscToEvac)
-                    {
-                        int upToDatePeerCount = getUpToDatePeerCount(peerCtx, rscDfn);
-                        int expectedReplicaCount = rscDfn.getResourceGroup()
-                            .getAutoPlaceConfig()
-                            .getReplicaCount(peerCtx);
-                        if (upToDatePeerCount >= expectedReplicaCount)
+                        if (!justDeleteRscToEvac)
                         {
-                            justDeleteRscToEvac = true;
+                            // no use to keep a non-UpToDate resource that should be evacuated
+                            justDeleteRscToEvac = !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(
+                                apiCtx,
+                                rscToEvacuate
+                            );
                         }
-                    }
 
-                    if (justDeleteRscToEvac)
-                    {
-                        fluxList.add(
-                            rscDeleteHandler.deleteResource(nodeNameEvacuateSourceStrRef, rscDfn.getName().displayValue)
-                        );
-                    }
-                    else
-                    {
-                        StorPool sp = getStorPoolForEvacuation(rscDfn);
-                        if (sp == null)
+                        if (!justDeleteRscToEvac)
                         {
-                            apiCallRc.addEntry(
-                                ApiCallRcImpl.simpleEntry(
-                                    ApiConsts.WARN_NOT_EVACUATING,
-                                    "Resource '" + rscName.displayValue +
-                                        "' cannot be evacuated as no available storage pool was found"
+                            int upToDatePeerCount = getUpToDatePeerCount(peerCtx, rscDfn);
+                            int expectedReplicaCount = rscDfn.getResourceGroup()
+                                .getAutoPlaceConfig()
+                                .getReplicaCount(peerCtx);
+                            if (upToDatePeerCount >= expectedReplicaCount)
+                            {
+                                justDeleteRscToEvac = true;
+                            }
+                        }
+
+                        if (justDeleteRscToEvac)
+                        {
+                            fluxList.add(
+                                rscDeleteHandler.deleteResource(
+                                    nodeNameEvacuateSourceStrRef,
+                                    rscDfn.getName().displayValue
                                 )
                             );
                         }
                         else
                         {
-                            NodeName nodeNameEvacTarget = sp.getNode().getName();
-
-                            Flux<ApiCallRc> createOrToggleDiskFlux = null;
-                            Resource rscOnTargetNode = sp.getNode().getResource(peerCtx, rscName);
-                            if (rscOnTargetNode != null)
+                            StorPool sp = getStorPoolForEvacuation(rscDfn);
+                            if (sp == null)
                             {
-                                // selected node already has the resource
-                                if (!rscOnTargetNode.getStateFlags().isSet(peerCtx, Resource.Flags.DRBD_DISKLESS))
+                                apiCallRc.addEntry(
+                                    ApiCallRcImpl.simpleEntry(
+                                        ApiConsts.WARN_NOT_EVACUATING,
+                                        "Resource '" + rscName.displayValue +
+                                            "' cannot be evacuated as no available storage pool was found"
+                                    )
+                                );
+                            }
+                            else
+                            {
+                                NodeName nodeNameEvacTarget = sp.getNode().getName();
+
+                                Flux<ApiCallRc> createOrToggleDiskFlux = null;
+                                Resource rscOnTargetNode = sp.getNode().getResource(peerCtx, rscName);
+                                if (rscOnTargetNode != null)
                                 {
-                                    createOrToggleDiskFlux = rscToggleDiskApiCallHandler.resourceToggleDisk(
-                                        nodeNameEvacTarget.displayValue,
-                                        rscName.displayValue,
-                                        sp.getName().displayValue,
-                                        nodeNameEvacuateSourceStrRef,
+                                    // selected node already has the resource
+                                    if (rscOnTargetNode.getStateFlags().isSet(peerCtx, Resource.Flags.DRBD_DISKLESS))
+                                    {
+                                        createOrToggleDiskFlux = rscToggleDiskApiCallHandler.resourceToggleDisk(
+                                            nodeNameEvacTarget.displayValue,
+                                            rscName.displayValue,
+                                            sp.getName().displayValue,
+                                            nodeNameEvacuateSourceStrRef,
+                                            null,
+                                            false,
+                                            Resource.DiskfulBy.AUTO_PLACER,
+                                            false,
+                                            copyAllSnaps,
+                                            Collections.emptyList()
+                                        );
+                                    }
+                                }
+
+                                if (createOrToggleDiskFlux == null)
+                                {
+                                    ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
+                                        new RscPojo(
+                                            rscName.displayValue,
+                                            nodeNameEvacTarget.displayValue,
+                                            0L,
+                                            Collections.singletonMap(
+                                                ApiConsts.KEY_STOR_POOL_NAME,
+                                                sp.getName().displayValue
+                                            )
+                                        ),
+                                        rscDfn.getLayerStack(peerCtx)
+                                            .stream()
+                                            .map(DeviceLayerKind::name)
+                                            .collect(Collectors.toList()),
                                         null,
-                                        false,
-                                        Resource.DiskfulBy.AUTO_PLACER
+                                        null,
+                                        null
+                                    );
+                                    createOrToggleDiskFlux = ctrlRscCrtApiCallHandler.createResource(
+                                        Collections.singletonList(createRscPojo),
+                                        Resource.DiskfulBy.AUTO_PLACER,
+                                        copyAllSnaps,
+                                        Collections.emptyList()
+                                    )
+                                        .concatWith(
+                                            rscToggleDiskApiCallHandler.waitForMigration(
+                                                contextRef,
+                                                nodeNameEvacTarget,
+                                                rscName,
+                                                nodeNameEvacuateSource
+                                            )
+                                        );
+                                }
+                                fluxList.add(createOrToggleDiskFlux);
+                            }
+
+                        }
+                    }
+                    else
+                    {
+                        // we have added the RD because we have a snapshot
+                        for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerCtx))
+                        {
+                            @Nullable Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeNameEvacuateSource);
+                            if (snap != null)
+                            {
+                                StorPool sp = getStorPoolForEvacuation(rscDfn);
+                                if (sp == null)
+                                {
+                                    apiCallRc.addEntry(
+                                        ApiCallRcImpl.simpleEntry(
+                                            ApiConsts.WARN_NOT_EVACUATING,
+                                            "Snapshot '" + snapDfn.getName() + "' of resource " + rscName.displayValue +
+                                                "' cannot be evacuated as no available storage pool was found"
+                                        )
+                                    );
+                                }
+                                else
+                                {
+                                    NodeName nodeNameEvacTarget = sp.getNode().getName();
+                                    fluxList.add(
+                                        copySnapsHelper.getCopyFlux(
+                                            snapDfn,
+                                            nodeNameEvacTarget.displayValue,
+                                            contextRef
+                                        )
                                     );
                                 }
                             }
-
-                            if (createOrToggleDiskFlux == null)
-                            {
-                                ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
-                                    new RscPojo(
-                                        rscName.displayValue,
-                                        nodeNameEvacTarget.displayValue,
-                                        0L,
-                                        Collections.singletonMap(
-                                            ApiConsts.KEY_STOR_POOL_NAME,
-                                            sp.getName().displayValue
-                                        )
-                                    ),
-                                    rscDfn.getLayerStack(peerCtx).stream().map(DeviceLayerKind::name)
-                                        .collect(Collectors.toList()),
-                                    null,
-                                    null,
-                                    null
-                                );
-                                PriorityProps prioProps = new PriorityProps(
-                                    sp.getNode().getProps(apiCtx),
-                                    ctrlPropsHelper.getCtrlPropsForView()
-                                );
-                                String copyAllSnapsStr = prioProps.getProp(ApiConsts.KEY_COPY_ALL_SNAPS_ON_EVAC);
-                                createOrToggleDiskFlux = ctrlRscCrtApiCallHandler
-                                    .createResource(
-                                        Collections.singletonList(createRscPojo),
-                                        Resource.DiskfulBy.AUTO_PLACER,
-                                        copyAllSnapsStr == null || Boolean.parseBoolean(copyAllSnapsStr),
-                                        Collections.emptyList()
-                                    );
-                            }
-                            fluxList.add(
-                                createOrToggleDiskFlux.concatWith(
-                                    rscToggleDiskApiCallHandler.waitForMigration(
-                                        contextRef,
-                                        nodeNameEvacTarget,
-                                        rscName,
-                                        nodeNameEvacuateSource
-                                    )
-                                )
-                            );
                         }
                     }
                 }
@@ -1742,8 +1808,12 @@ public class CtrlNodeApiCallHandler
 
             ctrlTransactionHelper.commit();
             eventNodeHandlerBridge.triggerNodeEvacuate(nodeToEvacuate.getApiData(peerCtx, null, null));
-            fluxList.add(ctrlBackupCrtApiCallHandler.deleteNodeQueueAndReQueueSnapsIfNeeded(nodeToEvacuate));
             flux = Flux.<ApiCallRc>just(apiCallRc)
+                .concatWith(
+                    // we must make sure to first interrupt all currently ongoing shipments
+                    // before we start our evacuation shipments (otherwise those could get interrupted as well)
+                    ctrlBackupCrtApiCallHandler.deleteNodeQueueAndReQueueSnapsIfNeeded(nodeToEvacuate)
+                )
                 .concatWith(Flux.merge(fluxList));
         }
         catch (AccessDeniedException accDeniedExc)

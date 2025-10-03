@@ -14,6 +14,7 @@ import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.CopySnapsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -32,8 +33,6 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.DiskfulBy;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -69,7 +68,6 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescription;
 
@@ -135,6 +133,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
     private final Provider<AutoDiskfulTask> autoDiskfulTaskProvider;
     private final MixedStorPoolHelper mixedStorPoolHelper;
+    private final CopySnapsHelper copySnapHelper;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -159,7 +158,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
         Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef,
         Provider<AutoDiskfulTask> autoDiskfulTaskProviderRef,
-        MixedStorPoolHelper mixedStorPoolHelperRef
+        MixedStorPoolHelper mixedStorPoolHelperRef,
+        CopySnapsHelper copySnapHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -185,6 +185,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
         autoDiskfulTaskProvider = autoDiskfulTaskProviderRef;
         mixedStorPoolHelper = mixedStorPoolHelperRef;
+        copySnapHelper = copySnapHelperRef;
     }
 
     @Override
@@ -255,7 +256,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             layerListRef,
             removeDisk,
             diskfulByRef,
-            false
+            false,
+            false,
+            Collections.emptyList()
         );
     }
 
@@ -268,6 +271,33 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         boolean removeDisk,
         @Nullable Resource.DiskfulBy diskfulByRef,
         boolean toggleIntoTiebreakerRef
+    )
+    {
+        return resourceToggleDisk(
+            nodeNameStr,
+            rscNameStr,
+            storPoolNameStr,
+            migrateFromNodeNameStr,
+            layerListRef,
+            removeDisk,
+            diskfulByRef,
+            toggleIntoTiebreakerRef,
+            false,
+            Collections.emptyList()
+        );
+    }
+
+    public Flux<ApiCallRc> resourceToggleDisk(
+        String nodeNameStr,
+        String rscNameStr,
+        @Nullable String storPoolNameStr,
+        @Nullable String migrateFromNodeNameStr,
+        @Nullable List<String> layerListRef,
+        boolean removeDisk,
+        @Nullable Resource.DiskfulBy diskfulByRef,
+        boolean toggleIntoTiebreakerRef,
+        boolean copyAllSnapsRef,
+        List<String> snapNamesToCopyRef
     )
     {
         ResponseContext context = makeRscContext(
@@ -289,6 +319,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     removeDisk,
                     diskfulByRef,
                     toggleIntoTiebreakerRef,
+                    copyAllSnapsRef,
+                    snapNamesToCopyRef,
                     context
                 )
             )
@@ -304,6 +336,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         boolean removeDisk,
         @Nullable Resource.DiskfulBy diskfulByRef,
         boolean toggleIntoTiebreakerRef,
+        boolean copyAllSnapsRef,
+        List<String> snapNamesToCopyRef,
         ResponseContext context
     )
     {
@@ -473,7 +507,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             {
                 Resource migrateFromRsc = ctrlApiDataLoader.loadRsc(migrateFromNodeNameStr, rscNameStr, true);
 
-                ensureNoSnapshots(migrateFromRsc);
+                // TODO technically we now could also ship these snapshots... not sure if we want to by default
+                // though...
+                // ensureNoSnapshots(migrateFromRsc);
 
                 setMigrateFrom(rsc, migrateFromRsc.getNode().getName());
 
@@ -560,7 +596,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .<ApiCallRc>just(responses)
             .concatWith(deactivateFlux)
             .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, toggleIntoTiebreakerRef, context))
-            .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rscDfn));
+            .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rscDfn))
+            .concatWith(
+                copySnapHelper.getCopyFlux(Collections.singleton(rsc), copyAllSnapsRef, snapNamesToCopyRef, context)
+            );
     }
 
     private void ensureAllPeersHavePeerSlotLeft(ResourceDefinition rscDfnRef)
@@ -1162,34 +1201,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         catch (DatabaseException sqlExc)
         {
             throw new ApiDatabaseException(sqlExc);
-        }
-    }
-
-    private void ensureNoSnapshots(Resource rsc)
-    {
-        try
-        {
-            for (SnapshotDefinition snapshotDfn : rsc.getResourceDefinition().getSnapshotDfns(peerAccCtx.get()))
-            {
-                Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getNode().getName());
-                if (snapshot != null)
-                {
-                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_SNAPSHOT,
-                        "Cannot migrate '" + rsc.getResourceDefinition().getName() + "' " +
-                            "from '" + rsc.getNode().getName() + "' because snapshots are present " +
-                            "and snapshots cannot be migrated"
-                    ));
-                }
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "check for snapshots of " + getRscDescriptionInline(rsc),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
-            );
         }
     }
 

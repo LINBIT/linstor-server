@@ -1,5 +1,6 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
@@ -136,6 +137,13 @@ public class RscApiTest extends ApiTestBase
             createDefaultResourceGroup(BOB_ACC_CTX)
         );
         rscDfnMap.put(testRscName, testRscDfn);
+
+        ctrlConf.setProp(
+            InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
+            java.util.UUID.randomUUID().toString(),
+            ApiConsts.NAMESPC_CLUSTER
+        );
+
         commitAndCleanUp(true);
     }
 
