@@ -24,6 +24,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -46,7 +47,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -220,58 +220,80 @@ public abstract class AbsBackupShippingService implements SystemService
         if (RscLayerSuffixes.shouldSuffixBeShipped(rscNameSuffixRef))
         {
             String namespc = BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + s3orLinRemoteName;
-            String s3orStltRemoteName = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot()
-                .getSnapshotDefinition()
-                .getSnapDfnProps(accCtx)
-                .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, namespc);
-            String s3Suffix = stltConfigAccessor.getReadonlyProps()
-                .getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-            String backupTimeRaw = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotDefinition()
-                .getSnapDfnProps(accCtx)
-                .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, namespc);
-            LocalDateTime backupTime = TimeUtils.millisToDate(Long.parseLong(backupTimeRaw));
+            Snapshot snap = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot();
+            synchronized (snap)
+            {
+                String s3orStltRemoteName = snap.getSnapshotDefinition()
+                    .getSnapDfnProps(accCtx)
+                    .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, namespc);
+                String s3Suffix = stltConfigAccessor.getReadonlyProps()
+                    .getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                String backupTimeRaw = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotDefinition()
+                    .getSnapDfnProps(accCtx)
+                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, namespc);
+                LocalDateTime backupTime = TimeUtils.millisToDate(Long.parseLong(backupTimeRaw));
 
-            String backupName = new S3VolumeNameInfo(
-                rscNameRef,
-                rscNameSuffixRef,
-                vlmNrRef,
-                backupTime,
-                s3Suffix,
-                snapNameRef
-            ).toString();
+                String backupName = new S3VolumeNameInfo(
+                    rscNameRef,
+                    rscNameSuffixRef,
+                    vlmNrRef,
+                    backupTime,
+                    s3Suffix,
+                    snapNameRef
+                ).toString();
 
-            AbsRemote s3orStltRemote = remoteMap.get(new RemoteName(s3orStltRemoteName, true));
-            startDaemon(
-                cmdRef,
-                new String[]
+                AbsRemote s3orStltRemote = remoteMap.get(new RemoteName(s3orStltRemoteName, true));
+
+                boolean startDaemon;
+                if (s3orStltRemote instanceof S3Remote)
                 {
-                    "timeout",
-                    "0",
-                    "bash",
-                    "-c",
-                    getCommandSending(
+                    startDaemon = true;
+                }
+                else if (s3orStltRemote instanceof StltRemote)
+                {
+                    @Nullable String ip = ((StltRemote) s3orStltRemote).getIp(accCtx);
+                    startDaemon = ip != null && !ip.isBlank();
+                }
+                else
+                {
+                    throw new ImplementationError("unknown remote type:" + s3orStltRemote.getType());
+                }
+                if (startDaemon)
+                {
+                    startDaemon(
                         cmdRef,
+                        new String[]
+                        {
+                            "timeout",
+                            "0",
+                            "bash",
+                            "-c",
+                            getCommandSending(
+                                cmdRef,
+                                s3orStltRemote,
+                                snapVlmData
+                            )
+                        },
+                        backupName,
                         s3orStltRemote,
+                        false,
+                        null,
+                        (success, addrInUse) -> postShipping(
+                            success,
+                            addrInUse,
+                            snapVlmData,
+                            InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_SENT,
+                            true,
+                            false,
+                            s3orStltRemote instanceof StltRemote ?
+                                ((StltRemote) s3orStltRemote).getLinstorRemoteName().displayValue :
+                                s3orStltRemoteName
+                        ),
+                        basedOnSnapVlmData,
                         snapVlmData
-                    )
-                },
-                backupName,
-                s3orStltRemote,
-                false,
-                null,
-                (success, addrInUse) -> postShipping(
-                    success,
-                    addrInUse,
-                    snapVlmData,
-                    InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_SENT,
-                    true,
-                    false,
-                    s3orStltRemote instanceof StltRemote ? ((StltRemote) s3orStltRemote).getLinstorRemoteName().displayValue :
-                        s3orStltRemoteName
-                ),
-                basedOnSnapVlmData,
-                snapVlmData
-            );
+                    );
+                }
+            }
         }
     }
 
@@ -283,51 +305,56 @@ public abstract class AbsBackupShippingService implements SystemService
         if (RscLayerSuffixes.shouldSuffixBeShipped(snapVlmData.getRscLayerObject().getResourceNameSuffix()))
         {
             SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-            String remoteName = snapVlm.getSnapshot()
-                .getSnapshotDefinition()
-                .getSnapDfnProps(accCtx)
-                .getProp(
-                    InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                    BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
-                );
-            AbsRemote remote = remoteMap.get(new RemoteName(remoteName, true));
-
-            ensureRemoteType(remote);
-            Integer port = null;
-            if (remote instanceof StltRemote)
+            Snapshot snap = snapVlm.getAbsResource();
+            synchronized (snap)
             {
-                port = ((StltRemote) remote).getPorts(accCtx)
-                    .get(snapVlmData.getVlmNr() + snapVlmData.getRscLayerObject().getResourceNameSuffix());
-            }
+                String remoteName = snapVlm.getSnapshot()
+                    .getSnapshotDefinition()
+                    .getSnapDfnProps(accCtx)
+                    .getProp(
+                        InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                        BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
+                    );
+                AbsRemote remote = remoteMap.get(new RemoteName(remoteName, true));
 
-            String backupName = getBackupNameForRestore(snapVlmData);
-            startDaemon(
-                cmdRef,
-                new String[]
+                ensureRemoteType(remote);
+                Integer port = null;
+                if (remote instanceof StltRemote)
                 {
-                    "timeout",
-                    "0",
-                    "bash",
-                    "-c",
-                    getCommandReceiving(cmdRef, remote, snapVlmData)
-                },
-                backupName,
-                remote,
-                true,
-                port,
-                (success, addrInUse) -> postShipping(
-                    success,
-                    addrInUse,
-                    snapVlmData,
-                    InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_RECEIVED,
+                    port = ((StltRemote) remote).getPorts(accCtx)
+                        .get(snapVlmData.getVlmNr() + snapVlmData.getRscLayerObject().getResourceNameSuffix());
+                }
+
+                String backupName = getBackupNameForRestore(snapVlmData);
+                startDaemon(
+                    cmdRef,
+                    new String[]
+                    {
+                        "timeout",
+                        "0",
+                        "bash",
+                        "-c",
+                        getCommandReceiving(cmdRef, remote, snapVlmData)
+                    },
+                    backupName,
+                    remote,
                     true,
-                    true,
-                    remote instanceof StltRemote ? ((StltRemote) remote).getLinstorRemoteName().displayValue :
-                        remoteName
-                ),
-                null,
-                snapVlmData
-            );
+                    port,
+                    (success, addrInUse) -> postShipping(
+                        success,
+                        addrInUse,
+                        snapVlmData,
+                        InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_RECEIVED,
+                        true,
+                        true,
+                        remote instanceof StltRemote ?
+                            ((StltRemote) remote).getLinstorRemoteName().displayValue :
+                            remoteName
+                    ),
+                    null,
+                    snapVlmData
+                );
+            }
         }
     }
 
@@ -426,10 +453,12 @@ public abstract class AbsBackupShippingService implements SystemService
                 ShippingInfo info = shippingInfoMap.computeIfAbsent(shipKey, key -> new ShippingInfo());
                 if (s3orStltRemote instanceof StltRemote)
                 {
-                    info.portsUsed.add(
-                        ((StltRemote) s3orStltRemote).getPorts(accCtx)
-                            .get(snapVlmData.getVlmNr() + snapVlmData.getRscLayerObject().getResourceNameSuffix())
-                    );
+                    @Nullable Integer port = ((StltRemote) s3orStltRemote).getPorts(accCtx)
+                        .get(snapVlmData.getVlmNr() + snapVlmData.getRscLayerObject().getResourceNameSuffix());
+                    if (port != null)
+                    {
+                        info.portsUsed.add(port);
+                    }
                 }
                 info.snapVlmDataInfoMap.put(
                     snapVlmData,
@@ -627,14 +656,8 @@ public abstract class AbsBackupShippingService implements SystemService
                             String simpleBackupName = snap.getSnapshotDefinition()
                                 .getSnapDfnProps(accCtx)
                                 .getProp(InternalApiConsts.KEY_BACKUP_TO_RESTORE, namespc);
-                            if (finishedShipments.containsKey(shipKey))
-                            {
-                                finishedShipments.get(shipKey).add(simpleBackupName);
-                            }
-                            else
-                            {
-                                finishedShipments.put(shipKey, new ArrayList<>(Arrays.asList(simpleBackupName)));
-                            }
+                            finishedShipments.computeIfAbsent(shipKey, ignored -> new ArrayList<>())
+                                .add(simpleBackupName);
                         }
                         catch (InvalidKeyException | AccessDeniedException exc)
                         {
