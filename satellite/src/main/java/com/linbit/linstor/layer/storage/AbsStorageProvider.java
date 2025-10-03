@@ -73,6 +73,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -640,7 +641,37 @@ public abstract class AbsStorageProvider<
             final boolean cloneVolume = isCloneVolume(vlmData);
             @Nullable LAYER_SNAP_DATA sourceSnapVlm = getSourceSnapVlmDataForRestore(vlmData);
 
+            boolean canRestore = false;
             if (sourceSnapVlm != null)
+            {
+                if (!sourceSnapVlm.exists())
+                {
+                    /*
+                     * Using the new "rollback via restore" mechanism in combination with ZFS the following scenario may
+                     * (or rather most likely) have occurred:
+                     * * We created a safety_snap
+                     * * We deleted the original resource
+                     * * * This includes that we threw away the layer data, including the ZfsData that represented
+                     * ___ sourceSnapVlm
+                     * * We received the new resource containing the restore property
+                     * * * We also received the resource's snapshots so we recreated the ZfsData of sourceSnapVlm, but
+                     * ___ that instance has by default "exists == false"
+                     * * * Our recent "zfs list" optimization only queries for the actual resource if it exists or not,
+                     * ___ but does not check if the restore-source also exists. That means that sourceSnapVlm is not
+                     * ___ null but still has "exists == false" although the ZFS snapshot itself also exists and is
+                     * ___ ready to be used as a clone.
+                     *
+                     * This scenario is a simple cache-miss, which is why we run an additional check to see verify
+                     * if the ZFS snapshot represented by sourceSnapVlm does indeed exist.
+                     *
+                     * Without this recache we would create a new (empty) ZFS volume, DrbdLayer would create new
+                     * metadata but the volume would stay in Inconsistent state.
+                     */
+                    updateVolumeAndSnapshotStates(Collections.emptyList(), Collections.singletonList(sourceSnapVlm));
+                }
+                canRestore = sourceSnapVlm.exists();
+            }
+            if (canRestore)
             {
                 errorReporter.logDebug("Restoring from snapshot: %s", asSnapLvIdentifier(sourceSnapVlm));
 
