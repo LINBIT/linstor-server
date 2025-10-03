@@ -90,6 +90,8 @@ public class BackupNodeFinder
      * means that the snap needs to be added to the prevNodeUndecidedQueue instead of the actual node queues
      *
      * @param rscDfn
+     * @param currentSnapDfnRef The current snapshot definition. If non-null only nodes are considered that already
+     *        have a snapshot of this given snapshot definitions. If this parameter is null, this check is skipped.
      * @param prevSnapDfnRef
      * @param requiredExtToolsRef
      *
@@ -99,6 +101,7 @@ public class BackupNodeFinder
      */
     public Set<Node> findUsableNodes(
         ResourceDefinition rscDfn,
+        @Nullable SnapshotDefinition currentSnapDfnRef,
         @Nullable SnapshotDefinition prevSnapDfnRef,
         AbsRemote remote,
         @Nullable String targetRscName
@@ -119,7 +122,7 @@ public class BackupNodeFinder
         while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
-            if (canNodeShip(rsc, accCtx))
+            if (canNodeShip(rsc, currentSnapDfnRef, accCtx))
             {
                 ApiCallRcImpl backupShippingSupported = backupShippingSupported(rsc);
                 if (backupShippingSupported.isEmpty())
@@ -230,7 +233,7 @@ public class BackupNodeFinder
                     }
                     prevNodeStr = prevSnapDfnRef.getSnapDfnProps(accCtx)
                         .getProp(
-                            InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + targetRscName,
+                            InternalApiConsts.KEY_BACKUP_SRC_NODE ,
                             BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName
                         );
                 }
@@ -274,7 +277,8 @@ public class BackupNodeFinder
         return ret;
     }
 
-    private boolean canNodeShip(Resource rsc, AccessContext accCtx) throws AccessDeniedException
+    private boolean canNodeShip(Resource rsc, @Nullable SnapshotDefinition currentSnapDfnRef, AccessContext accCtx)
+        throws AccessDeniedException
     {
         boolean isSomeSortOfDiskless = rsc.getStateFlags()
             .isSomeSet(
@@ -299,12 +303,15 @@ public class BackupNodeFinder
             ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE,
             ApiConsts.NAMESPC_BACKUP_SHIPPING
         );
+
+        boolean hasSnapshot = currentSnapDfnRef == null ||
+            currentSnapDfnRef.getSnapshot(accCtx, rsc.getNode().getName()) != null;
         /*
          * This does NOT check for free shipping slots, that is not important here, since we only want to know if the
          * node is able to do a shipment, not if it is possible to start it right now
          */
         boolean isNodeAllowedToShip = maxBackups == null || maxBackups.isEmpty() || Integer.parseInt(maxBackups) != 0;
-        return !isSomeSortOfDiskless && isNodeAvailable && isNodeAllowedToShip;
+        return !isSomeSortOfDiskless && isNodeAvailable && isNodeAllowedToShip && hasSnapshot;
     }
 
     private Set<Node> getNodesForFullBackup(Map<Category, Set<Node>> usableGroups)

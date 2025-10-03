@@ -136,7 +136,6 @@ public class CtrlBackupCreateApiCallHandler
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         backupHelper = backupHelperRef;
         backupNodeFinder = backupNodeFinderRef;
-
     }
 
     public Flux<ApiCallRc> createBackup(
@@ -315,7 +314,8 @@ public class CtrlBackupCreateApiCallHandler
                 nodeName,
                 responses,
                 queueAnyways,
-                l2lData
+                l2lData,
+                shipExistingSnap
             );
 
             List<Integer> nodeIds = new ArrayList<>();
@@ -364,12 +364,25 @@ public class CtrlBackupCreateApiCallHandler
                         " in progress."
                 ).putObjRef(ApiConsts.KEY_SNAPSHOT, snapName).build()
             );
-            Flux<ApiCallRc> flux = snapshotCrtHandler.postCreateSnapshot(snapDfn, runInBackgroundRef)
-                .concatWith(Flux.<ApiCallRc>just(responses));
+            Flux<ApiCallRc> flux = Flux.empty();
+            if (!shipExistingSnap)
+            {
+                flux = snapshotCrtHandler.postCreateSnapshot(snapDfn, runInBackgroundRef);
+            }
+            flux = flux.concatWith(Flux.<ApiCallRc>just(responses));
             if (chosenNode != null)
             {
                 flux = flux.concatWith(
-                    startShipping(snapDfn, chosenNode, remote, prevSnapDfn, responses, nodeName, l2lData)
+                    startShipping(
+                        snapDfn,
+                        chosenNode,
+                        remote,
+                        prevSnapDfn,
+                        responses,
+                        nodeName,
+                        l2lData,
+                        shipExistingSnap
+                    )
                 );
             }
             return new BackupSnapshotObj(
@@ -442,7 +455,8 @@ public class CtrlBackupCreateApiCallHandler
         SnapshotDefinition prevSnapDfn,
         ApiCallRcImpl responses,
         @Nullable String optPrefNodeName,
-        @Nullable BackupShippingSrcData optL2LData
+        @Nullable BackupShippingSrcData optL2LData,
+        boolean shipExistingSnapRef
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -458,7 +472,8 @@ public class CtrlBackupCreateApiCallHandler
                 prevSnapDfn,
                 responses,
                 optPrefNodeName,
-                optL2LData
+                optL2LData,
+                shipExistingSnapRef
             )
         );
     }
@@ -470,7 +485,8 @@ public class CtrlBackupCreateApiCallHandler
         SnapshotDefinition prevSnapDfn,
         ApiCallRcImpl responsesRef,
         @Nullable String optPrefNodeName,
-        @Nullable BackupShippingSrcData optL2LData
+        @Nullable BackupShippingSrcData optL2LData,
+        boolean shipExistingSnapRef
     )
     {
         try
@@ -489,12 +505,11 @@ public class CtrlBackupCreateApiCallHandler
                 );
                 if (remote instanceof S3Remote)
                 {
-                    snapDfnProps
-                        .setProp(
-                            InternalApiConsts.KEY_BACKUP_SRC_NODE,
-                            node.getName().displayValue,
-                            propsNamespc
-                        );
+                    snapDfnProps.setProp(
+                        InternalApiConsts.KEY_BACKUP_SRC_NODE,
+                        node.getName().displayValue,
+                        propsNamespc
+                    );
                 }
                 else if (remote instanceof LinstorRemote)
                 {
@@ -502,12 +517,12 @@ public class CtrlBackupCreateApiCallHandler
                     {
                         throw new ImplementationError("doing l2l-shipping but no l2l-data given");
                     }
-                    snapDfnProps
-                        .setProp(
-                            InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + optL2LData.getDstRscName(),
-                            node.getName().displayValue,
-                            propsNamespc
-                        );
+                    // this is (except the null check) the same as the S3Remote case. we could/should combine them
+                    snapDfnProps.setProp(
+                        InternalApiConsts.KEY_BACKUP_SRC_NODE,
+                        node.getName().displayValue,
+                        propsNamespc
+                    );
                 }
                 // now that it is decided that this node will do the shipping, see if any snapDfn can be moved to the
                 // normal queues
@@ -523,7 +538,8 @@ public class CtrlBackupCreateApiCallHandler
                         item.preferredNode,
                         responsesRef,
                         true, // always queue to avoid simultaneous shippings of consecutive backups
-                        item.l2lData
+                        item.l2lData,
+                        shipExistingSnapRef
                     );
                 }
 
@@ -574,7 +590,8 @@ public class CtrlBackupCreateApiCallHandler
                     optPrefNodeName,
                     responsesRef,
                     true, // queue anyways
-                    optL2LData
+                    optL2LData,
+                    shipExistingSnapRef
                 );
                 flux = Flux.empty();
             }
@@ -697,7 +714,8 @@ public class CtrlBackupCreateApiCallHandler
                         item.preferredNode,
                         responses,
                         false,
-                        item.l2lData
+                        item.l2lData,
+                        item.shipExistingSnap
                     );
                     if (shipFromNode != null)
                     {
@@ -709,7 +727,8 @@ public class CtrlBackupCreateApiCallHandler
                                 item.prevSnapDfn,
                                 responses,
                                 item.preferredNode,
-                                item.l2lData
+                                item.l2lData,
+                                item.shipExistingSnap
                             )
                         );
                     }
@@ -733,11 +752,13 @@ public class CtrlBackupCreateApiCallHandler
         @Nullable String prefNodeName,
         ApiCallRcImpl responses,
         boolean queueAnyways,
-        @Nullable BackupShippingSrcData l2lData
+        @Nullable BackupShippingSrcData l2lData,
+        boolean shipExistingSnapRef
     ) throws AccessDeniedException
     {
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
+            shipExistingSnapRef ? snapDfn : null,
             prevSnapDfn,
             remote,
             l2lData == null ? null : l2lData.getDstRscName()
@@ -756,7 +777,15 @@ public class CtrlBackupCreateApiCallHandler
             // the remote needs to be the LinstorRemote in L2L-cases, since the target node is not yet decided
             // on.
             // usableNodes might be empty, in that case the snapDfn is added to the prevNodeUndecidedQueue
-            backupInfoMgr.addToQueues(snapDfn, remote, prevSnapDfn, prefNodeName, l2lData, usableNodes);
+            backupInfoMgr.addToQueues(
+                snapDfn,
+                remote,
+                prevSnapDfn,
+                prefNodeName,
+                l2lData,
+                usableNodes,
+                shipExistingSnapRef
+            );
         }
         return chosenNode;
     }
@@ -1043,7 +1072,7 @@ public class CtrlBackupCreateApiCallHandler
                     {
                         String prevNodeStr = snapDfn.getSnapDfnProps(sysCtx)
                             .getProp(
-                                InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + targetRscName,
+                                InternalApiConsts.KEY_BACKUP_SRC_NODE,
                                 BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName
                             );
                         if (prevNodeStr != null)

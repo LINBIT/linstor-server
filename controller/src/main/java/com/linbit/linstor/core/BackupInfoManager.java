@@ -628,12 +628,13 @@ public class BackupInfoManager
         @Nullable SnapshotDefinition prevSnapDfn,
         @Nullable String preferredNode,
         @Nullable BackupShippingSrcData l2lData,
-        @Nullable Set<Node> usableNodes
+        @Nullable Set<Node> usableNodes,
+        boolean shipExistingSnap
     )
     {
         synchronized (uploadQueues)
         {
-            QueueItem item = new QueueItem(snapDfn, remote, prevSnapDfn, preferredNode, l2lData);
+            QueueItem item = new QueueItem(snapDfn, remote, prevSnapDfn, preferredNode, l2lData, shipExistingSnap);
             if (usableNodes != null && !usableNodes.isEmpty())
             {
                 for (Node node : usableNodes)
@@ -724,7 +725,7 @@ public class BackupInfoManager
         synchronized (uploadQueues)
         {
             // this works because hashCode & equals only use snapDfn & remote and ignore the prevSnapDfn
-            QueueItem toDelete = new QueueItem(snapDfn, remote, null, null, null);
+            QueueItem toDelete = new QueueItem(snapDfn, remote, null, null, null, false);
             uploadQueues.removeValue(toDelete);
             prevNodeUndecidedQueue.remove(toDelete);
         }
@@ -1081,6 +1082,10 @@ public class BackupInfoManager
          * node. Without alreadyStartedOn, an already finished shipping could be started again on another node.
          */
         public @Nullable Node alreadyStartedOn;
+        /**
+         * Needed for BackupNodeFinder's canUseNode to distinguish if a node needs to already have this snapshot or not.
+         */
+        public boolean shipExistingSnap;
 
         // TODO: spotbugs thinks that "remoteRef must be non-null but is marked as nullable" (non-null due to
         // @NonNullByDefault, nullable probably due to being off by one index during analysis). Once this bug is
@@ -1092,7 +1097,8 @@ public class BackupInfoManager
             AbsRemote remoteRef,
             @Nullable SnapshotDefinition prevSnapDfnRef,
             @Nullable String preferredNodeRef,
-            @Nullable BackupShippingSrcData l2lDataRef
+            @Nullable BackupShippingSrcData l2lDataRef,
+            boolean shipExistingSnapRef
         )
         {
             snapDfn = snapDfnRef;
@@ -1100,13 +1106,15 @@ public class BackupInfoManager
             prevSnapDfn = prevSnapDfnRef;
             preferredNode = preferredNodeRef;
             l2lData = l2lDataRef;
+            shipExistingSnap = shipExistingSnapRef;
         }
 
         @Override
         public String toString()
         {
-            return "QueueItem [snapDfn=" + snapDfn + ", remote=" + s3orLinRemote + ", prevSnapDfn=" + prevSnapDfn +
-                ", preferredNode=" + preferredNode + ", l2lData=" + l2lData + "]";
+            return "QueueItem [snapDfn=" + snapDfn + ", s3orLinRemote=" + s3orLinRemote + ", prevSnapDfn=" +
+                prevSnapDfn + ", preferredNode=" + preferredNode + ", l2lData=" + l2lData + ", alreadyStartedOn=" +
+                alreadyStartedOn + ", shipExistingSnap=" + shipExistingSnap + "]";
         }
 
         @Override

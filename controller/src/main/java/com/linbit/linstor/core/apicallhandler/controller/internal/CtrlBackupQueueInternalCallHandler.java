@@ -395,7 +395,8 @@ public class CtrlBackupQueueInternalCallHandler
                     current.preferredNode,
                     new ApiCallRcImpl(),
                     queueAnyways,
-                    null
+                    null,
+                    current.shipExistingSnap
                 );
             }
         }
@@ -411,7 +412,8 @@ public class CtrlBackupQueueInternalCallHandler
                     prevSnapDfn,
                     new ApiCallRcImpl(),
                     current.preferredNode,
-                    current.l2lData
+                    current.l2lData,
+                    current.shipExistingSnap
                 );
             }
             catch (ApiAccessDeniedException exc)
@@ -529,7 +531,8 @@ public class CtrlBackupQueueInternalCallHandler
                     next.preferredNode,
                     new ApiCallRcImpl(),
                     queueAnyways,
-                    l2lData
+                    l2lData,
+                    next.shipExistingSnap
                 );
                 if (l2lNodeForShipping != null)
                 {
@@ -545,7 +548,8 @@ public class CtrlBackupQueueInternalCallHandler
                         l2lPrevSnapDfn,
                         new ApiCallRcImpl(),
                         next.preferredNode,
-                        l2lData
+                        l2lData,
+                        next.shipExistingSnap
                     )
                         .concatWith(
                             scopeRunner.fluxInTransactionalScope(

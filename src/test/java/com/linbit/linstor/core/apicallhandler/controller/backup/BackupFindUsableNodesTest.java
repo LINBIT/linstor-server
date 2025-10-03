@@ -208,6 +208,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         singleStorageRsc(nodeA);
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
+            null,
             snapDfn,
             mockedRemote,
             TARGET_RSC_NAME
@@ -218,6 +219,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         {
             usableNodes = backupNodeFinder.findUsableNodes(
                 rscDfn,
+                null,
                 snapDfn,
                 mockedRemote,
                 TARGET_RSC_NAME
@@ -254,6 +256,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             null,
+            null,
             mockedRemote,
             TARGET_RSC_NAME
         );
@@ -266,7 +269,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
                 nodeA.getName().displayValue,
                 BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + REMOTE_NAME
             );
-        usableNodes = backupNodeFinder.findUsableNodes(rscDfn, snapDfn, mockedRemote, TARGET_RSC_NAME);
+        usableNodes = backupNodeFinder.findUsableNodes(rscDfn, null, snapDfn, mockedRemote, TARGET_RSC_NAME);
         assertSet(usableNodes, NODE_A, NODE_B);
     }
 
@@ -291,6 +294,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         singleDrbdRsc(nodeC);
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
+            null,
             null,
             mockedRemote,
             TARGET_RSC_NAME
@@ -344,6 +348,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         );
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
+            null,
             inc ? snapDfn : null,
             mockedRemote,
             TARGET_RSC_NAME

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.InternalApiConsts;
@@ -18,6 +19,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
@@ -528,16 +530,37 @@ public class CtrlSnapshotCrtHelper
         );
         long volumeSize = getVolumeSize(vlmDfn);
 
-        SnapshotVolumeDefinition snapshotVlmDfn;
+        @Nullable SnapshotVolumeDefinition snapshotVlmDfn;
         try
         {
-            snapshotVlmDfn = snapshotVolumeDefinitionControllerFactory.create(
-                peerAccCtx.get(),
-                snapshotDfn,
-                vlmDfn,
-                volumeSize,
-                new SnapshotVolumeDefinition.Flags[] {}
+            snapshotVlmDfn = snapshotDfn.getSnapshotVolumeDefinition(
+                apiCtx,
+                new VolumeNumber(vlmDfn.getVolumeNumber().value)
             );
+            if (snapshotVlmDfn == null)
+            {
+                snapshotVlmDfn = snapshotVolumeDefinitionControllerFactory.create(
+                    peerAccCtx.get(),
+                    snapshotDfn,
+                    vlmDfn,
+                    volumeSize,
+                    new SnapshotVolumeDefinition.Flags[] {}
+                );
+            }
+            else
+            {
+                if (snapshotVlmDfn.getVolumeSize(apiCtx) != volumeSize)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_BACKUP_CONFIG,
+                            "The snapshot-volume-definition " + descriptionInline +
+                                " already exists but has a different size. Current size: " + snapshotVlmDfn
+                                    .getVolumeSize(apiCtx) + ", expected size: " + volumeSize
+                        )
+                    );
+                }
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -582,6 +605,10 @@ public class CtrlSnapshotCrtHelper
                 ),
                 mdExc
             );
+        }
+        catch (ValueOutOfRangeException exc)
+        {
+            throw new ImplementationError(exc);
         }
         return snapshotVlmDfn;
     }
