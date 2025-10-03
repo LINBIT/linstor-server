@@ -32,6 +32,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -60,6 +61,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.utils.StringUtils;
@@ -71,6 +73,7 @@ import javax.inject.Singleton;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -217,21 +220,11 @@ public class CtrlBackupCreateApiCallHandler
                     )
                 );
             }
-            // test if master key is unlocked
-            if (!ctrlSecObj.areAllSet())
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_CRYPT_PASSPHRASE,
-                        "Backup shipping requires a set up encryption. Please use 'linstor encryption " +
-                            "create-passphrase' or '... enter-passphrase'"
-                    )
-                );
-            }
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
             AbsRemote remote;
             SnapshotDefinition prevSnapDfn = null;
             @Nullable SnapshotDefinition snapDfn = rscDfn.getSnapshotDfn(sysCtx, new SnapshotName(snapName));
+
             if (
                 snapDfn != null && (snapDfn.getFlags()
                     .isSomeSet(
@@ -253,9 +246,6 @@ public class CtrlBackupCreateApiCallHandler
             boolean shipExistingSnap = snapDfn != null;
             if (remoteTypeRef.equals(RemoteType.S3))
             {
-                // check if encryption is possible
-                backupHelper.getLocalMasterKey();
-
                 remote = backupHelper.getS3Remote(remoteName);
                 if (shipExistingSnap)
                 {
@@ -295,6 +285,7 @@ public class CtrlBackupCreateApiCallHandler
                         responses
                     );
             }
+            ensureMasterKeyIsUnlockedIfNeeded(snapDfn, rscDfn, remote);
             setBackupSnapDfnProps(snapDfn, scheduleNameRef, nowRef, remoteName);
             /*
              * See if the previous snap has already finished shipping. If it hasn't, the current snap must be queued to
@@ -401,6 +392,57 @@ public class CtrlBackupCreateApiCallHandler
         catch (InvalidKeyException | InvalidNameException | InvalidValueException exc)
         {
             throw new ImplementationError(exc);
+        }
+    }
+
+    private void ensureMasterKeyIsUnlockedIfNeeded(
+        @Nullable SnapshotDefinition snapDfnRef,
+        ResourceDefinition rscDfnRef,
+        AbsRemote remoteRef
+    )
+    {
+        boolean isMasterKeyNeeded = remoteRef instanceof S3Remote;
+        if (!isMasterKeyNeeded)
+        {
+            try
+            {
+                Collection<AbsResource<?>> absRscList = new ArrayList<>(
+                    snapDfnRef != null ?
+                        snapDfnRef.getAllNotDeletingSnapshots(sysCtx) :
+                        rscDfnRef.getNotDeletedDiskful(sysCtx)
+                );
+                for (AbsResource<?> absRsc : absRscList)
+                {
+                    List<DeviceLayerKind> layerStack = LayerRscUtils.getLayerStack(
+                        absRsc.getLayerData(sysCtx),
+                        sysCtx
+                    );
+                    if (layerStack.contains(DeviceLayerKind.LUKS))
+                    {
+                        isMasterKeyNeeded = true;
+                        break;
+                    }
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+
+        if (isMasterKeyNeeded)
+        {
+            // test if master key is unlocked
+            if (!ctrlSecObj.areAllSet())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_CRYPT_PASSPHRASE,
+                        "Backup shipping requires a set up encryption. Please use 'linstor encryption " +
+                            "create-passphrase' or '... enter-passphrase'"
+                    )
+                );
+            }
         }
     }
 
