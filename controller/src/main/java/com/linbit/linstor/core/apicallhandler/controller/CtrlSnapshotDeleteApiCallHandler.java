@@ -169,7 +169,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     public Flux<ApiCallRc> deleteSnapshot(
         ResourceName rscName,
         SnapshotName snapshotName,
-        List<String> nodeNamesStrListRef
+        @Nullable Collection<String> nodeNamesStrListRef
     )
     {
         return scopeRunner
@@ -186,7 +186,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     private Flux<ApiCallRc> deleteSnapshotInTransaction(
         ResourceName rscNameRef,
         SnapshotName snapshotNameRef,
-        @Nullable List<String> nodeNamesStrListRef
+        @Nullable Collection<String> nodeNamesStrListRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
