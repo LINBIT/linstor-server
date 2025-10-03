@@ -443,6 +443,18 @@ public class DrbdLayer implements DeviceLayer
                 // in case we want to undelete this resource... but the metadata got already wiped
                 drbdVlmData.setCheckMetaData(true);
             }
+            drbdRscData.setAdjustRequired(true);
+            if (adjustResourcesList != null && !drbdRscData.getAbsResource()
+                .getStateFlags()
+                .isSet(workerCtx, Resource.Flags.DRBD_DELETE))
+            {
+                /*
+                 * If DRBD_DELETE is not set but this method (delete DRBD) got still called, we are most likely in some
+                 * rollback scenario where we will most likely need to adjust the just deleted DRBD resource, possibly
+                 * even in the current deviceManagerRun.
+                 */
+                adjustResourcesList.add(drbdRscData.getResourceName().displayValue.toLowerCase());
+            }
         }
         catch (ExtCmdFailedException cmdExc)
         {
