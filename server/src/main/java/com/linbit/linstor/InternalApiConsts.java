@@ -177,6 +177,7 @@ public class InternalApiConsts
     public static final String KEY_BACKUP_SHIPPED_BY_SCHEDULE = "BackupShippedBySchedule";
     public static final String KEY_FORCE_INITIAL_SYNC_PERMA = "ForceInitialSyncPermanent";
     public static final String KEY_BACKUP_SRC_NODE = "SrcNode";
+    public static final String KEY_BACKUP_DST_NODE = "DstNode";
     public static final String KEY_RENAME_STORPOOL_MAP = "RenameStorpoolMap";
     public static final String KEY_SCHEDULE_DST_RSC_GRP = "TargetResourceGroup";
     public static final String KEY_SCHEDULE_DST_RSC_NAME = "TargetResourceName";

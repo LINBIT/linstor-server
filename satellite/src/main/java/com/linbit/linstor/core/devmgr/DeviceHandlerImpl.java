@@ -753,15 +753,14 @@ public class DeviceHandlerImpl implements DeviceHandler
                     {
                         // start the backup-shipping-daemons if necessary
                         snapListNotifyApplied.add(snap);
-                        if (
-                            BackupShippingUtils.isBackupTarget(snapDfn, wrkCtx) &&
-                                BackupShippingUtils.hasShippingStatus(
-                                    snapDfn,
-                                    null,
-                                    InternalApiConsts.VALUE_SHIPPING,
-                                    wrkCtx
-                                )
-                        )
+                        boolean isBackupTarget = BackupShippingUtils.isBackupTarget(snapDfn, snap.getNode(), wrkCtx);
+                        boolean hasShippingStatus = BackupShippingUtils.hasShippingStatus(
+                            snapDfn,
+                            null,
+                            InternalApiConsts.VALUE_SHIPPING,
+                            wrkCtx
+                        );
+                        if (isBackupTarget && hasShippingStatus)
                         {
                             @Nullable String srcRemoteName = snapDfn.getSnapDfnProps(wrkCtx)
                                 .getProp(

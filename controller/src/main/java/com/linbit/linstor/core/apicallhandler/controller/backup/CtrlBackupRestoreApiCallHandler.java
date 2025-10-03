@@ -574,6 +574,7 @@ public class CtrlBackupRestoreApiCallHandler
                     InternalApiConsts.VALUE_SHIPPING,
                     BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
                 );
+            nextBackup.setShipBackup(sysCtx, true);
             if (!backupInfoMgr.addAllRestoreEntries(
                 nextBackup.getResourceDefinition(),
                 toRestore.toString(),
@@ -1470,6 +1471,7 @@ public class CtrlBackupRestoreApiCallHandler
                         snap.getResourceName().displayValue + "_" + snap.getSnapshotName().displayValue,
                         BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
                     );
+                snap.setShipBackup(sysCtx, true);
                 if (!backupInfoMgr.addAllRestoreEntries(
                     rscDfn,
                     "",
@@ -1939,6 +1941,9 @@ public class CtrlBackupRestoreApiCallHandler
                         InternalApiConsts.KEY_BACKUP_TO_RESTORE,
                         propsNamespc
                     );
+                    // just to be sure
+                    snap.setTakeSnapshot(peerCtx, false);
+                    snap.setShipBackup(peerCtx, false);
 
                     for (Integer port : portsRef)
                     {
@@ -1963,6 +1968,7 @@ public class CtrlBackupRestoreApiCallHandler
                                 propsNamespc
                             );
 
+                        nextSnap.setShipBackup(peerCtx, true);
                         ctrlTransactionHelper.commit();
                         flux = flux.concatWith(
                             ctrlSatelliteUpdateCaller.updateSatellites(
@@ -1975,7 +1981,7 @@ public class CtrlBackupRestoreApiCallHandler
                                     LinstorParsingUtils.asRscName(rscNameRef),
                                     "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
                                 )
-                            ).concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn, true))
+                             ).concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn, true))
                         );
                         keepGoing = true;
                     }

@@ -264,14 +264,16 @@ public class StltSnapshotApiCallHandler
         checkUuid(snap, snapshotRaw);
         snap.getFlags().resetFlagsTo(apiCtx, snapshotFlags);
         errorReporter.logTrace(
-            "resetting flags of local snapshot (%s) to %s, suspendIO: %b, takeSnapshot: %b",
+            "resetting flags of local snapshot (%s) to %s, suspendIO: %b, takeSnapshot: %b, shipBackup: %b",
             snap,
             FlagsHelper.toStringList(Snapshot.Flags.class, snapshotRaw.getFlags()),
             snapshotRaw.getSuspendResource(),
-            snapshotRaw.getTakeSnapshot()
+            snapshotRaw.getTakeSnapshot(),
+            snapshotRaw.getShipBackup()
         );
         snap.setSuspendResource(apiCtx, snapshotRaw.getSuspendResource());
         snap.setTakeSnapshot(apiCtx, snapshotRaw.getTakeSnapshot());
+        snap.setShipBackup(apiCtx, snapshotRaw.getShipBackup());
 
         PropsUtils.resetProps(snapshotRaw.getSnapPropsMap(), snap.getSnapProps(apiCtx));
         PropsUtils.resetProps(snapshotRaw.getRscPropsMap(), snap.getRscPropsForChange(apiCtx));

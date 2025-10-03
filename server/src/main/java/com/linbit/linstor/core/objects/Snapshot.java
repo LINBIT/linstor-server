@@ -69,6 +69,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
 
     // Not persisted because we do not resume snapshot creation after a restart
     private final TransactionSimpleObject<Snapshot, Boolean> takeSnapshot;
+    // Not persisted because we do not resume snapshot creation after a restart
+    private final TransactionSimpleObject<Snapshot, Boolean> shipBackup;
 
     private final TransactionMap<Snapshot, VolumeNumber, SnapshotVolume> snapVlmMap;
 
@@ -135,6 +137,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
 
         suspendResource = transObjFactory.createTransactionSimpleObject(this, false, null);
         takeSnapshot = transObjFactory.createTransactionSimpleObject(this, false, null);
+        shipBackup = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs.addAll(
             Arrays.asList(
@@ -146,7 +149,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
                 flags,
                 deleted,
                 suspendResource,
-                takeSnapshot
+                takeSnapshot,
+                shipBackup
             )
         );
     }
@@ -322,6 +326,27 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         }
     }
 
+    public boolean getShipBackup(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        requireAccess(accCtx, AccessType.VIEW);
+        return shipBackup.get();
+    }
+
+    public void setShipBackup(AccessContext accCtx, boolean shipBackupRef)
+        throws AccessDeniedException
+    {
+        requireAccess(accCtx, AccessType.CONTROL);
+        try
+        {
+            shipBackup.set(shipBackupRef);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
     @Override
     public String toStringImpl()
     {
@@ -397,7 +422,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
             getNodeName().displayValue,
             getCreateTimestamp().orElse(null),
             snapProps.map(),
-            rscRoProps.map()
+            rscRoProps.map(),
+            shipBackup.get()
         );
     }
 

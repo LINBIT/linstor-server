@@ -14,6 +14,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.backupshipping.AbsBackupShippingService;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
+import com.linbit.linstor.backupshipping.BackupShippingS3Service;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.CoreModule;
@@ -711,9 +712,15 @@ public abstract class AbsStorageProvider<
                 if (targetRscName.equals(sourceRscName))
                 {
                     Snapshot snap = sourceSnap.getAbsResource();
-                    if (
-                        BackupShippingUtils.isBackupTarget(snap.getSnapshotDefinition(), storDriverAccCtx) &&
-                        !RscLayerSuffixes.shouldSuffixBeShipped(targetRscData.getResourceNameSuffix()))
+                    boolean isBackuptarget = BackupShippingUtils.isBackupTarget(
+                        snap.getSnapshotDefinition(),
+                        snap.getNode(),
+                        storDriverAccCtx
+                    );
+                    boolean shouldSuffixBeShipped = RscLayerSuffixes.shouldSuffixBeShipped(
+                        targetRscData.getResourceNameSuffix()
+                    );
+                    if (isBackuptarget && !shouldSuffixBeShipped)
                     {
                         /*
                          * Backup did purposely not contain this device, which means that we will not be able to
@@ -972,8 +979,9 @@ public abstract class AbsStorageProvider<
     private void takeSnapshots(LAYER_SNAP_DATA snapVlm, ApiCallRcImpl apiCallRc) throws StorageException,
         AccessDeniedException, DatabaseException
     {
-        SnapshotDefinition snapDfn = snapVlm.getVolume().getAbsResource().getSnapshotDefinition();
-        if (BackupShippingUtils.isBackupTarget(snapDfn, storDriverAccCtx))
+        Snapshot snap = snapVlm.getVolume().getAbsResource();
+        SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
+        if (BackupShippingUtils.isBackupTarget(snapDfn, snap.getNode(), storDriverAccCtx))
         {
             String remoteName = BackupShippingUtils.getBackupSrcRemote(snapDfn, storDriverAccCtx);
             @Nullable AbsRemote remote;
@@ -1080,83 +1088,153 @@ public abstract class AbsStorageProvider<
         Snapshot snap = snapVlm.getVolume().getAbsResource();
         SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
         @Nullable String remoteNameToUse = isTarget ? null : s3orLinRemoteName;
-        boolean shipping = BackupShippingUtils.hasShippingStatus(
-            snapDfn,
-            remoteNameToUse,
-            InternalApiConsts.VALUE_SHIPPING,
-            storDriverAccCtx
-        );
-        boolean prepShip = BackupShippingUtils.hasShippingStatus(
-            snapDfn,
-            remoteNameToUse,
-            InternalApiConsts.VALUE_PREPARE_SHIPPING,
-            storDriverAccCtx
-        );
-        boolean aborting = BackupShippingUtils.hasShippingStatus(
-            snapDfn,
-            remoteNameToUse,
-            InternalApiConsts.VALUE_ABORTING,
-            storDriverAccCtx
-        );
-        boolean prepAbort = BackupShippingUtils.hasShippingStatus(
-            snapDfn,
-            remoteNameToUse,
-            InternalApiConsts.VALUE_PREPARE_ABORT,
-            storDriverAccCtx
-        );
-        if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
+        boolean shipping;
+        boolean prepShip;
+        boolean aborting;
+        boolean prepAbort;
+
+        boolean shouldWeShip;
+        if (isTarget)
         {
-            if (vlmData == null && !isTarget)
+            shouldWeShip = BackupShippingUtils.isNodeTarget(snapDfn, snap.getNode(), storDriverAccCtx);
+        }
+        else
+        {
+            if (remoteNameToUse == null)
             {
-                throw new StorageException(
-                    String.format(
-                        "Could not create snapshot '%s' as there is no corresponding volume.",
-                        snapVlm.toString()
-                    )
+                shouldWeShip = false;
+            }
+            else
+            {
+                shouldWeShip = BackupShippingUtils.isNodeSource(
+                    snapDfn,
+                    snap.getNode(),
+                    remoteNameToUse,
+                    service instanceof BackupShippingS3Service,
+                    storDriverAccCtx
                 );
             }
+        }
 
-            if (!snapshotExists(snapVlm, true))
+        if (!shouldWeShip || (!isTarget && remoteNameToUse == null))
+        {
+            shipping = false;
+            prepShip = false;
+            aborting = false;
+            prepAbort = false;
+        }
+        else
+        {
+            shipping = BackupShippingUtils.hasShippingStatus(
+                snapDfn,
+                remoteNameToUse,
+                InternalApiConsts.VALUE_SHIPPING,
+                storDriverAccCtx
+            );
+            prepShip = BackupShippingUtils.hasShippingStatus(
+                snapDfn,
+                remoteNameToUse,
+                InternalApiConsts.VALUE_PREPARE_SHIPPING,
+                storDriverAccCtx
+            );
+            aborting = BackupShippingUtils.hasShippingStatus(
+                snapDfn,
+                remoteNameToUse,
+                InternalApiConsts.VALUE_ABORTING,
+                storDriverAccCtx
+            );
+            prepAbort = BackupShippingUtils.hasShippingStatus(
+                snapDfn,
+                remoteNameToUse,
+                InternalApiConsts.VALUE_PREPARE_ABORT,
+                storDriverAccCtx
+            );
+        }
+        boolean takeSnapshot = snap.getTakeSnapshot(storDriverAccCtx);
+        boolean shipBackup = snap.getShipBackup(storDriverAccCtx);
+
+        if (shipBackup)
+        {
+            if (isTarget && (shipping || prepShip))
             {
-                if (isTarget && (shipping || prepShip))
+                if (!snapshotExists(snapVlm, true))
                 {
-                    try
+                    errorReporter.logTrace(
+                        "Preparing to receive snapshot %s from remote %s",
+                        snapVlm.toString(),
+                        s3orLinRemoteName
+                    );
+
+                    updateGrossSize(snapVlm); // this should round snapshots up to the ALLOCATION_GRANULARITY
+                    // that is needed if a backup was created / uploaded with a larger ALLOCATION_GRANULARITY
+                    // than we have here locally. The controller should have already re-calculated the property
+                    // so we only need to apply and use it.
+
+                    createLvForBackupIfNeeded(snapVlm, s3orLinRemoteName, isTarget);
+                    waitForSnapIfNeeded(snapVlm);
+                }
+                try
+                {
+                    boolean alreadyStarted = service.alreadyStarted(snapVlm, s3orLinRemoteName);
+                    boolean alreadyFinished = service.alreadyFinished(snapVlm, s3orLinRemoteName, isTarget);
+                    if (!alreadyStarted && !alreadyFinished)
                     {
                         errorReporter.logTrace(
                             "Starting receive for snapshot %s from remote %s",
                             snapVlm.toString(),
                             s3orLinRemoteName
                         );
-                        updateGrossSize(snapVlm); // this should round snapshots up to the ALLOCATION_GRANULARITY
-                        // that is needed if a backup was created / uploaded with a larger ALLOCATION_GRANULARITY
-                        // than we have here locally. The controller should have already re-calculated the property
-                        // so we only need to apply and use it.
-
-                        createLvForBackupIfNeeded(snapVlm, s3orLinRemoteName, isTarget);
-                        waitForSnapIfNeeded(snapVlm);
                         startBackupRestore(snapVlm, service);
                     }
-                    catch (InvalidNameException exc)
+                    else
                     {
-                        throw new ImplementationError(exc);
+                        errorReporter.logTrace(
+                            "Should start receiving snapshot %s from remote %s but alreadyStarted: %b, " +
+                                "alreadyFinished: %b",
+                            snapVlm.toString(),
+                            s3orLinRemoteName,
+                            alreadyStarted,
+                            alreadyFinished
+                        );
                     }
                 }
-                else
+                catch (InvalidNameException exc)
                 {
-                    errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
-                    createSnapshot(vlmData, snapVlm, true);
-                    copySizes(vlmData, snapVlm);
-
-                    addSnapCreatedMsg(snapVlm, apiCallRc);
+                    throw new ImplementationError(exc);
                 }
             }
-            if (!isTarget && shipping)
+            else if (!isTarget && shipping)
             {
-                errorReporter.logTrace("Starting sending of snapshot %s to remote %s", snapVlm.toString(), s3orLinRemoteName);
+                errorReporter.logTrace(
+                    "Starting sending of snapshot %s to remote %s",
+                    snapVlm.toString(),
+                    s3orLinRemoteName
+                );
                 try
                 {
-                    waitForSnapIfNeeded(snapVlm);
-                    startBackupShipping(snapVlm, service, s3orLinRemoteName, isTarget);
+                    boolean alreadyStarted = service.alreadyStarted(snapVlm, s3orLinRemoteName);
+                    boolean alreadyFinished = false;
+                    // TODO: it would make sense to use service.alreadyFinished(...) but that method is currently based
+                    // on the BackupToRestore property, which is simply not set for the sender (source-snapshot).
+                    // That results in a "null" entry which does not get properly removed again. That on the other
+                    // hand results in service.alreadyFinished(...) returning false until the first time the snapshot
+                    // finishes and true until forever, even if the same snapshot should be shipped again.
+                    // alreadyFinished = service.alreadyFinished(snapVlm, s3orLinRemoteName, isTarget);
+                    if (!alreadyStarted && !alreadyFinished)
+                    {
+                        waitForSnapIfNeeded(snapVlm);
+                        startBackupShipping(snapVlm, service, s3orLinRemoteName, isTarget);
+                    }
+                    else
+                    {
+                        errorReporter.logTrace(
+                            "Should start sending snapshot %s to remote %s but alreadyStarted: %b, alreadyFinished: %b",
+                            snapVlm.toString(),
+                            s3orLinRemoteName,
+                            alreadyStarted,
+                            alreadyFinished
+                        );
+                    }
                 }
                 catch (InvalidNameException exc)
                 {
@@ -1164,52 +1242,34 @@ public abstract class AbsStorageProvider<
                 }
             }
         }
-        else
+        if (aborting)
         {
-            if (aborting)
+            errorReporter.logTrace(
+                "Aborting shipment of snapshot %s %s remote %s",
+                snapVlm.toString(),
+                isTarget ? "from" : "to",
+                s3orLinRemoteName
+            );
+            service.abort(snapVlm, s3orLinRemoteName, true);
+        }
+        if (!shipBackup && !aborting && takeSnapshot)
+        {
+            if (!snapshotExists(snapVlm, true))
             {
-                errorReporter.logTrace(
-                    "Aborting shipment of snapshot %s %s remote %s",
-                    snapVlm.toString(),
-                    isTarget ? "from" : "to",
-                    s3orLinRemoteName
-                );
-                service.abort(snapVlm, s3orLinRemoteName, true);
-            }
-
-            /*
-             * The following if case exists for the use-case where the backup-restore was already attempted but
-             * failed for some reason (maybe the port was blocked / already in use). In case of LVM we already
-             * have created the snapshot, so while "takeSnapshot" is set, "snapshotExists" will also return true.
-             * The "takeSnapshot == true" case however only deals with "!snapshotExists" scenarios.
-             * So we will have to wait (i.e. "waste" a few devMgr cycles) so that "takeSnapshot" is unset by the
-             * controller so we can (re-) try starting the backup restore.
-             *
-             * ZFS behaves differently since ZFS does not work if the snapshot already exists. Therefore the ZfsProvider
-             * does not create a dummy-snapshot, which means that while "takeSnapshot" is true, "snapshotExists" will
-             * return false in case of ZFS. So if the backup-restore attempt fails in case of ZFS, the next devMgr cycle
-             * will retry the backup-restore from the "takeSnapshot && !snapshotExists" case above.
-             */
-            if (snapshotExists(snapVlm, false) && isTarget && shipping)
-            {
-                boolean alreadyStarted = service.alreadyStarted(snapVlm, s3orLinRemoteName);
-                boolean alreadyFinished = service.alreadyFinished(snapVlm, s3orLinRemoteName, isTarget);
-                if (!alreadyStarted && !alreadyFinished)
+                if (vlmData == null)
                 {
-                    errorReporter.logTrace(
-                        "Retry starting receive for snapshot %s from remote %s",
-                        snapVlm.toString(),
-                        s3orLinRemoteName
+                    throw new StorageException(
+                        String.format(
+                            "Could not create snapshot '%s' as there is no corresponding volume.",
+                            snapVlm.toString()
+                        )
                     );
-                    try
-                    {
-                        startBackupRestore(snapVlm, service);
-                    }
-                    catch (InvalidNameException exc)
-                    {
-                        throw new ImplementationError(exc);
-                    }
                 }
+                errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
+                createSnapshot(vlmData, snapVlm, true);
+                copySizes(vlmData, snapVlm);
+
+                addSnapCreatedMsg(snapVlm, apiCallRc);
             }
         }
         // do either way, but after take-snapshot, so that daemon does already exist

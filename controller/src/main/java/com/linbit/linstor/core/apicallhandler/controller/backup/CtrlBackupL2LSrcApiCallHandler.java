@@ -694,7 +694,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                         InternalApiConsts.VALUE_SHIPPING,
                         propsNamespc
                     );
-                snap.setTakeSnapshot(accCtx, true); // needed by source-satellite to actually start sending
+                snap.setShipBackup(accCtx, true);
                 SnapshotDefinition prevSnapDfn = null;
                 if (
                     responseRef.srcSnapDfnUuid != null && !responseRef.srcSnapDfnUuid.isEmpty() && data
@@ -751,7 +751,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                             lockGuardFactory.create()
                                 .read(LockObj.NODES_MAP)
                                 .write(LockObj.RSC_DFN_MAP).buildDeferred(),
-                            () -> unsetTakeSnapshotInTransaction(data)
+                            () -> unsetShipBackupInTransaction(data)
                         )
                     );
             }
@@ -860,13 +860,13 @@ public class CtrlBackupL2LSrcApiCallHandler
         );
     }
 
-    private Flux<ApiCallRc> unsetTakeSnapshotInTransaction(BackupShippingSrcData dataRef)
+    private Flux<ApiCallRc> unsetShipBackupInTransaction(BackupShippingSrcData dataRef)
     {
         AccessContext accCtx = peerAccCtx.get();
         Snapshot snap = dataRef.getSrcSnapshot();
         try
         {
-            snap.setTakeSnapshot(accCtx, false);
+            snap.setShipBackup(accCtx, false);
             ctrlTransactionHelper.commit();
         }
         catch (AccessDeniedException exc)

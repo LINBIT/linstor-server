@@ -1796,6 +1796,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
                 .setSuspendResource(snapshot.getSuspendResource(serializerCtx))
                 .setTakeSnapshot(snapshot.getTakeSnapshot(serializerCtx))
+                .setShipBackup(snapshot.getShipBackup(serializerCtx))
                 .setLayerObject(
                     LayerObjectSerializer.serializeLayerObject(
                         snapshot.getApiData(serializerCtx, null, null).getLayerData(),

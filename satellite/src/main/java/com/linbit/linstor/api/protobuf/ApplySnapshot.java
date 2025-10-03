@@ -117,7 +117,8 @@ public class ApplySnapshot implements ApiCall
             snapshot.getNodeName(),
             null,
             snapshot.getSnapshotPropsMap(),
-            snapshot.getRscPropsMap()
+            snapshot.getRscPropsMap(),
+            snapshot.getShipBackup()
         );
     }
 }

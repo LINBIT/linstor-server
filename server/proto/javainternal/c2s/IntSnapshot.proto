@@ -33,8 +33,9 @@ message IntSnapshot
     string                            node_name         = 17;
     map<string, string>               snapshot_props    = 23;
     map<string, string>               rsc_props         = 24;
+    bool                              ship_backup       = 26;
 
-    // next id: 26
+    // next id: 27
 }
 
 message SnapshotVlmDfn

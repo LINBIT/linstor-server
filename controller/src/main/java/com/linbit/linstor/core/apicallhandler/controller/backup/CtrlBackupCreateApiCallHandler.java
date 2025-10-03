@@ -528,6 +528,7 @@ public class CtrlBackupCreateApiCallHandler
                 }
 
                 Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), node.getName());
+                snap.setShipBackup(peerAccCtx.get(), true);
                 if (remote instanceof S3Remote)
                 {
                     // make stlt start shipping - l2l needs to do this later
@@ -536,7 +537,6 @@ public class CtrlBackupCreateApiCallHandler
                         InternalApiConsts.VALUE_SHIPPING,
                         propsNamespc
                     );
-                    snap.setTakeSnapshot(peerAccCtx.get(), true);
                     // KEY_BACKUP_TARGET_REMOTE was set here previously - this is not needed for s3, since the remote is
                     // now part of the namespace - for l2l it will still be needed since there we save the stlt-remote
                 }

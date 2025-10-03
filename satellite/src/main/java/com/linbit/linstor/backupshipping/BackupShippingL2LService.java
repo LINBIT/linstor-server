@@ -200,7 +200,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
         {
             try
             {
-                if (BackupShippingUtils.isBackupTarget(snap.getSnapshotDefinition(), accCtx))
+                if (BackupShippingUtils.isBackupTarget(snap.getSnapshotDefinition(), snap.getNode(), accCtx))
                 {
                     remoteName = snap.getSnapshotDefinition()
                         .getSnapDfnProps(accCtx)

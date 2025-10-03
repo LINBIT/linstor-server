@@ -608,6 +608,7 @@ public class CtrlSnapshotCrtApiCallHandler
             for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
             {
                 setTakeSnapshotPrivileged(snapshot, false);
+                setShipBackupPrivileged(snapshot, false);
             }
             resumeIoPrivileged(rscDfn);
 
@@ -1053,6 +1054,18 @@ public class CtrlSnapshotCrtApiCallHandler
         try
         {
             snapshot.setTakeSnapshot(apiCtx, takeSnapshot);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+    }
+
+    private void setShipBackupPrivileged(Snapshot snapshot, boolean shipBackupRef)
+    {
+        try
+        {
+            snapshot.setShipBackup(apiCtx, shipBackupRef);
         }
         catch (AccessDeniedException accDeniedExc)
         {

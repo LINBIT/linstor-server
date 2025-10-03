@@ -663,7 +663,7 @@ public abstract class AbsBackupShippingService implements SystemService
                     success = preCtrlNotifyBackupShipped(success, restoring, snap, shippingInfo);
                 }
             }
-            success = waitForSnapCreateFinished(snap) && success;
+            // success = waitForSnapCreateFinished(snap) && success;
             controllerPeerConnector.getControllerPeer().sendMessage(
                 interComSerializer.onewayBuilder(internalApiName)
                     .notifyBackupShipped(

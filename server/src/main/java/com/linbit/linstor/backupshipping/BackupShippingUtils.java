@@ -13,6 +13,7 @@ import com.linbit.linstor.api.pojo.backups.RscMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -307,16 +308,41 @@ public class BackupShippingUtils
         return remoteName.equals(getBackupSrcRemote(snapDfn, accCtx));
     }
 
-    public static boolean isBackupTarget(SnapshotDefinition snapDfn, AccessContext accCtx) throws AccessDeniedException
+    public static boolean isBackupTarget(SnapshotDefinition snapDfn, Node nodeRef, AccessContext accCtx)
+        throws AccessDeniedException
     {
-        /*
-         * a snap is a current backup-target if it has the backup-target namespc, but not the backup-source namespc,
-         * since you can ship a snap that has previously been received, but you can't receive into an existing snap
-         */
-        ReadOnlyProps backupProps = snapDfn.getSnapDfnProps(accCtx)
-            .getNamespaceOrEmpty(ApiConsts.NAMESPC_BACKUP_SHIPPING);
-        return backupProps.getNamespace(InternalApiConsts.KEY_BACKUP_TARGET) != null &&
-            backupProps.getNamespace(InternalApiConsts.KEY_BACKUP_SOURCE) == null;
+        return (hasShippingStatus(snapDfn, null, InternalApiConsts.VALUE_PREPARE_SHIPPING, accCtx) ||
+            hasShippingStatus(snapDfn, null, InternalApiConsts.VALUE_SHIPPING, accCtx) ||
+            hasShippingStatus(snapDfn, null, InternalApiConsts.VALUE_ABORTING, accCtx)) &&
+            isNodeTarget(snapDfn, nodeRef, accCtx);
+    }
+
+    public static boolean isNodeTarget(SnapshotDefinition snapDfn, Node nodeRef, AccessContext accCtx)
+        throws InvalidKeyException, AccessDeniedException
+    {
+        return nodeRef.getName().displayValue.equalsIgnoreCase(
+            snapDfn.getSnapDfnProps(accCtx)
+                .getProp(
+                    InternalApiConsts.KEY_BACKUP_DST_NODE,
+                    BACKUP_TARGET_PROPS_NAMESPC
+                )
+        );
+    }
+
+    public static boolean isNodeSource(
+        SnapshotDefinition snapDfn,
+        Node nodeRef,
+        String remoteNameRef,
+        boolean isS3ServiceRef,
+        AccessContext accCtx
+    )
+        throws InvalidKeyException, AccessDeniedException
+    {
+        String propKey = InternalApiConsts.KEY_BACKUP_SRC_NODE;
+        return nodeRef.getName().displayValue.equalsIgnoreCase(
+            snapDfn.getSnapDfnProps(accCtx)
+                .getProp(propKey, BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteNameRef)
+        );
     }
 
     /**

@@ -23,4 +23,5 @@ public interface SnapshotApi
     RscLayerDataApi getLayerData();
     Map<String, String> getSnapPropsMap();
     Map<String, String> getRscPropsMap();
+    boolean getShipBackup();
 }

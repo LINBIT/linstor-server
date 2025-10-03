@@ -632,7 +632,7 @@ public class ZfsProvider
     {
         Snapshot snap = snapVlm.getVolume().getAbsResource();
         // snapshot will be created by "zfs receive" command
-        if (!BackupShippingUtils.isBackupTarget(snap.getSnapshotDefinition(), storDriverAccCtx))
+        if (!BackupShippingUtils.isBackupTarget(snap.getSnapshotDefinition(), snap.getNode(), storDriverAccCtx))
         {
             ZfsCommands.createSnapshot(
                 extCmdFactory.create(),

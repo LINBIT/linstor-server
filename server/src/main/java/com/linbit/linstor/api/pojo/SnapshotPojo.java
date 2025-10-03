@@ -28,6 +28,7 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     private final @Nullable Date createTimestamp;
     private final Map<String, String> snapPropsMap;
     private final Map<String, String> rscPropsMap;
+    private final boolean shipBackup;
 
     public SnapshotPojo(
         SnapshotDefinitionApi snaphotDfnRef,
@@ -42,7 +43,8 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         String nodeNameRef,
         @Nullable Date createTimestampRef,
         Map<String, String> snapPropsMapRef,
-        Map<String, String> rscPropsMapRef
+        Map<String, String> rscPropsMapRef,
+        boolean shipBackupRef
     )
     {
         snaphotDfn = snaphotDfnRef;
@@ -57,6 +59,7 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         nodeName = nodeNameRef;
         snapPropsMap = snapPropsMapRef;
         rscPropsMap = rscPropsMapRef;
+        shipBackup = shipBackupRef;
         createTimestamp = createTimestampRef != null &&
             createTimestampRef.getTime() != AbsResource.CREATE_DATE_INIT_VALUE ?
                 createTimestampRef : null;
@@ -90,6 +93,12 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     public boolean getTakeSnapshot()
     {
         return takeSnapshot;
+    }
+
+    @Override
+    public boolean getShipBackup()
+    {
+        return shipBackup;
     }
 
     @Override
