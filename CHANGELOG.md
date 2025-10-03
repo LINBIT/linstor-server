@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Zfs,rollback via restore: Fixed bug where instead of a rollback LINSTOR creates empty ZVOL
+- DRBD, rollback: Re-adjust (up) DRBD after rollback is finished (GitHub #464)
 
 ## [1.32.2] - 2025-10-01
 
