@@ -509,9 +509,11 @@ public class CtrlBackupL2LDstApiCallHandler
 
     private Flux<BackupShippingStartInfo> startReceivingInTransaction(BackupShippingDstData data, AbsRemote srcRemote)
     {
-        String clusterHash = getSrcClusterShortId(data.getSrcClusterId());
+        @Nullable String clusterHash = getSrcClusterShortId(data.getSrcClusterId());
 
-        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(data.getSrcBackupName() + "_" + clusterHash);
+        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(
+            clusterHash != null ? (data.getSrcBackupName() + "_" + clusterHash) : data.getSrcBackupName()
+        );
         StltRemote stltRemote = CtrlBackupL2LSrcApiCallHandler.createStltRemote(
             stltRemoteControllerFactory,
             remoteRepo,
@@ -533,7 +535,10 @@ public class CtrlBackupL2LDstApiCallHandler
         }
         Map<String, String> snapPropsFromSource = data.getMetaData().getRsc().getSnapProps();
         snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_UUID, data.getSrcClusterId());
-        snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH, clusterHash);
+        snapPropsFromSource.put(
+            InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH,
+            clusterHash == null ? "" : clusterHash
+        );
         ctrlTransactionHelper.commit();
 
         return ctrlSatelliteUpdateCaller.updateSatellites(stltRemote)
@@ -558,29 +563,41 @@ public class CtrlBackupL2LDstApiCallHandler
         );
     }
 
-    private String getSrcClusterShortId(String srcClusterIdRef)
+    private @Nullable String getSrcClusterShortId(String srcClusterIdRef)
     {
-        String ret;
+        @Nullable String ret;
         try
         {
             Props props = systemConfRepository.getCtrlConfForChange(apiCtx);
-            ret = props.getProp(srcClusterIdRef, ApiConsts.NAMESPC_CLUSTER_REMOTE);
-            if (ret == null)
+            @Nullable String localClusterId = props.getProp(
+                InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
+                ApiConsts.NAMESPC_CLUSTER
+            );
+            if (Objects.equals(localClusterId, srcClusterIdRef))
             {
-                ret = generateClusterShortId();
-
-                @Nullable Props namespace = props.getNamespace(ApiConsts.NAMESPC_CLUSTER_REMOTE);
-                if (namespace != null)
+                // we are shipping to ourself. do not return a clusterShortID.
+                ret = null;
+            }
+            else
+            {
+                ret = props.getProp(srcClusterIdRef, ApiConsts.NAMESPC_CLUSTER_REMOTE);
+                if (ret == null)
                 {
-                    HashSet<String> existingHashes = new HashSet<>(namespace.values());
+                    ret = generateClusterShortId();
 
-                    while (existingHashes.contains(ret))
+                    @Nullable Props namespace = props.getNamespace(ApiConsts.NAMESPC_CLUSTER_REMOTE);
+                    if (namespace != null)
                     {
-                        ret = generateClusterShortId();
-                    }
-                }
+                        HashSet<String> existingHashes = new HashSet<>(namespace.values());
 
-                props.setProp(srcClusterIdRef, ret, ApiConsts.NAMESPC_CLUSTER_REMOTE);
+                        while (existingHashes.contains(ret))
+                        {
+                            ret = generateClusterShortId();
+                        }
+                    }
+
+                    props.setProp(srcClusterIdRef, ret, ApiConsts.NAMESPC_CLUSTER_REMOTE);
+                }
             }
         }
         catch (AccessDeniedException | InvalidKeyException | DatabaseException | InvalidValueException exc)
