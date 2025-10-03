@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Attempt to fix race-condition "Received unknown storage resource from satellite"
+- Zfs,rollback via restore: Fixed bug where instead of a rollback LINSTOR creates empty ZVOL
 
 ## [1.32.2] - 2025-10-01
 
