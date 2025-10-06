@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed keep_res regular expression pattern from options
 - Instead of caching if a DRBD .res file exists, actually check if the file exists
+- Do not delete known Linstor drbd res files, LS_KEEP_RES is now obsolete
 
 ### Fixed
 
@@ -22,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - safety-snap: shorten safety-snap id length, to stay in LVM name limit
-- Do not delete known Linstor drbd res files, LS_KEEP_RES is now obsolete
 
 ### Fixed
 
