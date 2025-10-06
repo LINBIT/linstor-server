@@ -40,7 +40,6 @@ import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
@@ -441,16 +440,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
     @Override
     public void storPoolUpdateApplied(
-        Set<StorPoolName> storPoolSet,
+        Set<StorPool.Key> storPoolSet,
         Set<ResourceName> rscSet,
         ApiCallRc responses
     )
     {
         synchronized (sched)
         {
-            for (StorPoolName storPoolName : storPoolSet)
+            for (StorPool.Key storPoolKey : storPoolSet)
             {
-                UpdateNotification updateNotification = rcvPendingBundle.storPoolUpdates.remove(storPoolName);
+                UpdateNotification updateNotification = rcvPendingBundle.storPoolUpdates.remove(storPoolKey);
 
                 markPendingRscDispatch(updateNotification, rscSet);
 
@@ -1816,11 +1815,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
-    private void requestStorPoolUpdates(Map<StorPoolName, UUID> storPoolUpdates)
+    private void requestStorPoolUpdates(Map<StorPool.Key, UUID> storPoolUpdates)
     {
-        for (Entry<StorPoolName, UUID> entry : storPoolUpdates.entrySet())
+        for (Entry<StorPool.Key, UUID> entry : storPoolUpdates.entrySet())
         {
-            errLog.logTrace("Requesting update for storage pool '" + entry.getKey().displayValue + "'");
+            errLog.logTrace("Requesting update for storage pool '" + entry.getKey() + "'");
             stltUpdateRequester.requestStorPoolUpdate(
                 entry.getValue(),
                 entry.getKey()

@@ -32,6 +32,7 @@ public class ApplyDeletedStorPool implements ApiCall
     {
         MsgIntApplyDeletedStorPool storPoolDeletedData = MsgIntApplyDeletedStorPool.parseDelimitedFrom(msgDataIn);
         apiCallHandler.applyDeletedStorPoolChange(
+            storPoolDeletedData.getNodeName(),
             storPoolDeletedData.getStorPoolName(),
             storPoolDeletedData.getFullSyncId(),
             storPoolDeletedData.getUpdateId()

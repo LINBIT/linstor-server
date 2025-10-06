@@ -205,10 +205,9 @@ public class FullSync implements ApiCall
     )
     {
         ArrayList<StorPoolPojo> storPools = new ArrayList<>(storPoolsList.size());
-        String nodeName = controllerPeerConnector.getLocalNode().getName().displayValue;
         for (IntStorPool storPool : storPoolsList)
         {
-            storPools.add(ApplyStorPool.asStorPoolPojo(storPool, nodeName, fullSyncId, updateId));
+            storPools.add(ApplyStorPool.asStorPoolPojo(storPool, fullSyncId, updateId));
         }
         return storPools;
     }

@@ -369,13 +369,16 @@ public class StltApiCallHandler
                 for (StorPoolPojo storPool : storPools)
                 {
                     ChangedData appliedChanges = storPoolHandler.applyChanges(storPool);
-                    StorPoolDefinition storPoolDfnToRegister = appliedChanges.storPoolDfnToRegister;
-                    if (storPoolDfnToRegister != null)
+                    if (appliedChanges != null)
                     {
-                        storPoolDfnMap.put(
-                            storPoolDfnToRegister.getName(),
-                            storPoolDfnToRegister
-                        );
+                        StorPoolDefinition storPoolDfnToRegister = appliedChanges.storPoolDfnToRegister;
+                        if (storPoolDfnToRegister != null)
+                        {
+                            storPoolDfnMap.put(
+                                storPoolDfnToRegister.getName(),
+                                storPoolDfnToRegister
+                            );
+                        }
                     }
                 }
 
@@ -751,12 +754,13 @@ public class StltApiCallHandler
     }
 
     public void applyDeletedStorPoolChange(
+        String nodeNameStr,
         String storPoolNameStr,
         long fullSyncId,
         long updateId
     )
     {
-        applyChangedData(new ApplyStorPool(storPoolNameStr, fullSyncId, updateId));
+        applyChangedData(new ApplyStorPool(nodeNameStr, storPoolNameStr, fullSyncId, updateId));
     }
 
     public void applySnapshotChanges(SnapshotPojo snapshotRaw)
@@ -1168,6 +1172,7 @@ public class StltApiCallHandler
     private class ApplyStorPool implements ApplyData
     {
         private @Nullable StorPoolPojo storPoolPojo;
+        private @Nullable String deletedNodeName;
         private @Nullable String deletedStorPoolName;
         private final long fullSyncId;
         private final long updateId;
@@ -1179,8 +1184,9 @@ public class StltApiCallHandler
             updateId = storPoolPojo.getUpdateId();
         }
 
-        ApplyStorPool(String storPoolNameRef, long fullSyncIdRef, long updateIdRef)
+        ApplyStorPool(String nodeNameRef, String storPoolNameRef, long fullSyncIdRef, long updateIdRef)
         {
+            deletedNodeName = nodeNameRef;
             deletedStorPoolName = storPoolNameRef;
             fullSyncId = fullSyncIdRef;
             updateId = updateIdRef;
@@ -1214,7 +1220,7 @@ public class StltApiCallHandler
                 }
                 else
                 {
-                    storPoolHandler.applyDeletedStorPool(deletedStorPoolName);
+                    storPoolHandler.applyDeletedStorPool(deletedNodeName, deletedStorPoolName);
                 }
             }
         }

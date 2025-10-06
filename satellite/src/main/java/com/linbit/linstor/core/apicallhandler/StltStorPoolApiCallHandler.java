@@ -14,9 +14,10 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.CriticalError;
+import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.StltSecurityObjects;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -71,6 +72,7 @@ class StltStorPoolApiCallHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final DeviceManager deviceManager;
+    private final CoreModule.NodesMap nodesMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerPeerConnector controllerPeerConnector;
     private final StorPoolDefinitionSatelliteFactory storPoolDefinitionFactory;
@@ -88,6 +90,7 @@ class StltStorPoolApiCallHandler
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         DeviceManager deviceManagerRef,
+        CoreModule.NodesMap nodesMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         StorPoolDefinitionSatelliteFactory storPoolDefinitionFactoryRef,
@@ -104,6 +107,7 @@ class StltStorPoolApiCallHandler
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         deviceManager = deviceManagerRef;
+        nodesMap = nodesMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         storPoolDefinitionFactory = storPoolDefinitionFactoryRef;
@@ -116,31 +120,31 @@ class StltStorPoolApiCallHandler
         decryptionHelper = decryptionHelperRef;
         securityObjects = securityObjectsRef;
     }
+
     /**
      * We requested an update to a storPool and the controller is telling us that the requested storPool
      * does no longer exist.
      * Basically we now just mark the update as received and applied to prevent the
      * {@link DeviceManager} from waiting for the update.
      *
-     * @param storPoolNameStr
      */
-    public void applyDeletedStorPool(String storPoolNameStr)
+    public void applyDeletedStorPool(String nodeNameStr, @Nullable String storPoolNameStr)
     {
         try
         {
+            NodeName nodeName = new NodeName(nodeNameStr);
             StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
 
             @Nullable StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
             if (storPoolDfn != null)
             {
-                @Nullable StorPool localStorPool = storPoolDfn.getStorPool(
-                    apiCtx,
-                    controllerPeerConnector.getLocalNodeName()
-                );
-                if (localStorPool != null)
+                @Nullable StorPool storPool = storPoolDfn.getStorPool(apiCtx, nodeName);
+                if (storPool != null)
                 {
-                    localStorPool.delete(apiCtx);
-                    errorReporter.logInfo("Local storage pool '" + storPoolNameStr + " deleted");
+                    storPool.delete(apiCtx);
+                    errorReporter.logInfo(
+                        "Storage pool '" + storPoolNameStr + "' of node '" + nodeNameStr + "' deleted"
+                    );
                 }
                 // storPoolDfn might still be referred by other nodes. We still need the remote storage pools
                 // since the layer-data of our peer-resources still refer to them!
@@ -152,8 +156,8 @@ class StltStorPoolApiCallHandler
                 }
             }
             transMgrProvider.get().commit();
-            Set<StorPoolName> storPoolSet = new TreeSet<>();
-            storPoolSet.add(storPoolName);
+            Set<StorPool.Key> storPoolSet = new TreeSet<>();
+            storPoolSet.add(new StorPool.Key(nodeName, storPoolName));
             deviceManager.storPoolUpdateApplied(storPoolSet, Collections.emptySet(), new ApiCallRcImpl());
         }
         catch (Exception | ImplementationError exc)
@@ -166,159 +170,176 @@ class StltStorPoolApiCallHandler
     public @Nullable ChangedData applyChanges(StorPoolPojo storPoolRaw)
     {
         ChangedData changedData = null;
-        Set<StorPoolName> storPoolSet = new HashSet<>();
+        Set<StorPool.Key> storPoolSet = new HashSet<>();
         Set<ResourceName> changedResources = new TreeSet<>();
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
         try
         {
-            StorPoolName storPoolName;
+            NodeName nodeName = new NodeName(storPoolRaw.getNodeName());
+            StorPoolName storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
 
             StorPoolDefinition storPoolDfnToRegister = null;
 
             // TODO: uncomment the next line once the localNode gets requested from the controller
             // checkUuid(satellite.localNode, storPoolRaw);
 
-            storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
-            Node localNode = controllerPeerConnector.getLocalNode();
+            @Nullable Node node = nodesMap.get(nodeName);
             StorPool storPool;
-            if (localNode == null)
+            if (node != null)
             {
-                throw new ImplementationError("ApplyChanges called with invalid localnode", new NullPointerException());
-            }
-            storPool = localNode.getStorPool(apiCtx, storPoolName);
+                storPool = node.getStorPool(apiCtx, storPoolName);
 
-            String action;
-            if (storPool != null)
-            {
-                boolean storPoolChanged = false;
-                action = "updated";
-
-                checkUuid(storPool, storPoolRaw);
-                checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
-
-                Props storPoolProps = storPool.getProps(apiCtx);
-                Map<String, String> oldSEDMap = SEDUtils.drivePasswordMap(storPoolProps.cloneMap());
-                Map<String, String> newSEDMap = SEDUtils.drivePasswordMap(storPoolRaw.getStorPoolProps());
-                for (String sedDevice : oldSEDMap.keySet())
+                String action;
+                if (storPool != null)
                 {
-                    String oldPassEnc = oldSEDMap.get(sedDevice);
-                    if (newSEDMap.containsKey(sedDevice) && !newSEDMap.get(sedDevice).equals(oldPassEnc))
+                    boolean storPoolChanged = false;
+                    action = "updated";
+
+                    checkUuid(storPool, storPoolRaw);
+                    checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
+
+                    Props storPoolProps = storPool.getProps(apiCtx);
+                    Map<String, String> oldSEDMap = SEDUtils.drivePasswordMap(storPoolProps.cloneMap());
+                    Map<String, String> newSEDMap = SEDUtils.drivePasswordMap(storPoolRaw.getStorPoolProps());
+                    for (String sedDevice : oldSEDMap.keySet())
                     {
-                        byte[] masterKey = securityObjects.getCryptKey();
-                        if (masterKey != null)
+                        String oldPassEnc = oldSEDMap.get(sedDevice);
+                        if (newSEDMap.containsKey(sedDevice) && !newSEDMap.get(sedDevice).equals(oldPassEnc))
                         {
-                            // SED password changed
-                            String newPassEnc = newSEDMap.get(sedDevice);
-                            String oldPass = decryptionHelper.decryptB64ToString(masterKey, oldPassEnc);
-                            String newPass = decryptionHelper.decryptB64ToString(masterKey, newPassEnc);
-                            String realPath = SEDUtils.realpath(errorReporter, sedDevice);
-                            SEDUtils.changeSEDPassword(extCmdFactory, errorReporter, realPath, oldPass, newPass);
-                            storPoolChanged = true;
+                            byte[] masterKey = securityObjects.getCryptKey();
+                            if (masterKey != null)
+                            {
+                                // SED password changed
+                                String newPassEnc = newSEDMap.get(sedDevice);
+                                String oldPass = decryptionHelper.decryptB64ToString(masterKey, oldPassEnc);
+                                String newPass = decryptionHelper.decryptB64ToString(masterKey, newPassEnc);
+                                String realPath = SEDUtils.realpath(errorReporter, sedDevice);
+                                SEDUtils.changeSEDPassword(extCmdFactory, errorReporter, realPath, oldPass, newPass);
+                                storPoolChanged = true;
+                            }
+                            else
+                            {
+                                throw new LinStorException("Master passphrase missing, cannot change SED password.");
+                            }
                         }
-                        else
+                    }
+                    if (mergeProps(storPoolProps, storPoolRaw.getStorPoolProps()))
+                    {
+                        storPoolChanged = true;
+                    }
+
+                    if (storPoolChanged)
+                    {
+                        Collection<VlmProviderObject<Resource>> vlmDataCol = storPool.getVolumes(apiCtx);
+                        for (VlmProviderObject<Resource> vlmData : vlmDataCol)
                         {
-                            throw new LinStorException("Master passphrase missing, cannot change SED password.");
+                            ResourceDefinition rscDfn = vlmData.getVolume().getResourceDefinition();
+                            changedResources.add(rscDfn.getName());
+                        }
+
+                        Collection<VlmProviderObject<Snapshot>> snapVlmDataCol = storPool
+                            .getSnapVolumes(apiCtx);
+                        for (VlmProviderObject<Snapshot> snapVlmData : snapVlmDataCol)
+                        {
+                            SnapshotVolume vlm = (SnapshotVolume) snapVlmData.getVolume();
+                            // TODO maybe introduce a changedSnapshot? if that is even possible..
+                            changedResources.add(vlm.getResourceName());
                         }
                     }
                 }
-                if (mergeProps(storPoolProps, storPoolRaw.getStorPoolProps()))
+                else
                 {
-                    storPoolChanged = true;
-                }
-
-                if (storPoolChanged)
-                {
-                    Collection<VlmProviderObject<Resource>> vlmDataCol = storPool.getVolumes(apiCtx);
-                    for (VlmProviderObject<Resource> vlmData : vlmDataCol)
+                    action = "created";
+                    StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
+                    if (storPoolDfn == null)
                     {
-                        ResourceDefinition rscDfn = vlmData.getVolume().getResourceDefinition();
-                        changedResources.add(rscDfn.getName());
+                        storPoolDfn = storPoolDefinitionFactory.getInstance(
+                            apiCtx,
+                            storPoolRaw.getStorPoolDfnUuid(),
+                            storPoolName
+                        );
+                        checkUuid(storPoolDfn, storPoolRaw);
+
+                        storPoolDfn.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolDfnProps());
+
+                        storPoolDfnToRegister = storPoolDfn;
                     }
 
-                    Collection<VlmProviderObject<Snapshot>> snapVlmDataCol = storPool
-                        .getSnapVolumes(apiCtx);
-                    for (VlmProviderObject<Snapshot> snapVlmData : snapVlmDataCol)
-                    {
-                        SnapshotVolume vlm = (SnapshotVolume) snapVlmData.getVolume();
-                        // TODO maybe introduce a changedSnapshot? if that is even possible..
-                        changedResources.add(vlm.getResourceName());
-                    }
-                }
-            }
-            else
-            {
-                action = "created";
-                StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
-                if (storPoolDfn == null)
-                {
-                    storPoolDfn = storPoolDefinitionFactory.getInstance(
+                    DeviceProviderKind deviceProviderKind = storPoolRaw.getDeviceProviderKind();
+                    storPool = storPoolFactory.getInstanceSatellite(
                         apiCtx,
-                        storPoolRaw.getStorPoolDfnUuid(),
-                        storPoolName
+                        storPoolRaw.getStorPoolUuid(),
+                        node,
+                        storPoolDfn,
+                        deviceProviderKind,
+                        freeSpaceMgrFactory.getInstance(
+                            SharedStorPoolName.restoreName(storPoolRaw.getFreeSpaceManagerName())
+                        ),
+                        storPoolRaw.isExternalLocking()
                     );
-                    checkUuid(storPoolDfn, storPoolRaw);
 
-                    storPoolDfn.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolDfnProps());
-
-                    storPoolDfnToRegister = storPoolDfn;
+                    storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
                 }
 
-                DeviceProviderKind deviceProviderKind = storPoolRaw.getDeviceProviderKind();
-                storPool = storPoolFactory.getInstanceSatellite(
-                    apiCtx,
-                    storPoolRaw.getStorPoolUuid(),
-                    controllerPeerConnector.getLocalNode(),
-                    storPoolDfn,
-                    deviceProviderKind,
-                    freeSpaceMgrFactory.getInstance(
-                        SharedStorPoolName.restoreName(storPoolRaw.getFreeSpaceManagerName())
-                    ),
-                    storPoolRaw.isExternalLocking()
+                changedData = new ChangedData(storPoolDfnToRegister);
+
+                if (changedData.storPoolDfnToRegister != null)
+                {
+                    storPoolDfnMap.put(
+                        storPoolName,
+                        changedData.storPoolDfnToRegister
+                    );
+                }
+                transMgrProvider.get().commit();
+
+                errorReporter.logInfo(
+                    "Storage pool '%s' for node '%s' %s.",
+                    storPoolName.displayValue,
+                    nodeName.displayValue,
+                    action
                 );
 
-                storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
+                storPoolSet.add(storPool.getKey());
+
+                if (storPool.getNode().equals(controllerPeerConnector.getLocalNode()))
+                {
+                    SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool, true);
+                    DeviceProviderKind kind = storPool.getDeviceProviderKind();
+                    boolean isFileKind = kind.equals(DeviceProviderKind.FILE) || kind.equals(
+                        DeviceProviderKind.FILE_THIN
+                    );
+                    if (!kind.usesThinProvisioning() || isFileKind)
+                    {
+                        boolean supportsSnapshots = storPool.isSnapshotSupported(apiCtx);
+
+                        controllerPeerConnector.getControllerPeer()
+                            .sendMessage(
+                                ctrlStltSerializer
+                                    .onewayBuilder(InternalApiConsts.API_NOTIFY_STOR_POOL_APPLIED)
+                                    .storPoolApplied(storPool, spaceInfo, supportsSnapshots)
+                                    .build(),
+                                InternalApiConsts.API_NOTIFY_STOR_POOL_APPLIED
+                            );
+                    }
+                }
+
+                responses.addEntry(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.MODIFIED,
+                        "Changes applied to storage pool '" + storPoolName + "' of node '" + nodeName + "'"
+                    )
+                );
             }
-
-            changedData = new ChangedData(storPoolDfnToRegister);
-
-            if (changedData.storPoolDfnToRegister != null)
+            else // node == null
             {
-                storPoolDfnMap.put(
-                    storPoolName,
-                    changedData.storPoolDfnToRegister
+                errorReporter.logWarning(
+                    "Received update for storge pool of unknown (deleted?) node: %s, storage pool: %s. " +
+                        "Ignoring update due to possible race-condition.",
+                    nodeName.displayValue,
+                    storPoolName.displayValue
                 );
             }
-            transMgrProvider.get().commit();
-
-            errorReporter.logInfo(
-                "Storage pool '%s' %s.",
-                storPoolName.displayValue,
-                action
-            );
-
-            storPoolSet.add(storPoolName);
-
-            SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool, true);
-            DeviceProviderKind kind = storPool.getDeviceProviderKind();
-            boolean isFileKind = kind.equals(DeviceProviderKind.FILE) || kind.equals(DeviceProviderKind.FILE_THIN);
-            if (!kind.usesThinProvisioning() || isFileKind)
-            {
-                boolean supportsSnapshots = storPool.isSnapshotSupported(apiCtx);
-
-                controllerPeerConnector.getControllerPeer().sendMessage(
-                    ctrlStltSerializer
-                        .onewayBuilder(InternalApiConsts.API_NOTIFY_STOR_POOL_APPLIED)
-                        .storPoolApplied(storPool, spaceInfo, supportsSnapshots)
-                        .build(),
-                    InternalApiConsts.API_NOTIFY_STOR_POOL_APPLIED
-                );
-            }
-
-            responses.addEntry(ApiCallRcImpl.simpleEntry(
-                ApiConsts.MODIFIED,
-                "Changes applied to storage pool '" + storPoolName + "'"
-            ));
         }
         catch (LinStorException linStorException)
         {

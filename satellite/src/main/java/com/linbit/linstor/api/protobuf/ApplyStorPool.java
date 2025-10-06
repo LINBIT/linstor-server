@@ -47,7 +47,6 @@ public class ApplyStorPool implements ApiCall
 
         StorPoolPojo storPoolRaw = asStorPoolPojo(
             applyStorPool.getStorPool(),
-            controllerPeerConnector.getLocalNode().getName().displayValue,
             applyStorPool.getFullSyncId(),
             applyStorPool.getUpdateId()
         );
@@ -56,7 +55,6 @@ public class ApplyStorPool implements ApiCall
 
     static StorPoolPojo asStorPoolPojo(
         IntStorPool intStorPool,
-        String nodeName,
         long fullSyncId,
         long updateId
     )
@@ -67,7 +65,7 @@ public class ApplyStorPool implements ApiCall
         return new StorPoolPojo(
             ProtoUuidUtils.deserialize(protoStorPool.getStorPoolUuid()),
             ProtoUuidUtils.deserialize(protoStorPool.getNodeUuid()),
-            nodeName,
+            intStorPool.getStorPool().getNodeName(),
             protoStorPool.getStorPoolName(),
             ProtoUuidUtils.deserialize(protoStorPool.getStorPoolDfnUuid()),
             ProtoDeserializationUtils.parseDeviceProviderKind(protoStorPool.getProviderKind()),

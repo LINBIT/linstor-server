@@ -169,7 +169,7 @@ public class StorPoolDefinition extends AbsCoreObj<StorPoolDefinition> implement
     @Override
     public String toStringImpl()
     {
-        return "StorPool: '" + name + "'";
+        return "StorPoolDfn: '" + name + "'";
     }
 
     @Override

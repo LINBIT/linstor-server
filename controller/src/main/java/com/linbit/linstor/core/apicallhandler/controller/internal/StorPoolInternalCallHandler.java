@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -11,6 +12,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
@@ -19,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
@@ -53,6 +56,7 @@ public class StorPoolInternalCallHandler
 
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
+    private final NodesMap nodesMap;
 
     @Inject
     public StorPoolInternalCallHandler(
@@ -65,7 +69,8 @@ public class StorPoolInternalCallHandler
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        NodesMap nodesMapRef
     )
     {
         errorReporter = errorReporterRef;
@@ -78,9 +83,10 @@ public class StorPoolInternalCallHandler
         peerAccCtx = peerAccCtxRef;
         nodesMapLock = nodesMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
+        nodesMap = nodesMapRef;
     }
 
-    public void handleStorPoolRequest(UUID storPoolUuid, String storPoolNameStr)
+    public void handleStorPoolRequest(UUID storPoolUuid, String nodeNameStr, String storPoolNameRef)
     {
         try (
             LockGuard ls = LockGuard.createLocked(
@@ -90,10 +96,21 @@ public class StorPoolInternalCallHandler
             )
         )
         {
-            StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
+            NodeName nodeName = new NodeName(nodeNameStr);
+            StorPoolName storPoolName = new StorPoolName(storPoolNameRef);
 
             Peer currentPeer = peer.get();
-            StorPool storPool = currentPeer.getNode().getStorPool(apiCtx, storPoolName);
+            @Nullable Node node = nodesMap.get(nodeName);
+            @Nullable StorPool storPool;
+            if (node == null)
+            {
+                storPool = null;
+            }
+            else
+            {
+                storPool = node.getStorPool(apiCtx, storPoolName);
+            }
+
             // TODO: check if the storPool has the same uuid as storPoolUuid
             if (storPool != null)
             {
@@ -113,7 +130,7 @@ public class StorPoolInternalCallHandler
                 currentPeer.sendMessage(
                     ctrlStltSerializer
                         .onewayBuilder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED)
-                        .deletedStorPool(storPoolNameStr, fullSyncTimestamp, updateId)
+                        .deletedStorPool(nodeNameStr, storPoolNameRef, fullSyncTimestamp, updateId)
                         .build()
                 );
             }
@@ -122,7 +139,8 @@ public class StorPoolInternalCallHandler
         {
             errorReporter.reportError(
                 new ImplementationError(
-                    "Satellite requested data for invalid storpool name '" + storPoolNameStr + "'.",
+                    "Satellite requested data for invalid storpool name '" + storPoolNameRef + "' for node '" +
+                        nodeNameStr + "'.",
                     invalidNameExc
                 )
             );
@@ -182,7 +200,11 @@ public class StorPoolInternalCallHandler
 
                         try
                         {
-                            StorPool storPool = ctrlApiDataLoader.loadStorPool(capacityInfoPojo.getStorPoolName(), node, true);
+                            StorPool storPool = ctrlApiDataLoader.loadStorPool(
+                                capacityInfoPojo.getStorPoolName(),
+                                node,
+                                true
+                            );
                             if (storPool.getUuid().equals(capacityInfoPojo.getStorPoolUuid()))
                             {
                                 storPool.clearReports();

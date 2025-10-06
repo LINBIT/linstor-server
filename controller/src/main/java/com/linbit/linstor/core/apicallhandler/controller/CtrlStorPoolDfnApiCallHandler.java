@@ -47,6 +47,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -424,7 +425,21 @@ class CtrlStorPoolDfnApiCallHandler
             Iterator<StorPool> iterateStorPools = storPoolDfn.iterateStorPools(apiCtx);
             while (iterateStorPools.hasNext())
             {
-                fluxes.add(Flux.just(ctrlSatelliteUpdateCaller.updateSatellite(iterateStorPools.next())));
+                fluxes.add(
+                    Flux.just(
+                    ctrlSatelliteUpdateCaller.updateSatellite(iterateStorPools.next())
+                        .transform(
+                            updateResponses -> CtrlResponseUtils.combineResponses(
+                                errorReporter,
+                                updateResponses,
+                                storPoolDfn.getName().displayValue,
+                                Collections.emptyList(),
+                                "Storage pool updated on {0}",
+                                "Storage pool updated on {0}"
+                            )
+                        )
+                    )
+                );
             }
         }
         catch (AccessDeniedException accDeniedExc)

@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
@@ -126,6 +124,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
+
+import static java.util.stream.Collectors.toList;
 
 public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     implements CtrlStltSerializer.CtrlStltSerializerBuilder
@@ -272,8 +272,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     // no fullSync- or update-id needed
     @Override
-    public ProtoCtrlStltSerializerBuilder changedStorPool(UUID storPoolUuid, String storPoolName)
+    public ProtoCtrlStltSerializerBuilder changedStorPool(UUID storPoolUuid, String nodeNameRef, String storPoolName)
     {
+        appendObjectId(null, nodeNameRef);
         appendObjectId(storPoolUuid, storPoolName);
         return this;
     }
@@ -459,6 +460,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     @Override
     public ProtoCtrlStltSerializerBuilder deletedStorPool(
+        String nodeNameStr,
         String storPoolNameStr,
         long fullSyncTimestamp,
         long updateId
@@ -467,6 +469,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgIntApplyDeletedStorPool.newBuilder()
+                .setNodeName(nodeNameStr)
                 .setStorPoolName(storPoolNameStr)
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
@@ -1171,9 +1174,14 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName)
+    public ProtoCtrlStltSerializerBuilder requestStoragePoolUpdate(
+        UUID storPoolUuid,
+        String nodeNameRef,
+        String storPoolNameRef
+    )
     {
-        appendObjectId(storPoolUuid, storPoolName);
+        appendObjectId(null, nodeNameRef);
+        appendObjectId(storPoolUuid, storPoolNameRef);
         return this;
     }
 

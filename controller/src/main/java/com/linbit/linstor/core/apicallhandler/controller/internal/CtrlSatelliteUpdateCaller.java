@@ -15,6 +15,7 @@ import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequ
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -29,6 +30,7 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.tasks.RetryResourcesTask;
 
 import javax.inject.Inject;
@@ -40,8 +42,10 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.reactivestreams.Publisher;
@@ -227,35 +231,84 @@ public class CtrlSatelliteUpdateCaller
         return Flux.fromIterable(responses);
     }
 
-    public Flux<ApiCallRc> updateSatellite(final StorPool storPool)
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellite(final StorPool storPool)
     {
-        return updateSatellite(storPool.getUuid(), storPool.getName().displayValue, storPool.getNode());
+        // figure out which nodes to update
+        Set<Node> nodesToUpdate = new HashSet<>();
+        nodesToUpdate.add(storPool.getNode());
+
+        try
+        {
+            for (VlmProviderObject<Resource> vlmProviderObject : storPool.getVolumes(apiCtx))
+            {
+                ResourceDefinition rscDfn = vlmProviderObject.getRscLayerObject()
+                    .getAbsResource()
+                    .getResourceDefinition();
+                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+                while (rscIt.hasNext())
+                {
+                    Resource rsc = rscIt.next();
+                    nodesToUpdate.add(rsc.getNode());
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return updateSatellite(storPool, nodesToUpdate);
     }
 
-    public Flux<ApiCallRc> updateSatellite(final UUID storPoolUuid, final String storPoolName, final Node node)
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellite(
+        StorPool storPoolRef,
+        Set<Node> nodesToUpdateRef
+    )
     {
-        NodeName nodeName = node.getName();
+        List<Tuple2<NodeName, Flux<ApiCallRc>>> responses = new ArrayList<>();
 
+        // notify all peers that a storage pool has changed
+        final UUID spUuid = storPoolRef.getUuid();
+        final NodeName nodeName = storPoolRef.getNode().getName();
+        final StorPoolName storPoolName = storPoolRef.getName();
+        for (Node nodeToUpdate : nodesToUpdateRef)
+        {
+            Flux<ApiCallRc> response = updateSatellite(spUuid, nodeName, storPoolName, nodeToUpdate);
+
+            responses.add(Tuples.of(nodeToUpdate.getName(), response));
+        }
+
+        return Flux.fromIterable(responses);
+    }
+
+    public Flux<ApiCallRc> updateSatellite(
+        final UUID storPoolUuid,
+        final NodeName nodeName,
+        final StorPoolName storPoolName,
+        final Node nodeToUpdate
+    )
+    {
         Flux<ApiCallRc> response;
 
         try
         {
-            Peer currentPeer = node.getPeer(apiCtx);
+            Peer peerToUpdate = nodeToUpdate.getPeer(apiCtx);
 
-            if (currentPeer.isOnline() && currentPeer.hasFullSyncFailed())
+            if (peerToUpdate.isOnline() && peerToUpdate.hasFullSyncFailed())
             {
-                response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(currentPeer)));
+                response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(peerToUpdate)));
             }
             else
             {
-                response = currentPeer
+                response = peerToUpdate
                     .apiCall(
                         InternalApiConsts.API_CHANGED_STOR_POOL,
                         internalComSerializer
                             .headerlessBuilder()
                             .changedStorPool(
                                 storPoolUuid,
-                                storPoolName
+                                nodeName.displayValue,
+                                storPoolName.displayValue
                             )
                             .build()
                     )

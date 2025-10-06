@@ -34,10 +34,12 @@ public class IntRequestStorPool implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
+        IntObjectId nodeNameId = IntObjectId.parseDelimitedFrom(msgDataIn);
         IntObjectId storPoolId = IntObjectId.parseDelimitedFrom(msgDataIn);
         UUID storPoolUuid = ProtoUuidUtils.deserialize(storPoolId.getUuid());
         String storPoolName = storPoolId.getName();
+        String nodeNameStr = nodeNameId.getName();
 
-        storPoolInternalCallHandler.handleStorPoolRequest(storPoolUuid, storPoolName);
+        storPoolInternalCallHandler.handleStorPoolRequest(storPoolUuid, nodeNameStr, storPoolName);
     }
 }

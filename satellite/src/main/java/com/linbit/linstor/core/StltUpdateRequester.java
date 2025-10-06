@@ -8,8 +8,8 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 
@@ -71,12 +71,16 @@ public class StltUpdateRequester
         );
     }
 
-    public void requestStorPoolUpdate(UUID storPoolUuid, StorPoolName storPoolName)
+    public void requestStorPoolUpdate(UUID storPoolUuid, StorPool.Key spKeyRef)
     {
         sendRequest(
             interComSerializer
                 .onewayBuilder(InternalApiConsts.API_REQUEST_STOR_POOL)
-                .requestStoragePoolUpdate(storPoolUuid, storPoolName.getDisplayName())
+                .requestStoragePoolUpdate(
+                    storPoolUuid,
+                    spKeyRef.getNodeName().displayValue,
+                    spKeyRef.getStorPoolName().displayValue
+                )
                 .build(),
             InternalApiConsts.API_REQUEST_STOR_POOL
         );

@@ -8,10 +8,10 @@ import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.propscon.Props;
@@ -25,7 +25,7 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
 {
     void controllerUpdateApplied(Set<ResourceName> rscSet);
     void nodeUpdateApplied(Set<NodeName> nodeSet, Set<ResourceName> rscSet);
-    void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet, ApiCallRc responses);
+    void storPoolUpdateApplied(Set<StorPool.Key> storPoolSet, Set<ResourceName> rscSet, ApiCallRc responses);
     void rscUpdateApplied(Set<Resource.ResourceKey> rscSet);
     void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet);
     void externalFileUpdateApplied(ExternalFileName extFile, NodeName nodeName, Set<ResourceName> rscNameSet);
