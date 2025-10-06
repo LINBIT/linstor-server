@@ -1,0 +1,54 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended"
+    ],
+    "dockerfile": {
+        "enabled": false
+    },
+    "gitlabci": {
+        "enabled": false
+    },
+    "packageRules": [
+        {
+            "groupName": "jackson monorepo",
+            "matchSourceUrls": [
+                "https://github.com/FasterXML/jackson",
+                "https://github.com/FasterXML/jackson-annotations",
+                "https://github.com/FasterXML/jackson-core",
+                "https://github.com/FasterXML/jackson-databind",
+                "https://github.com/FasterXML/jackson-dataformats-binary",
+                "https://github.com/FasterXML/jackson-dataformats-text",
+                "https://github.com/FasterXML/jackson-jaxrs-providers",
+                "https://github.com/FasterXML/jackson-jr",
+                "https://github.com/FasterXML/jackson-module-kotlin",
+                "https://github.com/FasterXML/jackson-module-scala"
+            ],
+            "matchUpdateTypes": [
+                "digest",
+                "patch",
+                "minor",
+                "major"
+            ]
+        },
+        {
+            "groupName": "guice monorepo",
+            "matchSourceUrls": [
+                "https://github.com/google/guice"
+            ],
+            "matchUpdateTypes": [
+                "digest",
+                "patch",
+                "minor",
+                "major"
+            ]
+        },
+        {
+            "matchPackageNames": [
+                "com.h2database:h2"
+            ],
+            "enabled": false
+        }
+    ],
+    "automerge": false
+}
