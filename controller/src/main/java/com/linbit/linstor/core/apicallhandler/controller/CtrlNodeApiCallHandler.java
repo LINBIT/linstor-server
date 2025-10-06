@@ -1634,7 +1634,6 @@ public class CtrlNodeApiCallHandler
                 for (Snapshot snap : nodeToEvacuate.getSnapshots(peerCtx))
                 {
                     affectedRscDfnList.add(snap.getResourceDefinition());
-                    copySnapsHelper.deleteSnapAfterShipmentSent(snap);
                 }
             }
 
@@ -1670,12 +1669,12 @@ public class CtrlNodeApiCallHandler
                             );
                         }
 
+                        int expectedReplicaCount = rscDfn.getResourceGroup()
+                            .getAutoPlaceConfig()
+                            .getReplicaCount(peerCtx);
                         if (!justDeleteRscToEvac)
                         {
                             int upToDatePeerCount = getUpToDatePeerCount(peerCtx, rscDfn);
-                            int expectedReplicaCount = rscDfn.getResourceGroup()
-                                .getAutoPlaceConfig()
-                                .getReplicaCount(peerCtx);
                             if (upToDatePeerCount >= expectedReplicaCount)
                             {
                                 justDeleteRscToEvac = true;
@@ -1684,6 +1683,48 @@ public class CtrlNodeApiCallHandler
 
                         if (justDeleteRscToEvac)
                         {
+                            if (copyAllSnaps)
+                            {
+                                for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerCtx))
+                                {
+                                    @Nullable Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeNameEvacuateSource);
+                                    if (snap != null)
+                                    {
+                                        StorPool sp = getStorPoolForEvacuation(rscDfn);
+                                        if (sp == null)
+                                        {
+                                            sp = getStorPoolForCopySnaps(rscDfn, snapDfn);
+                                        }
+                                        if (sp == null)
+                                        {
+                                            apiCallRc.addEntry(
+                                                ApiCallRcImpl.simpleEntry(
+                                                    ApiConsts.WARN_NOT_EVACUATING,
+                                                    "Snapshot '" + snapDfn.getName() + "' of resource " +
+                                                        rscName.displayValue +
+                                                        "' cannot be evacuated as no available storage pool was found"
+                                                )
+                                            );
+                                        }
+                                        else
+                                        {
+                                            NodeName nodeNameEvacTarget = sp.getNode().getName();
+                                            int snapCount = snapDfn.getAllNotDeletingSnapshots(apiCtx).size();
+                                            if (snapCount == 1 || snapCount - 1 < expectedReplicaCount)
+                                            {
+                                                copySnapsHelper.deleteSnapAfterShipmentSent(snap);
+                                                fluxList.add(
+                                                    copySnapsHelper.getCopyFlux(
+                                                        snapDfn,
+                                                        nodeNameEvacTarget.displayValue,
+                                                        contextRef
+                                                    )
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             fluxList.add(
                                 rscDeleteHandler.deleteResource(
                                     nodeNameEvacuateSourceStrRef,
@@ -1709,7 +1750,18 @@ public class CtrlNodeApiCallHandler
                                 NodeName nodeNameEvacTarget = sp.getNode().getName();
 
                                 Flux<ApiCallRc> createOrToggleDiskFlux = null;
-                                Resource rscOnTargetNode = sp.getNode().getResource(peerCtx, rscName);
+                                @Nullable Resource rscOnTargetNode = sp.getNode().getResource(peerCtx, rscName);
+                                if (copyAllSnaps)
+                                {
+                                    for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerCtx))
+                                    {
+                                        @Nullable Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeNameEvacuateSource);
+                                        if (snap != null)
+                                        {
+                                            copySnapsHelper.deleteSnapAfterShipmentSent(snap);
+                                        }
+                                    }
+                                }
                                 if (rscOnTargetNode != null)
                                 {
                                     // selected node already has the resource
@@ -1729,7 +1781,6 @@ public class CtrlNodeApiCallHandler
                                         );
                                     }
                                 }
-
                                 if (createOrToggleDiskFlux == null)
                                 {
                                     ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
@@ -1767,7 +1818,6 @@ public class CtrlNodeApiCallHandler
                                 }
                                 fluxList.add(createOrToggleDiskFlux);
                             }
-
                         }
                     }
                     else
@@ -1781,6 +1831,10 @@ public class CtrlNodeApiCallHandler
                                 StorPool sp = getStorPoolForEvacuation(rscDfn);
                                 if (sp == null)
                                 {
+                                    sp = getStorPoolForCopySnaps(rscDfn, snapDfn);
+                                }
+                                if (sp == null)
+                                {
                                     apiCallRc.addEntry(
                                         ApiCallRcImpl.simpleEntry(
                                             ApiConsts.WARN_NOT_EVACUATING,
@@ -1791,6 +1845,10 @@ public class CtrlNodeApiCallHandler
                                 }
                                 else
                                 {
+                                    if (copyAllSnaps)
+                                    {
+                                        copySnapsHelper.deleteSnapAfterShipmentSent(snap);
+                                    }
                                     NodeName nodeNameEvacTarget = sp.getNode().getName();
                                     fluxList.add(
                                         copySnapsHelper.getCopyFlux(
@@ -1924,5 +1982,34 @@ public class CtrlNodeApiCallHandler
             ret = storPoolSet.iterator().next();
         }
         return ret;
+    }
+
+    private @Nullable StorPool getStorPoolForCopySnaps(ResourceDefinition rscDfn, SnapshotDefinition snapDfn)
+        throws AccessDeniedException
+    {
+        // if placing only a snapshot, limit nodes to those that don't already have the snap,
+        // and disable the rscAlreadyPlacedOn rule
+        errorReporter.logTrace("searching for rsc to add snapshots to");
+        long rscSize = CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, apiCtx);
+        List<String> nodesWithoutSnap = new ArrayList<>();
+        for (Resource rsc : rscDfn.getDiskfulResources(apiCtx))
+        {
+            NodeName nodeName = rsc.getNode().getName();
+            if (snapDfn.getSnapshot(apiCtx, nodeName) == null)
+            {
+                nodesWithoutSnap.add(nodeName.displayValue);
+            }
+        }
+        Set<StorPool> storPoolSet = autoplacer.autoPlace(
+            AutoSelectFilterPojo.merge(
+                new AutoSelectFilterBuilder().setNodeNameList(nodesWithoutSnap)
+                    .setSkipAlreadyPlacedOnAllNodeCheck(true)
+                    .build(),
+                rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+            ),
+            rscDfn,
+            rscSize
+        );
+        return storPoolSet != null && !storPoolSet.isEmpty() ? storPoolSet.iterator().next() : null;
     }
 }
