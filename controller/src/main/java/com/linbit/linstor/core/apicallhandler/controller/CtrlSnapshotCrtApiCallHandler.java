@@ -7,6 +7,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -65,6 +66,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -831,12 +833,23 @@ public class CtrlSnapshotCrtApiCallHandler
         {
             if (!snapDfn.isDeleted())
             {
+                @Nullable Date createTs = null;
+                for (Snapshot snapshot : getAllSnapshotsPrivileged(snapDfn))
+                {
+                    Optional<Date> crtTs = snapshot.getCreateTimestamp();
+                    if (crtTs.isPresent())
+                    {
+                        createTs = crtTs.get();
+                        break;
+                    }
+                }
+                createTs = createTs == null ? new Date() : createTs;
                 for (Snapshot snapshot : getAllSnapshotsPrivileged(snapDfn))
                 {
                     unsetSuspendResourcePrivileged(snapshot);
                     try
                     {
-                        snapshot.setCreateTimestamp(apiCtx, new Date());
+                        snapshot.setCreateTimestamp(apiCtx, createTs);
                     }
                     catch (AccessDeniedException | DatabaseException exc)
                     {
