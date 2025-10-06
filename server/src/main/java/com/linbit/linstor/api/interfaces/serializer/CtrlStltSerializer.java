@@ -54,7 +54,8 @@ public interface CtrlStltSerializer extends CommonSerializer
 
         CtrlStltSerializerBuilder changedNode(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder changedResource(UUID rscUuid, String rscName);
-        CtrlStltSerializerBuilder changedStorPool(UUID storPoolUuid, String storPoolName);
+
+        CtrlStltSerializerBuilder changedStorPool(UUID storPoolUuid, String nodeName, String storPoolName);
         CtrlStltSerializerBuilder changedSnapshot(String rscName, UUID snapshotUuid, String snapshotName);
 
         CtrlStltSerializerBuilder changedConfig(StltConfig stltConfig) throws IOException;
@@ -73,7 +74,13 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder resource(Resource localResource, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder deletedResource(String rscNameStr, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder storPool(StorPool storPool, long fullSyncTimestamp, long updateId);
-        CtrlStltSerializerBuilder deletedStorPool(String storPoolName, long fullSyncTimestamp, long updateId);
+
+        CtrlStltSerializerBuilder deletedStorPool(
+            String nodeNameRef,
+            String storPoolNameRef,
+            long fullSyncTimestamp,
+            long updateId
+        );
         CtrlStltSerializerBuilder snapshot(Snapshot snapshot, long fullSyncId, long updateId);
         CtrlStltSerializerBuilder endedSnapshot(
             String resourceNameStr,
@@ -173,7 +180,7 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder requestControllerUpdate();
         CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
-        CtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName);
+        CtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String nodeNameRef, String storPoolName);
         CtrlStltSerializerBuilder requestSnapshotUpdate(
             String rscName,
             UUID snapshotUuid,

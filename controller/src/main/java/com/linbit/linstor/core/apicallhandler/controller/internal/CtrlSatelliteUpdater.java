@@ -9,7 +9,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -18,13 +17,16 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -178,39 +180,70 @@ public class CtrlSatelliteUpdater
 
     public ApiCallRc updateSatellite(final StorPool storPool)
     {
-        return updateSatellite(storPool.getNode(), storPool.getName(), storPool.getUuid());
+        // figure out which nodes to update
+        Set<Node> nodesToUpdate = new HashSet<>();
+        nodesToUpdate.add(storPool.getNode());
+
+        try
+        {
+            for (VlmProviderObject<Resource> vlmProviderObject : storPool.getVolumes(apiCtx))
+            {
+                ResourceDefinition rscDfn = vlmProviderObject.getRscLayerObject()
+                    .getAbsResource()
+                    .getResourceDefinition();
+                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+                while (rscIt.hasNext())
+                {
+                    Resource rsc = rscIt.next();
+                    nodesToUpdate.add(rsc.getNode());
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return updateSatellite(storPool, nodesToUpdate);
     }
 
-    public ApiCallRc updateSatellite(final Node node, final StorPoolName storPoolName, final UUID storPoolUuid)
+    private ApiCallRc updateSatellite(final StorPool storPoolRef, Set<Node> nodesToUpdateRef)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
         try
         {
-            Peer satellitePeer = node.getPeer(apiCtx);
-            boolean connected = satellitePeer.isOnline();
-            if (connected)
+            final UUID storPoolUuid = storPoolRef.getUuid();
+            final String nodeNameStr = storPoolRef.getNode().getName().displayValue;
+            final String storPoolNameStr = storPoolRef.getName().displayValue;
+            for (Node nodeToUpdate : nodesToUpdateRef)
             {
-                if (satellitePeer.hasFullSyncFailed())
+                Peer peerToUpdate = nodeToUpdate.getPeer(apiCtx);
+                boolean connected = peerToUpdate.isOnline();
+                if (connected)
                 {
-                    responses.addEntry(ResponseUtils.makeFullSyncFailedResponse(satellitePeer));
+                    if (peerToUpdate.hasFullSyncFailed())
+                    {
+                        responses.addEntry(ResponseUtils.makeFullSyncFailedResponse(peerToUpdate));
+                    }
+                    else
+                    {
+                        peerToUpdate.sendMessage(
+                            internalComSerializer
+                                .onewayBuilder(InternalApiConsts.API_CHANGED_STOR_POOL)
+                                .changedStorPool(
+                                    storPoolUuid,
+                                    nodeNameStr,
+                                    storPoolNameStr
+                                )
+                                .build()
+                        );
+                    }
                 }
                 else
                 {
-                    satellitePeer.sendMessage(
-                        internalComSerializer
-                            .onewayBuilder(InternalApiConsts.API_CHANGED_STOR_POOL)
-                            .changedStorPool(
-                                storPoolUuid,
-                                storPoolName.displayValue
-                            )
-                            .build()
-                    );
+                    responses.addEntry(ResponseUtils.makeNotConnectedWarning(nodeToUpdate.getName()));
                 }
-            }
-            else
-            {
-                responses.addEntry(ResponseUtils.makeNotConnectedWarning(node.getName()));
             }
         }
         catch (AccessDeniedException implError)

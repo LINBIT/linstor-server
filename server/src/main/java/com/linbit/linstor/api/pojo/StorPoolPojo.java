@@ -7,6 +7,7 @@ import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -220,9 +221,39 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     }
 
     @Override
+    public int hashCode()
+    {
+        return Objects.hash(nodeName, storPoolName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+        if (obj == null)
+        {
+            return false;
+        }
+        if (getClass() != obj.getClass())
+        {
+            return false;
+        }
+        StorPoolPojo other = (StorPoolPojo) obj;
+        return Objects.equals(nodeName, other.nodeName) && Objects.equals(storPoolName, other.storPoolName);
+    }
+
+    @Override
     public int compareTo(StorPoolPojo otherStorPoolPojo)
     {
-        return storPoolName.compareTo(otherStorPoolPojo.storPoolName);
+        int cmp = nodeName.compareTo(otherStorPoolPojo.nodeName);
+        if (cmp == 0)
+        {
+            cmp = storPoolName.compareTo(otherStorPoolPojo.storPoolName);
+        }
+        return cmp;
     }
 
     public @Nullable Long getFullSyncId()

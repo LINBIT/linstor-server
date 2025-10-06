@@ -22,6 +22,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -32,6 +33,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
@@ -68,6 +70,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlStorPoolApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -85,6 +88,7 @@ public class CtrlStorPoolApiCallHandler
 
     @Inject
     public CtrlStorPoolApiCallHandler(
+        ErrorReporter errorReporterRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
@@ -101,6 +105,7 @@ public class CtrlStorPoolApiCallHandler
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProviderRef
     )
     {
+        errorReporter = errorReporterRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
@@ -257,7 +262,17 @@ public class CtrlStorPoolApiCallHandler
 
             if (notifyStlts)
             {
-                flux = ctrlSatelliteUpdateCaller.updateSatellite(storPool);
+                flux = ctrlSatelliteUpdateCaller.updateSatellite(storPool)
+                    .transform(
+                        updateResponses -> CtrlResponseUtils.combineResponses(
+                            errorReporter,
+                            updateResponses,
+                            storPoolNameStr,
+                            Collections.emptyList(),
+                            "Storage pool updated on {0}",
+                            "Storage pool updated on {0}"
+                        )
+                    );
             }
         }
         catch (Exception | ImplementationError exc)
@@ -403,7 +418,8 @@ public class CtrlStorPoolApiCallHandler
                 StorPoolDefinition spd = getStorPoolDefinition(storPool);
                 delete(storPool);
                 Iterator<StorPool> spIt = spd.iterateStorPools(sysCtx);
-                String spdDspName = spd.getName().displayValue;
+                StorPoolName storPoolName = spd.getName();
+                String spdDspName = storPoolName.displayValue;
                 if (!spIt.hasNext() && // only delete SPD if we just its deleted last SP
                     // and if the name is not default*
                     !spdDspName.equalsIgnoreCase(LinStor.DISKLESS_STOR_POOL_NAME) &&
@@ -416,7 +432,17 @@ public class CtrlStorPoolApiCallHandler
                 responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultDeletedEntry(
                     storPoolUuid, getStorPoolDescription(nodeNameStr, storPoolNameStr)));
 
-                flux = ctrlSatelliteUpdateCaller.updateSatellite(storPoolUuid, storPoolNameStr, storPoolNode);
+                flux = flux.concatWith(
+                    // it should be enough to update the single node that had this storage pool
+                    // since this storage pool no longer had resources/volumes. that should mean that there are no
+                    // other satellites that need a reference to this storage pool
+                    ctrlSatelliteUpdateCaller.updateSatellite(
+                        storPoolUuid,
+                        storPoolNode.getName(),
+                        storPoolName,
+                        storPoolNode
+                    )
+                );
             }
         }
         catch (Exception | ImplementationError exc)

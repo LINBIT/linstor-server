@@ -27,6 +27,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.StringUtils;
 
@@ -142,6 +143,10 @@ public class CtrlFullSyncApiCallHandler
 
             nodes.add(satelliteNode); // always add the localNode
 
+            // some storPools might have been created on the satellite, but are not used by resources / volumes
+            // however, when a rsc / vlm is created, they already assume the referenced storPool already exists
+            storPools.addAll(satelliteNode.streamStorPools(apiCtx).collect(toList()));
+
             for (Resource rsc : satelliteNode.streamResources(apiCtx).collect(toList()))
             {
                 rscs.add(rsc);
@@ -152,12 +157,10 @@ public class CtrlFullSyncApiCallHandler
                     if (otherRsc != rsc)
                     {
                         nodes.add(otherRsc.getNode());
+                        storPools.addAll(LayerVlmUtils.getStorPools(otherRsc, apiCtx));
                     }
                 }
             }
-            // some storPools might have been created on the satellite, but are not used by resources / volumes
-            // however, when a rsc / vlm is created, they already assume the referenced storPool already exists
-            storPools.addAll(satelliteNode.streamStorPools(apiCtx).collect(toList()));
 
             // we need to send all snaps, since the stlt might need them for e.g. incremental backup shipping
             snapshots.addAll(satelliteNode.getSnapshots(apiCtx));

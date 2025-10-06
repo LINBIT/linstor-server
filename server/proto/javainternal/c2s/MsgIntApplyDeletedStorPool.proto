@@ -6,6 +6,7 @@ package com.linbit.linstor.proto.javainternal.c2s;
 // This message is basically just to make sure the satellite deletes the storage pool.
 message MsgIntApplyDeletedStorPool
 {
+    string node_name = 4;
     string stor_pool_name = 1;
     sint64 full_sync_id = 2;
     sint64 update_id = 3;

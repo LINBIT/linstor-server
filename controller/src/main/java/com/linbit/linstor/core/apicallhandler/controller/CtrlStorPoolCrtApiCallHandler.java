@@ -17,6 +17,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.Node;
@@ -261,6 +262,16 @@ public class CtrlStorPoolCrtApiCallHandler
 
             Flux<ApiCallRc> updateResponses = ctrlSatelliteUpdateCaller
                 .updateSatellite(storPool)
+                .transform(
+                    innerUpdateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
+                        innerUpdateResponses,
+                        storPoolNameStr,
+                        Collections.emptyList(),
+                        "Storage pool updated on {0}",
+                        "Storage pool updated on {0}"
+                    )
+                )
                 .onErrorResume(
                     ApiRcException.class,
                     apiRcException -> Flux.just(apiRcException.getApiCallRc())

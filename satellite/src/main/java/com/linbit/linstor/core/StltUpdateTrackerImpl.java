@@ -10,6 +10,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.StorPool;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -120,13 +121,14 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
     }
 
     @Override
-    public Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, StorPoolName storPoolName)
+    public Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, NodeName nodeNameRef, StorPoolName storPoolName)
     {
         UpdateNotification updateNotification;
+        StorPool.Key key = new StorPool.Key(nodeNameRef, storPoolName);
         synchronized (sched)
         {
             updateNotification = cachedUpdates.storPoolUpdates.computeIfAbsent(
-                storPoolName,
+                key,
                 ignored -> new UpdateNotification(storPoolUuid)
             );
         }
@@ -288,7 +290,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
         public Optional<UpdateNotification> controllerUpdate = Optional.empty();
         public final Map<NodeName, UpdateNotification> nodeUpdates = new TreeMap<>();
         public final Map<Resource.ResourceKey, UpdateNotification> rscUpdates = new TreeMap<>();
-        public final Map<StorPoolName, UpdateNotification> storPoolUpdates = new TreeMap<>();
+        public final Map<StorPool.Key, UpdateNotification> storPoolUpdates = new TreeMap<>();
         public final Map<SnapshotDefinition.Key, UpdateNotification> snapshotUpdates = new TreeMap<>();
         public final Map<ExternalFileName, UpdateNotification> externalFileUpdates = new TreeMap<>();
         public final Map<RemoteName, UpdateNotification> remoteUpdates = new TreeMap<>();

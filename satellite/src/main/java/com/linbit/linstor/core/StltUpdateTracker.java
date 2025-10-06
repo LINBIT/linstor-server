@@ -21,7 +21,7 @@ public interface StltUpdateTracker
     Flux<ApiCallRc> updateController();
     Flux<ApiCallRc> updateNode(UUID nodeUuid, NodeName name);
     Flux<ApiCallRc> updateResource(UUID rscUuid, ResourceName resourceName, NodeName nodeName);
-    Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, StorPoolName storPoolName);
+    Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, NodeName nodeNameRef, StorPoolName storPoolName);
     Flux<ApiCallRc> updateSnapshot(UUID snapshotUuid, ResourceName resourceName, SnapshotName snapshotName);
     Flux<ApiCallRc> updateExternalFile(UUID externalFileUuidRef, ExternalFileName externalFileNameRef);
 

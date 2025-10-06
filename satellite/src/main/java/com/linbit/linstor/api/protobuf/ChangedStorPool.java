@@ -6,6 +6,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 
@@ -42,13 +43,17 @@ public class ChangedStorPool implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
+        IntObjectId nodeNameId = IntObjectId.parseDelimitedFrom(msgDataIn);
+        String nodeNameStr = nodeNameId.getName();
         IntObjectId storPoolId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String storPoolNameStr = storPoolId.getName();
         UUID storPoolUuid = ProtoUuidUtils.deserialize(storPoolId.getUuid());
 
+        NodeName nodeName;
         StorPoolName storPoolName;
         try
         {
+            nodeName = new NodeName(nodeNameStr);
             storPoolName = new StorPoolName(storPoolNameStr);
         }
         catch (InvalidNameException invalidNameExc)
@@ -62,6 +67,7 @@ public class ChangedStorPool implements ApiCallReactive
         return deviceManager.getUpdateTracker()
             .updateStorPool(
                 storPoolUuid,
+                nodeName,
                 storPoolName
             )
             .transform(responseSerializer::transform);
