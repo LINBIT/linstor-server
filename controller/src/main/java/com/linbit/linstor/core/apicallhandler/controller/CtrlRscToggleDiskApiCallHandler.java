@@ -258,7 +258,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             diskfulByRef,
             false,
             false,
-            Collections.emptyList()
+            Collections.emptyList(),
+            false
         );
     }
 
@@ -283,7 +284,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             diskfulByRef,
             toggleIntoTiebreakerRef,
             false,
-            Collections.emptyList()
+            Collections.emptyList(),
+            false
         );
     }
 
@@ -297,7 +299,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         @Nullable Resource.DiskfulBy diskfulByRef,
         boolean toggleIntoTiebreakerRef,
         boolean copyAllSnapsRef,
-        List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef,
+        boolean copySnapsForEvac
     )
     {
         ResponseContext context = makeRscContext(
@@ -321,7 +324,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     toggleIntoTiebreakerRef,
                     copyAllSnapsRef,
                     snapNamesToCopyRef,
-                    context
+                    context,
+                    copySnapsForEvac
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -338,7 +342,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         boolean toggleIntoTiebreakerRef,
         boolean copyAllSnapsRef,
         List<String> snapNamesToCopyRef,
-        ResponseContext context
+        ResponseContext context,
+        boolean copySnapsForEvac
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -598,7 +603,13 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, toggleIntoTiebreakerRef, context))
             .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rscDfn))
             .concatWith(
-                copySnapHelper.getCopyFlux(Collections.singleton(rsc), copyAllSnapsRef, snapNamesToCopyRef, context)
+                copySnapHelper.getCopyFlux(
+                    Collections.singleton(rsc),
+                    copyAllSnapsRef,
+                    snapNamesToCopyRef,
+                    context,
+                    copySnapsForEvac
+                )
             );
     }
 

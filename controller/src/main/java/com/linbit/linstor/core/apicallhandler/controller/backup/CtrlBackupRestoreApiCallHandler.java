@@ -2129,7 +2129,8 @@ public class CtrlBackupRestoreApiCallHandler
                                             disklessRscApiList,
                                             null,
                                             false,
-                                            Collections.emptyList()
+                                            Collections.emptyList(),
+                                            false
                                         )
                                     );
                             }

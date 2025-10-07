@@ -118,7 +118,8 @@ public class CopySnapsHelper
     public Flux<ApiCallRc> getCopyFlux(
         SnapshotDefinition snapDfnRef,
         String dstNodeNameRef,
-        ResponseContext context
+        ResponseContext context,
+        boolean copySnapsForEvac
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -132,7 +133,8 @@ public class CopySnapsHelper
             () -> getCopyFluxInTransaction(
                 snapDfnRef,
                 dstNodeNameRef,
-                true
+                true,
+                copySnapsForEvac
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -140,7 +142,8 @@ public class CopySnapsHelper
     private Flux<ApiCallRc> getCopyFluxInTransaction(
         SnapshotDefinition snapDfnRef,
         String dstNodeNameRef,
-        boolean runlocalRemoteExistsCheckRef
+        boolean runlocalRemoteExistsCheckRef,
+        boolean copySnapsForEvac
     )
     {
         if (runlocalRemoteExistsCheckRef)
@@ -172,7 +175,8 @@ public class CopySnapsHelper
             null,
             true,
             true,
-            false
+            false,
+            copySnapsForEvac
         );
     }
 
@@ -212,7 +216,8 @@ public class CopySnapsHelper
         Set<Resource> deployedResourcesRef,
         boolean copyAllSnapsRef,
         List<String> snapNamesToCopyRef,
-        ResponseContext context
+        ResponseContext context,
+        boolean copySnapsForEvac
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -227,7 +232,8 @@ public class CopySnapsHelper
                 deployedResourcesRef,
                 copyAllSnapsRef,
                 snapNamesToCopyRef,
-                context
+                context,
+                copySnapsForEvac
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -236,7 +242,8 @@ public class CopySnapsHelper
         Set<Resource> deployedResourcesRef,
         boolean copyAllSnapsRef,
         List<String> snapNamesToCopyRef,
-        ResponseContext context
+        ResponseContext context,
+        boolean copySnapsForEvac
     )
     {
         Flux<ApiCallRc> ret = Flux.empty();
@@ -275,7 +282,8 @@ public class CopySnapsHelper
                             getCopyFlux(
                                 snapDfn,
                                 targetNodeNameStr,
-                                context
+                                context,
+                                copySnapsForEvac
                             )
                         );
                     }

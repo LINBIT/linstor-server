@@ -318,7 +318,13 @@ public class CtrlRscAutoPlaceApiCallHandler
                     .concatWith(deploymentResponses)
                     .concatWith(autoFlux)
                     .concatWith(
-                        copySnapHelper.getCopyFlux(deployedResources.objB, copyAllSnapsRef, snapNamesToCopyRef, context)
+                        copySnapHelper.getCopyFlux(
+                            deployedResources.objB,
+                            copyAllSnapsRef,
+                            snapNamesToCopyRef,
+                            context,
+                            false
+                        )
                     );
             }
             else

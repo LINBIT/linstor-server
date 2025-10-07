@@ -168,7 +168,8 @@ public class CtrlBackupCreateApiCallHandler
                 scheduleNameRef,
                 runInBackgroundRef,
                 null,
-                null
+                null,
+                false
             ).getFlux()
         );
     }
@@ -201,7 +202,8 @@ public class CtrlBackupCreateApiCallHandler
         @Nullable String scheduleNameRef,
         boolean runInBackgroundRef,
         @Nullable String prevSnapDfnUuid,
-        @Nullable BackupShippingSrcData l2lData
+        @Nullable BackupShippingSrcData l2lData,
+        boolean copySnapsForEvac
     )
     {
         String snapName = snapNameRef;
@@ -306,7 +308,8 @@ public class CtrlBackupCreateApiCallHandler
                 responses,
                 queueAnyways,
                 l2lData,
-                shipExistingSnap
+                shipExistingSnap,
+                copySnapsForEvac
             );
 
             List<Integer> nodeIds = new ArrayList<>();
@@ -581,7 +584,8 @@ public class CtrlBackupCreateApiCallHandler
                         responsesRef,
                         true, // always queue to avoid simultaneous shippings of consecutive backups
                         item.l2lData,
-                        shipExistingSnapRef
+                        shipExistingSnapRef,
+                        false
                     );
                 }
 
@@ -633,7 +637,8 @@ public class CtrlBackupCreateApiCallHandler
                     responsesRef,
                     true, // queue anyways
                     optL2LData,
-                    shipExistingSnapRef
+                    shipExistingSnapRef,
+                    false
                 );
                 flux = Flux.empty();
             }
@@ -757,7 +762,8 @@ public class CtrlBackupCreateApiCallHandler
                         responses,
                         false,
                         item.l2lData,
-                        item.shipExistingSnap
+                        item.shipExistingSnap,
+                        false
                     );
                     if (shipFromNode != null)
                     {
@@ -795,7 +801,8 @@ public class CtrlBackupCreateApiCallHandler
         ApiCallRcImpl responses,
         boolean queueAnyways,
         @Nullable BackupShippingSrcData l2lData,
-        boolean shipExistingSnapRef
+        boolean shipExistingSnapRef,
+        boolean copySnapsForEvac
     ) throws AccessDeniedException
     {
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
@@ -803,7 +810,8 @@ public class CtrlBackupCreateApiCallHandler
             shipExistingSnapRef ? snapDfn : null,
             prevSnapDfn,
             remote,
-            l2lData == null ? null : l2lData.getDstRscName()
+            l2lData == null ? null : l2lData.getDstRscName(),
+            copySnapsForEvac
         );
         Node chosenNode = null;
         if (!queueAnyways)

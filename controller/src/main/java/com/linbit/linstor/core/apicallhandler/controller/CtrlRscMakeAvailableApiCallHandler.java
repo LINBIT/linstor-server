@@ -337,7 +337,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                                 Collections.singletonList(createRscPojo),
                                 Resource.DiskfulBy.MAKE_AVAILABLE,
                                 copyAllSnapsRef,
-                                snapNamesToCopyRef
+                                snapNamesToCopyRef,
+                                false
                             )
                         )
                     )
@@ -778,7 +779,8 @@ public class CtrlRscMakeAvailableApiCallHandler
             Collections.singletonList(createRscPojo),
             Resource.DiskfulBy.MAKE_AVAILABLE,
             copyAllSnapsRef,
-            snapNamesToCopyRef
+            snapNamesToCopyRef,
+            false
         );
     }
 

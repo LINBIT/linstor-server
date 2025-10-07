@@ -98,7 +98,8 @@ public class BackupShippingTask implements TaskScheduleService.Task
                     conf.schedule.getName().displayValue,
                     inc,
                     true,
-                    conf.forceRscGrp
+                    conf.forceRscGrp,
+                    false
                 );
         }
         else

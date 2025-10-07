@@ -211,7 +211,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             null,
             snapDfn,
             mockedRemote,
-            TARGET_RSC_NAME
+            TARGET_RSC_NAME,
+            false
         );
         assertSet(usableNodes, NODE_A);
         singleStorageRsc(nodeB);
@@ -222,7 +223,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
                 null,
                 snapDfn,
                 mockedRemote,
-                TARGET_RSC_NAME
+                TARGET_RSC_NAME,
+                false
             );
             fail();
         }
@@ -258,7 +260,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             null,
             null,
             mockedRemote,
-            TARGET_RSC_NAME
+            TARGET_RSC_NAME,
+            false
         );
         assertSet(usableNodes, NODE_A, NODE_B);
         singleDrbdRsc(nodeD, false);
@@ -269,7 +272,14 @@ public class BackupFindUsableNodesTest extends ApiTestBase
                 nodeA.getName().displayValue,
                 BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + REMOTE_NAME
             );
-        usableNodes = backupNodeFinder.findUsableNodes(rscDfn, null, snapDfn, mockedRemote, TARGET_RSC_NAME);
+        usableNodes = backupNodeFinder.findUsableNodes(
+            rscDfn,
+            null,
+            snapDfn,
+            mockedRemote,
+            TARGET_RSC_NAME,
+            false
+        );
         assertSet(usableNodes, NODE_A, NODE_B);
     }
 
@@ -297,7 +307,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             null,
             null,
             mockedRemote,
-            TARGET_RSC_NAME
+            TARGET_RSC_NAME,
+            false
         );
         assertEquals(3, usableNodes.size());
     }
@@ -351,7 +362,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             null,
             inc ? snapDfn : null,
             mockedRemote,
-            TARGET_RSC_NAME
+            TARGET_RSC_NAME,
+            false
         );
         // assertMap(usableNodes, input.objB);
 

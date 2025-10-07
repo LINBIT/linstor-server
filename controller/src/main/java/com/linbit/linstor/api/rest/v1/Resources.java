@@ -219,8 +219,8 @@ public class Resources
                 rscWithPayloadApiList,
                 Resource.DiskfulBy.USER,
                 copyAllSnaps != null && copyAllSnaps,
-                rscList.get(0).snap_names
-
+                rscList.get(0).snap_names,
+                false
             );
 
             requestHelper.doFlux(

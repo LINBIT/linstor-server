@@ -396,7 +396,8 @@ public class CtrlBackupQueueInternalCallHandler
                     new ApiCallRcImpl(),
                     queueAnyways,
                     null,
-                    current.shipExistingSnap
+                    current.shipExistingSnap,
+                    false
                 );
             }
         }
@@ -532,7 +533,8 @@ public class CtrlBackupQueueInternalCallHandler
                     new ApiCallRcImpl(),
                     queueAnyways,
                     l2lData,
-                    next.shipExistingSnap
+                    next.shipExistingSnap,
+                    false
                 );
                 if (l2lNodeForShipping != null)
                 {

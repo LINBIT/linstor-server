@@ -84,7 +84,8 @@ public class CtrlRscCrtApiCallHandler
         List<ResourceWithPayloadApi> rscApiList,
         @Nullable DiskfulBy diskfulByRef,
         boolean copyAllSnaps,
-        List<String> snapNames
+        List<String> snapNames,
+        boolean copySnapsForEvac
     )
     {
         List<String> rscNames = rscApiList.stream()
@@ -132,7 +133,8 @@ public class CtrlRscCrtApiCallHandler
                             thinFreeCapacities,
                             diskfulByRef,
                             copyAllSnaps,
-                            snapNames
+                            snapNames,
+                            copySnapsForEvac
                         ),
                         logContextMap
                     )
@@ -156,7 +158,8 @@ public class CtrlRscCrtApiCallHandler
         Map<StorPool.Key, Long> thinFreeCapacities,
         @Nullable DiskfulBy diskfulByRef,
         boolean copyAllSnapsRef,
-        List<String> snapNamesToCopyRef
+        List<String> snapNamesToCopyRef,
+        boolean copySnapsForEvac
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -222,7 +225,15 @@ public class CtrlRscCrtApiCallHandler
         return Flux.<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
             .concatWith(Flux.merge(autoFlux))
-            .concatWith(copySnapHelper.getCopyFlux(deployedResources, copyAllSnapsRef, snapNamesToCopyRef, context))
+            .concatWith(
+                copySnapHelper.getCopyFlux(
+                    deployedResources,
+                    copyAllSnapsRef,
+                    snapNamesToCopyRef,
+                    context,
+                    copySnapsForEvac
+                )
+            )
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))

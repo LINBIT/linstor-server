@@ -1717,7 +1717,8 @@ public class CtrlNodeApiCallHandler
                                                     copySnapsHelper.getCopyFlux(
                                                         snapDfn,
                                                         nodeNameEvacTarget.displayValue,
-                                                        contextRef
+                                                        contextRef,
+                                                        true
                                                     )
                                                 );
                                             }
@@ -1777,7 +1778,8 @@ public class CtrlNodeApiCallHandler
                                             Resource.DiskfulBy.AUTO_PLACER,
                                             false,
                                             copyAllSnaps,
-                                            Collections.emptyList()
+                                            Collections.emptyList(),
+                                            true
                                         );
                                     }
                                 }
@@ -1805,7 +1807,8 @@ public class CtrlNodeApiCallHandler
                                         Collections.singletonList(createRscPojo),
                                         Resource.DiskfulBy.AUTO_PLACER,
                                         copyAllSnaps,
-                                        Collections.emptyList()
+                                        Collections.emptyList(),
+                                        true
                                     )
                                         .concatWith(
                                             rscToggleDiskApiCallHandler.waitForMigration(
@@ -1854,7 +1857,8 @@ public class CtrlNodeApiCallHandler
                                         copySnapsHelper.getCopyFlux(
                                             snapDfn,
                                             nodeNameEvacTarget.displayValue,
-                                            contextRef
+                                            contextRef,
+                                            true
                                         )
                                     );
                                 }

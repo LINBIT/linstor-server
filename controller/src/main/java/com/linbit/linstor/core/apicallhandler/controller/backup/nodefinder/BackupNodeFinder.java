@@ -104,7 +104,8 @@ public class BackupNodeFinder
         @Nullable SnapshotDefinition currentSnapDfnRef,
         @Nullable SnapshotDefinition prevSnapDfnRef,
         AbsRemote remote,
-        @Nullable String targetRscName
+        @Nullable String targetRscName,
+        boolean copySnapsForEvac
     )
         throws AccessDeniedException
     {
@@ -122,7 +123,7 @@ public class BackupNodeFinder
         while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
-            if (canNodeShip(rsc, currentSnapDfnRef, accCtx))
+            if (canNodeShip(rsc, currentSnapDfnRef, accCtx, copySnapsForEvac))
             {
                 ApiCallRcImpl backupShippingSupported = backupShippingSupported(rsc);
                 if (backupShippingSupported.isEmpty())
@@ -277,7 +278,12 @@ public class BackupNodeFinder
         return ret;
     }
 
-    private boolean canNodeShip(Resource rsc, @Nullable SnapshotDefinition currentSnapDfnRef, AccessContext accCtx)
+    private boolean canNodeShip(
+        Resource rsc,
+        @Nullable SnapshotDefinition currentSnapDfnRef,
+        AccessContext accCtx,
+        boolean copySnapsForEvac
+    )
         throws AccessDeniedException
     {
         boolean isSomeSortOfDiskless = rsc.getStateFlags()
@@ -287,13 +293,29 @@ public class BackupNodeFinder
                 Resource.Flags.NVME_INITIATOR,
                 Resource.Flags.EBS_INITIATOR
             );
+        Node.Flags[] forbiddenFlags;
+        if (copySnapsForEvac)
+        {
+            forbiddenFlags = new Node.Flags[]
+            {
+                Node.Flags.DELETE,
+                Node.Flags.EVICTED
+            };
+        }
+        else
+        {
+            forbiddenFlags = new Node.Flags[]
+            {
+                Node.Flags.DELETE,
+                Node.Flags.EVACUATE,
+                Node.Flags.EVICTED
+            };
+        }
         boolean isNodeAvailable = !rsc.getNode()
             .getFlags()
             .isSomeSet(
                 accCtx,
-                Node.Flags.DELETE,
-                Node.Flags.EVACUATE,
-                Node.Flags.EVICTED
+                forbiddenFlags
             ) && rsc.getNode().getPeer(accCtx).isOnline();
         PriorityProps prioProps = new PriorityProps(
             rsc.getNode().getProps(accCtx),

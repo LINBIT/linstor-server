@@ -185,7 +185,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String scheduleNameRef,
         boolean allowIncremental,
         boolean runInBackgroundRef,
-        boolean forceRscGrp
+        boolean forceRscGrp,
+        boolean copySnapsForEvac
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -209,7 +210,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 scheduleNameRef,
                 allowIncremental,
                 runInBackgroundRef,
-                forceRscGrp
+                forceRscGrp,
+                copySnapsForEvac
             )
         );
     }
@@ -230,7 +232,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String scheduleNameRef,
         boolean allowIncremental,
         boolean runInBackgroundRef,
-        boolean forceRscGrp
+        boolean forceRscGrp,
+        boolean copySnapsForEvac
     ) throws AccessDeniedException, InvalidNameException
     {
         AbsRemote remote = ctrlApiDataLoader.loadRemote(linstorRemoteNameRef, true);
@@ -375,7 +378,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                             .read(LockObj.NODES_MAP)
                             .write(LockObj.RSC_DFN_MAP)
                             .buildDeferred(),
-                        () -> createSnapshot(resp, data, runInBackgroundRef)
+                        () -> createSnapshot(resp, data, runInBackgroundRef, copySnapsForEvac)
                     )
                 )
         );
@@ -391,7 +394,8 @@ public class CtrlBackupL2LSrcApiCallHandler
     private Flux<ApiCallRc> createSnapshot(
         BackupShippingResponsePrevSnap response,
         BackupShippingSrcData data,
-        boolean runInBackgroundRef
+        boolean runInBackgroundRef,
+        boolean copySnapsForEvac
     )
     {
         Flux<ApiCallRc> flux;
@@ -415,7 +419,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 data.getScheduleName(),
                 runInBackgroundRef,
                 response.prevSnapUuid,
-                data
+                data,
+                copySnapsForEvac
             );
             @Nullable Snapshot snap = createSnapshot.getSnap();
             if (snap != null)
