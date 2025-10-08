@@ -179,6 +179,8 @@ class StltStorPoolApiCallHandler
             NodeName nodeName = new NodeName(storPoolRaw.getNodeName());
             StorPoolName storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
 
+            storPoolSet.add(new StorPool.Key(nodeName, storPoolName));
+
             StorPoolDefinition storPoolDfnToRegister = null;
 
             // TODO: uncomment the next line once the localNode gets requested from the controller
@@ -299,8 +301,6 @@ class StltStorPoolApiCallHandler
                     nodeName.displayValue,
                     action
                 );
-
-                storPoolSet.add(storPool.getKey());
 
                 if (storPool.getNode().equals(controllerPeerConnector.getLocalNode()))
                 {
