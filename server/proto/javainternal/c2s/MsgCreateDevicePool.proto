@@ -19,4 +19,8 @@ message MsgCreateDevicePool {
     VdoArguments vdo_arguments = 6;
     bool sed = 7;
     repeated string sed_passwords = 8;
+    repeated string pv_create_arguments = 9;
+    repeated string vg_create_arguments = 10;
+    repeated string lv_create_arguments = 11;
+    repeated string zpool_create_arguments = 12;
 }

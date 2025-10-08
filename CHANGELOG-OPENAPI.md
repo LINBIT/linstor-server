@@ -2,6 +2,14 @@
 
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
+## [unreleased]
+
+### Added
+  - Added PhysicalStorageCreate.pv_create_arguments.
+  - Added PhysicalStorageCreate.vg_create_arguments.
+  - Added PhysicalStorageCreate.lv_create_arguments.
+  - Added PhysicalStorageCreate.zpool_create_arguments.
+
 ## [1.26.0]
 
 ### Added

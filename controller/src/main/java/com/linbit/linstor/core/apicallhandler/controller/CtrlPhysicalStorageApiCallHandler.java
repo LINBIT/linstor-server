@@ -198,7 +198,11 @@ public class CtrlPhysicalStorageApiCallHandler
         long vdoLogicalSizeKib,
         long vdoSlabSize,
         boolean sed,
-        Map<String, String> storagePoolProps
+        Map<String, String> storagePoolProps,
+        final List<String> pvCreateArguments,
+        final List<String> vgCreateArguments,
+        final List<String> lvCreateArguments,
+        final List<String> zpoolCreateArguments
     )
     {
         return scopeRunner.fluxInTransactionlessScope(
@@ -214,7 +218,11 @@ public class CtrlPhysicalStorageApiCallHandler
                 vdoLogicalSizeKib,
                 vdoSlabSize,
                 sed,
-                storagePoolProps
+                storagePoolProps,
+                pvCreateArguments,
+                vgCreateArguments,
+                lvCreateArguments,
+                zpoolCreateArguments
             )
         );
     }
@@ -229,7 +237,11 @@ public class CtrlPhysicalStorageApiCallHandler
         long vdoLogicalSizeKib,
         long vdoSlabSize,
         boolean sed,
-        Map<String, String> storagePoolProps
+        Map<String, String> storagePoolProps,
+        final List<String> pvCreateArguments,
+        final List<String> vgCreateArguments,
+        final List<String> lvCreateArguments,
+        final List<String> zpoolCreateArguments
     )
     {
         Flux<ApiCallRc> response;
@@ -271,7 +283,11 @@ public class CtrlPhysicalStorageApiCallHandler
                             vdoLogicalSizeKib,
                             vdoSlabSize,
                             sed,
-                            devicePasswords
+                            devicePasswords,
+                            pvCreateArguments,
+                            vgCreateArguments,
+                            lvCreateArguments,
+                            zpoolCreateArguments
                         ).build()
                 )
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())

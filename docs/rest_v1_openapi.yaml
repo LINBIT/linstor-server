@@ -8470,6 +8470,26 @@ components:
           type: boolean
           default: false
           description: initialize SED with a random password
+        pv_create_arguments:
+          type: array
+          description: Arguments to pass to pvcreate command.
+          items:
+            type: string
+        vg_create_arguments:
+          type: array
+          description: Arguments to pass to vgcreate command.
+          items:
+            type: string
+        lv_create_arguments:
+          type: array
+          description: Arguments to pass to lvcreate command.
+          items:
+            type: string
+        zpool_create_arguments:
+          type: array
+          description: Arguments to pass to zpool command.
+          items:
+            type: string
     EventMayPromoteChange:
       type: object
       description: may-promote-change

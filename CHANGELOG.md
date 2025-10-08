@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- physical-storage-api: allow passing pv/vg/lv/zpool create arguments
+
 ### Changed
 
 - Removed keep_res regular expression pattern from options

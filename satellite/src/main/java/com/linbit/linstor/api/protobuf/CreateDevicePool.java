@@ -126,6 +126,10 @@ public class CreateDevicePool implements ApiCall
                     devicePoolHandler.createDevicePool(
                         DeviceProviderKind.LVM,
                         devicePaths,
+                        msgCreateDevicePool.getPvCreateArgumentsList(),
+                        msgCreateDevicePool.getVgCreateArgumentsList(),
+                        msgCreateDevicePool.getLvCreateArgumentsList(),
+                        msgCreateDevicePool.getZpoolCreateArgumentsList(),
                         RaidLevel.valueOf(msgCreateDevicePool.getRaidLevel().name()),
                         msgCreateDevicePool.getPoolName() + InternalApiConsts.VDO_POOL_SUFFIX));
 
@@ -135,7 +139,8 @@ public class CreateDevicePool implements ApiCall
                     msgCreateDevicePool.getPoolName() + InternalApiConsts.VDO_POOL_SUFFIX,
                     msgCreateDevicePool.getPoolName(),
                     msgCreateDevicePool.getLogicalSizeKib(),
-                    msgCreateDevicePool.getVdoArguments().getSlabSizeKib()
+                    msgCreateDevicePool.getVdoArguments().getSlabSizeKib(),
+                    msgCreateDevicePool.getLvCreateArgumentsList()
                 );
             }
             else
@@ -145,6 +150,10 @@ public class CreateDevicePool implements ApiCall
                     apiCallRc.addEntries(devicePoolHandler.createDevicePool(
                         kind,
                         lvmDevicePaths,
+                        msgCreateDevicePool.getPvCreateArgumentsList(),
+                        msgCreateDevicePool.getVgCreateArgumentsList(),
+                        msgCreateDevicePool.getLvCreateArgumentsList(),
+                        msgCreateDevicePool.getZpoolCreateArgumentsList(),
                         RaidLevel.valueOf(msgCreateDevicePool.getRaidLevel().name()),
                         msgCreateDevicePool.getPoolName()
                     ));

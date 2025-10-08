@@ -1764,6 +1764,10 @@ public class JsonGenTypes
          * initialize SED with a random password
          */
         public boolean sed = false;
+        public List<String> pv_create_arguments = Collections.emptyList();
+        public List<String> vg_create_arguments = Collections.emptyList();
+        public List<String> lv_create_arguments = Collections.emptyList();
+        public List<String> zpool_create_arguments = Collections.emptyList();
     }
 
     /**

@@ -9,6 +9,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.storage.utils.Commands.RetryHandler;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.storage.utils.Commands.genericExecutor;
 
@@ -537,7 +538,12 @@ public class LvmCommands
         ), failMsg, failMsg);
     }
 
-    public static synchronized OutputData pvCreate(ExtCmd extCmd, String devicePath, String lvmConfig)
+    public static synchronized OutputData pvCreate(
+        ExtCmd extCmd,
+        String devicePath,
+        String lvmConfig,
+        String... additionalParameters
+    )
         throws StorageException
     {
         final String failMsg = "Failed to pvcreate on device: " + devicePath;
@@ -547,7 +553,7 @@ public class LvmCommands
                 "pvcreate",
                 lvmConfig,
                 (Collection<String>) null,
-                devicePath
+                StringUtils.concat(additionalParameters, devicePath)
             ),
             failMsg,
             failMsg
@@ -576,7 +582,8 @@ public class LvmCommands
         final String vgName,
         final RaidLevel raidLevel,  // ignore for now as we only support JBOD
         final List<String> devicePaths,
-        String lvmConfig
+        String lvmConfig,
+        String... additionalParameters
     )
         throws StorageException
     {
@@ -588,7 +595,7 @@ public class LvmCommands
                 "vgcreate",
                 lvmConfig,
                 devicePaths,
-                vgName
+                StringUtils.concat(additionalParameters, vgName)
             ),
             failMsg,
             failMsg

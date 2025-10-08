@@ -364,26 +364,27 @@ public class ZfsCommands
     public static OutputData createZPool(
         ExtCmd extCmd,
         final List<String> devicePaths,
+        final List<String> createArgs,
         final RaidLevel raidLevel,  // ignore for now as we only support JBOD yet
         final String zpoolName
     )
         throws StorageException
     {
         final String failMsg = "Failed to create zpool: " + zpoolName;
-        return genericExecutor(
-            extCmd,
-            StringUtils.concat(
-                new String[] {
-                    "zpool",
-                    "create",
-                    "-f", // force otherwise zpool will cry about possible partition on device
-                    "-m", "none", // do not mount the default zpool dataset
-                    zpoolName
-                },
-                devicePaths),
-            failMsg,
-            failMsg
+
+        String[] command = StringUtils.concat(
+            new String[] {
+                "zpool",
+                "create",
+                "-f", // force otherwise zpool will cry about possible partition on device
+                "-m", "none", // do not mount the default zpool dataset
+            },
+            createArgs
         );
+        command = StringUtils.concat(command, zpoolName);
+        command = StringUtils.concat(command, devicePaths);
+
+        return genericExecutor(extCmd, command, failMsg, failMsg);
     }
 
     public static OutputData deleteZPool(

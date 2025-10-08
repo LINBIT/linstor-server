@@ -44,8 +44,9 @@ public class DevicePoolHandler
         final String vgName,
         final String poolName,
         long logicalSizeKib,
-        long slabSizeKib
-    )
+        long slabSizeKib,
+        final List<String> lvCreateArguments
+        )
     {
         String vdoPool = null;
         try
@@ -69,6 +70,7 @@ public class DevicePoolHandler
             {
                 cmd.add("--vdosettings=slab_size_mb=" + (slabSizeKib / 1024));
             }
+            cmd.addAll(lvCreateArguments);
             cmd.add(vgName + "/vdopool0");
 
             {
@@ -109,6 +111,10 @@ public class DevicePoolHandler
     public ApiCallRc createDevicePool(
         final DeviceProviderKind deviceProviderKind,
         final List<String> devicePaths,
+        final List<String> pvCreateArguments,
+        final List<String> vgCreateArguments,
+        final List<String> lvCreateArguments,
+        final List<String> zpoolCreateArguments,
         final RaidLevel raidLevel,
         final String poolName
     )
@@ -118,16 +124,31 @@ public class DevicePoolHandler
         switch (deviceProviderKind)
         {
             case LVM:
-                apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, poolName));
+                apiCallRc.addEntries(createLVMPool(
+                    devicePaths,
+                    pvCreateArguments,
+                    vgCreateArguments,
+                    raidLevel,
+                    poolName
+                ));
                 break;
             case LVM_THIN:
-                apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, LvmThinDriverKind.VGName(poolName)));
-                apiCallRc.addEntries(
-                    createLVMThinPool(LvmThinDriverKind.VGName(poolName), LvmThinDriverKind.LVName(poolName)));
+                apiCallRc.addEntries(createLVMPool(
+                    devicePaths,
+                    pvCreateArguments,
+                    vgCreateArguments,
+                    raidLevel,
+                    LvmThinDriverKind.VGName(poolName)
+                ));
+                apiCallRc.addEntries(createLVMThinPool(
+                    LvmThinDriverKind.VGName(poolName),
+                    LvmThinDriverKind.LVName(poolName),
+                    lvCreateArguments
+                ));
                 break;
             case ZFS_THIN: // no differentiation between ZFS and ZFS_THIN pool. fall-through
             case ZFS:
-                apiCallRc.addEntries(createZPool(devicePaths, raidLevel, poolName));
+                apiCallRc.addEntries(createZPool(devicePaths, zpoolCreateArguments, raidLevel, poolName));
                 break;
             case SPDK:
                 apiCallRc.addEntries(createSpdkLocalPool(devicePaths, poolName));
@@ -157,7 +178,13 @@ public class DevicePoolHandler
         return apiCallRc;
     }
 
-    private ApiCallRc createLVMPool(final List<String> devicePaths, final RaidLevel raidLevel, final String poolName)
+    private ApiCallRc createLVMPool(
+        final List<String> devicePaths,
+        final List<String> pvCreateArguments,
+        final List<String> vgCreateArguments,
+        final RaidLevel raidLevel,
+        final String poolName
+    )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
@@ -167,7 +194,8 @@ public class DevicePoolHandler
                 LvmCommands.pvCreate(
                     extCmdFactory.create(),
                     devicePath,
-                    LvmUtils.getLvmFilterByPhysicalVolumes(devicePath)
+                    LvmUtils.getLvmFilterByPhysicalVolumes(devicePath),
+                    pvCreateArguments.toArray(new String[0])
                 );
                 apiCallRc.addEntry(
                     ApiCallRcImpl.entryBuilder(
@@ -183,7 +211,8 @@ public class DevicePoolHandler
                 poolName,
                 raidLevel,
                 devicePaths,
-                LvmUtils.getLvmFilterByPhysicalVolumes(devicePaths)
+                LvmUtils.getLvmFilterByPhysicalVolumes(devicePaths),
+                vgCreateArguments.toArray(new String[0])
             );
             LvmUtils.recacheNext();
 
@@ -256,7 +285,8 @@ public class DevicePoolHandler
 
     private ApiCallRc createLVMThinPool(
         final String lvmPoolName,
-        final String thinPoolName
+        final String thinPoolName,
+        final List<String> lvCreateArguments
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -268,7 +298,9 @@ public class DevicePoolHandler
                 config -> LvmCommands.createThinPool(
                     extCmdFactory.create(),
                     lvmPoolName,
-                    thinPoolName, config
+                    thinPoolName,
+                    config,
+                    lvCreateArguments.toArray(new String[0])
                 )
             );
             LvmUtils.recacheNext();
@@ -332,6 +364,7 @@ public class DevicePoolHandler
 
     private ApiCallRc createZPool(
         final List<String> devicePaths,
+        final List<String> createArgs,
         final RaidLevel raidLevel,
         final String zPoolName
     )
@@ -343,6 +376,7 @@ public class DevicePoolHandler
             ZfsCommands.createZPool(
                 extCmdFactory.create(),
                 devicePaths,
+                createArgs,
                 raidLevel,
                 zPoolName
             );

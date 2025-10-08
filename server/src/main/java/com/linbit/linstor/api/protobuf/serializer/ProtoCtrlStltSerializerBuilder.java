@@ -1332,7 +1332,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         long vdoLogicalSizeKib,
         long vdoSlabSize,
         boolean sed,
-        List<String> sedPasswords
+        List<String> sedPasswords,
+        final List<String> pvCreateArguments,
+        final List<String> vgCreateArguments,
+        final List<String> lvCreateArguments,
+        final List<String> zpoolCreateArguments
     )
     {
         try
@@ -1344,7 +1348,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setPoolName(poolName)
                 .setLogicalSizeKib(vdoLogicalSizeKib)
                 .setSed(sed)
-                .addAllSedPasswords(sedPasswords);
+                .addAllSedPasswords(sedPasswords)
+                .addAllPvCreateArguments(pvCreateArguments)
+                .addAllVgCreateArguments(vgCreateArguments)
+                .addAllLvCreateArguments(lvCreateArguments)
+                .addAllZpoolCreateArguments(zpoolCreateArguments);
 
             if (vdoEnabled)
             {

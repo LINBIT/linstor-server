@@ -223,7 +223,11 @@ public interface CtrlStltSerializer extends CommonSerializer
             long vdoLogicalSizeKib,
             long vdoSlabSizeKib,
             boolean sed,
-            List<String> sedPasswords
+            List<String> sedPasswords,
+            final List<String> pvCreateArguments,
+            final List<String> vgCreateArguments,
+            final List<String> lvCreateArguments,
+            final List<String> zpoolCreateArguments
         );
 
         CtrlStltSerializerBuilder deleteDevicePool(

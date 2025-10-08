@@ -257,7 +257,11 @@ public class PhysicalStorage
                 createData.vdo_logical_size_kib,
                 createData.vdo_slab_size_kib,
                 createData.sed,
-                storPoolProps
+                storPoolProps,
+                createData.pv_create_arguments,
+                createData.vg_create_arguments,
+                createData.lv_create_arguments,
+                createData.zpool_create_arguments
             );
 
             if (createData.with_storage_pool != null)
