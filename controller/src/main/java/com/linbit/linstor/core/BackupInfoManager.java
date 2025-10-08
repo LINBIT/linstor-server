@@ -1033,26 +1033,6 @@ public class BackupInfoManager
             {
                 ret = Flux.create(innerSink ->
                 {
-                    // we have a race-condition while evacuating that the shipment is sent but not
-                    // fully finished (i.e. the BackupInfoManager was not informed yet that the shipment
-                    // was fully received). When node evacuate then tries to continue to delete the
-                    // source-snapshot, we run into a "please wait until shipment is finished" error.
-                    try
-                    {
-                        // sorry for this. a better way would be to register the the "finished receiving" flux
-                        // but in the node evacuate context that is a bit cumbersome to figure out since
-                        // autoplacer might be involved or the shipment might even be queued.
-
-                        // on the other hand, it should not really matter that much if a shipment that can
-                        // easily take multiple minutes to finish waits 2 more seconds before it is getting
-                        // deleted...
-                        Thread.sleep(2_000);
-                    }
-                    catch (InterruptedException exc)
-                    {
-                        Thread.currentThread().interrupt();
-                        exc.printStackTrace();
-                    }
                     for (FluxSink<ApiCallRc> sink : sinkList)
                     {
                         consumerRef.accept(sink);

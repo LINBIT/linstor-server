@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -19,6 +20,7 @@ import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.Ba
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponsePrevSnap;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingSrcData;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
@@ -294,7 +296,18 @@ public class BackupShippingInternal
             BackupShippingSrcData data = backupInfoMgr.removeL2LSrcData(linstorRemoteName, stltRemoteName);
             // srcSuccessRef is always true, regardless of actual success - since this is only important for the src
             // (aka backup-send)
-            responses = backupL2LSrcApiCallHandler.startQueueIfReady(data.getStltRemote(), true, false)
+
+            Flux<ApiCallRc> shipSentDoneFlux = Flux.empty();
+            @Nullable Snapshot srcSnap = data == null ? null : data.getSrcSnapshot();
+            if (srcSnap != null && !srcSnap.isDeleted())
+            {
+                shipSentDoneFlux = backupInfoMgr.completeWaitForShipSentDoneFlux(
+                    srcSnap.getSnapshotDefinition(),
+                    linstorRemoteName.displayValue
+                );
+            }
+            responses = shipSentDoneFlux
+                .concatWith(backupL2LSrcApiCallHandler.startQueueIfReady(data.getStltRemote(), true, false))
                 .contextWrite(
                     requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_RECEIVING_DONE, request)
                 );

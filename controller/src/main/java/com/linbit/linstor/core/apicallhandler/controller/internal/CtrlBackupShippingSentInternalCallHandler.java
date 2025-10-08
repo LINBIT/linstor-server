@@ -264,12 +264,10 @@ public class CtrlBackupShippingSentInternalCallHandler
                     )
                 );
 
-                if (successRef)
+                if (!successRef)
                 {
-                    ret = ret.concatWith(backupInfoMgr.completeWaitForShipSentDoneFlux(snapDfn, remoteName));
-                }
-                else
-                {
+                    // if an error occurred, we can already stop waiting - otherwise we need to wait for the
+                    // target-cluster to be done as well
                     ret = ret.concatWith(backupInfoMgr.errorWaitForShipSentDoneFlux(snapDfn, remoteName));
                 }
 

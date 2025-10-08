@@ -1934,6 +1934,7 @@ public class CtrlNodeApiCallHandler
         long rscSize = CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerCtx);
         if (!disklessRscSet.isEmpty())
         {
+            errorReporter.logTrace("searching for diskless replacement to toggle-disk");
             List<String> disklessNodeNameStrList = disklessRscSet.stream()
                 .map(rsc -> rsc.getNode().getName().displayValue)
                 .collect(Collectors.toList());
@@ -1952,6 +1953,7 @@ public class CtrlNodeApiCallHandler
 
         if (storPoolSet == null || storPoolSet.isEmpty())
         {
+            errorReporter.logTrace("searching for diskful replacements to fulfill replCt");
             // no storage pool found for toggle disk. find any other storage pool
             storPoolSet = autoplacer.autoPlace(
                 AutoSelectFilterPojo.merge(
@@ -1964,6 +1966,7 @@ public class CtrlNodeApiCallHandler
 
         if (storPoolSet == null || storPoolSet.isEmpty())
         {
+            errorReporter.logTrace("searching for single diskful replacement ignoring replCt");
             // configured place-count could not be met, but maybe we can still place the resource at least on one new
             // node to keep the current replica count
             storPoolSet = autoplacer.autoPlace(
