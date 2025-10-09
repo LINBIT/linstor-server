@@ -170,6 +170,20 @@ check-openapi:
     - cd docs
     - lint-openapi -e rest_v1_openapi.yaml
 
+check-resttypes:
+  stage: build
+  interruptible: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+    - if: $CI_COMMIT_BRANCH == 'jenkins'
+    - if: $CI_COMMIT_BRANCH == 'master'
+  before_script:
+    - echo "checking if JsonGenTypes.java is up-to-date"
+  script:
+    - make resttypes
+    # exits with 1 if a difference is found, and also shows it
+    - git diff --exit-code
+
 check-package-info:
   stage: build
   interruptible: true
