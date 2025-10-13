@@ -1,3 +1,13 @@
+linstor-server (1.32.3-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Zfs,rollback via restore: Fixed cache-miss
+  * Drbd: Fix rollback
+  * StorPool: Also send remote storPools to Stlts
+  * StltStorPool: Fix hanging Stlt
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 13 Oct 2025 06:36:13 +0000
+
 linstor-server (1.32.2-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
