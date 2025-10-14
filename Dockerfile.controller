@@ -79,10 +79,10 @@ ENV INTERNAL_REPO=/etc/yum.repos.d/linbit-internal.repo
 # =lbbuild RUN yum install -y linstor-gui linstor-client && yum clean all -y && rm "$INTERNAL_REPO"
 
 ARG ARCH=amd64
-ARG K8S_AWAIT_ELECTION_VERSION=v0.4.1
+ARG K8S_AWAIT_ELECTION_VERSION=v0.4.2
 RUN curl --fail --location "https://github.com/LINBIT/k8s-await-election/releases/download/${K8S_AWAIT_ELECTION_VERSION}/k8s-await-election-${K8S_AWAIT_ELECTION_VERSION}-linux-${ARCH}.tar.gz" | tar -xvz -C /usr/local/bin/
 
-RUN curl --fail --location "https://dl.k8s.io/$(curl --fail --location https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/${ARCH}/kubectl" -o /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl
+RUN curl --fail --location "https://dl.k8s.io/$(curl --fail --location https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl" -o /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl
 
 RUN groupadd linstor
 RUN useradd -m -g linstor linstor
