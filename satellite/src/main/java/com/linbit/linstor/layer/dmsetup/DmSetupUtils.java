@@ -138,7 +138,7 @@ public class DmSetupUtils
         return isSuspended;
     }
 
-    public static Set<String> list(ExtCmd extCmd, String target) throws StorageException
+    public static Set<String> list(ExtCmd extCmd, @Nullable String target) throws StorageException
     {
         Set<String> ret = new HashSet<>();
         try
@@ -210,33 +210,70 @@ public class DmSetupUtils
     )
         throws StorageException
     {
-        long startSector = 0;
-        long endSector = Commands.getDeviceSizeInSectors(extCmdFactory.create(), dataDevice);
+        DmSetupUtils.create(
+            extCmdFactory,
+            identifierRef,
+            getWriteCacheTable(
+                dataDevice,
+                cacheDevice,
+                isCachePmem,
+                blockSize,
+                writecacheArgs,
+                0,
+                Commands.getDeviceSizeInSectors(extCmdFactory.create(), dataDevice)
+            )
+        );
+    }
 
+    public static void create(
+        ExtCmdFactory extCmdFactory,
+        String identifierRef,
+        String dmsetupTableRef
+    )
+        throws StorageException
+    {
         Commands.genericExecutor(
             extCmdFactory.create(),
             new String[]
             {
-            // * dmsetup create dm_log --table "0 1562758832 writecache p /dev/sdb /dev/pmem0 4096 4 high_watermark 10
                 "dmsetup",
                 "create",
                 identifierRef,
                 "--table",
-                // all following arguments have to be in one String-argument, not single array elements!
-                StringUtils.join(
-                    " ",
-                    startSector,
-                    endSector,
-                    "writecache",
-                    isCachePmem ? "p" : "s",
-                    dataDevice,
-                    cacheDevice,
-                    blockSize,
-                    writecacheArgs == null ? "" : writecacheArgs
-                )
+                dmsetupTableRef
             },
-            "Failed to create writecache device",
-            "Failed to create writecache device"
+            "Failed to create dmsetup device, identifier: " + identifierRef + ", used table: " + dmsetupTableRef,
+            "Failed to create dmsetup device, identifier: " + identifierRef + ", used table: " + dmsetupTableRef
+        );
+    }
+
+    /**
+     * <p>Generates a "table" for dmsetup as follows:<br/>
+     * <code>'{startSector} {endSector} writecache {"p" if isCachePmem else "s"} {dataDevice} {cacheDevice} {blockSize}
+     * {writecacheArgs}'</code></p>
+     * <p>Example:<br />
+     * <code>'0 1562758832 writecache p /dev/sdb /dev/pmem0 4096 2 high_watermark 10'</code></p>
+     */
+    public static String getWriteCacheTable(
+        String dataDevice,
+        String cacheDevice,
+        boolean isCachePmem,
+        long blockSize,
+        String writecacheArgs,
+        long startSector,
+        long endSector
+    )
+    {
+        return StringUtils.join(
+            " ",
+            startSector,
+            endSector,
+            "writecache",
+            isCachePmem ? "p" : "s",
+            dataDevice,
+            cacheDevice,
+            blockSize,
+            writecacheArgs == null ? "" : writecacheArgs
         );
     }
 
@@ -253,35 +290,56 @@ public class DmSetupUtils
     )
         throws StorageException
     {
-        long startSector = 0;
-        long endSector = Commands.getDeviceSizeInSectors(extCmdFactory.create(), dataDevice);
+        DmSetupUtils.create(
+            extCmdFactory,
+            identifierRef,
+            createCacheDmsetupTable(
+                dataDevice,
+                cacheDevice,
+                metaDevice,
+                blockSize,
+                feature,
+                policy,
+                policyArgs,
+                0,
+                Commands.getDeviceSizeInSectors(extCmdFactory.create(), dataDevice)
+            )
+        );
+    }
 
-        Commands.genericExecutor(
-            extCmdFactory.create(),
-            new String[]
-            {
-                "dmsetup",
-                "create",
-                identifierRef,
-                "--table",
-                // all following arguments have to be in one String-argument, not single array elements!
-                StringUtils.join(
-                    " ",
-                    startSector,
-                    endSector,
-                    "cache",
-                    metaDevice,
-                    cacheDevice,
-                    dataDevice,
-                    blockSize,
-                    "1", // 1 feature - not sure if there are more possible...
-                    feature,
-                    policy,
-                    policyArgs
-                )
-            },
-            "Failed to create cache device",
-            "Failed to create cache device"
+    /**
+     * <p>Generates a "table" for dmsetup as follows:<br/>
+     * <code>'{startSector} {endSector} cache {metaDevice} {cacheDevice} {dataDevice} {blockSize}
+     * 1 {feature} {policy} {policyArgs}'</code></p>
+     * <p>Example:<br />
+     * <code>'0 2105344 cache /dev/scratch/rsc.dmcache_meta_00000 /dev/scratch/rsc.dmcache_cache_00000
+     * /dev/scratch/rsc_00000 4096 1 writeback smq 0 '</code></p>
+     */
+    public static String createCacheDmsetupTable(
+        String dataDevice,
+        String cacheDevice,
+        String metaDevice,
+        long blockSize,
+        String feature,
+        String policy,
+        String policyArgs,
+        long startSector,
+        long endSector
+    )
+    {
+        return StringUtils.join(
+            " ",
+            startSector,
+            endSector,
+            "cache",
+            metaDevice,
+            cacheDevice,
+            dataDevice,
+            blockSize,
+            "1", // 1 feature - not sure if there are more possible...
+            feature,
+            policy,
+            policyArgs
         );
     }
 
