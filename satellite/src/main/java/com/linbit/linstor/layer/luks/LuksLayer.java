@@ -165,7 +165,7 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef, boolean ignoredAsRootLayerRef)
         throws ExtCmdFailedException, StorageException
     {
         DmSetupUtils.suspendIo(
@@ -178,7 +178,7 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef, boolean ignoredAsRootLayerRef)
         throws ExtCmdFailedException, StorageException
     {
         DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, false, null);

@@ -97,14 +97,14 @@ public class NvmeLayer implements DeviceLayer
     }
 
     @Override
-    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+    public void suspendIo(AbsRscLayerObject<Resource> ignoredRscDataRef, boolean ignoredAsRootLayerRef)
         throws ExtCmdFailedException, StorageException
     {
         throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
     }
 
     @Override
-    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
+    public void resumeIo(AbsRscLayerObject<Resource> ignoredRscDataRef, boolean ignoredAsRootLayerRef)
         throws ExtCmdFailedException, StorageException
     {
         throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);

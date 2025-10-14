@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer;
 
+import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.LinStorRuntimeException;
@@ -29,6 +30,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -109,20 +111,8 @@ public interface DeviceLayer extends Comparable<DeviceLayer>
     boolean isSuspendIoSupported();
 
     /**
-     * @param rscDataRef
-     *
-     * @return if this layer needs to run some extra code after its parent layer has already suspended IO
-     *
-     * @throws StorageException
-     */
-    default void managePostRootSuspend(AbsRscLayerObject<Resource> rscDataRef) throws StorageException
-    {
-        // noop
-    }
-
-    /**
      * The layer is expected to update the given rscData's {@link AbsRscLayerObject#setIsSuspended(boolean)} state so
-     * that the {@link SuspendManager} can properly check if a {@link #suspendIo(AbsRscLayerObject)} or
+     * that the {@link SuspendManager} can properly check if a {@link #suspendIo(AbsRscLayerObject, boolean)} or
      * {@link #resumeIo(AbsRscLayerObject)} call is needed
      *
      * @throws StorageException
@@ -135,12 +125,15 @@ public interface DeviceLayer extends Comparable<DeviceLayer>
     /*
      * Performs a suspend-io
      */
-    void suspendIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException, StorageException;
+    void suspendIo(AbsRscLayerObject<Resource> rscDataRef, boolean asRootLayerRef)
+        throws ExtCmdFailedException, StorageException, ChildProcessTimeoutException, IOException,
+        AccessDeniedException;
 
     /*
      * Performs a resume-io
      */
-    void resumeIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException, StorageException;
+    void resumeIo(AbsRscLayerObject<Resource> rscDataRef, boolean asRootLayerRef)
+        throws ExtCmdFailedException, StorageException;
 
     /**
      * Returns whether or not checking for 'lsblk ... -o DISC-GRAN' makes sense for this RscData.
@@ -290,6 +283,7 @@ public interface DeviceLayer extends Comparable<DeviceLayer>
 
     DeviceLayerKind getKind();
 
+    @Override
     default int compareTo(DeviceLayer other)
     {
         return Integer.compare(this.getKind().getOrder(), other.getKind().getOrder());

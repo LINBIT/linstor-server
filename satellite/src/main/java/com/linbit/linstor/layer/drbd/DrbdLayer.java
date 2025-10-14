@@ -1224,7 +1224,8 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef, boolean ignoredAsRootLayerRef)
+        throws ExtCmdFailedException
     {
         var drbdRscDataRef = (DrbdRscData<Resource>) rscDataRef;
         if (drbdResFileUtils.doesResFileExist(drbdRscDataRef))
@@ -1238,7 +1239,8 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef, boolean ignoredAsRootLayerRef)
+        throws ExtCmdFailedException
     {
         drbdUtils.suspendIo((DrbdRscData<Resource>) rscDataRef);
     }

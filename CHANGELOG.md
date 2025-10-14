@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - H2 db should no longer prematurely shutdown
 - DRBD: recreate ext-metadata after backing disk needed to be re-created
 - Fixed a bug where a failed clone leads to AccessToDeletedData bug
+- Cache: Properly flush to origin device when suspending
 
 ## [1.32.3] - 2025-10-13
 

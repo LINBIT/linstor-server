@@ -170,35 +170,33 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
-    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef, boolean asRootLayerRef)
         throws ExtCmdFailedException, StorageException
     {
-        DmSetupUtils.suspendIo(
-            errorReporter,
-            extCmdFactory,
-            rscDataRef,
-            true,
-            vlmData -> DmSetupUtils.flushOnSuspend(
+        if (asRootLayerRef)
+        {
+            DmSetupUtils.suspendIo(
+                errorReporter,
                 extCmdFactory,
-                vlmData
-            )
-        );
-    }
-
-    @Override
-    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
-        throws ExtCmdFailedException, StorageException
-    {
-        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, false, null);
-    }
-
-    @Override
-    public void managePostRootSuspend(AbsRscLayerObject<Resource> rscDataRef) throws StorageException
-    {
-        if (!rscDataRef.hasAnyPreventExecutionIgnoreReason())
+                rscDataRef,
+                true,
+                vlmData -> DmSetupUtils.flushOnSuspend(
+                    extCmdFactory,
+                    vlmData
+                )
+            );
+        }
+        else
         {
             DmSetupUtils.flush(extCmdFactory, rscDataRef);
         }
+    }
+
+    @Override
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef, boolean ignoredAsRootLayerRef)
+        throws ExtCmdFailedException, StorageException
+    {
+        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, false, null);
     }
 
     @Override

@@ -1,11 +1,11 @@
 package com.linbit.linstor.core.devmgr;
 
+import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -21,11 +21,11 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 @Singleton
 public class SuspendManager
@@ -78,15 +78,16 @@ public class SuspendManager
                  */
                 ManageSuspendIoResult suspendIoResult = manageSuspendIoIfNeeded(
                     rsc.getLayerData(wrkCtx),
-                    resumeOnlyRef
+                    resumeOnlyRef,
+                    true
                 );
                 switch (suspendIoResult)
                 {
                     case SUSPENDED:
+                    case RESUMED: // fall-through
                         suspendedResources.add(rsc);
                         break;
                     case NOOP: // fall-through
-                    case RESUMED: // fall-through
                     default:
                         // noop
                         break;
@@ -108,41 +109,28 @@ public class SuspendManager
             try
             {
                 // since the root layers are already suspended, there is no need to parallelize this step
-                AbsRscLayerObject<Resource> rootData = rsc.getLayerData(wrkCtx);
-
-                managePostRootSuspendIoIfNeededRec(rootData.getChildren());
+                manageSuspendIoIfNeeded(
+                    rsc.getLayerData(wrkCtx),
+                    resumeOnlyRef,
+                    false
+                );
             }
             catch (AccessDeniedException exc)
             {
                 throw new ImplementationError(exc);
             }
-            catch (StorageException | ResourceException exc)
+            catch (StorageException exc)
             {
                 failedRscs.put(rsc, excHandler.handleException(rsc, exc));
             }
         }
-
         return failedRscs;
-    }
-
-    private void managePostRootSuspendIoIfNeededRec(Set<AbsRscLayerObject<Resource>> childrenRef)
-        throws ResourceException, StorageException, AccessDeniedException
-    {
-        if (childrenRef != null)
-        {
-            for (AbsRscLayerObject<Resource> child : childrenRef)
-            {
-                DeviceLayer layer = layerFactory.getDeviceLayer(child.getLayerKind());
-                layer.managePostRootSuspend(child);
-
-                managePostRootSuspendIoIfNeededRec(child.getChildren());
-            }
-        }
     }
 
     private ManageSuspendIoResult manageSuspendIoIfNeeded(
         AbsRscLayerObject<Resource> rscLayerObjectRef,
-        boolean resumeOnlyRef
+        boolean resumeOnlyRef,
+        boolean rootOnlyRef
     )
         throws StorageException, AccessDeniedException
     {
@@ -152,10 +140,17 @@ public class SuspendManager
             DeviceLayer layer = layerFactory.getDeviceLayer(rscLayerObjectRef.getLayerKind());
             boolean isRootRscData = rscLayerObjectRef.getParent() == null;
 
-            boolean runManageSuspend = layer.isSuspendIoSupported() && isRootRscData;
+            boolean runManageSuspend = layer.isSuspendIoSupported() && (!rootOnlyRef || isRootRscData);
             if (runManageSuspend)
             {
-                result = manageSuspendIo(layer, rscLayerObjectRef, resumeOnlyRef);
+                result = manageSuspendIo(layer, rscLayerObjectRef, resumeOnlyRef, rootOnlyRef);
+            }
+            if (!rootOnlyRef)
+            {
+                for (AbsRscLayerObject<Resource> child : rscLayerObjectRef.getChildren())
+                {
+                    manageSuspendIoIfNeeded(child, resumeOnlyRef, rootOnlyRef);
+                }
             }
         }
         return result;
@@ -164,7 +159,8 @@ public class SuspendManager
     private ManageSuspendIoResult manageSuspendIo(
         DeviceLayer layer,
         AbsRscLayerObject<Resource> rscData,
-        boolean resumeOnlyRef
+        boolean resumeOnlyRef,
+        boolean rootOnlyRef
     )
         throws StorageException
     {
@@ -179,18 +175,18 @@ public class SuspendManager
             {
                 if (shouldSuspend)
                 {
-                    layer.suspendIo(rscData);
+                    layer.suspendIo(rscData, rootOnlyRef);
                     result = ManageSuspendIoResult.SUSPENDED;
                 }
                 else
                 {
-                    layer.resumeIo(rscData);
+                    layer.resumeIo(rscData, rootOnlyRef);
                     result = ManageSuspendIoResult.RESUMED;
                 }
                 rscData.setIsSuspended(shouldSuspend);
             }
         }
-        catch (ExtCmdFailedException exc)
+        catch (ExtCmdFailedException | ChildProcessTimeoutException | IOException exc)
         {
             throw new StorageException(
                 String.format(
@@ -202,7 +198,7 @@ public class SuspendManager
                 exc
             );
         }
-        catch (DatabaseException exc)
+        catch (AccessDeniedException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }

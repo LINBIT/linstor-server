@@ -24,13 +24,21 @@ import java.util.regex.Pattern;
 
 public class DmSetupUtils
 {
-    private static final String DM_SETUP_MESSAGE_FLUSH = "flush";
-    private static final String DM_SETUP_MESSAGE_FLUSH_ON_SUSPEND = "flush_on_suspend";
+    private static final String[] DM_SETUP_MESSAGE_FLUSH = new String[] {
+        "flush"
+    };
+    private static final String[] DM_SETUP_MESSAGE_FLUSH_ON_SUSPEND = new String[] {
+        "flush_on_suspend"
+    };
 
     private static final Pattern DM_SETUP_LS_PATTERN = Pattern.compile(
         "^([^\\s]+)\\s+\\(([0-9]+)[:,]\\s*([0-9]+)\\)$",
         Pattern.MULTILINE
     );
+
+    private static final String DM_SETUP_TYPE_CACHE = "cache";
+    private static final int DM_SETUP_STATUS_CACHE_TYPE_IDX = 2;
+    private static final int DM_SETUP_STATUS_CACHE_DIRTY_BLOCKS_IDX = 13;
 
     private DmSetupUtils()
     {
@@ -138,6 +146,37 @@ public class DmSetupUtils
         return isSuspended;
     }
 
+    public static long getLastEventNr(ExtCmdFactory extCmdFactory, VlmProviderObject<Resource> vlmDataRef)
+        throws ChildProcessTimeoutException, IOException, ExtCmdFailedException
+    {
+        long ret;
+        String[] cmd = {
+            "dmsetup",
+            "info",
+            "-c", // columns
+            "-o", "events", // show only event number column
+            "--noheadings", // make an educated guess
+            vlmDataRef.getDevicePath()
+        };
+        try
+        {
+            OutputData outputData = extCmdFactory.create().exec(cmd);
+            if (outputData.exitCode != 0)
+            {
+                throw new ExtCmdFailedException(cmd, outputData);
+            }
+            ret = Long.parseLong(new String(outputData.stdoutData).trim());
+        }
+        catch (ChildProcessTimeoutException timeoutExc)
+        {
+            throw new ExtCmdFailedException(cmd, timeoutExc);
+        }
+        catch (IOException ioExc)
+        {
+            throw new ExtCmdFailedException(cmd, ioExc);
+        }
+        return ret;
+    }
     public static Set<String> list(ExtCmd extCmd, @Nullable String target) throws StorageException
     {
         Set<String> ret = new HashSet<>();
@@ -293,17 +332,39 @@ public class DmSetupUtils
         DmSetupUtils.create(
             extCmdFactory,
             identifierRef,
-            createCacheDmsetupTable(
+            getCacheTable(
+                0L,
+                Commands.getDeviceSizeInSectors(extCmdFactory.create(), dataDevice),
                 dataDevice,
                 cacheDevice,
                 metaDevice,
                 blockSize,
                 feature,
                 policy,
-                policyArgs,
-                0,
-                Commands.getDeviceSizeInSectors(extCmdFactory.create(), dataDevice)
+                policyArgs
             )
+        );
+    }
+
+    public static void reload(
+        ExtCmdFactory extCmdFactoryRef,
+        String identifierRef,
+        String dmsetupTableRef
+    )
+        throws StorageException
+    {
+        Commands.genericExecutor(
+            extCmdFactoryRef.create(),
+            new String[]
+            {
+                "dmsetup",
+                "reload",
+                identifierRef,
+                "--table",
+                dmsetupTableRef
+            },
+            "Failed to reload dmsetup device, identifier: " + identifierRef + ", used table: " + dmsetupTableRef,
+            "Failed to reload dmsetup device, identifier: " + identifierRef + ", used table: " + dmsetupTableRef
         );
     }
 
@@ -315,16 +376,16 @@ public class DmSetupUtils
      * <code>'0 2105344 cache /dev/scratch/rsc.dmcache_meta_00000 /dev/scratch/rsc.dmcache_cache_00000
      * /dev/scratch/rsc_00000 4096 1 writeback smq 0 '</code></p>
      */
-    public static String createCacheDmsetupTable(
+    public static String getCacheTable(
+        long startSector,
+        long endSector,
         String dataDevice,
         String cacheDevice,
         String metaDevice,
         long blockSize,
-        String feature,
-        String policy,
-        String policyArgs,
-        long startSector,
-        long endSector
+        @Nullable String feature,
+        @Nullable String policy,
+        String... policyArgs
     )
     {
         return StringUtils.join(
@@ -336,10 +397,11 @@ public class DmSetupUtils
             cacheDevice,
             dataDevice,
             blockSize,
-            "1", // 1 feature - not sure if there are more possible...
-            feature,
-            policy,
-            policyArgs
+            feature == null ? "0" : "1 " + feature,
+            policy == null ? "" : policy,
+            policyArgs == null || policyArgs.length == 0 ?
+                "0" :
+                policyArgs.length + " " + StringUtils.join(" ", policyArgs)
         );
     }
 
@@ -440,23 +502,83 @@ public class DmSetupUtils
         ExtCmdFactory extCmdFactory,
         String device,
         @Nullable Long sector,
-        String message
+        String[] message
     )
         throws StorageException
     {
         String sectorStr = sector == null ? "0" : sector.toString();
         Commands.genericExecutor(
             extCmdFactory.create(),
-            new String[]
+            StringUtils.concat(new String[]
             {
                 "dmsetup",
                 "message",
                 device,
-                sectorStr,
-                message
-            },
+                sectorStr
+            }, message),
             "'dmsetup message' returned unexpected exit code",
             "Failed to send message '" + message + "' to device " + device + " (sector: " + sectorStr + ")"
         );
+    }
+
+    /**
+     * This method only works with "cache" types. NOT with "writecache" or any other dmsetup type!
+     */
+    public static long getDirtyCacheBlocks(
+        ExtCmdFactory extCmdFactory,
+        String device
+    )
+        throws StorageException
+    {
+        OutputData outputData = Commands.genericExecutor(
+            extCmdFactory.create(),
+            new String[]
+            {
+                "dmsetup", "status", device
+            },
+            "'dmsetup status " + device + "' failed with unexpected exit code",
+            "'dmsetup status " + device + "' failed"
+        );
+        String stdOut = new String(outputData.stdoutData).trim();
+        String[] parts = stdOut.split(" ");
+        // safety-check:
+        if (!DM_SETUP_TYPE_CACHE.equals(parts[2]))
+        {
+            throw new StorageException(
+                "Expected '" + DM_SETUP_TYPE_CACHE + "' but found: '" + parts[DM_SETUP_STATUS_CACHE_TYPE_IDX] +
+                    "'. Full status: " + stdOut
+            );
+        }
+        return Long.parseLong(parts[DM_SETUP_STATUS_CACHE_DIRTY_BLOCKS_IDX]);
+    }
+
+
+    public static void wait(ExtCmd extCmd, String device, @Nullable Long lastEventNrRef)
+        throws StorageException, ChildProcessTimeoutException, ExtCmdFailedException
+    {
+        String[] cmd = lastEventNrRef == null ?
+            new String[]
+            {
+                "dmsetup", "wait", device
+            } :
+            new String[]
+            {
+                "dmsetup", "wait", device, Long.toString(lastEventNrRef)
+            };
+        OutputData outputData;
+        try
+        {
+            outputData = extCmd.exec(cmd);
+            ExtCmdUtils.checkExitCode(
+                outputData,
+                StorageException::new,
+                "'%s' failed with unexpected exit code",
+                StringUtils.join(" ", cmd)
+            );
+        }
+        catch (IOException ioExc)
+        {
+            throw new ExtCmdFailedException(cmd, ioExc);
+        }
     }
 }
