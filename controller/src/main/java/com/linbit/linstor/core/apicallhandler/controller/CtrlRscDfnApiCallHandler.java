@@ -69,6 +69,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.debug.HexViewer;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.layer.utils.SuspendLayerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -971,7 +972,7 @@ public class CtrlRscDfnApiCallHandler
     {
         try
         {
-            rsc.getLayerData(peerAccCtx.get()).setShouldSuspendIo(true);
+            SuspendLayerUtils.suspendIo(apiCtx, rsc);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -995,7 +996,7 @@ public class CtrlRscDfnApiCallHandler
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                rsc.getLayerData(apiCtx).setShouldSuspendIo(false);
+                SuspendLayerUtils.resumeIo(apiCtx, rsc);
             }
         }
         catch (AccessDeniedException accDeniedExc)

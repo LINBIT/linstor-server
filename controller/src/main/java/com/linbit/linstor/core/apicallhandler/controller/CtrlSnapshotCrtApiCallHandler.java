@@ -38,6 +38,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.ebs.EbsUtils;
+import com.linbit.linstor.layer.utils.SuspendLayerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -976,7 +977,7 @@ public class CtrlSnapshotCrtApiCallHandler
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                rsc.getLayerData(apiCtx).setShouldSuspendIo(false);
+                SuspendLayerUtils.resumeIo(apiCtx, rsc);
             }
         }
         catch (AccessDeniedException accDeniedExc)

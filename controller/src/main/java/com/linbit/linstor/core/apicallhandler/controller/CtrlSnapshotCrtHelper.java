@@ -6,6 +6,7 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -33,6 +34,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.utils.SuspendLayerUtils;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
@@ -55,7 +57,6 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiC
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.linstor.utils.layer.LayerVlmUtils.getStorPoolMap;
 
-import com.linbit.linstor.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -823,7 +824,7 @@ public class CtrlSnapshotCrtHelper
     {
         try
         {
-            rsc.getLayerData(peerAccCtx.get()).setShouldSuspendIo(suspend);
+            SuspendLayerUtils.setSuspend(peerAccCtx.get(), rsc, suspend);
         }
         catch (AccessDeniedException accDeniedExc)
         {
