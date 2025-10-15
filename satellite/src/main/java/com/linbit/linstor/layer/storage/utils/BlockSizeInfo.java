@@ -32,8 +32,10 @@ public class BlockSizeInfo
      *
      * If the specified path is a symbolic link, then an attempt is made to resolve symbolic links
      * until the actual block device special file is found. The file name of this file is them used
-     * to find the /sys/block/.../queue/minimum-io-size file in the Linux kernel pseudo-filesystem,
-     * and this file is interpreted to determine the block size of the corresponding block device.
+     * to find the <code>/sys/block/.../queue/physical_block_size</code> file in the Linux kernel pseudo-filesystem.
+     * We deliberately do <b>not</b> use <code>minimum_io_size</code> since (by documentation, see
+     * https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/Documentation/ABI/stable/sysfs-block
+     * for more information) that is the "preferred minimum I/O size".
      *
      * A default block size of IO_SIZE_DFLT is returned in case of a failure to determine a valid block size.
      *
@@ -47,7 +49,7 @@ public class BlockSizeInfo
         {
             final Path blockDevice = SymbolicLinkResolver.resolveSymLink(storageObj);
             final Path infoSourceName = blockDevice.getFileName();
-            final Path infoSource = Path.of("/sys/block", infoSourceName.toString(), "queue/minimum_io_size");
+            final Path infoSource = Path.of("/sys/block", infoSourceName.toString(), "queue/physical_block_size");
 
             final byte[] data = new byte[32];
             try (final FileInputStream fileIn = new FileInputStream(infoSource.toString()))
