@@ -74,6 +74,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
@@ -125,7 +126,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -1613,7 +1613,19 @@ public class CtrlBackupRestoreApiCallHandler
                 Node node = ctrlApiDataLoader.loadNode(new NodeName(dstNodeRef), false);
                 if (node != null)
                 {
-                    dstNode = node.getName();
+                    if (
+                        CtrlBackupCreateApiCallHandler.hasNodeAllExtTools(
+                            node,
+                            RemoteType.LINSTOR.getRequiredExtTools(),
+                            apiCallRc,
+                            "Cannot use node '" + node.getName() +
+                                "' as it does not support the tool(s): ",
+                            sysCtx
+                        )
+                    )
+                    {
+                        dstNode = node.getName();
+                    }
                 }
                 else
                 {
@@ -1674,7 +1686,7 @@ public class CtrlBackupRestoreApiCallHandler
             );
             if (srcSnapDfnUuidsForIncrementalRef.contains(fromSrcSnapDfnUuid) && !shipmentFailed)
             {
-                Snapshot snap;
+                @Nullable Snapshot snap = null;
                 /*
                  * If the user chose a specific node, try to place the snap there even if it means we can't make an inc
                  * or the inc has to be based on a snap a lot further back
@@ -1685,8 +1697,8 @@ public class CtrlBackupRestoreApiCallHandler
                 }
                 else
                 {
-                    Iterator<Snapshot> snapshotIterator = snapDfn.getAllSnapshots(sysCtx).iterator();
-                    if (!snapshotIterator.hasNext())
+                    Collection<Snapshot> snapshots = snapDfn.getAllSnapshots(sysCtx);
+                    if (snapshots.isEmpty())
                     {
                         throw new ImplementationError(
                             "snapdfn: " + CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline(snapDfn) +
@@ -1694,11 +1706,26 @@ public class CtrlBackupRestoreApiCallHandler
                         );
                     }
                     /*
-                     * snapshotDfn will have only one snapshot (we will certainly not have received a backup into
-                     * multiple nodes)
-                     * WARNING this might not stay this way
+                     * check that we use a snapshot on a node that has all ext-tools (if dstNode is already set this has
+                     * already been checked)
                      */
-                    snap = snapshotIterator.next();
+                    for (Snapshot curSnap : snapshots)
+                    {
+                        if (
+                            CtrlBackupCreateApiCallHandler.hasNodeAllExtTools(
+                            curSnap.getNode(),
+                            RemoteType.LINSTOR.getRequiredExtTools(),
+                            apiCallRc,
+                                "Cannot use node '" + curSnap.getNodeName() +
+                                "' as it does not support the tool(s): ",
+                            sysCtx
+                            )
+                        )
+                        {
+                            snap = curSnap;
+                            break;
+                        }
+                    }
                 }
                 /*
                  * TODO: This should also test whether we have enough space left over to receive the snap, and since we

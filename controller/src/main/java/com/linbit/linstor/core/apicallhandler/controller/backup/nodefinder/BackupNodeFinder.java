@@ -234,7 +234,7 @@ public class BackupNodeFinder
                     }
                     prevNodeStr = prevSnapDfnRef.getSnapDfnProps(accCtx)
                         .getProp(
-                            InternalApiConsts.KEY_BACKUP_SRC_NODE ,
+                            InternalApiConsts.KEY_BACKUP_SRC_NODE,
                             BackupShippingUtils.BACKUP_SOURCE_PROPS_NAMESPC + "/" + remoteName
                         );
                 }
@@ -251,6 +251,11 @@ public class BackupNodeFinder
                     // if node in same-node-category, only return that node, else group
                     if (prevNode != null)
                     {
+                        /*
+                         * TODO: if the prevNode is unavailable now it won't be in any of the groups. In that case we
+                         * should figure out in which group the prevNode would be and use that group. For more details
+                         * see internal issue 1270
+                         */
                         for (Entry<Category, Set<Node>> group : usableGroups.entrySet())
                         {
                             if (group.getValue().contains(prevNode))

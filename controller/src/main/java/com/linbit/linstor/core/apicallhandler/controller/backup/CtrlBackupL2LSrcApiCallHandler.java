@@ -295,7 +295,14 @@ public class CtrlBackupL2LSrcApiCallHandler
         {
             for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(sysCtx))
             {
-                if (!snapDfn.getAllSnapshots(sysCtx).isEmpty())
+                if (
+                    !snapDfn.getAllSnapshots(sysCtx).isEmpty() && !BackupShippingUtils.hasShippingStatus(
+                        snapDfn,
+                        linstorRemoteNameRef,
+                        InternalApiConsts.VALUE_FAILED,
+                        sysCtx
+                    )
+                )
                 {
                     if (crtTime != null)
                     {
