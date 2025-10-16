@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed keep_res regular expression pattern from options
 - Instead of caching if a DRBD .res file exists, actually check if the file exists
 - Do not delete known Linstor drbd res files, LS_KEEP_RES is now obsolete
+- Increase max packet size 16M -> 64M
 
 ## [1.32.3] - 2025-10-13
 

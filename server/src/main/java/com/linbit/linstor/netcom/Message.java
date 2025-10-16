@@ -10,8 +10,8 @@ import java.nio.ByteBuffer;
 public interface Message
 {
     // Maximum data size of a message
-    // 16 MiB == 0x1000000
-    int DEFAULT_MAX_DATA_SIZE = 0x1000000;
+    // 64 MiB == 0x4000000
+    int DEFAULT_MAX_DATA_SIZE = 0x4000000;
 
     // 16 bytes (128 bits) message header
     int HEADER_SIZE = 16;
