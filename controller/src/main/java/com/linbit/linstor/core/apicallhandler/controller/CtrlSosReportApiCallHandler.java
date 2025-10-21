@@ -62,6 +62,7 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.CommandExec;
 import com.linbit.utils.FileCollector;
+import com.linbit.utils.ShellUtils;
 import com.linbit.utils.TimeUtils;
 
 import javax.inject.Inject;
@@ -95,7 +96,6 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.linbit.utils.ShellUtils;
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 
@@ -568,8 +568,17 @@ public class CtrlSosReportApiCallHandler
 
         Stream<Node> nodeStream = getNodeStreamForSosReport(nodes, rscs, excludeNodes);
         List<Node> nodeList = nodeStream.collect(Collectors.toList());
-        List<String> namesForTar = nodeList.stream().map(node -> sosReportName + "/" + node.getName().displayValue)
-            .collect(Collectors.toList());
+        List<String> namesForTar = new ArrayList<>();
+        if (includeCtrl)
+        {
+            namesForTar.add(sosReportName + "/_" + LinStor.CONTROLLER_MODULE);
+            createControllerFilesInto(tmpDir, sosReportName, since);
+        }
+        namesForTar.addAll(
+            nodeList.stream()
+                .map(node -> sosReportName + "/" + node.getName().displayValue)
+                .collect(Collectors.toList())
+        );
         for (String name : namesForTar)
         {
             try
@@ -586,11 +595,6 @@ public class CtrlSosReportApiCallHandler
                     exc
                 );
             }
-        }
-        if (includeCtrl)
-        {
-            namesForTar.add(sosReportName + "/_" + LinStor.CONTROLLER_MODULE);
-            createControllerFilesInto(tmpDir, sosReportName, since);
         }
         namesForTar.add(sosReportName + "/" + QUERY_FILE);
         append(
@@ -1156,7 +1160,7 @@ public class CtrlSosReportApiCallHandler
         throws IOException, ExtCmdFailedException, ChildProcessTimeoutException
     {
         ExtCmd extCommand = extCmdFactory.create();
-        extCommand.setTimeout(ChildProcessHandler.TimeoutType.WAIT, 4 * 60 * 1000);
+        extCommand.setTimeout(ChildProcessHandler.TimeoutType.WAIT, 60 * 60 * 1000/* 60 min */);
         List<String> cmd = new ArrayList<>();
         cmd.add("tar");
         cmd.add("-C");
