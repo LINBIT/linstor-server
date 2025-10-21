@@ -19,8 +19,13 @@ URL: https://github.com/LINBIT/linstor-server
 Source0: http://pkg.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.tar.gz
 
 %if 0%{?suse_version} >= 1500
+%if 0%{?sle_version} >= 150700
+BuildRequires: java-21-openjdk-headless java-21-openjdk-devel python
+%define GRADLE_JAVA_HOME -PjavaHome=/usr/lib64/jvm/jre-21
+%else
 BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python
 %define GRADLE_JAVA_HOME -PjavaHome=/usr/lib64/jvm/jre-11
+%endif
 %else
 %if 0%{?rhel} > 9
 BuildRequires: java-21-openjdk-headless java-21-openjdk-devel python3
@@ -81,7 +86,7 @@ cp %{_builddir}/%{NAME_VERS}/scripts/linstor_satellite-example.toml %{buildroot}
 ### common
 %package common
 Summary: Common files shared between controller and satellite
-%if 0%{?rhel} > 9
+%if 0%{?rhel} > 9 || 0%{?sle_version} >= 150700
 Requires: java-21-openjdk-headless
 %else
 Requires: jre-11-headless
@@ -105,7 +110,7 @@ Linstor shared components between linstor-controller and linstor-satellite
 %package controller
 Summary: Linstor controller specific files
 Requires: linstor-common = %{version}
-%if 0%{?rhel} > 9
+%if 0%{?rhel} > 9 || 0%{?sle_version} >= 150700
 Requires(post): java-21-openjdk-headless
 %else
 Requires(post): jre-11-headless
