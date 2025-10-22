@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.api.ApiConsts;
+
 public class InternalApiConsts
 {
     public static final String API_AUTH        = "Auth";
@@ -219,12 +221,14 @@ public class InternalApiConsts
     public static final String SET_BY_VALUE_LINSTOR = "linstor";
 
     // drbd option consts
+    public static final String NAMESPC_STLT_INTERNAL_DRBD = ApiConsts.NAMESPC_STLT + "/Drbd";
     public static final String NAMESPC_DRBD = "Drbd";
     public static final String DRBD_VERIFY_ALGO = "verify-alg";
     public static final String DRBD_AUTO_VERIFY_ALGO = "auto-verify-alg";
     public static final String KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_LIST = "auto-verify-algo-allowed-list";
     public static final String KEY_DRBD_NODE_IDS_TO_RESET = "NodeIdsToReset";
     public static final String KEY_DRBD_QUORUM = "quorum";
+    public static final String KEY_DRBD_NEEDS_INVALIDATE = "NeedsInvalidate";
 
     // external files consts
     public static final String NAMESPC_FILES = "files";

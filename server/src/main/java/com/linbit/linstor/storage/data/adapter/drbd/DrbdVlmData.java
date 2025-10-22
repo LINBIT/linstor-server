@@ -19,6 +19,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -29,6 +30,8 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     extends AbsVlmData<RSC, DrbdRscData<RSC>>
     implements DrbdVlmObject<RSC>
 {
+    private static final String FAKED_DATA_DEVICE_PATH = "/dev/this/is/not/used/faked";
+
     // unmodifiable data, once initialized
     private final DrbdVlmDfnData<RSC> vlmDfnData;
 
@@ -39,10 +42,16 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     private boolean hasMetaData;
     private boolean checkMetaData;
     private boolean isMetaDataNew;
+    /**
+     * This is the last resort if we in some rare circumstances really need a diskful-looking .res file
+     * but our child-data has not been processed. This might be the case for "drbdadm invalidate".
+     */
+    private boolean fakeDataDevicePath;
     private boolean hasDisk;
     private final TransactionList<DrbdVlmData<RSC>, State> states;
     private @Nullable Size sizeState;
     private @Nullable String diskState;
+
 
     public DrbdVlmData(
         AbsVolume<RSC> vlmRef,
@@ -60,6 +69,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
 
         checkMetaData = true;
         isMetaDataNew = false;
+        fakeDataDevicePath = false;
 
         externalMetaDataStorPool = transObjFactoryRef.createTransactionSimpleObject(
             this,
@@ -144,12 +154,19 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     @Override
     public @Nullable String getDataDevice()
     {
-        VlmProviderObject<RSC> childBySuffix = getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-        String bdDevPath = null;
-        if (childBySuffix != null)
+        @Nullable String bdDevPath = null;
+        if (fakeDataDevicePath)
         {
-            // null when diskless
-            bdDevPath = childBySuffix.getDevicePath();
+            bdDevPath = FAKED_DATA_DEVICE_PATH;
+        }
+        else
+        {
+            VlmProviderObject<RSC> childBySuffix = getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+            if (childBySuffix != null)
+            {
+                // null when diskless
+                bdDevPath = childBySuffix.getDevicePath();
+            }
         }
         return bdDevPath;
     }
@@ -215,8 +232,13 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
         externalMetaDataStorPool.set(extMetaStorPool);
     }
 
+    public void setFakeDataDevicePath(boolean fakeDataDevicePathRef)
+    {
+        fakeDataDevicePath = fakeDataDevicePathRef;
+    }
+
     @Override
-    public DrbdVlmDfnData<RSC> getVlmDfnLayerObject()
+    public @Nonnull DrbdVlmDfnData<RSC> getVlmDfnLayerObject()
     {
         return vlmDfnData;
     }

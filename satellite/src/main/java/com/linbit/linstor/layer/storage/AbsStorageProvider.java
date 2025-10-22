@@ -42,6 +42,7 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.layer.drbd.DrbdInvalidateUtils;
 import com.linbit.linstor.layer.storage.lvm.LvmProvider;
 import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.layer.storage.utils.DmStatCommands;
@@ -111,6 +112,7 @@ public abstract class AbsStorageProvider<
         private final BackupShippingMgr backupShippingMgr;
         private final FileSystemWatch fileSystemWatch;
         private final CoreModule.ResourceDefinitionMap rscDfnMap;
+        private final DrbdInvalidateUtils drbdInvalidateUtils;
 
         @Inject
         public AbsStorageProviderInit(
@@ -125,7 +127,8 @@ public abstract class AbsStorageProvider<
             CloneService cloneServiceRef,
             BackupShippingMgr backupShippingMgrRef,
             FileSystemWatch fileSystemWatchRef,
-            CoreModule.ResourceDefinitionMap rscDfnMapRef
+            CoreModule.ResourceDefinitionMap rscDfnMapRef,
+            DrbdInvalidateUtils drbdInvalidateUtilsRef
         )
         {
             errorReporter = errorReporterRef;
@@ -140,6 +143,7 @@ public abstract class AbsStorageProvider<
             backupShippingMgr = backupShippingMgrRef;
             fileSystemWatch = fileSystemWatchRef;
             rscDfnMap = rscDfnMapRef;
+            drbdInvalidateUtils = drbdInvalidateUtilsRef;
         }
     }
 
@@ -166,6 +170,7 @@ public abstract class AbsStorageProvider<
     private final String typeDescr;
     private final FileSystemWatch fsWatch;
     protected final DeviceProviderKind kind;
+    private final DrbdInvalidateUtils drbdInvalidateUtils;
 
     private final Map<StorPool, Long> extentSizeFromSpCache = new HashMap<>();
 
@@ -191,6 +196,7 @@ public abstract class AbsStorageProvider<
         cloneService = initRef.cloneService;
         backupShipMapper = initRef.backupShippingMgr;
         fsWatch = initRef.fileSystemWatch;
+        drbdInvalidateUtils = initRef.drbdInvalidateUtils;
 
         typeDescr = typeDescrRef;
         kind = kindRef;
@@ -697,6 +703,7 @@ public abstract class AbsStorageProvider<
                          * "restore from snapshot", since we do not have a snapshot of this special device.
                          * Therefore we simply need to create an empty volume instead...
                          */
+                        drbdInvalidateUtils.invalidate(vlmData);
                         createLvImpl(vlmData);
 
                         /*
@@ -727,6 +734,7 @@ public abstract class AbsStorageProvider<
             {
                 if (!cloneVolume)
                 {
+                    drbdInvalidateUtils.invalidate(vlmData);
                     createLvImpl(vlmData);
                 }
             }

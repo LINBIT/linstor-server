@@ -704,6 +704,16 @@ public class DrbdAdm
         }
     }
 
+    public void invalidate(DrbdRscData<Resource> drbdRscDataRef) throws ExtCmdFailedException
+    {
+        execute(DRBDADM_UTIL, "invalidate", drbdRscDataRef.getSuffixedResourceName());
+    }
+
+    public void invalidate(DrbdVlmData<Resource> drbdVlmDataRef) throws ExtCmdFailedException
+    {
+        execute(DRBDADM_UTIL, "invalidate", drbdVlmDataRef.getIdentifier());
+    }
+
     private void simpleSetupCommand(
         DrbdRscData<Resource> drbdRscData,
         @Nullable VolumeNumber vlmNr,

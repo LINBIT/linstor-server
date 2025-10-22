@@ -1,4 +1,4 @@
-package com.linbit.linstor.layer.drbd.utils;
+package com.linbit.linstor.layer.drbd.resfiles;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -27,7 +27,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
-import com.linbit.linstor.layer.drbd.utils.ConfFileBuilderAutoRules.AutoRule;
+import com.linbit.linstor.layer.drbd.resfiles.ConfFileBuilderAutoRules.AutoRule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;

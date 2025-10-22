@@ -2,7 +2,6 @@ package com.linbit.linstor.layer.drbd;
 
 import com.linbit.ImplementationError;
 import com.linbit.Platform;
-import com.linbit.PlatformStlt;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
@@ -12,9 +11,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerPeerConnector;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.SysBlockUtils;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
@@ -40,7 +37,7 @@ import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
 import com.linbit.linstor.layer.drbd.drbdstate.NoInitialStateException;
 import com.linbit.linstor.layer.drbd.helper.ReadyForPrimaryNotifier;
-import com.linbit.linstor.layer.drbd.utils.ConfFileBuilder;
+import com.linbit.linstor.layer.drbd.resfiles.DrbdResourceFileUtils;
 import com.linbit.linstor.layer.drbd.utils.DrbdAdm;
 import com.linbit.linstor.layer.drbd.utils.MdSuperblockBuffer;
 import com.linbit.linstor.layer.drbd.utils.WindowsFirewall;
@@ -65,18 +62,14 @@ import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
-import com.linbit.utils.AccessUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -85,14 +78,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Singleton
 public class DrbdLayer implements DeviceLayer
 {
     public static final String DRBD_DEVICE_PATH_FORMAT = "/dev/drbd%d";
-    private static final String DRBD_CONFIG_SUFFIX = ".res";
-    private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
 
     private static final long HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT = 2000;
 
@@ -100,10 +90,10 @@ public class DrbdLayer implements DeviceLayer
 
     private final AccessContext workerCtx;
     private final DrbdAdm drbdUtils;
+    private final DrbdResourceFileUtils drbdResFileUtils;
     private final DrbdStateStore drbdState;
     private final DrbdEventPublisher drbdEventPublisher;
     private final ErrorReporter errorReporter;
-    private final WhitelistProps whitelistProps;
     private final CtrlStltSerializer interComSerializer;
     private final ControllerPeerConnector controllerPeerConnector;
     private final Provider<DeviceHandler> resourceProcessorProvider;
@@ -111,7 +101,6 @@ public class DrbdLayer implements DeviceLayer
     private final StltConfigAccessor stltCfgAccessor;
     private final DrbdVersion drbdVersion;
     private final WindowsFirewall windowsFirewall;
-    private final PlatformStlt platformStlt;
 
     @Nullable private static String drbdSetupStatusOutput;
 
@@ -121,30 +110,30 @@ public class DrbdLayer implements DeviceLayer
      */
     @Nullable private static List<String> adjustResourcesList;
 
+
     @Inject
     public DrbdLayer(
         @DeviceManagerContext AccessContext workerCtxRef,
         DrbdAdm drbdUtilsRef,
+        DrbdResourceFileUtils drbdResFileUtilsRef,
         DrbdStateStore drbdStateRef,
         DrbdEventPublisher drbdEventPublisherRef,
         ErrorReporter errorReporterRef,
-        WhitelistProps whiltelistPropsRef,
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         Provider<DeviceHandler> resourceProcessorRef,
         ExtCmdFactory extCmdFactoryRef,
         StltConfigAccessor stltCfgAccessorRef,
         DrbdVersion drbdVersionRef,
-        WindowsFirewall windowsFirewallRef,
-        PlatformStlt platformStltRef
+        WindowsFirewall windowsFirewallRef
     )
     {
         workerCtx = workerCtxRef;
         drbdUtils = drbdUtilsRef;
+        drbdResFileUtils = drbdResFileUtilsRef;
         drbdState = drbdStateRef;
         drbdEventPublisher = drbdEventPublisherRef;
         errorReporter = errorReporterRef;
-        whitelistProps = whiltelistPropsRef;
         interComSerializer = interComSerializerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         resourceProcessorProvider = resourceProcessorRef;
@@ -152,7 +141,6 @@ public class DrbdLayer implements DeviceLayer
         stltCfgAccessor = stltCfgAccessorRef;
         drbdVersion = drbdVersionRef;
         windowsFirewall = windowsFirewallRef;
-        platformStlt = platformStltRef;
     }
 
     @Override
@@ -262,7 +250,7 @@ public class DrbdLayer implements DeviceLayer
                 adjustDrbd(drbdRscData, apiCallRc, true, null);
 
                 // this should not be executed if adjusting the drbd resource fails
-                copyResFileToBackup(drbdRscData);
+                drbdResFileUtils.copyResFileToBackup(drbdRscData);
             }
         }
         else
@@ -274,7 +262,7 @@ public class DrbdLayer implements DeviceLayer
                 processChild(drbdRscData, apiCallRc);
 
                 // this should not be executed if deleting the drbd resource fails
-                deleteBackupResFile(drbdRscData);
+                drbdResFileUtils.deleteBackupResFile(drbdRscData);
             }
             else
             {
@@ -283,7 +271,7 @@ public class DrbdLayer implements DeviceLayer
                     addAdjustedMsg(drbdRscData, apiCallRc);
 
                     // this should not be executed if adjusting the drbd resource fails
-                    copyResFileToBackup(drbdRscData);
+                    drbdResFileUtils.copyResFileToBackup(drbdRscData);
                 }
                 else
                 {
@@ -430,9 +418,7 @@ public class DrbdLayer implements DeviceLayer
                 }
                 addDeletedMsg(drbdRscData, apiCallRc);
             }
-            Path resFile = asResourceFile(drbdRscData, false, false);
-            errorReporter.logTrace("Ensuring .res file is deleted: %s ", resFile);
-            Files.deleteIfExists(resFile);
+            drbdResFileUtils.deleteResFile(drbdRscData);
 
             drbdRscData.setExists(false);
             for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
@@ -584,13 +570,12 @@ public class DrbdLayer implements DeviceLayer
             // The .res file might not have been generated in the prepare method since it was
             // missing information from the child-layers. Now that we have processed them, we
             // need to make sure the .res file exists in all circumstances.
-            regenerateResFile(drbdRscData);
+            drbdResFileUtils.regenerateResFile(drbdRscData);
 
             // createMetaData needs rendered resFile
             for (DrbdVlmData<Resource> drbdVlmData : createMetaData)
             {
                 createMetaData(drbdVlmData);
-                drbdRscData.setAdjustRequired(true);
             }
 
             try
@@ -769,7 +754,7 @@ public class DrbdLayer implements DeviceLayer
                     }
                     catch (ExtCmdFailedException extCmdExc)
                     {
-                        restoreBackupResFile(drbdRscData);
+                        drbdResFileUtils.restoreBackupResFile(drbdRscData);
                         throw extCmdExc;
                     }
                 }
@@ -1111,8 +1096,7 @@ public class DrbdLayer implements DeviceLayer
     public void resumeIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException
     {
         var drbdRscDataRef = (DrbdRscData<Resource>) rscDataRef;
-        Path resFile = asResourceFile(drbdRscDataRef, false, false);
-        if (Files.exists(resFile))
+        if (drbdResFileUtils.doesResFileExist(drbdRscDataRef))
         {
             drbdUtils.resumeIo(drbdRscDataRef);
         }
@@ -1253,6 +1237,9 @@ public class DrbdLayer implements DeviceLayer
                 drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
                 drbdVlmData.getVlmNr().getValue());
             drbdVlmData.setMetaDataIsNew(true);
+
+            DrbdRscData<Resource> drbdRscData = drbdVlmData.getRscLayerObject();
+            drbdRscData.setAdjustRequired(true);
 
             if (DrbdLayerUtils.skipInitSync(workerCtx, drbdVlmData))
             {
@@ -1560,237 +1547,34 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private String readResFile(Path resFilePath) throws IOException
-    {
-        return Files.readString(resFilePath);
-    }
+
 
     private List<String> regenerateAllResFile(Set<AbsRscLayerObject<Resource>> rscDataList)
     {
         List<String> notGeneratedList = new ArrayList<>();
         for (AbsRscLayerObject<Resource> rscLayerObject : rscDataList)
         {
-            DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>)rscLayerObject;
+            DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscLayerObject;
             try
             {
                 if (drbdRscData.isResFileReady(workerCtx) &&
                     !drbdRscData.getAbsResource().getStateFlags().isSomeSet(
                         workerCtx, Flags.DRBD_DELETE, Flags.DELETE, Flags.INACTIVE))
                 {
-                    regenerateResFile(drbdRscData);
+                    drbdResFileUtils.regenerateResFile(drbdRscData);
                 }
                 else
                 {
                     notGeneratedList.add(drbdRscData.getResourceName().displayValue.toLowerCase());
                 }
             }
-            catch (AccessDeniedException|StorageException exc)
+            catch (AccessDeniedException | StorageException exc)
             {
                 errorReporter.reportError(exc);
                 notGeneratedList.add(drbdRscData.getResourceName().displayValue.toLowerCase());
             }
         }
         return notGeneratedList;
-    }
-
-    /**
-     * Compares the contents of 2 res files if they are equal
-     * Starts comparing, after finding the 'resources "' section, because Linstor generates a header with date.
-     * @param resA String content of first res file to compare
-     * @param resB String content of second res file to compare
-     * @return true if real res file content is the same
-     */
-    private boolean isResFileEqual(String resA, String resB)
-    {
-        boolean equal;
-        int beginA = resA.indexOf("resource \"");
-        int beginB = resB.indexOf("resource \"");
-
-        if (beginA >= 0 && beginB >= 0)
-        {
-            equal = resA.substring(beginA).equals(resB.substring(beginB));
-        }
-        else
-        {
-            throw new ImplementationError("isResFileEqual should only be used for DRBD res files.");
-        }
-        return equal;
-    }
-
-    /**
-     * Writes a new resfile if the content really changed.
-     *
-     * @param drbdRscData
-     * @return True if a new res file was written otherwise false.
-     * @throws AccessDeniedException
-     * @throws StorageException
-     */
-    private boolean regenerateResFile(DrbdRscData<Resource> drbdRscData)
-        throws AccessDeniedException, StorageException
-    {
-        boolean fileWritten = false;
-        Path resFile = asResourceFile(drbdRscData, false, false);
-        Path tmpResFile = asResourceFile(drbdRscData, true, false);
-
-        List<DrbdRscData<Resource>> drbdPeerRscDataList = drbdRscData.getRscDfnLayerObject()
-            .getDrbdRscDataList().stream()
-            .filter(otherRscData -> !otherRscData.equals(drbdRscData) &&
-                AccessUtils.execPrivileged(() -> DrbdLayerUtils.isDrbdResourceExpected(workerCtx, otherRscData)) &&
-                AccessUtils.execPrivileged(
-                    () -> !otherRscData.getAbsResource().getStateFlags().isSet(workerCtx, Resource.Flags.INACTIVE)
-                )
-            )
-            .collect(Collectors.toList());
-
-        String content = new ConfFileBuilder(
-            errorReporter,
-            workerCtx,
-            drbdRscData,
-            drbdPeerRscDataList,
-            whitelistProps,
-            stltCfgAccessor.getReadonlyProps(),
-            drbdVersion
-        ).build();
-
-        String onDiskContent = "resource \"i\"{}";
-        if (Files.exists(resFile))
-        {
-            try
-            {
-                onDiskContent = readResFile(resFile);
-            }
-            catch (NoSuchFileException nsfe)
-            {
-                errorReporter.logWarning("Expected resource file %s did not exist. Rewriting...", resFile.toString());
-            }
-            catch (IOException exc)
-            {
-                errorReporter.reportError(exc);
-            }
-        }
-
-        if (!isResFileEqual(onDiskContent, content))
-        {
-            try (FileOutputStream resFileOut = new FileOutputStream(tmpResFile.toFile()))
-            {
-                resFileOut.write(content.getBytes());
-            }
-            catch (IOException ioExc)
-            {
-                String ioErrorMsg = ioExc.getMessage();
-                if (ioErrorMsg == null)
-                {
-                    ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
-                        "the I/O error";
-                }
-                throw new StorageException(
-                    "Creation of the DRBD configuration file for resource '" + drbdRscData.getSuffixedResourceName() +
-                        "' failed due to an I/O error",
-                    getAbortMsg(drbdRscData),
-                    "Creation of the DRBD configuration file failed due to an I/O error",
-                    "- Check whether enough free space is available for the creation of the file\n" +
-                        "- Check whether the application has write access to the target directory\n" +
-                        "- Check whether the storage is operating flawlessly",
-                    "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                    ioExc
-                );
-            }
-
-            try
-            {
-                Files.move(
-                    tmpResFile,
-                    resFile,
-                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
-                );
-                fileWritten = true;
-            }
-            catch (IOException ioExc)
-            {
-                String ioErrorMsg = ioExc.getMessage();
-                throw new StorageException(
-                    "Unable to move temporary DRBD resource file '" + tmpResFile + "' to resource directory.",
-                    getAbortMsg(drbdRscData),
-                    "Unable to move temporary DRBD resource file due to an I/O error",
-                    "- Check whether enough free space is available for moving the file\n" +
-                        "- Check whether the application has write access to the target directory\n" +
-                        "- Check whether the storage is operating flawlessly",
-                    "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                    ioExc
-                );
-            }
-            errorReporter.logInfo("DRBD regenerated resource file: %s", resFile);
-        }
-        return fileWritten;
-    }
-
-    private void copyResFile(Path srcPath, Path dstPath, String errMsg, String errCause)
-        throws StorageException
-    {
-        try
-        {
-            Files.copy(srcPath, dstPath, StandardCopyOption.REPLACE_EXISTING);
-        }
-        catch (IOException ioExc)
-        {
-            String ioErrorMsg = ioExc.getMessage();
-            if (ioErrorMsg == null)
-            {
-                ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
-                    "the I/O error";
-            }
-            throw new StorageException(
-                errMsg,
-                errCause,
-                null,
-                "- Check whether enough free space is available for the creation of the file\n" +
-                    "- Check whether the application has write access to the target directory\n" +
-                    "- Check whether the storage is operating flawlessly",
-                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                ioExc
-            );
-        }
-    }
-
-    private void copyResFileToBackup(DrbdRscData<Resource> drbdRscData) throws StorageException
-    {
-        Path resFile = asResourceFile(drbdRscData, false, false);
-        Path backupFile = asBackupResourceFile(drbdRscData);
-        String rscName = drbdRscData.getSuffixedResourceName();
-        copyResFile(
-            resFile,
-            backupFile,
-            String.format("Failed to create a backup of the resource file of resource '%s'", rscName),
-            getAbortMsg(drbdRscData)
-        );
-    }
-
-    private void restoreBackupResFile(DrbdRscData<Resource> drbdRscData) throws StorageException
-    {
-        String rscName = drbdRscData.getSuffixedResourceName();
-        errorReporter.logError("Restoring resource file from backup: %s", rscName);
-        Path backupFile = asBackupResourceFile(drbdRscData);
-        Path resFile = asResourceFile(drbdRscData, false, false);
-        copyResFile(
-            backupFile,
-            resFile,
-            String.format("Failed to restore resource file from backup of resource '%s'", rscName),
-            getAbortMsg(drbdRscData)
-        );
-    }
-
-    private void deleteBackupResFile(DrbdRscData<Resource> drbdRscDataRef) throws StorageException
-    {
-        Path resFile = asBackupResourceFile(drbdRscDataRef);
-        errorReporter.logTrace("Deleting res file from backup: %s ", resFile);
-        try
-        {
-            Files.deleteIfExists(resFile);
-        }
-        catch (IOException exc)
-        {
-            throw new StorageException("IOException while removing resource file from backup", exc);
-        }
     }
 
     private void condInitialOrSkipSync(DrbdRscData<Resource> drbdRscData)
@@ -2000,35 +1784,7 @@ public class DrbdLayer implements DeviceLayer
     /*
      * DELETE method and its utilities
      */
-
-    private Path asResourceFile(DrbdRscData<Resource> drbdRscData, boolean temp, boolean cygwinFormat)
-    {
-        String prefix;
-
-        if (cygwinFormat)
-        {
-            prefix = platformStlt.sysRootCygwin();
-        }
-        else
-        {
-            prefix = platformStlt.sysRoot();
-        }
-
-        return Paths.get(
-            prefix + LinStor.CONFIG_PATH,
-            drbdRscData.getSuffixedResourceName() + (temp ? DRBD_CONFIG_TMP_SUFFIX : DRBD_CONFIG_SUFFIX)
-        );
-    }
-
-    private Path asBackupResourceFile(DrbdRscData<Resource> drbdRscData)
-    {
-        return Paths.get(
-            platformStlt.sysRoot() + LinStor.BACKUP_PATH,
-            drbdRscData.getSuffixedResourceName() + DRBD_CONFIG_SUFFIX
-        );
-    }
-
-    private String getAbortMsg(DrbdRscData<Resource> drbdRscData)
+    public static String getAbortMsg(DrbdRscData<Resource> drbdRscData)
     {
         return "Operations on resource '" + drbdRscData.getSuffixedResourceName() + "' were aborted";
     }
@@ -2186,7 +1942,7 @@ public class DrbdLayer implements DeviceLayer
         {
             throw new StorageException("clone DRBD last known block device file failed.", ioExc);
         }
-        catch (ExtCmdFailedException|AccessDeniedException exc)
+        catch (ExtCmdFailedException | AccessDeniedException exc)
         {
             throw new StorageException("drbdmeta check-resize failed", exc);
         }

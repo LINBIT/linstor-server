@@ -1,4 +1,4 @@
-package com.linbit.linstor.layer.drbd.utils;
+package com.linbit.linstor.layer.drbd.resfiles;
 
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;

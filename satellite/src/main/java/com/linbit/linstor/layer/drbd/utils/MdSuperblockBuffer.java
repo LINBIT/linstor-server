@@ -1,15 +1,15 @@
 package com.linbit.linstor.layer.drbd.utils;
 
-import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.storage.StorageUtils;
-import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.ImplementationError;
 import com.linbit.Platform;
+import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.StorageUtils;
+import com.linbit.linstor.storage.utils.Commands;
 
-import java.io.RandomAccessFile;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -161,8 +161,8 @@ public class MdSuperblockBuffer
         buffer.rewind();
     }
 
-        /* TODO: external meta data no? */
-    public static void wipe(ExtCmdFactory extCmdFactory, final String objPath) throws IOException
+    public static void wipe(ExtCmdFactory extCmdFactory, final String objPath, boolean extMetadata)
+        throws IOException
     {
         if (Platform.isWindows())
         {
@@ -171,6 +171,7 @@ public class MdSuperblockBuffer
                 OutputData res = Commands.genericExecutor(
                     extCmdFactory.create(),
                     new String[] {
+                        /* TODO: external meta data? */
                         "windrbd", "wipe-metadata", objPath, "internal"
                     },
                     "Failed to get size of block device " + objPath + " please use at least WinDRBD 1.0.3",
@@ -193,10 +194,13 @@ public class MdSuperblockBuffer
                     FileChannel inChan = file.getChannel();
                     long fileSize = getFileSize(extCmdFactory, objPath, inChan);
 
-                    long offset = fileSize - SUPERBLK_SIZE;
+                    if (!extMetadata)
+                    {
+                        long offset = fileSize - SUPERBLK_SIZE;
 
-                    // Read the DRBD meta data superblock
-                    inChan.position(offset);
+                        // Read the DRBD meta data superblock
+                        inChan.position(offset);
+                    }
 
                     inChan.write(ZEROES_BUFFER);
                 }
