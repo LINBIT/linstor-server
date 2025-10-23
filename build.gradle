@@ -533,6 +533,12 @@ distributions {
             from("server/" + logbackConfig) {
                 into("lib/conf")
             }
+            from("scripts/linstor-controller.service") {
+                into("systemd")
+            }
+            from("scripts/linstor-satellite.service") {
+                into("systemd")
+            }
         }
     }
 }
