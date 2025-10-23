@@ -13,6 +13,7 @@ ExecStart=/usr/share/linstor-server/bin/Controller --logs=/var/log/linstor-contr
 SuccessExitStatus=0 143 129
 User=root
 PrivateTmp=yes
+TimeoutStartSec=240s
 
 [Install]
 WantedBy=multi-user.target
