@@ -21,11 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Increase max packet size 16M -> 64M
 - Increased timeout for tar during sos-report to an hour
 
+### Fixed
+
+- Attempt to fix race-condition "Received unknown storage resource from satellite"
+
 ## [1.32.3] - 2025-10-13
 
 ### Fixed
 
-- Attempt to fix race-condition "Received unknown storage resource from satellite"
 - Zfs,rollback via restore: Fixed bug where instead of a rollback LINSTOR creates empty ZVOL
 - DRBD, rollback: Re-adjust (up) DRBD after rollback is finished (GitHub #464)
 - StorPool: Remote storage pools are now properly sent to satellites (not just local)
