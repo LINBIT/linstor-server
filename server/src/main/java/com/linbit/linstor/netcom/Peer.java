@@ -50,7 +50,7 @@ public interface Peer
      *
      * @return Node instance
      */
-    Node getNode();
+    @Nullable Node getNode();
 
     /**
      * Returns the service instance name of the connector associated with this peer object

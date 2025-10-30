@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Increase max packet size 16M -> 64M
 - Increased timeout for tar during sos-report to an hour
 - Removed flywaydb dependency and do migrations (as with other "db"s) ourselves
+- ReconnectorTask: changed logging levels and added more logging
 
 ### Fixed
 

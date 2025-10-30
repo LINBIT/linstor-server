@@ -121,7 +121,7 @@ public class ReconnectorTask implements Task
     public void add(Peer peer, boolean authenticateImmediately, boolean abortBackupShipments)
     {
         boolean sendAuthentication = false;
-        Node node = peer.getNode();
+        @Nullable Node node = peer.getNode();
         synchronized (syncObj)
         {
             if (authenticateImmediately && peer.isConnected(false))
@@ -134,16 +134,18 @@ public class ReconnectorTask implements Task
             {
                 try
                 {
-                    if (!node.isDeleted())
+                    if (node != null && !node.isDeleted())
                     {
                         if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                         {
-                            reconnectorConfigSet.add(new ReconnectConfig(peer, drbdConnectionsOk(node)));
+                            var toAdd = new ReconnectConfig(peer, drbdConnectionsOk(node));
+                            errorReporter.logDebug("ReconnectorTask add: " + toAdd);
+                            reconnectorConfigSet.add(toAdd);
                             getFailedPeers(); // update evictionTime if necessary
                         }
                         else
                         {
-                            errorReporter.logDebug("Node %s is evicted and will not be reconnected", node.getName());
+                            errorReporter.logInfo("Node %s is evicted and will not be reconnected", node.getName());
                         }
                     }
                 }
@@ -168,7 +170,7 @@ public class ReconnectorTask implements Task
              * the only way I can think of now would require some rewriting of many method-signatures
              * converting them from non-flux to flux returning methods.
              */
-            if (!node.isDeleted())
+            if (node != null && !node.isDeleted())
             {
                 backupShipAbortHandler.abortAllShippingPrivileged(node, true)
                     .contextWrite(
@@ -204,8 +206,8 @@ public class ReconnectorTask implements Task
         boolean sendAuthentication = false;
         synchronized (syncObj)
         {
-            Object removed = null;
-            ReconnectConfig toRemove = null;
+            @Nullable Object removed = null;
+            @Nullable ReconnectConfig toRemove = null;
             for (ReconnectConfig config : reconnectorConfigSet)
             {
                 if (config.peer.equals(peer))
@@ -241,7 +243,7 @@ public class ReconnectorTask implements Task
     {
         synchronized (syncObj)
         {
-            ReconnectConfig toRemove = null;
+            @Nullable ReconnectConfig toRemove = null;
             for (ReconnectConfig config : reconnectorConfigSet)
             {
                 if (config.peer.equals(peer))
@@ -251,6 +253,7 @@ public class ReconnectorTask implements Task
             }
             if (toRemove != null)
             {
+                errorReporter.logDebug("ReconnectorTask remove: " + toRemove);
                 reconnectorConfigSet.remove(toRemove);
             }
             pingTask.remove(peer);
@@ -269,6 +272,7 @@ public class ReconnectorTask implements Task
                 pair = getFailedPeers();
             }
         }
+        errorReporter.logTrace("Reconnect list: " + pair.objA);
         ArrayList<ReconnectConfig> localList = pair.objA;
         runEvictionFluxes(pair.objB);
 
@@ -276,19 +280,19 @@ public class ReconnectorTask implements Task
         {
             if (config.peer.isConnected(false))
             {
-                errorReporter.logTrace(
+                errorReporter.logInfo(
                     config.peer + " has connected. Removed from reconnectList, added to pingList."
                 );
                 peerConnected(config.peer);
             }
             else
             {
-                errorReporter.logTrace(
+                errorReporter.logDebug(
                     "Peer " + config.peer.getId() + " has not connected yet, retrying connect."
                 );
                 try
                 {
-                    Node node = config.peer.getNode();
+                    @Nullable Node node = config.peer.getNode();
                     if (node != null && !node.isDeleted())
                     {
                         // transactionMgr MUST be started before taking any linstor locks in order to avoid a deadlock
@@ -353,14 +357,14 @@ public class ReconnectorTask implements Task
                     {
                         if (node == null)
                         {
-                            errorReporter.logTrace(
+                            errorReporter.logDebug(
                                 "Peer %s's node is null (possibly rollbacked), removing from reconnect list",
                                 config.peer.getId()
                             );
                         }
                         else
                         {
-                            errorReporter.logTrace(
+                            errorReporter.logDebug(
                                 "Peer %s's node got deleted, removing from reconnect list",
                                 config.peer.getId()
                             );
@@ -399,11 +403,11 @@ public class ReconnectorTask implements Task
 
     private void setNetIf(Node node, ReconnectConfig config) throws AccessDeniedException, DatabaseException
     {
-        NetInterface currentActiveStltConn = node
+        @Nullable NetInterface currentActiveStltConn = node
             .getActiveStltConn(config.peer.getAccessContext());
         Iterator<NetInterface> netIfIt = node
             .iterateNetInterfaces(config.peer.getAccessContext());
-        NetInterface firstPossible = null;
+        @Nullable NetInterface firstPossible = null;
         boolean setIf = false;
         while (netIfIt.hasNext())
         {
@@ -419,7 +423,7 @@ public class ReconnectorTask implements Task
                 else if (setIf)
                 {
                     // already after current connection, set new connection
-                    errorReporter.logDebug(
+                    errorReporter.logInfo(
                         "Setting new active satellite connection on " + node.getName().displayValue + " '" +
                             netInterface.getName() + "' " +
                             netInterface.getAddress(config.peer.getAccessContext()).getAddress()
@@ -439,7 +443,7 @@ public class ReconnectorTask implements Task
             // current connection not found, use default
             if (firstPossible != null)
             {
-                errorReporter.logDebug(
+                errorReporter.logInfo(
                     "Setting new active satellite connection: '" +
                         firstPossible.getName() + "' " +
                         firstPossible.getAddress(config.peer.getAccessContext()).getAddress()
@@ -467,8 +471,8 @@ public class ReconnectorTask implements Task
         {
             try
             {
-                Node node = config.peer.getNode();
-                if (!node.isDeleted())
+                @Nullable Node node = config.peer.getNode();
+                if (node != null && !node.isDeleted())
                 {
                     boolean drbdOkNew = drbdConnectionsOk(node);
                     final PriorityProps props = new PriorityProps(
@@ -525,7 +529,7 @@ public class ReconnectorTask implements Task
                                 int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
                                 if (numDiscon <= maxDiscon)
                                 {
-                                    errorReporter.logTrace(
+                                    errorReporter.logInfo(
                                         config.peer + " has been offline for too long, relocation of resources started."
                                     );
                                     fluxes.add(
@@ -541,7 +545,7 @@ public class ReconnectorTask implements Task
                                 }
                                 else
                                 {
-                                    errorReporter.logTrace(
+                                    errorReporter.logInfo(
                                         "Currently more than %d%% nodes are not connected to the controller. " +
                                             "The controller might have a problem with it's connections, therefore " +
                                             "no nodes will be declared as EVICTED",
@@ -552,8 +556,8 @@ public class ReconnectorTask implements Task
                             else
                             {
                                 errorReporter.logDebug(
-                                    "The node %s will not be evicted since the property AutoEvictAllowEviction is set " +
-                                        "to false.",
+                                    "The node %s will not be evicted since the property AutoEvictAllowEviction is " +
+                                        "set to false.",
                                     node.getName()
                                 );
                             }
@@ -585,10 +589,8 @@ public class ReconnectorTask implements Task
 
                     for (SatelliteResourceState neighborRscState : neighborRscStates.values())
                     {
-                        for (
-                            Entry<NodeName, Map<NodeName, String>> conStateEntry : neighborRscState.getConnectionStates()
-                                .entrySet()
-                        )
+                        Map<NodeName, Map<NodeName, String>> connStates = neighborRscState.getConnectionStates();
+                        for (Entry<NodeName, Map<NodeName, String>> conStateEntry : connStates.entrySet())
                         {
                             if (conStateEntry.getKey().equals(node.getName()))
                             {
