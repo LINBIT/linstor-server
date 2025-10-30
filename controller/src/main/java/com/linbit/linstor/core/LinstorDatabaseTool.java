@@ -242,6 +242,7 @@ public class LinstorDatabaseTool
             dbInit.initialize();
 
             injectorConsumer.accept(injector);
+            dbInit.shutdown(true); // make sure that databases like H2 get a chance to properly shutdown...
         }
     }
 

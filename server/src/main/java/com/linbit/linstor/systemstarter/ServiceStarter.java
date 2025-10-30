@@ -20,9 +20,9 @@ public class ServiceStarter implements StartupInitializer
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean jvmShutdownRef)
     {
-        service.shutdown();
+        service.shutdown(jvmShutdownRef);
     }
 
     @Override

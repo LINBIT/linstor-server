@@ -261,7 +261,7 @@ public class DbEtcd implements ControllerETCDDatabase
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         try
         {

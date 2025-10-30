@@ -165,7 +165,7 @@ public class EbsStatusManagerService implements SystemService
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         synchronized (syncQueueAndThread)
         {

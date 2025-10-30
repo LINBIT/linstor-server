@@ -129,7 +129,7 @@ public class ApplicationLifecycleManager
             }
             try
             {
-                service.shutdown();
+                service.shutdown(true);
             }
             catch (Exception unhandledExc)
             {

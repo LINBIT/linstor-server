@@ -28,9 +28,9 @@ public class NetComInitializer implements StartupInitializer
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean jvmShutdownRef)
     {
-        sncInitializer.shutdown();
+        sncInitializer.shutdown(jvmShutdownRef);
     }
 
     @Override

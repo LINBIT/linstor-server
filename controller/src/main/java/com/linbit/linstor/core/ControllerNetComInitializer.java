@@ -159,7 +159,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
             svcStarted = curNetComSvc.isStarted();
             if (svcStarted)
             {
-                curNetComSvc.shutdown();
+                curNetComSvc.shutdown(false);
                 issuedShutdown = true;
             }
         }
@@ -169,7 +169,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
             svcStarted = sysSvc.isStarted();
             if (svcStarted)
             {
-                sysSvc.shutdown();
+                sysSvc.shutdown(false);
                 issuedShutdown = true;
             }
         }
@@ -242,11 +242,11 @@ public final class ControllerNetComInitializer implements StartupInitializer
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean jvmShutdownRef)
     {
         if (netComSvc != null)
         {
-            netComSvc.shutdown();
+            netComSvc.shutdown(jvmShutdownRef);
         }
     }
 

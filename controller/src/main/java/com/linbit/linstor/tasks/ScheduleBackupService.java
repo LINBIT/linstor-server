@@ -195,7 +195,7 @@ public class ScheduleBackupService implements SystemService
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         running = false;
         synchronized (syncObj)

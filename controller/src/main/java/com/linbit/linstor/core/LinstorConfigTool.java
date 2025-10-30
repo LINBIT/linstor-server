@@ -420,7 +420,7 @@ public class LinstorConfigTool
             {
                 databasePair.objA.migrateTo(toVersion);
             }
-            databasePair.objB.shutdown();
+            databasePair.objB.shutdown(true);
             return null;
         }
     }
@@ -449,7 +449,7 @@ public class LinstorConfigTool
             {
                 System.out.println("no migration needed");
             }
-            databasePair.objB.shutdown();
+            databasePair.objB.shutdown(true);
 
             return result;
         }
@@ -501,7 +501,7 @@ public class LinstorConfigTool
             CtrlTomlConfig linstorToml = new Toml().read(tomlFile).to(CtrlTomlConfig.class);
 
             dataSource = initConnectionProvider(
-                linstorToml.getDB().getConnectionUrl(),
+                linstorToml.getDB().getConnectionUrl(), // unmodified connection-url. H2 will shutdown automatically
                 linstorToml.getDB().getUser(),
                 linstorToml.getDB().getPassword()
             );

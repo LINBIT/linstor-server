@@ -34,9 +34,6 @@ public interface ControllerDatabase extends SystemService
      */
     boolean closeAllThreadLocalConnections();
 
-    @Override
-    void shutdown();
-
     /**
      * Throws a DatabaseException if the database cannot be reached
      */

@@ -1,15 +1,16 @@
 package com.linbit.extproc;
 
+import static org.junit.Assert.fail;
+
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StderrErrorReporter;
-import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Action;
+import com.linbit.timer.GenericTimer;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 /**
  * Test external command execution and piping the output of external commands
@@ -32,7 +33,7 @@ public class ExtCmdPipingTest
     @After
     public void tearDown()
     {
-        intrTimer.shutdown();
+        intrTimer.shutdown(false);
     }
 
     /**

@@ -1,14 +1,16 @@
 package com.linbit.extproc;
 
+import static org.junit.Assert.fail;
+
 import com.linbit.ChildProcessTimeoutException;
-import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Action;
+import com.linbit.timer.GenericTimer;
+
 import java.io.IOException;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 /**
  * Test the ClientProcessHandler class
@@ -33,7 +35,7 @@ public class ClientProcessHandlerTest
     @After
     public void tearDown()
     {
-        intrTimer.shutdown();
+        intrTimer.shutdown(false);
     }
 
     @Test

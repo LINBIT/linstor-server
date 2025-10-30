@@ -199,7 +199,7 @@ public class TaskScheduleService implements SystemService, Runnable
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         try
         {

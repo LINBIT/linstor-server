@@ -15,7 +15,11 @@ public interface StartupInitializer
         DatabaseException,
         SystemServiceStartException;
 
-    default void shutdown()
+    /**
+     * @param jvmShutdownRef <code>True</code> iff this shutdown was initiated by the shutdown hook or another
+     *      source that should end in the end of the JVM relatively soon.
+     */
+    default void shutdown(boolean jvmShutdownRef)
     {
     }
 

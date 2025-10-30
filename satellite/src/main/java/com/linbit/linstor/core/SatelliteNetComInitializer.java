@@ -298,11 +298,11 @@ public final class SatelliteNetComInitializer
         return success;
     }
 
-    public void shutdown()
+    public void shutdown(boolean jvmShutdownRef)
     {
         if (netComSvc != null)
         {
-            netComSvc.shutdown();
+            netComSvc.shutdown(jvmShutdownRef);
         }
     }
 

@@ -1,14 +1,15 @@
 package com.linbit.timer;
 
+import static org.junit.Assert.fail;
+
 import com.linbit.NegativeTimeException;
 import com.linbit.ValueOutOfRangeException;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 /**
  * Test the GenericTimer class
@@ -46,7 +47,7 @@ public class GenericTimerTest
     @After
     public void tearDown()
     {
-        instance.shutdown();
+        instance.shutdown(false);
     }
 
     /**

@@ -367,7 +367,7 @@ public class GrizzlyHttpService implements SystemService
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         if (httpServer != null)
         {

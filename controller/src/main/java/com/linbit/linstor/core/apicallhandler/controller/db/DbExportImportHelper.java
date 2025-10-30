@@ -18,11 +18,8 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
-import com.linbit.linstor.dbdrivers.k8s.crd.K8sCrdEngine;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
-import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -70,9 +67,6 @@ public class DbExportImportHelper
     private final Map<DatabaseTable, AbsDatabaseDriver<?, ?, ?>> allDrivers;
     private final DbConnectionPool dbSql;
     private final DbEngine currentDbEngine;
-    private final Provider<SQLEngine> sqlEngineProvider;
-    private final Provider<ETCDEngine> etcdEngineProvider;
-    private final Provider<K8sCrdEngine> k8sEngineProvider;
     private final DbEtcd dbEtcd;
     private final DbK8sCrd dbK8s;
     private final Provider<TransactionMgrGenerator> txMgrGenerator;
@@ -85,9 +79,6 @@ public class DbExportImportHelper
         ErrorReporter errorReporterRef,
         Map<DatabaseTable, AbsDatabaseDriver<?, ?, ?>> allDriversRef,
         DbEngine currentDbEngineRef,
-        Provider<SQLEngine> sqlEngineProviderRef,
-        Provider<ETCDEngine> etcdEngineProviderRef,
-        Provider<K8sCrdEngine> k8sEngineProviderRef,
         DbConnectionPool dbSqlRef,
         DbEtcd dbEtcdRef,
         DbK8sCrd dbK8sRef,
@@ -101,9 +92,6 @@ public class DbExportImportHelper
         errorReporter = errorReporterRef;
         allDrivers = allDriversRef;
         currentDbEngine = currentDbEngineRef;
-        sqlEngineProvider = sqlEngineProviderRef;
-        etcdEngineProvider = etcdEngineProviderRef;
-        k8sEngineProvider = k8sEngineProviderRef;
         dbSql = dbSqlRef;
         dbEtcd = dbEtcdRef;
         dbK8s = dbK8sRef;

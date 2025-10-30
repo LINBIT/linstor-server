@@ -130,6 +130,11 @@ public class DbConnectionPool implements ControllerSQLDatabase
         ErrorCheck.ctorNotNull(DbConnectionPool.class, String.class, dbConnectionUrlRef);
         dbConnectionUrl = dbConnectionUrlRef;
 
+        if (isH2DataSource())
+        {
+            dbConnectionUrl += ";DB_CLOSE_ON_EXIT=FALSE";
+        }
+
         errorLog.logInfo("SQL database connection URL is \"%s\"", dbConnectionUrl);
 
         try
@@ -312,10 +317,20 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean jvmShutdownRef)
     {
         try
         {
+            if (jvmShutdownRef && isH2DataSource())
+            {
+                try (
+                    Connection con = getConnection();
+                    Statement stmt = con.createStatement()
+                )
+                {
+                    stmt.execute("SHUTDOWN");
+                }
+            }
             dataSource.close();
             atomicStarted.set(false);
         }
@@ -323,6 +338,11 @@ public class DbConnectionPool implements ControllerSQLDatabase
         {
             // FIXME: report using the Controller's ErrorReporter instance
         }
+    }
+
+    private boolean isH2DataSource()
+    {
+        return dbConnectionUrl.startsWith("jdbc:h2");
     }
 
     @Override

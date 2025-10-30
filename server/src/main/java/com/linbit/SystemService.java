@@ -19,8 +19,11 @@ public interface SystemService extends SystemServiceInfo
 
     /**
      * Disables the service
+     *
+     * @param jvmShutdownRef <code>True</code> iff this shutdown was initiated by the shutdown hook or another
+     *      source that should end in the end of the JVM relatively soon.
      */
-    void shutdown();
+    void shutdown(boolean jvmShutdownRef);
 
     /**
      * Waits until the service has shut down or the timeout is exceeded

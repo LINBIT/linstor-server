@@ -1,10 +1,11 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.linstor.security.AccessContext;
+
+import javax.inject.Inject;
 
 import java.io.PrintStream;
 import java.util.Map;
@@ -65,7 +66,7 @@ public class CmdEndService extends BaseDebugCmd
                 SystemService sysSvc = systemServicesMap.get(svcName);
                 if (sysSvc != null)
                 {
-                    sysSvc.shutdown();
+                    sysSvc.shutdown(false);
                     debugOut.printf(
                         "End service '%s' initiated.\n",
                         sysSvc.getInstanceName().getDisplayName()

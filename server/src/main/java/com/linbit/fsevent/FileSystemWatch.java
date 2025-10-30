@@ -257,7 +257,7 @@ public class FileSystemWatch implements Runnable, SystemService
      * This method does not wait until the event loop has stopped
      */
     @Override
-    public synchronized void shutdown()
+    public synchronized void shutdown(boolean ignoredJvmShutdownRef)
     {
         stopFlag.set(true);
         if (watchThread != null)

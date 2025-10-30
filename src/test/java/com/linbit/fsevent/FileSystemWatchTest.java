@@ -1,5 +1,16 @@
 package com.linbit.fsevent;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+
+import com.linbit.NegativeTimeException;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.fsevent.FileSystemWatch.FileEntry;
+import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
+import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.linstor.testutils.EmptyErrorReporter;
+import com.linbit.timer.Delay;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,22 +23,11 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.linbit.NegativeTimeException;
-import com.linbit.ValueOutOfRangeException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import com.linbit.fsevent.FileSystemWatch.FileEntry;
-import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
-import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
-import com.linbit.linstor.testutils.EmptyErrorReporter;
-import com.linbit.timer.Delay;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * Tests the FileSystemWatch class
@@ -192,7 +192,7 @@ public class FileSystemWatchTest
     @After
     public void tearDown()
     {
-        fsw.shutdown();
+        fsw.shutdown(false);
         try
         {
             fsw.cancelAllWatchKeys();

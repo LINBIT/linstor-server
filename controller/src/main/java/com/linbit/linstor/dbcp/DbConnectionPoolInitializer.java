@@ -132,6 +132,18 @@ public class DbConnectionPoolInitializer implements DbInitializer
         return dbType;
     }
 
+    @Override
+    public void shutdown(boolean jvmShutdownRef)
+    {
+        dbConnPool.shutdown(jvmShutdownRef);
+    }
+
+    @Override
+    public void awaitShutdown(long timeoutRef) throws InterruptedException
+    {
+        dbConnPool.awaitShutdown(timeoutRef);
+    }
+
     @SuppressFBWarnings("ODR_OPEN_DATABASE_RESOURCE_EXCEPTION_PATH")
     private void testDbConnection()
         throws InitializationException

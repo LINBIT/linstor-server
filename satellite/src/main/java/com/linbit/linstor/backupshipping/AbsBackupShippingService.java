@@ -833,7 +833,7 @@ public abstract class AbsBackupShippingService implements SystemService
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         serviceStarted = false;
         for (ShippingInfo info : shippingInfoMap.values())

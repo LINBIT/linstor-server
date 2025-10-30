@@ -296,13 +296,13 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                     );
                 }
                 errorReporter.logWarning("Failed to start events2 stream. Shutting down '%s' service", SERVICE_INFO);
-                shutdown();
+                shutdown(false);
             }
         }
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         running = false;
         demonHandler.stop(true);

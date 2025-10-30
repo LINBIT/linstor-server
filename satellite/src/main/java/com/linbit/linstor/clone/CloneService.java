@@ -133,7 +133,7 @@ public class CloneService implements SystemService
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         serviceStarted = false;
         for (CloneInfo cloneInfo : activeClones)

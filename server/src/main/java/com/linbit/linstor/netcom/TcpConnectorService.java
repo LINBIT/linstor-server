@@ -1,5 +1,10 @@
 package com.linbit.linstor.netcom;
 
+import static java.nio.channels.SelectionKey.OP_ACCEPT;
+import static java.nio.channels.SelectionKey.OP_CONNECT;
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
+
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -51,11 +56,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
-
-import static java.nio.channels.SelectionKey.OP_ACCEPT;
-import static java.nio.channels.SelectionKey.OP_CONNECT;
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
  * TCP/IP network communication service
@@ -402,7 +402,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     }
 
     @Override
-    public synchronized void shutdown()
+    public synchronized void shutdown(boolean ignoredJvmShutdownRef)
     {
         shutdownFlag.set(true);
         Selector srvSel = serverSelector;

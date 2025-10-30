@@ -224,7 +224,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
      * This method does not wait for the ActionScheduler thread to end.
      */
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         synchronized (this)
         {

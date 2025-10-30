@@ -122,7 +122,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         drbdEventService.removeObserver(this);
         started = false;

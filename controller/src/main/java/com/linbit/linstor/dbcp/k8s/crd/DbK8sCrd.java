@@ -305,7 +305,7 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     }
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean ignoredJvmShutdownRef)
     {
         try
         {
