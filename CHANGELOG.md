@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Attempt to fix race-condition "Received unknown storage resource from satellite"
+- Prometheus: fix using peerId as peer address in api call duration statistics (GitHub #466)
 
 ## [1.32.3] - 2025-10-13
 

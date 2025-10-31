@@ -492,8 +492,11 @@ public class TcpConnectorPeer implements Peer
             )
             .switchIfEmpty(Flux.error(new ApiCallNoResponseException()));
 
+        // Don't use peerId here, because it includes the connection count and so would create a new
+        // histogram for each reconnect, which is not wanted.
+        String peerHostStr = String.format("%s:%d", peerHost.getHostString(), peerHost.getPort());
         return Flux.using(
-            () -> LinstorServerMetrics.apiCallHistogram.labels(apiCallName, peerId).startTimer(),
+            () -> LinstorServerMetrics.apiCallHistogram.labels(apiCallName, peerHostStr).startTimer(),
             (ignored) -> call,
             Histogram.Timer::close
         );
