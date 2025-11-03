@@ -3,11 +3,13 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -115,8 +117,22 @@ public class CtrlRscStateHelper
                         getResourceState(rsc, rscStateMap);
                     }
                     // Can change the minimum I/O size by restarting resources after changing the configuration
-                    // if there is no diskless primary
+                    // if there is no primary peer
                     ret = !CtrlRscStateHelper.hasPrimary(rscStateMap);
+
+                    if (ret)
+                    {
+                        // Can change the minimum I/O size if no volume-definition's block-size is already frozen
+                        // (i.e. due to the resource being primary already)
+                        Iterator<VolumeDefinition> vlmDfnIt = rscDfnRef.iterateVolumeDfn(apiCtx);
+                        while (vlmDfnIt.hasNext() && ret)
+                        {
+                            VolumeDefinition vlmDfn = vlmDfnIt.next();
+                            @Nullable String freezeValue = vlmDfn.getProps(apiCtx)
+                                .getProp(ApiConsts.KEY_DRBD_FREEZE_BLOCK_SIZE, ApiConsts.NAMESPC_LINSTOR_DRBD);
+                            ret = !Boolean.valueOf(freezeValue);
+                        }
+                    }
                 }
             }
             return ret;

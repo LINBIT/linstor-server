@@ -26,6 +26,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
@@ -264,14 +265,6 @@ public class CtrlRscDeleteApiHelper
 
                 cleanupAndDelete(rsc);
 
-                if (rscDfn.getResourceCount() == 0)
-                {
-                    // remove primary flag
-                    errorReporter.logDebug(
-                        String.format("Resource definition '%s' empty, deleting primary flag.", rscName)
-                    );
-                    removePropPrimarySetPrivileged(rscDfn);
-                }
                 rscDfnsToCheck.add(rscDfn);
 
                 apiCallRc.addEntry(
@@ -297,6 +290,12 @@ public class CtrlRscDeleteApiHelper
                 // maybe we should create an auto-helper from this..
                 if (rscDfn.getResourceCount() == 0)
                 {
+                    // remove primary flag
+                    errorReporter.logDebug(
+                        String.format("Resource definition '%s' empty, deleting primary flag.", rscName)
+                    );
+                    removePropPrimarySetPrivileged(rscDfn);
+
                     try
                     {
                         Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(apiCtx);
@@ -311,11 +310,15 @@ public class CtrlRscDeleteApiHelper
                                     ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
                                     InternalApiConsts.KEY_DRBD_BLOCK_SIZE
                                 );
-                                vlmDfn.getProps(apiCtx)
-                                    .removeProp(
-                                        InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
-                                        ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
-                                    );
+                                Props vlmDfnProps = vlmDfn.getProps(apiCtx);
+                                vlmDfnProps.removeProp(
+                                    InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
+                                    ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                                );
+                                vlmDfnProps.removeProp(
+                                    ApiConsts.KEY_DRBD_FREEZE_BLOCK_SIZE,
+                                    ApiConsts.NAMESPC_LINSTOR_DRBD
+                                );
                             }
                         }
                     }

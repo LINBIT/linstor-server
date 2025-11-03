@@ -5,8 +5,10 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.events.EventDrbdHandlerBridge;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlMinIoSizeHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -14,6 +16,8 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
@@ -22,6 +26,9 @@ import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.PeerState;
@@ -45,6 +52,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -65,6 +73,7 @@ public class ResourceStateEventHandler implements EventHandler
     private final LockGuardFactory lockGuardFactory;
     private final AutoDiskfulTask autoDiskfulTask;
     private final EventDrbdHandlerBridge eventDrbdHandlerBridge;
+    private final CtrlMinIoSizeHelper ctrlMinIoSizeHelper;
 
     @Inject
     public ResourceStateEventHandler(
@@ -76,7 +85,8 @@ public class ResourceStateEventHandler implements EventHandler
         LockGuardFactory lockGuardFactoryRef,
         AutoDiskfulTask autoDiskfulTaskRef,
         EventDrbdHandlerBridge eventDrbdHandlerBridgeRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        CtrlMinIoSizeHelper ctrlMinIoSizeHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -88,6 +98,7 @@ public class ResourceStateEventHandler implements EventHandler
         autoDiskfulTask = autoDiskfulTaskRef;
         eventDrbdHandlerBridge = eventDrbdHandlerBridgeRef;
         errorReporter = errorReporterRef;
+        ctrlMinIoSizeHelper = ctrlMinIoSizeHelperRef;
     }
 
     @Override
@@ -222,9 +233,11 @@ public class ResourceStateEventHandler implements EventHandler
         // EventProcessor has already taken write lock on NodesMap
         try (LockGuard ignored = lockGuardFactory.build(LockType.WRITE, LockObj.RSC_DFN_MAP))
         {
+            @Nullable ResourceDefinition rscDfn = null;
             @Nullable Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, resourceName, false);
             if (rsc != null && !rsc.isDeleted())
             {
+                rscDfn = rsc.getResourceDefinition();
                 StateFlags<Flags> flags = rsc.getStateFlags();
                 if (inUseRef != null && inUseRef)
                 {
@@ -239,10 +252,38 @@ public class ResourceStateEventHandler implements EventHandler
                     autoDiskfulTask.update(rsc);
                 }
             }
+            if (rscDfn == null)
+            {
+                rscDfn = ctrlApiDataLoader.loadRscDfn(resourceName, false);
+            }
+            if (rscDfn != null && Boolean.TRUE.equals(inUseRef))
+            {
+                Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(apiCtx);
+                while (vlmDfnIt.hasNext())
+                {
+                    VolumeDefinition vlmDfn = vlmDfnIt.next();
+                    if (ctrlMinIoSizeHelper.isAutoMinIoSize(vlmDfn, apiCtx))
+                    {
+                        Props vlmDfnProps = vlmDfn.getProps(apiCtx);
+                        @Nullable String freezeValue = vlmDfnProps.getProp(
+                            ApiConsts.KEY_DRBD_FREEZE_BLOCK_SIZE,
+                            ApiConsts.NAMESPC_LINSTOR_DRBD
+                        );
+                        if (!Boolean.parseBoolean(freezeValue))
+                        {
+                            vlmDfnProps.setProp(
+                                ApiConsts.KEY_DRBD_FREEZE_BLOCK_SIZE,
+                                "True",
+                                ApiConsts.NAMESPC_LINSTOR_DRBD
+                            );
+                        }
+                    }
+                }
+            }
         }
-        catch (AccessDeniedException exc)
+        catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
         {
-            throw new ImplementationError("ApiCtx does not have enough privileges");
+            throw new ImplementationError(exc);
         }
         catch (DatabaseException exc)
         {

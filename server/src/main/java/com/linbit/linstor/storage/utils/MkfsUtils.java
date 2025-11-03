@@ -94,6 +94,35 @@ public class MkfsUtils
         return Optional.ofNullable(filesys);
     }
 
+    public static boolean needsToCreateFs(Resource rsc, AccessContext wrkCtx)
+        throws InvalidKeyException, AccessDeniedException
+    {
+        boolean ret = false;
+        if (rsc.getLayerData(wrkCtx).checkFileSystem())
+        {
+            for (AbsVolume<Resource> vlm : rsc.streamVolumes().collect(Collectors.toList()))
+            {
+                VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+                ResourceDefinition rscDfn = vlm.getResourceDefinition();
+                ResourceGroup rscGrp = rscDfn.getResourceGroup();
+                PriorityProps prioProps = new PriorityProps(
+                    rsc.getProps(wrkCtx),
+                    vlmDfn.getProps(wrkCtx),
+                    rscGrp.getVolumeGroupProps(wrkCtx, vlmDfn.getVolumeNumber()),
+                    rscDfn.getProps(wrkCtx),
+                    rscGrp.getProps(wrkCtx)
+                );
+
+                if (prioProps.getProp(ApiConsts.KEY_FS_TYPE, ApiConsts.NAMESPC_FILESYSTEM) != null)
+                {
+                    ret = true;
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
+
     public static void makeFileSystemOnMarked(
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,

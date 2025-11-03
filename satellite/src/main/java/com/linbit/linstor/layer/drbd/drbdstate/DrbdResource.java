@@ -79,6 +79,7 @@ public class DrbdResource
     private final Map<VolumeNumber, DrbdVolume> volList;
     protected boolean isLinstorDrbdResource;
     protected boolean suppressDestroyEvent;
+    protected boolean suppressRscEventsWhenPrimary;
 
     protected DrbdResource(String nameStr)
     {
@@ -141,6 +142,16 @@ public class DrbdResource
     public void suppressDestroyEvent(final boolean flag)
     {
         suppressDestroyEvent = flag;
+    }
+
+    public boolean areRscEventsSuppressedWhenPrimary()
+    {
+        return suppressRscEventsWhenPrimary;
+    }
+
+    public void suppressRscEventsWhenPrimary(final boolean flag)
+    {
+        suppressRscEventsWhenPrimary = flag;
     }
 
     protected static DrbdResource newFromProps(

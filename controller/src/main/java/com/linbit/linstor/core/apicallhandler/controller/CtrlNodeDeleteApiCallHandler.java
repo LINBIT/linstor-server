@@ -165,8 +165,10 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             .fluxInTransactionalScope(
                 "Delete node",
                 lockGuardFactory.createDeferred()
-                    .write(LockObj.NODES_MAP)
-                    .read(LockObj.RSC_DFN_MAP)
+                    // RD writeLock needed because we also want to disconnect from the satellite, which calls
+                    // connectionClosed, which executes code regarding eventsProcessor which requires RD writeLock. If
+                    // we would take here only RD readLock we would effectively cause a singleThreaded deadlock.
+                    .write(LockObj.NODES_MAP, LockObj.RSC_DFN_MAP)
                     .build(),
                 () -> deleteNodeInTransaction(context, nodeNameStr)
             )

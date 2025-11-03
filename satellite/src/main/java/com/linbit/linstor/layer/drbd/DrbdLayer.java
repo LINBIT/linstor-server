@@ -1770,20 +1770,22 @@ public class DrbdLayer implements DeviceLayer
                 }
 
 
-                /*
-                 * since we just created this resource, becoming briefly primary should not be an issue.
-                 * primary needs to be done with --force since we might have configured quorum, but did not give DRBD
-                 * enough time to connect to peers.
-                 *
-                 * we need to be primary even if autoPromote is deactivated to create the filesystem
-                 */
-                try (var ignored = drbdUtils.primaryAutoClose(drbdRscData, true, false))
+                if (MkfsUtils.needsToCreateFs(rsc, workerCtx))
                 {
-                    MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
-                }
-                catch (ExtCmdFailedException exc)
-                {
-                    throw new StorageException("Failed to become secondary again after creating filesystem", exc);
+                    /*
+                     * primary needs to be done with --force since we might have configured quorum, but did not give
+                     * DRBD enough time to connect to peers.
+                     *
+                     * we need to be primary even if autoPromote is deactivated to create the filesystem
+                     */
+                    try (var ignored = drbdUtils.primaryAutoClose(drbdRscData, true, false))
+                    {
+                        MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
+                    }
+                    catch (ExtCmdFailedException exc)
+                    {
+                        throw new StorageException("Failed to become secondary again after creating filesystem", exc);
+                    }
                 }
             }
         }
@@ -1841,6 +1843,20 @@ public class DrbdLayer implements DeviceLayer
     {
         waitForValidStateForPrimary(drbdRscData);
 
+        @Nullable DrbdResource drbdResource = null;
+        try
+        {
+            drbdResource = drbdState.getDrbdResource(drbdRscData.getSuffixedResourceName());
+        }
+        catch (NoInitialStateException ignored)
+        {
+        }
+        if (drbdResource != null)
+        {
+            // we need to suppress the next primary event from getting fired to the controller so that the controller
+            // does not freeze the block-size for this primary event.
+            drbdResource.suppressRscEventsWhenPrimary(true);
+        }
         try (var ignored = drbdUtils.primaryAutoClose(drbdRscData, true, false))
         {
             // setting to secondary because of two reasons:
@@ -1862,6 +1878,13 @@ public class DrbdLayer implements DeviceLayer
                 null,
                 cmdExc
             );
+        }
+        finally
+        {
+            if (drbdResource != null)
+            {
+                drbdResource.suppressRscEventsWhenPrimary(false);
+            }
         }
     }
 

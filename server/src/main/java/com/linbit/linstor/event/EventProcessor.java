@@ -25,6 +25,7 @@ import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -118,6 +119,7 @@ public class EventProcessor
             try (
                 LockGuard lockGuard = lockGuardFactory.create()
                     .read(NODES_MAP)
+                    .write(RSC_DFN_MAP)
                     .postLinstorLocks(eventHandlingLock)
                     .build())
             {
@@ -179,14 +181,10 @@ public class EventProcessor
         InputStream eventDataIn
     )
     {
-        // eventHandlingLock is taken in connectionClosed method outside of the lockGuardFactory (inherently, since
-        // connectionClosed calls executeNoConnection which then takes the LINSTOR locks via lockGuardFactory), so here
-        // we must also take the eventHandlinglock before the lockGuardFactory in order to prevent deadlocks
-
         return scopeRunner.fluxInTransactionalScope(
             "Handle event",
             lockGuardFactory.createDeferred()
-                .write(NODES_MAP)
+                .write(NODES_MAP, RSC_DFN_MAP)
                 .postLinstorLocks(eventHandlingLock)
                 .build(),
             () -> handleEventInTransaction(

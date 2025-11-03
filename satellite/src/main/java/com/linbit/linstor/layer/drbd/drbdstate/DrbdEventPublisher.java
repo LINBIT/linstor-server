@@ -269,10 +269,20 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
 
     private void triggerResourceStateEvent(DrbdResource resource)
     {
-        resourceStateEvent.get().triggerEvent(
-            ObjectIdentifier.resourceDefinition(resource.getResName()),
-            determineResourceState(resource)
-        );
+        ResourceState rscState = determineResourceState(resource);
+        boolean triggerEvent = true;
+        if (Boolean.TRUE.equals(rscState.getInUse()))
+        {
+            triggerEvent = !resource.suppressRscEventsWhenPrimary;
+        }
+        if (triggerEvent)
+        {
+            resourceStateEvent.get()
+                .triggerEvent(
+                    ObjectIdentifier.resourceDefinition(resource.getResName()),
+                    rscState
+                );
+        }
     }
 
     private void triggerReplicationStateEvent(DrbdResource resource, DrbdVolume volume)
