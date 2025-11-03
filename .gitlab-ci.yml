@@ -1,21 +1,40 @@
+spec:
+  inputs:
+    virter_version:
+      type: string
+      default: v0.27.0
+      description: virter version to use
+    vmshed_version:
+      type: string
+      default: v0.24.0
+      description: vmshed version to use
+    build_helpers_version:
+      type: string
+      default: b67f7745a1485878063a43c3d5dc8b21eb15e966
+      description: build-helpers version or tag to use
+    vmshed_torun:
+      type: string
+      default: "all"
+      description: "list of named tests to run, `all` means all :D"
+    vmshed_variants:
+      type: string
+      default: --variant default
+      description: "which variant to run: [standard, default, crd, etcd]; e.g. `--variant crd --variant etcd`"
+    linstor_test_repeats:
+      type: number
+      default: 1
+      description: How often to repeat each run
+    distributions:
+      type: string
+      default: ubuntu-focal,ubuntu-jammy,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,rhel10.0,debian-bookworm
+      description: "which distributions to build for"
+
+---
 image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  VIRTER_VERSION: v0.27.0
-  VMSHED_VERSION: v0.24.0
-  BUILD_HELPERS_VERSION: b67f7745a1485878063a43c3d5dc8b21eb15e966
-  VMSHED_TORUN:
-    value: all
-    description: list of named tests to run, `all` means all :D
-  VMSHED_VARIANTS:
-    value: --variant default
-    description: "which variant to run: [standard, default, crd, etcd]; e.g. `--variant crd --variant etcd`"
-  LINSTOR_TEST_REPEATS:
-    value: "1"
-    description: How often to repeat each run
   RUNNER_TAG_LIBVIRT: "libvirt"
-  DISTRIBUTIONS: ubuntu-focal,ubuntu-jammy,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,rhel10.0,debian-bookworm
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
 
 cache:
@@ -92,9 +111,9 @@ workflow:
       -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER
       -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD
       -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL
-      -d $DISTRIBUTIONS
+      -d $[[ inputs.distributions ]]
     - |
-      IFS="," read -ra ALL_DISTS <<< ${DISTRIBUTIONS}
+      IFS="," read -ra ALL_DISTS <<< $[[ inputs.distributions ]]
       echo "distributions:"
       for dist in "${ALL_DISTS[@]}"; do
         if [[ ${dist} == rhel* ]] ; then
@@ -131,11 +150,14 @@ workflow:
       docker rm -v $CID
     - |
       mkdir build-helpers
+      BUILD_HELPERS_VERSION=$[[ inputs.build_helpers_version ]]
       curl -sSfL $LINBIT_REGISTRY_URL/repository/test-suite/build-helpers-$BUILD_HELPERS_VERSION.tar.gz | tar -xvz -C ./build-helpers
       . build-helpers/gitlab-utils.sh
     - |
       ci_prepare_tools
       ci_fetch_rq
+      VIRTER_VERSION=$[[ inputs.virter_version ]]
+      VMSHED_VERSION=$[[ inputs.vmshed_version ]]
       ci_fetch_binary virter virter-$VIRTER_VERSION https://github.com/LINBIT/virter/releases/download/$VIRTER_VERSION/virter-linux-amd64
       ci_fetch_binary vmshed vmshed-$VMSHED_VERSION https://github.com/LINBIT/vmshed/releases/download/$VMSHED_VERSION/vmshed-linux-amd64
     - |
@@ -150,7 +172,7 @@ workflow:
     - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
     - export LINBIT_CI_JOB_ID=$CI_JOB_ID
-    - ./virter/run-test.py $VARIANTS --torun $VMSHED_TORUN --repeats="$LINSTOR_TEST_REPEATS"
+    - ./virter/run-test.py $VARIANTS --torun $[[ inputs.vmshed_torun ]] --repeats="$[[ inputs.linstor_test_repeats ]]"
 
 check-openapi:
   stage: build
@@ -316,7 +338,7 @@ test-e2e:
     - echo "no before"
   script:
     - TEST_BRANCH=latest
-    - if [[ "$CI_PIPELINE_SOURCE" == "web" ]]; then TMP_VARIANTS=$VMSHED_VARIANTS; fi
+    - if [[ "$CI_PIPELINE_SOURCE" == "web" ]]; then TMP_VARIANTS="$[[ inputs.vmshed_variants ]]"; fi
     - !reference [.common_e2e, script]
   artifacts:
     # provide a convenient name so that the downloaded artifacts can be identified
@@ -334,6 +356,7 @@ sbom:
     - if: $CI_COMMIT_BRANCH == 'jenkins'
   stage: build
   before_script:
+    - BUILD_HELPERS_VERSION=$[[ inputs.build_helpers_version ]]
     - git init build-helpers -q -b unused
     - git -C build-helpers fetch -q --depth 1 $CI_SERVER_PROTOCOL://gitlab-ci-token:${CI_JOB_TOKEN}@$CI_SERVER_HOST:$CI_SERVER_PORT/linbit/build-helpers.git $BUILD_HELPERS_VERSION
     - git -C build-helpers checkout -q $BUILD_HELPERS_VERSION
@@ -369,7 +392,7 @@ cve-scan:
     - trivy -q sbom --exit-code 0 build/reports/linstor-server.json
     # Fail on critical (unfixed) vulnerabilities
     - trivy -q sbom --exit-code 1 --ignore-unfixed --severity CRITICAL build/reports/linstor-server.json
-  allow_failure: yes # For now...
+  allow_failure: true # For now...
   artifacts:
     when: always
     expose_as: "CVE Scan"
