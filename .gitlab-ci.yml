@@ -28,6 +28,10 @@ spec:
       type: string
       default: ubuntu-focal,ubuntu-jammy,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,rhel10.0,debian-bookworm
       description: "which distributions to build for"
+    ci_e2e_timeout:
+      type: string
+      default: 90 minutes
+      description: "timeout for the CI e2e tests"
 
 ---
 image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
@@ -327,7 +331,7 @@ test-e2e-all:
 test-e2e:
   stage: integration
   interruptible: true
-  timeout: 90 minutes
+  timeout: $[[ inputs.ci_e2e_timeout ]]
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
