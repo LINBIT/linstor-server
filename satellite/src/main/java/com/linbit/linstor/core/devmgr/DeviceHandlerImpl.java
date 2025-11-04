@@ -847,9 +847,12 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             try
             {
-                final Props rscDfnProps = rsc.getResourceDefinition().getProps(wrkCtx);
+                final ResourceDefinition rscDfn = rsc.getResourceDefinition();
+                final Props rscDfnProps = rscDfn.getProps(wrkCtx);
                 final @Nullable String srcRscName = rscDfnProps.getProp(InternalApiConsts.KEY_CLONED_FROM);
-                if (srcRscName != null && anyVlmInCloningState(rsc))
+                final boolean isRscDeleting = rsc.getStateFlags().isSet(wrkCtx, Resource.Flags.DELETE) ||
+                    rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.Flags.DELETE);
+                if (!isRscDeleting && srcRscName != null && anyVlmInCloningState(rsc))
                 {
                     final Resource srcRsc = getResource(rsc, srcRscName);
                     final AbsRscLayerObject<Resource> srcRootLayerObj = srcRsc.getLayerData(wrkCtx);
@@ -866,7 +869,10 @@ public class DeviceHandlerImpl implements DeviceHandler
                 while (vlmsIt.hasNext())
                 {
                     Volume vlm = vlmsIt.next();
-                    if (vlm.getFlags().isSet(wrkCtx, Volume.Flags.CLONING_FINISHED))
+                    StateFlags<Volume.Flags> vlmFlags = vlm.getFlags();
+                    if (isRscDeleting ||
+                        vlmFlags.isSet(wrkCtx, Volume.Flags.DELETE) ||
+                        vlmFlags.isSet(wrkCtx, Volume.Flags.CLONING_FINISHED))
                     {
                         cloneService.removeClone(
                             vlm.getResourceDefinition().getName(),
