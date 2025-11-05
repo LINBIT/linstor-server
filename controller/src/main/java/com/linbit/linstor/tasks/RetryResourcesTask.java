@@ -216,7 +216,8 @@ public class RetryResourcesTask implements Task
             }
 
             long retryAt = config.lastFailTimestamp + RETRY_DELAYS[retryIdx] * times;
-            retryAt = (retryAt / TASK_TIMEOUT) * TASK_TIMEOUT;
+            // round up instead of down. retrying too early usually does not make too much sense.
+            retryAt = ((retryAt / TASK_TIMEOUT) + 1) * TASK_TIMEOUT;
 
             if (now >= retryAt)
             {
