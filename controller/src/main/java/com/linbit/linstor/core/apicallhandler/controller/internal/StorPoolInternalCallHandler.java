@@ -261,16 +261,23 @@ public class StorPoolInternalCallHandler
     )
     {
         Peer currentPeer = peer.get();
-        StorPool storPool;
+        @Nullable StorPool storPool = null;
         try
         {
-            storPool = currentPeer.getNode().getStorPool(apiCtx, new StorPoolName(storPoolNameRef));
-            storPool.setSupportsSnapshot(apiCtx, supportsSnapshotsRef);
+            @Nullable Node node = currentPeer.getNode();
+            if (node != null && !node.isDeleted())
+            {
+                storPool = node.getStorPool(apiCtx, new StorPoolName(storPoolNameRef));
+                if (storPool != null && !storPool.isDeleted())
+                {
+                    storPool.setSupportsSnapshot(apiCtx, supportsSnapshotsRef);
+                    updateRealFreeSpace(currentPeer, Collections.singletonList(capacityInfoPojoRef));
+                }
+            }
         }
         catch (AccessDeniedException | InvalidNameException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
-        updateRealFreeSpace(currentPeer, Collections.singletonList(capacityInfoPojoRef));
     }
 }

@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where a failed clone leads to AccessToDeletedData bug
 - Cache: Properly flush to origin device when suspending
 - Fixed toggle-disk bug when evacuation target has already diskless resource
+- Fixed possible NPE when a satellite updates a storage pool (capacity, supports snapshots, etc)
 
 ## [1.32.3] - 2025-10-13
 
