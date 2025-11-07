@@ -241,7 +241,8 @@ public class CtrlRemoteApiCallHandler
                     ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
                     "The remote could not be created because the following required " +
                         (missingCt == 1 ? "parameter is" : "parameters are") +
-                        " missing: " + missingParams
+                        " missing: " + missingParams,
+                    true
                 )
             );
         }
