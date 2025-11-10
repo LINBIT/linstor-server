@@ -537,9 +537,11 @@ public class StorPoolFilter
                     {
                         errorReporter.logTrace(
                             "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool " +
-                                "does not have enough free space",
+                                "does not have enough free space. Free space (KiB): %d. Needed space (KiB): %d",
                             sp.getName().displayValue,
-                            sp.getNode().getName().displayValue
+                            sp.getNode().getName().displayValue,
+                            freeCapacity,
+                            sizeInKib
                         );
                     }
                 }
