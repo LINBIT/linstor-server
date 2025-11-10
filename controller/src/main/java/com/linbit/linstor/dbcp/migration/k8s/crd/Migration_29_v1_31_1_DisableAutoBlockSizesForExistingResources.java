@@ -47,7 +47,7 @@ public class Migration_29_v1_31_1_DisableAutoBlockSizesForExistingResources exte
         ).values();
         for (GenCrdV1_31_1.ResourceDefinitionsSpec rscDfnSpec : allRscDfnSpecs)
         {
-            ret.add(rscDfnSpec.resourceDspName);
+            ret.add(rscDfnSpec.resourceName);
         }
         return ret;
     }

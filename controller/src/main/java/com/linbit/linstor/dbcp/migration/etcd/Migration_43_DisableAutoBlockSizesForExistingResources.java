@@ -68,7 +68,7 @@ public class Migration_43_DisableAutoBlockSizesForExistingResources extends Base
                 final String propKey = innerEntry.getKey();
                 final String propValue = innerEntry.getValue();
 
-                txRef.put(prefixedInstanceName + propKey, propValue);
+                txRef.put(prefixedInstanceName + propKey + "/PROP_VALUE", propValue);
             }
         }
     }
