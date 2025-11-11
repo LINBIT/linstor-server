@@ -2,7 +2,7 @@
 
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
-## [unreleased]
+## [1.27.0]
 
 ### Added
   - Added PhysicalStorageCreate.pv_create_arguments.

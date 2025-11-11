@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.33.0-rc.1] - 2025-11-11
+
 ### Added
 
 - physical-storage-api: allow passing pv/vg/lv/zpool create arguments

@@ -1,3 +1,96 @@
+linstor-server (1.33.0~rc.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * satellite: do not delete known drbd res files
+  * conf: remove drbd keep res pattern config variable
+  * drbdlayer: Really check if a DRBD .res file exists
+  * CHANGELOG: fix incorrect entry
+  * merge versions from v1.32.3
+  * gitlab-ci: use vmshed 0.24.0
+  * Changelog: fix wrong entry
+  * sql/db: remove flyway migration library
+  * systemd-controller: Increase start timeout
+  * gradle: include systemd service files in the distri.{zip,tar}
+  * ReconnectorTask: changed logging levels and added more logging
+  * metrics: fix using peerId as peer address in api call duration statistics
+  * gitlab-ci: use inputs
+  * gitlab-ci: timeout input
+  * bump rest api version 1.27.0 for 1.33.0-rc.1
+
+  [ Gabor Hernadi ]
+  * Toggle-disk: Attempt to fix race condition
+  * TimedCache: Made more general purpose
+  * LayerMerger: Replace root layer object during toggle-disk
+  * Zfs,rollback via restore: Fixed cache-miss
+  * Drbd: Fix rollback
+  * StorPool: Also send remote storPools to Stlts
+  * StltStorPool: Fix hanging Stlt
+  * Encryption: Add systemd-creds support
+  * Msg: Increase size 16M -> 64M
+  * H2: Do not automatically close DB during shutdown
+  * Drbd: Recreate ext metadata after recreating backing device
+  * Clone: Remove CloneInfo during delete
+  * Drbd,min-io: Delete block-size prop when last rsc is deleted
+  * Drbd,min-io: Use physical_block_size instead of minimal_io_size
+  * Drbd,min-io: initialize minio at first usage of vlmDfn
+  * Drbd,min-io: Add database migrations
+  * Drbd,min-io: Add auto-/ freeze-block-size
+  * RetryRscTask: Round up to next retry timeslot instead of down
+  * Introduce SuspendLayerUtils
+  * DmSetupUtils: Make more modular
+  * CacheLayer: Force cache layer to flush data to origin device
+  * Backups: allow shipment of already existing snapshots
+  * BackupInfo: Introduce waitForShipDoneFlux
+  * CopySnapHelper: Search for local remotes
+  * CopySnapHelper: Add methods to migrate snapshot
+  * Node,evac: Also evacuate snapshots
+  * Snap,del: Add @Nullable annotations
+  * Snapshot,rollback: Fixed NPE introduced with copySnapshots
+  * Backup: Introduce Snapshot.shipBackup + new property
+  * Node,evac: Ignore snapshot suffix for local cluster
+  * Shipping: Fixed race condition
+  * Backup,create: Fixed bugs when shipping existing snapshots
+  * Backup: Clear ShippingStatus at the end of S3 shipment
+  * Backup,create: only require masterKey if needed
+  * Node,evac: Added --target and --do-not-target
+  * StorPoolUpdate: Add null-checks
+  * AutoPlacer: Log free & required space when disqualifying SP
+  * Etcd,Crd,Migration: Fixed bug in recent DisableAutoBlockSize migration
+
+  [ Moritz Wanzenböck ]
+  * physical-storage: pass arguments to pv/vg/lv/zpool create
+  * docker: update tools
+  * spec: use java 21 also for SLES15 SP7+
+  * ci: check if JsonGenTypes is up-to-date
+  * remotes: no error report for missing parameters
+
+  [ Robert Altnoeder ]
+  * Luks: Add user specified format/open options to LuksLayer & CryptSetup [...]
+  * ShellUtils: Add excludeArguments function
+  * Remove conflicting user specified command line arguments from LUKS commands
+  * Move user specified arguments behind the cryptsetup sub-command
+  * Drbd,min-io: Figure out blocksize on satellite for storage pools
+  * Drbd,min-io: Stlt update new minIoSize on applyChanges
+  * Drbd,min-io: Ctrl update vlmDfn minIoSize on FullSyncResponse
+  * Drbd,min-io: Modify props rules
+  * Drbd,min-io: Restart DRBD resource if blockSize changed
+  * Drbd,min-io: Prevent resource creation under special circumstances
+  * Drbd,min-io: Suppress DRBD events when briefly restarting DRBD resource
+
+  [ Johanna Kucera ]
+  * SosReport: increase timeout & tar ctrl files first
+  * BackupShipping: use props instead of flags & introduce new namespc
+  * Backups: remove unnecessary safety-check
+  * Snapshots: add copy-snaps option to various commands
+  * Snapshots: add CopyAllSnaps props
+  * Snapshots: don't overwrite creation-time when adding new snap
+  * Evacuate: copy snaps if rsc does not need evacuating
+  * Backups: allow evicting src-node for copy-snaps during evict
+  * Backups: prevent race when auto-deleting snapshot after shipping
+  * Backups: add more checks for missing ext-tools
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 11 Nov 2025 07:21:53 +0000
+
 linstor-server (1.32.3-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
