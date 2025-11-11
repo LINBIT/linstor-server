@@ -333,7 +333,8 @@ public class CtrlSnapshotCrtApiCallHandler
                 )
             );
             flux = Flux.<ApiCallRc>just(responses)
-                .concatWith(postCreateSnapshot(createSimpleSnapshotRequestPrivileged(snapDfn), true));
+                .concatWith(postCreateSnapshot(createSimpleSnapshotRequestPrivileged(snapDfn), true))
+                .concatWith(ctrlSnapshotDeleteApiCallHandler.cleanupOldAutoSnapshots(rscDfn));
         }
         return flux;
     }
