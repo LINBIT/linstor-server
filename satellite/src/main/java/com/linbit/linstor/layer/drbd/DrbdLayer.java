@@ -1294,75 +1294,76 @@ public class DrbdLayer implements DeviceLayer
             metaDiskPath = drbdVlmData.getDataDevice();
         }
 
-        MdSuperblockBuffer mdUtils = new MdSuperblockBuffer();
-        try
+        boolean hasMetaData = false;
+        if (metaDiskPath != null)
         {
-            mdUtils.readObject(extCmdFactory, metaDiskPath, externalMd);
-        }
-        catch (IOException exc)
-        {
-            throw new VolumeException(
-                String.format(
-                    "Failed to access DRBD super-block of volume %s/%d",
-                    drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
-                    drbdVlmData.getVlmNr().value
-                ),
-                exc
-            );
-        }
-
-        boolean hasMetaData;
-
-        if (drbdVlmData.checkMetaData() ||
-            // when adding a disk, DRBD believes that it is diskless but we still need to create metadata
-            !drbdVlmData.hasDisk())
-        {
-            if (mdUtils.hasMetaData())
+            MdSuperblockBuffer mdUtils = new MdSuperblockBuffer();
+            try
             {
-                boolean isMetaDataCorrupt;
-                try
-                {
-                    isMetaDataCorrupt = !drbdUtils.hasMetaData(
-                        metaDiskPath,
-                        drbdVlmData.getVlmDfnLayerObject().getMinorNr().value,
-                        externalMd ? "flex-external" : "internal"
-                    );
-                }
-                catch (ExtCmdFailedException exc)
-                {
-                    throw new VolumeException(
-                        String.format(
-                            "Failed to check DRBD meta-data integrety of volume %s/%d",
-                            drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
-                            drbdVlmData.getVlmNr().value
-                        ),
-                        exc
-                    );
-                }
-                if (isMetaDataCorrupt)
-                {
-                    throw new VolumeException(
-                        "Corrupted drbd-metadata",
-                        null,
-                        "Linstor has found existing DRBD meta data, " +
-                            "but drbdmeta could not read them",
-                        "Check if the DRBD-utils version match the DRBD kernel version. ",
-                        null
-                    );
-                }
-                else
-                {
-                    hasMetaData = true;
-                }
+                mdUtils.readObject(extCmdFactory, metaDiskPath, externalMd);
             }
-            else
+            catch (IOException exc)
             {
-                hasMetaData = false;
+                throw new VolumeException(
+                    String.format(
+                        "Failed to access DRBD super-block of volume %s/%d",
+                        drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                        drbdVlmData.getVlmNr().value
+                    ),
+                    exc
+                );
+            }
+
+            // Assume that meta data is there and do not create meta data if the check is disabled (checkMetaData),
+            // except if there is no disk, because when adding a disk, meta data for a disk must be created
+            // despite the DRBD logic still saying it is diskless
+            hasMetaData = !drbdVlmData.checkMetaData() && drbdVlmData.hasDisk();
+            if (!hasMetaData)
+            {
+                if (mdUtils.hasMetaData())
+                {
+                    boolean isMetaDataCorrupt = true;
+                    try
+                    {
+                        isMetaDataCorrupt = !drbdUtils.hasMetaData(
+                            metaDiskPath,
+                            drbdVlmData.getVlmDfnLayerObject().getMinorNr().value,
+                            externalMd ? "flex-external" : "internal"
+                        );
+                    }
+                    catch (ExtCmdFailedException exc)
+                    {
+                        throw new VolumeException(
+                            String.format(
+                                "Failed to check DRBD meta-data integrity of volume %s/%d",
+                                drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                                drbdVlmData.getVlmNr().value
+                            ),
+                            exc
+                        );
+                    }
+                    if (isMetaDataCorrupt)
+                    {
+                        throw new VolumeException(
+                            "Corrupted drbd-metadata",
+                            null,
+                            "Linstor has found existing DRBD meta data, " +
+                                "but drbdmeta could not read them",
+                            "Check if the DRBD-utils version matches the DRBD kernel version.",
+                            null
+                        );
+                    }
+                    else
+                    {
+                        hasMetaData = true;
+                    }
+                }
             }
         }
         else
         {
-            hasMetaData = true; // just dont create new meta-data if "checkMetaData" is disabled
+            errorReporter.logDebug("%s", "metaDiskPath == null in " + getClass().getCanonicalName() +
+                                   " method hasMetaData");
         }
         errorReporter.logTrace("Found metadata: %s", hasMetaData);
         return hasMetaData;
