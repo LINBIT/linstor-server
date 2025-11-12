@@ -18,7 +18,7 @@ spec:
       description: "list of named tests to run, `all` means all :D"
     vmshed_variants:
       type: string
-      default: --variant default
+      default: --variant standard
       description: "which variant to run: [standard, default, crd, etcd]; e.g. `--variant crd --variant etcd`"
     linstor_test_repeats:
       type: number
@@ -166,9 +166,9 @@ workflow:
       ci_fetch_binary vmshed vmshed-$VMSHED_VERSION https://github.com/LINBIT/vmshed/releases/download/$VMSHED_VERSION/vmshed-linux-amd64
     - |
       case "$CI_COMMIT_BRANCH" in
-       "jenkins") VARIANTS="--variant default --variant etcd --variant crd" ;;
-       "master") VARIANTS=${TMP_VARIANTS:---variant default} ;;
-       *) VARIANTS=${TMP_VARIANTS:---variant standard} ;;
+        "jenkins") VARIANTS="--variant default --variant etcd --variant crd" ;;
+        "master") VARIANTS="--variant default" ;;
+        *) VARIANTS="$[[ inputs.vmshed_variants ]]" ;;
       esac
 # --- is used because of bash
     - echo "Running variants $VARIANTS"
@@ -200,9 +200,10 @@ check-resttypes:
   stage: build
   interruptible: true
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
-    - if: $CI_COMMIT_BRANCH == 'jenkins'
-    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == "jenkins"
+    - if: $CI_COMMIT_BRANCH == "master"
   before_script:
     - echo "checking if JsonGenTypes.java is up-to-date"
   script:
@@ -214,9 +215,10 @@ check-package-info:
   stage: build
   interruptible: true
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
-    - if: $CI_COMMIT_BRANCH == 'jenkins'
-    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == "jenkins"
+    - if: $CI_COMMIT_BRANCH == "master"
   before_script:
     - echo "checking package-info.java"
   script:
@@ -247,9 +249,11 @@ test:
   stage: test
   interruptible: true
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
-    - if: '$CI_COMMIT_BRANCH == "master"'
-    - if: $CI_COMMIT_BRANCH == 'jenkins'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "jenkins"
   script:
     - ./gradlew getProtoc
     - ./gradlew -PversionOverride= checkstyleMain
@@ -295,8 +299,11 @@ deploy-nexus-master:
 deploy-nexus:
   stage: deploy
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
-    - if: $CI_COMMIT_BRANCH == 'jenkins'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == "jenkins"
   before_script:
     - curl -sSL $LINBIT_REGISTRY_URL/repository/lbbuild/lbbuildctl-latest -o /usr/local/bin/lbbuildctl
     - chmod +x /usr/local/bin/lbbuildctl
@@ -308,9 +315,8 @@ test-e2e-all:
   stage: integration-all
   interruptible: true
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: manual
-    - if: $CI_PIPELINE_SOURCE == 'schedule'
   tags:
     - libvirt
   before_script:
@@ -333,16 +339,17 @@ test-e2e:
   interruptible: true
   timeout: $[[ inputs.ci_e2e_timeout ]]
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
-    - if: $CI_COMMIT_BRANCH == 'jenkins'
-    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH == "jenkins"
+    - if: $CI_COMMIT_BRANCH == "master"
   tags:
     - $RUNNER_TAG_LIBVIRT
   before_script:
     - echo "no before"
   script:
     - TEST_BRANCH=latest
-    - if [[ "$CI_PIPELINE_SOURCE" == "web" ]]; then TMP_VARIANTS="$[[ inputs.vmshed_variants ]]"; fi
     - !reference [.common_e2e, script]
   artifacts:
     # provide a convenient name so that the downloaded artifacts can be identified
@@ -355,9 +362,10 @@ test-e2e:
 
 sbom:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == "jenkins"
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH == 'jenkins'
   stage: build
   before_script:
     - BUILD_HELPERS_VERSION=$[[ inputs.build_helpers_version ]]
@@ -378,9 +386,10 @@ sbom:
 
 cve-scan:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == "jenkins"
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH == 'jenkins'
   stage: test
   image:
     name: docker.io/aquasec/trivy:latest
