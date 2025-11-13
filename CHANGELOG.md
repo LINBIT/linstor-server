@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AutoSnapshot: Fixed "Keep" property (regression introduced in 1.32.0)
+- Fixed bug where clone no longer works with other min-io size than 512
 
 ## [1.33.0-rc.1] - 2025-11-11
 

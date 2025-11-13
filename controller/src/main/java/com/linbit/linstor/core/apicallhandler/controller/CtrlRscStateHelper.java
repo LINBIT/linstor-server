@@ -104,7 +104,7 @@ public class CtrlRscStateHelper
     {
         try
         {
-            boolean ret = rscDfnRef == null;
+            boolean ret = rscDfnRef == null || rscDfnRef.getResourceCount() == 0;
             if (rscDfnRef != null)
             {
                 if (minIoSizeHelper.isAutoMinIoSize(rscDfnRef, apiCtx))

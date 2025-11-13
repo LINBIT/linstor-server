@@ -8,7 +8,6 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscStateHelper;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -71,8 +70,8 @@ public class Autoplacer
 
             // Can change minIoSize if a new resource definition is being created
             final boolean canChangeMinIoSize = rscStateHelper.canChangeMinIoSize(rscDfnRef);
-            final long minIoSize = rscDfnRef == null ?
-                BlockSizeConsts.DFLT_IO_SIZE : rscDfnRef.getFloorVolumesMinIoSize(apiAccCtx);
+            @Nullable final Long minIoSize = rscDfnRef == null ?
+                null : rscDfnRef.getFloorVolumesMinIoSize(apiAccCtx);
 
             // 1: filter storage pools
             long startFilter = System.currentTimeMillis();

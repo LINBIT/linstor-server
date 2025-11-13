@@ -66,7 +66,7 @@ public class SelectionManager
     private final LinkedList<State> selectionStack = new LinkedList<>();
     private final HashMap<String, Integer> xReplicasOnDiffCount = new HashMap<>();
 
-    private final long minIoSize;
+    private @Nullable final Long minIoSize;
 
     public SelectionManager(
         AccessContext accessContextRef,
@@ -80,7 +80,7 @@ public class SelectionManager
         Autoplacer.StorPoolWithScore[] sortedStorPoolByScoreArrRef,
         boolean allowStorPoolMixingRef,
         boolean canChangeMinIoSizePrm,
-        long minIoSizePrm
+        @Nullable Long minIoSizePrm
     )
         throws AccessDeniedException
     {
@@ -100,7 +100,14 @@ public class SelectionManager
         allowStorPoolMixing = tmpAllowMixing;
 
         canChangeMinIoSize = canChangeMinIoSizePrm;
-        minIoSize = MathUtils.bounds(BlockSizeConsts.MIN_IO_SIZE, minIoSizePrm, BlockSizeConsts.MAX_IO_SIZE);
+        if (minIoSizePrm == null)
+        {
+            minIoSize = null;
+        }
+        else
+        {
+            minIoSize = MathUtils.bounds(BlockSizeConsts.MIN_IO_SIZE, minIoSizePrm, BlockSizeConsts.MAX_IO_SIZE);
+        }
 
         final Map<DeviceProviderKind, List<Version>> initDeployedProviderKindsToDrbdVersionsRef;
         if (selectFilterRef.getDisklessType() == null)
@@ -456,7 +463,7 @@ public class SelectionManager
             }
         }
 
-        if (!canChangeMinIoSize && isValid)
+        if (!canChangeMinIoSize && isValid && minIoSize != null)
         {
             final long stateMinIoSize = state.getMinIoSize(accessContext);
             if (stateMinIoSize > minIoSize)

@@ -255,36 +255,46 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
     }
 
     /**
-     * Returns the smallest min-io-size used by any of the volume definitions of this resource definition.
+     * Returns the smallest min-io-size used by any of the volume definitions of this resource definition
+     * or <code>null</code> if this resource-definition does not have any resources.
      *
      * If the resource definition's layer stack lists any special layers, the result is
      * BlockSizeConsts.DFLT_SPECIAL_IO_SIZE. Otherwise, the result is the smallest minimum I/O size currently
      * set on any of the volume definitions of this resource definition.
      *
      * @param accCtx AccessContext for accessing resource definition, volume definition and layer information
-     * @return Floor value minimum-io-size of all volume definitions
+     * @return Floor value minimum-io-size of all volume definitions, or <code>null</code> if no resources exist
      * @throws AccessDeniedException If access to required information is denied
      */
-    public long getFloorVolumesMinIoSize(final AccessContext accCtx)
+    public @Nullable Long getFloorVolumesMinIoSize(final AccessContext accCtx)
         throws AccessDeniedException
     {
-        long floorMinIoSize = BlockSizeConsts.DFLT_SPECIAL_IO_SIZE;
-        final boolean hasSpecialLayers = LayerKindUtils.hasSpecialLayers(this, accCtx);
-        if (!hasSpecialLayers)
+        @Nullable Long ret;
+        if (resourceMap.isEmpty())
         {
-            floorMinIoSize = BlockSizeConsts.MAX_IO_SIZE;
-            final Iterator<VolumeDefinition> vlmIter = iterateVolumeDfn(accCtx);
-            while (vlmIter.hasNext())
+            ret = null;
+        }
+        else
+        {
+            long floorMinIoSize = BlockSizeConsts.DFLT_SPECIAL_IO_SIZE;
+            final boolean hasSpecialLayers = LayerKindUtils.hasSpecialLayers(this, accCtx);
+            if (!hasSpecialLayers)
             {
-                final VolumeDefinition vlmDfn = vlmIter.next();
-                final long vlmMinIoSize = vlmDfn.getMinIoSize(accCtx);
-                if (vlmMinIoSize < floorMinIoSize)
+                floorMinIoSize = BlockSizeConsts.MAX_IO_SIZE;
+                final Iterator<VolumeDefinition> vlmIter = iterateVolumeDfn(accCtx);
+                while (vlmIter.hasNext())
                 {
-                    floorMinIoSize = vlmMinIoSize;
+                    final VolumeDefinition vlmDfn = vlmIter.next();
+                    final long vlmMinIoSize = vlmDfn.getMinIoSize(accCtx);
+                    if (vlmMinIoSize < floorMinIoSize)
+                    {
+                        floorMinIoSize = vlmMinIoSize;
+                    }
                 }
             }
+            ret = MathUtils.bounds(BlockSizeConsts.MIN_IO_SIZE, floorMinIoSize, BlockSizeConsts.MAX_IO_SIZE);
         }
-        return MathUtils.bounds(BlockSizeConsts.MIN_IO_SIZE, floorMinIoSize, BlockSizeConsts.MAX_IO_SIZE);
+        return ret;
     }
 
     public int getResourceCount()

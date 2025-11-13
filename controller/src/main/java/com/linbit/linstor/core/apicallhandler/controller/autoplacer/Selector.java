@@ -66,7 +66,7 @@ class Selector
         @Nullable ResourceDefinition rscDfnRef,
         Collection<StorPoolWithScore> storPoolWithScores,
         final boolean canChangeMinIoSize,
-        final long minIoSize
+        @Nullable final Long minIoSize
     )
         throws AccessDeniedException
     {

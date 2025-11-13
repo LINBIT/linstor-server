@@ -155,7 +155,7 @@ public class StorPoolFilter
         long sizeInKib,
         @Nullable Resource.Flags disklessTypeRef,
         final boolean canChangeMinIoSize,
-        final long minIoSize
+        @Nullable final Long minIoSize
     )
         throws AccessDeniedException
     {
@@ -170,7 +170,7 @@ public class StorPoolFilter
         );
 
         List<StorPool> availableStorPools = availableStorPoolsRef;
-        if (!canChangeMinIoSize)
+        if (!canChangeMinIoSize && minIoSize != null)
         {
             List<StorPool> filteredStorPools = new LinkedList<>();
             for (StorPool entry : availableStorPools)
