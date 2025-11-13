@@ -316,7 +316,6 @@ test-e2e-all:
   interruptible: true
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: manual
   tags:
     - libvirt
   before_script:
