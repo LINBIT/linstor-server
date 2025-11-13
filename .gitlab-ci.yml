@@ -168,7 +168,7 @@ workflow:
       case "$CI_COMMIT_BRANCH" in
         "jenkins") VARIANTS="--variant default --variant etcd --variant crd" ;;
         "master") VARIANTS="--variant default" ;;
-        *) VARIANTS="$[[ inputs.vmshed_variants ]]" ;;
+        *) VARIANTS="${TMP_VARIANTS:-$[[ inputs.vmshed_variants ]]}" ;;
       esac
 # --- is used because of bash
     - echo "Running variants $VARIANTS"
