@@ -1024,6 +1024,8 @@ public class CtrlConfApiCallHandler
                             // fall-through
                         case ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND:
                             // fall-through
+                        case ApiConsts.NAMESPC_CLONE + "/" + ApiConsts.KEY_BALANCE_AFTER_CLONE:
+                            // fall-through
                         case ZfsRollbackStrategy.FULL_KEY_USE_ZFS_ROLLBACK_PROP:
                             // fall-through
                         case ZfsDeleteStrategy.FULL_KEY_ZFS_DELETE_STRATEGY:

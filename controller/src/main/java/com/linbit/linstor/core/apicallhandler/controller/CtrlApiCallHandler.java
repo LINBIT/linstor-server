@@ -24,6 +24,7 @@ import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -31,6 +32,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
@@ -1247,6 +1249,20 @@ public class CtrlApiCallHandler
         });
     }
 
+    @SuppressWarnings("DescendantToken")
+    private static boolean hasCloneVolume(ResourceApi rsc)
+    {
+        for (VolumeApi volume : rsc.getVlmList())
+        {
+            if ((volume.getFlags() & Volume.Flags.CLONING_FINISHED.flagValue) ==
+                Volume.Flags.CLONING_FINISHED.flagValue)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static Map<String, Integer> getExpectedOnlineDiskfulNodeIds(ResourceList rscs)
     {
         Map<String, Integer> diskfulExpectedOnlineNodeIds = new HashMap<>();
@@ -1255,7 +1271,9 @@ public class CtrlApiCallHandler
             // if DRBD is involved, it has to be the topmost layer if it exists in the
             // layer-tree
             RscLayerDataApi rootLayerData = resourceApi.getLayerData();
-            if (rootLayerData.getLayerKind().equals(DeviceLayerKind.DRBD) && !resourceApi.isDRBDDiskless())
+            if (rootLayerData.getLayerKind().equals(DeviceLayerKind.DRBD) &&
+                !resourceApi.isDRBDDiskless() &&
+                hasCloneVolume(resourceApi))
             {
                 diskfulExpectedOnlineNodeIds.put(
                     resourceApi.getNodeName().toLowerCase(),
@@ -1284,9 +1302,11 @@ public class CtrlApiCallHandler
                     Map<String, Integer> diskfulExpectedOnlineNodeIds = getExpectedOnlineDiskfulNodeIds(rscs);
 
                     final Set<String> nodeNames = rscs.getResources().stream()
+                        .filter(CtrlApiCallHandler::hasCloneVolume)
                         .map(r -> r.getNodeName().toLowerCase())
                         .collect(Collectors.toSet());
 
+                    errorReporter.logDebug("clone check names: %s", nodeNames);
                     for (Map.Entry<NodeName, SatelliteState> entry : rscs.getSatelliteStates().entrySet())
                     {
                         // Ignore non resource nodes
@@ -1326,6 +1346,10 @@ public class CtrlApiCallHandler
                                     );
                                     if (anyFailed)
                                     {
+                                        errorReporter.logError(
+                                            "Cloning failed: resource state Inconsistent/Outdated on node %s",
+                                            lowerCaseNodeName
+                                        );
                                         break;
                                     }
                                 }
