@@ -646,7 +646,19 @@ public class CtrlRscCrtApiHelper
                     }
                 }
 
-                if (poolBlockSize > vlmBlockSize)
+                final boolean autoMinIoSizeForVlmDfn = minIoSizeHelper.isAutoMinIoSize(vlmDfn, apiCtx);
+                boolean minIoNeedsUpdate;
+                if (vlmBlockSizeStr == null)
+                {
+                    // if the property was not set until now, but autoMinIoSize is enabled, we need to set
+                    // the minio size property.
+                    minIoNeedsUpdate = autoMinIoSizeForVlmDfn;
+                }
+                else
+                {
+                    minIoNeedsUpdate = autoMinIoSizeForVlmDfn && poolBlockSize > vlmBlockSize;
+                }
+                if (minIoNeedsUpdate)
                 {
                     if (canChangeMinIo)
                     {
