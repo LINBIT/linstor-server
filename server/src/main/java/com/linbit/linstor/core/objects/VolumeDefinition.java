@@ -230,6 +230,16 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
     }
 
     /**
+     * Calls <code>getMinIoSize(accCtx, null)</code>.
+     *
+     * @see #getMinIoSize(AccessContext, Long)
+     */
+    public @Nullable Long getMinIoSize(AccessContext accCtx) throws AccessDeniedException
+    {
+        return getMinIoSize(accCtx, null);
+    }
+
+    /**
      * Returns the minimum I/O size currently set as DRBD option for {@value InternalApiConsts#KEY_DRBD_BLOCK_SIZE}.
      *
      * If the DRBD option property is absent or invalid, the default block size is returned
@@ -239,18 +249,21 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
      * @return Value of the DRBD option for {@value InternalApiConsts#KEY_DRBD_BLOCK_SIZE}
      * @throws AccessDeniedException If access to the volume definition's properties is denied
      */
-    public long getMinIoSize(AccessContext accCtx)
+    public @Nullable Long getMinIoSize(AccessContext accCtx, @Nullable Long dfltMinIoSize)
         throws AccessDeniedException
     {
-        long minIoSize = BlockSizeConsts.DFLT_IO_SIZE;
+        @Nullable Long minIoSize = dfltMinIoSize;
         final Props localProps = getProps(accCtx);
-        final String valueStr = localProps.getProp(
+        final @Nullable String valueStr = localProps.getProp(
             InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
             ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
         );
         try
         {
-            minIoSize = Long.parseLong(valueStr);
+            if (valueStr != null)
+            {
+                minIoSize = Long.parseLong(valueStr);
+            }
         }
         catch (NumberFormatException ignored)
         {

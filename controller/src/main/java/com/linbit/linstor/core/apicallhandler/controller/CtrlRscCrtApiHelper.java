@@ -680,13 +680,6 @@ public class CtrlRscCrtApiHelper
                         );
                     }
                 }
-                else if (vlmBlockSizeStr == null)
-                {
-                    // initialize the minIoSize so that we have the property set. If we omit this step, the next time a
-                    // satellite reconnects the code there would see the missing property and would set it (to the
-                    // default 512) but would also set the DrbdRestart property, which is quite unnecessary.
-                    vlmDfn.setMinIoSize(vlmBlockSize, apiCtx);
-                }
             }
             if (haveChangedMinIo)
             {

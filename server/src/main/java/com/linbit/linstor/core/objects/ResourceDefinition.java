@@ -263,10 +263,11 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
      * set on any of the volume definitions of this resource definition.
      *
      * @param accCtx AccessContext for accessing resource definition, volume definition and layer information
+     * @param autoMinIoSizeRef
      * @return Floor value minimum-io-size of all volume definitions, or <code>null</code> if no resources exist
      * @throws AccessDeniedException If access to required information is denied
      */
-    public @Nullable Long getFloorVolumesMinIoSize(final AccessContext accCtx)
+    public @Nullable Long getFloorVolumesMinIoSize(final AccessContext accCtx, boolean autoMinIoSizeRef)
         throws AccessDeniedException
     {
         @Nullable Long ret;
@@ -276,23 +277,43 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         }
         else
         {
-            long floorMinIoSize = BlockSizeConsts.DFLT_SPECIAL_IO_SIZE;
-            final boolean hasSpecialLayers = LayerKindUtils.hasSpecialLayers(this, accCtx);
-            if (!hasSpecialLayers)
+            if (LayerKindUtils.hasSpecialLayers(this, accCtx))
             {
-                floorMinIoSize = BlockSizeConsts.MAX_IO_SIZE;
+                ret = BlockSizeConsts.DFLT_SPECIAL_IO_SIZE;
+            }
+            else
+            {
+                @Nullable Long floorMinIoSize;
+                @Nullable Long dfltVlmDfnMinIoSize;
+                if (autoMinIoSizeRef)
+                {
+                    floorMinIoSize = BlockSizeConsts.MAX_IO_SIZE;
+                    dfltVlmDfnMinIoSize = BlockSizeConsts.DFLT_IO_SIZE;
+                }
+                else
+                {
+                    floorMinIoSize = null;
+                    dfltVlmDfnMinIoSize = null;
+                }
                 final Iterator<VolumeDefinition> vlmIter = iterateVolumeDfn(accCtx);
                 while (vlmIter.hasNext())
                 {
                     final VolumeDefinition vlmDfn = vlmIter.next();
-                    final long vlmMinIoSize = vlmDfn.getMinIoSize(accCtx);
-                    if (vlmMinIoSize < floorMinIoSize)
+                    final @Nullable Long vlmMinIoSize = vlmDfn.getMinIoSize(accCtx, dfltVlmDfnMinIoSize);
+                    if (vlmMinIoSize != null && (floorMinIoSize == null || vlmMinIoSize < floorMinIoSize))
                     {
                         floorMinIoSize = vlmMinIoSize;
                     }
                 }
+                if (floorMinIoSize != null)
+                {
+                    ret = MathUtils.bounds(BlockSizeConsts.MIN_IO_SIZE, floorMinIoSize, BlockSizeConsts.MAX_IO_SIZE);
+                }
+                else
+                {
+                    ret = null;
+                }
             }
-            ret = MathUtils.bounds(BlockSizeConsts.MIN_IO_SIZE, floorMinIoSize, BlockSizeConsts.MAX_IO_SIZE);
         }
         return ret;
     }

@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlMinIoSizeHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscStateHelper;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -29,6 +30,7 @@ public class Autoplacer
     private final Selector selector;
     private final ErrorReporter errorReporter;
     private final CtrlRscStateHelper rscStateHelper;
+    private final CtrlMinIoSizeHelper minIoSizeHelper;
 
     @Inject
     public Autoplacer(
@@ -37,7 +39,8 @@ public class Autoplacer
         StrategyHandler strategyHandlerRef,
         Selector selectorRef,
         ErrorReporter errorReporterRef,
-        CtrlRscStateHelper rscStateHelperRef
+        CtrlRscStateHelper rscStateHelperRef,
+        CtrlMinIoSizeHelper minIoSizeHelperRef
     )
     {
         apiAccCtx = apiAccCtxRef;
@@ -46,6 +49,7 @@ public class Autoplacer
         selector = selectorRef;
         errorReporter = errorReporterRef;
         rscStateHelper = rscStateHelperRef;
+        minIoSizeHelper = minIoSizeHelperRef;
     }
 
     /**
@@ -71,7 +75,8 @@ public class Autoplacer
             // Can change minIoSize if a new resource definition is being created
             final boolean canChangeMinIoSize = rscStateHelper.canChangeMinIoSize(rscDfnRef);
             @Nullable final Long minIoSize = rscDfnRef == null ?
-                null : rscDfnRef.getFloorVolumesMinIoSize(apiAccCtx);
+                null :
+                rscDfnRef.getFloorVolumesMinIoSize(apiAccCtx, minIoSizeHelper.isAutoMinIoSize(rscDfnRef, apiAccCtx));
 
             // 1: filter storage pools
             long startFilter = System.currentTimeMillis();
