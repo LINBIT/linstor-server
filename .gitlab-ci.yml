@@ -164,12 +164,7 @@ workflow:
       VMSHED_VERSION=$[[ inputs.vmshed_version ]]
       ci_fetch_binary virter virter-$VIRTER_VERSION https://github.com/LINBIT/virter/releases/download/$VIRTER_VERSION/virter-linux-amd64
       ci_fetch_binary vmshed vmshed-$VMSHED_VERSION https://github.com/LINBIT/vmshed/releases/download/$VMSHED_VERSION/vmshed-linux-amd64
-    - |
-      case "$CI_COMMIT_BRANCH" in
-        "jenkins") VARIANTS="--variant default --variant etcd --variant crd" ;;
-        "master") VARIANTS="--variant default" ;;
-        *) VARIANTS="${TMP_VARIANTS:-$[[ inputs.vmshed_variants ]]}" ;;
-      esac
+    - VARIANTS="${TMP_VARIANTS:-$[[ inputs.vmshed_variants ]]}"
 # --- is used because of bash
     - echo "Running variants $VARIANTS"
     - echo "LINSTOR-TEST BRANCH = $TEST_BRANCH"
@@ -342,7 +337,11 @@ test-e2e:
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_COMMIT_BRANCH == "jenkins"
-    - if: $CI_COMMIT_BRANCH == "master"
+      variables:
+        TMP_VARIANTS: "--variant default --variant etcd --variant crd"
+    - if: '$CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE == "push"'
+      variables:
+        TMP_VARIANTS: "--variant default"
   tags:
     - $RUNNER_TAG_LIBVIRT
   before_script:
