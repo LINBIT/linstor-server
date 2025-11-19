@@ -301,90 +301,101 @@ public class DrbdLayer implements DeviceLayer
         throws AccessDeniedException
     {
         final ResourceName rscName = rsc.getKey().getResourceName();
-        final String restartReqStr = rscPropsMap.getOrDefault(
-            InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD, Boolean.FALSE.toString()
-        );
-        final boolean restartReq = Boolean.parseBoolean(restartReqStr);
-        errorReporter.logDebug(
-            "DrbdLayer processResource: DRBD resource \"%s\", restart request = %b",
-            rscName, restartReq
-        );
+        boolean isDeleting = rsc.getStateFlags()
+            .isSomeSet(workerCtx, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE);
 
-        if (restartReq)
+        if (!isDeleting)
         {
-            @Nullable DrbdResource rscState = null;
-            boolean performRestart = false;
-            try
-            {
-                rscState = drbdState.getDrbdResource(rscName.displayValue);
-                if (rscState != null)
-                {
-                    final boolean hasPrimary = isSomePeerPrimary(rscState);
-                    performRestart = !hasPrimary;
-                    errorReporter.logDebug(
-                        "DrbdLayer processResource: DRBD resource \"%s\", have primary peer = %b",
-                        rscName, hasPrimary
-                    );
-                }
-            }
-            catch (NoInitialStateException ignored)
-            {
-            }
+            final String restartReqStr = rscPropsMap.getOrDefault(
+                InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD,
+                Boolean.FALSE.toString()
+            );
+            final boolean restartReq = Boolean.parseBoolean(restartReqStr);
+            errorReporter.logDebug(
+                "DrbdLayer processResource: DRBD resource \"%s\", restart request = %b",
+                rscName,
+                restartReq
+            );
 
-            if (performRestart)
+            if (restartReq)
             {
-                errorReporter.logDebug(
-                    "DrbdLayer processResource: Restarting DRBD resource \"%s\"",
-                    rscName
-                );
-                final CountDownLatch syncPoint = new CountDownLatch(1);
-                final ResourceObserver rscObs = new ResourceObserver()
-                {
-                    @Override
-                    public void resourceDestroyed(DrbdResource rsc)
-                    {
-                        syncPoint.countDown();
-                    }
-                };
-
-                drbdState.addObserver(rscObs, DrbdStateTracker.OBS_RES_DSTR);
-
+                @Nullable DrbdResource rscState = null;
+                boolean performRestart = false;
                 try
                 {
-                    // rscState != null is invariant at this point, but probably need the check for spotbugs
-                    // Also, not a bad idea if performRestart behavior changes in the future
+                    rscState = drbdState.getDrbdResource(rscName.displayValue);
                     if (rscState != null)
                     {
-                        rscState.suppressDestroyEvent(true);
+                        final boolean hasPrimary = isSomePeerPrimary(rscState);
+                        performRestart = !hasPrimary;
+                        errorReporter.logDebug(
+                            "DrbdLayer processResource: DRBD resource \"%s\", have primary peer = %b",
+                            rscName,
+                            hasPrimary
+                        );
                     }
+                }
+                catch (NoInitialStateException ignored)
+                {
+                }
 
-                    drbdUtils.down(drbdRscData);
-                    syncPoint.await(ChildProcessHandler.dfltWaitTimeout, TimeUnit.MILLISECONDS);
-
-                    drbdResFileUtils.regenerateResFile(drbdRscData);
-
-                    drbdUtils.adjust(drbdRscData, false, false, false);
-
+                if (performRestart)
+                {
                     errorReporter.logDebug(
-                        "DrbdLayer processResource: DRBD resource \"%s\", reset property, %s = %b",
-                        rscName, InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD, false
+                        "DrbdLayer processResource: Restarting DRBD resource \"%s\"",
+                        rscName
                     );
-                    rscPropsMap.put(InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD, Boolean.FALSE.toString());
-                }
-                catch (InterruptedException ignored)
-                {
-                }
-                catch (ExtCmdFailedException | StorageException exc)
-                {
-                    errorReporter.reportError(Level.ERROR, exc);
-                }
-                finally
-                {
-                    if (rscState != null)
+                    final CountDownLatch syncPoint = new CountDownLatch(1);
+                    final ResourceObserver rscObs = new ResourceObserver()
                     {
-                        rscState.suppressDestroyEvent(false);
+                        @Override
+                        public void resourceDestroyed(DrbdResource rsc)
+                        {
+                            syncPoint.countDown();
+                        }
+                    };
+
+                    drbdState.addObserver(rscObs, DrbdStateTracker.OBS_RES_DSTR);
+
+                    try
+                    {
+                        // rscState != null is invariant at this point, but probably need the check for spotbugs
+                        // Also, not a bad idea if performRestart behavior changes in the future
+                        if (rscState != null)
+                        {
+                            rscState.suppressDestroyEvent(true);
+                        }
+
+                        drbdUtils.down(drbdRscData);
+                        syncPoint.await(ChildProcessHandler.dfltWaitTimeout, TimeUnit.MILLISECONDS);
+
+                        drbdResFileUtils.regenerateResFile(drbdRscData);
+
+                        drbdUtils.adjust(drbdRscData, false, false, false);
+
+                        errorReporter.logDebug(
+                            "DrbdLayer processResource: DRBD resource \"%s\", reset property, %s = %b",
+                            rscName,
+                            InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD,
+                            false
+                        );
+                        rscPropsMap.put(InternalApiConsts.MIN_IO_SIZE_RESTART_DRBD, Boolean.FALSE.toString());
                     }
-                    drbdState.removeObserver(rscObs);
+                    catch (InterruptedException ignored)
+                    {
+                    }
+                    catch (ExtCmdFailedException | StorageException exc)
+                    {
+                        errorReporter.reportError(Level.ERROR, exc);
+                    }
+                    finally
+                    {
+                        if (rscState != null)
+                        {
+                            rscState.suppressDestroyEvent(false);
+                        }
+                        drbdState.removeObserver(rscObs);
+                    }
                 }
             }
         }
