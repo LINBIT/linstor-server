@@ -1802,7 +1802,8 @@ public class CtrlNodeApiCallHandler
                                             false,
                                             copyAllSnaps,
                                             Collections.emptyList(),
-                                            true
+                                            true,
+                                            null // will be fetched
                                         );
                                     }
                                 }

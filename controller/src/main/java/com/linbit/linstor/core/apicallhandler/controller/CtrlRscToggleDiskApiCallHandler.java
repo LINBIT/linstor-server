@@ -82,6 +82,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -134,6 +135,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final Provider<AutoDiskfulTask> autoDiskfulTaskProvider;
     private final MixedStorPoolHelper mixedStorPoolHelper;
     private final CopySnapsHelper copySnapHelper;
+    private final FreeCapacityFetcher freeCapacityFetcher;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -159,7 +161,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef,
         Provider<AutoDiskfulTask> autoDiskfulTaskProviderRef,
         MixedStorPoolHelper mixedStorPoolHelperRef,
-        CopySnapsHelper copySnapHelperRef
+        CopySnapsHelper copySnapHelperRef,
+        FreeCapacityFetcher freeCapacityFetcherRef
     )
     {
         apiCtx = apiCtxRef;
@@ -186,6 +189,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         autoDiskfulTaskProvider = autoDiskfulTaskProviderRef;
         mixedStorPoolHelper = mixedStorPoolHelperRef;
         copySnapHelper = copySnapHelperRef;
+        freeCapacityFetcher = freeCapacityFetcherRef;
     }
 
     @Override
@@ -248,18 +252,23 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         @Nullable Resource.DiskfulBy diskfulByRef
     )
     {
-        return resourceToggleDisk(
-            nodeNameStr,
-            rscNameStr,
-            storPoolNameStr,
-            migrateFromNodeNameStr,
-            layerListRef,
-            removeDisk,
-            diskfulByRef,
-            false,
-            false,
-            Collections.emptyList(),
-            false
+        return freeCapacityFetcher.fetchThinFreeCapacities(
+            Collections.singleton(LinstorParsingUtils.asNodeName(nodeNameStr)))
+                .flatMapMany(
+                    thinFreeCapacities -> resourceToggleDisk(
+                        nodeNameStr,
+                        rscNameStr,
+                        storPoolNameStr,
+                        migrateFromNodeNameStr,
+                        layerListRef,
+                        removeDisk,
+                        diskfulByRef,
+                        false,
+                        false,
+                        Collections.emptyList(),
+                        false,
+                        thinFreeCapacities
+                    )
         );
     }
 
@@ -274,18 +283,23 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         boolean toggleIntoTiebreakerRef
     )
     {
-        return resourceToggleDisk(
-            nodeNameStr,
-            rscNameStr,
-            storPoolNameStr,
-            migrateFromNodeNameStr,
-            layerListRef,
-            removeDisk,
-            diskfulByRef,
-            toggleIntoTiebreakerRef,
-            false,
-            Collections.emptyList(),
-            false
+        return freeCapacityFetcher
+            .fetchThinFreeCapacities(Collections.singleton(LinstorParsingUtils.asNodeName(nodeNameStr)))
+            .flatMapMany(thinFreeCapacities ->
+            resourceToggleDisk(
+                nodeNameStr,
+                rscNameStr,
+                storPoolNameStr,
+                migrateFromNodeNameStr,
+                layerListRef,
+                removeDisk,
+                diskfulByRef,
+                toggleIntoTiebreakerRef,
+                false,
+                Collections.emptyList(),
+                false,
+                thinFreeCapacities
+            )
         );
     }
 
@@ -300,7 +314,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         boolean toggleIntoTiebreakerRef,
         boolean copyAllSnapsRef,
         List<String> snapNamesToCopyRef,
-        boolean copySnapsForEvac
+        boolean copySnapsForEvac,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacitiesRef
     )
     {
         ResponseContext context = makeRscContext(
@@ -309,26 +324,41 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             rscNameStr
         );
 
-        return scopeRunner
-            .fluxInTransactionalScope(
-                "Toggle disk",
-                createLockGuard(),
-                () -> toggleDiskInTransaction(
-                    nodeNameStr,
-                    rscNameStr,
-                    storPoolNameStr,
-                    migrateFromNodeNameStr,
-                    layerListRef,
-                    removeDisk,
-                    diskfulByRef,
-                    toggleIntoTiebreakerRef,
-                    copyAllSnapsRef,
-                    snapNamesToCopyRef,
-                    context,
-                    copySnapsForEvac
+        Mono<@Nullable Map<StorPool.Key, Long>> thinFreeCapacitiesMono;
+
+        if (!removeDisk && thinFreeCapacitiesRef == null)
+        {
+            thinFreeCapacitiesMono = freeCapacityFetcher
+                .fetchThinFreeCapacities(Collections.singleton(LinstorParsingUtils.asNodeName(nodeNameStr)));
+        }
+        else
+        {
+            thinFreeCapacitiesMono = Mono.just(thinFreeCapacitiesRef);
+        }
+
+        return thinFreeCapacitiesMono.flatMapMany(
+            thinFreeCapacities -> scopeRunner
+                .fluxInTransactionalScope(
+                    "Toggle disk",
+                    createLockGuard(),
+                    () -> toggleDiskInTransaction(
+                        nodeNameStr,
+                        rscNameStr,
+                        storPoolNameStr,
+                        migrateFromNodeNameStr,
+                        layerListRef,
+                        removeDisk,
+                        diskfulByRef,
+                        toggleIntoTiebreakerRef,
+                        copyAllSnapsRef,
+                        snapNamesToCopyRef,
+                        context,
+                        copySnapsForEvac,
+                        thinFreeCapacities
+                    )
                 )
-            )
-            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+                .transform(responses -> responseConverter.reportingExceptions(context, responses))
+        );
     }
 
     private Flux<ApiCallRc> toggleDiskInTransaction(
@@ -343,7 +373,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         boolean copyAllSnapsRef,
         List<String> snapNamesToCopyRef,
         ResponseContext context,
-        boolean copySnapsForEvac
+        boolean copySnapsForEvac,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -473,6 +504,13 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             {
                 needsDeactivate = true;
                 payload.drbdRsc.needsNewNodeId = true;
+            }
+            else
+            {
+                if (!removeDisk)
+                {
+                    checkFreeSpace(sp, vlm, getVlmDfnSizePrivileged(vlmDfn), thinFreeCapacities);
+                }
             }
         }
         if (storPoolNames.size() == 1)
@@ -611,6 +649,67 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     copySnapsForEvac
                 )
             );
+    }
+
+    private long getVlmDfnSizePrivileged(VolumeDefinition vlmDfnRef)
+    {
+        try
+        {
+            return vlmDfnRef.getVolumeSize(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private void checkFreeSpace(
+        StorPool spRef,
+        Volume vlmRef,
+        long requiredSizeRef,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities
+    )
+    {
+        /*
+         * (todo copied from CtrlVlmCrtApiHelper.checkIfStorPoolsAreUsable)
+         *
+         * TODO: improve this size check. Problem is that i.e. snapshot (and backup) restore have layerData to
+         * grab meta-storage pools from.
+         * Resource create kinda has that information but no accurate sizes for the meta-devices since those are
+         * only calculated on the satellite.
+         *
+         * That is why (for now) the snapshot restore is dumbed down (in
+         * CtrlSnapshotRestoreApiCallHAndler#restoreOnNode) to only include the data-storage pool to
+         * this set of SP that will be checked here. This might fail later if a metapool runs out of space on
+         * the satellite which is also not really what one would desire.
+         */
+        if (
+            !FreeCapacityAutoPoolSelectorUtils
+                .isStorPoolUsable(
+                    requiredSizeRef,
+                    thinFreeCapacities,
+                    true,
+                    spRef.getName(),
+                    spRef.getNode(),
+                    ctrlPropsHelper.getCtrlPropsForView(),
+                    apiCtx
+                )
+                // allow the volume to be created if the free capacity is unknown
+                .orElse(true)
+        )
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_VLM_SIZE,
+                    String.format(
+                        "Not enough free space available for volume %d of resource '%s'.",
+                        vlmRef.getVolumeDefinition().getVolumeNumber().value,
+                        vlmRef.getResourceDefinition().getName().getDisplayName()
+                    ),
+                    true
+                )
+            );
+        }
     }
 
     private void ensureAllPeersHavePeerSlotLeft(ResourceDefinition rscDfnRef)

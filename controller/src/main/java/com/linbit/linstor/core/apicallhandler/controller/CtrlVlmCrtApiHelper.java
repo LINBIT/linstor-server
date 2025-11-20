@@ -314,7 +314,8 @@ public class CtrlVlmCrtApiHelper
                                 "Not enough free space available for volume %d of resource '%s'.",
                                 vlmDfn.getVolumeNumber().value,
                                 rsc.getResourceDefinition().getName().getDisplayName()
-                            )
+                            ),
+                            true
                         )
                     );
                 }
