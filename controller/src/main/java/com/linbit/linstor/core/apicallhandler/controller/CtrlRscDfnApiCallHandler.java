@@ -59,6 +59,7 @@ import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPool.Key;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
@@ -1361,6 +1362,7 @@ public class CtrlRscDfnApiCallHandler
                 Resource rsc = it.next();
 
                 failIfWrongRscState(rsc);
+                checkFreeSpace(rsc, thinFreeCapacities);
 
                 setSuspendIO(rsc);
 
@@ -1490,6 +1492,77 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return flux;
+    }
+
+    private void checkFreeSpace(Resource rscRef, Map<Key, Long> thinFreeCapacitiesRef)
+    {
+        try
+        {
+            for (Volume vlm : rscRef.streamVolumes().collect(Collectors.toList()))
+            {
+                Map<String, StorPool> storPoolMap = LayerVlmUtils.getStorPoolMap(vlm, apiCtx);
+                @Nullable StorPool storPool = storPoolMap.get(RscLayerSuffixes.SUFFIX_DATA);
+                // not sure how this can be null, but it does not hurt to check
+                if (storPool != null)
+                {
+                    /*
+                     * (todo copied from CtrlVlmCrtApiHelper.checkIfStorPoolsAreUsable)
+                     *
+                     * TODO: improve this size check. Problem is that i.e. snapshot (and backup) restore have layerData
+                     * to grab meta-storage pools from.
+                     * Resource create kinda has that information but no accurate sizes for the meta-devices since those
+                     * are only calculated on the satellite.
+                     *
+                     * That is why (for now) the snapshot restore is dumbed down (in
+                     * CtrlSnapshotRestoreApiCallHAndler#restoreOnNode) to only include the data-storage pool to
+                     * this set of SP that will be checked here. This might fail later if a metapool runs out of space
+                     * on the satellite which is also not really what one would desire.
+                     */
+
+                    final int scalingFactor;
+                    if (storPool.getDeviceProviderKind() == DeviceProviderKind.LVM)
+                    {
+                        // we still need to make a (thick) snapshot in case of LVM, but that also consumes as much
+                        // space as the volume itself, hence x2 space requirement.
+                        scalingFactor = 2;
+                    }
+                    else
+                    {
+                        scalingFactor = 1;
+                    }
+
+                    if (!FreeCapacityAutoPoolSelectorUtils
+                        .isStorPoolUsable(
+                            vlm.getVolumeDefinition().getVolumeSize(apiCtx) * scalingFactor,
+                            thinFreeCapacitiesRef,
+                            true,
+                            storPool.getName(),
+                            storPool.getNode(),
+                            ctrlPropsHelper.getCtrlPropsForView(),
+                            apiCtx
+                        )
+                        // allow the volume to be created if the free capacity is unknown
+                        .orElse(true))
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_INVLD_VLM_SIZE,
+                                String.format(
+                                    "Not enough free space available for volume %d of resource '%s'.",
+                                    vlm.getVolumeDefinition().getVolumeNumber().value,
+                                    vlm.getResourceDefinition().getName().getDisplayName()
+                                ),
+                                true
+                            )
+                        );
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private void requireRscDfnMapChangeAccess()
