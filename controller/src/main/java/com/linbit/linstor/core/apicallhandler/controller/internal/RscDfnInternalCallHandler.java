@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -239,7 +240,7 @@ public class RscDfnInternalCallHandler
             while (itVlmDfn.hasNext())
             {
                 VolumeDefinition vlmDfn = itVlmDfn.next();
-                String passphrase = vlmDfn.getProps(apiCtx).getProp(
+                @Nullable String passphrase = vlmDfn.getProps(apiCtx).getProp(
                     ApiConsts.KEY_PASSPHRASE, ApiConsts.NAMESPC_ENCRYPTION);
                 if (passphrase != null)
                 {
@@ -279,6 +280,10 @@ public class RscDfnInternalCallHandler
                     else
                     {
                         rscDfn.getFlags().enableFlags(apiCtx, ResourceDefinition.Flags.FAILED);
+                        // We set the DELETE flag here, to prevent undeletable/broken resources
+                        // currently we don't have a good way to ignore layers, but ensure to be able to delete storage
+                        // layer volumes, so DELETE is currently our only choice
+                        vlm.getFlags().enableFlags(apiCtx, Volume.Flags.DELETE);
                         errorReporter.logError("Error cloning Volume %s/%d on node %s",
                             rscName, vlmNr, currentPeer.getNode().getName());
                     }
