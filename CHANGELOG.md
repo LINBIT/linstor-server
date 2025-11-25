@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ToggleDisk: Added missing free-space check
 - Clone: Added missing free-space check
 - Fixed very rare AccessToDeletedNode during a node-update from the satellite
+- Fixed possible NPE in DrbdLayer.hasMetaData
 
 ## [1.33.0-rc.1] - 2025-11-11
 

@@ -1286,13 +1286,8 @@ public class DrbdLayer implements DeviceLayer
     private boolean hasMetaData(DrbdVlmData<Resource> drbdVlmData)
         throws VolumeException, AccessDeniedException
     {
-        String metaDiskPath = drbdVlmData.getMetaDiskPath();
         boolean externalMd = hasExternalMd(drbdVlmData);
-        if (!externalMd)
-        {
-            // internal meta data
-            metaDiskPath = drbdVlmData.getDataDevice();
-        }
+        String metaDiskPath = externalMd ? drbdVlmData.getMetaDiskPath() : drbdVlmData.getDataDevice();
 
         boolean hasMetaData = false;
         if (metaDiskPath != null)
@@ -1322,7 +1317,7 @@ public class DrbdLayer implements DeviceLayer
             {
                 if (mdUtils.hasMetaData())
                 {
-                    boolean isMetaDataCorrupt = true;
+                    boolean isMetaDataCorrupt;
                     try
                     {
                         isMetaDataCorrupt = !drbdUtils.hasMetaData(
@@ -1362,8 +1357,7 @@ public class DrbdLayer implements DeviceLayer
         }
         else
         {
-            errorReporter.logDebug("%s", "metaDiskPath == null in " + getClass().getCanonicalName() +
-                                   " method hasMetaData");
+            errorReporter.logDebug("metaDiskPath == null in %s method hasMetaData", getClass().getCanonicalName());
         }
         errorReporter.logTrace("Found metadata: %s", hasMetaData);
         return hasMetaData;
