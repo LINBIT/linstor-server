@@ -24,6 +24,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.Node;
@@ -37,6 +38,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -448,20 +450,20 @@ public class CtrlRscAutoPlaceApiCallHandler
 
             final long rscInitFlags = calculateInitialDisklessFlags(layerStackList, rscNameStr);
 
+            final ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
+
             // deploy resource disklessly on remaining nodes
             for (Node disklessNode : nodesMap.values())
             {
                 try
                 {
-                    Resource deployedResource = disklessNode.getResource(
-                        apiCtx,
-                        LinstorParsingUtils.asRscName(rscNameStr)
-                    );
-                    if (
-                        disklessNode.getNodeType(apiCtx) == Node.Type.SATELLITE && // only deploy on satellites
-                            (deployedResource == null ||
-                                deployedResource.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER))
-                    )
+                    @Nullable Resource deployedResource = disklessNode.getResource(apiCtx, rscName);
+                    boolean deploy = deployedResource == null ||
+                        deployedResource.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER);
+                    // only deploy on satellites / combined nodes
+                    deploy &= disklessNode.getNodeType(apiCtx).isDeviceProviderKindAllowed(DeviceProviderKind.DISKLESS);
+
+                    if (deploy)
                     {
                         PairNonNull<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper
                             .createResourceDb(
