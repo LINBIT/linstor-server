@@ -401,7 +401,7 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public LocalPropsChangePojo checkStorPool(StorPoolInfo storPoolInfo, boolean update)
+    public @Nullable LocalPropsChangePojo checkStorPool(StorPoolInfo storPoolInfo, boolean update)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         @Nullable LocalPropsChangePojo setLocalNodePojo;

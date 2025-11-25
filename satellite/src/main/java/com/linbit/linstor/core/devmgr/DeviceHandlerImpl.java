@@ -496,9 +496,9 @@ public class DeviceHandlerImpl implements DeviceHandler
 
         long rc;
         String errMsg;
-        String cause;
-        String correction;
-        String details;
+        @Nullable String cause;
+        @Nullable String correction;
+        @Nullable String details;
         if (exc instanceof StorageException ||
             exc instanceof ResourceException ||
             exc instanceof VolumeException
@@ -535,7 +535,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             correction = null;
 
             List<String> devLayersAbove = new ArrayList<>();
-            AbsRscLayerObject<?> parent = rscLayerData.getParent();
+            @Nullable AbsRscLayerObject<?> parent = rscLayerData.getParent();
             while (parent != null)
             {
                 devLayersAbove.add(layerFactory.getDeviceLayer(parent.getLayerKind()).getName());
@@ -724,7 +724,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
             try
             {
-                Resource rsc = snap.getResourceDefinition().getResource(wrkCtx, snap.getNodeName());
+                @Nullable Resource rsc = snap.getResourceDefinition().getResource(wrkCtx, snap.getNodeName());
                 apiCallRc = failedRscs.get(rsc);
                 boolean process;
                 if (apiCallRc == null)
@@ -780,7 +780,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                             while (namespcIter.hasNext())
                             {
                                 String remoteName = namespcIter.next();
-                                String dstRemoteName = srcProps.getProp(
+                                @Nullable String dstRemoteName = srcProps.getProp(
                                     InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                                     remoteName
                                 );
@@ -1093,7 +1093,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     {
         if (srcStrat.contains(CloneStrategy.ZFS_COPY) && tgtStrat.contains(CloneStrategy.ZFS_COPY))
         {
-            String useZfsClone = targetVlmData.getRscLayerObject().getAbsResource().getResourceDefinition()
+            @Nullable String useZfsClone = targetVlmData.getRscLayerObject().getAbsResource().getResourceDefinition()
                 .getProps(wrkCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
             // zfs clone only works if on the same storage pool
             if (StringUtils.propTrueOrYes(useZfsClone) &&
@@ -1134,6 +1134,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             final VlmProviderObject<Resource> targetVlmData = cloneEntry.getValue();
             final Volume targetVlm = (Volume) targetVlmData.getVolume();
             final AbsRscLayerObject<Resource> targetRscData = targetVlmData.getRscLayerObject();
+            final ResourceName resName = targetVlmData.getRscLayerObject().getResourceName();
             try
             {
                 final VolumeNumber vlmNr = targetVlm.getVolumeNumber();
@@ -1168,7 +1169,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
                     if (cloneStrategy.needsOpenDevices())
                     {
-                        openForClone(sourceVlmData, targetVlmData.getRscLayerObject().getResourceName().displayValue);
+                        openForClone(sourceVlmData, resName.displayValue);
                         openForClone(targetVlmData, null);
                     }
 
@@ -1177,12 +1178,20 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
             catch (StorageException exc)
             {
+                try
+                {
+                    cloneService.cleanupSrcCloneSnapshots(sourceVlmData, resName, false);
+                }
+                catch (StorageException storExc)
+                {
+                    errorReporter.logError("Unable to cleanup source clone snapshots for: ", resName);
+                    errorReporter.reportError(storExc);
+                }
                 cloneService.setFailed(
-                    targetVlmData.getRscLayerObject().getResourceName(),
+                    resName,
                     targetVlmData.getVlmNr(),
                     targetRscData.getResourceNameSuffix());
-                cloneService.notifyCloneStatus(
-                    targetVlmData.getRscLayerObject().getResourceName(), targetVlmData.getVlmNr(), true);
+                cloneService.notifyCloneStatus(resName, targetVlmData.getVlmNr(), true);
                 handleException(targetVlmData.getRscLayerObject().getAbsResource(), exc);
             }
         }
@@ -1580,7 +1589,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     throw new ImplementationError("Unknown provider kind: " + storPoolInfo.getDeviceProviderKind());
             }
 
-            LocalPropsChangePojo pojo = layer.checkStorPool(storPoolInfo, update);
+            @Nullable LocalPropsChangePojo pojo = layer.checkStorPool(storPoolInfo, update);
             spaceInfo = layer.getStoragePoolSpaceInfo(storPoolInfo);
 
             if (pojo != null)
@@ -1639,7 +1648,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 .getLayerData(wrkCtx)
                 .getVlmProviderObject(vlmRef.getVolumeNumber());
 
-            TreeSet<String> symlinks = null;
+            @Nullable TreeSet<String> symlinks = null;
             if (!vlmRef.getFlags().isSet(wrkCtx, Volume.Flags.CLONING) &&
                 !vlmRef.getFlags().isSet(wrkCtx, Volume.Flags.DRBD_DELETE))
             {
@@ -1698,7 +1707,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private void updateDiscGran(VlmProviderObject<Resource> vlmData) throws DatabaseException, StorageException
     {
-        String devicePath = vlmData.getDevicePath();
+        @Nullable String devicePath = vlmData.getDevicePath();
         if (devicePath != null && vlmData.exists())
         {
             if (vlmData.getDiscGran() == VlmProviderObject.UNINITIALIZED_SIZE)
@@ -1766,7 +1775,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         if (isPassthrough != null && isPassthrough)
         {
             final String rscNameSuffix = rscData.getResourceNameSuffix();
-            final AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
+            final @Nullable AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
             final VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmData.getVlmNr());
             openForClone(childVlmData, targetRscNameRef);
             vlmData.setCloneDevicePath(childVlmData.getCloneDevicePath());
@@ -1787,7 +1796,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         @Nullable Boolean isPassthrough = rscData.isClonePassthroughMode();
         if (isPassthrough != null && isPassthrough)
         {
-            AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
+            @Nullable AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
             VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmData.getVlmNr());
             closeAfterClone(childVlmData, targetRscNameRef);
         }
@@ -1807,7 +1816,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         curLayer.processAfterClone(vlmSrcData, vlmTgtData, clonedDevPath);
 
         final String rscNameSuffix = rscData.getResourceNameSuffix();
-        AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
+        @Nullable AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
         if (childRscData != null)
         {
             VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmTgtData.getVlmNr());

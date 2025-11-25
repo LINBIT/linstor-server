@@ -165,19 +165,22 @@ public class CloneService implements SystemService
             srcData.getIdentifier(), cloneName, srcData.getVlmNr().value
         );
 
-        final String vlmGroup = srcData.getVolumeGroup();
-        LvmUtils.execWithRetry(
-            extCmdFactory,
-            Collections.singleton(vlmGroup),
-            config -> LvmCommands.delete(
-                extCmdFactory.create(),
-                vlmGroup,
-                srcFullSnapshotName,
-                config,
-                LvmCommands.LvmVolumeType.SNAPSHOT
-            )
-        );
-        LvmUtils.recacheNext();
+        final @Nullable String vlmGroup = srcData.getVolumeGroup();
+        if (vlmGroup != null)
+        {
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(vlmGroup),
+                config -> LvmCommands.delete(
+                    extCmdFactory.create(),
+                    vlmGroup,
+                    srcFullSnapshotName,
+                    config,
+                    LvmCommands.LvmVolumeType.SNAPSHOT
+                )
+            );
+            LvmUtils.recacheNext();
+        }
     }
 
     public void doZFSCloneSourceCleanup(ZfsData<Resource> srcData, String cloneName, boolean zfsClone)
@@ -220,6 +223,48 @@ public class CloneService implements SystemService
         }
     }
 
+    public void cleanupSrcCloneSnapshots(
+        VlmProviderObject<Resource> srcVlmData, ResourceName rscName, boolean isZfsCloneStrategy)
+        throws StorageException
+    {
+        AbsRscLayerObject<Resource> srcRscData = srcVlmData.getRscLayerObject();
+        Set<AbsRscLayerObject<Resource>> srcStorRscDataSet = LayerRscUtils.getRscDataByLayer(
+            srcRscData,
+            DeviceLayerKind.STORAGE
+        );
+
+        for (var srcStorRscData : srcStorRscDataSet)
+        {
+            VlmProviderObject<Resource> vlmObj = srcStorRscData.getVlmLayerObjects().get(srcVlmData.getVlmNr());
+            DeviceProviderKind storPoolKind = vlmObj.getProviderKind();
+            switch (storPoolKind)
+            {
+                case LVM:
+                case LVM_THIN:
+                    doLVMCloneSourceCleanup((LvmData<Resource>) vlmObj, rscName.displayValue);
+                    break;
+                case ZFS:
+                case ZFS_THIN:
+                    doZFSCloneSourceCleanup((ZfsData<Resource>) vlmObj, rscName.displayValue, isZfsCloneStrategy);
+                    break;
+                case DISKLESS:
+                case FILE:
+                case SPDK:
+                case EBS_INIT:
+                case FILE_THIN:
+                case EBS_TARGET:
+                case REMOTE_SPDK:
+                case STORAGE_SPACES:
+                case STORAGE_SPACES_THIN:
+                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                default:
+                    // no cleanup
+                    break;
+
+            }
+        }
+    }
+
     private void cleanupDevices(CloneInfo cloneInfo)
     {
         Lock writeLock = reconfigurationLock.writeLock();
@@ -253,44 +298,12 @@ public class CloneService implements SystemService
             tgtRscData.removeClonePassthroughMode(tgtRscData);
 
             // cleanup all clone snapshots
-            Set<AbsRscLayerObject<Resource>> srcStorRscDataSet = LayerRscUtils.getRscDataByLayer(
-                srcRscData,
-                DeviceLayerKind.STORAGE
+            cleanupSrcCloneSnapshots(
+                srcVlmData,
+                cloneInfo.getResourceName(),
+                cloneInfo.cloneStrategy == DeviceHandler.CloneStrategy.ZFS_CLONE
             );
 
-            for (var srcStorRscData : srcStorRscDataSet)
-            {
-                VlmProviderObject<Resource> vlmObj = srcStorRscData.getVlmLayerObjects().get(srcVlmData.getVlmNr());
-                DeviceProviderKind storPoolKind = vlmObj.getProviderKind();
-                switch (storPoolKind)
-                {
-                    case LVM:
-                    case LVM_THIN:
-                        doLVMCloneSourceCleanup((LvmData<Resource>) vlmObj, cloneInfo.getResourceName().displayValue);
-                        break;
-                    case ZFS:
-                    case ZFS_THIN:
-                        doZFSCloneSourceCleanup(
-                            (ZfsData<Resource>) vlmObj,
-                            cloneInfo.getResourceName().displayValue,
-                            cloneInfo.cloneStrategy == DeviceHandler.CloneStrategy.ZFS_CLONE);
-                        break;
-                    case DISKLESS:
-                    case FILE:
-                    case SPDK:
-                    case EBS_INIT:
-                    case FILE_THIN:
-                    case EBS_TARGET:
-                    case REMOTE_SPDK:
-                    case STORAGE_SPACES:
-                    case STORAGE_SPACES_THIN:
-                    case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
-                    default:
-                        // no cleanup
-                        break;
-
-                }
-            }
             Set<AbsRscLayerObject<Resource>> tgtStorRscDataSet = LayerRscUtils.getRscDataByLayer(
                 tgtRscData,
                 DeviceLayerKind.STORAGE
