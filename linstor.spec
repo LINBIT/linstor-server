@@ -110,6 +110,7 @@ Linstor shared components between linstor-controller and linstor-satellite
 %package controller
 Summary: Linstor controller specific files
 Requires: linstor-common = %{version}
+Requires: tar
 %if 0%{?rhel} > 9 || 0%{?sle_version} >= 150700
 Requires(post): java-21-openjdk-headless
 %else
@@ -144,7 +145,7 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %package satellite
 Summary: Linstor satellite specific files
 Requires: linstor-common = %{version}
-Requires: lvm2
+Requires: lvm2 tar
 
 %description satellite
 Linstor satellite, communicates with linstor-controller

@@ -22,6 +22,7 @@ Architecture: all
 Pre-Depends: default-jre-headless (>= 1.11)
 Depends: ${misc:Depends},
          linstor-common (= ${binary:Version}),
+         tar,
 Description: DRBD distributed resource management utility
  LINSTOR controller manages the configuration of the LINSTOR cluster
  and all of its managed storage resources.
@@ -30,6 +31,7 @@ Package: linstor-satellite
 Architecture: all
 Depends: ${misc:Depends},
          linstor-common (= ${binary:Version}),
+         tar,
          thin-provisioning-tools
 Suggests: drbd-utils (>= 9.7.0),
           socat,
