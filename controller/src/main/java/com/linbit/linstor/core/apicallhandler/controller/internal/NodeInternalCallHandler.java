@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SharedStorPoolManager;
@@ -49,7 +50,7 @@ public class NodeInternalCallHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final CtrlStltSerializer ctrlStltSerializer;
-    private final Provider<Peer> peer;
+    private final Provider<Peer> peerProvider;
     private final ReadWriteLock nodesMapLock;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final SharedStorPoolManager sharedStorPoolManager;
@@ -72,7 +73,7 @@ public class NodeInternalCallHandler
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
-        peer = peerRef;
+        peerProvider = peerRef;
         nodesMapLock = nodesMapLockRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         sharedStorPoolManager = sharedStorPoolManagerRef;
@@ -84,10 +85,10 @@ public class NodeInternalCallHandler
     {
         try (LockGuard ls = LockGuard.createLocked(
             nodesMapLock.readLock(),
-            peer.get().getSerializerLock().readLock()
+            peerProvider.get().getSerializerLock().readLock()
         ))
         {
-            Peer currentPeer = peer.get();
+            Peer currentPeer = peerProvider.get();
             NodeName nodeName = new NodeName(nodeNameStr);
 
             Node node = ctrlApiDataLoader.loadNode(nodeName, false);
@@ -159,7 +160,7 @@ public class NodeInternalCallHandler
 
     public void handleSharedStorPoolLockRequest(List<String> sharedStorPoolLocksListRef)
     {
-        Peer currentPeer = peer.get();
+        Peer currentPeer = peerProvider.get();
         Node node = currentPeer.getNode();
 
         // node is null if the peer calling this API was not a satellite...
@@ -197,7 +198,7 @@ public class NodeInternalCallHandler
 
     public void handleDevMgrRunCompleted()
     {
-        Node node = peer.get().getNode();
+        Node node = peerProvider.get().getNode();
 
         // node is null if the peer calling this API was not a satellite...
         if (node != null)
@@ -232,63 +233,81 @@ public class NodeInternalCallHandler
         Map<String, List<String>> deletedStorPoolPropsRef
     )
     {
-        Node node = peer.get().getNode();
+        Peer peer = peerProvider.get();
+        @Nullable Node node = peer.getNode();
 
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.writeLock(),
-                peer.get().getSerializerLock().readLock()
+        if (node != null && !node.isDeleted())
+        {
+            try (
+                LockGuard ls = LockGuard.createLocked(
+                    nodesMapLock.writeLock(),
+                    peer.getSerializerLock().readLock()
+                )
             )
-        )
-        {
-            Props props = node.getProps(apiCtx);
-            boolean changedNode = false;
-            changedNode |= delete(props, deletedPropsListRef);
-            changedNode |= update(props, changedPropsRef);
-
-            Set<StorPool> changedStorPoolSet = new HashSet<>();
-            for (Entry<String, List<String>> entry : deletedStorPoolPropsRef.entrySet())
             {
-                StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
-                Props spProps = storPool.getProps(apiCtx);
-                boolean changedSp = delete(spProps, entry.getValue());
-                if (changedSp)
+                Props props = node.getProps(apiCtx);
+                boolean changedNode = false;
+                changedNode |= delete(props, deletedPropsListRef);
+                changedNode |= update(props, changedPropsRef);
+
+                Set<StorPool> changedStorPoolSet = new HashSet<>();
+                for (Entry<String, List<String>> entry : deletedStorPoolPropsRef.entrySet())
                 {
-                    changedStorPoolSet.add(storPool);
+                    StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
+                    Props spProps = storPool.getProps(apiCtx);
+                    boolean changedSp = delete(spProps, entry.getValue());
+                    if (changedSp)
+                    {
+                        changedStorPoolSet.add(storPool);
+                    }
+                }
+                for (Entry<String, Map<String, String>> entry : changedStorPoolPropsRef.entrySet())
+                {
+                    StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
+                    Props spProps = storPool.getProps(apiCtx);
+                    boolean changedSp = update(spProps, entry.getValue());
+                    if (changedSp)
+                    {
+                        changedStorPoolSet.add(storPool);
+                    }
+                }
+
+                if (changedNode || !changedStorPoolSet.isEmpty())
+                {
+                    ctrlTransactionHelper.commit();
+
+                    if (changedNode)
+                    {
+                        stltUpdater.updateSatellites(node);
+                    }
+                    for (StorPool storPool : changedStorPoolSet)
+                    {
+                        stltUpdater.updateSatellite(storPool);
+                    }
                 }
             }
-            for (Entry<String, Map<String, String>> entry : changedStorPoolPropsRef.entrySet())
+            catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
             {
-                StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
-                Props spProps = storPool.getProps(apiCtx);
-                boolean changedSp = update(spProps, entry.getValue());
-                if (changedSp)
-                {
-                    changedStorPoolSet.add(storPool);
-                }
+                throw new ImplementationError(exc);
             }
-
-            if (changedNode || !changedStorPoolSet.isEmpty())
+            catch (DatabaseException exc)
             {
-                ctrlTransactionHelper.commit();
-
-                if (changedNode)
-                {
-                    stltUpdater.updateSatellites(node);
-                }
-                for (StorPool storPool : changedStorPoolSet)
-                {
-                    stltUpdater.updateSatellite(storPool);
-                }
+                errorReporter.reportError(exc);
             }
         }
-        catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
+        else
         {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException exc)
-        {
-            errorReporter.reportError(exc);
+            if (node == null)
+            {
+                errorReporter.logWarning("Ignored node update since peer %s has no node attached", peer.getId());
+            }
+            else
+            {
+                errorReporter.logWarning(
+                    "Ignored node update since node '%s' is already deleted",
+                    node.getKey().displayValue
+                );
+            }
         }
     }
 

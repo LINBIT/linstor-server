@@ -296,6 +296,12 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         return ret;
     }
 
+    public NodeName getKey()
+    {
+        // deliberately no checkDeleted!
+        return nodeName;
+    }
+
     @Override
     public NodeName getName()
     {
