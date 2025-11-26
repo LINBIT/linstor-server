@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.cache;
 
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
+import com.linbit.exceptions.InvalidSizeException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -41,7 +42,7 @@ public class CacheLayerSizeCalculator extends AbsCacheLayerSizeCalculator<CacheV
 
 
     private long calcMetaDeviceSize(CacheVlmData<?> vlmDataRef, VlmProviderObject<?> cacheChildVlmDataRef)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidSizeException
     {
         long cacheSizeInKib = vlmDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE).getUsableSize();
         long cacheSizeInB = SizeConv.convert(cacheSizeInKib, SizeUnit.UNIT_KiB, SizeUnit.UNIT_B);

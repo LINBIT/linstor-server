@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.exceptions.InvalidSizeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -41,6 +42,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerSizeHelper;
 import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -111,6 +113,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     private final EbsStatusManagerService ebsStatusMgr;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
     private final EncryptionHelper encHelper;
+    private final LayerSizeHelper layerSizeHelper;
 
     @Inject
     CtrlVlmDfnModifyApiCallHandler(
@@ -127,7 +130,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         EbsStatusManagerService ebsStatusMgrRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
         EncryptionHelper encryptionHelperRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        LayerSizeHelper layerSizeHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -144,6 +148,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
         encHelper = encryptionHelperRef;
         errorReporter = errorReporterRef;
+        layerSizeHelper = layerSizeHelperRef;
     }
 
     @Override
@@ -1177,6 +1182,19 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         try
         {
             vlmDfn.setVolumeSize(peerAccCtx.get(), size);
+
+            // run size check to verify if we do not exceed some limit...
+            Iterator<Volume> vlmsIt = vlmDfn.iterateVolumes(apiCtx);
+            VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+            while (vlmsIt.hasNext())
+            {
+                Volume vlm = vlmsIt.next();
+                layerSizeHelper.calculateSize(
+                    apiCtx,
+                    vlm.getAbsResource().getLayerData(apiCtx).getVlmProviderObject(vlmNr)
+                );
+            }
+
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -1190,17 +1208,29 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         {
             throw new ApiDatabaseException(sqlExc);
         }
-        catch (MinSizeException | MaxSizeException exc)
+        catch (InvalidSizeException | MinSizeException | MaxSizeException exc)
         {
-            final String smallLarge = exc instanceof MinSizeException ? "small" : "large";
+            final String descr;
+            if (exc instanceof MinSizeException)
+            {
+                descr = "too small";
+            }
+            else if (exc instanceof MaxSizeException)
+            {
+                descr = "too big";
+            }
+            else
+            {
+                descr = "invalid";
+            }
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_VLM_SIZE,
-                    "The given size [" + size + "KiB] is too " + smallLarge
+                    "The given size [" + size + "KiB] is " + descr,
+                    true
                 )
             );
         }
-
     }
 
     private boolean hasDeployedVolumes(VolumeDefinition vlmDfn)

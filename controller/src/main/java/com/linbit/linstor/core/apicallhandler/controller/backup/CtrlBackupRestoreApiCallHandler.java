@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.exceptions.InvalidSizeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -617,7 +618,7 @@ public class CtrlBackupRestoreApiCallHandler
                     error -> cleanupAfterFailedRestore(error, nextBackSnapDfn, targetRscName)
                 );
         }
-        catch (IOException | ParseException exc)
+        catch (IOException | ParseException | MaxSizeException exc)
         {
             errorReporter.reportError(exc);
             throw new ApiRcException(
@@ -662,6 +663,7 @@ public class CtrlBackupRestoreApiCallHandler
      *
      * @throws InvalidValueException
      * @throws InvalidKeyException
+     * @throws MaxSizeException
      */
     private Snapshot createSnapshotByS3Meta(
         S3MetafileNameInfo metafileNameInfo,
@@ -679,7 +681,8 @@ public class CtrlBackupRestoreApiCallHandler
         boolean forceRestore,
         boolean forceRscGrpRef
     )
-        throws AccessDeniedException, ImplementationError, DatabaseException, InvalidKeyException, InvalidValueException
+        throws AccessDeniedException, ImplementationError, DatabaseException, InvalidKeyException,
+        InvalidValueException, MaxSizeException
     {
         // 1. Ensure we have all the required files
         for (List<BackupMetaInfoPojo> backupList : metadata.getBackups().values())
@@ -883,7 +886,7 @@ public class CtrlBackupRestoreApiCallHandler
         AbsRemote remote,
         @Nullable ApiCallRc apiCallRc
     )
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, MaxSizeException
     {
         Snapshot snap = snapshotCrtHelper
             .restoreSnapshot(snapDfn, node, layers, renameMap, apiCallRc);
@@ -932,7 +935,7 @@ public class CtrlBackupRestoreApiCallHandler
                 recalculateCommonAllocationGranularityIfNeeded(snapVlm);
             }
         }
-        catch (InvalidKeyException | InvalidValueException exc)
+        catch (InvalidKeyException | InvalidValueException | InvalidSizeException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -974,9 +977,11 @@ public class CtrlBackupRestoreApiCallHandler
      * @throws InvalidValueException
      * @throws DatabaseException
      * @throws InvalidKeyException
+     * @throws InvalidSizeException
      */
     private void recalculateCommonAllocationGranularityIfNeeded(SnapshotVolume snapVlmRef)
-        throws AccessDeniedException, InvalidKeyException, DatabaseException, InvalidValueException
+        throws AccessDeniedException, InvalidKeyException, DatabaseException, InvalidValueException,
+        InvalidSizeException
     {
         SnapshotVolumeDefinition snapVlmDfn = snapVlmRef.getSnapshotVolumeDefinition();
         Props snapVlmDfnProps = snapVlmDfn.getVlmDfnPropsForChange(sysCtx);
@@ -1586,7 +1591,7 @@ public class CtrlBackupRestoreApiCallHandler
         {
             throw new ApiDatabaseException(exc);
         }
-        catch (InvalidKeyException | InvalidValueException | InvalidNameException exc)
+        catch (InvalidKeyException | InvalidValueException | InvalidNameException | MaxSizeException exc)
         {
             throw new ImplementationError(exc);
         }

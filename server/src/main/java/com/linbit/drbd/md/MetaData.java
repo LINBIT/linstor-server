@@ -100,6 +100,7 @@ public class MetaData extends MdCommon implements MetaDataApi
                MinAlSizeException, MaxAlSizeException, AlStripesException, PeerCountException
     {
         checkValid(grossSize, peers, alStripes, alStripeSize);
+        checkMaxDrbdSize(grossSize);
 
         long bitmapSize = getBitmapInternalSizeGross(grossSize, peers);
         long alSize = getAlSize(alStripes, alStripeSize);

@@ -8,6 +8,7 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinAlSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.drbd.md.PeerCountException;
+import com.linbit.exceptions.InvalidSizeException;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
@@ -45,7 +46,7 @@ public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator<DrbdVlmData<
 
     @Override
     protected void updateAllocatedSizeFromUsableSizeImpl(DrbdVlmData<?> drbdVlmDataRef)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidSizeException
     {
         DrbdRscData<?> drbdRscData = drbdVlmDataRef.getRscLayerObject();
         short peerSlots = drbdRscData.getPeerSlots();
@@ -121,18 +122,19 @@ public class DrbdLayerSizeCalculator extends AbsLayerSizeCalculator<DrbdVlmData<
                 drbdVlmDataRef.setUsableSize(netSize);
             }
         }
-        catch (
-            InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException |
-            MinAlSizeException | MaxAlSizeException | AlStripesException | PeerCountException exc
-        )
+        catch (InvalidKeyException | IllegalArgumentException | AlStripesException | PeerCountException exc)
         {
             throw new ImplementationError(exc);
+        }
+        catch (MinSizeException | MaxSizeException | MinAlSizeException | MaxAlSizeException exc)
+        {
+            throw new InvalidSizeException(drbdVlmDataRef.getVolumeKey() + "'s size is invalid", exc);
         }
     }
 
     @Override
     protected void updateUsableSizeFromAllocatedSizeImpl(DrbdVlmData<?> drbdVlmDataRef)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidSizeException
     {
         DrbdRscData<?> drbdRscData = drbdVlmDataRef.getRscLayerObject();
         short peerSlots = drbdRscData.getPeerSlots();

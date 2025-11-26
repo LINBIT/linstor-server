@@ -2,13 +2,18 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.exceptions.InvalidSizeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.utils.MixedStorPoolHelper;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerSizeHelper;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -35,6 +40,7 @@ public class VolumeControllerFactory
     private final Provider<TransactionMgr> transMgrProvider;
     private final CtrlRscLayerDataFactory layerStackHelper;
     private final MixedStorPoolHelper mixedStorPoolHelper;
+    private final LayerSizeHelper layerSizeHelper;
 
     @Inject
     public VolumeControllerFactory(
@@ -43,7 +49,8 @@ public class VolumeControllerFactory
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         CtrlRscLayerDataFactory layerStackHelperRef,
-        MixedStorPoolHelper mixedStorPoolHelperRef
+        MixedStorPoolHelper mixedStorPoolHelperRef,
+        LayerSizeHelper layerSizeHelperRef
     )
     {
         driver = driverRef;
@@ -52,6 +59,7 @@ public class VolumeControllerFactory
         transMgrProvider = transMgrProviderRef;
         layerStackHelper = layerStackHelperRef;
         mixedStorPoolHelper = mixedStorPoolHelperRef;
+        layerSizeHelper = layerSizeHelperRef;
     }
 
     public <RSC extends AbsResource<RSC>> Volume create(
@@ -101,6 +109,27 @@ public class VolumeControllerFactory
         {
             // ignore payload if we have snapLayerData
             layerStackHelper.copyLayerData(absLayerData, rsc, storpoolRenameMap, apiCallRc);
+        }
+
+        try
+        {
+            // calculate the sizes also include some maximum size checks (like 1 PiB for DRBD)
+            layerSizeHelper.calculateSize(
+                accCtx,
+                rsc.getLayerData(accCtx).getVlmProviderObject(vlmDfn.getVolumeNumber())
+            );
+        }
+        catch (InvalidSizeException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_INVLD_VLM_SIZE,
+                    "The size " + vlmDfn.getVolumeSize(accCtx) + " is invalid. See cause for more details"
+                )
+                    .setSkipErrorReport(true)
+                    .build(),
+                exc
+            );
         }
 
         mixedStorPoolHelper.handleMixedStoragePools(volData);

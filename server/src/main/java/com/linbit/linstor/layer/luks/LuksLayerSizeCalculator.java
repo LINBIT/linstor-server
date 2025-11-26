@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer.luks;
 
+import com.linbit.exceptions.InvalidSizeException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.AbsLayerSizeCalculator;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -30,7 +31,7 @@ public class LuksLayerSizeCalculator extends AbsLayerSizeCalculator<LuksVlmData<
 
     @Override
     protected void updateAllocatedSizeFromUsableSizeImpl(LuksVlmData<?> luksDataRef)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidSizeException
     {
         long luksHeaderSize = getLuksHeaderSize(luksDataRef);
         long grossSize = luksDataRef.getUsableSize() + luksHeaderSize;
@@ -51,7 +52,7 @@ public class LuksLayerSizeCalculator extends AbsLayerSizeCalculator<LuksVlmData<
 
     @Override
     protected void updateUsableSizeFromAllocatedSizeImpl(LuksVlmData<?> luksDataRef)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidSizeException
     {
         long luksHeaderSize = getLuksHeaderSize(luksDataRef);
         long grossSize = luksDataRef.getAllocatedSize();

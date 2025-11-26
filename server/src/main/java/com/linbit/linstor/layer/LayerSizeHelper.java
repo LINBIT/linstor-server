@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer;
 
 import com.linbit.ImplementationError;
+import com.linbit.exceptions.InvalidSizeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -44,12 +45,13 @@ public class LayerSizeHelper
      * @param vlmDataRef
      *
      * @throws AccessDeniedException
+     * @throws InvalidSizeException
      */
     public <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>> void calculateSize(
         AccessContext accCtxRef,
         VLM_TYPE vlmDataRef
     )
-        throws AccessDeniedException
+        throws AccessDeniedException, InvalidSizeException
     {
         AbsLayerSizeCalculator<VLM_TYPE> sizeCalc = getLayerSizeCalculator(vlmDataRef.getLayerKind());
         if (sizeCalc == null)
@@ -96,13 +98,14 @@ public class LayerSizeHelper
      * @return The allocation size of the STORAGE layer with the specified {@code rscSuffixRef}
      *
      * @throws AccessDeniedException
+     * @throws InvalidSizeException
      */
     public <RSC extends AbsResource<RSC>> long calculateSize(
         AccessContext accCtxRef,
         VlmProviderObject<RSC> vlmDataRef,
         String rscSuffixRef
     )
-        throws AccessDeniedException
+        throws AccessDeniedException, InvalidSizeException
     {
         long ret;
 
@@ -149,7 +152,7 @@ public class LayerSizeHelper
         AbsVolume<RSC> vlmRef,
         String rscSuffixRef
     )
-        throws AccessDeniedException
+        throws AccessDeniedException, InvalidSizeException
     {
         long ret;
 
@@ -179,6 +182,7 @@ public class LayerSizeHelper
      * @return
      *
      * @throws AccessDeniedException
+     * @throws InvalidSizeException
      */
     private <RSC extends AbsResource<RSC>> long calcSize(
         AccessContext accCtxRef,
@@ -186,7 +190,7 @@ public class LayerSizeHelper
         VolumeDefinition vlmDfnRef,
         String rscLayerSuffixRef
     )
-        throws AccessDeniedException
+        throws AccessDeniedException, InvalidSizeException
     {
         long ret;
 

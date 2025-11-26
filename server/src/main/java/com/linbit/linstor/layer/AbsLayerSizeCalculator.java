@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer;
 
+import com.linbit.exceptions.InvalidSizeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -98,9 +99,10 @@ public abstract class AbsLayerSizeCalculator<VLM_TYPE extends VlmProviderObject<
      *
      * @throws DatabaseException
      * @throws AccessDeniedException
+     * @throws InvalidSizeException
      */
     public final void updateAllocatedSizeFromUsableSize(VlmProviderObject<?> vlmDataRef)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidSizeException
     {
         AbsLayerSizeCalculator<VlmProviderObject<?>> sizeCalc = getLayerSizeCalculator(vlmDataRef);
         String suffixedRscName = vlmDataRef.getRscLayerObject().getSuffixedResourceName();
@@ -134,9 +136,10 @@ public abstract class AbsLayerSizeCalculator<VLM_TYPE extends VlmProviderObject<
      *
      * @throws DatabaseException
      * @throws AccessDeniedException
+     * @throws InvalidSizeException
      */
     public final void updateUsableSizeFromAllocatedSize(VlmProviderObject<?> vlmDataRef)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidSizeException
     {
         AbsLayerSizeCalculator<VlmProviderObject<?>> sizeCalc = getLayerSizeCalculator(vlmDataRef);
         String kindName = sizeCalc.kind.name();
@@ -216,9 +219,10 @@ public abstract class AbsLayerSizeCalculator<VLM_TYPE extends VlmProviderObject<
      *
      * @throws AccessDeniedException
      * @throws DatabaseException
+     * @throws InvalidSizeException
      */
     protected abstract void updateAllocatedSizeFromUsableSizeImpl(VLM_TYPE vlmData)
-        throws AccessDeniedException, DatabaseException;
+        throws AccessDeniedException, DatabaseException, InvalidSizeException;
 
     /**
      * The layer implementing this method can assume that its allocated size is already set.
@@ -230,7 +234,8 @@ public abstract class AbsLayerSizeCalculator<VLM_TYPE extends VlmProviderObject<
      *
      * @throws AccessDeniedException
      * @throws DatabaseException
+     * @throws InvalidSizeException
      */
     protected abstract void updateUsableSizeFromAllocatedSizeImpl(VLM_TYPE vlmData)
-        throws AccessDeniedException, DatabaseException;
+        throws AccessDeniedException, DatabaseException, InvalidSizeException;
 }

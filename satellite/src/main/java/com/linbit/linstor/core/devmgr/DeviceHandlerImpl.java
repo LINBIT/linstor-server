@@ -3,6 +3,7 @@ package com.linbit.linstor.core.devmgr;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.Platform;
+import com.linbit.exceptions.InvalidSizeException;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
@@ -302,7 +303,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         return ret;
     }
 
-    private ArrayList<Resource> calculateGrossSizes(Collection<Resource> resources) throws ImplementationError
+    private ArrayList<Resource> calculateGrossSizes(Collection<Resource> resources)
+        throws ImplementationError
     {
         ArrayList<Resource> rscs = new ArrayList<>();
         for (Resource rsc : resources)
@@ -316,10 +318,13 @@ public class DeviceHandlerImpl implements DeviceHandler
                 }
                 rscs.add(rsc);
             }
-            catch (ImplementationError exc)
+            catch (ImplementationError | InvalidSizeException exc)
             {
                 errorReporter.reportError(
-                    new ImplementationError("Caught Implementation error while processing: " + rsc, exc)
+                    new ImplementationError(
+                        "Caught " + exc.getClass().getSimpleName() + " while processing: " + rsc,
+                        exc
+                    )
                 );
             }
             catch (AccessDeniedException exc)
