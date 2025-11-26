@@ -305,9 +305,9 @@ public class DeviceHandlerImpl implements DeviceHandler
     private ArrayList<Resource> calculateGrossSizes(Collection<Resource> resources) throws ImplementationError
     {
         ArrayList<Resource> rscs = new ArrayList<>();
-        try
+        for (Resource rsc : resources)
         {
-            for (Resource rsc : resources)
+            try
             {
                 AbsRscLayerObject<Resource> rscData = rsc.getLayerData(wrkCtx);
                 for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
@@ -316,10 +316,16 @@ public class DeviceHandlerImpl implements DeviceHandler
                 }
                 rscs.add(rsc);
             }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
+            catch (ImplementationError exc)
+            {
+                errorReporter.reportError(
+                    new ImplementationError("Caught Implementation error while processing: " + rsc, exc)
+                );
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
         }
         return rscs;
     }
