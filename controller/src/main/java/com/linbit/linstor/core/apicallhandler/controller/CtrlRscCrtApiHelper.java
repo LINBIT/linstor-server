@@ -664,7 +664,12 @@ public class CtrlRscCrtApiHelper
                     {
                         // Set the changed minIoSize
                         vlmDfn.setMinIoSize(poolBlockSize, apiCtx);
-                        haveChangedMinIo = true;
+                        if (rscDfn.getResourceCount() > 1)
+                        {
+                            // Only enable the "restart DRBD" property if this is NOT the very first resource we are
+                            // creating in the current RD
+                            haveChangedMinIo = true;
+                        }
                     }
                     else
                     {

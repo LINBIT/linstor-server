@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clone: cleanup source snapshot if cloning failed
 - Clone: mark failed volumes with DELETE flags to allow to delete them afterward
 - Fixed --diskless-on-remaining not working with COMBINED nodes
+- Fixed unnecessary restart of local DRBD peer right after the resource was created
 
 ## [1.33.0-rc.1] - 2025-11-11
 
