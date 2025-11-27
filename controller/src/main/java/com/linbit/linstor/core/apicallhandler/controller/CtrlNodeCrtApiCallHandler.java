@@ -12,7 +12,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -24,10 +23,8 @@ import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -44,7 +41,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -66,10 +62,8 @@ public class CtrlNodeCrtApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final CtrlNodeApiCallHandler ctrlNodeApiCallHandler;
     private final CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtHandler;
-    private final ResourceDefinitionRepository rscDfnRepo;
     private final Provider<CtrlAuthenticator> ctrlAuthenticator;
     private final ReconnectorTask reconnectorTask;
-    private final CtrlRscAutoHelper autoHelper;
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
     private final CtrlApiDataLoader dataLoader;
 
@@ -85,10 +79,8 @@ public class CtrlNodeCrtApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef,
         CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtHandlerRef,
-        ResourceDefinitionRepository rscDfnRepoRef,
         Provider<CtrlAuthenticator> ctrlAuthenticatorRef,
         ReconnectorTask reconnectorTaskRef,
-        CtrlRscAutoHelper autoHelperRef,
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
         CtrlApiDataLoader dataLoaderRef
     )
@@ -103,10 +95,8 @@ public class CtrlNodeCrtApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
         ctrlStorPoolCrtHandler = ctrlStorPoolCrtHandlerRef;
-        rscDfnRepo = rscDfnRepoRef;
         ctrlAuthenticator = ctrlAuthenticatorRef;
         reconnectorTask = reconnectorTaskRef;
-        autoHelper = autoHelperRef;
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
         dataLoader = dataLoaderRef;
     }
@@ -208,7 +198,7 @@ public class CtrlNodeCrtApiCallHandler
             eventNodeHandlerBridge.triggerNodeCreate(node.getApiData(apiCtx, null, null));
 
             flux = Flux.just(responses);
-            flux = flux.concatWith(connectNow(context, node));
+            flux = flux.concatWith(connectNow(node));
         }
         catch (AccessDeniedException exc)
         {
@@ -235,7 +225,6 @@ public class CtrlNodeCrtApiCallHandler
             "Create EBS node",
             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
             () -> createEbsNodeInTransaction(
-                context,
                 nodeNameStr,
                 ebsRemoteNameRef
             )
@@ -243,7 +232,6 @@ public class CtrlNodeCrtApiCallHandler
     }
 
     private Flux<ApiCallRc> createEbsNodeInTransaction(
-        ResponseContext contextRef,
         String nodeNameStrRef,
         String ebsRemoteNameStrRef
     )
@@ -290,7 +278,7 @@ public class CtrlNodeCrtApiCallHandler
 
             flux = Flux.<ApiCallRc>just(responses)
                 .log()
-                .concatWith(connectNow(contextRef, node))
+                .concatWith(connectNow(node))
                 .log()
                 .concatWith(createStorPoolFlux);
         }
@@ -305,7 +293,7 @@ public class CtrlNodeCrtApiCallHandler
         return flux;
     }
 
-    public Flux<ApiCallRc> connectNow(ResponseContext context, Node node)
+    public Flux<ApiCallRc> connectNow(Node node)
         throws AccessDeniedException
     {
         Flux<ApiCallRc> flux;
@@ -319,7 +307,7 @@ public class CtrlNodeCrtApiCallHandler
                 node,
                 FIRST_CONNECT_TIMEOUT_MILLIS
             )
-                .concatMap(connected -> processConnectingResponse(node, connected, context));
+                .concatMap(connected -> processConnectingResponse(node, connected));
         }
         else
         {
@@ -334,14 +322,13 @@ public class CtrlNodeCrtApiCallHandler
         return flux;
     }
 
-    private Flux<ApiCallRc> processConnectingResponse(Node node, boolean connected, ResponseContext context)
+    private Flux<ApiCallRc> processConnectingResponse(Node node, boolean connected)
     {
         Flux<ApiCallRc> connectedFlux;
         if (connected)
         {
             connectedFlux = ctrlAuthenticator.get()
-                .completeAuthentication(node)
-                .concatWith(runAutoMagic(context));
+                .completeAuthentication(node);
         }
         else
         {
@@ -362,39 +349,5 @@ public class CtrlNodeCrtApiCallHandler
             }
         }
         return connectedFlux;
-    }
-
-    private Flux<ApiCallRc> runAutoMagic(ResponseContext context)
-    {
-        return scopeRunner.fluxInTransactionalScope(
-            "Auto-Quorum and -Tiebreaker after node create",
-            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
-            () -> runAutoMagicInTransaction(context)
-        );
-    }
-
-    private Flux<ApiCallRc> runAutoMagicInTransaction(ResponseContext context)
-    {
-        ApiCallRcImpl apiCallRcImpl = new ApiCallRcImpl();
-        List<Flux<ApiCallRc>> autoFluxes = new ArrayList<>();
-        try
-        {
-            for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(peerAccCtx.get()).values())
-            {
-                autoFluxes.add(autoHelper.manage(new AutoHelperContext(apiCallRcImpl, context, rscDfn)).getFlux());
-            }
-
-            ctrlTransactionHelper.commit();
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "Running auto-quorum and -tiebreaker on new node",
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        return Flux.<ApiCallRc>just(apiCallRcImpl)
-            .concatWith(Flux.merge(autoFluxes));
     }
 }

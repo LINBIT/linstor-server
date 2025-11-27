@@ -5,6 +5,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
@@ -14,11 +15,13 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlMinIoSizeHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlFullSyncResponseApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlFullSyncResponseApiCallHandler.FullSyncSuccessContext;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -31,6 +34,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -50,6 +54,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerKindUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
+import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -87,6 +92,8 @@ public class IntFullSyncResponse implements ApiCallReactive
     private final Provider<Peer> satelliteProvider;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlMinIoSizeHelper minIoSizeHelper;
+    private final ResourceDefinitionRepository rscDfnRepo;
+    private final CtrlRscAutoHelper autoHelper;
 
     @Inject
     public IntFullSyncResponse(
@@ -99,6 +106,8 @@ public class IntFullSyncResponse implements ApiCallReactive
         CtrlFullSyncResponseApiCallHandler ctrlFullSyncApiCallHandlerRef,
         Provider<Peer> satelliteProviderRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
+        ResourceDefinitionRepository rscDfnRepoRef,
+        CtrlRscAutoHelper autoHelperRef,
         CtrlMinIoSizeHelper minIoSizeHelperRef
     )
     {
@@ -111,30 +120,24 @@ public class IntFullSyncResponse implements ApiCallReactive
         ctrlFullSyncApiCallHandler = ctrlFullSyncApiCallHandlerRef;
         satelliteProvider = satelliteProviderRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
+        rscDfnRepo = rscDfnRepoRef;
+        autoHelper = autoHelperRef;
         minIoSizeHelper = minIoSizeHelperRef;
     }
 
     @Override
     public Flux<byte[]> executeReactive(InputStream msgDataIn) throws IOException
     {
-        return processReactive(satelliteProvider.get(), msgDataIn, null);
+        return processReactive(satelliteProvider.get(), msgDataIn);
     }
 
-    public Flux<byte[]> processReactive(Peer satellitePeerRef, InputStream msgDataIn, @Nullable ResponseContext context)
+    public Flux<byte[]> processReactive(Peer satellitePeerRef, InputStream msgDataIn)
         throws IOException
     {
-        final ResponseContext ctx;
-        if (context == null)
-        {
-            ctx = CtrlNodeApiCallHandler.makeNodeContext(
-                ApiOperation.makeCreateOperation(),
-                satellitePeerRef.getNode().getName().displayValue
-            );
-        }
-        else
-        {
-            ctx = context;
-        }
+        ResponseContext context = CtrlNodeApiCallHandler.makeNodeContext(
+            ApiOperation.makeCreateOperation(),
+            satellitePeerRef.getNode().getName().displayValue
+        );
 
         MsgIntFullSyncResponse msgIntFullSyncResponse = MsgIntFullSyncResponse.parseDelimitedFrom(msgDataIn);
 
@@ -155,17 +158,20 @@ public class IntFullSyncResponse implements ApiCallReactive
                 );
             }
 
-            List<ProcCryptoEntry> cryptoEntries = msgIntFullSyncResponse.getCryptoEntriesList().stream()
-                .map(ce -> new ProcCryptoEntry(
-                    ce.getName(),
-                    ce.getDriver(),
-                    ProcCryptoEntry.CryptoType.fromString(ce.getType()),
-                    ce.getPriority()))
-                .collect(Collectors.toList());
-            errorReporter.logTrace("CryptoEntries for %s: %s",
-                satellitePeerRef.getNode().getName(),
-                cryptoEntries.stream().map(ProcCryptoEntry::getName).collect(Collectors.toList()));
-            satellitePeerRef.getNode().setCryptoEntries(cryptoEntries);
+            try (LockGuard ignored = lockGuardFactory.build(LockType.WRITE, LockObj.NODES_MAP))
+            {
+                List<ProcCryptoEntry> cryptoEntries = msgIntFullSyncResponse.getCryptoEntriesList().stream()
+                    .map(ce -> new ProcCryptoEntry(
+                        ce.getName(),
+                        ce.getDriver(),
+                        ProcCryptoEntry.CryptoType.fromString(ce.getType()),
+                        ce.getPriority()))
+                    .collect(Collectors.toList());
+                errorReporter.logTrace("CryptoEntries for %s: %s",
+                    satellitePeerRef.getNode().getName(),
+                    cryptoEntries.stream().map(ProcCryptoEntry::getName).collect(Collectors.toList()));
+                satellitePeerRef.getNode().setCryptoEntries(cryptoEntries);
+            }
 
             flux = scopeRunner.fluxInTransactionalScope(
                 "Handle full sync api success",
@@ -191,8 +197,9 @@ public class IntFullSyncResponse implements ApiCallReactive
                             msgIntFullSyncResponse.getNodePropKeysToDeleteList(),
                             msgIntFullSyncResponse.getNodePropNamespacesToDeleteList()
                         ),
-                        ctx
+                        context
                     )
+                    .thenMany(runAutoMagic(context))
                     .thenMany(Flux.empty())
                 )
             );
@@ -413,6 +420,41 @@ public class IntFullSyncResponse implements ApiCallReactive
         }
         errorReporter.logDebug("EXIT updateVolumeMinIoSize");
         return flux;
+    }
+
+    private Flux<ApiCallRc> runAutoMagic(ResponseContext context)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Run autohelper.manage after node fullsync",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
+            () -> runAutoMagicInTransaction(context)
+        );
+    }
+
+    private Flux<ApiCallRc> runAutoMagicInTransaction(ResponseContext context)
+    {
+        ApiCallRcImpl apiCallRcImpl = new ApiCallRcImpl();
+        List<Flux<ApiCallRc>> autoFluxes = new ArrayList<>();
+        try
+        {
+            for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(apiCtx).values())
+            {
+                autoFluxes.add(autoHelper.manage(
+                    new CtrlRscAutoHelper.AutoHelperContext(apiCallRcImpl, context, rscDfn)).getFlux());
+            }
+
+            ctrlTransactionHelper.commit();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "Running auto-quorum and -tiebreaker on new node",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return Flux.<ApiCallRc>just(apiCallRcImpl)
+            .concatWith(Flux.merge(autoFluxes));
     }
 
     private boolean isResourceWithSpecialLayers(final Resource rsc)

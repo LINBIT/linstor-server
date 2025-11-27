@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -16,6 +17,7 @@ import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.utils.ProcCryptoUtils;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -79,7 +81,8 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                     boolean result = false;
                     try
                     {
-                        if (!rsc.getNode().isDeleted())
+                        @Nullable Peer peer = rsc.getNode().getPeer(peerCtxProvider.get());
+                        if (!rsc.getNode().isDeleted() && peer != null && peer.isFullSyncApplied())
                         {
                             result = LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get())
                                 .contains(DeviceLayerKind.DRBD);
@@ -109,7 +112,7 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                     "RG (" + rscDfn.getResourceGroup().getName() + ")")
                 .addProps(sysCfgRepo.getCtrlConfForView(peerCtxProvider.get()), "C");
 
-            final String verifyAlgo = prioProps.getProp(
+            final @Nullable String verifyAlgo = prioProps.getProp(
                 InternalApiConsts.DRBD_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
 
             if (verifyAlgo != null && rscDfn.usesLayer(peerCtxProvider.get(), DeviceLayerKind.DRBD))
@@ -121,7 +124,8 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                 {
                     throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
                         ApiConsts.FAIL_INVLD_PROP,
-                        String.format("Verify algorithm '%s' not supported on all nodes.", verifyAlgo)));
+                        String.format("Resource '%s': Verify algorithm '%s' not supported on all nodes."
+                            , rscDfn.getName(), verifyAlgo)));
                 }
             }
         }
@@ -162,7 +166,7 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                 sysCfgRepo.getCtrlConfForView(peerCtx)
             );
 
-            final String disableAuto = prioProps.getProp(ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO,
+            final @Nullable String disableAuto = prioProps.getProp(ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO,
                 ApiConsts.NAMESPC_DRBD_OPTIONS);
             if (StringUtils.propFalseOrNull(disableAuto) &&
                 rscDfn.usesLayer(peerCtx, DeviceLayerKind.DRBD))
@@ -183,13 +187,13 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                 );
                 allowedAlgos.addAll(Arrays.asList(allowedAutoAlgosUserString.trim().split(";")));
 
-                final ProcCryptoEntry commonHashAlgo = ProcCryptoUtils.commonCryptoType(
+                final @Nullable ProcCryptoEntry commonHashAlgo = ProcCryptoUtils.commonCryptoType(
                     nodeCryptos, ProcCryptoEntry.CryptoType.SHASH, allowedAlgos
                 );
 
                 if (commonHashAlgo != null)
                 {
-                    final String autoVerifyAlgo = rscDfn.getProps(peerCtx).getProp(
+                    final @Nullable String autoVerifyAlgo = rscDfn.getProps(peerCtx).getProp(
                         InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS
                     );
 

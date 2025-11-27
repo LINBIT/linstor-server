@@ -660,7 +660,7 @@ public class CtrlNodeApiCallHandler
                 {
                     node.getPeer(apiCtx).closeConnection(false);
                     waitForConnectFlux = waitForConnectFlux
-                        .concatWith(ctrlNodeCrtApiCallHandlerProvider.get().connectNow(context, node));
+                        .concatWith(ctrlNodeCrtApiCallHandlerProvider.get().connectNow(node));
                     reconNodes.add(nodeStr);
                 }
                 else

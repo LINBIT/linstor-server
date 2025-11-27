@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed possible NPE in DrbdLayer.hasMetaData
 - If one resource fails during calculating gross/net size, other resources should still be processed
 - Check resource size on creation and resize
+- Run autohelper.manage tasks after node fullsync (before only on node rc, c, d)
 
 ## [1.33.0-rc.1] - 2025-11-11
 
