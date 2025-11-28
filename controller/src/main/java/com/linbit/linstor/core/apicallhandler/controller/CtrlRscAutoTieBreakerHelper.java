@@ -33,6 +33,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
@@ -256,17 +257,22 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
             {
                 if (tieBreaker != null)
                 {
-                    // this cannot be the last diskful rsc of any rscDfn, so no need to notify scheduled shipping
-                    tieBreaker.markDeleted(peerCtx.get());
-                    ctx.responses.addEntries(
-                        ApiCallRcImpl.singleApiCallRc(
-                            ApiConsts.INFO_TIE_BREAKER_DELETING,
-                            "Tie breaker marked for deletion"
-                        )
-                    );
+                    @Nullable Peer tiePeer = tieBreaker.getNode().getPeer(peerCtx.get());
+                    // only delete the tiebreaker if node is online
+                    if (tiePeer != null && tiePeer.isFullSyncApplied() && tiePeer.isOnline())
+                    {
+                        // this cannot be the last diskful rsc of any rscDfn, so no need to notify scheduled shipping
+                        tieBreaker.markDeleted(peerCtx.get());
+                        ctx.responses.addEntries(
+                            ApiCallRcImpl.singleApiCallRc(
+                                ApiConsts.INFO_TIE_BREAKER_DELETING,
+                                "Tie breaker marked for deletion"
+                            )
+                        );
 
-                    ctx.nodeNamesForDelete.add(tieBreaker.getNode().getName());
-                    ctx.requiresUpdateFlux = true;
+                        ctx.nodeNamesForDelete.add(tieBreaker.getNode().getName());
+                        ctx.requiresUpdateFlux = true;
+                    }
                 }
             }
         }
