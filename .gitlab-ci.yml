@@ -20,6 +20,10 @@ spec:
       type: string
       default: --variant standard
       description: "which variant to run: [standard, default, crd, etcd]; e.g. `--variant crd --variant etcd`"
+    vmshed_print_error_details:
+      type: boolean
+      default: false
+      description: "Show all test error logs at the end of the run"
     linstor_test_repeats:
       type: number
       default: 1
@@ -171,7 +175,7 @@ workflow:
     - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
     - export LINBIT_CI_JOB_ID=$CI_JOB_ID
-    - ./virter/run-test.py $VARIANTS --torun $[[ inputs.vmshed_torun ]] --repeats="$[[ inputs.linstor_test_repeats ]]"
+    - ./virter/run-test.py $VARIANTS --torun $[[ inputs.vmshed_torun ]] --repeats="$[[ inputs.linstor_test_repeats ]]" --error-details=$[[ inputs.vmshed_print_error_details ]]
 
 check-openapi:
   stage: build
