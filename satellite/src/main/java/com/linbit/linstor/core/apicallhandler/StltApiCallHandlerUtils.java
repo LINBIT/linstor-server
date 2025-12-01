@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ExternalFileMap;
@@ -73,6 +74,7 @@ public class StltApiCallHandlerUtils
     private final ResourceGroupMap rscGrpMap;
     private final ScheduleMap scheduleMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
+    private final CloneService cloneService;
 
     @Inject
     public StltApiCallHandlerUtils(
@@ -89,6 +91,7 @@ public class StltApiCallHandlerUtils
         CoreModule.ScheduleMap scheduleMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         DeviceProviderMapper deviceProviderMapperRef,
+        CloneService cloneServiceRef,
         Provider<DeviceManager> devMgrProviderRef
     )
     {
@@ -105,6 +108,7 @@ public class StltApiCallHandlerUtils
         scheduleMap = scheduleMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         deviceProviderMapper = deviceProviderMapperRef;
+        cloneService = cloneServiceRef;
         devMgr = devMgrProviderRef;
     }
 
@@ -354,6 +358,7 @@ public class StltApiCallHandlerUtils
         rscGrpMap.clear();
         scheduleMap.clear();
         storPoolDfnMap.clear();
+        cloneService.clear();
     }
 
     public void clearCaches()

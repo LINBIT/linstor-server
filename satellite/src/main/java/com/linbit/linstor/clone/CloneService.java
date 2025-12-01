@@ -136,11 +136,7 @@ public class CloneService implements SystemService
     public void shutdown(boolean ignoredJvmShutdownRef)
     {
         serviceStarted = false;
-        for (CloneInfo cloneInfo : activeClones)
-        {
-            cloneInfo.getCloneDaemon().shutdown();
-            cleanupDevices(cloneInfo);
-        }
+        cleanupActiveClones();
     }
 
     @Override
@@ -157,6 +153,24 @@ public class CloneService implements SystemService
             }
             cleanupDevices(cloneInfo);
         }
+    }
+
+    private void cleanupActiveClones()
+    {
+        for (CloneInfo cloneInfo : activeClones)
+        {
+            if (cloneInfo.getCloneDaemon() != null)
+            {
+                cloneInfo.getCloneDaemon().shutdown();
+            }
+            cleanupDevices(cloneInfo);
+        }
+        activeClones.clear();
+    }
+
+    public void clear()
+    {
+        cleanupActiveClones();
     }
 
     private void doLVMCloneSourceCleanup(LvmData<Resource> srcData, String cloneName) throws StorageException

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Check resource size on creation and resize
 - Run autohelper.manage tasks after node fullsync (before only on node rc, c, d)
 - Autotiebreaker: do not delete tiebereaker if node is not online/fullsynced
+- Cleanup clone task on satellite reconnect
 
 ## [1.33.0-rc.1] - 2025-11-11
 
