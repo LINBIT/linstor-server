@@ -61,6 +61,7 @@ import reactor.core.publisher.Mono;
 @Produces(MediaType.APPLICATION_JSON)
 public class ResourceDefinitions
 {
+    private final ErrorReporter errorReporter;
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
@@ -70,6 +71,7 @@ public class ResourceDefinitions
 
     @Inject
     ResourceDefinitions(
+        ErrorReporter errorReporterRef,
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandlerRef,
@@ -77,6 +79,7 @@ public class ResourceDefinitions
         CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
+        errorReporter = errorReporterRef;
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlRscDfnDeleteApiCallHandler = ctrlRscDfnDeleteApiCallHandlerRef;
@@ -388,13 +391,16 @@ public class ResourceDefinitions
                     new HashSet<>(requestData.delete_props),
                     new HashSet<>(requestData.delete_namespaces)
                 );
-
             requestHelper.doFlux(
                 ApiConsts.API_CLONE_RSCDFN,
                 request,
                 asyncResponse,
                 mapToCloneStarted(srcName, requestData.name, flux)
             );
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            errorReporter.reportError(exc);
         }
     }
 

@@ -19,6 +19,8 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.BackgroundRunner;
+import com.linbit.linstor.core.BackgroundRunner.RunConfig;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMapExtName;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -164,6 +166,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelper;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
     private final Autoplacer autoplacer;
+    private final BackgroundRunner backgroundRunner;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -200,7 +203,8 @@ public class CtrlRscDfnApiCallHandler
         SystemConfRepository systemConfRepositoryRef,
         CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelperRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
-        Autoplacer autoplacerRef
+        Autoplacer autoplacerRef,
+        BackgroundRunner backgroundRunnerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -237,6 +241,7 @@ public class CtrlRscDfnApiCallHandler
         ctrlRscDfnApiCallHelper = ctrlRscDfnApiCallHelperRef;
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
         autoplacer = autoplacerRef;
+        backgroundRunner = backgroundRunnerRef;
     }
 
     public @Nullable ResourceDefinition createResourceDefinition(
@@ -822,19 +827,68 @@ public class CtrlRscDfnApiCallHandler
             ApiOperation.makeCreateOperation(),
             clonedRscName
         );
-        // TODO optimize: only fetch involved nodes
-        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
-            .flatMapMany(thinFreeCapacities ->
-                scopeRunner
-                    .fluxInTransactionalScope(
-                        "Clone resource-definition",
-                        lockGuardFactory.buildDeferred(LockGuardFactory.LockType.WRITE, NODES_MAP, RSC_DFN_MAP),
-                        () -> cloneRscDfnInTransaction(
-                            srcRscName, clonedRscName, clonedExtName, useZfsClone,
-                            volumePassphrases, layerList, context, thinFreeCapacities, intoRscGrpName,
-                            overrideProps, deletePropKeys, deleteNamespaces)
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Preparing clone " + srcRscName + " -> " + clonedRscName,
+            lockGuardFactory.buildDeferred(LockGuardFactory.LockType.READ, NODES_MAP, RSC_DFN_MAP),
+            () -> getNodeNamesForClone(srcRscName)
+        )
+            .flatMap(
+                nodeNameList -> backgroundRunner.syncWithBackgroundFluxes(
+                    new RunConfig<>(
+                        0,
+                        "BackgroundRunner for cloning " + srcRscName + " -> " + clonedRscName,
+                        () -> freeCapacityFetcher.fetchThinFreeCapacities(nodeNameList)
+                            .flatMapMany(
+                                thinFreeCapacities -> scopeRunner
+                                    .fluxInTransactionalScope(
+                                        "Clone resource-definition",
+                                        lockGuardFactory.buildDeferred(
+                                            LockGuardFactory.LockType.WRITE,
+                                            NODES_MAP,
+                                            RSC_DFN_MAP
+                                        ),
+                                        () -> cloneRscDfnInTransaction(
+                                            srcRscName,
+                                            clonedRscName,
+                                            clonedExtName,
+                                            useZfsClone,
+                                            volumePassphrases,
+                                            layerList,
+                                            context,
+                                            thinFreeCapacities,
+                                            intoRscGrpName,
+                                            overrideProps,
+                                            deletePropKeys,
+                                            deleteNamespaces
+                                        )
+                                    )
+                                    .transform(responses -> responseConverter.reportingExceptions(context, responses))
+                            ),
+                        apiCtx,
+                        nodeNameList,
+                        false
                     )
-                    .transform(responses -> responseConverter.reportingExceptions(context, responses)));
+                )
+            );
+    }
+
+    private Flux<Set<NodeName>> getNodeNamesForClone(String srcRscNameRef)
+    {
+        Set<NodeName> ret = new HashSet<>();
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(srcRscNameRef, true);
+        try
+        {
+            for (Resource rsc : rscDfn.getDiskfulResources(apiCtx))
+            {
+                ret.add(rsc.getNode().getName());
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return Flux.just(ret);
     }
 
     private Flux<ApiCallRc> setCloneSnapshotProperty(ResourceDefinition rscDfn, String cloneRscName)

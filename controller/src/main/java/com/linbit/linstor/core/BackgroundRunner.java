@@ -386,7 +386,7 @@ public class BackgroundRunner
         private final @Nullable Supplier<Flux<T>> fluxSupplier;
         private final Map<Object, Object> subscriberContext = new HashMap<>();
 
-        private final List<NodeName> nodesToLock;
+        private final Collection<NodeName> nodesToLock;
         private final boolean background;
 
         private @Nullable Consumer<T> subscriptionConsumer = null;
@@ -402,7 +402,7 @@ public class BackgroundRunner
             String descriptionRef,
             Supplier<Flux<T>> fluxSupplierRef,
             AccessContext accCtxRef,
-            List<NodeName> nodesToLockRef,
+            Collection<NodeName> nodesToLockRef,
             boolean backgroundRef
         )
         {
@@ -423,7 +423,7 @@ public class BackgroundRunner
             String descriptionRef,
             Flux<T> fluxRef,
             AccessContext accCtxRef,
-            @Nullable List<NodeName> nodesToLockRef,
+            @Nullable Collection<NodeName> nodesToLockRef,
             boolean backgroundRef
         )
         {
@@ -438,7 +438,7 @@ public class BackgroundRunner
             String descriptionRef,
             Flux<T> fluxRef,
             AccessContext accCtxRef,
-            @Nullable List<NodeName> nodesToLockRef,
+            @Nullable Collection<NodeName> nodesToLockRef,
             boolean backgroundRef
         )
         {
