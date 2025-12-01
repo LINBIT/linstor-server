@@ -1,3 +1,39 @@
+linstor-server (1.33.0~rc.2-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * AutoSnap: Fix 'Keep' prop
+  * Clone,Autoplacer: Fix wrongly calculated min-io size
+  * MinIo: Fixed bug that prevents creating new resources
+  * MinIo: Fixed auto-placer bug with disabled auto-min-io
+  * DrbdLayer: Only restart DRBD rsc if DELETE flags are not set
+  * Rg,spawn: fixed diskless-on-remaining with COMBINED types
+  * Drbd: Do not restart DRBD after the first rsc
+  * ToggleDisk: Add free space check
+  * Clone: Add free space check
+  * Node,Del: Fix rare AccessToDeletedNode
+  * DevMgr: Continue if one rsc fails
+  * Drbd: Check for size during creation and resize
+  * GitLab CI: Add printErrorDetails input
+  * Clone: Fix race when starting multiple clones
+
+  [ Rene Peinthor ]
+  * gitlab-ci: fix scheduled pipelines variant use
+  * gitlab-ci: fix incorrect test-all MR pipeline job variant
+  * gitlab-ci: auto start test-e2e-all on MRs
+  * gitlab-ci: only force --variant default on master push events
+  * clone: cleanuper sourced snapshot if start cloning failed
+  * clone: mark failed volumes with DELETE flags
+  * packaging: add tar dependency
+  * node-fullsync: Run autohelper.manage after full-sync
+  * autotiebreaker: Do not delete tiebreaker if node is not online
+  * Cloneservice: cleanup cloneinfo maps and running clones on reconnect
+
+  [ Robert Altnoeder ]
+  * Fixes in DrbdLayer method hasMetaData, fix NullPointerException (#1266)
+  * DrbdLayer.hasMetaData fix: Code cleanup
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 01 Dec 2025 18:11:20 +0000
+
 linstor-server (1.33.0~rc.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
