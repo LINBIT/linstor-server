@@ -1046,17 +1046,25 @@ public class RscDrbdLayerHelper extends
 
     private void checkPeerSlotCount(short peerSlots, ResourceDefinition rscDfn)
     {
-        if (peerSlots < rscDfn.getResourceCount())
+        try
         {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS,
-                    "Insufficient peer slots to create resource"
-                )
-                .setDetails("Peerslot count '" + peerSlots + "' is too low.")
-                .setCorrection("Configure a higher peer slot count on the resource definition or controller")
-                .build()
-            );
+            if (peerSlots < rscDfn.getDiskfulCount(apiCtx))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS,
+                            "Insufficient peer slots to create resource"
+                        )
+                        .setDetails("Peerslot count '" + peerSlots + "' is too low.")
+                        .setCorrection("Configure a higher peer slot count on the resource definition or controller")
+                        .build()
+                );
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 }
