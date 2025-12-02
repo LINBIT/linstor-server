@@ -164,7 +164,7 @@ public class RscDrbdLayerHelper extends
         }
         if (peerSlots == null)
         {
-            peerSlots = getAndCheckPeerSlotsForNewResource(rscDfn, payload);
+            peerSlots = getPeerSlotsForNewResource(rscDfn, payload);
         }
         if (alStripes == null)
         {
@@ -1010,7 +1010,7 @@ public class RscDrbdLayerHelper extends
         return nodeId;
     }
 
-    private short getAndCheckPeerSlotsForNewResource(
+    private short getPeerSlotsForNewResource(
         ResourceDefinition rscDfn,
         LayerPayload payload
     )
@@ -1036,7 +1036,6 @@ public class RscDrbdLayerHelper extends
             {
                 peerSlots = payloadPeerSlots;
             }
-            checkPeerSlotCount(peerSlots, rscDfn);
         }
         catch (InvalidKeyException exc)
         {
