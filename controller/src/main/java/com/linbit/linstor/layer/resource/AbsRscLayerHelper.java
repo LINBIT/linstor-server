@@ -114,7 +114,7 @@ public abstract class AbsRscLayerHelper<
     )
         throws LinStorException, ValueOutOfRangeException
     {
-        RSC_DFN_LO rscDfnData = rscDfn.getLayerData(apiCtx, kind, rscNameSuffix);
+        @Nullable RSC_DFN_LO rscDfnData = rscDfn.getLayerData(apiCtx, kind, rscNameSuffix);
         if (rscDfnData == null)
         {
             rscDfnData = createRscDfnData(rscDfn, rscNameSuffix, payload);

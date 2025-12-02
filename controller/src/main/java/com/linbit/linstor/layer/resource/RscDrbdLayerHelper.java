@@ -21,6 +21,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -81,7 +82,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -261,19 +265,31 @@ public class RscDrbdLayerHelper extends
         ValueInUseException, ImplementationError, InvalidNameException, LinStorException
     {
         ResourceDefinition rscDfn = rscRef.getResourceDefinition();
-        DrbdRscDfnData<Resource> drbdRscDfnData = ensureResourceDefinitionExists(
+        @Nullable DrbdRscDfnData<Resource> drbdRscDfnData = ensureResourceDefinitionExists(
             rscDfn,
             rscNameSuffixRef,
             payloadRef
         );
 
+        if (drbdRscDfnData == null)
+        {
+            throw new ImplementationError("DrbdRscDfnData was unexpectedly null. " + rscDfn + " " + rscNameSuffixRef);
+        }
+
         NodeId nodeId = getNodeId(rscRef, payloadRef, rscNameSuffixRef, layerListRef, drbdRscDfnData, null);
 
         long initFlags = 0;
+        @Nullable Short peerSlotsForNewRsc = null;
         // some flags that might already be set on resource level should be copied to DrbdRscData level
         if (isResourceDiskless(rscRef))
         {
             initFlags |= DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue;
+        }
+        else
+        {
+            peerSlotsForNewRsc = drbdRscDfnData.getPeerSlots();
+            checkIfPeersHaveEnoughPeerSlots(drbdRscDfnData);
+            checkPeerSlotCount(peerSlotsForNewRsc, rscDfn);
         }
 
         int layerRscId = layerRscIdPool.autoAllocate();
@@ -298,6 +314,7 @@ public class RscDrbdLayerHelper extends
             initFlags
         );
     }
+
 
     private boolean isResourceDiskless(Resource rscRef) throws AccessDeniedException
     {
@@ -1058,6 +1075,64 @@ public class RscDrbdLayerHelper extends
                         )
                         .setDetails("Peerslot count '" + peerSlots + "' is too low.")
                         .setCorrection("Configure a higher peer slot count on the resource definition or controller")
+                        .build()
+                );
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    /**
+     * Checks all existing DrbdRscData if their local peerSlot is at least 1 larger than the number of diskful
+     * resources in order to add yet another diskful peer
+     * @param drbdRscDfnDataRef
+     */
+    private void checkIfPeersHaveEnoughPeerSlots(DrbdRscDfnData<Resource> drbdRscDfnDataRef)
+    {
+        TreeMap<Short, Set<NodeName>> peerSlots = new TreeMap<>();
+        // we have not yet created the new DrbdRscData, so all currently existing diskful resources count
+        // as peers. not -1 !
+        short diskfulCount = 0;
+        try
+        {
+            for (DrbdRscData<Resource> drbdRscData : drbdRscDfnDataRef.getDrbdRscDataList())
+            {
+                peerSlots.computeIfAbsent(drbdRscData.getPeerSlots(), ignore -> new TreeSet<>())
+                    .add(drbdRscData.getNodeName());
+                if (drbdRscData.isDiskless(apiCtx))
+                {
+                    diskfulCount++;
+                }
+            }
+
+            // drop all entries with a key larger than diskfulCount
+            peerSlots.tailMap((short) (diskfulCount + 1)).clear();
+            if (!peerSlots.isEmpty())
+            {
+                StringBuilder sb = new StringBuilder(
+                    "The resources on the following nodes have not enough peer slots:\n"
+                );
+                for (Entry<Short, Set<NodeName>> entry : peerSlots.entrySet())
+                {
+                    short slots = entry.getKey();
+                    for (NodeName nodeName : entry.getValue())
+                    {
+                        sb.append("   * ").append(nodeName.displayValue).append(" (").append(slots).append(")\n");
+                    }
+                }
+                sb.append(diskfulCount).append(" needed.");
+
+                throw new ApiRcException(
+                    ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS,
+                            "Peers have insufficient peer slots to create new resource"
+                        )
+                        .setDetails(sb.toString())
+                        .setCorrection("Recreate mentioned resources with higher peer slot")
                         .build()
                 );
             }
