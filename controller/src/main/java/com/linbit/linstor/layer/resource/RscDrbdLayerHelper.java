@@ -95,6 +95,8 @@ public class RscDrbdLayerHelper extends
     DrbdRscDfnData<Resource>, DrbdVlmDfnData<Resource>
 >
 {
+    private static final short DFLT_RESERVERD_PEER_SLOT_COUNT = (short) 1;
+
     private final ReadOnlyProps stltConf;
     private final ResourceDefinitionRepository rscDfnMap;
     private final ModularCryptoProvider cryptoProvider;
@@ -155,6 +157,7 @@ public class RscDrbdLayerHelper extends
         @Nullable TransportType transportType = drbdRscDfnPayload.transportType;
         @Nullable String secret = drbdRscDfnPayload.sharedSecret;
         @Nullable Short peerSlots = drbdRscDfnPayload.peerSlotsNewResource;
+        @Nullable Short reserverdPeerSlotCount = drbdRscDfnPayload.reservedPeerSlotCount;
         @Nullable Integer alStripes = drbdRscDfnPayload.alStripes;
         @Nullable Long alStripeSize = drbdRscDfnPayload.alStripeSize;
         if (secret == null)
@@ -179,7 +182,7 @@ public class RscDrbdLayerHelper extends
             alStripeSize = InternalApiConsts.DEFAULT_AL_SIZE;
         }
 
-        checkPeerSlotCount(peerSlots, rscDfn);
+        checkPeerSlotCount(peerSlots, reserverdPeerSlotCount, rscDfn);
 
         return layerDataFactory.createDrbdRscDfnData(
             rscDfn.getName(),
@@ -215,7 +218,7 @@ public class RscDrbdLayerHelper extends
         if (drbdRscDfnPayload.peerSlotsNewResource != null)
         {
             ResourceDefinition rscDfn = rscDfnMap.get(apiCtx, drbdRscDfnData.getResourceName());
-            checkPeerSlotCount(drbdRscDfnPayload.peerSlotsNewResource, rscDfn);
+            checkPeerSlotCount(drbdRscDfnPayload.peerSlotsNewResource, drbdRscDfnPayload.reservedPeerSlotCount, rscDfn);
             drbdRscDfnData.setPeerSlots(drbdRscDfnPayload.peerSlotsNewResource);
         }
     }
@@ -289,7 +292,7 @@ public class RscDrbdLayerHelper extends
         {
             peerSlotsForNewRsc = drbdRscDfnData.getPeerSlots();
             checkIfPeersHaveEnoughPeerSlots(drbdRscDfnData);
-            checkPeerSlotCount(peerSlotsForNewRsc, rscDfn);
+            checkPeerSlotCount(peerSlotsForNewRsc, DFLT_RESERVERD_PEER_SLOT_COUNT, rscDfn);
         }
 
         int layerRscId = layerRscIdPool.autoAllocate();
@@ -1061,19 +1064,53 @@ public class RscDrbdLayerHelper extends
         return peerSlots;
     }
 
-    private void checkPeerSlotCount(short peerSlots, ResourceDefinition rscDfn)
+    /**
+     * <p>
+     * Checks if the given <code>peerSlots</code> is large enough for the given {@link ResourceDefinition} based on
+     * {@link ResourceDefinition#getDiskfulCount(AccessContext)}. The <code>reservedPeerSlotCount</code> should be used
+     * to indicate how much larger <code>peerSlots</code> should be than the count of already deployed diskful
+     * resources. </p>
+     * <p>Usual use-cases are
+     * <ul>
+     *  <li><code>0:</code> in case the given <code>rscDfn</code> should be cloned</li>
+     *  <li><code>1: </code> if this method is called right before a new resource is created</li>
+     * </ul></p>
+     *
+     * @param peerSlots
+     * @param reservedPeerSlotCount if omitted {@value #DFLT_RESERVERD_PEER_SLOT_COUNT} is used.
+     * @param rscDfn
+     */
+    private void checkPeerSlotCount(
+        short peerSlots,
+        @Nullable Short reservedPeerSlotCountRef,
+        ResourceDefinition rscDfn
+    )
     {
         try
         {
-            if (peerSlots < rscDfn.getDiskfulCount(apiCtx))
+            short reservedPeerSlotCount = reservedPeerSlotCountRef == null ?
+                DFLT_RESERVERD_PEER_SLOT_COUNT :
+                reservedPeerSlotCountRef;
+            if (peerSlots + reservedPeerSlotCount < rscDfn.getDiskfulCount(apiCtx) - 1)
             {
+                StringBuilder details = new StringBuilder("Peerslot count '")
+                    .append(peerSlots)
+                    .append("' is too low since we already have '")
+                    .append(rscDfn.getDiskfulCount(apiCtx))
+                    .append("' diskful resources");
+                if (reservedPeerSlotCount > 0)
+                {
+                    details = details.append(" and we still need '")
+                        .append(reservedPeerSlotCount)
+                        .append("' for new resources");
+                }
                 throw new ApiRcException(
                     ApiCallRcImpl
                         .entryBuilder(
                             ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS,
                             "Insufficient peer slots to create resource"
                         )
-                        .setDetails("Peerslot count '" + peerSlots + "' is too low.")
+                        .setDetails(details.toString())
                         .setCorrection("Configure a higher peer slot count on the resource definition or controller")
                         .build()
                 );
@@ -1109,7 +1146,7 @@ public class RscDrbdLayerHelper extends
             }
 
             // drop all entries with a key larger than diskfulCount
-            peerSlots.tailMap((short) (diskfulCount + 1)).clear();
+            peerSlots.tailMap(diskfulCount).clear();
             if (!peerSlots.isEmpty())
             {
                 StringBuilder sb = new StringBuilder(

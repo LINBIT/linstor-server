@@ -56,6 +56,7 @@ public class LayerPayload
         public @Nullable TransportType transportType;
         public @Nullable String sharedSecret;
         public @Nullable Short peerSlotsNewResource;
+        public @Nullable Short reservedPeerSlotCount;
         public @Nullable Integer alStripes;
         public @Nullable Long alStripeSize;
     }

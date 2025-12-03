@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Added checks if existing resources have enough peerSlots for a new peer
+
+### Fixed
+
+- Clone: Fixed wrong resource-counting for the peerSlots checks
+
 ## [1.33.0-rc.2] - 2025-12-01
 
 ### Fixed

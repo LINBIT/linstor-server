@@ -1164,6 +1164,7 @@ public class CtrlRscDfnApiCallHandler
         {
             DrbdRscDfnData<Resource> drbdRscDfnData = (DrbdRscDfnData<Resource>) obj;
             payload.drbdRscDfn.peerSlotsNewResource = drbdRscDfnData.getPeerSlots();
+            payload.drbdRscDfn.reservedPeerSlotCount = 0; // we do not need peer slots for new resources
             payload.drbdRscDfn.transportType = drbdRscDfnData.getTransportType();
             payload.drbdRscDfn.alStripes = drbdRscDfnData.getAlStripes();
             payload.drbdRscDfn.alStripeSize = drbdRscDfnData.getAlStripeSize();
