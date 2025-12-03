@@ -56,17 +56,21 @@ public class ApiRcException extends ApiException implements ErrorContextSupplier
     }
 
     @Override
-    public @Nullable String getErrorContext()
+    public String getErrorContext()
     {
-        StringBuilder sb = new StringBuilder("ApiRcException entries: ");
+        StringBuilder sb = new StringBuilder("ApiRcException entries: \n");
         int entryNr = 1;
 
-        for (RcEntry entry : getApiCallRc())
+        boolean printNumber = apiCallRc.size() > 1;
+        for (RcEntry entry : apiCallRc)
         {
-            sb.append("Nr: " + entryNr);
+            if (printNumber)
+            {
+                sb.append("Nr: ").append(entryNr).append("\n");
+            }
             if (entry.getMessage() != null)
             {
-                sb.append("  Message: ").append(entry.getMessage()).append("\n");
+                sb.append("  Message:     ").append(entry.getMessage()).append("\n");
             }
             if (entry.getCause() != null)
             {
@@ -80,7 +84,7 @@ public class ApiRcException extends ApiException implements ErrorContextSupplier
             {
                 sb.append("  Details:     ").append(entry.getDetails()).append("\n");
             }
-            sb.append("  NumericCode:  ").append(entry.getReturnCode()).append("\n");
+            sb.append("  NumericCode: ").append(entry.getReturnCode()).append("\n");
             Map<String, String> objRefs = entry.getObjRefs();
             if (objRefs != null && !objRefs.isEmpty())
             {
@@ -94,7 +98,7 @@ public class ApiRcException extends ApiException implements ErrorContextSupplier
         }
         sb.append("\n");
 
-        return null;
+        return sb.toString();
     }
 
     @Override
