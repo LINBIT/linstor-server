@@ -11,8 +11,8 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.SatelliteConnector;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupShippingAbortHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.NetInterface;
@@ -272,7 +272,10 @@ public class ReconnectorTask implements Task
                 pair = getFailedPeers();
             }
         }
-        errorReporter.logTrace("Reconnect list: " + pair.objA);
+        if (!pair.objA.isEmpty())
+        {
+            errorReporter.logTrace("Reconnect list: " + pair.objA);
+        }
         ArrayList<ReconnectConfig> localList = pair.objA;
         runEvictionFluxes(pair.objB);
 
