@@ -43,6 +43,7 @@ image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   RUNNER_TAG_LIBVIRT: "libvirt"
+  LINBIT_CI_MAX_CPUS: 38  # limit memory usage (limit 84GB) on default runners 38 * 2 + 7(vmshed/virter...)
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
 
 cache:
@@ -67,9 +68,11 @@ workflow:
     - if: $CI_COMMIT_BRANCH == 'jenkins'
       variables:
         RUNNER_TAG_LIBVIRT: "libvirt-xl"
+        LINBIT_CI_MAX_CPUS: 64  # enough memory on xl runners
     - if: $CI_COMMIT_BRANCH == 'master'
       variables:
         RUNNER_TAG_LIBVIRT: "libvirt-xl"
+        LINBIT_CI_MAX_CPUS: 64  # enough memory on xl runners
     - when: always  # Other pipelines can run, but use the default variables
 
 .upload_nexus:
