@@ -164,9 +164,9 @@ public abstract class BaseErrorReporter
                 {
                     outputRef.println(ERROR_FIELD_FORMAT, "Error message:", curErrorInfo.getMessage());
                 }
-                if (curErrorInfo instanceof LinStorException)
+                if (curErrorInfo instanceof ErrorContextSupplier)
                 {
-                    LinStorException linStorException = (LinStorException) curErrorInfo;
+                    ErrorContextSupplier linStorException = (ErrorContextSupplier) curErrorInfo;
                     if (linStorException.hasErrorContext())
                     {
                         outputRef.println(linStorException.getErrorContext());
