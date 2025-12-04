@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Clone: Fixed wrong resource-counting for the peerSlots checks
+- DrbdProxy: Fixed ignored DrbdProxy/AutoEnable property when set on controller level
 
 ## [1.33.0-rc.2] - 2025-12-01
 
