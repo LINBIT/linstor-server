@@ -1,3 +1,21 @@
+linstor-server (1.33.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gitlab: The default CPU count is too high for our memory use
+  * stltcrypthelper: Improved error logging on decryption errors
+
+  [ Gabor Hernadi ]
+  * Drbd: Remove unnecessary double peerSlots check
+  * Drbd,peerSlots: Compare the peerSlots against diskful resource count
+  * Drbd,peerSlots: Check if peers have enough slots
+  * Clone,peerSlots: Fix peerSlots-check
+  * ErrorReport: Report context information from more Exception classes
+  * ErrorReport: Fix broken errorContext for ApiRcExceptions
+  * Reconnector: Only log reconnect list if not empty.
+  * Drbd-proxy: Fix DrbdProxy/AutoEnable
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 11 Dec 2025 07:10:00 +0000
+
 linstor-server (1.33.0~rc.2-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
