@@ -1731,7 +1731,7 @@ public class CtrlNodeApiCallHandler
                                             int snapCount = snapDfn.getAllNotDeletingSnapshots(apiCtx).size();
                                             if (snapCount == 1 || snapCount - 1 < expectedReplicaCount)
                                             {
-                                                copySnapsHelper.deleteSnapAfterShipmentSent(snap);
+                                                copySnapsHelper.deleteSnapAfterShipmentSent(snap, false);
                                                 fluxList.add(
                                                     copySnapsHelper.getCopyFlux(
                                                         snapDfn,
@@ -1782,7 +1782,7 @@ public class CtrlNodeApiCallHandler
                                         @Nullable Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeNameEvacuateSource);
                                         if (snap != null)
                                         {
-                                            copySnapsHelper.deleteSnapAfterShipmentSent(snap);
+                                            copySnapsHelper.deleteSnapAfterShipmentSent(snap, false);
                                         }
                                     }
                                 }
@@ -1878,7 +1878,7 @@ public class CtrlNodeApiCallHandler
                                 {
                                     if (copyAllSnaps)
                                     {
-                                        copySnapsHelper.deleteSnapAfterShipmentSent(snap);
+                                        copySnapsHelper.deleteSnapAfterShipmentSent(snap, false);
                                     }
                                     NodeName nodeNameEvacTarget = sp.getNode().getName();
                                     fluxList.add(

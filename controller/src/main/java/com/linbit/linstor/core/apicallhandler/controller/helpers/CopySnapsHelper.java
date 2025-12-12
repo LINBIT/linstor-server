@@ -134,7 +134,8 @@ public class CopySnapsHelper
                 snapDfnRef,
                 dstNodeNameRef,
                 true,
-                copySnapsForEvac
+                copySnapsForEvac,
+                true
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -143,7 +144,8 @@ public class CopySnapsHelper
         SnapshotDefinition snapDfnRef,
         String dstNodeNameRef,
         boolean runlocalRemoteExistsCheckRef,
-        boolean copySnapsForEvac
+        boolean copySnapsForEvac,
+        boolean commit
     )
     {
         if (runlocalRemoteExistsCheckRef)
@@ -151,6 +153,10 @@ public class CopySnapsHelper
             try
             {
                 getOrCreateLocalRemote(); // just ensure the local remote exists
+                if (commit)
+                {
+                    ctrlTransactionHelper.commit();
+                }
             }
             catch (DatabaseException exc)
             {
@@ -180,7 +186,7 @@ public class CopySnapsHelper
         );
     }
 
-    public void deleteSnapAfterShipmentSent(Snapshot snapToDeleteRef)
+    public void deleteSnapAfterShipmentSent(Snapshot snapToDeleteRef, boolean commit)
     {
 
         // this flux is just a side-effect to cleanup once the shipment is done.
@@ -196,7 +202,7 @@ public class CopySnapsHelper
                 rscName.displayValue,
                 nodeName.displayValue
             ),
-            getWaitForShipToLocalhostDoneFlux(snapToDeleteRef.getSnapshotDefinition())
+            getWaitForShipToLocalhostDoneFlux(snapToDeleteRef.getSnapshotDefinition(), commit)
                 .concatWith(
                     ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(
                         rscName.displayValue,
@@ -367,14 +373,15 @@ public class CopySnapsHelper
         return ret;
     }
 
-    public Flux<ApiCallRc> getWaitForShipToLocalhostDoneFlux(SnapshotDefinition snapDfnRef)
+    public Flux<ApiCallRc> getWaitForShipToLocalhostDoneFlux(SnapshotDefinition snapDfnRef, boolean commit)
     {
-        return getWaitForShipToLocalhostDoneFlux(snapDfnRef, true);
+        return getWaitForShipToLocalhostDoneFlux(snapDfnRef, true, commit);
     }
 
     public Flux<ApiCallRc> getWaitForShipToLocalhostDoneFlux(
         SnapshotDefinition snapDfnRef,
-        boolean runLocalRemoteExistsCheckRef
+        boolean runLocalRemoteExistsCheckRef,
+        boolean commit
     )
     {
         if (runLocalRemoteExistsCheckRef)
@@ -382,6 +389,10 @@ public class CopySnapsHelper
             try
             {
                 getOrCreateLocalRemote();
+                if (commit)
+                {
+                    ctrlTransactionHelper.commit();
+                }
             }
             catch (DatabaseException exc)
             {
