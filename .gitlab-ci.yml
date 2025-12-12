@@ -36,6 +36,10 @@ spec:
       type: string
       default: 90 minutes
       description: "timeout for the CI e2e tests"
+    ci_remove_success_logs:
+      type: boolean
+      default: false
+      description: "Removes vm logs from successful tests before creating the artifact"
 
 ---
 image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
@@ -178,6 +182,7 @@ workflow:
     - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
     - export LINBIT_CI_JOB_ID=$CI_JOB_ID
+    - export LINBIT_CI_REMOVE_SUCCESS_LOGS=$[[ inputs.ci_remove_success_logs ]]
     - ./virter/run-test.py $VARIANTS --torun $[[ inputs.vmshed_torun ]] --repeats="$[[ inputs.linstor_test_repeats ]]" --error-details=$[[ inputs.vmshed_print_error_details ]]
 
 check-openapi:
