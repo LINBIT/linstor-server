@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
- - Fixed missing transaction-commits during evacuate's copy-snap
+
+- Fixed missing transaction-commits during evacuate's copy-snap
+- Also delete error-report text files on error delete api call
 
 ## [1.33.0] - 2025-12-11
 

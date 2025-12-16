@@ -7,6 +7,7 @@ import com.linbit.linstor.security.AccessContext;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,7 +15,7 @@ import org.slf4j.event.Level;
 
 public class StderrErrorReporter extends BaseErrorReporter implements ErrorReporter
 {
-    private AtomicLong errorNr = new AtomicLong(0L);
+    private final AtomicLong errorNr = new AtomicLong(0L);
 
     public StderrErrorReporter(String moduleName)
     {
@@ -28,7 +29,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
     }
 
     @Override
-    public Level getCurrentLogLevel()
+    public @Nullable Level getCurrentLogLevel()
     {
         return Level.TRACE;
     }
@@ -75,22 +76,22 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
     }
 
     @Override
-    public String reportError(Throwable errorInfo)
+    public @Nullable String reportError(Throwable errorInfo)
     {
         return reportError(Level.ERROR, errorInfo, null, null, null);
     }
 
     @Override
-    public String reportError(Level logLevel, Throwable errorInfo)
+    public @Nullable String reportError(Level logLevel, Throwable errorInfo)
     {
         return reportError(logLevel, errorInfo, null, null, null);
     }
 
     @Override
-    public String reportError(
+    public @Nullable String reportError(
         Throwable errorInfo,
-        AccessContext accCtx,
-        Peer client,
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
         String contextInfo
     )
     {
@@ -170,8 +171,8 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
     }
 
     @Override
-    public @Nullable Path getLogDirectory()
+    public Path getLogDirectory()
     {
-        return null;
+        return Paths.get("/tmp");
     }
 }

@@ -2,10 +2,10 @@ package com.linbit.linstor.logging;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.TimeUtils;
@@ -22,6 +22,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -102,7 +103,7 @@ public class H2ErrorReporter
 
     public void writeErrorReportToDB(
         long reportNr,
-        Peer client,
+        @Nullable Peer client,
         Throwable errorInfo,
         long instanceEpoch,
         LocalDateTime errorTime,
@@ -111,9 +112,9 @@ public class H2ErrorReporter
         byte[] errorReportText)
     {
         StackTraceElement[] traceItems = errorInfo.getStackTrace();
-        String originFile = traceItems.length > 0 ? traceItems[0].getFileName() : null;
-        String originMethod = traceItems.length > 0 ? traceItems[0].getMethodName() : null;
-        Integer originLine = traceItems.length > 0 ? traceItems[0].getLineNumber() : null;
+        @Nullable String originFile = traceItems.length > 0 ? traceItems[0].getFileName() : null;
+        @Nullable String originMethod = traceItems.length > 0 ? traceItems[0].getMethodName() : null;
+        @Nullable Integer originLine = traceItems.length > 0 ? traceItems[0].getLineNumber() : null;
         String excMsg = errorInfo.getMessage();
 
         try
@@ -211,7 +212,7 @@ public class H2ErrorReporter
             ResultSet rslt = stmt.executeQuery(stmtStr);
             while (rslt.next())
             {
-                String text = null;
+                @Nullable String text = null;
                 if (withText)
                 {
                     Clob clob = rslt.getClob("TEXT");
@@ -250,100 +251,119 @@ public class H2ErrorReporter
         return new ErrorReportResult(count, errors);
     }
 
-    public ApiCallRc deleteErrorReports(
+    public List<String> deleteErrorReports(
         @Nullable final Date since,
         @Nullable final Date to,
         @Nullable final String exception,
         @Nullable final String version,
         @Nullable final List<String> ids)
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-
         // prevent an "empty" where clause(delete all)
         if (since == null && to == null && exception == null && version == null && (ids == null || ids.isEmpty()))
         {
-            return apiCallRc;
+            return Collections.emptyList();
         }
 
         try
         {
-            int index = 1;
-            StringBuilder stmt = new StringBuilder();
-            stmt.append("DELETE FROM ERRORS WHERE 1=1");
+            StringBuilder delStmt = new StringBuilder();
+            String delPrefix = "DELETE FROM ERRORS WHERE 1=1";
+            delStmt.append(delPrefix);
             if (to != null)
             {
-                stmt.append(" AND DATETIME < ?");
+                delStmt.append(" AND DATETIME < ?");
             }
             if (since != null)
             {
-                stmt.append(" AND DATETIME >= ?");
+                delStmt.append(" AND DATETIME >= ?");
             }
             if (exception != null)
             {
-                stmt.append(" AND EXCEPTION=?");
+                delStmt.append(" AND EXCEPTION=?");
             }
             if (version != null)
             {
-                stmt.append(" AND VERSION=?");
+                delStmt.append(" AND VERSION=?");
             }
             if (ids != null && !ids.isEmpty())
             {
-                stmt.append(" AND ERROR_ID in (");
+                delStmt.append(" AND ERROR_ID in (");
 
                 for (String ignored : ids)
                 {
-                    stmt.append("?,");
+                    delStmt.append("?,");
                 }
 
-                stmt.deleteCharAt(stmt.length() - 1);
-                stmt.append(")");
+                delStmt.deleteCharAt(delStmt.length() - 1);
+                delStmt.append(")");
             }
+
+            String selStmt = "SELECT ERROR_ID FROM ERRORS WHERE 1=1" + delStmt.substring(delPrefix.length());
 
             try
             (
                 Connection con = dataSource.getConnection();
-                PreparedStatement pStmt = con.prepareStatement(stmt.toString());
+                PreparedStatement pSelStmt = con.prepareStatement(selStmt);
+                PreparedStatement pDelStmt = con.prepareStatement(delStmt.toString())
             )
             {
+                int index = 1;
                 if (to != null)
                 {
-                    pStmt.setTimestamp(index++, new java.sql.Timestamp(to.getTime()));
+                    pSelStmt.setTimestamp(index, new java.sql.Timestamp(to.getTime()));
+                    pDelStmt.setTimestamp(index++, new java.sql.Timestamp(to.getTime()));
                 }
                 if (since != null)
                 {
-                    pStmt.setTimestamp(index++, new java.sql.Timestamp(since.getTime()));
+                    pSelStmt.setTimestamp(index, new java.sql.Timestamp(since.getTime()));
+                    pDelStmt.setTimestamp(index++, new java.sql.Timestamp(since.getTime()));
                 }
                 if (exception != null)
                 {
-                    pStmt.setString(index++, exception);
+                    pSelStmt.setString(index, exception);
+                    pDelStmt.setString(index++, exception);
                 }
                 if (version != null)
                 {
-                    pStmt.setString(index++, version);
+                    pSelStmt.setString(index, version);
+                    pDelStmt.setString(index++, version);
                 }
                 if (ids != null)
                 {
                     for (String id : ids)
                     {
-                        pStmt.setString(index++, id);
+                        pSelStmt.setString(index, id);
+                        pDelStmt.setString(index++, id);
                     }
                 }
 
-                final int deleted = pStmt.executeUpdate();
-                if (deleted > 0)
+                var delIds = new ArrayList<String>();
+                con.setAutoCommit(false);
+                try (ResultSet rs = pSelStmt.executeQuery())
                 {
-                    apiCallRc.addEntry(String.format("Deleted %d error-report(s)", deleted), ApiConsts.DELETED);
+                    while (rs.next())
+                    {
+                        delIds.add(rs.getString("ERROR_ID"));
+                    }
                 }
+                pDelStmt.executeUpdate();
+
+                con.commit();
+                return delIds;
             }
         }
         catch (SQLException sqlExc)
         {
             final String errorMsg = "Unable to operate on error-reports database: " + sqlExc.getMessage();
-            final String errorId = errorReporter.reportError(sqlExc);
-            apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_SQL, errorMsg).addErrorId(errorId));
-        }
+            final @Nullable String errorId = errorReporter.reportError(sqlExc);
+            ApiCallRcImpl.ApiCallRcEntry entry = ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_SQL, errorMsg);
+            if (errorId != null)
+            {
+                entry.addErrorId(errorId);
+            }
 
-        return apiCallRc;
+            throw new ApiRcException(entry);
+        }
     }
 
     public void shutdown() throws SQLException

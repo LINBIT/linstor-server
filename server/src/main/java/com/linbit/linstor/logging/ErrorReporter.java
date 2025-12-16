@@ -38,7 +38,7 @@ public interface ErrorReporter
      *
      * @return
      */
-    Level getCurrentLogLevel();
+    @Nullable Level getCurrentLogLevel();
 
     /**
      * Sets the log level, if the backing logging frameworks supports that.
@@ -135,7 +135,7 @@ public interface ErrorReporter
      *
      * @return the logName of the generated report; may be null if no report was created
      */
-    String reportError(
+    @Nullable String reportError(
         Throwable errorInfo,
         @Nullable AccessContext accCtx,
         @Nullable Peer client,
@@ -154,7 +154,7 @@ public interface ErrorReporter
      *
      * @return the logName of the generated report; may be null if no report was created
      */
-    String reportError(
+    @Nullable String reportError(
         Level logLevel,
         Throwable errorInfo,
         @Nullable AccessContext accCtx,
@@ -176,7 +176,7 @@ public interface ErrorReporter
      *
      * @return the logName of the generated report; may be null if no report was created
      */
-    String reportProblem(
+    @Nullable String reportProblem(
         Level logLevel,
         LinStorException errorInfo,
         @Nullable AccessContext accCtx,

@@ -5,7 +5,10 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -85,7 +88,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         {
             try
             {
-                String linstorLogLevel = linstorLogLevelRef;
+                @Nullable String linstorLogLevel = linstorLogLevelRef;
                 if (linstorLogLevel == null)
                 {
                     linstorLogLevel = logLevelRef;
@@ -153,7 +156,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     @Override
     public @Nullable Level getCurrentLogLevel()
     {
-        Level level = null; // no logging, aka OFF
+        @Nullable Level level = null; // no logging, aka OFF
         org.slf4j.Logger crtLogger = mainLogger;
         if (crtLogger.isTraceEnabled())
         {
@@ -235,19 +238,19 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public String reportError(Throwable errorInfo)
+    public @Nullable String reportError(Throwable errorInfo)
     {
         return reportError(Level.ERROR, errorInfo, null, null, null);
     }
 
     @Override
-    public String reportError(Level logLevel, Throwable errorInfo)
+    public @Nullable String reportError(Level logLevel, Throwable errorInfo)
     {
         return reportError(logLevel, errorInfo, null, null, null);
     }
 
     @Override
-    public String reportError(
+    public @Nullable String reportError(
         Throwable errorInfo,
         @Nullable AccessContext accCtx,
         @Nullable Peer client,
@@ -258,7 +261,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public String reportError(
+    public @Nullable String reportError(
         Level logLevel,
         Throwable errorInfo,
         @Nullable AccessContext accCtx,
@@ -270,18 +273,18 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public String reportProblem(
+    public @Nullable String reportProblem(
         Level logLevel,
         LinStorException errorInfo,
-        AccessContext accCtx,
-        Peer client,
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
         String contextInfo
     )
     {
         return reportImpl(logLevel, errorInfo, accCtx, client, contextInfo, false);
     }
 
-    private String reportImpl(
+    private @Nullable String reportImpl(
         Level logLevel,
         Throwable errorInfo,
         @Nullable AccessContext accCtxRef,
@@ -290,7 +293,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         boolean includeStackTrace
     )
     {
-        PrintStream output = null;
+        @Nullable PrintStream output = null;
         long reportNr = errorNr.getAndIncrement();
         final String logName = getLogName(reportNr);
         final LocalDateTime errorTime = LocalDateTime.now();
@@ -384,12 +387,17 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         );
     }
 
+    private Path getErrorLogPath(String logName)
+    {
+        return getLogDirectory().resolve(RPT_PREFIX + logName + RPT_SUFFIX);
+    }
+
     private PrintStream openReportFile(String logName)
     {
-        PrintStream reportPrinter = null;
+        @Nullable PrintStream reportPrinter = null;
         try
         {
-            Path filePath = getLogDirectory().resolve(RPT_PREFIX + logName + RPT_SUFFIX);
+            Path filePath = getErrorLogPath(logName);
             OutputStream reportStream = new FileOutputStream(
                 filePath.toFile()
             );
@@ -446,12 +454,47 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         @Nullable final String version,
         @Nullable final List<String> ids)
     {
-        return h2ErrorReporter.deleteErrorReports(since, to, exception, version, ids);
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try
+        {
+            List<String> delIds = h2ErrorReporter.deleteErrorReports(since, to, exception, version, ids);
+
+            for (String delId : delIds)
+            {
+                Path logFile = getErrorLogPath(delId);
+                try
+                {
+                    if (Files.exists(logFile))
+                    {
+                        Files.delete(logFile);
+                    }
+                }
+                catch (IOException e)
+                {
+                    apiCallRc.add(ApiCallRcImpl.entryBuilder(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            "IO Error deleting text error report: " + logFile)
+                        .setSkipErrorReport(true)
+                        .build());
+                }
+            }
+
+            if (!delIds.isEmpty())
+            {
+                apiCallRc.addEntry(String.format("Deleted %d error-report(s)", delIds.size()), ApiConsts.DELETED);
+            }
+        }
+        catch (ApiRcException apiRcExc)
+        {
+            apiCallRc.addEntries(apiRcExc.getApiCallRc());
+        }
+
+        return apiCallRc;
     }
 
     private @Nullable BasicFileAttributes getAttributes(final Path file)
     {
-        BasicFileAttributes basicFileAttributes = null;
+        @Nullable BasicFileAttributes basicFileAttributes = null;
         try
         {
             basicFileAttributes = Files.readAttributes(file, BasicFileAttributes.class);
@@ -502,7 +545,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 .filter(file ->
                 {
                     // only archive files older 2 months (at month starting)
-                    BasicFileAttributes attr = getAttributes(file);
+                    @Nullable BasicFileAttributes attr = getAttributes(file);
                     boolean use = false;
                     if (attr != null)
                     {
@@ -513,7 +556,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 })
                 .collect(Collectors.groupingBy(file ->
                 {
-                    BasicFileAttributes attr = getAttributes(file);
+                    @Nullable BasicFileAttributes attr = getAttributes(file);
                     return attr != null ? df.format(TimeUtils.millisToDate(attr.creationTime().toMillis())) : "unknown";
                 }));
 

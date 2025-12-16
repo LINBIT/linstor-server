@@ -2102,7 +2102,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
          * that means, the difference in the index of the two satellites will be 256
          */
 
-        Level logLevel = errorReporter.getCurrentLogLevel();
+        @Nullable Level logLevel = errorReporter.getCurrentLogLevel();
         errorReporter.setLogLevel(SYS_CTX, Level.TRACE, Level.TRACE);
         long start = System.currentTimeMillis();
         evaluateTest(call);
