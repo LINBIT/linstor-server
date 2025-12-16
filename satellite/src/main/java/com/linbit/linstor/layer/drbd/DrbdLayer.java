@@ -712,7 +712,29 @@ public class DrbdLayer implements DeviceLayer
             // The .res file might not have been generated in the prepare method since it was
             // missing information from the child-layers. Now that we have processed them, we
             // need to make sure the .res file exists in all circumstances.
-            drbdResFileUtils.regenerateResFile(drbdRscData);
+            // However, if the underlying devices are not accessible (e.g., LUKS device is closed
+            // during resource deletion), we skip regenerating the res file to avoid errors
+            boolean canRegenerateResFile = true;
+            if (!skipDisk && !drbdRscData.getAbsResource().isDrbdDiskless(workerCtx))
+            {
+                AbsRscLayerObject<Resource> dataChild = drbdRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+                if (dataChild != null)
+                {
+                    for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                    {
+                        VlmProviderObject<Resource> childVlm = dataChild.getVlmProviderObject(drbdVlmData.getVlmNr());
+                        if (childVlm == null || !childVlm.exists() || childVlm.getDevicePath() == null)
+                        {
+                            canRegenerateResFile = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (canRegenerateResFile)
+            {
+                drbdResFileUtils.regenerateResFile(drbdRscData);
+            }
 
             // createMetaData needs rendered resFile
             for (DrbdVlmData<Resource> drbdVlmData : createMetaData)
@@ -885,19 +907,47 @@ public class DrbdLayer implements DeviceLayer
 
                 if (drbdRscData.isAdjustRequired())
                 {
-                    try
+                    // Check if underlying devices are accessible before adjusting
+                    // This is important for encrypted resources (LUKS) where the device
+                    // might be closed during deletion
+                    boolean canAdjust = true;
+                    if (!skipDisk && !drbdRscData.getAbsResource().isDrbdDiskless(workerCtx))
                     {
-                        drbdUtils.adjust(
-                            drbdRscData,
-                            false,
-                            skipDisk,
-                            false
-                        );
+                        AbsRscLayerObject<Resource> dataChild = drbdRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+                        if (dataChild != null)
+                        {
+                            for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                            {
+                                VlmProviderObject<Resource> childVlm = dataChild.getVlmProviderObject(drbdVlmData.getVlmNr());
+                                if (childVlm == null || !childVlm.exists() || childVlm.getDevicePath() == null)
+                                {
+                                    canAdjust = false;
+                                    break;
+                                }
+                            }
+                        }
                     }
-                    catch (ExtCmdFailedException extCmdExc)
+                    
+                    if (canAdjust)
                     {
-                        drbdResFileUtils.restoreBackupResFile(drbdRscData);
-                        throw extCmdExc;
+                        try
+                        {
+                            drbdUtils.adjust(
+                                drbdRscData,
+                                false,
+                                skipDisk,
+                                false
+                            );
+                        }
+                        catch (ExtCmdFailedException extCmdExc)
+                        {
+                            drbdResFileUtils.restoreBackupResFile(drbdRscData);
+                            throw extCmdExc;
+                        }
+                    }
+                    else
+                    {
+                        drbdRscData.setAdjustRequired(false);
                     }
                 }
 
