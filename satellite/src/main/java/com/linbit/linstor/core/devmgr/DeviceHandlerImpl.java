@@ -394,8 +394,9 @@ public class DeviceHandlerImpl implements DeviceHandler
                     processResource(rscLayerObject, apiCallRc);
 
                     StateFlags<Flags> rscFlags = rsc.getStateFlags();
-                    if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) &&
-                        rscFlags.isUnset(wrkCtx, Resource.Flags.INACTIVE) &&
+                    if (rscFlags.isUnset(wrkCtx, Flags.DELETE) &&
+                        rscFlags.isUnset(wrkCtx, Flags.DRBD_DELETE) &&
+                        rscFlags.isUnset(wrkCtx, Flags.INACTIVE) &&
                         rsc.getResourceDefinition().getFlags().isUnset(wrkCtx, ResourceDefinition.Flags.CLONING))
                     {
                         if (rscLayerObject.getLayerKind().isLocalOnly())
