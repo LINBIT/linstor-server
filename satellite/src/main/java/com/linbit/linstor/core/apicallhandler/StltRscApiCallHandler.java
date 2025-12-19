@@ -413,8 +413,7 @@ class StltRscApiCallHandler
 
                 if (localRsc == null)
                 {
-                    CriticalError.die(
-                        errorReporter,
+                    CriticalError.dieSoon(
                         String.format(
                             "The local resource with the UUID '%s' was not found in the stored " +
                                 "resource definition '%s'.",
@@ -475,8 +474,7 @@ class StltRscApiCallHandler
                                 removed.getNode().getName().displayValue)
                             )
                             {
-                                CriticalError.die(
-                                    errorReporter,
+                                CriticalError.dieSoon(
                                     "The resource with UUID '%s' was deployed on node '%s' but is now " +
                                         "on node '%s' (this should have cause a delete and re-deploy of that resource)."
                                 );
@@ -485,7 +483,7 @@ class StltRscApiCallHandler
                                 removed.getNode().getUuid())
                             )
                             {
-                                CriticalError.dieUuidMissmatch(errorReporter,
+                                CriticalError.dieUuidMissmatch(
                                     "Node",
                                     removed.getNode().getName().displayValue,
                                     otherRsc.getNodeName(),
@@ -860,7 +858,6 @@ class StltRscApiCallHandler
         if (!localUuid.equals(remoteUuid))
         {
             CriticalError.dieUuidMissmatch(
-                errorReporter,
                 type,
                 localName,
                 remoteName,

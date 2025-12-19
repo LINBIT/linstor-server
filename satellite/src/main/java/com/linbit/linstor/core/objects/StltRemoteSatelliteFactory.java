@@ -94,7 +94,6 @@ public class StltRemoteSatelliteFactory
             if (!remote.getUuid().equals(uuid))
             {
                 CriticalError.dieUuidMissmatch(
-                    errorReporter,
                     StltRemote.class.getSimpleName(),
                     remote.getName().displayValue,
                     remoteNameRef.displayValue,

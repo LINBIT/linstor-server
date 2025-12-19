@@ -84,7 +84,6 @@ public class ExternalFileSatelliteFactory
             if (!extFile.getUuid().equals(uuid))
             {
                 CriticalError.dieUuidMissmatch(
-                    errorReporter,
                     ExternalFile.class.getSimpleName(),
                     extFile.getName().extFileName,
                     extFileNameRef.extFileName,

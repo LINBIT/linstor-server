@@ -504,6 +504,16 @@ public final class Controller
             () -> null
         );
 
+        // register CriticalError die error handler
+        // We cannot directly call System.exit on a Critical error, because the code calling the exit
+        // can still have locks and the applicationmanager also needs locks for a prober shutdown
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            if (throwable instanceof CriticalError)
+            {
+                CriticalError.die(errorLog, (CriticalError) throwable);
+            }
+        });
+
         // check database type
         DatabaseDriverInfo.DatabaseType dbType = checkDatabaseConfig(errorLog, cfg);
         errorLog.logInfo("%s %s", "Database type is", dbType.displayName());

@@ -12,6 +12,7 @@ import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
+import com.linbit.linstor.core.CriticalError;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -49,6 +50,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
@@ -107,6 +109,13 @@ public class CommonMessageProcessor implements MessageProcessor
         // fashion as part of the message re-ordering.
         sink = Sinks.many().unicast().onBackpressureBuffer(Queues.<Runnable>unbounded(queueSize).get());
         Flux<Runnable> workerPool = sink.asFlux();
+        Hooks.onOperatorError((throwable, context) -> {
+            if (throwable instanceof CriticalError)
+            {
+                CriticalError.die(errorLog, (CriticalError) throwable);
+            }
+            return throwable;
+        });
         workerPool
             .parallel(thrCount, 1)
             .runOn(scheduler, 1)

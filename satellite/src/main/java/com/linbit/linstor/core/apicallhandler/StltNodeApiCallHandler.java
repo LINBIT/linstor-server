@@ -337,7 +337,6 @@ public class StltNodeApiCallHandler
         if (!localUuid.equals(remoteUuid))
         {
             CriticalError.dieUuidMissmatch(
-                errorReporter,
                 type,
                 localName,
                 remoteName,

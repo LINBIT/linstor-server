@@ -92,7 +92,6 @@ public class S3RemoteSatelliteFactory
             if (!remote.getUuid().equals(uuid))
             {
                 CriticalError.dieUuidMissmatch(
-                    errorReporter,
                     S3Remote.class.getSimpleName(),
                     remote.getName().displayValue,
                     remoteNameRef.displayValue,

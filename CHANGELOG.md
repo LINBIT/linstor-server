@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed missing transaction-commits during evacuate's copy-snap
 - Make sure updateDiscGranularity is not called if only DRBD_DELETE is set
 - Also delete error-report text files on error delete api call
+- Properly exit on a CriticalError instead of running into a deadlock
 
 ## [1.33.0] - 2025-12-11
 

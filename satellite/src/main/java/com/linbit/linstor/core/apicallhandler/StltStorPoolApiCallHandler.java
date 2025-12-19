@@ -494,7 +494,6 @@ class StltStorPoolApiCallHandler
         if (!localUuid.equals(remoteUuid))
         {
             CriticalError.dieUuidMissmatch(
-                errorReporter,
                 type,
                 localName,
                 remoteName,

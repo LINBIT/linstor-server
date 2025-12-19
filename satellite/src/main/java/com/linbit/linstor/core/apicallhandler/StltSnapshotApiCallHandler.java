@@ -442,7 +442,7 @@ public class StltSnapshotApiCallHandler
     {
         if (!localUuid.equals(remoteUuid))
         {
-            CriticalError.dieUuidMissmatch(errorReporter,
+            CriticalError.dieUuidMissmatch(
                 type,
                 localName,
                 remoteName,
