@@ -1,3 +1,16 @@
+linstor-server (1.33.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gitlab: add ci_remove_success_logs
+  * error-reporter: delete text files on error delete API
+  * devhandler: do not call updateDiscGran if DRBD_DELETE
+  * criticalerror: Delay System.exit() until all locks are given up
+
+  [ Johanna Kucera ]
+  * Evacuate,Backups: add missing transaction commits
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 22 Dec 2025 16:01:28 +0000
+
 linstor-server (1.33.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
