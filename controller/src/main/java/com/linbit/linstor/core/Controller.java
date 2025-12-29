@@ -26,7 +26,6 @@ import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -460,10 +459,6 @@ public final class Controller
         {
             dbType = DatabaseDriverInfo.DatabaseType.SQL;
         }
-        else if (dbConnectionUrl.startsWith("etcd"))
-        {
-            dbType = DatabaseDriverInfo.DatabaseType.ETCD;
-        }
         else if (dbConnectionUrl.startsWith("k8s"))
         {
             dbType = DatabaseDriverInfo.DatabaseType.K8S_CRD;
@@ -490,8 +485,6 @@ public final class Controller
 
         Path sentryFilePath = Paths.get(cfg.getConfigDir(), "sentry.properties");
         System.setProperty("sentry.properties.file", sentryFilePath.toString());
-
-        EtcdUtils.linstorPrefix = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
 
         MDC.put(ErrorReporter.LOGID, "ffffff");
         StdErrorReporter errorLog = new StdErrorReporter(

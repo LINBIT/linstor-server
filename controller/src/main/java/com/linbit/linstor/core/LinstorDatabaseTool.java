@@ -23,7 +23,6 @@ import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugModule;
 import com.linbit.linstor.event.EventModule;
@@ -157,7 +156,6 @@ public class LinstorDatabaseTool
                 cfgPath
             }
         );
-        EtcdUtils.linstorPrefix = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
 
         ErrorReporter errorLog = new StdErrorReporter(
             "linstor-db",

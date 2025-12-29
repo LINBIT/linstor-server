@@ -81,9 +81,6 @@ public final class StorPoolDbDriver
         switch (getDbType())
         {
             case SQL: // fall-through
-            case ETCD:
-                setColumnSetter(EXTERNAL_LOCKING, sp -> Boolean.toString(sp.isExternalLocking()));
-                break;
             case K8S_CRD:
                 setColumnSetter(EXTERNAL_LOCKING, sp -> sp.isExternalLocking());
                 break;
@@ -115,9 +112,6 @@ public final class StorPoolDbDriver
 
         switch (getDbType())
         {
-            case ETCD:
-                externalLocking = raw.build(EXTERNAL_LOCKING, Boolean::parseBoolean);
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 externalLocking = raw.get(EXTERNAL_LOCKING);

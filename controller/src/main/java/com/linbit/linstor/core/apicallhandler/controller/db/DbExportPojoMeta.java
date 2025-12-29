@@ -1,8 +1,10 @@
 package com.linbit.linstor.core.apicallhandler.controller.db;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties({"etcd_version"})
 public class DbExportPojoMeta
 {
     @JsonProperty("linstor_version")
@@ -15,8 +17,6 @@ public class DbExportPojoMeta
     public final String genCrdVersion;
     @JsonProperty("sql_version")
     public final String sqlVersion;
-    @JsonProperty("etcd_version")
-    public final int etcdVersion;
     @JsonProperty("k8s_version")
     public final int k8sVersion;
 
@@ -27,7 +27,6 @@ public class DbExportPojoMeta
         @JsonProperty("exported_from") String exportedByRef,
         @JsonProperty("data_version") String genCrdVersionRef,
         @JsonProperty("sql_version") String sqlVerionRef,
-        @JsonProperty("etcd_version") int etcdVersionRef,
         @JsonProperty("k8s_version") int k8sVersionRef
     )
     {
@@ -36,7 +35,6 @@ public class DbExportPojoMeta
         exportedBy = exportedByRef;
         genCrdVersion = genCrdVersionRef;
         sqlVersion = sqlVerionRef;
-        etcdVersion = etcdVersionRef;
         k8sVersion = k8sVersionRef;
     }
 }

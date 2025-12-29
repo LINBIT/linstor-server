@@ -106,42 +106,6 @@ project(':server') {
         // toml parsing library
         api group: 'io.hotmoka', name: 'toml4j', version: '0.7.3'
 
-        // this needs to be moved to the controller, once we have refactored
-        // our interfaces requiring this to be here
-        api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.24'
-        constraints {
-            api('io.netty:netty-transport-native-epoll:4.1.118.Final') {
-                because('to have the same version with newer libs')
-            }
-            api('io.netty:netty-codec:4.1.118.Final') {
-                because('to have the same version with newer libs')
-            }
-            api('io.netty:netty-codec-http:4.1.118.Final') {
-                because('to have the same version with newer libs')
-            }
-            api('io.netty:netty-codec-http2:4.1.118.Final') {
-                because('to have the same version with newer libs')
-            }
-            api('io.netty:netty-handler:4.1.118.Final') {
-                because('to have the same version with newer libs')
-            }
-            runtimeOnly('io.grpc:grpc-netty:1.72.0') {
-                because('newer protobuf version')
-            }
-            api('io.grpc:grpc-protobuf:1.72.0') {
-                because('newer protobuf version')
-            }
-            api('io.grpc:grpc-stub:1.72.0') {
-                because('newer protobuf version')
-            }
-            api('io.grpc:grpc-netty:1.72.0') {
-                because('newer protobuf version')
-            }
-            api('com.google.code.gson:gson:2.11.0') {
-                because('newer protobuf version')
-            }
-        }
-
         api group: 'io.fabric8', name: 'kubernetes-client', version: '7.3.1'
 
         api group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.8.4'

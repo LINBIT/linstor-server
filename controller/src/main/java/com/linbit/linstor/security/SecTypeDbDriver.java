@@ -60,13 +60,6 @@ public class SecTypeDbDriver extends AbsDatabaseDriver<SecurityType, SecTypeInit
                     Function.identity()
                 );
                 break;
-            case ETCD:
-                typeEnabledDriver = generateSingleColumnDriver(
-                    TYPE_ENABLED,
-                    this::getId,
-                    enabled -> Boolean.toString(enabled)
-                );
-                break;
             default:
                 throw new ImplementationError("Unexpected Db type: " + getDbType());
         }

@@ -53,14 +53,6 @@ public final class SecObjectProtectionAclDbDriver
                 setColumnSetter(ACCESS_TYPE, acEntry -> acEntry.access.getAccessMask());
                 accessTypeDriver = generateSingleColumnDriver(ACCESS_TYPE, this::getId, AccessType::getAccessMask);
                 break;
-            case ETCD:
-                setColumnSetter(ACCESS_TYPE, acEntry -> Short.toString(acEntry.access.getAccessMask()));
-                accessTypeDriver = generateSingleColumnDriver(
-                    ACCESS_TYPE,
-                    this::getId,
-                    accessType -> Short.toString(accessType.getAccessMask())
-                );
-                break;
             default:
                 throw new ImplementationError("Unexpected db type: " + getDbType());
         }

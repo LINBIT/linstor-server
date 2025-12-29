@@ -23,7 +23,6 @@ import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.CLUSTER_ID;
@@ -86,16 +85,6 @@ public final class LinstorRemoteDbDriver extends AbsProtectedDatabaseDriver<Lins
 
         switch (getDbType())
         {
-            case ETCD:
-                setColumnSetter(
-                    ENCRYPTED_PASSPHRASE,
-                    remote ->
-                    {
-                        byte[] passphrase = remote.getEncryptedRemotePassphrase(dbCtx);
-                        return passphrase != null ? Base64.encode(passphrase) : null;
-                    }
-                );
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 setColumnSetter(ENCRYPTED_PASSPHRASE, remote -> remote.getEncryptedRemotePassphrase(dbCtx));
@@ -108,13 +97,6 @@ public final class LinstorRemoteDbDriver extends AbsProtectedDatabaseDriver<Lins
 
         switch (getDbType())
         {
-            case ETCD:
-                encryptedPassphraseDriver = generateSingleColumnDriver(
-                    ENCRYPTED_PASSPHRASE,
-                    ignored -> "do not log",
-                    byteArr -> byteArr != null ? Base64.encode(byteArr) : null
-                );
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 encryptedPassphraseDriver = generateSingleColumnDriver(
@@ -169,11 +151,6 @@ public final class LinstorRemoteDbDriver extends AbsProtectedDatabaseDriver<Lins
         final byte[] encryptedPassphrase;
         switch (getDbType())
         {
-            case ETCD:
-                initFlags = Long.parseLong(raw.get(FLAGS));
-                String encPassphraseBase64 = raw.get(ENCRYPTED_PASSPHRASE);
-                encryptedPassphrase = encPassphraseBase64 != null ? Base64.decode(encPassphraseBase64) : null;
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 initFlags = raw.get(FLAGS);

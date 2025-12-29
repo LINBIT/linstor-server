@@ -251,10 +251,6 @@ public class Controller
         controllerConfig.db.in_memory = ctrlCfg.getDbInMemory();
         controllerConfig.db.version_check_disabled = ctrlCfg.isDbVersionCheckDisabled();
 
-        controllerConfig.db.etcd = new JsonGenTypes.ControllerConfigDbEtcd();
-        controllerConfig.db.etcd.operations_per_transaction = ctrlCfg.getEtcdOperationsPerTransaction();
-        controllerConfig.db.etcd.prefix = ctrlCfg.getEtcdPrefix();
-
         controllerConfig.db.k8s = new JsonGenTypes.ControllerConfigDbK8s();
         controllerConfig.db.k8s.request_retries = ctrlCfg.getK8sRequestRetries();
         controllerConfig.db.k8s.max_rollback_entries = ctrlCfg.getK8sMaxRollbackEntries();

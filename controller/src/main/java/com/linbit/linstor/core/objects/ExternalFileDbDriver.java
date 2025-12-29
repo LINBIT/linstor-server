@@ -25,7 +25,6 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.ByteUtils;
-import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Files.CONTENT;
@@ -77,14 +76,6 @@ public final class ExternalFileDbDriver extends AbsProtectedDatabaseDriver<Exter
 
         switch (getDbType())
         {
-            case ETCD:
-                setColumnSetter(CONTENT, extFile -> Base64.encode(extFile.getContent(dbCtxRef)));
-                contentDriver = generateSingleColumnDriver(
-                    CONTENT,
-                    extFile -> new String(extFile.getContent(dbCtxRef)),
-                    Base64::encode
-                );
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 setColumnSetter(CONTENT, extFile -> extFile.getContent(dbCtxRef));
@@ -152,11 +143,6 @@ public final class ExternalFileDbDriver extends AbsProtectedDatabaseDriver<Exter
 
         switch (getDbType())
         {
-            case ETCD:
-                content = Base64.decode(raw.get(CONTENT));
-                initFlags = Long.parseLong(raw.get(FLAGS));
-                setColumnSetter(CONTENT, extFile -> Base64.encode(extFile.getContent(dbCtx)));
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 content = raw.get(CONTENT);

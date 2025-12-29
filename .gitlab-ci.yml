@@ -19,7 +19,7 @@ spec:
     vmshed_variants:
       type: string
       default: --variant standard
-      description: "which variant to run: [standard, default, crd, etcd]; e.g. `--variant crd --variant etcd`"
+      description: "which variant to run: [standard, default, crd]; e.g. `--variant crd`"
     vmshed_print_error_details:
       type: boolean
       default: false
@@ -364,7 +364,7 @@ test-e2e:
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_COMMIT_BRANCH == "jenkins"
       variables:
-        TMP_VARIANTS: "--variant default --variant etcd --variant crd"
+        TMP_VARIANTS: "--variant default --variant crd"
     - if: '$CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE == "push"'
       variables:
         TMP_VARIANTS: "--variant default"

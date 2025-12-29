@@ -271,7 +271,6 @@ public class DbMigrater
                 case ASE: // fall-through
                 case DB2_I: // fall-through
                 case DB2_Z: // fall-through
-                case ETCD: // fall-through
                 case MSFT_SQLSERVER: // fall-through
                 case ORACLE_RDBMS: // fall-through
                 case UNKNOWN: // fall-through

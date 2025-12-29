@@ -17,7 +17,6 @@ import com.linbit.linstor.dbdrivers.interfaces.SecIdentityCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdentityDatabaseDriver.SecIdentityDbObj;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdentities.IDENTITY_DSP_NAME;
@@ -86,34 +85,6 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<SecIdentityDbObj, Voi
                     Function.identity()
                 );
                 break;
-            case ETCD:
-                setColumnSetter(PASS_HASH, id -> Base64.encode(id.getPassHash()));
-                setColumnSetter(PASS_SALT, id -> Base64.encode(id.getPassSalt()));
-                setColumnSetter(ID_ENABLED, id -> Boolean.toString(id.isEnabled()));
-                setColumnSetter(ID_LOCKED, id -> Boolean.toString(id.isLocked()));
-
-                passHashDriver = generateSingleColumnDriver(
-                    PASS_HASH,
-                    ignored -> MSG_DO_NOT_LOG,
-                    Base64::encode
-                );
-                passSaltDriver = generateSingleColumnDriver(
-                    PASS_SALT,
-                    ignored -> MSG_DO_NOT_LOG,
-                    Base64::encode
-                );
-
-                idEnabledDriver = generateSingleColumnDriver(
-                    ID_ENABLED,
-                    this::getId,
-                    enabled -> Boolean.toString(enabled)
-                );
-                idLockedDriver = generateSingleColumnDriver(
-                    ID_LOCKED,
-                    this::getId,
-                    locked -> Boolean.toString(locked)
-                );
-                break;
             default:
                 throw new ImplementationError("Unexpected Db type: " + getDbType());
         }
@@ -163,10 +134,6 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<SecIdentityDbObj, Voi
             case K8S_CRD:
                 passHash = rawRef.get(PASS_HASH);
                 passSalt = rawRef.get(PASS_SALT);
-                break;
-            case ETCD:
-                passHash = rawRef.buildParsed(PASS_HASH, Base64::decode);
-                passSalt = rawRef.buildParsed(PASS_SALT, Base64::decode);
                 break;
             default:
                 throw new ImplementationError("Unexpected Db type: " + getDbType());

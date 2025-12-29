@@ -30,7 +30,6 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
@@ -102,20 +101,6 @@ public final class ResourceDefinitionDbDriver
         setColumnSetter(PARENT_UUID, ignored -> null);
         switch (getDbType())
         {
-            case ETCD:
-                setColumnSetter(
-                    RESOURCE_EXTERNAL_NAME,
-                    rscDfn -> {
-                        byte[] extName = rscDfn.getExternalName();
-                        String extNameBase64 = null;
-                        if (extName != null)
-                        {
-                            extNameBase64 = Base64.encode(rscDfn.getExternalName());
-                        }
-                        return extNameBase64;
-                    }
-                );
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 setColumnSetter(RESOURCE_EXTERNAL_NAME, ResourceDefinition::getExternalName);
@@ -176,11 +161,6 @@ public final class ResourceDefinitionDbDriver
 
             switch (getDbType())
             {
-                case ETCD:
-                    flags = Long.parseLong(raw.get(RESOURCE_FLAGS));
-                    String extNameBase64 = raw.get(RESOURCE_EXTERNAL_NAME);
-                    extName = extNameBase64 != null ? Base64.decode(extNameBase64) : null;
-                    break;
                 case SQL:// fall-through
                 case K8S_CRD:
                     flags = raw.get(RESOURCE_FLAGS);

@@ -2,7 +2,6 @@ package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.ControllerSQLDatabase;
 import com.linbit.linstor.core.objects.ExternalFileDbDriver;
@@ -47,11 +46,8 @@ import com.linbit.linstor.core.objects.remotes.S3RemoteDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
-import com.linbit.linstor.dbcp.etcd.DbEtcd;
-import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrdInitializer;
-import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
@@ -145,7 +141,6 @@ import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.k8s.crd.K8sCrdEngine;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.security.DbAccessor;
-import com.linbit.linstor.security.DbEtcdPersistence;
 import com.linbit.linstor.security.DbK8sCrdPersistence;
 import com.linbit.linstor.security.DbSQLPersistence;
 import com.linbit.linstor.security.SecConfigDbDriver;
@@ -308,7 +303,6 @@ public class ControllerDbModule extends AbstractModule
         // all 3 are (indirectly) needed by the db-exporter. just make sure to not re-bind the same interface
         // multiple times!
         bind(ControllerSQLDatabase.class).to(DbConnectionPool.class);
-        bind(ControllerETCDDatabase.class).to(DbEtcd.class);
         bind(ControllerK8sCrdDatabase.class).to(DbK8sCrd.class);
         bindDbType();
     }
@@ -333,18 +327,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(new TypeLiteral<DbAccessor<? extends ControllerDatabase>>()
                 {
                 }).to(new TypeLiteral<DbSQLPersistence>()
-                {
-                });
-
-                break;
-            case ETCD:
-                bind(ControllerDatabase.class).to(DbEtcd.class);
-                bind(DbEngine.class).to(ETCDEngine.class);
-
-                bind(DbInitializer.class).to(DbEtcdInitializer.class);
-                bind(new TypeLiteral<DbAccessor<? extends ControllerDatabase>>()
-                {
-                }).to(new TypeLiteral<DbEtcdPersistence>()
                 {
                 });
 

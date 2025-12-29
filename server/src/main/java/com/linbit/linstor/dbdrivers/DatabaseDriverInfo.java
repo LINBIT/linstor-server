@@ -32,7 +32,6 @@ public interface DatabaseDriverInfo
     enum DatabaseType
     {
         SQL,
-        ETCD,
         K8S_CRD;
 
         public String displayName()
@@ -42,9 +41,6 @@ public interface DatabaseDriverInfo
             {
                 case SQL:
                     dspName = "SQL";
-                    break;
-                case ETCD:
-                    dspName = "etcd";
                     break;
                 case K8S_CRD:
                     dspName = "Kubernetes-CRD";

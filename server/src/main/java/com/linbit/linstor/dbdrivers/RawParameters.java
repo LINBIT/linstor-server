@@ -5,14 +5,12 @@ import com.linbit.linstor.annotation.Nonnull;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
-import com.linbit.utils.Base64;
 import com.linbit.utils.ExceptionThrowingFunction;
 
 import java.io.IOException;
 import java.sql.JDBCType;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +39,7 @@ public class RawParameters
     }
 
     /**
-     * ETCD always returns Strings for {@link #get(Column)}. This method however will call for ETCD the
-     * {@link #getValueFromEtcd(Column)} before returning the value.
+     * ETCD always returns Strings for {@link #get(Column)}.
      * As a result, the value will be parsed based on the {@link Column#getSqlType()}.
      *
      * For non-ETCD engines, this method is a simple delegate for {@link #get(Column)}.
@@ -55,9 +52,6 @@ public class RawParameters
             case SQL:
             case K8S_CRD:
                 ret = get(col);
-                break;
-            case ETCD:
-                ret = getValueFromEtcd(col);
                 break;
             default:
                 throw new ImplementationError("Unknown db type: " + dbType);
@@ -85,62 +79,6 @@ public class RawParameters
         if (data != null)
         {
             ret = func.accept(data);
-        }
-        return ret;
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> @Nullable T getValueFromEtcd(Column col) throws ImplementationError
-    {
-        @Nullable T ret;
-        @Nullable String etcdVal = (String) rawDataMap.get(col.getName());
-        if (etcdVal == null)
-        {
-            ret = null;
-        }
-        else
-        {
-            switch (col.getSqlType())
-            {
-                case Types.CHAR:
-                case Types.VARCHAR:
-                case Types.LONGVARBINARY:
-                case Types.CLOB:
-                    ret = (T) etcdVal;
-                    break;
-                case Types.BLOB:
-                    ret = (T) Base64.decode(etcdVal);
-                    break;
-                case Types.BIT:
-                case Types.BOOLEAN:
-                    ret = (T) ((Boolean) Boolean.parseBoolean(etcdVal));
-                    break;
-                case Types.TINYINT:
-                    ret = (T) ((Byte) Byte.parseByte(etcdVal));
-                    break;
-                case Types.SMALLINT:
-                    ret = (T) ((Short) Short.parseShort(etcdVal));
-                    break;
-                case Types.INTEGER:
-                    ret = (T) ((Integer) Integer.parseInt(etcdVal));
-                    break;
-                case Types.BIGINT:
-                case Types.TIMESTAMP:
-                    ret = (T) ((Long) Long.parseLong(etcdVal));
-                    break;
-                case Types.DATE:
-                    ret = (T) (new Date(Long.parseLong(etcdVal)));
-                    break;
-                case Types.REAL:
-                case Types.FLOAT:
-                    ret = (T) ((Float) Float.parseFloat(etcdVal));
-                    break;
-                case Types.DOUBLE:
-                    ret = (T) ((Double) Double.parseDouble(etcdVal));
-                    break;
-                default:
-                    throw new ImplementationError("Unhandled SQL type: " + col.getSqlType());
-            }
         }
         return ret;
     }
@@ -311,25 +249,5 @@ public class RawParameters
         }
 
         return ret;
-    }
-
-    public @Nullable Short etcdGetShort(Column column)
-    {
-        return this.<String, @Nullable Short, RuntimeException>build(column, Short::parseShort);
-    }
-
-    public @Nullable Integer etcdGetInt(Column column)
-    {
-        return this.<String, @Nullable Integer, RuntimeException>build(column, Integer::parseInt);
-    }
-
-    public @Nullable Long etcdGetLong(Column column)
-    {
-        return this.<String, @Nullable Long, RuntimeException>build(column, Long::parseLong);
-    }
-
-    public @Nullable Boolean etcdGetBoolean(Column column)
-    {
-        return this.<String, @Nullable Boolean, RuntimeException>build(column, Boolean::parseBoolean);
     }
 }

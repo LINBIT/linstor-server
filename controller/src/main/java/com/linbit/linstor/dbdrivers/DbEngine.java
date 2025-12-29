@@ -17,7 +17,6 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Nodes;
-import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
@@ -36,7 +35,7 @@ import java.util.function.Function;
 
 /**
  * <p>
- * Currently this interface is implemented by {@link SQLEngine} and {@link ETCDEngine}.
+ * Currently this interface is implemented by {@link SQLEngine} and {@link K8sCrdEngine}.
  * </p>
  * <p>
  * The idea is that classes like {@link AbsDatabaseDriver} does not have to know if they are

@@ -121,16 +121,6 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
                 parentId = raw.get(LAYER_RESOURCE_PARENT_ID);
                 suspended = raw.get(LAYER_RESOURCE_SUSPENDED);
                 break;
-            case ETCD:
-                rli = Integer.parseInt(raw.get(LAYER_RESOURCE_ID));
-
-                @Nullable String parentIdStr = raw.get(LAYER_RESOURCE_PARENT_ID);
-                parentId = parentIdStr == null ? null : Integer.parseInt(parentIdStr);
-
-                @Nullable String suspendedStr = raw.get(LAYER_RESOURCE_SUSPENDED);
-                suspended = Boolean.parseBoolean(suspendedStr);
-
-                break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }

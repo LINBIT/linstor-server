@@ -177,13 +177,6 @@ public final class ScheduleDbDriver extends AbsProtectedDatabaseDriver<Schedule,
         final Integer maxRetries;
         switch (getDbType())
         {
-            case ETCD:
-                initFlags = Long.parseLong(raw.get(FLAGS));
-                onFailureLong = Long.parseLong(raw.get(ON_FAILURE));
-                keepLocal = raw.<String, Integer, NumberFormatException> build(KEEP_LOCAL, Integer::parseInt);
-                keepRemote = raw.<String, Integer, NumberFormatException> build(KEEP_REMOTE, Integer::parseInt);
-                maxRetries = raw.<String, Integer, NumberFormatException> build(MAX_RETRIES, Integer::parseInt);
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 initFlags = raw.get(FLAGS);

@@ -111,9 +111,6 @@ public final class VolumeConnectionDbDriver
 
             switch (getDbType())
             {
-                case ETCD:
-                    vlmNr = new VolumeNumber(Integer.parseInt(raw.get(VLM_NR)));
-                    break;
                 case SQL: // fall-through
                 case K8S_CRD:
                     vlmNr = raw.build(VLM_NR, VolumeNumber::new);

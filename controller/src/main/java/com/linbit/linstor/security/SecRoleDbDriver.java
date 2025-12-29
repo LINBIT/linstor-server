@@ -66,16 +66,6 @@ public class SecRoleDbDriver extends AbsDatabaseDriver<Role, SecRoleInit, SecRol
                     Function.identity()
                 );
                 break;
-            case ETCD:
-                // by default new roles are always enabled
-                setColumnSetter(ROLE_ENABLED, ignored -> Boolean.TRUE.toString());
-
-                roleEnabledDriver = generateSingleColumnDriver(
-                    ROLE_ENABLED,
-                    this::getId,
-                    enabled -> Boolean.toString(enabled)
-                );
-                break;
             default:
                 throw new ImplementationError("Unexpected Db type: " + getDbType());
         }

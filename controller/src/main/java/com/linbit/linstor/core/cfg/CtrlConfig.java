@@ -31,12 +31,6 @@ public class CtrlConfig extends LinstorConfig
     private boolean dbDisableVersionCheck;
 
     /*
-     * Database.ETCD
-     */
-    private int etcdOperationsPerTransaction = 128;
-    private @Nullable String etcdPrefix;
-
-    /*
      * Database.k8s
      */
     private int k8sRequestRetries = 3;
@@ -99,7 +93,6 @@ public class CtrlConfig extends LinstorConfig
         super.applyDefaultValues();
         setDbConnectionUrl("jdbc:h2:/var/lib/linstor/linstordb");
         setDbDisableVersionCheck(false);
-        setEtcdPrefix("/LINSTOR/");
 
         setLogRestAccessLogPath("rest-access.log");
         setLogRestAccessMode(RestAccessLogMode.NO_LOG);
@@ -225,22 +218,6 @@ public class CtrlConfig extends LinstorConfig
         if (dbDisableVersionCheckRef != null)
         {
             dbDisableVersionCheck = dbDisableVersionCheckRef;
-        }
-    }
-
-    public void setEtcdOperationsPerTransaction(@Nullable Integer etcdOperationsPerTransactionRef)
-    {
-        if (etcdOperationsPerTransactionRef != null)
-        {
-            etcdOperationsPerTransaction = etcdOperationsPerTransactionRef;
-        }
-    }
-
-    public void setEtcdPrefix(final @Nullable String etcdPrefixRef)
-    {
-        if (etcdPrefixRef != null)
-        {
-            etcdPrefix = etcdPrefixRef;
         }
     }
 
@@ -463,16 +440,6 @@ public class CtrlConfig extends LinstorConfig
     public boolean isDbVersionCheckDisabled()
     {
         return dbDisableVersionCheck;
-    }
-
-    public int getEtcdOperationsPerTransaction()
-    {
-        return etcdOperationsPerTransaction;
-    }
-
-    public @Nullable String getEtcdPrefix()
-    {
-        return etcdPrefix;
     }
 
     public int getK8sRequestRetries()

@@ -240,7 +240,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
     public String getCurrentVersion()
     {
         // DO NOT use Flyway, since it requires an actual connection to the database, which might not be running if we
-        // are using ETCD or K8s
+        // are using K8s
 
         ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
         List<Class<? extends LinstorMigration>> sqlMigrationClasses = classPathLoader.loadClasses(

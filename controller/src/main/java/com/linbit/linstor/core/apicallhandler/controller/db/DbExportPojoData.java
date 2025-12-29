@@ -22,7 +22,6 @@ public class DbExportPojoData extends DbExportPojoMeta
         @JsonProperty("exported_from") String exportedByRef,
         @JsonProperty("data_version") String genCrdVersionRef,
         @JsonProperty("sql_version") String sqlVerionRef,
-        @JsonProperty("etcd_version") int etcdVersionRef,
         @JsonProperty("k8s_version") int k8sVersionRef,
         @JsonProperty("tables") List<Table> tablesRef
     )
@@ -33,7 +32,6 @@ public class DbExportPojoData extends DbExportPojoMeta
             exportedByRef,
             genCrdVersionRef,
             sqlVerionRef,
-            etcdVersionRef,
             k8sVersionRef
         );
         tables = tablesRef;

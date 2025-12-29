@@ -3,7 +3,6 @@ package com.linbit.linstor.core;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
@@ -13,19 +12,15 @@ import com.linbit.linstor.core.cfg.CtrlTomlConfig;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
-import com.linbit.linstor.dbcp.etcd.DbEtcd;
-import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrdInitializer;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
-import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StderrErrorReporter;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
-import com.linbit.linstor.transaction.ControllerETCDTransactionMgrGenerator;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
 import com.linbit.utils.PairNonNull;
 
@@ -87,18 +82,12 @@ public class LinstorConfigTool
         "## jdbc connection url\n" +
         "# connection_url = \"jdbc:h2:/var/lib/linstor/linstordb\"\n" +
         "\n" +
-        "## if you use TLS with etcd/crd\n" +
+        "## if you use TLS with crd\n" +
         "# ca_certificate = \"ca.pem\"\n" +
         "# client_certificate = \"client.pem\"\n" +
         "# client_key_pkcs8_pem = \"client-key.pkcs8\"\n" +
         "## set client_key_password if private key has a password\n" +
         "# client_key_password = \"mysecret\"\n" +
-        "\n" +
-        "## for etcd\n" +
-        "## do not set user field if no authentication required\n" +
-        "# connection_url = \"etcd://etcdhost:2379\"\n" +
-        "    [db.etcd]\n" +
-        "    # prefix = \"/LINSTOR/\"\n" +
         "\n" +
         "## for k8s crd\n" +
         "# connection_url = \"k8s\"\n" +
@@ -542,32 +531,6 @@ public class LinstorConfigTool
             case SQL:
                 database = new DbConnectionPool(cfg, reporter);
                 initializer = new DbConnectionPoolInitializer(
-                    reporter,
-                    database,
-                    cfg
-                );
-                break;
-            case ETCD:
-                EtcdUtils.linstorPrefix = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
-                Provider<ControllerETCDDatabase> etcdInitializerProvider = new Provider<>()
-                {
-                    private final DbEtcd dbEtcd = new DbEtcd(
-                        reporter,
-                        cfg,
-                        new ControllerETCDTransactionMgrGenerator(
-                            this,
-                            cfg
-                        )
-                    );
-                    @Override
-                    public ControllerETCDDatabase get()
-                    {
-                        return dbEtcd;
-                    }
-                };
-
-                database = etcdInitializerProvider.get();
-                initializer = new DbEtcdInitializer(
                     reporter,
                     database,
                     cfg

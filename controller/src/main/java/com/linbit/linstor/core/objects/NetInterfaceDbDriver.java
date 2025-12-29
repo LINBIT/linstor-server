@@ -74,12 +74,6 @@ public final class NetInterfaceDbDriver
         switch (getDbType())
         {
             case SQL: // fallthrough
-            case ETCD:
-                setColumnSetter(
-                    STLT_CONN_PORT,
-                    netIf -> TcpPortNumber.getValueNullable(netIf.getStltConnPort(dbCtxRef))
-                );
-                break;
             case K8S_CRD:
                 // TODO: change NetIf.STLT_CONN_PORT from SHORT to INTEGER with SQL migration
                 setColumnSetter(
@@ -151,10 +145,6 @@ public final class NetInterfaceDbDriver
 
         switch (getDbType())
         {
-            case ETCD:
-                String portStr = raw.get(STLT_CONN_PORT);
-                port = portStr != null ? new TcpPortNumber(Integer.parseInt(portStr)) : null;
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 Object portObj = raw.get(STLT_CONN_PORT);

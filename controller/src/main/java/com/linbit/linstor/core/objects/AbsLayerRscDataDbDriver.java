@@ -350,9 +350,6 @@ public abstract class AbsLayerRscDataDbDriver<
             case K8S_CRD:
                 lri = rawRef.get(layerRscIdColumn);
                 break;
-            case ETCD:
-                lri = rawRef.etcdGetInt(layerRscIdColumn);
-                break;
             default:
                 throw new ImplementationError("Unknown db type: " + getDbType());
         }

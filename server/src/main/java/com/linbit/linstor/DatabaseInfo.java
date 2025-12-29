@@ -19,8 +19,7 @@ public class DatabaseInfo
         MYSQL,
         MARIADB,
         INFORMIX,
-        ASE,
-        ETCD;
+        ASE;
 
         public String displayName()
         {
@@ -65,9 +64,6 @@ public class DatabaseInfo
                     break;
                 case ASE:
                     dspName = "SAP Adaptive Server Enterprise (Sybase)";
-                    break;
-                case ETCD:
-                    dspName = "Non-SQL / etcd";
                     break;
                 default:
                     throw new ImplementationError(
@@ -121,9 +117,6 @@ public class DatabaseInfo
                     break;
                 case ASE:
                     dspName = "sybase";
-                    break;
-                case ETCD:
-                    dspName = "etcd";
                     break;
                 default:
                     throw new ImplementationError(
@@ -200,11 +193,6 @@ public class DatabaseInfo
         if (dbUpperName.equals(SUB_ID_MARIADB))
         {
             dbProd = DbProduct.MARIADB;
-        }
-        else
-        if (dbUpperName.equals(ID_ETCD))
-        {
-            dbProd = DbProduct.ETCD;
         }
         return dbProd;
     }

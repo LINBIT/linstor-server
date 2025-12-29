@@ -202,9 +202,6 @@ public class LayerDrbdRscDbDriver
                 // bug: by accident we store the peerSlots as INTEGER instead of SMALLINT
                 peerSlots = rawRef.<Integer>get(LayerDrbdResources.PEER_SLOTS).shortValue();
                 break;
-            case ETCD:
-                peerSlots = rawRef.etcdGetShort(LayerDrbdResources.PEER_SLOTS);
-                break;
             default:
                 throw new ImplementationError("Unknown db type: " + getDbType());
         }

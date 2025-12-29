@@ -89,10 +89,6 @@ public final class VolumeGroupDbDriver
         final long flags;
         switch (getDbType())
         {
-            case ETCD:
-                vlmNr = new VolumeNumber(Integer.parseInt(raw.get(VLM_NR)));
-                flags = Long.parseLong(raw.get(FLAGS));
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 vlmNr = raw.build(VLM_NR, VolumeNumber::new);

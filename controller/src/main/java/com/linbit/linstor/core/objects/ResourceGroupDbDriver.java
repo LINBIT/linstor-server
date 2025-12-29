@@ -52,15 +52,11 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Function;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 
 @Singleton
 public final class ResourceGroupDbDriver
@@ -293,57 +289,21 @@ public final class ResourceGroupDbDriver
         final @Nullable Boolean disklessOnRemaining;
         final @Nullable Short peerSlots;
 
-        try
+        switch (getDbType())
         {
-            switch (getDbType())
-            {
-                case ETCD:
-                    @Nullable String replicaCountStr = raw.get(REPLICA_COUNT);
-                    replicaCount = replicaCountStr != null ? Integer.parseInt(replicaCountStr) : null;
+            case SQL: // fall-through
+            case K8S_CRD:
+                replicaCount = raw.get(REPLICA_COUNT);
 
-                    @Nullable String replicasOnSameStr = raw.get(REPLICAS_ON_SAME);
-                    replicasOnSame = replicasOnSameStr != null ?
-                        new ArrayList<>(OBJ_MAPPER.readValue(replicasOnSameStr, TYPE_REF_STRING_LIST)) :
-                        null;
+                replicasOnSame = raw.getAsStringListNonNull(REPLICAS_ON_SAME);
+                replicasOnDifferentList = raw.getAsStringListNonNull(REPLICAS_ON_DIFFERENT);
+                xReplicasOnDifferentMap = raw.getAsStringIntegerMapNonNull(X_REPLICAS_ON_DIFFERENT);
 
-                    @Nullable String replicasOnDifferentStr = raw.get(REPLICAS_ON_DIFFERENT);
-                    replicasOnDifferentList = replicasOnDifferentStr != null ?
-                        new ArrayList<>(OBJ_MAPPER.readValue(replicasOnDifferentStr, TYPE_REF_STRING_LIST)) :
-                        null;
-
-                    @Nullable String xReplicasOnDifferentMapStr = raw.get(X_REPLICAS_ON_DIFFERENT);
-                    xReplicasOnDifferentMap = xReplicasOnDifferentMapStr != null ?
-                        new TreeMap<>(
-                            OBJ_MAPPER.readValue(xReplicasOnDifferentMapStr, new TypeReference<Map<String, Integer>>()
-                            {
-                            })
-                        ) :
-                        null;
-
-                    @Nullable String disklessOnRemainingStr = raw.get(DISKLESS_ON_REMAINING);
-                    disklessOnRemaining = disklessOnRemainingStr != null ?
-                        Boolean.parseBoolean(disklessOnRemainingStr) : null;
-
-                    peerSlots = raw.etcdGetShort(PEER_SLOTS);
-                    break;
-                case SQL: // fall-through
-                case K8S_CRD:
-                    replicaCount = raw.get(REPLICA_COUNT);
-
-                    replicasOnSame = raw.getAsStringListNonNull(REPLICAS_ON_SAME);
-                    replicasOnDifferentList = raw.getAsStringListNonNull(REPLICAS_ON_DIFFERENT);
-                    xReplicasOnDifferentMap = raw.getAsStringIntegerMapNonNull(X_REPLICAS_ON_DIFFERENT);
-
-                    disklessOnRemaining = raw.get(DISKLESS_ON_REMAINING);
-                    peerSlots = raw.get(PEER_SLOTS);
-                    break;
-                default:
-                    throw new ImplementationError("Unknown database type: " + getDbType());
-            }
-        }
-        catch (IOException exc)
-        {
-            throw new DatabaseException(exc);
+                disklessOnRemaining = raw.get(DISKLESS_ON_REMAINING);
+                peerSlots = raw.get(PEER_SLOTS);
+                break;
+            default:
+                throw new ImplementationError("Unknown database type: " + getDbType());
         }
 
         return new Pair<>(

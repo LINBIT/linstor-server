@@ -23,7 +23,6 @@ import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.EbsRemotes.ACCESS_KEY;
@@ -88,24 +87,6 @@ public final class EbsRemoteDbDriver extends AbsProtectedDatabaseDriver<EbsRemot
 
         switch (getDbType())
         {
-            case ETCD:
-                setColumnSetter(
-                    ACCESS_KEY,
-                    remote ->
-                    {
-                        byte[] accessKey = remote.getEncryptedAccessKey(dbCtx);
-                        return accessKey != null ? Base64.encode(accessKey) : null;
-                    }
-                );
-                setColumnSetter(
-                    SECRET_KEY,
-                    remote ->
-                    {
-                        byte[] secretKey = remote.getEncryptedSecretKey(dbCtx);
-                        return secretKey != null ? Base64.encode(secretKey) : null;
-                    }
-                );
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 setColumnSetter(ACCESS_KEY, remote -> remote.getEncryptedAccessKey(dbCtx));
@@ -129,18 +110,6 @@ public final class EbsRemoteDbDriver extends AbsProtectedDatabaseDriver<EbsRemot
 
         switch (getDbType())
         {
-            case ETCD:
-                encryptedSecretKeyDriver = generateSingleColumnDriver(
-                    SECRET_KEY,
-                    ignored -> "do not log",
-                    byteArr -> byteArr != null ? Base64.encode(byteArr) : null
-                );
-                encryptedAccessKeyDriver = generateSingleColumnDriver(
-                    ACCESS_KEY,
-                    ignored -> "do not log",
-                    byteArr -> byteArr != null ? Base64.encode(byteArr) : null
-                );
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 encryptedSecretKeyDriver = generateSingleColumnDriver(
@@ -206,11 +175,6 @@ public final class EbsRemoteDbDriver extends AbsProtectedDatabaseDriver<EbsRemot
         final byte[] encryptedAccessKey;
         switch (getDbType())
         {
-            case ETCD:
-                initFlags = Long.parseLong(raw.get(FLAGS));
-                encryptedSecretKey = Base64.decode(raw.get(SECRET_KEY));
-                encryptedAccessKey = Base64.decode(raw.get(ACCESS_KEY));
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 initFlags = raw.get(FLAGS);

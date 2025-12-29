@@ -24,7 +24,6 @@ import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.ACCESS_KEY;
@@ -85,10 +84,6 @@ public final class S3RemoteDbDriver extends AbsProtectedDatabaseDriver<S3Remote,
         setColumnSetter(REGION, remote -> remote.getRegion(dbCtx));
         switch (getDbType())
         {
-            case ETCD:
-                setColumnSetter(ACCESS_KEY, remote -> Base64.encode(remote.getAccessKey(dbCtx)));
-                setColumnSetter(SECRET_KEY, remote -> Base64.encode(remote.getSecretKey(dbCtx)));
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 setColumnSetter(ACCESS_KEY, remote -> remote.getAccessKey(dbCtx));
@@ -103,18 +98,6 @@ public final class S3RemoteDbDriver extends AbsProtectedDatabaseDriver<S3Remote,
         regionDriver = generateSingleColumnDriver(REGION, remote -> remote.getRegion(dbCtx), Function.identity());
         switch (getDbType())
         {
-            case ETCD:
-                accessKeyDriver = generateSingleColumnDriver(
-                    ACCESS_KEY,
-                    ignored -> MSG_DO_NOT_LOG,
-                    byteArr -> Base64.encode(byteArr)
-                );
-                secretKeyDriver = generateSingleColumnDriver(
-                    SECRET_KEY,
-                    ignored -> MSG_DO_NOT_LOG,
-                    byteArr -> Base64.encode(byteArr)
-                );
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 accessKeyDriver = generateSingleColumnDriver(
@@ -178,11 +161,6 @@ public final class S3RemoteDbDriver extends AbsProtectedDatabaseDriver<S3Remote,
         final byte[] secretKey;
         switch (getDbType())
         {
-            case ETCD:
-                initFlags = Long.parseLong(raw.get(FLAGS));
-                accessKey = Base64.decode(raw.get(ACCESS_KEY));
-                secretKey = Base64.decode(raw.get(SECRET_KEY));
-                break;
             case SQL: // fall-through
             case K8S_CRD:
                 initFlags = raw.get(FLAGS);

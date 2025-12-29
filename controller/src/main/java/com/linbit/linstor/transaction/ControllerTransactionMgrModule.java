@@ -24,9 +24,6 @@ public class ControllerTransactionMgrModule extends AbstractModule
             case SQL:
                 bind(TransactionMgrGenerator.class).to(ControllerSQLTransactionMgrGenerator.class);
                 break;
-            case ETCD:
-                bind(TransactionMgrGenerator.class).to(ControllerETCDTransactionMgrGenerator.class);
-                break;
             case K8S_CRD:
                 bind(TransactionMgrGenerator.class).to(ControllerK8sCrdTransactionMgrGenerator.class);
                 break;

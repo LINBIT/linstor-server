@@ -100,13 +100,6 @@ public final class ResourceDbDriver extends
                     new Timestamp(createTime.getTime()) :
                     null;
                 break;
-            case ETCD:
-                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
-                    Long.toString(rsc.getCreateTimestamp().get().getTime()) : null);
-                createTimestampTypeMapper = createTime -> createTime != null ?
-                    Long.toString(createTime.getTime()) :
-                    null;
-                break;
             case K8S_CRD:
                 setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
                     rsc.getCreateTimestamp().get().getTime() : null);
@@ -153,14 +146,6 @@ public final class ResourceDbDriver extends
             final long flags;
             switch (getDbType())
             {
-                case ETCD:
-                    flags = Long.parseLong(raw.get(RESOURCE_FLAGS));
-                    final String strCreateTimestamp = raw.get(CREATE_TIMESTAMP);
-                    if (strCreateTimestamp != null)
-                    {
-                        createTimestamp = Long.parseLong(strCreateTimestamp);
-                    }
-                    break;
                 case SQL:
                 case K8S_CRD:
                     flags = raw.get(RESOURCE_FLAGS);

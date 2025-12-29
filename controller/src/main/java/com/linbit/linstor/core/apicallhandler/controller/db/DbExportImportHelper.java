@@ -11,7 +11,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
-import com.linbit.linstor.dbcp.etcd.DbEtcd;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -67,7 +66,6 @@ public class DbExportImportHelper
     private final Map<DatabaseTable, AbsDatabaseDriver<?, ?, ?>> allDrivers;
     private final DbConnectionPool dbSql;
     private final DbEngine currentDbEngine;
-    private final DbEtcd dbEtcd;
     private final DbK8sCrd dbK8s;
     private final Provider<TransactionMgrGenerator> txMgrGenerator;
     private final Provider<TransactionMgr> txMgrProvider;
@@ -80,7 +78,6 @@ public class DbExportImportHelper
         Map<DatabaseTable, AbsDatabaseDriver<?, ?, ?>> allDriversRef,
         DbEngine currentDbEngineRef,
         DbConnectionPool dbSqlRef,
-        DbEtcd dbEtcdRef,
         DbK8sCrd dbK8sRef,
         Provider<TransactionMgrGenerator> txMgrGeneratorRef,
         Provider<TransactionMgr> txMgrProviderRef,
@@ -93,7 +90,6 @@ public class DbExportImportHelper
         allDrivers = allDriversRef;
         currentDbEngine = currentDbEngineRef;
         dbSql = dbSqlRef;
-        dbEtcd = dbEtcdRef;
         dbK8s = dbK8sRef;
         txMgrGenerator = txMgrGeneratorRef;
         txMgrProvider = txMgrProviderRef;
@@ -112,9 +108,6 @@ public class DbExportImportHelper
         String exportedBy;
         switch (currentDbEngine.getType())
         {
-            case ETCD:
-                exportedBy = "etcd";
-                break;
             case K8S_CRD:
                 exportedBy = "k8s";
                 break;
@@ -137,7 +130,6 @@ public class DbExportImportHelper
             exportedBy,
             GenCrdCurrent.VERSION,
             dbSql.getCurrentVersion(),
-            dbEtcd.getCurrentVersion(),
             dbK8s.getCurrentVersion(),
             tables
         );
@@ -255,12 +247,6 @@ public class DbExportImportHelper
             String dbConnectionUrl = ctrlCfg.getDbConnectionUrl();
             switch (currentDbEngine.getType())
             {
-                case ETCD:
-                    // although etcd has no structure we have to update / migrate up to and exported data also contains
-                    // default data, we still need to migrate for non-data entries like linstor database version etc.
-                    // therefore we will also need to truncate the data afterwards
-                    dbEtcd.preImportMigrateToVersion(dbConnectionUrl, exportPojoData.etcdVersion);
-                    break;
                 case K8S_CRD:
                     dbK8s.preImportMigrateToVersion(dbConnectionUrl, exportPojoData.k8sVersion);
                     break;

@@ -13,7 +13,6 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.RawParameters;
-import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -79,7 +78,6 @@ public final class NodeDbDriver extends AbsProtectedDatabaseDriver<Node, Node.In
         switch (getDbType())
         {
             case SQL: // fall-through
-            case ETCD:
                 setColumnSetter(NODE_TYPE, node -> node.getNodeType(dbCtxRef).getFlagValue());
                 break;
             case K8S_CRD:
@@ -88,11 +86,6 @@ public final class NodeDbDriver extends AbsProtectedDatabaseDriver<Node, Node.In
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
-        }
-
-        if (dbEngine instanceof ETCDEngine)
-        {
-            ((ETCDEngine) dbEngine).disableRecursiveDelete(GeneratedDatabaseTables.NODES);
         }
 
         flagsDriver = generateFlagDriver(NODE_FLAGS, Node.Flags.class);
@@ -137,10 +130,6 @@ public final class NodeDbDriver extends AbsProtectedDatabaseDriver<Node, Node.In
         final long flags;
         switch (getDbType())
         {
-            case ETCD:
-                nodeType = Node.Type.getByValue(Long.parseLong(raw.get(NODE_TYPE)));
-                flags = Long.parseLong(raw.get(NODE_FLAGS));
-                break;
             case SQL:
                 nodeType = Node.Type.getByValue(raw.<Integer>get(NODE_TYPE).longValue());
                 flags = raw.get(NODE_FLAGS);

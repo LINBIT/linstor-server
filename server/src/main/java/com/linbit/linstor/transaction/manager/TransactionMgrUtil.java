@@ -12,11 +12,6 @@ public class TransactionMgrUtil
             initScope.seed(TransactionMgrSQL.class, (TransactionMgrSQL) transMgr);
         }
         else
-        if (transMgr instanceof TransactionMgrETCD)
-        {
-            initScope.seed(TransactionMgrETCD.class, (TransactionMgrETCD) transMgr);
-        }
-        else
         if (transMgr instanceof TransactionMgrK8sCrd)
         {
             initScope.seed(TransactionMgrK8sCrd.class, (TransactionMgrK8sCrd) transMgr);

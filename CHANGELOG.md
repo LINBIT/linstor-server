@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Toggle-disk can now be retried or aborted.
 
+### Removed
+
+- ETCD database support is now removed, please convert to SQL or CRD DB, before upgrade
+
 ### Fixed
 
 - Fixed resource definition delete setting DELETE flag when resources are still in use

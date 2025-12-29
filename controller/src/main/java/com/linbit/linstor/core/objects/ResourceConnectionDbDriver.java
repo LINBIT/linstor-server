@@ -140,15 +140,6 @@ public final class ResourceConnectionDbDriver
             final long flags;
             switch (getDbType())
             {
-                case ETCD:
-                    String portSrcStr = raw.get(TCP_PORT_SRC);
-                    portSrc = portSrcStr != null ? new TcpPortNumber(Integer.parseInt(portSrcStr)) : null;
-
-                    String portDstStr = raw.get(TCP_PORT_DST);
-                    portDst = portDstStr != null ? new TcpPortNumber(Integer.parseInt(portDstStr)) : null;
-
-                    flags = Long.parseLong(raw.get(FLAGS));
-                    break;
                 case SQL: // fall-through
                 case K8S_CRD:
                     portSrc = raw.build(TCP_PORT_SRC, TcpPortNumber::new);
