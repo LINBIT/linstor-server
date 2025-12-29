@@ -42,7 +42,7 @@ spec:
       description: "Removes vm logs from successful tests before creating the artifact"
 
 ---
-image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
+image: $LINBIT_DOCKER_REGISTRY/build-helpers:de5278c920b815fcfbaa364b0eb7d15c620e2002
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
@@ -79,7 +79,7 @@ workflow:
         LINBIT_CI_MAX_CPUS: 64  # enough memory on xl runners
     - when: always  # Other pipelines can run, but use the default variables
 
-.upload_nexus:
+.run_lbbuild:
   script:
 # build spacetracking
     - |
@@ -109,6 +109,14 @@ workflow:
     - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
     - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
     - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
+    - pulp file content upload --repository lbbuild-upstream --file linstor-server-$LINSTOR_VERSION.tar.gz --relative-path linstor-server-$LINSTOR_VERSION.tar.gz
+#    - |
+#      curl -kisSf -X POST -u "admin:${LINBIT_PULP_PASSWORD}" \
+#        -H "Content-Type: multipart/form-data" \
+#        -F "repository=https://pulp.at.linbit.com/pulp/api/v3/repositories/file/file/019b1dc3-e2f8-7ef9-860c-9f74ea754d49/" \
+#        -F "relative_path=linstor-server-$LINSTOR_VERSION.tar.gz" \
+#        -F "file=@linstor-server-$LINSTOR_VERSION.tar.gz" \
+#        "https://pulp.at.linbit.com/pulp/api/v3/content/file/files/"
 # workaround a nexus bug not regenerating metadata
     - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel10/x86_64/linstor-controller-$LINSTOR_VERSION-1.noarch.rpm
     - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel10/x86_64/linstor-common-$LINSTOR_VERSION-1.noarch.rpm
@@ -146,6 +154,10 @@ workflow:
         fi
       done
     - rm linstor-server-$LINSTOR_VERSION.tar.gz
+    - |
+      for sha in $(pulp file repository content list --repository lbbuild-upstream | jq -r ".[] | select(.relative_path==\"linstor-server-$LINSTOR_VERSION.tar.gz\") | .sha256"); do
+        pulp file repository content remove --repository lbbuild-upstream --relative-path linstor-server-$LINSTOR_VERSION.tar.gz --sha256 $sha
+      done
 
 .common_e2e:
   script:
@@ -292,7 +304,7 @@ deploy:
   tags:
     - shell
 
-deploy-nexus-master:
+run-lbbuild-master:
   stage: deploy
   rules:
     - if: $CI_COMMIT_BRANCH == 'master'
@@ -301,9 +313,9 @@ deploy-nexus-master:
     - chmod +x /usr/local/bin/lbbuildctl
   variables:
     LINSTOR_VERSION: 1.99.0.latest
-  extends: .upload_nexus
+  extends: .run_lbbuild
 
-deploy-nexus:
+run-lbbuild:
   stage: deploy
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -316,7 +328,7 @@ deploy-nexus:
     - chmod +x /usr/local/bin/lbbuildctl
   variables:
     LINSTOR_VERSION: 1.99.0.$CI_COMMIT_SHORT_SHA
-  extends: .upload_nexus
+  extends: .run_lbbuild
 
 test-e2e-all:
   stage: integration-all
