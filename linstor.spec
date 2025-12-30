@@ -27,17 +27,12 @@ BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python
 %define GRADLE_JAVA_HOME -PjavaHome=/usr/lib64/jvm/jre-11
 %endif
 %else
-%if 0%{?rhel} > 9
+%if 0%{?rhel} > 7
 BuildRequires: java-21-openjdk-headless java-21-openjdk-devel python3
 %define GRADLE_JAVA_HOME -PjavaHome=/usr/lib/jvm/jre-21
 %else
-%if 0%{?rhel} > 7
-BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python3
-%define GRADLE_JAVA_HOME -PjavaHome=/usr/lib/jvm/jre-11
-%else
 BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python2
 %define GRADLE_JAVA_HOME -PjavaHome=/usr/lib/jvm/jre-11
-%endif
 %endif
 %endif
 

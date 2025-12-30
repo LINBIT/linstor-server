@@ -4,7 +4,7 @@ Uploaders: Roland Kammerer <roland.kammerer@linbit.com>
 Section: admin
 Priority: optional
 Build-Depends: debhelper (>= 9),
-               default-jdk-headless (>= 1.11),
+               default-jdk-headless | java-runtime-headless (>= 11),
 #               gradle (>= 6.8.3),
                python3-all (>= 3.5)
 Standards-Version: 3.9.6
@@ -12,14 +12,14 @@ Standards-Version: 3.9.6
 Package: linstor-common
 Architecture: all
 Depends: ${misc:Depends},
-         default-jre-headless (>= 1.11)
+         default-jre-headless | java-runtime-headless (>= 11)
 Description: DRBD distributed resource management utility
  This is the linstor common packages containing shared deps.
 
 Package: linstor-controller
 Architecture: all
 # Pre-Depends for the postinst script
-Pre-Depends: default-jre-headless (>= 1.11)
+Pre-Depends: default-jre-headless | java-runtime-headless (>= 11)
 Depends: ${misc:Depends},
          linstor-common (= ${binary:Version}),
          tar,
