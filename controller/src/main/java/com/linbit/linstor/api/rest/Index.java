@@ -17,7 +17,7 @@ public class Index
     private final CtrlConfig linstorConfig;
     private static final String INDEX_CONTENT = "<html><title>Linstor REST server</title>" +
             "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/" + JsonGenTypes.REST_API_VERSION +
-            "\">API Documentation</a><p>As LINBIT SDS subscriber you can install the UI by running " +
+            "\">API Documentation</a><p>You can install the UI by running " +
             "<code>apt install linstor-gui</code> or <code>dnf install linstor-gui</code>.</p></body></html>";
 
     @Inject
