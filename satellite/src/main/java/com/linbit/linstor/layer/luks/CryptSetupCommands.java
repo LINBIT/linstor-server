@@ -35,6 +35,11 @@ public class CryptSetupCommands implements Luks
     private static final Version V2_1_0 = new Version(2, 1, 0);
     private static final Version V2_0_0 = new Version(2, 0, 0);
     private static final String PBDKF_MAX_MEMORY_KIB = "262144";  // 256 MiB
+    // Fixed LUKS2 data offset in 512-byte sectors (16 MiB = 32768 sectors).
+    // This ensures consistent LUKS header size across all nodes regardless of system defaults.
+    // Without this, different systems may create LUKS with different header sizes (16 MiB vs 32 MiB)
+    // which causes "Low.dev. smaller than requested DRBD-dev. size" errors during toggle-disk.
+    private static final String LUKS2_DATA_OFFSET_SECTORS = "32768";
 
     @SuppressWarnings("unused")
     private final ErrorReporter errorReporter;
@@ -78,13 +83,17 @@ public class CryptSetupCommands implements Luks
 
             List<String> checkedAdditionalOptions = ShellUtils.excludeArguments(
                 additionalOptions,
-                new ShellUtils.ExcludeArgsEntry("--pbkdf-memory", 1)
+                new ShellUtils.ExcludeArgsEntry("--pbkdf-memory", 1),
+                new ShellUtils.ExcludeArgsEntry("--offset", 1)
             );
 
             ArrayList<String> command = new ArrayList<>();
             command.add(CRYPTSETUP);
             command.add("-q");
             command.add("luksFormat");
+            // Always specify explicit offset to ensure consistent LUKS header size across all nodes
+            command.add("--offset");
+            command.add(LUKS2_DATA_OFFSET_SECTORS);
             command.addAll(checkedAdditionalOptions);
             if (version.greaterOrEqual(V2_0_0))
             {
