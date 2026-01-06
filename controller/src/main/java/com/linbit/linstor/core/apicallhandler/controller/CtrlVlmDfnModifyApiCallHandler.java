@@ -689,7 +689,12 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, apiCtx, true);
+                /*
+                 * TODO: improve this size check of metadata.
+                 *  Metadata size check skipped by workaround "withMetaStoragePools=false".
+                 *  This might fail later if a meta-pool runs out of space on the satellite.
+                 */
+                Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, apiCtx, false);
                 for (StorPool sp : storPools)
                 {
                     if (!sp.getDeviceProviderKind().usesThinProvisioning())
