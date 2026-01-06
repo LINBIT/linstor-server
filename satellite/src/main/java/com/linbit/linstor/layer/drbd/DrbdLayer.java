@@ -501,10 +501,13 @@ public class DrbdLayer implements DeviceLayer
         boolean isDiskless = drbdRscData.getAbsResource().isDrbdDiskless(workerCtx);
         StateFlags<Flags> rscFlags = drbdRscData.getAbsResource().getStateFlags();
         boolean isDiskRemoving = rscFlags.isSet(workerCtx, Resource.Flags.DISK_REMOVING);
+        // Check if we're in toggle-disk operation (adding disk to diskless resource)
+        boolean isDiskAdding = rscFlags.isSomeSet(workerCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING);
 
         boolean contProcess = isDiskless;
 
-        boolean processChildren = !isDiskless || isDiskRemoving;
+        // Process children when: has disk, removing disk, OR adding disk (toggle-disk)
+        boolean processChildren = !isDiskless || isDiskRemoving || isDiskAdding;
         // do not process children when ONLY DRBD_DELETE flag is set (DELETE flag is still unset)
         processChildren &= (!rscFlags.isSet(workerCtx, Resource.Flags.DRBD_DELETE) ||
             rscFlags.isSet(workerCtx, Resource.Flags.DELETE));
@@ -697,7 +700,11 @@ public class DrbdLayer implements DeviceLayer
         {
             // hasMetaData needs to be run after child-resource processed
             List<DrbdVlmData<Resource>> createMetaData = new ArrayList<>();
-            if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx) && !skipDisk)
+            // Check if we're in toggle-disk operation (adding disk to diskless resource)
+            boolean isDiskAddingForMd = drbdRscData.getAbsResource().getStateFlags()
+                .isSomeSet(workerCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING);
+            // Create metadata when: has disk OR adding disk (toggle-disk), and skipDisk is disabled
+            if ((!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx) || isDiskAddingForMd) && !skipDisk)
             {
                 // do not try to create meta data while the resource is diskless or skipDisk is enabled
                 for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
@@ -1114,8 +1121,10 @@ public class DrbdLayer implements DeviceLayer
     {
         List<DrbdVlmData<Resource>> checkMetaData = new ArrayList<>();
         Resource rsc = drbdRscData.getAbsResource();
+        // Include DISK_ADD_REQUESTED/DISK_ADDING for toggle-disk scenario where we need to check/create metadata
         if (!rsc.isDrbdDiskless(workerCtx) ||
-            rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING)
+            rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING) ||
+            rsc.getStateFlags().isSomeSet(workerCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING)
         )
         {
             // using a dedicated list to prevent concurrentModificationException
@@ -1311,8 +1320,12 @@ public class DrbdLayer implements DeviceLayer
 
             // Assume that meta data is there and do not create meta data if the check is disabled (checkMetaData),
             // except if there is no disk, because when adding a disk, meta data for a disk must be created
-            // despite the DRBD logic still saying it is diskless
-            hasMetaData = !drbdVlmData.checkMetaData() && drbdVlmData.hasDisk();
+            // despite the DRBD logic still saying it is diskless.
+            // Also force metadata check when DISK_ADD_REQUESTED/DISK_ADDING flag is set (retry scenario
+            // where storage exists but no metadata).
+            boolean isDiskAddingState = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags()
+                .isSomeSet(workerCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING);
+            hasMetaData = !drbdVlmData.checkMetaData() && drbdVlmData.hasDisk() && !isDiskAddingState;
             if (!hasMetaData)
             {
                 if (mdUtils.hasMetaData())
