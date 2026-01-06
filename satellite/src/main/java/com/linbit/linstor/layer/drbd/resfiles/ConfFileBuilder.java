@@ -894,12 +894,16 @@ public class ConfFileBuilder
         if (((Volume) vlmData.getVolume()).getFlags().isUnset(localAccCtx, Volume.Flags.DELETE))
         {
             final String disk;
+            // Check if we're in toggle-disk operation (adding disk to diskless resource)
+            boolean isDiskAdding = vlmData.getVolume().getAbsResource().getStateFlags().isSomeSet(
+                localAccCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING);
             if ((!isPeerRsc && vlmData.getDataDevice() == null) ||
                 (isPeerRsc &&
                 // FIXME: vlmData.getRscLayerObject().getFlags should be used here
                      vlmData.getVolume().getAbsResource().disklessForDrbdPeers(accCtx)
                 ) ||
-                (!isPeerRsc &&
+                // For toggle-disk: if dataDevice is set and we're adding disk, use the actual device
+                (!isPeerRsc && !isDiskAdding &&
                 // FIXME: vlmData.getRscLayerObject().getFlags should be used here
                      vlmData.getVolume().getAbsResource().isDrbdDiskless(accCtx)
                 )
