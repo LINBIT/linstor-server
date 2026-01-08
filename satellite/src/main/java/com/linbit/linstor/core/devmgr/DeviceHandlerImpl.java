@@ -87,6 +87,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @Singleton
 public class DeviceHandlerImpl implements DeviceHandler
@@ -1719,7 +1721,10 @@ public class DeviceHandlerImpl implements DeviceHandler
     private void updateDiscGran(VlmProviderObject<Resource> vlmData) throws DatabaseException, StorageException
     {
         @Nullable String devicePath = vlmData.getDevicePath();
-        if (devicePath != null && vlmData.exists())
+        // Check if device path physically exists before calling lsblk
+        // This is important for DRBD devices which might be temporarily unavailable during adjust
+        // (drbdadm adjust brings devices down/up, and kernel might not have created the device node yet)
+        if (devicePath != null && vlmData.exists() && Files.exists(Paths.get(devicePath)))
         {
             if (vlmData.getDiscGran() == VlmProviderObject.UNINITIALIZED_SIZE)
             {
