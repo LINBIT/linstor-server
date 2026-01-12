@@ -276,8 +276,6 @@ public class CtrlRscLayerDataFactory
 
                 rscDataToProcess.addAll(rscData.getChildren());
             }
-
-            ensureStackDataExists(rscRef, null, new LayerPayload());
         }
         catch (AccessDeniedException exc)
         {
