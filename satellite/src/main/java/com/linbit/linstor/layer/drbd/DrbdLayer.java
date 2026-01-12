@@ -697,7 +697,17 @@ public class DrbdLayer implements DeviceLayer
         {
             // hasMetaData needs to be run after child-resource processed
             List<DrbdVlmData<Resource>> createMetaData = new ArrayList<>();
-            if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx) && !skipDisk)
+            Resource rsc = drbdRscData.getAbsResource();
+            StateFlags<Flags> rscFlags = rsc.getStateFlags();
+
+            // Do not try to create metadata when resource is being deleted
+            boolean isDeleting = rscFlags.isSomeSet(
+                workerCtx,
+                Resource.Flags.DELETE,
+                Resource.Flags.DRBD_DELETE
+            );
+
+            if (!isDeleting && !rsc.isDrbdDiskless(workerCtx) && !skipDisk)
             {
                 // do not try to create meta data while the resource is diskless or skipDisk is enabled
                 for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
@@ -1189,8 +1199,18 @@ public class DrbdLayer implements DeviceLayer
     {
         List<DrbdVlmData<Resource>> checkMetaData = new ArrayList<>();
         Resource rsc = drbdRscData.getAbsResource();
-        if (!rsc.isDrbdDiskless(workerCtx) ||
-            rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING)
+        StateFlags<Flags> rscFlags = rsc.getStateFlags();
+
+        // Do not check metadata when resource is being deleted
+        boolean isDeleting = rscFlags.isSomeSet(
+            workerCtx,
+            Resource.Flags.DELETE,
+            Resource.Flags.DRBD_DELETE
+        );
+
+        if (!isDeleting &&
+            (!rsc.isDrbdDiskless(workerCtx) ||
+             rscFlags.isSet(workerCtx, Resource.Flags.DISK_REMOVING))
         )
         {
             // using a dedicated list to prevent concurrentModificationException
