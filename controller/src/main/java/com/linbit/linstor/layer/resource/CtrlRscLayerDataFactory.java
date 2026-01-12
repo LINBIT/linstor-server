@@ -265,6 +265,11 @@ public class CtrlRscLayerDataFactory
 
     public void resetStoragePools(Resource rscRef)
     {
+        resetStoragePools(rscRef, true);
+    }
+
+    public void resetStoragePools(Resource rscRef, boolean callEnsureStackDataExistsRef)
+    {
         try
         {
             Deque<AbsRscLayerObject<Resource>> rscDataToProcess = new ArrayDeque<>();
@@ -278,7 +283,10 @@ public class CtrlRscLayerDataFactory
                 rscDataToProcess.addAll(rscData.getChildren());
             }
 
-            ensureStackDataExists(rscRef, null, new LayerPayload());
+            if (callEnsureStackDataExistsRef)
+            {
+                ensureStackDataExists(rscRef, null, new LayerPayload());
+            }
         }
         catch (AccessDeniedException exc)
         {

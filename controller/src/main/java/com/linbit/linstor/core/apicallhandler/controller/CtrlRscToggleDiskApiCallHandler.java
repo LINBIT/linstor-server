@@ -35,6 +35,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.utils.MixedStorPoolHelper;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -84,6 +85,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -980,10 +982,16 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 rsc.getNode().getName().displayValue,
                 rscDfn.getName().displayValue
             );
+
+            /*
+             * We also have to remove the currently diskless DrbdRscData and free up the node-id as now we must
+             * use the shared resource's node-id. We still need to preserve TCP ports though.
+             */
+            copyDrbdTcpPortsIfExists(rsc, payload);
         }
         else
         {
-            copyDrbdNodeIdIfExists(rsc, payload);
+            copyDrbdSettings(rsc, payload);
         }
 
         removeLayerData(rsc);
@@ -1163,10 +1171,20 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     }
 
     /**
-     * Although we need to rebuild the layerData as the layerList might have changed, if we do not
-     * deactivate (i.e. down) the current resource, we need to make sure that deleting DrbdRscData
-     * and recreating a new DrbdRscData ends up with the same node-id as before.
+     * Copies DRBD settings (node-id and TCP ports) from the existing DrbdRscData into the payload
+     * before removeLayerData() deletes them. This ensures that recreated DrbdRscData ends up with
+     * the same node-id and TCP ports as before.
+     *
+     * TCP ports must be preserved because if the satellite misses the update (e.g. due to controller
+     * restart or connectivity issues), it will keep the old ports while peers receive the new ones,
+     * causing DRBD connections to fail with StandAlone state.
      */
+    private void copyDrbdSettings(Resource rsc, LayerPayload payload) throws ImplementationError
+    {
+        copyDrbdNodeIdIfExists(rsc, payload);
+        copyDrbdTcpPortsIfExists(rsc, payload);
+    }
+
     private void copyDrbdNodeIdIfExists(Resource rsc, LayerPayload payload) throws ImplementationError
     {
         Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
@@ -1182,6 +1200,28 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) drbdRscDataSet.iterator().next();
             payload.drbdRsc.replacingOldLayerRscId = drbdRscData.getRscLayerId();
             payload.drbdRsc.nodeId = drbdRscData.getNodeId().value;
+        }
+    }
+
+    private void copyDrbdTcpPortsIfExists(Resource rsc, LayerPayload payload) throws ImplementationError
+    {
+        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
+            getLayerData(apiCtx, rsc),
+            DeviceLayerKind.DRBD
+        );
+        if (!drbdRscDataSet.isEmpty())
+        {
+            DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) drbdRscDataSet.iterator().next();
+            Collection<TcpPortNumber> tcpPorts = drbdRscData.getTcpPortList();
+            if (tcpPorts != null && !tcpPorts.isEmpty())
+            {
+                Set<Integer> portInts = new TreeSet<>();
+                for (TcpPortNumber port : tcpPorts)
+                {
+                    portInts.add(port.value);
+                }
+                payload.drbdRsc.tcpPorts = portInts;
+            }
         }
     }
 
@@ -1440,15 +1480,17 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             /*
              * We also have to remove the possible meta-children of previous StorageRscData.
              * LayerData will be recreated with ensureStackDataExists.
-             * However, we still need to remember our node-id if we had / have DRBD in the list
+             * However, we still need to remember our DRBD settings if we had / have DRBD in the list
              */
-            copyDrbdNodeIdIfExists(rsc, payload);
+            copyDrbdSettings(rsc, payload);
             layerList = removeLayerData(rsc);
         }
         else
         {
             markDiskAdded(rsc);
-            ctrlLayerStackHelper.resetStoragePools(rsc);
+            // Pass false to skip redundant ensureStackDataExists call within resetStoragePools,
+            // since we call it explicitly below with the correct payload
+            ctrlLayerStackHelper.resetStoragePools(rsc, false);
         }
         ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
 
