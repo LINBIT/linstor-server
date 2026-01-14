@@ -266,6 +266,7 @@ public class CtrlRscDfnTruncateApiCallHandler
                                 nodeName.displayValue
                             )
                         )
+                        .setSkipErrorReport(true)
                         .build()
                 );
             }
