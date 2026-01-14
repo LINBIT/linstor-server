@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed resource definition delete setting DELETE flag when resources are still in use
+
 ## [1.33.1] - 2025-12-22
 
 ### Fixed

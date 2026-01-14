@@ -124,6 +124,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         // fail fast
         ensureNoSnapDfns(rscDfn);
+        ctrlRscDfnTruncateApiCallHandler.ensureNoRscInUse(rscDfn);
         markDeleted(rscDfn);
 
         ctrlTransactionHelper.commit();
