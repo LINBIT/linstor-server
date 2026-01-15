@@ -76,7 +76,7 @@ public final class SecObjectProtectionAclDbDriver
             new AccessControlEntry(
                 objPath,
                 role,
-                rawRef.<@Nullable Short, @Nullable AccessType, IllegalArgumentException>buildParsed(
+                rawRef.<@Nullable Short, @Nullable AccessType, IllegalArgumentException>build(
                     ACCESS_TYPE,
                     AccessType::get
                 )

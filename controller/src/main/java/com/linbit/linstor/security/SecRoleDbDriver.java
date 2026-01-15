@@ -93,14 +93,14 @@ public class SecRoleDbDriver extends AbsDatabaseDriver<Role, SecRoleInit, SecRol
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
         MdException, ExhaustedPoolException, ValueInUseException, RuntimeException, AccessDeniedException
     {
-        final Privilege[] limit = Privilege.restore(rawRef.getParsed(ROLE_PRIVILEGES));
+        final Privilege[] limit = Privilege.restore(rawRef.get(ROLE_PRIVILEGES));
         final Role role = Role.create(
             dbCtx,
             rawRef.build(ROLE_DSP_NAME, RoleName::new),
             new PrivilegeSet(limit)
         );
 
-        final boolean roleEnabled = rawRef.getParsed(ROLE_ENABLED);
+        final boolean roleEnabled = rawRef.get(ROLE_ENABLED);
 
         return new Pair<>(
             role,

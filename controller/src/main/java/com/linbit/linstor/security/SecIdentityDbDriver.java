@@ -121,8 +121,8 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<SecIdentityDbObj, Voi
         IdentityName idName = rawRef.build(IDENTITY_DSP_NAME, IdentityName::new);
         byte[] passHash;
         byte[] passSalt;
-        boolean enabled = rawRef.getParsed(ID_ENABLED);
-        boolean locked = rawRef.getParsed(ID_LOCKED);
+        boolean enabled = rawRef.get(ID_ENABLED);
+        boolean locked = rawRef.get(ID_LOCKED);
 
         switch (getDbType())
         {

@@ -623,7 +623,7 @@ public class SQLEngine implements DbEngine
         {
             throw new DatabaseException(exc);
         }
-        return new RawParameters(table, objects, DatabaseType.SQL);
+        return new RawParameters(table, objects);
     }
 
     @Override

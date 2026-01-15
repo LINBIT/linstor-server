@@ -1,9 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nonnull;
 import com.linbit.linstor.annotation.Nullable;
-import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.utils.ExceptionThrowingFunction;
 
@@ -29,58 +27,11 @@ public class RawParameters
 
     private final @Nullable DatabaseTable table;
     private final Map<String, Object> rawDataMap;
-    private final DatabaseType dbType;
 
-    public RawParameters(@Nullable DatabaseTable tableRef, Map<String, Object> rawDataMapRef, DatabaseType dbTypeRef)
+    public RawParameters(@Nullable DatabaseTable tableRef, Map<String, Object> rawDataMapRef)
     {
         table = tableRef;
         rawDataMap = rawDataMapRef;
-        dbType = dbTypeRef;
-    }
-
-    /**
-     * ETCD always returns Strings for {@link #get(Column)}.
-     * As a result, the value will be parsed based on the {@link Column#getSqlType()}.
-     *
-     * For non-ETCD engines, this method is a simple delegate for {@link #get(Column)}.
-     */
-    public <T> @Nullable T getParsed(Column col)
-    {
-        @Nullable T ret;
-        switch (dbType)
-        {
-            case SQL:
-            case K8S_CRD:
-                ret = get(col);
-                break;
-            default:
-                throw new ImplementationError("Unknown db type: " + dbType);
-        }
-        return ret;
-    }
-
-    /**
-     * This method does the same as {@link #build(Column, Class)}, but instead of depending on {@link #get(Column)}
-     * this method calls {@link #getParsed(Column)}.
-     */
-    /*
-     * yes, these annotations look weird, but they are correct:
-     * T can be null whithin this method, but before it is passed to func a null-check is performed, so that func can
-     * expect a @Nonnull T
-     */
-    public <@Nullable T, @Nullable R, EXC extends Exception> @Nullable R buildParsed(
-        Column col,
-        ExceptionThrowingFunction<@Nonnull T, R, EXC> func
-    )
-        throws EXC
-    {
-        @Nullable T data = getParsed(col);
-        @Nullable R ret = null;
-        if (data != null)
-        {
-            ret = func.accept(data);
-        }
-        return ret;
     }
 
     @SuppressWarnings("unchecked")

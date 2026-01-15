@@ -136,8 +136,8 @@ public class LayerStorageVlmDbDriver
     )
         throws ValueOutOfRangeException, InvalidNameException, DatabaseException, AccessDeniedException
     {
-        int lri = rawRef.getParsed(LayerStorageVolumes.LAYER_RESOURCE_ID);
-        VolumeNumber vlmNr = rawRef.buildParsed(LayerStorageVolumes.VLM_NR, VolumeNumber::new);
+        int lri = rawRef.get(LayerStorageVolumes.LAYER_RESOURCE_ID);
+        VolumeNumber vlmNr = rawRef.build(LayerStorageVolumes.VLM_NR, VolumeNumber::new);
         NodeName storPoolNodeName = rawRef.build(LayerStorageVolumes.NODE_NAME, NodeName::new);
         StorPoolName storPoolName = rawRef.build(LayerStorageVolumes.STOR_POOL_NAME, StorPoolName::new);
         DeviceProviderKind providerKind = rawRef.build(LayerStorageVolumes.PROVIDER_KIND, DeviceProviderKind.class);

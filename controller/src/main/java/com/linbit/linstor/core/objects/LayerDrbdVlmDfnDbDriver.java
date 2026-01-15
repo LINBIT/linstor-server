@@ -104,9 +104,9 @@ public class LayerDrbdVlmDfnDbDriver
     {
         DrbdVlmDfnData<?> drbdVlmDfnData;
 
-        ResourceName rscName = raw.buildParsed(LayerDrbdVolumeDefinitions.RESOURCE_NAME, ResourceName::new);
-        VolumeNumber vlmNr = raw.buildParsed(LayerDrbdVolumeDefinitions.VLM_NR, VolumeNumber::new);
-        Integer minorNr = raw.getParsed(LayerDrbdVolumeDefinitions.VLM_MINOR_NR);
+        ResourceName rscName = raw.build(LayerDrbdVolumeDefinitions.RESOURCE_NAME, ResourceName::new);
+        VolumeNumber vlmNr = raw.build(LayerDrbdVolumeDefinitions.VLM_NR, VolumeNumber::new);
+        Integer minorNr = raw.get(LayerDrbdVolumeDefinitions.VLM_MINOR_NR);
         String rscNameSuffix = raw.get(LayerDrbdVolumeDefinitions.RESOURCE_NAME_SUFFIX);
         String snapNameStr = raw.get(LayerDrbdVolumeDefinitions.SNAPSHOT_NAME);
 

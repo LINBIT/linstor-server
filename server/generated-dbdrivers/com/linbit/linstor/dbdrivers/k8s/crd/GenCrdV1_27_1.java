@@ -1277,15 +1277,15 @@ public class GenCrdV1_27_1
         public static EbsRemotesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new EbsRemotesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.URL),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.REGION),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.AVAILABILITY_ZONE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.ACCESS_KEY),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.SECRET_KEY)
+                rawParamsRef.get(GeneratedDatabaseTables.EbsRemotes.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.EbsRemotes.NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.EbsRemotes.DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.EbsRemotes.FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.EbsRemotes.URL),
+                rawParamsRef.get(GeneratedDatabaseTables.EbsRemotes.REGION),
+                rawParamsRef.get(GeneratedDatabaseTables.EbsRemotes.AVAILABILITY_ZONE),
+                rawParamsRef.get(GeneratedDatabaseTables.EbsRemotes.ACCESS_KEY),
+                rawParamsRef.get(GeneratedDatabaseTables.EbsRemotes.SECRET_KEY)
             );
         }
 
@@ -1481,11 +1481,11 @@ public class GenCrdV1_27_1
         public static FilesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new FilesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.PATH),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.CONTENT),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM)
+                rawParamsRef.get(GeneratedDatabaseTables.Files.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.Files.PATH),
+                rawParamsRef.get(GeneratedDatabaseTables.Files.FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.Files.CONTENT),
+                rawParamsRef.get(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM)
             );
         }
 
@@ -1655,9 +1655,9 @@ public class GenCrdV1_27_1
         public static KeyValueStoreSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new KeyValueStoreSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.KeyValueStore.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.KeyValueStore.KVS_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.KeyValueStore.KVS_DSP_NAME)
+                rawParamsRef.get(GeneratedDatabaseTables.KeyValueStore.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.KeyValueStore.KVS_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.KeyValueStore.KVS_DSP_NAME)
             );
         }
 
@@ -1823,11 +1823,11 @@ public class GenCrdV1_27_1
         public static LayerBcacheVolumesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerBcacheVolumesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.LAYER_RESOURCE_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.POOL_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.DEV_UUID)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerBcacheVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerBcacheVolumes.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerBcacheVolumes.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerBcacheVolumes.POOL_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerBcacheVolumes.DEV_UUID)
             );
         }
 
@@ -2004,11 +2004,11 @@ public class GenCrdV1_27_1
         public static LayerCacheVolumesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerCacheVolumesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.LAYER_RESOURCE_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_CACHE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_META)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerCacheVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerCacheVolumes.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerCacheVolumes.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_CACHE),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_META)
             );
         }
 
@@ -2188,12 +2188,12 @@ public class GenCrdV1_27_1
         public static LayerDrbdResourcesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerDrbdResourcesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.LAYER_RESOURCE_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.PEER_SLOTS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPES),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPE_SIZE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.NODE_ID)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResources.LAYER_RESOURCE_ID),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResources.PEER_SLOTS),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPES),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPE_SIZE),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResources.FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResources.NODE_ID)
             );
         }
 
@@ -2386,15 +2386,15 @@ public class GenCrdV1_27_1
         public static LayerDrbdResourceDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerDrbdResourceDefinitionsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.PEER_SLOTS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPES),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPE_SIZE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TCP_PORT),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TRANSPORT_TYPE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SECRET)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SNAPSHOT_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.PEER_SLOTS),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPES),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPE_SIZE),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TCP_PORT),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TRANSPORT_TYPE),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SECRET)
             );
         }
 
@@ -2589,10 +2589,10 @@ public class GenCrdV1_27_1
         public static LayerDrbdVolumesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerDrbdVolumesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumes.LAYER_RESOURCE_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumes.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumes.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumes.POOL_NAME)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdVolumes.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdVolumes.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdVolumes.POOL_NAME)
             );
         }
 
@@ -2764,11 +2764,11 @@ public class GenCrdV1_27_1
         public static LayerDrbdVolumeDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerDrbdVolumeDefinitionsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME_SUFFIX),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_MINOR_NR)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME_SUFFIX),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.SNAPSHOT_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_MINOR_NR)
             );
         }
 
@@ -2941,9 +2941,9 @@ public class GenCrdV1_27_1
         public static LayerLuksVolumesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerLuksVolumesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerLuksVolumes.LAYER_RESOURCE_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerLuksVolumes.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerLuksVolumes.ENCRYPTED_PASSWORD)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerLuksVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerLuksVolumes.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerLuksVolumes.ENCRYPTED_PASSWORD)
             );
         }
 
@@ -3119,14 +3119,14 @@ public class GenCrdV1_27_1
         public static LayerResourceIdsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerResourceIdsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_KIND),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_PARENT_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUFFIX),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUSPENDED)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_ID),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerResourceIds.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerResourceIds.RESOURCE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerResourceIds.SNAPSHOT_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_KIND),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_PARENT_ID),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUFFIX),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUSPENDED)
             );
         }
 
@@ -3317,11 +3317,11 @@ public class GenCrdV1_27_1
         public static LayerStorageVolumesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerStorageVolumesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.LAYER_RESOURCE_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.PROVIDER_KIND),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.STOR_POOL_NAME)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerStorageVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerStorageVolumes.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerStorageVolumes.PROVIDER_KIND),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerStorageVolumes.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerStorageVolumes.STOR_POOL_NAME)
             );
         }
 
@@ -3495,10 +3495,10 @@ public class GenCrdV1_27_1
         public static LayerWritecacheVolumesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LayerWritecacheVolumesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerWritecacheVolumes.LAYER_RESOURCE_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerWritecacheVolumes.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerWritecacheVolumes.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerWritecacheVolumes.POOL_NAME)
+                rawParamsRef.get(GeneratedDatabaseTables.LayerWritecacheVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerWritecacheVolumes.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerWritecacheVolumes.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LayerWritecacheVolumes.POOL_NAME)
             );
         }
 
@@ -3676,13 +3676,13 @@ public class GenCrdV1_27_1
         public static LinstorRemotesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new LinstorRemotesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.URL),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.ENCRYPTED_PASSPHRASE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.CLUSTER_ID)
+                rawParamsRef.get(GeneratedDatabaseTables.LinstorRemotes.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.LinstorRemotes.NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LinstorRemotes.DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.LinstorRemotes.FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.LinstorRemotes.URL),
+                rawParamsRef.get(GeneratedDatabaseTables.LinstorRemotes.ENCRYPTED_PASSPHRASE),
+                rawParamsRef.get(GeneratedDatabaseTables.LinstorRemotes.CLUSTER_ID)
             );
         }
 
@@ -3868,11 +3868,11 @@ public class GenCrdV1_27_1
         public static NodesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new NodesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.NODE_DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.NODE_FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.NODE_TYPE)
+                rawParamsRef.get(GeneratedDatabaseTables.Nodes.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.Nodes.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Nodes.NODE_DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Nodes.NODE_FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.Nodes.NODE_TYPE)
             );
         }
 
@@ -4042,9 +4042,9 @@ public class GenCrdV1_27_1
         public static NodeConnectionsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new NodeConnectionsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeConnections.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeConnections.NODE_NAME_SRC),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeConnections.NODE_NAME_DST)
+                rawParamsRef.get(GeneratedDatabaseTables.NodeConnections.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeConnections.NODE_NAME_SRC),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeConnections.NODE_NAME_DST)
             );
         }
 
@@ -4217,13 +4217,13 @@ public class GenCrdV1_27_1
         public static NodeNetInterfacesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new NodeNetInterfacesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.INET_ADDRESS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_PORT),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_ENCR_TYPE)
+                rawParamsRef.get(GeneratedDatabaseTables.NodeNetInterfaces.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeNetInterfaces.INET_ADDRESS),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_PORT),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_ENCR_TYPE)
             );
         }
 
@@ -4416,13 +4416,13 @@ public class GenCrdV1_27_1
         public static NodeStorPoolSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new NodeStorPoolSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.POOL_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.DRIVER_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.EXTERNAL_LOCKING)
+                rawParamsRef.get(GeneratedDatabaseTables.NodeStorPool.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeStorPool.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeStorPool.POOL_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeStorPool.DRIVER_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.NodeStorPool.EXTERNAL_LOCKING)
             );
         }
 
@@ -4603,9 +4603,9 @@ public class GenCrdV1_27_1
         public static PropsContainersSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new PropsContainersSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.PropsContainers.PROPS_INSTANCE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.PropsContainers.PROP_KEY),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.PropsContainers.PROP_VALUE)
+                rawParamsRef.get(GeneratedDatabaseTables.PropsContainers.PROPS_INSTANCE),
+                rawParamsRef.get(GeneratedDatabaseTables.PropsContainers.PROP_KEY),
+                rawParamsRef.get(GeneratedDatabaseTables.PropsContainers.PROP_VALUE)
             );
         }
 
@@ -4775,12 +4775,12 @@ public class GenCrdV1_27_1
         public static ResourcesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new ResourcesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.RESOURCE_FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP)
+                rawParamsRef.get(GeneratedDatabaseTables.Resources.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.Resources.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Resources.RESOURCE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Resources.SNAPSHOT_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Resources.RESOURCE_FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP)
             );
         }
 
@@ -4969,13 +4969,13 @@ public class GenCrdV1_27_1
         public static ResourceConnectionsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new ResourceConnectionsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_SRC),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_DST),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.TCP_PORT)
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceConnections.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_SRC),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_DST),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceConnections.RESOURCE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceConnections.SNAPSHOT_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceConnections.FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceConnections.TCP_PORT)
             );
         }
 
@@ -5179,16 +5179,16 @@ public class GenCrdV1_27_1
         public static ResourceDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new ResourceDefinitionsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.LAYER_STACK),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_EXTERNAL_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_GROUP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.PARENT_UUID)
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.LAYER_STACK),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_EXTERNAL_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_GROUP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceDefinitions.PARENT_UUID)
             );
         }
 
@@ -5426,23 +5426,23 @@ public class GenCrdV1_27_1
         public static ResourceGroupsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new ResourceGroupsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DESCRIPTION),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.LAYER_STACK),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.REPLICA_COUNT),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.NODE_NAME_LIST),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.POOL_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.POOL_NAME_DISKLESS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_REGEX),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_LIST),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_SAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_DIFFERENT),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.X_REPLICAS_ON_DIFFERENT),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.ALLOWED_PROVIDER_LIST),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.PEER_SLOTS)
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.DESCRIPTION),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.LAYER_STACK),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.REPLICA_COUNT),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.NODE_NAME_LIST),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.POOL_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.POOL_NAME_DISKLESS),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_REGEX),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_LIST),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_SAME),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_DIFFERENT),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.X_REPLICAS_ON_DIFFERENT),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.ALLOWED_PROVIDER_LIST),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING),
+                rawParamsRef.get(GeneratedDatabaseTables.ResourceGroups.PEER_SLOTS)
             );
         }
 
@@ -5690,15 +5690,15 @@ public class GenCrdV1_27_1
         public static S3RemotesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new S3RemotesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.ENDPOINT),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.BUCKET),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.REGION),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.ACCESS_KEY),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.SECRET_KEY)
+                rawParamsRef.get(GeneratedDatabaseTables.S3Remotes.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.S3Remotes.NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.S3Remotes.DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.S3Remotes.FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.S3Remotes.ENDPOINT),
+                rawParamsRef.get(GeneratedDatabaseTables.S3Remotes.BUCKET),
+                rawParamsRef.get(GeneratedDatabaseTables.S3Remotes.REGION),
+                rawParamsRef.get(GeneratedDatabaseTables.S3Remotes.ACCESS_KEY),
+                rawParamsRef.get(GeneratedDatabaseTables.S3Remotes.SECRET_KEY)
             );
         }
 
@@ -5894,11 +5894,11 @@ public class GenCrdV1_27_1
         public static SatellitesCapacitySpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SatellitesCapacitySpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.CAPACITY),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.FAIL_FLAG),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.ALLOCATED),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.USABLE)
+                rawParamsRef.get(GeneratedDatabaseTables.SatellitesCapacity.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SatellitesCapacity.CAPACITY),
+                rawParamsRef.get(GeneratedDatabaseTables.SatellitesCapacity.FAIL_FLAG),
+                rawParamsRef.get(GeneratedDatabaseTables.SatellitesCapacity.ALLOCATED),
+                rawParamsRef.get(GeneratedDatabaseTables.SatellitesCapacity.USABLE)
             );
         }
 
@@ -6089,16 +6089,16 @@ public class GenCrdV1_27_1
         public static SchedulesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SchedulesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.FLAGS),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.FULL_CRON),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.INC_CRON),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.KEEP_LOCAL),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.KEEP_REMOTE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.ON_FAILURE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.MAX_RETRIES)
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.FLAGS),
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.FULL_CRON),
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.INC_CRON),
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.KEEP_LOCAL),
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.KEEP_REMOTE),
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.ON_FAILURE),
+                rawParamsRef.get(GeneratedDatabaseTables.Schedules.MAX_RETRIES)
             );
         }
 
@@ -6290,8 +6290,8 @@ public class GenCrdV1_27_1
         public static SecAccessTypesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecAccessTypesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_VALUE)
+                rawParamsRef.get(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_VALUE)
             );
         }
 
@@ -6446,9 +6446,9 @@ public class GenCrdV1_27_1
         public static SecAclMapSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecAclMapSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAclMap.OBJECT_PATH),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAclMap.ROLE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAclMap.ACCESS_TYPE)
+                rawParamsRef.get(GeneratedDatabaseTables.SecAclMap.OBJECT_PATH),
+                rawParamsRef.get(GeneratedDatabaseTables.SecAclMap.ROLE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecAclMap.ACCESS_TYPE)
             );
         }
 
@@ -6609,9 +6609,9 @@ public class GenCrdV1_27_1
         public static SecConfigurationSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecConfigurationSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecConfiguration.ENTRY_KEY),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecConfiguration.ENTRY_DSP_KEY),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecConfiguration.ENTRY_VALUE)
+                rawParamsRef.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_KEY),
+                rawParamsRef.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_DSP_KEY),
+                rawParamsRef.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_VALUE)
             );
         }
 
@@ -6768,8 +6768,8 @@ public class GenCrdV1_27_1
         public static SecDfltRolesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecDfltRolesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecDfltRoles.IDENTITY_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecDfltRoles.ROLE_NAME)
+                rawParamsRef.get(GeneratedDatabaseTables.SecDfltRoles.IDENTITY_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecDfltRoles.ROLE_NAME)
             );
         }
 
@@ -6933,12 +6933,12 @@ public class GenCrdV1_27_1
         public static SecIdentitiesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecIdentitiesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.IDENTITY_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.IDENTITY_DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.PASS_SALT),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.PASS_HASH),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.ID_ENABLED),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.ID_LOCKED)
+                rawParamsRef.get(GeneratedDatabaseTables.SecIdentities.IDENTITY_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecIdentities.IDENTITY_DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecIdentities.PASS_SALT),
+                rawParamsRef.get(GeneratedDatabaseTables.SecIdentities.PASS_HASH),
+                rawParamsRef.get(GeneratedDatabaseTables.SecIdentities.ID_ENABLED),
+                rawParamsRef.get(GeneratedDatabaseTables.SecIdentities.ID_LOCKED)
             );
         }
 
@@ -7110,8 +7110,8 @@ public class GenCrdV1_27_1
         public static SecIdRoleMapSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecIdRoleMapSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdRoleMap.IDENTITY_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdRoleMap.ROLE_NAME)
+                rawParamsRef.get(GeneratedDatabaseTables.SecIdRoleMap.IDENTITY_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecIdRoleMap.ROLE_NAME)
             );
         }
 
@@ -7270,10 +7270,10 @@ public class GenCrdV1_27_1
         public static SecObjectProtectionSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecObjectProtectionSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecObjectProtection.OBJECT_PATH),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecObjectProtection.CREATOR_IDENTITY_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecObjectProtection.OWNER_ROLE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecObjectProtection.SECURITY_TYPE_NAME)
+                rawParamsRef.get(GeneratedDatabaseTables.SecObjectProtection.OBJECT_PATH),
+                rawParamsRef.get(GeneratedDatabaseTables.SecObjectProtection.CREATOR_IDENTITY_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecObjectProtection.OWNER_ROLE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecObjectProtection.SECURITY_TYPE_NAME)
             );
         }
 
@@ -7444,11 +7444,11 @@ public class GenCrdV1_27_1
         public static SecRolesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecRolesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.ROLE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.ROLE_DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.DOMAIN_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.ROLE_ENABLED),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.ROLE_PRIVILEGES)
+                rawParamsRef.get(GeneratedDatabaseTables.SecRoles.ROLE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecRoles.ROLE_DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecRoles.DOMAIN_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecRoles.ROLE_ENABLED),
+                rawParamsRef.get(GeneratedDatabaseTables.SecRoles.ROLE_PRIVILEGES)
             );
         }
 
@@ -7618,9 +7618,9 @@ public class GenCrdV1_27_1
         public static SecTypesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecTypesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypes.TYPE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypes.TYPE_DSP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypes.TYPE_ENABLED)
+                rawParamsRef.get(GeneratedDatabaseTables.SecTypes.TYPE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecTypes.TYPE_DSP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecTypes.TYPE_ENABLED)
             );
         }
 
@@ -7780,9 +7780,9 @@ public class GenCrdV1_27_1
         public static SecTypeRulesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SecTypeRulesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypeRules.DOMAIN_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypeRules.TYPE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypeRules.ACCESS_TYPE)
+                rawParamsRef.get(GeneratedDatabaseTables.SecTypeRules.DOMAIN_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecTypeRules.TYPE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.SecTypeRules.ACCESS_TYPE)
             );
         }
 
@@ -7940,8 +7940,8 @@ public class GenCrdV1_27_1
         public static SpaceHistorySpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new SpaceHistorySpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SpaceHistory.ENTRY_DATE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.SpaceHistory.CAPACITY)
+                rawParamsRef.get(GeneratedDatabaseTables.SpaceHistory.ENTRY_DATE),
+                rawParamsRef.get(GeneratedDatabaseTables.SpaceHistory.CAPACITY)
             );
         }
 
@@ -8096,9 +8096,9 @@ public class GenCrdV1_27_1
         public static StorPoolDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new StorPoolDefinitionsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.StorPoolDefinitions.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.StorPoolDefinitions.POOL_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.StorPoolDefinitions.POOL_DSP_NAME)
+                rawParamsRef.get(GeneratedDatabaseTables.StorPoolDefinitions.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.StorPoolDefinitions.POOL_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.StorPoolDefinitions.POOL_DSP_NAME)
             );
         }
 
@@ -8253,7 +8253,7 @@ public class GenCrdV1_27_1
         public static TrackingDateSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new TrackingDateSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.TrackingDate.ENTRY_DATE)
+                rawParamsRef.get(GeneratedDatabaseTables.TrackingDate.ENTRY_DATE)
             );
         }
 
@@ -8412,12 +8412,12 @@ public class GenCrdV1_27_1
         public static VolumesSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new VolumesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.VLM_FLAGS)
+                rawParamsRef.get(GeneratedDatabaseTables.Volumes.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.Volumes.NODE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Volumes.RESOURCE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Volumes.SNAPSHOT_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.Volumes.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.Volumes.VLM_FLAGS)
             );
         }
 
@@ -8604,12 +8604,12 @@ public class GenCrdV1_27_1
         public static VolumeConnectionsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new VolumeConnectionsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_SRC),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_DST),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.VLM_NR)
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeConnections.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_SRC),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_DST),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeConnections.RESOURCE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeConnections.SNAPSHOT_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeConnections.VLM_NR)
             );
         }
 
@@ -8797,12 +8797,12 @@ public class GenCrdV1_27_1
         public static VolumeDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new VolumeDefinitionsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.VLM_SIZE),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.VLM_FLAGS)
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeDefinitions.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeDefinitions.RESOURCE_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeDefinitions.SNAPSHOT_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_SIZE),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_FLAGS)
             );
         }
 
@@ -8982,10 +8982,10 @@ public class GenCrdV1_27_1
         public static VolumeGroupsSpec fromRawParameters(RawParameters rawParamsRef)
         {
             return new VolumeGroupsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeGroups.UUID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeGroups.RESOURCE_GROUP_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeGroups.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeGroups.FLAGS)
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeGroups.UUID),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeGroups.RESOURCE_GROUP_NAME),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeGroups.VLM_NR),
+                rawParamsRef.get(GeneratedDatabaseTables.VolumeGroups.FLAGS)
             );
         }
 

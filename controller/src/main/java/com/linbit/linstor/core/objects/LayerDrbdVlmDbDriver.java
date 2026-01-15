@@ -144,8 +144,8 @@ public class LayerDrbdVlmDbDriver
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
         MdException, ExhaustedPoolException, ValueInUseException, RuntimeException, AccessDeniedException
     {
-        int lri = rawRef.getParsed(LayerDrbdVolumes.LAYER_RESOURCE_ID);
-        VolumeNumber vlmNr = rawRef.buildParsed(LayerDrbdVolumes.VLM_NR, VolumeNumber::new);
+        int lri = rawRef.get(LayerDrbdVolumes.LAYER_RESOURCE_ID);
+        VolumeNumber vlmNr = rawRef.build(LayerDrbdVolumes.VLM_NR, VolumeNumber::new);
         NodeName extStorPoolNodeName = rawRef.build(LayerDrbdVolumes.NODE_NAME, NodeName::new);
         StorPoolName extStorPoolName = rawRef.build(LayerDrbdVolumes.POOL_NAME, StorPoolName::new);
 

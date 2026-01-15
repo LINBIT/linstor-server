@@ -128,14 +128,14 @@ public class LayerCacheVlmDbDriver
     )
         throws ValueOutOfRangeException, InvalidNameException, DatabaseException, AccessDeniedException
     {
-        int lri = rawRef.getParsed(LayerCacheVolumes.LAYER_RESOURCE_ID);
-        VolumeNumber vlmNr = rawRef.buildParsed(LayerCacheVolumes.VLM_NR, VolumeNumber::new);
+        int lri = rawRef.get(LayerCacheVolumes.LAYER_RESOURCE_ID);
+        VolumeNumber vlmNr = rawRef.build(LayerCacheVolumes.VLM_NR, VolumeNumber::new);
 
         CacheRscData<?> cacheRscData = parentRef.getRscData(lri);
         AbsResource<?> absResource = cacheRscData.getAbsResource();
         AbsVolume<?> absVlm = absResource.getVolume(vlmNr);
 
-        NodeName storPoolNodeName = rawRef.buildParsed(LayerCacheVolumes.NODE_NAME, NodeName::new);
+        NodeName storPoolNodeName = rawRef.build(LayerCacheVolumes.NODE_NAME, NodeName::new);
         StorPool cacheStorPool = null;
         StorPool metaStorPool = null;
         if (storPoolNodeName != null)
@@ -143,13 +143,13 @@ public class LayerCacheVlmDbDriver
             cacheStorPool = parentRef.storPoolWithInitMap.get(
                 new PairNonNull<>(
                     storPoolNodeName,
-                    rawRef.buildParsed(LayerCacheVolumes.POOL_NAME_CACHE, StorPoolName::new)
+                    rawRef.build(LayerCacheVolumes.POOL_NAME_CACHE, StorPoolName::new)
                 )
             ).objA;
             metaStorPool = parentRef.storPoolWithInitMap.get(
                 new PairNonNull<>(
                     storPoolNodeName,
-                    rawRef.buildParsed(LayerCacheVolumes.POOL_NAME_META, StorPoolName::new)
+                    rawRef.build(LayerCacheVolumes.POOL_NAME_META, StorPoolName::new)
                 )
             ).objA;
         }

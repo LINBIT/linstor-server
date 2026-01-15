@@ -52,7 +52,7 @@ public class SecTypeRulesDbDriver extends AbsDatabaseDriver<TypeEnforcementRuleP
             new TypeEnforcementRulePojo(
                 rawRef.get(DOMAIN_NAME),
                 rawRef.get(TYPE_NAME),
-                rawRef.getParsed(ACCESS_TYPE)
+                rawRef.get(ACCESS_TYPE)
             ),
             null
         );

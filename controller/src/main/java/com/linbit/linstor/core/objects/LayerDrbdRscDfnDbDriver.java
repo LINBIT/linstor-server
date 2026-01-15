@@ -166,19 +166,19 @@ public class LayerDrbdRscDfnDbDriver
     protected Pair<DrbdRscDfnData<?>, List<DrbdRscData<?>>> load(RawParameters raw, ParentObjects parentRef)
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException
     {
-        ResourceName rscName = raw.buildParsed(LayerDrbdResourceDefinitions.RESOURCE_NAME, ResourceName::new);
-        String rscNameSuffix = raw.getParsed(LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX);
-        String snapNameStr = raw.getParsed(LayerDrbdResourceDefinitions.SNAPSHOT_NAME);
+        ResourceName rscName = raw.build(LayerDrbdResourceDefinitions.RESOURCE_NAME, ResourceName::new);
+        String rscNameSuffix = raw.get(LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX);
+        String snapNameStr = raw.get(LayerDrbdResourceDefinitions.SNAPSHOT_NAME);
 
         short peerSlots;
-        @Nullable Integer alStripes = raw.getParsed(LayerDrbdResourceDefinitions.AL_STRIPES);
-        @Nullable Long alStripesSize = raw.getParsed(LayerDrbdResourceDefinitions.AL_STRIPE_SIZE);
-        @Nullable Integer port = raw.getParsed(LayerDrbdResourceDefinitions.TCP_PORT);
+        @Nullable Integer alStripes = raw.get(LayerDrbdResourceDefinitions.AL_STRIPES);
+        @Nullable Long alStripesSize = raw.get(LayerDrbdResourceDefinitions.AL_STRIPE_SIZE);
+        @Nullable Integer port = raw.get(LayerDrbdResourceDefinitions.TCP_PORT);
         TransportType transportType = raw.<String, TransportType, IllegalArgumentException>build(
             LayerDrbdResourceDefinitions.TRANSPORT_TYPE,
             TransportType::byValue
         );
-        String secret = raw.getParsed(LayerDrbdResourceDefinitions.SECRET);
+        String secret = raw.get(LayerDrbdResourceDefinitions.SECRET);
 
         switch (getDbType())
         {

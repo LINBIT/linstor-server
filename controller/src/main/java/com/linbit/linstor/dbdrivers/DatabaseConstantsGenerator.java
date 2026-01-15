@@ -1195,7 +1195,7 @@ public final class DatabaseConstantsGenerator
                         for (Column clm : tbl.columns)
                         {
                             appendLine(
-                                "rawParamsRef.getParsed(GeneratedDatabaseTables.%s.%s),",
+                                "rawParamsRef.get(GeneratedDatabaseTables.%s.%s),",
                                 tblNameCamelCase,
                                 clm.name
                             );

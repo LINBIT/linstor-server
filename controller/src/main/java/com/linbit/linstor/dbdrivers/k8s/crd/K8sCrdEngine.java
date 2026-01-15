@@ -235,7 +235,7 @@ public class K8sCrdEngine implements DbEngine
             try
             {
                 pair = dataLoader.loadImpl(
-                    new RawParameters(table, linstorSpec.asRawParameters(), DatabaseType.K8S_CRD),
+                    new RawParameters(table, linstorSpec.asRawParameters()),
                     parents
                 );
             }
@@ -382,7 +382,7 @@ public class K8sCrdEngine implements DbEngine
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         for (LinstorSpec<?, ?> linstorSpec : tx.getSpec(tableRef).values())
         {
-            ret.add(new RawParameters(tableRef, linstorSpec.asRawParameters(), DatabaseType.K8S_CRD));
+            ret.add(new RawParameters(tableRef, linstorSpec.asRawParameters()));
         }
 
         return ret;

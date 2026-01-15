@@ -14,7 +14,6 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsLayerRscDataDbDriver.ParentObjects;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.ControllerLayerRscDatabaseDriver;
-import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
@@ -284,7 +283,6 @@ public abstract class AbsLayerRscDataDbDriver<
                  * LayerResourceId table,
                  */
                 DeviceLayerKind localKind = getDeviceLayerKind();
-                DatabaseType dbType = getDbType();
                 for (AbsRscLayerObject<?> absRscLayerObject : parentObjectsRef.dummyLayerResourceObjectyById.values())
                 {
                     if (absRscLayerObject.getLayerKind().equals(localKind))
@@ -293,7 +291,7 @@ public abstract class AbsLayerRscDataDbDriver<
 
                         rawMap.put(NULL_TABLE_LAYER_RSC_DATA_COLUMN.getName(), absRscLayerObject);
 
-                        rscDataRawCache.put(absRscLayerObject.getRscLayerId(), new RawParameters(null, rawMap, dbType));
+                        rscDataRawCache.put(absRscLayerObject.getRscLayerId(), new RawParameters(null, rawMap));
                     }
                 }
             }

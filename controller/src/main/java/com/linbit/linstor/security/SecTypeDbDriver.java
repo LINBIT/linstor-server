@@ -77,7 +77,7 @@ public class SecTypeDbDriver extends AbsDatabaseDriver<SecurityType, SecTypeInit
         MdException, ExhaustedPoolException, ValueInUseException, RuntimeException, AccessDeniedException
     {
         final SecTypeName secTypeName = rawRef.build(TYPE_DSP_NAME, SecTypeName::new);
-        final boolean enabled = rawRef.getParsed(TYPE_ENABLED);
+        final boolean enabled = rawRef.get(TYPE_ENABLED);
 
         return new Pair<>(
             SecurityType.create(dbCtx, secTypeName),

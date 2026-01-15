@@ -124,21 +124,21 @@ public class LayerBCacheVlmDbDriver
     )
         throws ValueOutOfRangeException, InvalidNameException, DatabaseException, AccessDeniedException
     {
-        int lri = rawRef.getParsed(LayerBcacheVolumes.LAYER_RESOURCE_ID);
-        VolumeNumber vlmNr = rawRef.buildParsed(LayerBcacheVolumes.VLM_NR, VolumeNumber::new);
+        int lri = rawRef.get(LayerBcacheVolumes.LAYER_RESOURCE_ID);
+        VolumeNumber vlmNr = rawRef.build(LayerBcacheVolumes.VLM_NR, VolumeNumber::new);
 
         BCacheRscData<?> cacheRscData = parentRef.getRscData(lri);
         AbsResource<?> absResource = cacheRscData.getAbsResource();
         AbsVolume<?> absVlm = absResource.getVolume(vlmNr);
 
-        NodeName storPoolNodeName = rawRef.buildParsed(LayerBcacheVolumes.NODE_NAME, NodeName::new);
+        NodeName storPoolNodeName = rawRef.build(LayerBcacheVolumes.NODE_NAME, NodeName::new);
         StorPool cacheStorPool = null;
         if (storPoolNodeName != null)
         {
             cacheStorPool = parentRef.storPoolWithInitMap.get(
                 new PairNonNull<>(
                     storPoolNodeName,
-                    rawRef.buildParsed(LayerBcacheVolumes.POOL_NAME, StorPoolName::new)
+                    rawRef.build(LayerBcacheVolumes.POOL_NAME, StorPoolName::new)
                 )
             ).objA;
         }

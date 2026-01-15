@@ -111,18 +111,18 @@ public class LayerWritecacheVlmDbDriver
     )
         throws ValueOutOfRangeException, InvalidNameException, DatabaseException, AccessDeniedException
     {
-        int lri = rawRef.getParsed(LayerWritecacheVolumes.LAYER_RESOURCE_ID);
-        VolumeNumber vlmNr = rawRef.buildParsed(LayerWritecacheVolumes.VLM_NR, VolumeNumber::new);
+        int lri = rawRef.get(LayerWritecacheVolumes.LAYER_RESOURCE_ID);
+        VolumeNumber vlmNr = rawRef.build(LayerWritecacheVolumes.VLM_NR, VolumeNumber::new);
 
         WritecacheRscData<?> writecacheRscData = parentRef.getRscData(lri);
         AbsResource<?> absResource = writecacheRscData.getAbsResource();
         AbsVolume<?> absVlm = absResource.getVolume(vlmNr);
 
-        NodeName storPoolNodeName = rawRef.buildParsed(LayerWritecacheVolumes.NODE_NAME, NodeName::new);
+        NodeName storPoolNodeName = rawRef.build(LayerWritecacheVolumes.NODE_NAME, NodeName::new);
         StorPool cacheStorPool = null;
         if (storPoolNodeName != null)
         {
-            StorPoolName storPoolName = rawRef.buildParsed(LayerWritecacheVolumes.POOL_NAME, StorPoolName::new);
+            StorPoolName storPoolName = rawRef.build(LayerWritecacheVolumes.POOL_NAME, StorPoolName::new);
             cacheStorPool = parentRef.storPoolWithInitMap.get(
                 new PairNonNull<>(
                     storPoolNodeName,

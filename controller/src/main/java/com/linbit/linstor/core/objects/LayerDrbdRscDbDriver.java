@@ -173,12 +173,12 @@ public class LayerDrbdRscDbDriver
         Set<AbsRscLayerObject<?>> typeErasedChildren;
         Map<VolumeNumber, DrbdVlmData<?>> typeErasedVlmMap;
 
-        int lri = rawRef.getParsed(LayerDrbdResources.LAYER_RESOURCE_ID);
-        NodeId nodeId = rawRef.buildParsed(LayerDrbdResources.NODE_ID, NodeId::new);
+        int lri = rawRef.get(LayerDrbdResources.LAYER_RESOURCE_ID);
+        NodeId nodeId = rawRef.build(LayerDrbdResources.NODE_ID, NodeId::new);
         short peerSlots;
-        Integer alStripes = rawRef.getParsed(LayerDrbdResources.AL_STRIPES);
-        Long alStripeSize = rawRef.getParsed(LayerDrbdResources.AL_STRIPE_SIZE);
-        Long initFlags = rawRef.getParsed(LayerDrbdResources.FLAGS);
+        Integer alStripes = rawRef.get(LayerDrbdResources.AL_STRIPES);
+        Long alStripeSize = rawRef.get(LayerDrbdResources.AL_STRIPE_SIZE);
+        Long initFlags = rawRef.get(LayerDrbdResources.FLAGS);
 
         // tcpPorts are stored like "[7000, 7001]" for resources or "[-2]" for snapshots
         // an entry "[-x]" states that there were x ports used by the resource when the snapshot was created

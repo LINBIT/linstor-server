@@ -73,10 +73,10 @@ public class LayerLuksVlmDbDriver
     )
         throws ValueOutOfRangeException, InvalidNameException, DatabaseException, AccessDeniedException
     {
-        int lri = rawRef.getParsed(LayerLuksVolumes.LAYER_RESOURCE_ID);
-        VolumeNumber vlmNr = rawRef.buildParsed(LayerLuksVolumes.VLM_NR, VolumeNumber::new);
+        int lri = rawRef.get(LayerLuksVolumes.LAYER_RESOURCE_ID);
+        VolumeNumber vlmNr = rawRef.build(LayerLuksVolumes.VLM_NR, VolumeNumber::new);
 
-        byte[] encryptedPassword = rawRef.buildParsed(LayerLuksVolumes.ENCRYPTED_PASSWORD, Base64::decode);
+        byte[] encryptedPassword = rawRef.build(LayerLuksVolumes.ENCRYPTED_PASSWORD, Base64::decode);
 
         LuksRscData<?> luksRscData = parentRef.getRscData(lri);
         AbsResource<?> absResource = luksRscData.getAbsResource();
