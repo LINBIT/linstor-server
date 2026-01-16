@@ -10,7 +10,7 @@ spec:
       description: vmshed version to use
     build_helpers_version:
       type: string
-      default: b67f7745a1485878063a43c3d5dc8b21eb15e966
+      default: dc32380a3fc0e2117bb2cb5f2593c450fe44e31d
       description: build-helpers version or tag to use
     vmshed_torun:
       type: string
@@ -42,7 +42,7 @@ spec:
       description: "Removes vm logs from successful tests before creating the artifact"
 
 ---
-image: $LINBIT_DOCKER_REGISTRY/build-helpers:de5278c920b815fcfbaa364b0eb7d15c620e2002
+image: $LINBIT_DOCKER_REGISTRY/build-helpers:$[[ inputs.build_helpers_version ]]
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
@@ -108,6 +108,8 @@ workflow:
 # normal linstor build
     - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
     - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
+    - . gitlab-utils.sh
+    - ci_prepare_tools
     - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
     - pulp file content upload --repository lbbuild-upstream --file linstor-server-$LINSTOR_VERSION.tar.gz --relative-path linstor-server-$LINSTOR_VERSION.tar.gz
 #    - |
