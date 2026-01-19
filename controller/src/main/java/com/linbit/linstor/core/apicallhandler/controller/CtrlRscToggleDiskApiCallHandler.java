@@ -9,7 +9,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -27,7 +26,6 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.DiskfulBy;
@@ -44,7 +42,6 @@ import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
-import com.linbit.linstor.layer.resource.RscDrbdLayerHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -78,7 +75,6 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -122,7 +118,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final CtrlRscLayerDataFactory ctrlLayerStackHelper;
-    private final RscDrbdLayerHelper ctrlDrbdLayerStackHelper;
     private final ResponseConverter responseConverter;
     private final ResourceStateEvent resourceStateEvent;
     private final EventWaiter eventWaiter;
@@ -149,7 +144,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlRscLayerDataFactory ctrlLayerStackHelperRef,
-        RscDrbdLayerHelper ctrlDrbdLayerStackHelperRef,
         ResponseConverter responseConverterRef,
         ResourceStateEvent resourceStateEventRef,
         EventWaiter eventWaiterRef,
@@ -176,7 +170,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         ctrlLayerStackHelper = ctrlLayerStackHelperRef;
-        ctrlDrbdLayerStackHelper = ctrlDrbdLayerStackHelperRef;
         responseConverter = responseConverterRef;
         resourceStateEvent = resourceStateEventRef;
         eventWaiter = eventWaiterRef;
@@ -361,6 +354,24 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         );
     }
 
+    /**
+     * Result of resolving and validating storage pools for toggle disk operation.
+     */
+    private static class StorPoolResolutionResult
+    {
+        final boolean needsDeactivate;
+        final LayerPayload payload;
+
+        StorPoolResolutionResult(
+            boolean needsDeactivateRef,
+            LayerPayload payloadRef
+        )
+        {
+            needsDeactivate = needsDeactivateRef;
+            payload = payloadRef;
+        }
+    }
+
     private Flux<ApiCallRc> toggleDiskInTransaction(
         String nodeNameStr,
         String rscNameStr,
@@ -378,7 +389,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
-
         NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
 
@@ -386,7 +396,74 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             "Toggle Disk on %s/%s %s", nodeNameStr, rscNameStr, removeDisk ? "removing disk" : "adding disk");
 
         Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
+        ResourceDefinition rscDfn = rsc.getResourceDefinition();
 
+        // 1. Validate preconditions
+        validateToggleDiskPreconditions(rsc, removeDisk);
+
+        // 2. Resolve and validate storage pools
+        StorPoolResolutionResult storPoolResult = resolveStoragePools(
+            rsc,
+            removeDisk,
+            thinFreeCapacities,
+            storPoolNameStr,
+            responses
+        );
+
+        // 3. Handle disk removal or addition
+        Flux<ApiCallRc> deactivateFlux;
+        if (removeDisk)
+        {
+            // diskful -> diskless
+            markDiskRemoveRequested(rsc);
+            removeDiskfulByProp(rsc);
+            deactivateFlux = Flux.empty();
+        }
+        else
+        {
+            // diskless -> diskful
+            deactivateFlux = prepareDiskAddition(
+                rsc,
+                migrateFromNodeNameStr,
+                layerListStr,
+                diskfulByRef,
+                storPoolResult,
+                responses
+            );
+        }
+
+        // 4. validate layer support. This needs to be done after the layerData was possibly recreated.
+        // Therefore, DO NOT move this method into the early fail fast!
+        validateLayerSupport(rsc);
+
+        // 5. Commit and build response
+        ctrlTransactionHelper.commit();
+
+        String action = removeDisk ? "Removal of disk from" : "Addition of disk to";
+        responses.addEntry(ApiCallRcImpl.simpleEntry(
+            ApiConsts.MODIFIED,
+            action + " resource '" + rscDfn.getName().displayValue + "' " +
+                "on node '" + rsc.getNode().getName().displayValue + "' registered"
+        ));
+
+        return Flux
+            .<ApiCallRc>just(responses)
+            .concatWith(deactivateFlux)
+            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, toggleIntoTiebreakerRef, context))
+            .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rscDfn))
+            .concatWith(
+                copySnapHelper.getCopyFlux(
+                    Collections.singleton(rsc),
+                    copyAllSnapsRef,
+                    snapNamesToCopyRef,
+                    context,
+                    copySnapsForEvac
+                )
+            );
+    }
+
+    private void validateToggleDiskPreconditions(Resource rsc, boolean removeDisk)
+    {
         if (hasDiskAddRequested(rsc))
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -422,189 +499,214 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
 
         ResourceDefinition rscDfn = rsc.getResourceDefinition();
-        AccessContext peerCtx = peerAccCtx.get();
         if (removeDisk)
         {
-            // Prevent removal of the last disk
-            int haveDiskCount = countDisksAndIsOnline(rscDfn);
-            if (haveDiskCount <= 1)
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INSUFFICIENT_REPLICA_COUNT,
-                    "Cannot remove the disk from the only online resource with a disk",
-                    true
-                ));
-            }
-
-            if (!LayerUtils.hasLayer(getLayerData(peerCtx, rsc), DeviceLayerKind.DRBD))
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_LAYER_STACK,
-                    "Toggle disk is only supported in combination with DRBD",
-                    true
-                ));
-            }
+            validateDiskRemovalAllowed(rsc, rscDfn);
         }
         else
         {
             ensureAllPeersHavePeerSlotLeft(rscDfn);
         }
+    }
 
-        // Save the requested storage pool in the resource properties.
-        // This does not cause the storage pool to be used automatically.
-        Props rscProps = ctrlPropsHelper.getProps(rsc);
-        if (storPoolNameStr == null || storPoolNameStr.isEmpty())
+    private void validateDiskRemovalAllowed(Resource rsc, ResourceDefinition rscDfn)
+    {
+        int haveDiskCount = countDisksAndIsOnline(rscDfn);
+        if (haveDiskCount <= 1)
         {
-            if (removeDisk)
-            {
-                rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
-            }
-            else
-            {
-                rscProps.map().remove(ApiConsts.KEY_STOR_POOL_NAME);
-            }
-        }
-        else
-        {
-            ctrlPropsHelper.fillProperties(
-                responses,
-                LinStorObject.RSC,
-                Collections.singletonMap(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr),
-                rscProps,
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INSUFFICIENT_REPLICA_COUNT,
+                "Cannot remove the disk from the only online resource with a disk",
+                true
+            ));
         }
 
-        /*
-         * If any of the targeted storage pools is shared and already actively used by a shared resource,
-         * we must set the INACTIVE flag for the current rsc.
-         */
-        boolean needsDeactivate = false;
-        Flux<ApiCallRc> deactivateFlux = Flux.empty();
+        if (!LayerUtils.hasLayer(getLayerData(peerAccCtx.get(), rsc), DeviceLayerKind.DRBD))
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_LAYER_STACK,
+                "Toggle disk is only supported in combination with DRBD",
+                true
+            ));
+        }
+    }
 
+    /**
+     * Resolves the storage pool(s) for the toggle disk so we can fail fast is something goes wrong.
+     */
+    private StorPoolResolutionResult resolveStoragePools(
+        Resource rsc,
+        boolean removeDisk,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
+        @Nullable String storPoolNameStrRef,
+        ApiCallRcImpl responses
+    )
+        throws ApiRcException
+    {
         LayerPayload payload = new LayerPayload();
         if (isSharedSourceStorPool(rsc))
         {
             payload.drbdRsc.needsNewNodeId = true;
         }
 
-        // Resolve storage pool now so that nothing is committed if the storage pool configuration is invalid
-        Set<StorPoolName> storPoolNames = new HashSet<>();
+        updateStorPoolProp(rsc, removeDisk, storPoolNameStrRef);
+
+        boolean needsDeactivate = false;
         Iterator<Volume> vlmIter = rsc.iterateVolumes();
         while (vlmIter.hasNext())
         {
             Volume vlm = vlmIter.next();
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
 
-            StorPool sp = ctrlStorPoolResolveHelper
+            @Nullable StorPool sp = ctrlStorPoolResolveHelper
                 .resolveStorPool(rsc, vlmDfn, removeDisk)
                 .extractApiCallRc(responses);
-            storPoolNames.add(sp.getName());
-            if (isSharedSpAlreadyUsed(rsc, sp))
+
+            if (sp != null)
             {
-                needsDeactivate = true;
-                payload.drbdRsc.needsNewNodeId = true;
-            }
-            else
-            {
-                if (!removeDisk)
+                if (isSharedSpAlreadyUsed(rsc, sp))
+                {
+                    needsDeactivate = true;
+                    payload.drbdRsc.needsNewNodeId = true;
+                }
+                else if (!removeDisk)
                 {
                     checkFreeSpace(sp, vlm, getVlmDfnSizePrivileged(vlmDfn), thinFreeCapacities);
                 }
             }
         }
-        if (storPoolNames.size() == 1)
+
+        return new StorPoolResolutionResult(needsDeactivate, payload);
+    }
+
+    /**
+     * Sets the StorPoolName property if the parameter is non-null and non-empty, otherwise deletes the property, or
+     * sets it to {@value LinStor#DISKLESS_STOR_POOL_NAME} if the resource should become diskless.
+     */
+    private void updateStorPoolProp(Resource rscRef, boolean removeDiskRef, String storPoolNameStrRef)
+        throws ImplementationError, ApiRcException, ApiDatabaseException
+    {
+        @Nullable String spNameVal = null; // null == delete prop.
+        if (storPoolNameStrRef != null && !storPoolNameStrRef.isBlank())
         {
-            /*
-             * Since we also set the StorPoolName property when going diskless, we should also set it then going diskful
-             * (and this property makes sense to be set on resource-level)
-             */
-            ctrlPropsHelper.fillProperties(
-                responses,
-                LinStorObject.RSC,
-                Collections.singletonMap(ApiConsts.KEY_STOR_POOL_NAME, storPoolNames.iterator().next().displayValue),
-                rscProps,
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
+            spNameVal = storPoolNameStrRef;
         }
-
-        if (removeDisk)
+        else if (removeDiskRef)
         {
-            // diskful -> diskless
-            markDiskRemoveRequested(rsc);
-
-            // before we can update the layerData we first have to remove the actual disk.
-            // that means we can only update the storage layer if the deviceManager already got rid
-            // of the actual volume(s)
-
-            removeDiskfulByProp(rsc);
-        }
-        else
-        {
-            // diskless -> diskful
-            // ctrlLayerStackHelper.resetStoragePools(rsc);
-
-            markDiskAddRequested(rsc);
-
-            if (migrateFromNodeNameStr != null && !migrateFromNodeNameStr.isEmpty())
-            {
-                Resource migrateFromRsc = ctrlApiDataLoader.loadRsc(migrateFromNodeNameStr, rscNameStr, true);
-
-                // TODO technically we now could also ship these snapshots... not sure if we want to by default
-                // though...
-                // ensureNoSnapshots(migrateFromRsc);
-
-                setMigrateFrom(rsc, migrateFromRsc.getNode().getName());
-
-                ctrlRscDeleteApiHelper.ensureNotInUse(migrateFromRsc);
-            }
-
-            // List<DeviceLayerKind> layerList = null;
-            if (needsDeactivate)
-            {
-                responses.addEntries(
-                    ApiCallRcImpl.singleApiCallRc(
-                        ApiConsts.WARN_RSC_DEACTIVATED,
-                        "Resource got deactivated as target shared storage pool is already used by a shared resource"
-                        )
-                    );
-                deactivateFlux = ctrlRscActivateApiCallHandler.deactivateRsc(
-                    rsc.getNode().getName().displayValue,
-                    rscDfn.getName().displayValue
-                );
-
-                /*
-                 * We also have to remove the currently diskless DrbdRscData and free up the node-id as now we must
-                 * use the shared resource's node-id
-                 */
-            }
-            else
-            {
-                copyDrbdNodeIdIfExists(rsc, payload);
-            }
-            /*
-             * rebuilds the layerdata in case we just removed it..
-             * doing so, we need to rebuild the layerstack instead of taking the previous one, as a diskless resource
-             * might be "DRBD,storage" while its diskfull peers actually have "DRBD,LUKS,storage".
-             */
-            removeLayerData(rsc);
-            List<DeviceLayerKind> layerList = CtrlRscCrtApiHelper.getLayerstackOrBuildDefault(
-                peerCtx,
-                ctrlLayerStackHelper,
-                errorReporter,
-                layerListStr,
-                responses,
-                rscDfn
-            );
-
-            ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
-
-            setDiskfulByProp(rsc, diskfulByRef);
+            spNameVal = LinStor.DISKLESS_STOR_POOL_NAME;
         }
 
         try
         {
-            List<DeviceLayerKind> unsupportedLayers = CtrlRscCrtApiHelper.getUnsupportedLayers(peerCtx, rsc);
+            Props rscProps = rscRef.getProps(apiCtx);
+            if (spNameVal != null)
+            {
+                rscProps.setProp(ApiConsts.KEY_STOR_POOL_NAME, spNameVal);
+            }
+            else
+            {
+                rscProps.removeProp(ApiConsts.KEY_STOR_POOL_NAME);
+            }
+        }
+        catch (InvalidKeyException | AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (InvalidValueException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
+                    "The given storage pool name '" + storPoolNameStrRef + "' is invalid",
+                    true
+                )
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    /**
+     * <ul>
+     *  <li>Enables {@link Resource.Flags.DISK_ADD_REQUESTED}</li>
+     *  <li>Sets {@value ApiConsts#KEY_RSC_MIGRATE_FROM} if necessary</li>
+     *  <li>Recreates layer data</li>
+     *  <li>Sets {@value ApiConsts#KEY_RSC_DISKFUL_BY} if <code>diskfulByRef</code> is non-null, otherwise removes
+     *   the property</li>
+     * </ul>
+     *
+     * @return A deactivation-flux if required  (empty flux otherwise)
+     */
+    private Flux<ApiCallRc> prepareDiskAddition(
+        Resource rsc,
+        @Nullable String migrateFromNodeNameStr,
+        @Nullable List<String> layerListStr,
+        @Nullable DiskfulBy diskfulByRef,
+        StorPoolResolutionResult storPoolResult,
+        ApiCallRcImpl responses
+    )
+    {
+        Flux<ApiCallRc> deactivateFlux = Flux.empty();
+        ResourceDefinition rscDfn = rsc.getResourceDefinition();
+        LayerPayload payload = storPoolResult.payload;
+
+        markDiskAddRequested(rsc);
+
+        if (migrateFromNodeNameStr != null && !migrateFromNodeNameStr.isEmpty())
+        {
+            Resource migrateFromRsc = ctrlApiDataLoader.loadRsc(
+                migrateFromNodeNameStr,
+                rscDfn.getName().displayValue,
+                true
+            );
+            setMigrateFrom(rsc, migrateFromRsc.getNode().getName());
+            ctrlRscDeleteApiHelper.ensureNotInUse(migrateFromRsc);
+        }
+
+        if (storPoolResult.needsDeactivate)
+        {
+            responses.addEntries(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.WARN_RSC_DEACTIVATED,
+                    "Resource got deactivated as target shared storage pool is already used by a shared resource"
+                )
+            );
+            deactivateFlux = ctrlRscActivateApiCallHandler.deactivateRsc(
+                rsc.getNode().getName().displayValue,
+                rscDfn.getName().displayValue
+            );
+        }
+        else
+        {
+            copyDrbdNodeIdIfExists(rsc, payload);
+        }
+
+        removeLayerData(rsc);
+        List<DeviceLayerKind> layerList = CtrlRscCrtApiHelper.getLayerstackOrBuildDefault(
+            peerAccCtx.get(),
+            ctrlLayerStackHelper,
+            errorReporter,
+            layerListStr,
+            responses,
+            rscDfn
+        );
+
+        ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
+        setDiskfulByProp(rsc, diskfulByRef);
+
+        return deactivateFlux;
+    }
+
+    /**
+     * Checks if the given resource has some unused layers. This method must be called after the layerData was rebuild!
+     */
+    private void validateLayerSupport(Resource rsc)
+    {
+        try
+        {
+            List<DeviceLayerKind> unsupportedLayers = CtrlRscCrtApiHelper.getUnsupportedLayers(peerAccCtx.get(), rsc);
             if (!unsupportedLayers.isEmpty())
             {
                 throw new ApiRcException(
@@ -620,35 +722,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "toggle disk resource " + rscDfn.getName().displayValue + " on node " +
+                "toggle disk resource " + rsc.getResourceDefinition().getName().displayValue + " on node " +
                     rsc.getNode().getName(),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
-
-        ctrlTransactionHelper.commit();
-
-        String action = removeDisk ? "Removal of disk from" : "Addition of disk to";
-        responses.addEntry(ApiCallRcImpl.simpleEntry(
-            ApiConsts.MODIFIED,
-            action + " resource '" + rscDfn.getName().displayValue + "' " +
-                "on node '" + rsc.getNode().getName().displayValue + "' registered"
-        ));
-
-        return Flux
-            .<ApiCallRc>just(responses)
-            .concatWith(deactivateFlux)
-            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, toggleIntoTiebreakerRef, context))
-            .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rscDfn))
-            .concatWith(
-                copySnapHelper.getCopyFlux(
-                    Collections.singleton(rsc),
-                    copyAllSnapsRef,
-                    snapNamesToCopyRef,
-                    context,
-                    copySnapsForEvac
-                )
-            );
     }
 
     private long getVlmDfnSizePrivileged(VolumeDefinition vlmDfnRef)
