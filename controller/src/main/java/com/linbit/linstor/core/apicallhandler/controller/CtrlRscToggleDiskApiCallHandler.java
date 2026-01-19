@@ -355,6 +355,21 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     }
 
     /**
+     * Determines what action to take for a toggle disk request.
+     */
+    private enum ToggleDiskAction
+    {
+        /** Resource is already in the desired state, no action needed */
+        NOOP,
+        /** Normal toggle disk operation */
+        NORMAL,
+        /** Abort current transition and start opposite direction */
+        ABORT,
+        /** Retry current transition (re-update satellites) */
+        RETRY
+    }
+
+    /**
      * Result of resolving and validating storage pools for toggle disk operation.
      */
     private static class StorPoolResolutionResult
@@ -398,6 +413,119 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
         ResourceDefinition rscDfn = rsc.getResourceDefinition();
 
+        // 1. Determine what action to take
+        ToggleDiskAction action = determineToggleDiskAction(rsc, removeDisk);
+
+        errorReporter.logDebug("Toggle Disk action: %s", action);
+
+        Flux<ApiCallRc> retFlux;
+        // 2. Handle based on action type
+        switch (action)
+        {
+            case NOOP:
+                retFlux = handleNoopAction(rsc, removeDisk);
+                break;
+            case RETRY:
+                retFlux = handleRetryAction(rsc, removeDisk, toggleIntoTiebreakerRef, context);
+                break;
+            case ABORT:
+                clearToggleDiskFlags(rsc);
+                errorReporter.logInfo(
+                    "Aborting previous toggle disk transition, starting new transition to %s",
+                    removeDisk ? "diskless" : "diskful"
+                );
+                // fall-through to NORMAL case
+            case NORMAL:
+                retFlux = handleNormalToggleDisk(
+                    rsc,
+                    rscDfn,
+                    nodeName,
+                    rscName,
+                    storPoolNameStr,
+                    migrateFromNodeNameStr,
+                    layerListStr,
+                    removeDisk,
+                    diskfulByRef,
+                    toggleIntoTiebreakerRef,
+                    copyAllSnapsRef,
+                    snapNamesToCopyRef,
+                    context,
+                    copySnapsForEvac,
+                    thinFreeCapacities,
+                    responses
+                );
+                break;
+            default:
+                throw new ImplementationError("Unhandled case: " + action);
+        }
+        return retFlux;
+    }
+
+    /**
+     * Noop action. Only returns a message like "Resource &lt;rsc&gt; is already diskful/diskless" to the client.
+     * No further fluxes are chained.
+     */
+    private Flux<ApiCallRc> handleNoopAction(Resource rscRef, boolean removeDiskRef)
+    {
+        String state = removeDiskRef ? "diskless" : "diskful";
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        responses.addEntry(ApiCallRcImpl.simpleEntry(
+            ApiConsts.INFO_NOOP,
+            "Resource '" + rscRef.getResourceDefinition().getName().displayValue + "' on node '" +
+                rscRef.getNode().getName().displayValue + "' is already " + state
+        ));
+        return Flux.just(responses);
+    }
+
+    /**
+     * Retries a toggle disk. Besides a message to the client this method does not change any flags or properties
+     * but just continues the Flux starting with
+     * {@link #updateAndAdjustDisk(NodeName, ResourceName, boolean, boolean, ResponseContext)}.
+     */
+    private Flux<ApiCallRc> handleRetryAction(
+        Resource rscRef,
+        boolean removeDisk,
+        boolean toggleIntoTiebreakerRef,
+        ResponseContext context
+    )
+    {
+        String direction = removeDisk ? "diskless" : "diskful";
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        NodeName nodeName = rscRef.getNode().getName();
+        ResourceName rscName = rscRef.getResourceDefinition().getName();
+        responses.addEntry(ApiCallRcImpl.simpleEntry(
+            ApiConsts.INFO_NOOP,
+            "Retrying toggle disk to " + direction + " for resource '" + rscName.displayValue +
+                "' on node '" + nodeName.displayValue + "'"
+        ));
+
+        return Flux
+            .<ApiCallRc>just(responses)
+            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, toggleIntoTiebreakerRef, context));
+    }
+
+    /**
+     * Default behavior. Handles diskful -> diskless or vice versa scenarios.
+     */
+    private Flux<ApiCallRc> handleNormalToggleDisk(
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        NodeName nodeName,
+        ResourceName rscName,
+        @Nullable String storPoolNameStr,
+        @Nullable String migrateFromNodeNameStr,
+        @Nullable List<String> layerListStr,
+        boolean removeDisk,
+        @Nullable Resource.DiskfulBy diskfulByRef,
+        boolean toggleIntoTiebreakerRef,
+        boolean copyAllSnapsRef,
+        List<String> snapNamesToCopyRef,
+        ResponseContext context,
+        boolean copySnapsForEvac,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
+        ApiCallRcImpl responses
+    )
+    {
         // 1. Validate preconditions
         validateToggleDiskPreconditions(rsc, removeDisk);
 
@@ -439,10 +567,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         // 5. Commit and build response
         ctrlTransactionHelper.commit();
 
-        String action = removeDisk ? "Removal of disk from" : "Addition of disk to";
+        String actionStr = removeDisk ? "Removal of disk from" : "Addition of disk to";
         responses.addEntry(ApiCallRcImpl.simpleEntry(
             ApiConsts.MODIFIED,
-            action + " resource '" + rscDfn.getName().displayValue + "' " +
+            actionStr + " resource '" + rscDfn.getName().displayValue + "' " +
                 "on node '" + rsc.getNode().getName().displayValue + "' registered"
         ));
 
@@ -462,42 +590,71 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             );
     }
 
+    /**
+     * Determines what action to take for a toggle disk request based on current state.
+     *
+     * @param rsc the resource
+     * @param removeDisk true if requesting diskless, false if requesting diskful
+     *
+     * @return the action to take
+     */
+    private ToggleDiskAction determineToggleDiskAction(Resource rsc, boolean removeDisk)
+    {
+        /*
+         * DRBD_DISKLESS flag behavior:
+         * diskful -> diskless:
+         * * A0) pre-toggle-disk-state: - (same state as B3)
+         * * A1) toggleDiskInTx: DISK_REMOVE_REQUESTED
+         * * A2) updateAndAdjustDisk: DISK_REMOVE_REQUESTED, DISK_REMOVING, DRBD_DISKLESS
+         * * A3) finishOperation: DRBD_DISKLESS (same state as B0)
+         *
+         * diskless -> diskful:
+         * * B0) pre-toggle-disk-state: DRBD_DISKLESS (same state as A3)
+         * * B1) toggleDiskInTx: DISK_ADD_REQUESTED, DRBD_DISKLESS
+         * * B2) updateAndAdjustdisk: DISK_ADD_REQUESTED, DISK_ADDING, DRBD_DISKLESS
+         * * B3) finishOperation: - (same state as A0)
+         */
+        boolean isDiskless = ctrlVlmCrtApiHelper.isDiskless(rsc);
+        boolean diskAddRequested = hasDiskAddRequested(rsc);
+        boolean diskRemoveRequested = hasDiskRemoveRequested(rsc);
+
+        ToggleDiskAction action;
+        if (isDiskless)
+        { // candidates: A2, A3/B0, B1, B2
+            if (diskAddRequested)
+            { // B1 or B2
+                action = removeDisk ? ToggleDiskAction.ABORT : ToggleDiskAction.RETRY;
+            }
+            else if (diskRemoveRequested)
+            { // A2
+                action = removeDisk ? ToggleDiskAction.RETRY : ToggleDiskAction.ABORT;
+            }
+            else
+            { // A3/B0, not in toggle-disk
+                action = removeDisk ? ToggleDiskAction.NOOP : ToggleDiskAction.NORMAL;
+            }
+        }
+        else
+        { // diskful. candidates: A0/B3, A1
+            if (diskRemoveRequested)
+            { // A1
+                action = removeDisk ? ToggleDiskAction.RETRY : ToggleDiskAction.ABORT;
+            }
+            else
+            { // A0/B3, not in toggle-disk
+                action = removeDisk ? ToggleDiskAction.NORMAL : ToggleDiskAction.NOOP;
+            }
+        }
+
+        return action;
+    }
+
+    /**
+     * Validates preconditions for a normal toggle disk operation.
+     * Only called for NORMAL and ABORT actions (not for NOOP or RETRY).
+     */
     private void validateToggleDiskPreconditions(Resource rsc, boolean removeDisk)
     {
-        if (hasDiskAddRequested(rsc))
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_RSC_BUSY,
-                "Addition of disk to resource already requested",
-                true
-            ));
-        }
-        if (hasDiskRemoveRequested(rsc))
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_RSC_BUSY,
-                "Removal of disk from resource already requested",
-                true
-            ));
-        }
-
-        if (!removeDisk && !ctrlVlmCrtApiHelper.isDiskless(rsc))
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.WARN_RSC_ALREADY_HAS_DISK,
-                "Resource already has disk",
-                true
-            ));
-        }
-        if (removeDisk && ctrlVlmCrtApiHelper.isDiskless(rsc))
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.WARN_RSC_ALREADY_DISKLESS,
-                "Resource already diskless",
-                true
-            ));
-        }
-
         ResourceDefinition rscDfn = rsc.getResourceDefinition();
         if (removeDisk)
         {
@@ -506,6 +663,27 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         else
         {
             ensureAllPeersHavePeerSlotLeft(rscDfn);
+        }
+    }
+
+    /**
+     * Clears all toggle-disk related flags. Used when aborting a transition.
+     */
+    private void clearToggleDiskFlags(Resource rsc)
+    {
+        try
+        {
+            rsc.getStateFlags().disableFlags(
+                apiCtx,
+                Resource.Flags.DISK_ADD_REQUESTED,
+                Resource.Flags.DISK_ADDING,
+                Resource.Flags.DISK_REMOVE_REQUESTED,
+                Resource.Flags.DISK_REMOVING
+            );
+        }
+        catch (AccessDeniedException | DatabaseException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
