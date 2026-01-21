@@ -10,7 +10,7 @@ spec:
       description: vmshed version to use
     build_helpers_version:
       type: string
-      default: dc32380a3fc0e2117bb2cb5f2593c450fe44e31d
+      default: 4f89dfb823bfdeb6fd648d8375f21fb35af96377
       description: build-helpers version or tag to use
     vmshed_torun:
       type: string
