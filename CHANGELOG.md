@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed resource definition delete setting DELETE flag when resources are still in use
+- Fixed retry deletion of already deleting resource (no longer fails if it is the second to last diskful resource)
 
 ## [1.33.1] - 2025-12-22
 
