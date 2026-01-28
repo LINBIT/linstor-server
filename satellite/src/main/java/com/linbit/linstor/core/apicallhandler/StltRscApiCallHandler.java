@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
@@ -11,8 +12,8 @@ import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
-import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.CriticalError;
+import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
@@ -23,6 +24,7 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
+import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeSatelliteFactory;
@@ -57,6 +59,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -346,27 +349,7 @@ class StltRscApiCallHandler
 
                 for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())
                 {
-                    Node remoteNode = nodeFactory.getInstanceSatellite(
-                        apiCtx,
-                        otherRscRaw.getNodeUuid(),
-                        new NodeName(otherRscRaw.getNodeName()),
-                        Node.Type.valueOf(otherRscRaw.getNodeType()),
-                        Node.Flags.restoreFlags(otherRscRaw.getNodeFlags())
-                    );
-                    checkUuid(remoteNode, otherRscRaw);
-                    remoteNode.getProps(apiCtx).map().putAll(otherRscRaw.getNodeProps());
-
-                    // set node's netinterfaces
-                    for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRscRaw.getNetInterfacefPojos())
-                    {
-                        netInterfaceFactory.getInstanceSatellite(
-                            apiCtx,
-                            otherNodeNetIf.getUuid(),
-                            remoteNode,
-                            new NetInterfaceName(otherNodeNetIf.getName()),
-                            new LsIpAddress(otherNodeNetIf.getAddress())
-                        );
-                    }
+                    Node remoteNode = getMergedRemoteNode(otherRscRaw);
 
                     Resource remoteRsc = createRsc(
                         otherRscRaw.getRscUuid(),
@@ -500,37 +483,7 @@ class StltRscApiCallHandler
                     {
                         // controller sent us a resource that we don't know
                         // create its node
-                        NodeName nodeName = new NodeName(otherRsc.getNodeName());
-                        Node remoteNode = nodesMap.get(nodeName);
-                        if (remoteNode == null)
-                        {
-                            remoteNode = nodeFactory.getInstanceSatellite(
-                                apiCtx,
-                                otherRsc.getNodeUuid(),
-                                nodeName,
-                                Node.Type.valueOf(otherRsc.getNodeType()),
-                                Node.Flags.restoreFlags(otherRsc.getNodeFlags())
-                            );
-
-                            // set node's netinterfaces
-                            for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRsc.getNetInterfacefPojos())
-                            {
-                                netInterfaceFactory.getInstanceSatellite(
-                                    apiCtx,
-                                    otherNodeNetIf.getUuid(),
-                                    remoteNode,
-                                    new NetInterfaceName(otherNodeNetIf.getName()),
-                                    new LsIpAddress(otherNodeNetIf.getAddress())
-                                );
-                            }
-                        }
-                        else
-                        {
-                            checkUuid(remoteNode, otherRsc);
-                        }
-                        Props remoteNodeProps = remoteNode.getProps(apiCtx);
-                        remoteNodeProps.map().putAll(otherRsc.getNodeProps());
-                        remoteNodeProps.keySet().retainAll(otherRsc.getNodeProps().keySet());
+                        Node remoteNode = getMergedRemoteNode(otherRsc);
 
                         // create resource
                         remoteRsc = createRsc(
@@ -548,15 +501,9 @@ class StltRscApiCallHandler
                     }
                     else
                     {
-                        // we found the resource by the uuid the controller sent us
-                        Node remoteNode = remoteRsc.getNode();
-                        // check if the node uuids also match
-                        checkUuid(remoteNode, otherRsc);
-
-                        // update node props
-                        Props remoteNodeProps = remoteNode.getProps(apiCtx);
-                        remoteNodeProps.map().putAll(otherRsc.getNodeProps());
-                        remoteNodeProps.keySet().retainAll(otherRsc.getNodeProps().keySet());
+                        // we found the resource by the uuid the controller sent us, but we still need to make sure
+                        // to merge the remoteNode in case some properties / netIfs have changed.
+                        getMergedRemoteNode(otherRsc);
 
                         // update matching resource props
                         Props remoteRscProps = remoteRsc.getProps(apiCtx);
@@ -689,6 +636,87 @@ class StltRscApiCallHandler
         {
             // TODO: kill connection?
             errorReporter.reportError(exc);
+        }
+    }
+
+    /**
+     * Gets the remote {@link Node} and merges the nodes properties and network interfaces based on the content of
+     * <code>otherRscRawRef</code>
+     *
+     * @param otherRscRawRef
+     * @return The fully merged remote {@link Node}
+     */
+    private Node getMergedRemoteNode(OtherRscPojo otherRscRawRef)
+        throws ImplementationError, InvalidNameException, AccessDeniedException, InvalidIpAddressException,
+        DatabaseException
+    {
+        Node remoteNode = nodeFactory.getInstanceSatellite(
+            apiCtx,
+            otherRscRawRef.getNodeUuid(),
+            new NodeName(otherRscRawRef.getNodeName()),
+            Node.Type.valueOf(otherRscRawRef.getNodeType()),
+            Node.Flags.restoreFlags(otherRscRawRef.getNodeFlags())
+        );
+        checkUuid(remoteNode, otherRscRawRef);
+        Map<String, String> propsMap = remoteNode.getProps(apiCtx).map();
+        propsMap.clear();
+        propsMap.putAll(otherRscRawRef.getNodeProps());
+
+        mergeNetIfs(remoteNode, otherRscRawRef);
+
+        return remoteNode;
+    }
+
+    private void mergeNetIfs(Node remoteNode, OtherRscPojo otherRscRawRef)
+        throws AccessDeniedException, InvalidNameException, InvalidIpAddressException, ImplementationError,
+        DatabaseException
+    {
+        // the list of netIfs could be empty if we are processing (remote) resources during a FullSync. The FullSync
+        // only includes remote netIfs in the IntNode proto messages, but not in the remote part of IntRsc. So the
+        // FullSync will correctly apply the remote netIfs when processing the remote nodes, but once we process the
+        // remote rscs (here) we see the empty list and delete all remote netIfs.
+
+        // during a non-FullSync (i.e. an update) the remote node's netIfs are included and the list of remote netIfs
+        // is not empty.
+
+        // also in general it makes no sense to "force-apply" an empty list of netIfs. We only know remote nodes if we
+        // have a shared resource with them. Shared resource without a netIf does not work.
+        if (!otherRscRawRef.getNetInterfacefPojos().isEmpty())
+        {
+            // since we should also to delete no longer existing netIfs, we first create a list of registered netIfs of
+            // the remoteNode
+            Map<NetInterfaceName, NetInterface> netIfsToRemove = new HashMap<>();
+            Iterator<NetInterface> netIfIt = remoteNode.iterateNetInterfaces(apiCtx);
+            while (netIfIt.hasNext())
+            {
+                NetInterface netIf = netIfIt.next();
+                netIfsToRemove.put(netIf.getName(), netIf);
+            }
+
+            // set node's netinterfaces
+            for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRscRawRef.getNetInterfacefPojos())
+            {
+                NetInterfaceName netIfName = new NetInterfaceName(otherNodeNetIf.getName());
+                LsIpAddress addr = new LsIpAddress(otherNodeNetIf.getAddress());
+                NetInterface netIf = netInterfaceFactory.getInstanceSatellite(
+                    apiCtx,
+                    otherNodeNetIf.getUuid(),
+                    remoteNode,
+                    netIfName,
+                    addr
+                );
+                if (!netIf.getAddress(apiCtx).equals(addr))
+                {
+                    netIf.setAddress(apiCtx, addr);
+                }
+                netIfsToRemove.remove(netIfName);
+            }
+
+            // remove nodes no longer known netIfs
+            for (NetInterface netIf : netIfsToRemove.values())
+            {
+                remoteNode.removeNetInterface(apiCtx, netIf);
+            }
         }
     }
 

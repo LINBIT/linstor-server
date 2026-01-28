@@ -506,7 +506,8 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
         netInterfaceMap.put(niRef.getName(), niRef);
     }
 
-    void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException, DatabaseException
+    public void removeNetInterface(AccessContext accCtx, NetInterface niRef)
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
