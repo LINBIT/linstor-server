@@ -353,6 +353,14 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         );
     }
 
+    public int getNotDeletedDiskfulCountExcluding(AccessContext accCtxRef, Resource... rscsRef)
+        throws AccessDeniedException
+    {
+        List<Resource> rscList = getNotDeletedDiskful(accCtxRef);
+        rscList.removeAll(Arrays.asList(rscsRef));
+        return rscList.size();
+    }
+
     public int getNotDeletedDiskfulCount(AccessContext accCtx) throws AccessDeniedException
     {
         return getNotDeletedDiskful(accCtx).size();

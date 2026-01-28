@@ -395,13 +395,13 @@ public class CtrlRscDeleteApiHelper
         try
         {
             AccessContext accCtx = peerAccCtx.get();
-            boolean isDiskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx) ||
+            boolean isDiskless = rsc.isDrbdDiskless(accCtx) ||
+                rsc.isNvmeInitiator(accCtx) ||
                 rsc.isEbsInitiator(accCtx);
-            if (
-                !isDiskless &&
-                    rsc.getResourceDefinition().hasDisklessNotDeleting(accCtx) &&
-                    rsc.getResourceDefinition().getNotDeletedDiskfulCount(accCtx) == 1
-            )
+            boolean hasDisklessNotDeleting = rsc.getResourceDefinition().hasDisklessNotDeleting(accCtx);
+            int otherNotDeletedDiskfulCount = rsc.getResourceDefinition()
+                .getNotDeletedDiskfulCountExcluding(accCtx, rsc);
+            if (!isDiskless && hasDisklessNotDeleting && otherNotDeletedDiskfulCount == 0)
             {
                 ApiCallRcImpl.ApiCallRcEntry err = ApiCallRcImpl
                     .entryBuilder(
