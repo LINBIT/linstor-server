@@ -44,12 +44,12 @@ public class GrizzlyInitializer implements StartupInitializer
 
         try
         {
-            Path keyStorePath = null;
-            String keyStorePassword;
-            Path trustStorePath = null;
-            String trustStorePassword;
-            final String keyStorePathProp = ctrlCfg.getRestSecureKeystore();
-            final String trustStorePathProp = ctrlCfg.getRestSecureTruststore();
+            @Nullable Path keyStorePath = null;
+            @Nullable String keyStorePassword;
+            @Nullable Path trustStorePath = null;
+            @Nullable String trustStorePassword;
+            final @Nullable String keyStorePathProp = ctrlCfg.getRestSecureKeystore();
+            final @Nullable String trustStorePathProp = ctrlCfg.getRestSecureTruststore();
             if (keyStorePathProp != null && ctrlCfg.isRestSecureEnabled())
             {
                 keyStorePath = Paths.get(keyStorePathProp);

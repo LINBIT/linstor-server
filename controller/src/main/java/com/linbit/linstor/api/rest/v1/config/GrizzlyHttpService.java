@@ -66,9 +66,9 @@ public class GrizzlyHttpService implements SystemService
     private final String listenAddress;
     private final String listenAddressSecure;
     private final @Nullable Path keyStoreFile;
-    private final String keyStorePassword;
-    private final Path trustStoreFile;
-    private final String trustStorePassword;
+    private final @Nullable String keyStorePassword;
+    private final @Nullable Path trustStoreFile;
+    private final @Nullable String trustStorePassword;
     private final ResourceConfig restResourceConfig;
     private final Path restAccessLogPath;
     private final SystemConfRepository systemConfRepository;
@@ -87,10 +87,10 @@ public class GrizzlyHttpService implements SystemService
         String listenAddressRef,
         String listenAddressSecureRef,
         @Nullable Path keyStoreFileRef,
-        String keyStorePasswordRef,
-        Path trustStoreFileRef,
-        String trustStorePasswordRef,
-        String restAccessLogPathRef,
+        @Nullable String keyStorePasswordRef,
+        @Nullable Path trustStoreFileRef,
+        @Nullable String trustStorePasswordRef,
+        @Nullable String restAccessLogPathRef,
         RestAccessLogMode restAccessLogModeRef,
         String webUiDirectoryRef
     )
@@ -230,13 +230,6 @@ public class GrizzlyHttpService implements SystemService
                 restResourceConfig,
                 false
             );
-        }
-
-        // configure access logging
-        if (restAccessLogMode == null)
-        {
-            errorReporter.logWarning("Unknown rest_access_log_mode set, fallback to append");
-            restAccessLogMode = LinstorConfig.RestAccessLogMode.APPEND;
         }
 
         if (restAccessLogMode != LinstorConfig.RestAccessLogMode.NO_LOG)
