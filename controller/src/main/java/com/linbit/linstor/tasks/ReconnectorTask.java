@@ -64,6 +64,10 @@ public class ReconnectorTask implements Task
     private static final int RECONNECT_SLEEP = 10_000;
     private static final String STATUS_CONNECTED = "Connected";
 
+    /**
+     * must be taken AFTER other possible LINSTOR locks. I.e.
+     * <code>try(LockGuard lg = ...){ synchronized(syncObj){ ...}}<code>
+     */
     private final Object syncObj = new Object();
 
     private final AccessContext apiCtx;
@@ -128,7 +132,7 @@ public class ReconnectorTask implements Task
             {
                 // no locks needed
                 sendAuthentication = true;
-                pingTask.add(peer);
+                getPingTask().add(peer);
             }
             else
             {
@@ -216,6 +220,18 @@ public class ReconnectorTask implements Task
             // do not add peer to ping task, as that is done when the satellite
             // authenticated successfully.
         }
+    }
+
+    /**
+     * Helper method to get rid of @Nullable.
+     */
+    private PingTask getPingTask()
+    {
+        if (pingTask == null)
+        {
+            throw new ImplementationError("PingTask not yet injected");
+        }
+        return pingTask;
     }
 
     /**
@@ -339,7 +355,7 @@ public class ReconnectorTask implements Task
         synchronized (syncObj)
         {
             removeConfigsByNode(peer.getNode());
-            pingTask.remove(peer);
+            getPingTask().remove(peer);
         }
     }
 
@@ -473,13 +489,9 @@ public class ReconnectorTask implements Task
                     transMgr.commit();
                     synchronized (syncObj)
                     {
-                        reconnectorConfigSet.add(
-                            new ReconnectConfig(
-                                config,
-                                config.peer.getConnector().reconnect(config.peer)
-                            )
-                        );
+                        Peer reconnectedPeer = config.peer.getConnector().reconnect(config.peer);
                         reconnectorConfigSet.remove(config);
+                        reconnectorConfigSet.add(new ReconnectConfig(config, reconnectedPeer));
                     }
                 }
             }
