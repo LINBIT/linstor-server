@@ -138,7 +138,21 @@ public class ReconnectorTask implements Task
                     {
                         if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                         {
-                            var toAdd = new ReconnectConfig(peer, drbdConnectionsOk(node));
+                            // Remove any existing configs for this node before adding the new one.
+                            // Each reconnection attempt creates a new Peer object, so we need to
+                            // clean up stale entries to prevent duplicates from accumulating.
+                            // Preserve the oldest offlineSince to maintain correct eviction timing.
+                            @Nullable ReconnectConfig oldestRemoved = removeConfigsByNode(node);
+                            ReconnectConfig toAdd;
+                            if (oldestRemoved != null)
+                            {
+                                // Preserve offlineSince from the oldest removed config
+                                toAdd = new ReconnectConfig(oldestRemoved, peer);
+                            }
+                            else
+                            {
+                                toAdd = new ReconnectConfig(peer, drbdConnectionsOk(node));
+                            }
                             errorReporter.logDebug("ReconnectorTask add: " + toAdd);
                             reconnectorConfigSet.add(toAdd);
                             getFailedPeers(); // update evictionTime if necessary
@@ -204,28 +218,106 @@ public class ReconnectorTask implements Task
         }
     }
 
+    /**
+     * Removes all ReconnectConfigs for the given node and returns the one with the oldest
+     * offlineSince timestamp (or null if none were found).
+     * Compares by Node, not Peer identity, because each reconnection attempt creates a new
+     * Peer object. This ensures we find and remove all stale entries for the same node.
+     * Must be called while holding syncObj lock.
+     *
+     * Note: This method does NOT clear the node's eviction timestamp. Callers should
+     * explicitly call node.setEvictionTimestamp(null) if appropriate (e.g., in peerConnected).
+     */
+    private @Nullable ReconnectConfig removeConfigsByNode(@Nullable Node node)
+    {
+        @Nullable ReconnectConfig oldest = null;
+        if (node != null)
+        {
+            if (node.isDeleted())
+            {
+                cleanupDeletedNode(node);
+            }
+            else
+            {
+                oldest = removeAndFindOldestConfig(node);
+            }
+        }
+        return oldest;
+    }
+
+    /**
+     * Given an already deleted node instance, this method still tries to cleanup possible entries in
+     * <code>reconnectorConfigSet</code> using <code>==</code> instead of <code>.equals(..)</code>
+     * @param node A Node that is already deleted.
+     */
+    private void cleanupDeletedNode(Node node)
+    {
+        Iterator<ReconnectConfig> it = reconnectorConfigSet.iterator();
+        while (it.hasNext())
+        {
+            // we must not use node, but we can still try a cleanup using == instead of .equals
+            ReconnectConfig config = it.next();
+            if (config.peer.getNode().getKey().equals(node.getKey()))
+            {
+                it.remove();
+            }
+        }
+    }
+
+    /**
+     * <p>This method assumes the parameter is not just non-null, but also non-deleting.
+     * Since this method cannot enforce that no other thread deletes the given node while we iterate over our internal
+     * <code>reconnectorConfigSet</code>, all calls of "node.delete(..)" must make sure that the ReconnectorTask
+     * already gave up reconnecting to the given node.</p>
+     * <p>This method searches and returns the oldest {@link ReconnectConfig} (if any) based on
+     * {@link ReconnectConfig#offlineSince}.</p>
+     * <p>This method also deletes all {@link ReconnectConfig} entries with peers that point to the given node.
+     * @param node The node for which the oldest (if existing) {@link ReconnectConfig} should be returned
+     */
+    private @Nullable ReconnectConfig removeAndFindOldestConfig(Node node)
+    {
+        @Nullable ReconnectConfig oldest = null;
+        Iterator<ReconnectConfig> it = reconnectorConfigSet.iterator();
+        while (it.hasNext())
+        {
+            ReconnectConfig config = it.next();
+            @Nullable Node configNode = config.peer.getNode();
+            if (configNode != null && configNode.isDeleted())
+            {
+                // just remove it
+                it.remove();
+            }
+            else if (node.equals(configNode))
+            {
+                errorReporter.logDebug("ReconnectorTask remove: " + config);
+                it.remove();
+                if (oldest == null || config.offlineSince < oldest.offlineSince)
+                {
+                    oldest = config;
+                }
+            }
+        }
+        return oldest;
+    }
+
     public void peerConnected(Peer peer)
     {
         boolean sendAuthentication = false;
         synchronized (syncObj)
         {
-            @Nullable Object removed = null;
-            @Nullable ReconnectConfig toRemove = null;
-            for (ReconnectConfig config : reconnectorConfigSet)
+            @Nullable Node node = peer.getNode();
+            @Nullable ReconnectConfig removed = removeConfigsByNode(node);
+            if (removed != null)
             {
-                if (config.peer.equals(peer))
+                // Node has reconnected, clear eviction timestamp
+                if (pingTask != null)
                 {
-                    toRemove = config;
+                    sendAuthentication = true;
                 }
             }
-            if (toRemove != null)
+            if (node != null)
             {
-                toRemove.peer.getNode().setEvictionTimestamp(null);
-                removed = reconnectorConfigSet.remove(toRemove);
-            }
-            if (removed != null && pingTask != null)
-            {
-                sendAuthentication = true;
+                node.setEvictionTimestamp(null);
             }
         }
         if (sendAuthentication)
@@ -246,19 +338,7 @@ public class ReconnectorTask implements Task
     {
         synchronized (syncObj)
         {
-            @Nullable ReconnectConfig toRemove = null;
-            for (ReconnectConfig config : reconnectorConfigSet)
-            {
-                if (config.peer.equals(peer))
-                {
-                    toRemove = config;
-                }
-            }
-            if (toRemove != null)
-            {
-                errorReporter.logDebug("ReconnectorTask remove: " + toRemove);
-                reconnectorConfigSet.remove(toRemove);
-            }
+            removeConfigsByNode(peer.getNode());
             pingTask.remove(peer);
         }
     }
@@ -282,110 +362,148 @@ public class ReconnectorTask implements Task
         ArrayList<ReconnectConfig> localList = pair.objA;
         runEvictionFluxes(pair.objB);
 
+        // Track nodes we've already processed in this cycle to avoid duplicate reconnect
+        // attempts when multiple stale configs exist for the same node.
+        Set<NodeName> processedNodes = new HashSet<>();
+
         for (final ReconnectConfig config : localList)
         {
-            if (config.peer.isConnected(false))
+            @Nullable Node node = config.peer.getNode();
+            @Nullable NodeName nodeName = node == null ? null : node.getKey(); // getKey avoids checkDeleted()
+            if (node == null || processedNodes.contains(nodeName))
             {
-                errorReporter.logInfo(
-                    config.peer + " has connected. Removed from reconnectList, added to pingList."
-                );
-                peerConnected(config.peer);
+                if (node == null)
+                {
+                    errorReporter.logDebug("Node of peer " + config.peer + " is null. Skipping");
+                }
+                else
+                {
+                    errorReporter.logDebug(
+                        "Node (" + node + ") of peer " + config.peer + " already processed. Skipping"
+                    );
+                }
             }
             else
             {
-                errorReporter.logDebug(
-                    "Peer " + config.peer.getId() + " has not connected yet, retrying connect."
-                );
+                processedNodes.add(nodeName);
+
+                // Check if the Node's current peer is connected, not the stale peer in config.
+                // The node might have reconnected via a different Peer object.
+                @Nullable Peer currentPeer = null;
                 try
                 {
-                    @Nullable Node node = config.peer.getNode();
-                    if (node != null && !node.isDeleted())
+                    currentPeer = node.getPeer(apiCtx);
+                }
+                catch (AccessDeniedException ignored)
+                {
+                    // should not happen with apiCtx
+                }
+                if (currentPeer != null && currentPeer.isConnected(false))
+                {
+                    errorReporter.logInfo(
+                        "Node " + node.getName() + " has connected. Removed from reconnectList, added to pingList."
+                    );
+                    peerConnected(currentPeer);
+                }
+                else
+                {
+                    errorReporter.logDebug(
+                        "Peer " + config.peer.getId() + " has not connected yet, retrying connect."
+                    );
+                    try
                     {
-                        // transactionMgr MUST be started before taking any linstor locks in order to avoid a deadlock
-                        // with database internal locks
-                        // worst case scenario: since we just checked if the node is already deleted (outside of any
-                        // lock... which is not great, but should be fine), all that might happen between now and when
-                        // we have acquired the lock is that the node gets deleted. In that case, we still have a second
-                        // check within the try (with locks) to deal with that situation, so we can also return the
-                        // (unnecessarily created) transaction immediately again
-                        TransactionMgr transMgr = transactionMgrGenerator.startTransaction();
-                        try (LockGuard ignore = lockGuardFactory.create()
-                            .read(CTRL_CONFIG)
-                            .write(NODES_MAP)
-                            .build();
-                            LinStorScope.ScopeAutoCloseable close = reconnScope.enter()
-                        )
-                        {
-                            // another check needed to detect race conditions (someone could have called node.delete()
-                            // while we were waiting for the lock)
-                            if (!node.isDeleted())
-                            {
-                                reconnScope.seed(Key.get(AccessContext.class, PeerContext.class), apiCtx);
-                                TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
-
-                                // look for another netIf configured as satellite connection and set it as active
-                                setNetIf(node, config);
-
-                                transMgr.commit();
-                                synchronized (syncObj)
-                                {
-                                    reconnectorConfigSet.add(
-                                        new ReconnectConfig(
-                                            config,
-                                            config.peer.getConnector().reconnect(config.peer)
-                                        )
-                                    );
-                                    reconnectorConfigSet.remove(config);
-                                }
-                            }
-                        }
-                        catch (AccessDeniedException | DatabaseException exc)
-                        {
-                            errorReporter.logError(exc.getMessage());
-                        }
-                        finally
-                        {
-                            try
-                            {
-                                transMgr.rollback();
-                            }
-                            catch (TransactionException exc)
-                            {
-                                errorReporter.reportError(exc);
-                            }
-                            finally
-                            {
-                                transMgr.returnConnection();
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (node == null)
-                        {
-                            errorReporter.logDebug(
-                                "Peer %s's node is null (possibly rollbacked), removing from reconnect list",
-                                config.peer.getId()
-                            );
-                        }
-                        else
+                        if (node.isDeleted())
                         {
                             errorReporter.logDebug(
                                 "Peer %s's node got deleted, removing from reconnect list",
                                 config.peer.getId()
                             );
+                            removePeer(config.peer);
                         }
-                        removePeer(config.peer);
+                        else
+                        {
+                            reconnectImpl(config);
+                        }
                     }
-                }
-                catch (IOException ioExc)
-                {
-                    // TODO: detailed error reporting
-                    errorReporter.reportError(ioExc);
+                    catch (IOException ioExc)
+                    {
+                        // TODO: detailed error reporting
+                        errorReporter.reportError(ioExc);
+                    }
                 }
             }
         }
         return getNextFutureReschedule(scheduleAt, RECONNECT_SLEEP);
+    }
+
+    /**
+     * @param config The config that should be used for reconnect.
+     * @throws IOException Thrown when something fails during actual reconnect
+     */
+    private void reconnectImpl(final ReconnectConfig config) throws IOException
+    {
+        @Nullable Node node = config.peer.getNode();
+        if (node != null && !node.isDeleted())
+        {
+            // transactionMgr MUST be started before taking any linstor locks in order to avoid a deadlock with database
+            // internal locks
+            // worst case scenario: since we just checked if the node is already deleted (outside of any lock... which
+            // is not great, but should be fine), all that might happen between now and when we have acquired the lock
+            // is that the node gets deleted. In that case, we still have a second check within the try (with locks) to
+            // deal with that situation, so we can also return the (unnecessarily created) transaction immediately again
+            TransactionMgr transMgr = transactionMgrGenerator.startTransaction();
+            try (
+                LockGuard ignore = lockGuardFactory.create()
+                    .read(CTRL_CONFIG)
+                    .write(NODES_MAP)
+                    .build();
+                LinStorScope.ScopeAutoCloseable close = reconnScope.enter()
+            )
+            {
+                // another check needed to detect race conditions (someone could have called node.delete() while we were
+                // waiting for the lock)
+                if (!node.isDeleted())
+                {
+                    reconnScope.seed(Key.get(AccessContext.class, PeerContext.class), apiCtx);
+                    TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
+
+                    // look for another netIf configured as satellite connection and set it as active
+                    setNetIf(node, config);
+
+                    transMgr.commit();
+                    synchronized (syncObj)
+                    {
+                        reconnectorConfigSet.add(
+                            new ReconnectConfig(
+                                config,
+                                config.peer.getConnector().reconnect(config.peer)
+                            )
+                        );
+                        reconnectorConfigSet.remove(config);
+                    }
+                }
+            }
+            catch (AccessDeniedException | DatabaseException exc)
+            {
+                errorReporter.logError(exc.getMessage());
+            }
+            finally
+            {
+                try
+                {
+                    transMgr.rollback();
+                }
+                catch (TransactionException exc)
+                {
+                    errorReporter.reportError(exc);
+                }
+                finally
+                {
+                    transMgr.returnConnection();
+                }
+
+            }
+        }
     }
 
     private void runEvictionFluxes(ArrayList<PairNonNull<Flux<ApiCallRc>, Peer>> fluxList)

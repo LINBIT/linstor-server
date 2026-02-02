@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed race condition in updateController() that leads to uncompleted ChangedController answers (client timeout)
 - Systemd-notify: Use SDNotify library instead of calling "systemd-notify"
 - Fixed bug that could lead to NPE when multiple cache layers are processed in one DevMgr cycle
+- Fixed some issues with ReconnectorTask when multiple peers representing the same nodes try to reconnect
 
 ## [1.33.1] - 2025-12-22
 
