@@ -394,7 +394,14 @@ public class CtrlSatelliteUpdateCaller
 
                 .onErrorResume(
                     PeerNotConnectedException.class,
-                    ignored -> notConnectedHandler.handleNotConnected(nodeName)
+                    ignored ->
+                    {
+                        // Add to retry queue so the update will be retried when the satellite
+                        // becomes available. This must be done here because onErrorResume converts
+                        // the error to a success, so doOnError below won't see it.
+                        retryResourceTaskProvider.get().add(currentRsc, nextStepRef);
+                        return notConnectedHandler.handleNotConnected(nodeName);
+                    }
                 )
                 .doOnError(ignored -> retryResourceTaskProvider.get().add(currentRsc, nextStepRef));
         }
