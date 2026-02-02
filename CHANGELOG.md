@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed possible bug that could have caused orphaned DRBD resources being left on the satellite
 - Fixed autounplacer not prioritizing autoplacer-settings violations over free space properly
 - Fixed EventStreamClosed exception if toggle-disk a single diskful resource
+- Fixed some issues with ReconnectorTask when multiple peers representing the same nodes try to reconnect
 
 ## [1.33.1] - 2025-12-22
 
