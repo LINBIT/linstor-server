@@ -484,7 +484,7 @@ public class ReconnectorTask implements Task
                     TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
 
                     // look for another netIf configured as satellite connection and set it as active
-                    setNetIf(node, config);
+                    setNextNetIf(node, config);
 
                     transMgr.commit();
                     synchronized (syncObj)
@@ -537,56 +537,68 @@ public class ReconnectorTask implements Task
         }
     }
 
-    private void setNetIf(Node node, ReconnectConfig config) throws AccessDeniedException, DatabaseException
+    /**
+     * Sets the next usable network interface of the given node as active. If a node has 3 or more NetIfs, this method
+     * makes sure to not simply toggle between the first two (first non-selected netIf), but to actually iterate
+     * through all available NetIfs before starting at the first again.
+     */
+    private void setNextNetIf(Node node, ReconnectConfig config) throws AccessDeniedException, DatabaseException
     {
-        @Nullable NetInterface currentActiveStltConn = node
-            .getActiveStltConn(config.peer.getAccessContext());
-        Iterator<NetInterface> netIfIt = node
-            .iterateNetInterfaces(config.peer.getAccessContext());
-        @Nullable NetInterface firstPossible = null;
-        boolean setIf = false;
+        final @Nullable NetInterface currentActiveStltConn = node.getActiveStltConn(config.peer.getAccessContext());
+        Iterator<NetInterface> netIfIt = node.iterateNetInterfaces(config.peer.getAccessContext());
+        @Nullable NetInterface firstNetIf = null;
+        @Nullable NetInterface nextNetIf = null;
+        boolean setNext = false;
+        boolean netIfUpdated = false;
         while (netIfIt.hasNext())
         {
             NetInterface netInterface = netIfIt.next();
-            if (netInterface.isUsableAsStltConn(config.peer.getAccessContext()))
+            boolean usableAsStltConn = netInterface.isUsableAsStltConn(config.peer.getAccessContext());
+            if (firstNetIf == null && usableAsStltConn)
             {
-                // NetIf usable as StltConn
-                if (!setIf && firstPossible == null && !netInterface.equals(currentActiveStltConn))
-                {
-                    // current connection not found yet, set default if none found
-                    firstPossible = netInterface;
-                }
-                else if (setIf)
-                {
-                    // already after current connection, set new connection
-                    errorReporter.logInfo(
-                        "Setting new active satellite connection on " + node.getKey().displayValue + " '" +
-                            netInterface.getName() + "' " +
-                            netInterface.getAddress(config.peer.getAccessContext()).getAddress()
-                    );
-                    node.setActiveStltConn(config.peer.getAccessContext(), netInterface);
-                    break;
-                }
+                firstNetIf = netInterface;
             }
+
             if (netInterface.equals(currentActiveStltConn))
             {
-                // current connection found, allow new connection after this
-                setIf = true;
+                setNext = true;
+            }
+            else
+            if (setNext && usableAsStltConn)
+            {
+                // already after current connection, set new connection
+                errorReporter.logInfo(
+                    "Setting new active satellite connection on " + node.getKey().displayValue + " '" +
+                        netInterface.getName() + "' " +
+                        netInterface.getAddress(config.peer.getAccessContext()).getAddress()
+                );
+                node.setActiveStltConn(config.peer.getAccessContext(), netInterface);
+                netIfUpdated = true;
+                break;
             }
         }
-        if (currentActiveStltConn.equals(node.getActiveStltConn(config.peer.getAccessContext())))
+        if (!netIfUpdated)
         {
-            // current connection not found, use default
-            if (firstPossible != null)
+            nextNetIf = firstNetIf;
+        }
+
+        if (nextNetIf != null)
+        {
+            if (!nextNetIf.equals(currentActiveStltConn))
             {
                 errorReporter.logInfo(
                     "Setting new active satellite connection: '" +
-                        firstPossible.getName() + "' " +
-                        firstPossible.getAddress(config.peer.getAccessContext()).getAddress()
+                        nextNetIf.getName() + "' " +
+                        nextNetIf.getAddress(config.peer.getAccessContext()).getAddress()
                 );
-                node.setActiveStltConn(config.peer.getAccessContext(), firstPossible);
+                node.setActiveStltConn(config.peer.getAccessContext(), nextNetIf);
             }
-            // else do nothing and reuse current connection, since no other connection is valid
+        }
+        else
+        {
+            errorReporter.logWarning(
+                "No network interfaces usable for satellite communication found for node '" + node.getName() + "'"
+            );
         }
     }
 
