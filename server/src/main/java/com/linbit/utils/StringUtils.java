@@ -77,7 +77,7 @@ public class StringUtils
         return string.substring(0, 1).toUpperCase() + string.substring(1);
     }
 
-    public static boolean isEmpty(String string)
+    public static boolean isEmpty(@Nullable String string)
     {
         return string == null || string.isEmpty();
     }
