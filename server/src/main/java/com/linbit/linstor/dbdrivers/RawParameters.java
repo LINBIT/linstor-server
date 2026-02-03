@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nonnull;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
@@ -37,6 +38,17 @@ public class RawParameters
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
     public <T> @Nullable T get(Column col)
     {
+        return (T) rawDataMap.get(col.getName());
+    }
+
+    @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+    public <T> T getNotNull(Column col)
+    {
+        if (col.isNullable())
+        {
+            throw new ImplementationError(
+                String.format("Wrong getNotNull column: %s::%s", col.getTable(), col.getName()));
+        }
         return (T) rawDataMap.get(col.getName());
     }
 
