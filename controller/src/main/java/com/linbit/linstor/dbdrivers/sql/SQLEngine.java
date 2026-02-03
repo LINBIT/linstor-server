@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -869,6 +870,24 @@ public class SQLEngine implements DbEngine
             );
             idx++;
         }
+    }
+
+    @Override
+    public @Nullable java.sql.Timestamp getDateToDbTypeConverter(Optional<Instant> dateRef)
+    {
+        return dateRef.map(this::getDateToDbTypeConverter).orElse(null);
+    }
+
+    @Override
+    public java.sql.Timestamp getDateToDbTypeConverter(Instant dateRef)
+    {
+        return new Timestamp(dateRef.toEpochMilli());
+    }
+
+    @Override
+    public @Nullable java.sql.Timestamp getDateToDbNullableTypeConverter(@Nullable Instant dateRef)
+    {
+        return dateRef != null ? new Timestamp(dateRef.toEpochMilli()) : null;
     }
 
     @Override

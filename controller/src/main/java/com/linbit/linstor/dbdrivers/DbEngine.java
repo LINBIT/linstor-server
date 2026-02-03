@@ -29,9 +29,11 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -353,4 +355,11 @@ public interface DbEngine
     void truncateAllData(List<DbExportPojoData.Table> orderedTablesListRef) throws DatabaseException;
 
     void importData(DbExportPojoData.Table dbExportTableRef) throws DatabaseException;
+
+    /*
+     * Type converter methods
+     */
+    @Nullable Object getDateToDbTypeConverter(Optional<Instant> dateRef);
+    Object getDateToDbTypeConverter(Instant dateRef);
+    @Nullable Object getDateToDbNullableTypeConverter(@Nullable Instant dateRef);
 }

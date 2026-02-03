@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
@@ -40,11 +39,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.function.Function;
 
 @Singleton
 public final class ResourceDbDriver extends
@@ -58,7 +55,7 @@ public final class ResourceDbDriver extends
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
-    final SingleColumnDatabaseDriver<AbsResource<Resource>, Instant> createTimestampDriver;
+    private final SingleColumnDatabaseDriver<AbsResource<Resource>, Instant> createTimestampDriver;
 
     @Inject
     public ResourceDbDriver(
@@ -84,36 +81,17 @@ public final class ResourceDbDriver extends
 
         flagsDriver = generateFlagDriver(RESOURCE_FLAGS, Resource.Flags.class);
 
-        Function<Instant, Object> createTimestampTypeMapper;
-
         setColumnSetter(UUID, rsc -> rsc.getUuid().toString());
         setColumnSetter(NODE_NAME, rsc -> rsc.getNode().getName().value);
         setColumnSetter(RESOURCE_NAME, rsc -> rsc.getResourceDefinition().getName().value);
         setColumnSetter(RESOURCE_FLAGS, rsc -> ((Resource) rsc).getStateFlags().getFlagsBits(dbCtxRef));
         setColumnSetter(SNAPSHOT_NAME, ignored -> DFLT_SNAP_NAME_FOR_RSC);
-        switch (getDbType())
-        {
-            case SQL ->
-            {
-                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
-                    new Timestamp(rsc.getCreateTimestamp().get().toEpochMilli()) : null);
-                createTimestampTypeMapper = createTime -> createTime != null ?
-                    new Timestamp(createTime.toEpochMilli()) :
-                    null;
-            }
-            case K8S_CRD ->
-            {
-                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
-                    rsc.getCreateTimestamp().get().toEpochMilli() : null);
-                createTimestampTypeMapper = createTime -> createTime != null ? createTime.toEpochMilli() : null;
-            }
-            default -> throw new ImplementationError("Unknown database type: " + getDbType());
-        }
+        setColumnSetter(CREATE_TIMESTAMP, rsc -> dbEngine.getDateToDbTypeConverter(rsc.getCreateTimestamp()));
 
         createTimestampDriver = generateSingleColumnDriver(
             CREATE_TIMESTAMP,
             rsc -> rsc.getCreateTimestamp().isPresent() ? rsc.getCreateTimestamp().get().toString() : "null",
-            createTimestampTypeMapper
+            dbEngine::getDateToDbTypeConverter
         );
     }
 

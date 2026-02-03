@@ -9,6 +9,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -35,10 +36,12 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
 
@@ -423,6 +426,24 @@ public class K8sCrdEngine implements DbEngine
         {
             rscClient.create((CRD) spec.getCrd());
         }
+    }
+
+    @Override
+    public @Nullable Long getDateToDbTypeConverter(Optional<Instant> dateRef)
+    {
+        return dateRef.map(this::getDateToDbTypeConverter).orElse(null);
+    }
+
+    @Override
+    public Long getDateToDbTypeConverter(Instant dateRef)
+    {
+        return dateRef.toEpochMilli();
+    }
+
+    @Override
+    public @Nullable Long getDateToDbNullableTypeConverter(@Nullable Instant dateRef)
+    {
+        return dateRef != null ? dateRef.toEpochMilli() : null;
     }
 
     @SuppressWarnings("unchecked")
