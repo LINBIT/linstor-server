@@ -235,6 +235,29 @@ public class ReconnectorTask implements Task
     }
 
     /**
+     * Finds (but does not remove) the ReconnectConfig for the given node.
+     * Returns null if no config exists for the node.
+     * Must be called while holding syncObj lock.
+     */
+    private @Nullable ReconnectConfig findConfigByNode(@Nullable Node nodeRef)
+    {
+        @Nullable ReconnectConfig found = null;
+        if (nodeRef != null && !nodeRef.isDeleted())
+        {
+            for (ReconnectConfig config : reconnectorConfigSet)
+            {
+                @Nullable Node configNode = config.peer.getNode();
+                if (nodeRef.equals(configNode))
+                {
+                    found = config;
+                    break;
+                }
+            }
+        }
+        return found;
+    }
+
+    /**
      * Removes all ReconnectConfigs for the given node and returns the one with the oldest
      * offlineSince timestamp (or null if none were found).
      * Compares by Node, not Peer identity, because each reconnection attempt creates a new
@@ -322,13 +345,28 @@ public class ReconnectorTask implements Task
         synchronized (syncObj)
         {
             @Nullable Node node = peer.getNode();
-            @Nullable ReconnectConfig removed = removeConfigsByNode(node);
-            if (removed != null)
+            @Nullable ReconnectConfig config = findConfigByNode(node);
+            if (config != null)
             {
-                // Node has reconnected, clear eviction timestamp
-                if (pingTask != null)
+                if (config.peer == peer)
                 {
-                    sendAuthentication = true;
+                    // Peer matches - this is the expected connection, remove config and authenticate
+                    reconnectorConfigSet.remove(config);
+                    if (pingTask != null)
+                    {
+                        sendAuthentication = true;
+                    }
+                }
+                else
+                {
+                    // Peer doesn't match - this is a stale callback from an old peer that was replaced.
+                    // Ignore it to avoid removing the config for the new peer.
+                    errorReporter.logDebug(
+                        "peerConnected called for peer %s but config tracks different peer %s. " +
+                            "Ignoring stale callback.",
+                        peer.getId(),
+                        config.peer.getId()
+                    );
                 }
             }
             if (node != null)
@@ -487,9 +525,19 @@ public class ReconnectorTask implements Task
                     setNextNetIf(node, config);
 
                     transMgr.commit();
+
+                    // before reconnecting, we want to cancel the previous connection attempt, just to be sure.
+                    // the .reconnect(Peer) method already closes the connection first. However we still need to make
+                    // sure to call .reconnect(Peer) OUTSIDE of the synchronized block to make sure that a possibly
+                    // race-condition enters the synchronized before we block it.
+                    // otherwise we might run into race-conditions that the old peer does succeed in establishing a
+                    // connection which triggers some "node is now connected" events while the node's peer already has
+                    // been replaced.
+
+                    Peer reconnectedPeer = config.peer.getConnector().reconnect(config.peer);
+
                     synchronized (syncObj)
                     {
-                        Peer reconnectedPeer = config.peer.getConnector().reconnect(config.peer);
                         reconnectorConfigSet.remove(config);
                         reconnectorConfigSet.add(new ReconnectConfig(config, reconnectedPeer));
                     }
