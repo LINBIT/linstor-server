@@ -36,6 +36,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
     public static final int ROLLBACK_CRD_WAIT_TIME_MS = 1_000;
     protected final int version;
     protected final String description;
+    protected final boolean isInitial;
     protected final K8sCrdMigrationContext fromCtx;
     protected final K8sCrdMigrationContext toCtx;
 
@@ -57,6 +58,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
         K8sCrdMigration k8sMigAnnot = this.getClass().getAnnotation(K8sCrdMigration.class);
         version = k8sMigAnnot.version();
         description = k8sMigAnnot.description();
+        isInitial = k8sMigAnnot.isInitial();
 
         fromCtx = Objects.requireNonNull(fromCtxRef);
         toCtx = Objects.requireNonNull(toCtxRef);
@@ -84,6 +86,11 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
     public String getDescription()
     {
         return description;
+    }
+
+    public boolean isInitial()
+    {
+        return isInitial;
     }
 
     protected void updateCrdSchemaForAllTables()

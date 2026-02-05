@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,6 +55,39 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "K8s CRD handler";
     private static final String K8S_SCHEME = "k8s";
+
+    /**
+     * <p>This map stores the database versions that the current version of LINSTOR can no longer migrate from
+     * due to the migrations having been consolidated.</p>
+     *
+     * <p>The key of an entry is the db-version that can only be applied by the LINSTOR version of the given value.
+     * For example {@code <10, "v1.33.2">} means that if the current db-version is 10, the current LINSTOR version
+     * can NOT migrate. The last LINSTOR version that could migrate from db version 10 was LINSTOR v1.33.2.</p>
+     *
+     * <p>Note that "version 10" here means that Migration_10_* was not yet applied. Db-version here refers to what
+     * you get as a response from calling {@code tx.getDbVersion()}, but that is the <b>next</b> version that needs
+     * to be applied. So if {@code tx.getDbVersion()} returns 10 that means that the current DB only has Migration_9
+     * applied, not Migration_10. Since the original Migration_10_v1_19_1_CleanupOrphanedObjects was consolidated into
+     * Migration_10_v1_19_1_ConsolidatedInit and can no longer be applied stand-alone in the current version of
+     * LINSTOR, we write in this map {@code <10, "v1.33.2">}, since v1.33.2 was the last version that still contained
+     * the original Migration_10_v1_19_1_CleanupOrphanedObjects.</p>
+     *
+     * <p>If {@code tx.getDbVersion()} returns for example 11, and we still have Migration_11 (has {@code version = 11}
+     * in its annotation), we are fine and can continue with the migration-chain.</p>
+     */
+    private static final TreeMap<Integer, String> MIGRATION_SUPPORTED_BY_LAST_LINSTOR_VERSION;
+
+    static
+    {
+        MIGRATION_SUPPORTED_BY_LAST_LINSTOR_VERSION = new TreeMap<>();
+        // @checkstyle-suppress:magicnumber
+        MIGRATION_SUPPORTED_BY_LAST_LINSTOR_VERSION.put(10, "v1.33.2");
+        // when extending this map, we might want to calculate a more detailed upgrade path so that we can
+        // write the user something like "v1.33.2 -> v1.35.4 -> v1.40.3 -> current" instead of having the user
+        // find out how to properly upgrade.
+
+        // @checkstyle-cancel-suppress
+    }
 
     private final AtomicBoolean atomicStarted = new AtomicBoolean(false);
     private final ControllerK8sCrdTransactionMgrGenerator k8sTxGenerator;
@@ -159,6 +193,25 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
                 rollback.serverSideApply();
             }
         }
+        else
+        {
+            // check if we have already consolidated the required migration
+            @Nullable Entry<Integer, String> ceilingEntry = MIGRATION_SUPPORTED_BY_LAST_LINSTOR_VERSION
+                .ceilingEntry(dbVersion);
+            if (ceilingEntry != null)
+            {
+                throw new InitializationException(
+                    String.format(
+                        "Local DB version (%d) is too old. The current LINSTOR version can only migrate DB " +
+                            "versions from and including %d. The last version of LINSTOR that supports migration of " +
+                            "local DB is %s",
+                        dbVersion,
+                        MIGRATION_SUPPORTED_BY_LAST_LINSTOR_VERSION.lastKey() + 1,
+                        ceilingEntry.getValue()
+                    )
+                );
+            }
+        }
 
         try
         {
@@ -183,10 +236,20 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             while (dbVersion <= highestKey)
             {
                 BaseK8sCrdMigration migration = migrations.get(dbVersion);
+                final int fromVersion;
+                if (migration.isInitial())
+                {
+                    fromVersion = 0;
+                }
+                else
+                {
+                    fromVersion = migration.getVersion() - 1;
+                }
+                final int toVersion = migration.getNextVersion() - 1;
                 errorReporter.logDebug(
                     "Migration DB: %d -> %d: %s",
-                    migration.getVersion() - 1,
-                    migration.getNextVersion() - 1,
+                    fromVersion,
+                    toVersion,
                     migration.getDescription()
                 );
                 migration.migrate(k8sDb);
@@ -249,6 +312,7 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
         TreeMap<Integer, BaseK8sCrdMigration> migrations = new TreeMap<>();
         try
         {
+            @Nullable BaseK8sCrdMigration initMigration = null;
             for (Class<? extends BaseK8sCrdMigration> k8sMigrationClass : k8sMigrationClasses)
             {
                 BaseK8sCrdMigration migration = k8sMigrationClass.getDeclaredConstructor().newInstance();
@@ -261,10 +325,32 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
                             migration.getDescription()
                     );
                 }
+                if (migration.isInitial())
+                {
+                    if (initMigration != null)
+                    {
+                        throw new ImplementationError(
+                            "Multiple initial migrations found!\n" + migration.getDescription() + "\n" +
+                                initMigration.getDescription()
+                        );
+                    }
+                    initMigration = migration;
+                }
                 migrations.put(version, migration);
             }
-            // also copy version 1 to 0, so we can start the loop at 0
-            migrations.put(0, migrations.get(1));
+            if (initMigration == null)
+            {
+                throw new ImplementationError("No initial migration found!");
+            }
+            if (!initMigration.equals(migrations.firstEntry().getValue()))
+            {
+                throw new ImplementationError(
+                    "Initial migration is not the oldest migration!\nInitial: " + initMigration.getDescription() +
+                        "\nOldest: " + migrations.firstEntry().getValue()
+                );
+            }
+            // set the initial migration to version 0, so we can start the loop at 0
+            migrations.put(0, initMigration);
 
             checkIfAllMigrationsLinked(migrations);
         }

@@ -2,23 +2,25 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
-import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
+import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
 import com.linbit.linstor.transaction.K8sCrdMigrationContext;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 import com.linbit.linstor.transaction.K8sCrdTransaction;
 
+import java.util.UUID;
+
 @K8sCrdMigration(
-    description = "initial data",
-    version = 1
-)
-public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
+    description = "consolidated initial data",
+    version = 10,
+    isInitial = true)
+public class Migration_10_v1_19_1_ConsolidatedInit extends BaseK8sCrdMigration
 {
-    public Migration_01_v1_15_0_init()
+    public Migration_10_v1_19_1_ConsolidatedInit()
     {
         super(
-            new SpecialK8sTxMgrCtx(), // only valid for migration 0 -> 1
-            GenCrdV1_15_0.createMigrationContext()
+            new SpecialK8sTxMgrCtx(), // only valid for migration 0 -> initMigration
+            GenCrdV1_19_1.createMigrationContext()
         );
     }
 
@@ -159,41 +161,43 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
             null
         );
         createPropsContainers(txTo, "/CTRLCFG", "defaultDebugSslConnector", "DebugSslConnector");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/bindaddress", "::0");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/enabled", "true");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/keyPasswd", "linstor");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/keyStore", "ssl/keystore.jks");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/keyStorePasswd", "linstor");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/port", "3373");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/sslProtocol", "TLSv1.2");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/trustStore", "ssl/certificates.jks");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/trustStorePasswd", "linstor");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/DebugSslConnector/type", "ssl");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/PlainConnector/enabled", "true");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/PlainConnector/port", "3376");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/PlainConnector/type", "plain");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/enabled", "true");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/keyPasswd", "linstor");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/keyStore", "ssl/keystore.jks");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/keyStorePasswd", "linstor");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/port", "3377");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/sslProtocol", "TLSv1.2");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/trustStore", "ssl/certificates.jks");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/trustStorePasswd", "linstor");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/type", "ssl");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/BindAddress", "::0");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/Enabled", "true");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/KeyPasswd", "linstor");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/KeyStore", "ssl/keystore.jks");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/KeyStorePasswd", "linstor");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/Port", "3373");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/SslProtocol", "TLSv1.2");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/TrustStore", "ssl/certificates.jks");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/TrustStorePasswd", "linstor");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/DebugSslConnector/Type", "SSL");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/PlainConnector/Enabled", "true");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/PlainConnector/Port", "3376");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/PlainConnector/Type", "Plain");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/Enabled", "true");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/KeyPasswd", "linstor");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/KeyStore", "ssl/keystore.jks");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/KeyStorePasswd", "linstor");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/Port", "3377");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/SslProtocol", "TLSv1.2");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/TrustStore", "ssl/certificates.jks");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/TrustStorePasswd", "linstor");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/Type", "SSL");
         createPropsContainers(txTo, "/CTRLCFG", "DrbdOptions/auto-quorum", "io-error");
         createPropsContainers(txTo, "/CTRLCFG", "DrbdOptions/auto-add-quorum-tiebreaker", "True");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/PlainConnector/bindaddress", "");
-        createPropsContainers(txTo, "/CTRLCFG", "netcom/SslConnector/bindaddress", "");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/PlainConnector/BindAddress", "");
+        createPropsContainers(txTo, "/CTRLCFG", "NetCom/SslConnector/BindAddress", "");
         createPropsContainers(txTo, "/CTRLCFG", "DrbdOptions/auto-diskful-allow-cleanup", "True");
         createPropsContainers(txTo, "/CTRLCFG", "DrbdOptions/AutoEvictAllowEviction", "True");
         createPropsContainers(
             txTo,
             "/CTRLCFG",
-            "DrbdOptions/auto-verify-algo-allowed-list", "crct10dif-pclmul;crct10dif-generic;sha384-generic;sha512-generic;sha256-generic;md5-generic"
+            "DrbdOptions/auto-verify-algo-allowed-list",
+            "crct10dif-pclmul;crct10dif-generic;sha384-generic;sha512-generic;sha256-generic;md5-generic"
         );
-        createPropsContainers(txTo, "/CTRLCFG", "Cluster/LocalID", "4ac9438a-ead8-4503-846b-56440ce1412a");
-        createPropsContainers(txTo, "STLTCFG", "Cluster/LocalID", "4ac9438a-ead8-4503-846b-56440ce1412a");
+        String newRandomUuid = UUID.randomUUID().toString().toLowerCase();
+        createPropsContainers(txTo, "/CTRLCFG", "Cluster/LocalID", newRandomUuid);
+        createPropsContainers(txTo, "STLTCFG", "Cluster/LocalID", newRandomUuid);
         createPropsContainers(txTo, "/CTRLCFG", "defaultPlainConSvc", "PlainConnector");
         createPropsContainers(txTo, "/CTRLCFG", "defaultSslConSvc", "SslConnector");
 
@@ -203,12 +207,13 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     private void createSecConfiguration(
         K8sCrdTransaction txToRef,
         String entryKey,
-        String entryDspKey, String entryValue
+        String entryDspKey,
+        String entryValue
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_CONFIGURATION,
-            GenCrdV1_15_0.createSecConfiguration(entryKey, entryDspKey, entryValue)
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_CONFIGURATION,
+            GenCrdV1_19_1.createSecConfiguration(entryKey, entryDspKey, entryValue)
         );
     }
 
@@ -218,24 +223,26 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
         String identityDspName,
         @Nullable String passSalt,
         @Nullable String passHash,
-        boolean idEnabled, boolean idLocked
+        boolean idEnabled,
+        boolean idLocked
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_IDENTITIES,
-            GenCrdV1_15_0.createSecIdentities(identityName, identityDspName, passSalt, passHash, idEnabled, idLocked)
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_IDENTITIES,
+            GenCrdV1_19_1.createSecIdentities(identityName, identityDspName, passSalt, passHash, idEnabled, idLocked)
         );
     }
 
     private void createSecTypes(
         K8sCrdTransaction txToRef,
         String typeName,
-        String typeDspName, boolean typeEnabled
+        String typeDspName,
+        boolean typeEnabled
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_TYPES,
-            GenCrdV1_15_0.createSecTypes(typeName, typeDspName, typeEnabled)
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_TYPES,
+            GenCrdV1_19_1.createSecTypes(typeName, typeDspName, typeEnabled)
         );
     }
 
@@ -244,23 +251,25 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
         String roleName,
         String roleDspName,
         String domainName,
-        boolean roleEnabled, long rolePrivileges
+        boolean roleEnabled,
+        long rolePrivileges
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_ROLES,
-            GenCrdV1_15_0.createSecRoles(roleName, roleDspName, domainName, roleEnabled, rolePrivileges)
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_ROLES,
+            GenCrdV1_19_1.createSecRoles(roleName, roleDspName, domainName, roleEnabled, rolePrivileges)
         );
     }
 
     private void createSecIdRoleMap(
         K8sCrdTransaction txToRef,
-        String identityName, String roleName
+        String identityName,
+        String roleName
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_ID_ROLE_MAP,
-            GenCrdV1_15_0.createSecIdRoleMap(
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_ID_ROLE_MAP,
+            GenCrdV1_19_1.createSecIdRoleMap(
                 identityName,
                 roleName
             )
@@ -269,12 +278,13 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
 
     private void createSecAccessTypes(
         K8sCrdTransaction txToRef,
-        String accessTypeName, int accessTypeValue
+        String accessTypeName,
+        int accessTypeValue
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_ACCESS_TYPES,
-            GenCrdV1_15_0.createSecAccessTypes(
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_ACCESS_TYPES,
+            GenCrdV1_19_1.createSecAccessTypes(
                 accessTypeName,
                 (short) accessTypeValue
             )
@@ -284,12 +294,13 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     private void createSecTypeRules(
         K8sCrdTransaction txToRef,
         String domainName,
-        String typeName, int accessType
+        String typeName,
+        int accessType
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_TYPE_RULES,
-            GenCrdV1_15_0.createSecTypeRules(
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_TYPE_RULES,
+            GenCrdV1_19_1.createSecTypeRules(
                 domainName,
                 typeName,
                 (short) accessType
@@ -299,12 +310,13 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
 
     private void createSecDfltRoles(
         K8sCrdTransaction txToRef,
-        String identityName, String roleName
+        String identityName,
+        String roleName
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_DFLT_ROLES,
-            GenCrdV1_15_0.createSecDfltRoles(
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_DFLT_ROLES,
+            GenCrdV1_19_1.createSecDfltRoles(
                 identityName,
                 roleName
             )
@@ -315,12 +327,13 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
         K8sCrdTransaction txToRef,
         String objectPath,
         String creatorIdentityName,
-        String ownerRoleName, String securityTypeName
+        String ownerRoleName,
+        String securityTypeName
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_OBJECT_PROTECTION,
-            GenCrdV1_15_0.createSecObjectProtection(
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_OBJECT_PROTECTION,
+            GenCrdV1_19_1.createSecObjectProtection(
                 objectPath,
                 creatorIdentityName,
                 ownerRoleName,
@@ -332,12 +345,13 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     private void createSecAclMap(
         K8sCrdTransaction txToRef,
         String objectPath,
-        String roleName, int accessType
+        String roleName,
+        int accessType
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_ACL_MAP,
-            GenCrdV1_15_0.createSecAclMap(
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_ACL_MAP,
+            GenCrdV1_19_1.createSecAclMap(
                 objectPath,
                 roleName,
                 (short) accessType
@@ -348,12 +362,13 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     private void createStorPoolDefinitions(
         K8sCrdTransaction txToRef,
         String uuid,
-        String poolName, String poolDspName
+        String poolName,
+        String poolDspName
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.STOR_POOL_DEFINITIONS,
-            GenCrdV1_15_0.createStorPoolDefinitions(
+            GenCrdV1_19_1.GeneratedDatabaseTables.STOR_POOL_DEFINITIONS,
+            GenCrdV1_19_1.createStorPoolDefinitions(
                 uuid,
                 poolName,
                 poolDspName
@@ -376,12 +391,13 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
         @Nullable String doNotPlaceWithRscList,
         @Nullable String replicasOnSame,
         @Nullable String replicasOnDifferent,
-        @Nullable String allowedProviderList, @Nullable Boolean disklessOnRemaining
+        @Nullable String allowedProviderList,
+        @Nullable Boolean disklessOnRemaining
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.RESOURCE_GROUPS,
-            GenCrdV1_15_0.createResourceGroups(
+            GenCrdV1_19_1.GeneratedDatabaseTables.RESOURCE_GROUPS,
+            GenCrdV1_19_1.createResourceGroups(
                 uuid,
                 resourceGroupName,
                 resourceGroupDspName,
@@ -404,12 +420,13 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     private void createPropsContainers(
         K8sCrdTransaction txToRef,
         String propsInstance,
-        String propKey, String propValue
+        String propKey,
+        String propValue
     )
     {
         txToRef.create(
-            GenCrdV1_15_0.GeneratedDatabaseTables.PROPS_CONTAINERS,
-            GenCrdV1_15_0.createPropsContainers(
+            GenCrdV1_19_1.GeneratedDatabaseTables.PROPS_CONTAINERS,
+            GenCrdV1_19_1.createPropsContainers(
                 propsInstance,
                 propKey,
                 propValue

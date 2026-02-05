@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - ETCD database support is now removed, please convert to SQL or CRD DB, before upgrade
+- Removed K8s migrations older than 2023 / LINSTOR v1.21.0-rc1
 
 ### Fixed
 
