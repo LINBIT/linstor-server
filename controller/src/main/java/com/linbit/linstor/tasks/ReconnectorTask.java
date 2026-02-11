@@ -145,7 +145,10 @@ public class ReconnectorTask implements Task
                         }
                         else
                         {
-                            errorReporter.logInfo("Node %s is evicted and will not be reconnected", node.getName());
+                            errorReporter.logInfo(
+                                "Node %s is evicted and will not be reconnected",
+                                node.getKey().displayValue
+                            );
                         }
                     }
                 }
@@ -427,7 +430,7 @@ public class ReconnectorTask implements Task
                 {
                     // already after current connection, set new connection
                     errorReporter.logInfo(
-                        "Setting new active satellite connection on " + node.getName().displayValue + " '" +
+                        "Setting new active satellite connection on " + node.getKey().displayValue + " '" +
                             netInterface.getName() + "' " +
                             netInterface.getAddress(config.peer.getAccessContext()).getAddress()
                     );
@@ -561,7 +564,7 @@ public class ReconnectorTask implements Task
                                 errorReporter.logDebug(
                                     "The node %s will not be evicted since the property AutoEvictAllowEviction is " +
                                         "set to false.",
-                                    node.getName()
+                                    node.getKey().displayValue
                                 );
                             }
                         }
@@ -595,7 +598,7 @@ public class ReconnectorTask implements Task
                         Map<NodeName, Map<NodeName, String>> connStates = neighborRscState.getConnectionStates();
                         for (Entry<NodeName, Map<NodeName, String>> conStateEntry : connStates.entrySet())
                         {
-                            if (conStateEntry.getKey().equals(node.getName()))
+                            if (conStateEntry.getKey().equals(node.getKey()))
                             {
                                 Map<NodeName, String> conStates = conStateEntry.getValue();
                                 for (Entry<NodeName, String> conEntry : conStates.entrySet())
@@ -610,7 +613,7 @@ public class ReconnectorTask implements Task
                             }
                             else
                             {
-                                String conValOrNull = conStateEntry.getValue().get(node.getName());
+                                String conValOrNull = conStateEntry.getValue().get(node.getKey());
                                 if (conValOrNull != null && conValOrNull.equalsIgnoreCase(STATUS_CONNECTED))
                                 {
                                     drbdOk = true;
@@ -665,7 +668,7 @@ public class ReconnectorTask implements Task
             SatelliteConnector stltConnector = satelliteConnector.get();
             for (Node node : nodes)
             {
-                errorReporter.logDebug("Reconnecting to node '" + node.getName() + "'.");
+                errorReporter.logDebug("Reconnecting to node '" + node.getKey().displayValue + "'.");
                 stltConnector.startConnecting(node, initCtx);
             }
         }
