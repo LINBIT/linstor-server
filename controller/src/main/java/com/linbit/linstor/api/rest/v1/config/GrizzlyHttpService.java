@@ -13,6 +13,7 @@ import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig.RestAccessLogMode;
+import com.linbit.linstor.core.repository.AuthTokenRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -34,6 +35,7 @@ import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -61,6 +63,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 public class GrizzlyHttpService implements SystemService
 {
     private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
+    private static final Path AUTO_HTTPS_KEYSTORE_PATH = Paths.get("/var/lib/linstor/autohttps-keystore.p12");
 
     private final ErrorReporter errorReporter;
     private final String listenAddress;
@@ -95,6 +98,7 @@ public class GrizzlyHttpService implements SystemService
         String webUiDirectoryRef
     )
     {
+        sysCtx = injector.getInstance(Key.get(AccessContext.class, SystemContext.class));
         errorReporter = errorReporterRef;
         listenAddress = listenAddressRef;
         listenAddressSecure = listenAddressSecureRef;
@@ -107,10 +111,12 @@ public class GrizzlyHttpService implements SystemService
         webUiDirectory = webUiDirectoryRef;
         restResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest");
         restResourceConfig.register(new CORSFilter());
+        SystemConfRepository sysConfRepo = injector.getInstance(SystemConfRepository.class);
+        AuthTokenRepository authTokenRepository = injector.getInstance(AuthTokenRepository.class);
+        restResourceConfig.register(new AuthenticationFilter(authTokenRepository, sysConfRepo, sysCtx, errorReporter));
         registerExceptionMappers(restResourceConfig);
         lockGuardFactory = injector.getInstance(LockGuardFactory.class);
         systemConfRepository = injector.getInstance(SystemConfRepository.class);
-        sysCtx = injector.getInstance(Key.get(AccessContext.class, SystemContext.class));
 
         try
         {
@@ -166,6 +172,21 @@ public class GrizzlyHttpService implements SystemService
             fwdMappings.toArray(new String[0]));
     }
 
+    private boolean isAutoHttpsEnabled()
+    {
+        try (LockGuard ignored = lockGuardFactory.build(READ, CTRL_CONFIG))
+        {
+            @Nullable String autoHttps = systemConfRepository
+                .getCtrlConfForView(sysCtx)
+                .getProp(ApiConsts.KEY_AUTO_HTTPS, ApiConsts.NAMESPC_REST);
+            return Boolean.parseBoolean(autoHttps);
+        }
+        catch (AccessDeniedException ignored)
+        {
+            return false;
+        }
+    }
+
     private void addUiStaticHandler(HttpServer httpSrv)
     {
         httpSrv.getServerConfiguration().addHttpHandler(new StaticHttpHandler(webUiDirectory), "/ui");
@@ -177,6 +198,50 @@ public class GrizzlyHttpService implements SystemService
         compressionConfig.setCompressionMode(CompressionConfig.CompressionMode.ON);
         compressionConfig.setCompressibleMimeTypes("text/plain", "text/html", "application/json");
         compressionConfig.setCompressionMinSize(COMPRESSION_MIN_SIZE);
+    }
+
+    /**
+     * Generates an in-memory KeyStore with a self-signed certificate for HTTPS using keytool.
+     *
+     * Modern java can't create in memory certificates, so the only way is to use keytool here.
+     * To have everything pure in memory java, we would need a library like bouncycastle.
+     */
+    private byte[] generateSelfSignedKeyStore(String password) throws Exception
+    {
+        // Create a temporary keystore path (keytool needs a non-existing file)
+        Path tempKeyStore = Files.createTempFile("linstor-keystore-", ".jks");
+        Files.delete(tempKeyStore); // keytool requires the file to not exist
+        try
+        {
+            // Use keytool to generate a self-signed certificate
+            ProcessBuilder pb = new ProcessBuilder(
+                "keytool",
+                "-genkeypair",
+                "-alias", "linstor",
+                "-keyalg", "RSA",
+                "-keysize", "2048",
+                "-validity", "365",
+                "-dname", "CN=LINSTOR Controller, O=LINBIT, C=AT",
+                "-keystore", tempKeyStore.toString(),
+                "-storepass", password,
+                "-keypass", password,
+                "-storetype", "PKCS12"
+            );
+            pb.inheritIO();
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+            if (exitCode != 0)
+            {
+                throw new IOException("keytool failed with exit code " + exitCode);
+            }
+
+            // Read the keystore into memory
+            return Files.readAllBytes(tempKeyStore);
+        }
+        finally
+        {
+            Files.deleteIfExists(tempKeyStore);
+        }
     }
 
     private void initGrizzly(final String bindAddress, final String httpsBindAddress)
@@ -224,12 +289,97 @@ public class GrizzlyHttpService implements SystemService
         }
         else
         {
-            httpSslServer = null;
-            httpServer = GrizzlyHttpServerFactory.createHttpServer(
-                URI.create(String.format("http://%s", bindAddress)),
-                restResourceConfig,
-                false
-            );
+            // No keystore file configured - check if AutoHTTPS is enabled
+            boolean autoHttpsEnabled = isAutoHttpsEnabled();
+
+            if (autoHttpsEnabled)
+            {
+                // Generate self-signed certificate for HTTPS when AutoHTTPS is enabled
+                final URI httpsUri = URI.create(String.format("https://%s", httpsBindAddress));
+                String selfSignedPassword = "linstor";
+
+                try
+                {
+                    byte[] keyStoreBytes;
+                    if (Files.exists(AUTO_HTTPS_KEYSTORE_PATH))
+                    {
+                        keyStoreBytes = Files.readAllBytes(AUTO_HTTPS_KEYSTORE_PATH);
+                        errorReporter.logInfo(
+                            "Reusing existing AutoHTTPS keystore from %s",
+                            AUTO_HTTPS_KEYSTORE_PATH
+                        );
+                    }
+                    else
+                    {
+                        keyStoreBytes = generateSelfSignedKeyStore(selfSignedPassword);
+                        Files.write(AUTO_HTTPS_KEYSTORE_PATH, keyStoreBytes);
+                        errorReporter.logInfo(
+                            "Generated new AutoHTTPS keystore and saved to %s",
+                            AUTO_HTTPS_KEYSTORE_PATH
+                        );
+                    }
+
+                    // Create HTTP server with redirect to HTTPS
+                    httpServer = GrizzlyHttpServerFactory.createHttpServer(
+                        URI.create(String.format("http://%s", bindAddress)),
+                        restResourceConfig,
+                        false
+                    );
+                    addHTTPSRedirectHandler(httpServer, httpsUri.getPort());
+
+                    // Create HTTPS server with self-signed certificate
+                    httpSslServer = GrizzlyHttpServerFactory.createHttpServer(
+                        httpsUri,
+                        restResourceConfig,
+                        false
+                    );
+
+                    SSLContextConfigurator sslCon = new SSLContextConfigurator();
+                    sslCon.setSecurityProtocol("TLS");
+                    sslCon.setKeyStoreBytes(keyStoreBytes);
+                    sslCon.setKeyStorePass(selfSignedPassword);
+
+                    for (NetworkListener netListener : httpSslServer.getListeners())
+                    {
+                        netListener.setSecure(true);
+                        SSLEngineConfigurator ssle = new SSLEngineConfigurator(sslCon);
+                        ssle.setClientMode(false);
+                        ssle.setNeedClientAuth(false);
+                        netListener.setSSLEngineConfig(ssle);
+                    }
+
+                    errorReporter.logInfo(
+                        "Using self-signed certificate for HTTPS on %s (not recommended for production)",
+                        httpsBindAddress
+                    );
+                }
+                catch (Exception exc)
+                {
+                    errorReporter.logWarning(
+                        "Failed to generate self-signed certificate, falling back to HTTP only: %s",
+                        exc.getMessage()
+                    );
+                    httpSslServer = null;
+                    httpServer = GrizzlyHttpServerFactory.createHttpServer(
+                        URI.create(String.format("http://%s", bindAddress)),
+                        restResourceConfig,
+                        false
+                    );
+                }
+            }
+            else
+            {
+                // No AutoHTTPS, no keystore - HTTP only
+                httpServer = GrizzlyHttpServerFactory.createHttpServer(
+                    URI.create(String.format("http://%s", bindAddress)),
+                    restResourceConfig,
+                    false
+                );
+                errorReporter.logInfo(
+                    "Starting HTTP only on %s (no keystore configured and AutoHTTPS not enabled)",
+                    bindAddress
+                );
+            }
         }
 
         if (restAccessLogMode != LinstorConfig.RestAccessLogMode.NO_LOG)
