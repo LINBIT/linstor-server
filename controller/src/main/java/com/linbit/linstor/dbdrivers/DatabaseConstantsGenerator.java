@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 
 public final class DatabaseConstantsGenerator
 {
@@ -69,13 +70,20 @@ public final class DatabaseConstantsGenerator
     // At least truncating old imported CRDs might still depend on this
     public static final String CRD_GROUP = "internal.linstor.linbit.com";
 
-    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper YAML_MAPPER;
 
     private Random random = new Random();
     private StringBuilder mainBuilder = new StringBuilder();
     private int indentLevel = 0;
     private TreeMap<String, Table> tbls = new TreeMap<>();
     private List<String> tblsOrder;
+
+    static
+    {
+        YAML_MAPPER = new ObjectMapper(
+            new YAMLFactory().enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+        );
+    }
 
     public DatabaseConstantsGenerator(Connection conRef) throws SQLException
     {

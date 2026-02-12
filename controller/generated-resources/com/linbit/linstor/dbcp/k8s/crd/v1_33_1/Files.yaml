@@ -6,185 +6,119 @@ metadata:
 spec:
   group: "internal.linstor.linbit.com"
   versions:
-  - name: "v1-33-1"
-    served: true
-    storage: true
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        properties:
-          spec:
-            type: "object"
-            properties:
-              uuid:
-                type: "string"
-              path:
-                type: "string"
-              flags:
-                type: "integer"
-                format: "int64"
-              content:
-                type: "string"
-                format: "byte"
-              content_checksum:
-                type: "string"
-              alt_suffixes:
-                type: "string"
-                format: "byte"
-  - name: "v1-31-1"
-    served: true
-    storage: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        properties:
-          spec:
-            type: "object"
-            properties:
-              uuid:
-                type: "string"
-              path:
-                type: "string"
-              flags:
-                type: "integer"
-                format: "int64"
-              content:
-                type: "string"
-                format: "byte"
-              content_checksum:
-                type: "string"
-  - name: "v1-27-1"
-    served: true
-    storage: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        properties:
-          spec:
-            type: "object"
-            properties:
-              uuid:
-                type: "string"
-              path:
-                type: "string"
-              flags:
-                type: "integer"
-                format: "int64"
-              content:
-                type: "string"
-                format: "byte"
-              content_checksum:
-                type: "string"
-  - name: "v1-25-1"
-    served: true
-    storage: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        properties:
-          spec:
-            type: "object"
-            properties:
-              uuid:
-                type: "string"
-              path:
-                type: "string"
-              flags:
-                type: "integer"
-                format: "int64"
-              content:
-                type: "string"
-                format: "byte"
-              content_checksum:
-                type: "string"
-  - name: "v1-19-1"
-    served: true
-    storage: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        properties:
-          spec:
-            type: "object"
-            properties:
-              uuid:
-                type: "string"
-              path:
-                type: "string"
-              flags:
-                type: "integer"
-                format: "int64"
-              content:
-                type: "string"
-                format: "byte"
-              content_checksum:
-                type: "string"
-  - name: "v1-18-2"
-    served: true
-    storage: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        properties:
-          spec:
-            type: "object"
-            properties:
-              uuid:
-                type: "string"
-              path:
-                type: "string"
-              flags:
-                type: "integer"
-                format: "int64"
-              content:
-                type: "string"
-                format: "byte"
-              content_checksum:
-                type: "string"
-  - name: "v1-17-0"
-    served: true
-    storage: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        properties:
-          spec:
-            type: "object"
-            properties:
-              uuid:
-                type: "string"
-              path:
-                type: "string"
-              flags:
-                type: "integer"
-                format: "int64"
-              content:
-                type: "string"
-                format: "byte"
-              content_checksum:
-                type: "string"
-  - name: "v1-15-0"
-    served: true
-    storage: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        properties:
-          spec:
-            type: "object"
-            properties:
-              uuid:
-                type: "string"
-              path:
-                type: "string"
-              flags:
-                type: "integer"
-                format: "int64"
-              content:
-                type: "string"
-                format: "byte"
-              content_checksum:
-                type: "string"
+    - name: "v1-33-1"
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: "object"
+          properties:
+            spec:
+              type: "object"
+              properties:
+                uuid:
+                  type: "string"
+                path:
+                  type: "string"
+                flags:
+                  type: "integer"
+                  format: "int64"
+                content:
+                  type: "string"
+                  format: "byte"
+                content_checksum:
+                  type: "string"
+                alt_suffixes:
+                  type: "string"
+                  format: "byte"
+    - name: "v1-31-1"
+      served: true
+      storage: false
+      schema:
+        openAPIV3Schema:
+          type: "object"
+          properties:
+            spec:
+              type: "object"
+              properties:
+                uuid:
+                  type: "string"
+                path:
+                  type: "string"
+                flags:
+                  type: "integer"
+                  format: "int64"
+                content:
+                  type: "string"
+                  format: "byte"
+                content_checksum:
+                  type: "string"
+    - name: "v1-27-1"
+      served: true
+      storage: false
+      schema:
+        openAPIV3Schema:
+          type: "object"
+          properties:
+            spec:
+              type: "object"
+              properties:
+                uuid:
+                  type: "string"
+                path:
+                  type: "string"
+                flags:
+                  type: "integer"
+                  format: "int64"
+                content:
+                  type: "string"
+                  format: "byte"
+                content_checksum:
+                  type: "string"
+    - name: "v1-25-1"
+      served: true
+      storage: false
+      schema:
+        openAPIV3Schema:
+          type: "object"
+          properties:
+            spec:
+              type: "object"
+              properties:
+                uuid:
+                  type: "string"
+                path:
+                  type: "string"
+                flags:
+                  type: "integer"
+                  format: "int64"
+                content:
+                  type: "string"
+                  format: "byte"
+                content_checksum:
+                  type: "string"
+    - name: "v1-19-1"
+      served: true
+      storage: false
+      schema:
+        openAPIV3Schema:
+          type: "object"
+          properties:
+            spec:
+              type: "object"
+              properties:
+                uuid:
+                  type: "string"
+                path:
+                  type: "string"
+                flags:
+                  type: "integer"
+                  format: "int64"
+                content:
+                  type: "string"
+                  format: "byte"
+                content_checksum:
+                  type: "string"
   scope: "Cluster"
   names:
     plural: "files"
