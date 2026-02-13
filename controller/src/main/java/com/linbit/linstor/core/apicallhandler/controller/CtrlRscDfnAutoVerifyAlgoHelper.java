@@ -220,13 +220,17 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                 }
                 else
                 {
-                    final String msg = String.format("No common DRBD verify algorithm found for '%s', clearing prop",
-                        rscDfn.getName());
-                    errorReporter.logInfo(msg);
-                    final Props rscDfnProps = rscDfn.getProps(peerCtx);
-                    rscDfnProps.removeProp(InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
-                    touchedResources.addAll(rscDfn.streamResource(
-                        peerCtxProvider.get()).collect(Collectors.toList()));
+                    if (nodeCryptos.size() != 1)
+                    {
+                        final String msg = String.format(
+                            "No common DRBD verify algorithm found for '%s', clearing prop",
+                            rscDfn.getName());
+                        errorReporter.logInfo(msg);
+                        final Props rscDfnProps = rscDfn.getProps(peerCtx);
+                        rscDfnProps.removeProp(InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
+                        touchedResources.addAll(rscDfn.streamResource(
+                            peerCtxProvider.get()).toList());
+                    }
                 }
             }
             else
