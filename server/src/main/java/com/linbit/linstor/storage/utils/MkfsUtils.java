@@ -133,7 +133,6 @@ public class MkfsUtils
     {
         if (rsc.getLayerData(wrkCtx).checkFileSystem())
         {
-            rsc.getLayerData(wrkCtx).disableCheckFileSystem();
             for (AbsVolume<Resource> vlm : rsc.streamVolumes().collect(Collectors.toList()))
             {
                 VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
@@ -251,6 +250,7 @@ public class MkfsUtils
                     // else Check for mismatch?
                 }
             }
+            rsc.getLayerData(wrkCtx).disableCheckFileSystem();
         }
     }
 
