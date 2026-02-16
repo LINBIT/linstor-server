@@ -109,11 +109,14 @@ endif
 controller/jar.deps satellite/jar.deps jclcrypto/jar.deps: build.gradle
 	@./gradlew installdist
 	./scripts/diffcopy.py -n ./controller/build/install/controller/lib ./server/build/install/server/lib /usr/share/linstor-server/lib > controller/jar.deps
-	sed -i '/^|usr|share|linstor-server|lib|server-/d' controller/jar.deps
+	sed -i '\|^/usr/share/linstor-server/lib/server-|d' controller/jar.deps
+	sed -i '\|^/usr/share/linstor-server/lib/jclcrypto-|d' controller/jar.deps
 	./scripts/diffcopy.py -n ./satellite/build/install/satellite/lib ./server/build/install/server/lib /usr/share/linstor-server/lib > satellite/jar.deps
-	sed -i '/^|usr|share|linstor-server|lib|server-/d' satellite/jar.deps
+	sed -i '\|^/usr/share/linstor-server/lib/server-|d' satellite/jar.deps
+	sed -i '\|^/usr/share/linstor-server/lib/jclcrypto-|d' satellite/jar.deps
 	./scripts/diffcopy.py -n ./jclcrypto/build/install/jclcrypto/lib ./server/build/install/server/lib /usr/share/linstor-server/lib > jclcrypto/jar.deps
-	sed -i '/^|usr|share|linstor-server|lib|server-/d' jclcrypto/jar.deps
+	sed -i '\|^/usr/share/linstor-server/lib/server-|d' jclcrypto/jar.deps
+	sed -i '\|^/usr/share/linstor-server/lib/jclcrypto-|d' jclcrypto/jar.deps
 ifneq ("$(wildcard libs/controller-st.jar)","")
 	echo "/usr/share/linstor-server/lib/controller-st.jar" >> controller/jar.deps
 endif
