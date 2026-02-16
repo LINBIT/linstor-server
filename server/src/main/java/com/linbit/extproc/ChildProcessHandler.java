@@ -8,7 +8,9 @@ import com.linbit.Platform;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
@@ -26,16 +28,16 @@ import java.util.concurrent.TimeUnit;
 public class ChildProcessHandler
 {
     /** Default: Wait up to 45 seconds for a child process to exit */
-    private static long dfltWaitTimeout = 45000;
+    private static volatile long dfltWaitTimeout = 45000;
     /** Default: Wait up to 15 seconds for a child process to exit after receiving a signal */
-    private static long dfltTermTimeout = 15000;
+    private static volatile long dfltTermTimeout = 15000;
     /** Default: Wait up to 5 seconds for a child process to exit after the operating system has been ordered to
       * enforce termination of the process */
-    private static long dfltKillTimeout = 5000;
+    private static volatile long dfltKillTimeout = 5000;
     /** Default: I/O stall timeout inherits from dfltWaitTimeout when null */
-    private static @Nullable Long dfltIoStallTimeout = null;
+    private static volatile @Nullable Long dfltIoStallTimeout = null;
     /** Default: Wait for 2 seconds between polling /proc/&lt;pid>/io*/
-    private static long dfltIoAwarePollInterval = 2_000;
+    private static volatile long dfltIoAwarePollInterval = 2_000;
 
     public enum TimeoutType
     {
@@ -353,32 +355,67 @@ public class ChildProcessHandler
     {
         PriorityProps prioProps = new PriorityProps(propsArr);
 
-        @Nullable String waitStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_WAIT_TO);
-        if (waitStr != null)
+        // we try to parse all properties before applying them to achieve an "all or nothing" approach
+        @Nullable Long waitTimeout = parseLong(prioProps, ApiConsts.KEY_WAIT_TO, ApiConsts.NAMESPC_EXT_CMD);
+        @Nullable Long termTimeout = parseLong(prioProps, ApiConsts.KEY_TERM_TO, ApiConsts.NAMESPC_EXT_CMD);
+        @Nullable Long killTimeout = parseLong(prioProps, ApiConsts.KEY_KILL_TO, ApiConsts.NAMESPC_EXT_CMD);
+        @Nullable Long ioStallTimeout = parseLong(prioProps, ApiConsts.KEY_IO_STALL_TO, ApiConsts.NAMESPC_EXT_CMD);
+        @Nullable Long ioPollInterval = parseLong(prioProps, ApiConsts.KEY_IO_POLL_INTERVAL, ApiConsts.NAMESPC_EXT_CMD);
+
+        if (waitTimeout != null)
         {
-            dfltWaitTimeout = Long.parseLong(waitStr);
+            dfltWaitTimeout = waitTimeout;
+        }
+        if (termTimeout != null)
+        {
+            dfltTermTimeout = termTimeout;
+        }
+        if (killTimeout != null)
+        {
+            dfltKillTimeout = killTimeout;
         }
 
-        @Nullable String termStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_TERM_TO);
-        if (termStr != null)
-        {
-            dfltTermTimeout = Long.parseLong(termStr);
-        }
+        // dfltIoStallTimeout can be null.
+        // If it is null it will inherit the value from dfltWaitTimeout which must not be null
+        dfltIoStallTimeout = ioStallTimeout;
 
-        @Nullable String killStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_KILL_TO);
-        if (killStr != null)
+        if (ioPollInterval != null)
         {
-            dfltKillTimeout = Long.parseLong(killStr);
+            dfltIoAwarePollInterval = ioPollInterval;
         }
+    }
 
-        @Nullable String ioStallStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_IO_STALL_TO);
-        dfltIoStallTimeout = ioStallStr != null ? Long.parseLong(ioStallStr) : null;
-
-        @Nullable String ioPollStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_IO_POLL_INTERVAL);
-        if (ioPollStr != null)
+    private static @Nullable Long parseLong(PriorityProps prioPropsRef, String keyRef, String namespcRef)
+    {
+        @Nullable String value = prioPropsRef.getProp(keyRef, namespcRef);
+        @Nullable Long ret;
+        if (value == null)
         {
-            dfltIoAwarePollInterval = Long.parseLong(ioPollStr);
+            ret = null;
         }
+        else
+        {
+            try
+            {
+                ret = Long.parseLong(value);
+            }
+            catch (NumberFormatException nfe)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_PROP,
+                        String.format(
+                            "The property %s/%s has to have a numeric value. Current value: %s",
+                            namespcRef,
+                            keyRef,
+                            value
+                        )
+                    ),
+                    nfe
+                );
+            }
+        }
+        return ret;
     }
 
     private static class Interruptor implements Action<String>

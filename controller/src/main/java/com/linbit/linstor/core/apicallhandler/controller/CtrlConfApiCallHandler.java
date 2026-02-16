@@ -994,11 +994,19 @@ public class CtrlConfApiCallHandler
                             // no need to update stlts
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             break;
-                        case ApiConsts.KEY_EXT_CMD_WAIT_TO:
-                        case ApiConsts.KEY_EXT_CMD_TERM_TO:
-                        case ApiConsts.KEY_EXT_CMD_KILL_TO:
-                        case ApiConsts.KEY_EXT_CMD_IO_STALL_TO:
-                        case ApiConsts.KEY_EXT_CMD_IO_POLL_INTERVAL:
+                        case ApiConsts.KEY_EXT_CMD_WAIT_TO: // deprecated
+                            String mappedKey = ApiConsts.NAMESPC_EXT_CMD + "/" + ApiConsts.KEY_WAIT_TO;
+                            apiCallRc.add(ApiCallRcImpl.simpleEntry(
+                                ApiConsts.WARN_DEPRECATED,
+                                "'" + fullKey + "' is deprecated, please use '" + mappedKey + "'"
+                            ));
+                            fullKey = mappedKey;
+                            // fall-through with re-mapped fullKey
+                        case ApiConsts.NAMESPC_EXT_CMD + "/" + ApiConsts.KEY_WAIT_TO:
+                        case ApiConsts.NAMESPC_EXT_CMD + "/" + ApiConsts.KEY_TERM_TO:
+                        case ApiConsts.NAMESPC_EXT_CMD + "/" + ApiConsts.KEY_KILL_TO:
+                        case ApiConsts.NAMESPC_EXT_CMD + "/" + ApiConsts.KEY_IO_STALL_TO:
+                        case ApiConsts.NAMESPC_EXT_CMD + "/" + ApiConsts.KEY_IO_POLL_INTERVAL:
                             notifyStlts = applyExtCmdTimeout(fullKey, normalized, propChangedListener);
                             break;
                         default:
