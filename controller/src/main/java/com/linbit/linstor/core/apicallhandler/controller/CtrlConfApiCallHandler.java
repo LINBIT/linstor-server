@@ -995,31 +995,12 @@ public class CtrlConfApiCallHandler
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             break;
                         case ApiConsts.KEY_EXT_CMD_WAIT_TO:
-                            try
-                            {
-                                long timeout = Long.parseLong(value);
-                                if (timeout < 0)
-                                {
-                                    throw new ApiRcException(
-                                        ApiCallRcImpl.simpleEntry(
-                                            ApiConsts.FAIL_INVLD_PROP,
-                                            "The " + ApiConsts.KEY_EXT_CMD_WAIT_TO + " must not be negative"
-                                        )
-                                    );
-                                }
-                                ChildProcessHandler.dfltWaitTimeout = timeout;
-                            }
-                            catch (NumberFormatException exc)
-                            {
-                                throw new ApiRcException(
-                                    ApiCallRcImpl.simpleEntry(
-                                        ApiConsts.FAIL_INVLD_PROP,
-                                        "The " + ApiConsts.KEY_EXT_CMD_WAIT_TO + " has to have a numeric value"
-                                    ),
-                                    exc
-                                );
-                            }
-                            // fall-through
+                        case ApiConsts.KEY_EXT_CMD_TERM_TO:
+                        case ApiConsts.KEY_EXT_CMD_KILL_TO:
+                        case ApiConsts.KEY_EXT_CMD_IO_STALL_TO:
+                        case ApiConsts.KEY_EXT_CMD_IO_POLL_INTERVAL:
+                            notifyStlts = applyExtCmdTimeout(fullKey, normalized, propChangedListener);
+                            break;
                         default:
                             notifyStlts = setStltProp(peerAccCtx.get(), fullKey, normalized, propChangedListener);
                             break;
@@ -1107,6 +1088,38 @@ public class CtrlConfApiCallHandler
             }
         }
         return new TripleNonNull<>(apiCallRc, notifyStlts, changedRscs);
+    }
+
+    private boolean applyExtCmdTimeout(String fullKey, String value, PropertyChangedListener propChangedListenerRef)
+        throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
+    {
+        long timeout;
+        try
+        {
+            timeout = Long.parseLong(value);
+        }
+        catch (NumberFormatException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_PROP,
+                    "The " + fullKey + " has to have a numeric value"
+                ),
+                exc
+            );
+        }
+        if (timeout < 0)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_PROP,
+                    "The " + fullKey + " must not be negative"
+                )
+            );
+        }
+        boolean notifyStlt = setStltProp(peerAccCtx.get(), fullKey, value, propChangedListenerRef);
+        ChildProcessHandler.applyTimeoutProps(systemConfRepository.getStltConfForView(peerAccCtx.get()));
+        return notifyStlt;
     }
 
     private void handleClusterRemoteNamespace(ApiCallRcImpl apiCallRc, String fullKey, String value)

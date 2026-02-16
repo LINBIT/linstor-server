@@ -59,6 +59,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.proto.common.StltConfigOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -626,13 +627,10 @@ public class StltApiCallHandler
             // local nodename needed by openflex driver
             stltConf.setProp(LinStor.KEY_NODE_NAME, controllerPeerConnector.getLocalNodeName().displayValue);
 
-            @Nullable String extCmdWaitToStr = stltConf.getProp(ApiConsts.KEY_EXT_CMD_WAIT_TO);
-            if (extCmdWaitToStr != null)
-            {
-                ChildProcessHandler.dfltWaitTimeout = Long.parseLong(extCmdWaitToStr);
-            }
+            ReadOnlyProps nodeProps = controllerPeerConnector.getLocalNode().getProps(apiCtx);
+            ChildProcessHandler.applyTimeoutProps(nodeProps, stltConf);
 
-            LvmUtils.updateCacheTime(stltConf, controllerPeerConnector.getLocalNode().getProps(apiCtx));
+            LvmUtils.updateCacheTime(stltConf, nodeProps);
 
             transMgrProvider.get().commit();
 

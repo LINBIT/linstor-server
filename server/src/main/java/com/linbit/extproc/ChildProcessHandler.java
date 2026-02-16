@@ -6,7 +6,10 @@ import com.linbit.ImplementationError;
 import com.linbit.NegativeTimeException;
 import com.linbit.Platform;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
 
@@ -29,7 +32,8 @@ public class ChildProcessHandler
     /** Default: Wait up to 5 seconds for a child process to exit after the operating system has been ordered to
       * enforce termination of the process */
     public static long dfltKillTimeout =  5000;
-    // Default stallTimeout is by default the same as waitTimeout
+    /** Default: I/O stall timeout inherits from dfltWaitTimeout when null */
+    public static @Nullable Long dfltIoStallTimeout = null;
     /** Default: Wait for 2 seconds between polling /proc/&lt;pid>/io*/
     public static long dfltIoAwarePollInterval = 2_000;
 
@@ -50,7 +54,7 @@ public class ChildProcessHandler
     private boolean autoKill = true;
 
     private boolean ioProgressMode = false;
-    private long ioStallTimeout = dfltWaitTimeout; // dflt stallTimeout is the same as waitTimeout
+    private long ioStallTimeout = getEffectiveIoStallTimeout();
     private long ioPollInterval = dfltIoAwarePollInterval;
 
     private final Timer<String, Action<String>> timeoutScheduler;
@@ -332,6 +336,49 @@ public class ChildProcessHandler
             }
         } // else (presumably Windows case): just return -1, since we do not have /proc/<pid>/io
         return ret;
+    }
+
+    private static long getEffectiveIoStallTimeout()
+    {
+        return dfltIoStallTimeout != null ? dfltIoStallTimeout : dfltWaitTimeout;
+    }
+
+    /**
+     * Reads ext-cmd timeout properties from the given priority-resolved props and updates
+     * the static default fields. Node props take precedence over controller (stlt) props.
+     *
+     * @param propsArr The ReadOnlyProps that should be used as prioProps (order is kept)
+     */
+    public static void applyTimeoutProps(ReadOnlyProps... propsArr)
+    {
+        PriorityProps prioProps = new PriorityProps(propsArr);
+
+        @Nullable String waitStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_WAIT_TO);
+        if (waitStr != null)
+        {
+            dfltWaitTimeout = Long.parseLong(waitStr);
+        }
+
+        @Nullable String termStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_TERM_TO);
+        if (termStr != null)
+        {
+            dfltTermTimeout = Long.parseLong(termStr);
+        }
+
+        @Nullable String killStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_KILL_TO);
+        if (killStr != null)
+        {
+            dfltKillTimeout = Long.parseLong(killStr);
+        }
+
+        @Nullable String ioStallStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_IO_STALL_TO);
+        dfltIoStallTimeout = ioStallStr != null ? Long.parseLong(ioStallStr) : null;
+
+        @Nullable String ioPollStr = prioProps.getProp(ApiConsts.KEY_EXT_CMD_IO_POLL_INTERVAL);
+        if (ioPollStr != null)
+        {
+            dfltIoAwarePollInterval = Long.parseLong(ioPollStr);
+        }
     }
 
     private static class Interruptor implements Action<String>

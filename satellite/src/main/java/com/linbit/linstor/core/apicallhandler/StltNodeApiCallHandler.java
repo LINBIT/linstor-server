@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.pojo.NodePojo;
@@ -9,8 +10,8 @@ import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
-import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.CriticalError;
+import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
@@ -29,6 +30,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -191,7 +193,9 @@ public class StltNodeApiCallHandler
 
             transMgrProvider.get().commit();
 
-            LvmUtils.updateCacheTime(stltConfigAccessor.getReadonlyProps(), nodeProps);
+            final ReadOnlyProps stltProps = stltConfigAccessor.getReadonlyProps();
+            LvmUtils.updateCacheTime(stltProps, nodeProps);
+            ChildProcessHandler.applyTimeoutProps(nodeProps, stltProps);
 
             errorReporter.logInfo("Node '" + nodePojo.getName() + "' created.");
             Set<NodeName> updatedNodes = new TreeSet<>();
