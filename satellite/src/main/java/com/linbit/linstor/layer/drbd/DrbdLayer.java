@@ -368,7 +368,7 @@ public class DrbdLayer implements DeviceLayer
                         }
 
                         drbdUtils.down(drbdRscData);
-                        syncPoint.await(ChildProcessHandler.dfltWaitTimeout, TimeUnit.MILLISECONDS);
+                        syncPoint.await(ChildProcessHandler.getDefaultWaitTimeout(), TimeUnit.MILLISECONDS);
 
                         drbdResFileUtils.regenerateResFile(drbdRscData);
 

@@ -35,13 +35,14 @@ public class CommandExec
         pb.redirectError(errFileRef);
 
         Process proc = pb.start();
-        boolean exited = proc.waitFor(ChildProcessHandler.dfltWaitTimeout, TimeUnit.MILLISECONDS);
+        final long timeout = ChildProcessHandler.getDefaultWaitTimeout();
+        boolean exited = proc.waitFor(timeout, TimeUnit.MILLISECONDS);
         if (!exited)
         {
             proc.destroyForcibly();
             Files.write(
                 errFileRef.toPath(),
-                ("\n\nCommand did not terminate within " + ChildProcessHandler.dfltWaitTimeout + "ms. Command was: " +
+                ("\n\nCommand did not terminate within " + timeout + "ms. Command was: " +
                     ShellUtils.joinShellQuote(commandRef)).getBytes(StandardCharsets.UTF_8),
                 StandardOpenOption.CREATE,
                 StandardOpenOption.APPEND,

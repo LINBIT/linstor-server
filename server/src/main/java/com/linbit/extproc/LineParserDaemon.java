@@ -176,10 +176,10 @@ public class LineParserDaemon implements Runnable
      */
     public int waitDone()
     {
-        long deadline = System.currentTimeMillis() + ExtCmd.dfltWaitTimeout;
+        long deadline = System.currentTimeMillis() + ExtCmd.getDefaultWaitTimeout();
         synchronized (waiter)
         {
-            while(!waiter.get() && System.currentTimeMillis() < deadline)
+            while (!waiter.get() && System.currentTimeMillis() < deadline)
             {
                 try
                 {

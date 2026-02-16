@@ -26,16 +26,16 @@ import java.util.concurrent.TimeUnit;
 public class ChildProcessHandler
 {
     /** Default: Wait up to 45 seconds for a child process to exit */
-    public static long dfltWaitTimeout = 45000;
+    private static long dfltWaitTimeout = 45000;
     /** Default: Wait up to 15 seconds for a child process to exit after receiving a signal */
-    public static long dfltTermTimeout = 15000;
+    private static long dfltTermTimeout = 15000;
     /** Default: Wait up to 5 seconds for a child process to exit after the operating system has been ordered to
       * enforce termination of the process */
-    public static long dfltKillTimeout =  5000;
+    private static long dfltKillTimeout = 5000;
     /** Default: I/O stall timeout inherits from dfltWaitTimeout when null */
-    public static @Nullable Long dfltIoStallTimeout = null;
+    private static @Nullable Long dfltIoStallTimeout = null;
     /** Default: Wait for 2 seconds between polling /proc/&lt;pid>/io*/
-    public static long dfltIoAwarePollInterval = 2_000;
+    private static long dfltIoAwarePollInterval = 2_000;
 
     public enum TimeoutType
     {
@@ -408,5 +408,10 @@ public class ChildProcessHandler
         {
             return "INTR-" + Long.toString(targetThreadId);
         }
+    }
+
+    public static long getDefaultWaitTimeout()
+    {
+        return dfltWaitTimeout;
     }
 }
