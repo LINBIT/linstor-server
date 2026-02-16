@@ -215,6 +215,13 @@ public class ExtCmd extends ChildProcessHandler
         }
     }
 
+    @Override
+    public ExtCmd setIoProgressMode(boolean ioProgressModeRef)
+    {
+        super.setIoProgressMode(ioProgressModeRef);
+        return this;
+    }
+
     public ExtCmd logExecution(boolean logRef)
     {
         logExecution = logRef;

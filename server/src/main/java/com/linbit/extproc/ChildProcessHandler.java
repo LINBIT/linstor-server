@@ -4,10 +4,16 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.NegativeTimeException;
+import com.linbit.Platform;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Process spawner &amp; handler for running external processes
@@ -16,23 +22,24 @@ import com.linbit.timer.Timer;
  */
 public class ChildProcessHandler
 {
-    // Default: Wait up to 45 seconds for a child process to exit
+    /** Default: Wait up to 45 seconds for a child process to exit */
     public static long dfltWaitTimeout = 45000;
-
-    // Default: Wait up to 15 seconds for a child process to exit
-    //          after receiving a signal
+    /** Default: Wait up to 15 seconds for a child process to exit after receiving a signal */
     public static long dfltTermTimeout = 15000;
-
-    // Default: Wait up to 5 seconds for a child process to exit
-    //          after the operating system has been ordered to enforce
-    //          termination of the process
+    /** Default: Wait up to 5 seconds for a child process to exit after the operating system has been ordered to
+      * enforce termination of the process */
     public static long dfltKillTimeout =  5000;
+    // Default stallTimeout is by default the same as waitTimeout
+    /** Default: Wait for 2 seconds between polling /proc/&lt;pid>/io*/
+    public static long dfltIoAwarePollInterval = 2_000;
 
     public enum TimeoutType
     {
         WAIT,
         TERM,
-        KILL
+        KILL,
+        IO_STALL,
+        IO_POLL
     }
 
     private long waitTimeout = dfltWaitTimeout;
@@ -41,6 +48,10 @@ public class ChildProcessHandler
 
     private boolean autoTerm = true;
     private boolean autoKill = true;
+
+    private boolean ioProgressMode = false;
+    private long ioStallTimeout = dfltWaitTimeout; // dflt stallTimeout is the same as waitTimeout
+    private long ioPollInterval = dfltIoAwarePollInterval;
 
     private final Timer<String, Action<String>> timeoutScheduler;
     private @Nullable Process childProcess;
@@ -72,6 +83,12 @@ public class ChildProcessHandler
         childProcess = child;
     }
 
+    // SuppressWarnings because ErrorProne forces us to use new-syntax switch "case TERM -> ...;"
+    // while checkstyle then complains about "InnerAssignment". Suppressing this warning satisfies both
+    // checkstyle's "InnerAssignment" rule was supposed to catch things like 'if((i = read()) == -1)', which
+    // admittedly is not so easy to read/understand. This switch here on the other hand is simple enough to
+    // ignore this false positive warning.
+    @SuppressWarnings("InnerAssignment")
     public void setTimeout(TimeoutType type, long timeout)
     {
         if (timeout < 0)
@@ -85,17 +102,12 @@ public class ChildProcessHandler
 
         switch (type)
         {
-            case TERM:
-                termTimeout = timeout;
-                break;
-            case KILL:
-                killTimeout = timeout;
-                break;
-            case WAIT:
-                // fall-through
-            default:
-                waitTimeout = timeout;
-                break;
+            case TERM -> termTimeout = timeout;
+            case KILL -> killTimeout = timeout;
+            case WAIT -> waitTimeout = timeout;
+            case IO_STALL -> ioStallTimeout = timeout;
+            case IO_POLL -> ioPollInterval = timeout;
+            default -> throw new ImplementationError("Unhandled case: " + type.name());
         }
     }
 
@@ -107,6 +119,18 @@ public class ChildProcessHandler
     public void setAutoKill(boolean flag)
     {
         autoKill = flag;
+    }
+
+    /**
+     * Enables or disables I/O progress monitoring mode. Instead of a fixed wall-clock timeout,
+     * the process is monitored via /proc/&lt;pid&gt;/io. As long as read_bytes + write_bytes
+     * keep changing, the process is considered active. Only if I/O stalls for
+     * {@code stallTimeoutMs} will a timeout be raised.
+     */
+    public ChildProcessHandler setIoProgressMode(boolean ioProgressModeRef)
+    {
+        ioProgressMode = ioProgressModeRef;
+        return this;
     }
 
     public int waitFor() throws ChildProcessTimeoutException
@@ -122,7 +146,14 @@ public class ChildProcessHandler
         int exitCode = -1;
         try
         {
-            exitCode = waitFor(waitTimeout);
+            if (ioProgressMode)
+            {
+                exitCode = waitForWithIoProgress();
+            }
+            else
+            {
+                exitCode = waitFor(waitTimeout);
+            }
         }
         catch (ChildProcessTimeoutException waitTimeoutExc)
         {
@@ -222,6 +253,77 @@ public class ChildProcessHandler
         {
         }
         return killed;
+    }
+
+    private int waitForWithIoProgress() throws ChildProcessTimeoutException
+    {
+        long lastIoBytes = -1;
+        long stallStartMs = System.currentTimeMillis();
+        int exitCode = -1;
+
+        while (true)
+        {
+            try
+            {
+                boolean exited = childProcess.waitFor(ioPollInterval, TimeUnit.MILLISECONDS);
+                if (exited)
+                {
+                    exitCode = childProcess.exitValue();
+                    break;
+                }
+            }
+            catch (InterruptedException ignored)
+            {
+                Thread.currentThread().interrupt();
+                throw new ChildProcessTimeoutException();
+            }
+
+            long currentIoBytes = readProcIoBytes(childProcess.pid());
+            long now = System.currentTimeMillis();
+
+            if (currentIoBytes < 0 || currentIoBytes != lastIoBytes)
+            {
+                // I/O progress detected (or /proc unreadable — assume progress)
+                lastIoBytes = currentIoBytes;
+                stallStartMs = now;
+            }
+            else
+            if (now - stallStartMs >= ioStallTimeout)
+            {
+                throw new ChildProcessTimeoutException();
+            }
+        }
+        return exitCode;
+    }
+
+    /**
+     * Reads /proc/&lt;pid&gt;/io and returns the sum of read_bytes + write_bytes,
+     * or -1 if the file cannot be read (non-Linux, permissions, process gone).
+     */
+    private static long readProcIoBytes(long pid)
+    {
+        long ret = -1;
+        if (Platform.isLinux())
+        {
+            try
+            {
+                long total = 0;
+                for (String line : Files.readAllLines(Paths.get("/proc/" + pid + "/io")))
+                {
+                    if (line.startsWith("read_bytes:") || line.startsWith("write_bytes:"))
+                    {
+                        total += Long.parseLong(line.substring(line.indexOf(':') + 1).trim());
+                    }
+                }
+                ret = total;
+            }
+            catch (IOException | NumberFormatException ignored)
+            {
+                // NoSuchFileException (extends IOException) -> Process most likely already exited
+                // in any case keep and return ret = -1
+            }
+        } // else (presumably Windows case): just return -1, since we do not have /proc/<pid>/io
+        return ret;
     }
 
     private static class Interruptor implements Action<String>

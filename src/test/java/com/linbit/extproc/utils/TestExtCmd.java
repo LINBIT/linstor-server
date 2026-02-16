@@ -94,6 +94,13 @@ public class TestExtCmd extends ExtCmd
     }
 
     @Override
+    public ExtCmd setIoProgressMode(boolean ignored)
+    {
+        // no-op for tests
+        return this;
+    }
+
+    @Override
     public OutputData syncProcess() throws IOException, ChildProcessTimeoutException
     {
         throw new UnsupportedOperationException("This test did not implement this method");
