@@ -148,7 +148,15 @@ public class ChildProcessHandler
         {
             if (ioProgressMode)
             {
-                exitCode = waitForWithIoProgress();
+                if (Platform.isLinux())
+                {
+                    exitCode = waitForWithIoProgress();
+                }
+                else
+                {
+                    // sorry, not (yet?) supported for Windows.
+                    exitCode = waitFor(waitTimeout);
+                }
             }
             else
             {
@@ -162,7 +170,7 @@ public class ChildProcessHandler
                 try
                 {
                     waitForDestroy();
-                    waitTimeoutExc = new ChildProcessTimeoutException(true);
+                    waitTimeoutExc = new ChildProcessTimeoutException(true, waitTimeoutExc);
                 }
                 catch (ChildProcessTimeoutException termTimedOut)
                 {
@@ -170,7 +178,7 @@ public class ChildProcessHandler
                     {
                         if (waitForDestroyForcibly())
                         {
-                            waitTimeoutExc = new ChildProcessTimeoutException(true);
+                            waitTimeoutExc = new ChildProcessTimeoutException(true, waitTimeoutExc);
                         }
                     }
                 }

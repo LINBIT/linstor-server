@@ -26,6 +26,12 @@ public class ChildProcessTimeoutException extends TimeoutException
         termFlag = terminated;
     }
 
+    public ChildProcessTimeoutException(boolean terminated, ChildProcessTimeoutException waitTimeoutExcRef)
+    {
+        this(terminated);
+        addSuppressed(waitTimeoutExcRef);
+    }
+
     public boolean isTerminated()
     {
         return termFlag;
