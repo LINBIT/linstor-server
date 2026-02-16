@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - SOS report now uses export-db instead of non-JSON database dump
 - Minimum java version is now java-21, please upgrade if you want to continue building/running LINSTOR.
+- DRBD: create-md now only times out if there was no IO for 45s
 
 ### Removed
 

@@ -29,6 +29,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
+import com.linbit.utils.ExceptionThrowingConsumer;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -47,6 +48,8 @@ import java.util.stream.Collectors;
 @Singleton
 public class DrbdAdm
 {
+    private static final int DFLT_WINDOWS_TIMEOUT_MS = 5 * 60 * 1000;
+
     public static final String DRBDADM_UTIL   = "drbdadm";
     public static final String DRBDMETA_UTIL  = "drbdmeta";
     public static final String DRBDSETUP_UTIL = "drbdsetup";
@@ -371,11 +374,12 @@ public class DrbdAdm
     }
 
     /**
-     * Calls drbdadm to create the metadata information for a volume
+     * Calls drbdadm to create the metadata information for a volume.
+     * Uses I/O progress monitoring so large volumes don't get killed prematurely.
      */
     public void createMd(DrbdVlmData<Resource> drbdVlmData, int peers) throws ExtCmdFailedException
     {
-        simpleAdmCommand(
+        ioAwareAdmCommand(
             drbdVlmData.getRscLayerObject(),
             drbdVlmData.getVlmNr(),
             "--max-peers", Integer.toString(peers),
@@ -737,6 +741,27 @@ public class DrbdAdm
     )
         throws ExtCmdFailedException
     {
+        execAdmCommand(drbdRscData, volNum, cmdList -> execute(cmdList, false), subCommands);
+    }
+
+    private void ioAwareAdmCommand(
+        DrbdRscData<Resource> drbdRscData,
+        @Nullable VolumeNumber volNum,
+        String... subCommands
+    )
+        throws ExtCmdFailedException
+    {
+        execAdmCommand(drbdRscData, volNum, cmdList -> execute(cmdList, true), subCommands);
+    }
+
+    private void execAdmCommand(
+        DrbdRscData<Resource> drbdRscData,
+        @Nullable VolumeNumber vlmNr,
+        ExceptionThrowingConsumer<List<String>, ExtCmdFailedException> cmdExecutor,
+        String... subCommands
+    )
+        throws ExtCmdFailedException
+    {
         List<String> command = new ArrayList<>();
         command.add(DRBDADM_UTIL);
         command.add("-vvv");
@@ -748,13 +773,13 @@ public class DrbdAdm
         // command.addAll(asConfigParameter(resourceName.value));
         command.addAll(Arrays.asList(subCommands));
         String resName = drbdRscData.getSuffixedResourceName();
-        if (volNum != null)
+        if (vlmNr != null)
         {
-            resName += "/" + volNum.value;
+            resName += "/" + vlmNr.value;
         }
         command.add(resName);
 
-        execute(command);
+        cmdExecutor.accept(command);
     }
 
     private void waitForFamily(
@@ -780,6 +805,12 @@ public class DrbdAdm
 
     private void execute(List<String> commandList) throws ExtCmdFailedException
     {
+        execute(commandList, false);
+    }
+
+    private void execute(List<String> commandList, boolean setIoProgressmodeRef)
+        throws ExtCmdFailedException
+    {
         String[] command = commandList.toArray(new String[commandList.size()]);
         try
         {
@@ -787,7 +818,12 @@ public class DrbdAdm
             ExtCmd extCmd = extCmdFactory.create();
             if (Platform.isWindows())
             {
-                extCmd.setTimeout(TimeoutType.WAIT, 5*60*1000);
+                extCmd.setTimeout(TimeoutType.WAIT, DFLT_WINDOWS_TIMEOUT_MS);
+            }
+            else if (setIoProgressmodeRef)
+            {
+                // ioProgressMode is not available for windows, since IO polling is based on /proc/<pid>/io
+                extCmd.setIoProgressMode(true);
             }
             OutputData outputData = extCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), command);
             if (outputData.exitCode != 0)
