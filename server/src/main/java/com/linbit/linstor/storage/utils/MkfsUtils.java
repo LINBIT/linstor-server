@@ -196,7 +196,11 @@ public class MkfsUtils
                                 mkfsParametes += " -E root_owner=" + mkfsUID + ":" + mkfsGID;
                             }
 
-                            MkfsUtils.makeExt4(extCmdFactory.create(), devicePath, mkfsParametes);
+                            MkfsUtils.makeExt4(
+                                extCmdFactory.create().setIoProgressMode(true),
+                                devicePath,
+                                mkfsParametes
+                            );
                         }
                         else
                         if (fsType.equals(ApiConsts.VAL_FS_TYPE_XFS))
@@ -228,7 +232,11 @@ public class MkfsUtils
                                 }
                             }
 
-                            MkfsUtils.makeXfs(extCmdFactory.create(), devicePath, mkfsParametes);
+                            MkfsUtils.makeXfs(
+                                extCmdFactory.create().setIoProgressMode(true),
+                                devicePath,
+                                mkfsParametes
+                            );
 
                             if (tempFile != null)
                             {
