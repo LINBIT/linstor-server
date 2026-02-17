@@ -245,44 +245,48 @@ public class NodeInternalCallHandler
                 )
             )
             {
-                Props props = node.getProps(apiCtx);
-                boolean changedNode = false;
-                changedNode |= delete(props, deletedPropsListRef);
-                changedNode |= update(props, changedPropsRef);
-
-                Set<StorPool> changedStorPoolSet = new HashSet<>();
-                for (Entry<String, List<String>> entry : deletedStorPoolPropsRef.entrySet())
+                // check again now that we have the lock
+                if (!node.isDeleted())
                 {
-                    StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
-                    Props spProps = storPool.getProps(apiCtx);
-                    boolean changedSp = delete(spProps, entry.getValue());
-                    if (changedSp)
-                    {
-                        changedStorPoolSet.add(storPool);
-                    }
-                }
-                for (Entry<String, Map<String, String>> entry : changedStorPoolPropsRef.entrySet())
-                {
-                    StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
-                    Props spProps = storPool.getProps(apiCtx);
-                    boolean changedSp = update(spProps, entry.getValue());
-                    if (changedSp)
-                    {
-                        changedStorPoolSet.add(storPool);
-                    }
-                }
+                    Props props = node.getProps(apiCtx);
+                    boolean changedNode = false;
+                    changedNode |= delete(props, deletedPropsListRef);
+                    changedNode |= update(props, changedPropsRef);
 
-                if (changedNode || !changedStorPoolSet.isEmpty())
-                {
-                    ctrlTransactionHelper.commit();
-
-                    if (changedNode)
+                    Set<StorPool> changedStorPoolSet = new HashSet<>();
+                    for (Entry<String, List<String>> entry : deletedStorPoolPropsRef.entrySet())
                     {
-                        stltUpdater.updateSatellites(node);
+                        StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
+                        Props spProps = storPool.getProps(apiCtx);
+                        boolean changedSp = delete(spProps, entry.getValue());
+                        if (changedSp)
+                        {
+                            changedStorPoolSet.add(storPool);
+                        }
                     }
-                    for (StorPool storPool : changedStorPoolSet)
+                    for (Entry<String, Map<String, String>> entry : changedStorPoolPropsRef.entrySet())
                     {
-                        stltUpdater.updateSatellite(storPool);
+                        StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
+                        Props spProps = storPool.getProps(apiCtx);
+                        boolean changedSp = update(spProps, entry.getValue());
+                        if (changedSp)
+                        {
+                            changedStorPoolSet.add(storPool);
+                        }
+                    }
+
+                    if (changedNode || !changedStorPoolSet.isEmpty())
+                    {
+                        ctrlTransactionHelper.commit();
+
+                        if (changedNode)
+                        {
+                            stltUpdater.updateSatellites(node);
+                        }
+                        for (StorPool storPool : changedStorPoolSet)
+                        {
+                            stltUpdater.updateSatellite(storPool);
+                        }
                     }
                 }
             }
