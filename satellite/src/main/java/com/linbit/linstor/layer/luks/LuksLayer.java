@@ -405,6 +405,7 @@ public class LuksLayer implements DeviceLayer
                 vlmData.setSizeState(Size.AS_EXPECTED);
 
                 vlmData.setOpened(true);
+                vlmData.setExists(true);
                 vlmData.setFailed(false);
             }
         }
