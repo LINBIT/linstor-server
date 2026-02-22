@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- WinDRBD specific patches regarding missing sha1 and hmac crypto algorithms
+
 ### Fixed
 
 - Fixed resource definition delete setting DELETE flag when resources are still in use

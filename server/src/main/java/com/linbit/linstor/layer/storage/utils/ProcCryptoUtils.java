@@ -123,6 +123,7 @@ public class ProcCryptoUtils
         {
             /* driver name must be lower case. */
             cryptoEntries.add(new ProcCryptoEntry("crc32c", "windrbd", ProcCryptoEntry.CryptoType.SHASH, 200));
+            cryptoEntries.add(new ProcCryptoEntry("sha1", "windrbd", ProcCryptoEntry.CryptoType.SHASH, 200));
         }
         return cryptoEntries;
     }
