@@ -509,8 +509,8 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
             snapshotName.getDisplayName(),
             snapshotVlmDfns,
             flags.getFlagsBits(accCtx),
-            snaptDfnProps.map(),
-            rscDfnProps.map(),
+            snaptDfnProps.cloneMap(),
+            rscDfnProps.cloneMap(),
             layerData,
             withSnapshots ? getSnapshotApis(accCtx) : Collections.emptyList()
         );

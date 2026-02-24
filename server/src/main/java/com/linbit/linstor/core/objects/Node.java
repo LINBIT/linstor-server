@@ -890,14 +890,16 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
             netInterfaces,
             activeStltConn.get() != null ? activeStltConn.get().getApiData(accCtx) : null,
             nodeConns,
-            getProps(accCtx).map(),
+            getProps(accCtx).cloneMap(),
             connectionStatus,
             fullSyncId,
             updateId,
             extToolsManager.getSupportedLayers().stream()
-                .map(deviceLayerKind -> deviceLayerKind.name()).collect(toList()),
+                .map(deviceLayerKind -> deviceLayerKind.name())
+                .collect(toList()),
             extToolsManager.getSupportedProviders().stream()
-                .map(deviceProviderKind -> deviceProviderKind.name()).collect(toList()),
+                .map(deviceProviderKind -> deviceProviderKind.name())
+                .collect(toList()),
             extToolsManager.getUnsupportedLayersWithReasonsAsString(),
             extToolsManager.getUnsupportedProvidersWithReasonsAsString(),
             evictionTimstamp,

@@ -231,8 +231,8 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
             getSnapshotVolumeDefinition().getUuid(),
             getUuid(),
             getVolumeNumber().value,
-            snapVlmProps.map(),
-            vlmRoProps.map(),
+            snapVlmProps.cloneMap(),
+            vlmRoProps.cloneMap(),
             state
         );
     }

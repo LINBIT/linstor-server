@@ -468,7 +468,7 @@ public class Resource extends AbsResource<Resource>
             getResourceDefinition().getApiData(accCtx),
             getUuid(),
             getStateFlags().getFlagsBits(accCtx),
-            getProps(accCtx).map(),
+            getProps(accCtx).cloneMap(),
             volumes,
             null, // otherRscList
             rscConns,

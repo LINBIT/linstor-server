@@ -140,7 +140,7 @@ public class KeyValueStore extends AbsCoreObj<KeyValueStore> implements Protecte
     {
         return new KeyValueStorePojo(
             getName().getDisplayName(),
-            props.map()
+            props.cloneMap()
         );
     }
 

@@ -421,8 +421,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
             getLayerData(accCtx).asPojo(accCtx),
             getNodeName().displayValue,
             getCreateTimestamp().orElse(null),
-            snapProps.map(),
-            rscRoProps.map(),
+            snapProps.cloneMap(),
+            rscRoProps.cloneMap(),
             shipBackup.get()
         );
     }

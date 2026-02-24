@@ -462,7 +462,7 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             connectionKey.getSourceNodeName().getDisplayName(),
             connectionKey.getTargetNodeName().getDisplayName(),
             connectionKey.getResourceName().getDisplayName(),
-            getProps(accCtx).map(),
+            getProps(accCtx).cloneMap(),
             getStateFlags().getFlagsBits(accCtx),
             TcpPortNumber.getValueNullable(getDrbdProxyPortSource(accCtx)),
             TcpPortNumber.getValueNullable(getDrbdProxyPortTarget(accCtx))

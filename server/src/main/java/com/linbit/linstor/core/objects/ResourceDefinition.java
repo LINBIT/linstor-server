@@ -758,7 +758,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
             getName().getDisplayName(),
             getExternalName(),
             getFlags().getFlagsBits(accCtx),
-            getProps(accCtx).map(),
+            getProps(accCtx).cloneMap(),
             vlmDfnList,
             layerData
         );

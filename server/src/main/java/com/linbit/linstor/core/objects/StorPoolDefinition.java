@@ -163,7 +163,7 @@ public class StorPoolDefinition extends AbsCoreObj<StorPoolDefinition> implement
     public StorPoolDefinitionApi getApiData(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        return new StorPoolDfnPojo(getUuid(), getName().getDisplayName(), getProps(accCtx).map());
+        return new StorPoolDfnPojo(getUuid(), getName().getDisplayName(), getProps(accCtx).cloneMap());
     }
 
     @Override

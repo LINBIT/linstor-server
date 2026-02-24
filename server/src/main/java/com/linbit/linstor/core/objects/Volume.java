@@ -470,7 +470,7 @@ public class Volume extends AbsVolume<Resource>
             getDevicePath(accCtx),
             vlmNr.value,
             getFlags().getFlagsBits(accCtx),
-            getProps(accCtx).map(),
+            getProps(accCtx).cloneMap(),
             Optional.ofNullable(allocated),
             Optional.ofNullable(usableSize.get()),
             layerDataList,

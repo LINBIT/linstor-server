@@ -55,7 +55,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
 
     private final TransactionSimpleObject<ResourceGroup, @Nullable String> description;
 
-    private final Props rscDfnGrpProps;
+    private final Props rscGrpProps;
 
     private final TransactionMap<ResourceGroup, VolumeNumber, VolumeGroup> vlmMap;
 
@@ -104,7 +104,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
             dbDriverRef.getDescriptionDriver()
         );
 
-        rscDfnGrpProps = propsContainerFactoryRef.getInstance(
+        rscGrpProps = propsContainerFactoryRef.getInstance(
             PropsContainer.buildPath(rscGrpNameRef),
             toStringImpl(),
             LinStorObject.RSC_GRP
@@ -136,7 +136,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
 
         transObjs = Arrays.asList(
             objProt,
-            rscDfnGrpProps,
+            rscGrpProps,
             autoPlaceConfig,
             vlmMap,
             peerSlots,
@@ -200,7 +200,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         throws AccessDeniedException
     {
         checkDeleted();
-        return PropsAccess.secureGetProps(accCtxRef, objProt, rscDfnGrpProps);
+        return PropsAccess.secureGetProps(accCtxRef, objProt, rscGrpProps);
     }
 
     /**
@@ -343,7 +343,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
             objId,
             name.displayValue,
             description.get(),
-            rscDfnGrpProps.map(),
+            rscGrpProps.cloneMap(),
             vlmGrpApiList,
             autoPlaceConfig.getApiData(),
             peerSlots.get()
@@ -369,7 +369,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
                 vlmGrp.delete(accCtx);
             }
 
-            rscDfnGrpProps.delete();
+            rscGrpProps.delete();
 
             objProt.delete(accCtx);
             activateTransMgr();

@@ -295,7 +295,7 @@ public class NodeConnection extends AbsCoreObj<NodeConnection>
             objId,
             localNode.getName().displayValue,
             otherNodePojo,
-            props.map()
+            props.cloneMap()
         );
     }
 

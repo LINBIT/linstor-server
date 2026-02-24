@@ -533,7 +533,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
             getVolumeNumber().value,
             getVolumeSize(accCtx),
             getFlags().getFlagsBits(accCtx),
-            getProps(accCtx).map(),
+            getProps(accCtx).cloneMap(),
             layerData
         );
     }

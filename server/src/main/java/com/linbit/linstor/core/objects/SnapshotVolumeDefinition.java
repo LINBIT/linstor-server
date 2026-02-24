@@ -373,8 +373,8 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
             getVolumeNumber().value,
             getVolumeSize(accCtx),
             flags.getFlagsBits(accCtx),
-            snapVlmDfnProps.map(),
-            vlmDfnProps.map()
+            snapVlmDfnProps.cloneMap(),
+            vlmDfnProps.cloneMap()
         );
     }
 
