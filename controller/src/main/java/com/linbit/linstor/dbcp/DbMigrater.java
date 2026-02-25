@@ -147,13 +147,20 @@ public class DbMigrater
 
     private TreeMap<LinstorMigrationVersion, LinstorMigration> getNeededMigrations(
         TreeMap<LinstorMigrationVersion, LinstorMigration> migrations,
-        TreeSet<LinstorMigrationVersion> appliedVersions)
+        TreeSet<LinstorMigrationVersion> appliedVersions
+    )
+        throws InitializationException
     {
         var migrationsCopy = new TreeMap<>(migrations);
-        for (var version : appliedVersions)
+        if (!appliedVersions.isEmpty())
         {
-            migrationsCopy.remove(version);
+            DbMigraterConsolidatedVersions.checkIfMigrationIsPossible(appliedVersions.last());
+            for (var version : appliedVersions)
+            {
+                migrationsCopy.remove(version);
+            }
         }
+
         return migrationsCopy;
     }
 
@@ -197,6 +204,7 @@ public class DbMigrater
     }
 
     public void migrateToVersion(Connection conn, DatabaseDriverInfo dbInfo, @Nullable String targetVersionRef)
+        throws InitializationException
     {
         TreeMap<LinstorMigrationVersion, LinstorMigration> migrations = buildMigrations();
         TreeMap<LinstorMigrationVersion, LinstorMigration> neededMigrations =
@@ -344,8 +352,18 @@ public class DbMigrater
     {
         DatabaseDriverInfo dbInfo = DatabaseDriverInfo.createDriverInfo(dbType);
         TreeMap<LinstorMigrationVersion, LinstorMigration> migrations = buildMigrations();
-        var neededMigrations = getNeededMigrations(migrations, getAppliedVersions(conn, dbInfo));
-        return !neededMigrations.isEmpty();
+        boolean ret;
+        try
+        {
+            var neededMigrations = getNeededMigrations(migrations, getAppliedVersions(conn, dbInfo));
+            ret = !neededMigrations.isEmpty();
+        }
+        catch (InitializationException exc)
+        {
+            logger.reportError(exc);
+            ret = true;
+        }
+        return ret;
     }
 
     public void setSchema(Connection conn, DatabaseDriverInfo dbInfo)
