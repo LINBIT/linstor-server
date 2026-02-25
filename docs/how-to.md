@@ -21,10 +21,10 @@ The `@Migration` annotation requires:
 
 ```java
 @Migration(
-    version = "2022.01.24.14.00",
+    version = "2026.04.21.14.00",
     description = "Add column to existing table"
 )
-public class Migration_2022_01_24_14_00_AddColumn extends LinstorMigration
+public class Migration_2026_04_21_14_00_AddColumn extends LinstorMigration
 {
     @Override
     public void migrate(Connection connection, DbProduct dbProduct) throws Exception
@@ -43,20 +43,15 @@ public class Migration_2022_01_24_14_00_AddColumn extends LinstorMigration
 
 **For creating new tables**, create a dedicated `.sql` file and load it from the migration:
 
-SQL file (`controller/src/main/resources/com/linbit/linstor/dbcp/migration/2022_01_24_add-schedules.sql`):
+SQL file (`controller/src/main/resources/com/linbit/linstor/dbcp/migration/2026_04_21_add-my-table.sql`):
 
 ```sql
-CREATE TABLE SCHEDULES(
+CREATE TABLE MY_TABLE(
     UUID CHARACTER(36) NOT NULL,
     NAME VARCHAR(256) NOT NULL PRIMARY KEY,
     DSP_NAME VARCHAR(256) NOT NULL,
     FLAGS BIGINT NOT NULL,
-    FULL_CRON VARCHAR(256) NOT NULL,
-    INC_CRON VARCHAR(256), -- nullable
-    KEEP_LOCAL INTEGER, -- nullable
-    KEEP_REMOTE INTEGER, -- nullable
-    ON_FAILURE BIGINT NOT NULL,
-    MAX_RETRIES INTEGER -- nullable
+    ...
 );
 ```
 
@@ -64,20 +59,20 @@ Java migration class:
 
 ```java
 @Migration(
-    version = "2022.01.24.14.00",
-    description = "Add Schedules table"
+    version = "2026.04.21.14.00",
+    description = "Add my table"
 )
-public class Migration_2022_01_24_AddSchedulesTable extends LinstorMigration
+public class Migration_2026_04_21_AddMyTable extends LinstorMigration
 {
     @Override
     public void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
         // Although migrations should never be applied twice, this is an additional safeguard
-        if (!MigrationUtils.tableExists(connection, "SCHEDULES"))
+        if (!MigrationUtils.tableExists(connection, "MY_TABLE"))
         {
             SQLUtils.runSql(
                 connection,
-                MigrationUtils.replaceTypesByDialect(dbProduct, MigrationUtils.loadResource("2022_01_24_add-schedules.sql"))
+                MigrationUtils.replaceTypesByDialect(dbProduct, MigrationUtils.loadResource("2026_04_21_add-my-table.sql"))
             );
         }
     }
@@ -103,33 +98,9 @@ convention of `Migration_XX_vY_Z_W_Description.java` where:
 - `XX` is the sequential migration number.
 - `vY_Z_W` matches the newly generated `GenCrdV*` class from step 2.
 
-**For adding new tables** (no data transformation needed):
+**For adding new tables** (no data transformation needed) see `Migration_33_v1_33_1_AddAuthTokensTable.java` as a complete example.
 
-```java
-@K8sCrdMigration(
-    description = "Add schedule table",
-    version = 6
-)
-public class Migration_06_v1_18_2_AddScheduleTable extends BaseK8sCrdMigration
-{
-    public Migration_06_v1_18_2_AddScheduleTable()
-    {
-        super(
-            GenCrdV1_17_0.createMigrationContext(),  // previous version
-            GenCrdV1_18_2.createMigrationContext()   // new version from step 2
-        );
-    }
-
-    @Override
-    public MigrationResult migrateImpl(MigrationContext ctx) throws Exception
-    {
-        updateCrdSchemaForAllTables();
-        return null;
-    }
-}
-```
-
-**For data transformation** (populating new columns or modifying existing data), see `Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256.java` for a complete example, or refer to the template in `Migration_Template.java`.
+**For data transformation** (populating new columns or modifying existing data), see `Migration_32_v1_33_1_ChangeSpaceTrackingFromDateToTimestamp.java` for a complete example, or refer to the template in `Migration_Template.java`.
 
 > 📝 **NOTE:** Migration classes (both SQL and K8s CRD) are automatically discovered and applied by LINSTOR at startup. No manual registration is required.
 

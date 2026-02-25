@@ -19,11 +19,11 @@
 //  * This template shows two common migration patterns:
 //  *
 //  * 1. SIMPLE MIGRATION (new table, no data transformation):
-//  *    Just call updateCrdSchemaForAllTables() - see Migration_06_v1_18_2_AddScheduleTable.java
+//  *    Just call updateCrdSchemaForAllTables() - see Migration_33_v1_33_1_AddAuthTokensTable.java
 //  *
 //  * 2. DATA TRANSFORMATION (modify existing data):
 //  *    Load from old version, transform, write to new version - see example below
-//  *    and Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256.java for a complete implementation
+//  *    and Migration_28_v1_31_1_MoveTcpPortsToNodes.java for a complete implementation
 //  */
 // @K8sCrdMigration(
 //     description = "Description of the migration",
