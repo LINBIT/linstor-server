@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DRBD: create-md now only times out if there was no IO for 45s
 - mkfs: mkfs.ext4 and mkfs.xfs now only time out if there was no IO for 45s
 - Moved old property "ExtCmdWaitTimeout" -> "ExtCmd/WaitTimeout"
+- SOS report: 'tar' command now only times out if there was no IO for 45s
 
 ### Removed
 

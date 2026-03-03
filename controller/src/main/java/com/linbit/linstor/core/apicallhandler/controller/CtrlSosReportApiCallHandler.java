@@ -3,7 +3,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.DaemonHandler;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
@@ -1153,13 +1152,14 @@ public class CtrlSosReportApiCallHandler
      *
      * @throws IOException Any IO error from the tar command (i.e. no space left).
      * @throws ExtCmdFailedException If the tar command returns a non-zero exit code.
-     * @throws ChildProcessTimeoutException If the tar command does not return after 4 minutes.
+     * @throws ChildProcessTimeoutException If the tar command has not IO progress for 45s (or whatever the currently
+     *   configured timeout is).
      */
     private void createTar(Path source, String fileName, List<String> directories)
         throws IOException, ExtCmdFailedException, ChildProcessTimeoutException
     {
         ExtCmd extCommand = extCmdFactory.create();
-        extCommand.setTimeout(ChildProcessHandler.TimeoutType.WAIT, 60 * 60 * 1000/* 60 min */);
+        extCommand.setIoProgressMode(true);
         List<String> cmd = new ArrayList<>();
         cmd.add("tar");
         cmd.add("-C");
