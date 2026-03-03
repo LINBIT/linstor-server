@@ -50,8 +50,13 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
     {
         // we don't care if we override an existing value, we just have to make sure that
         // cachedUpdates.controllerUpdate is NOT null (this will trigger the devMgr to re-generate .res files, etc)
-        cachedUpdates.controllerUpdate = Optional.of(new UpdateNotification(null));
-        return update(cachedUpdates.controllerUpdate.get());
+        UpdateNotification updateNotification;
+        synchronized (sched)
+        {
+            cachedUpdates.controllerUpdate = Optional.of(new UpdateNotification(null));
+            updateNotification = cachedUpdates.controllerUpdate.get();
+        }
+        return update(updateNotification);
     }
 
     @Override

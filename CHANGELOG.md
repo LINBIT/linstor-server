@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed retry deletion of already deleting resource (no longer fails if it is the second to last diskful resource)
 - Satellite now properly merges remote nodes + their data (props, netIfs)
 - Fixed potential ConcurrentModificationException when serializing properties
+- Fixed race condition in updateController() that leads to uncompleted ChangedController answers (client timeout)
 
 ## [1.33.1] - 2025-12-22
 
