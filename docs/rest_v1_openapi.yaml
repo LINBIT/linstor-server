@@ -7909,6 +7909,11 @@ components:
           type: object
           additionalProperties:
             type: string
+        rebalance:
+          type: boolean
+          description: >
+            If true, after restore completes, replicas will be migrated
+            to the autoplacer-optimal nodes via migrate-disk.
     SnapshotRollback:
       type: object
       properties:
@@ -8656,6 +8661,11 @@ components:
           type: array
           items:
             type: string
+        rebalance:
+          type: boolean
+          description: >
+            If true, after cloning completes, replicas will be migrated
+            to the autoplacer-optimal nodes via migrate-disk.
     ResourceDefinitionCloneStarted:
       type: object
       description: Clone request started object
