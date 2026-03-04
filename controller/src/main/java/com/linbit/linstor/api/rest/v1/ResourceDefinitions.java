@@ -389,7 +389,8 @@ public class ResourceDefinitions
                     requestData.resource_group,
                     requestData.override_props,
                     new HashSet<>(requestData.delete_props),
-                    new HashSet<>(requestData.delete_namespaces)
+                    new HashSet<>(requestData.delete_namespaces),
+                    requestData.rebalance
                 );
             requestHelper.doFlux(
                 ApiConsts.API_CLONE_RSCDFN,
