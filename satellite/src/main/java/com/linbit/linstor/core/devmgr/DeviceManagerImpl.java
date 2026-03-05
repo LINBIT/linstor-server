@@ -823,7 +823,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     )
                 );
             }
-            catch (ImplementationError implErr)
+            catch (ImplementationError | AssertionError implErr)
             {
                 errLog.reportError(
                     Level.ERROR,
