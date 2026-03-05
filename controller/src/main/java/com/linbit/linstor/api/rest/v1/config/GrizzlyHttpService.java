@@ -11,7 +11,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig.RestAccessLogMode;
 import com.linbit.linstor.core.repository.AuthTokenRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
@@ -81,8 +80,19 @@ public class GrizzlyHttpService implements SystemService
 
     private @Nullable HttpServer httpServer;
     private @Nullable HttpServer httpSslServer;
-    private ServiceName instanceName;
-    private RestAccessLogMode restAccessLogMode;
+    public static final ServiceName INSTANCE_NAME;
+    static
+    {
+        try
+        {
+            INSTANCE_NAME = new ServiceName("GrizzlyHttpServer");
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError("Invalid service name", exc);
+        }
+    }
+    private final RestAccessLogMode restAccessLogMode;
 
     public GrizzlyHttpService(
         Injector injector,
@@ -117,14 +127,6 @@ public class GrizzlyHttpService implements SystemService
         registerExceptionMappers(restResourceConfig);
         lockGuardFactory = injector.getInstance(LockGuardFactory.class);
         systemConfRepository = injector.getInstance(SystemConfRepository.class);
-
-        try
-        {
-            instanceName = new ServiceName("GrizzlyHttpServer");
-        }
-        catch (InvalidNameException ignored)
-        {
-        }
     }
 
     private static class HTTPSForwarder extends HttpHandler
@@ -382,7 +384,7 @@ public class GrizzlyHttpService implements SystemService
             }
         }
 
-        if (restAccessLogMode != LinstorConfig.RestAccessLogMode.NO_LOG)
+        if (restAccessLogMode != RestAccessLogMode.NO_LOG)
         {
             final Path accessLogPath = restAccessLogPath.isAbsolute() ?
                 restAccessLogPath :
@@ -449,7 +451,7 @@ public class GrizzlyHttpService implements SystemService
     @Override
     public void setServiceInstanceName(ServiceName instanceNameRef)
     {
-        instanceName = instanceNameRef;
+        // instance name is static final, ignore
     }
 
     @Override
@@ -508,6 +510,20 @@ public class GrizzlyHttpService implements SystemService
         }
     }
 
+    public void restart()
+    {
+        errorReporter.logInfo("Restarting Grizzly HTTP service to apply new configuration");
+        shutdown(false);
+        try
+        {
+            start();
+        }
+        catch (SystemServiceStartException exc)
+        {
+            errorReporter.reportError(exc);
+        }
+    }
+
     @Override
     public void shutdown(boolean ignoredJvmShutdownRef)
     {
@@ -562,7 +578,7 @@ public class GrizzlyHttpService implements SystemService
     @Override
     public ServiceName getInstanceName()
     {
-        return instanceName;
+        return INSTANCE_NAME;
     }
 
     @Override

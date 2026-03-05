@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.ServiceName;
+import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.InternalApiConsts;
@@ -15,6 +17,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.api.rest.v1.config.GrizzlyHttpService;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.SatelliteConfig;
 import com.linbit.linstor.backupshipping.BackupConsts;
@@ -139,6 +142,7 @@ public class CtrlConfApiCallHandler
     private final BalanceResourcesTask balanceResourcesTask;
 
     private final CtrlRscAutoHelper ctrlRscAutoHelper;
+    private final Map<ServiceName, SystemService> systemServicesMap;
 
     public enum LinstorEncryptionStatus
     {
@@ -195,7 +199,8 @@ public class CtrlConfApiCallHandler
         CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef,
         TaskScheduleService taskScheduleServiceRef,
         BalanceResourcesTask balanceResourcesTaskRef,
-        CtrlRscAutoHelper ctrlRscAutoHelperRef
+        CtrlRscAutoHelper ctrlRscAutoHelperRef,
+        Map<ServiceName, SystemService> systemServicesMapRef
     )
     {
         errorReporter = errorReporterRef;
@@ -228,6 +233,7 @@ public class CtrlConfApiCallHandler
         taskScheduleService = taskScheduleServiceRef;
         balanceResourcesTask = balanceResourcesTaskRef;
         ctrlRscAutoHelper = ctrlRscAutoHelperRef;
+        systemServicesMap = systemServicesMapRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -257,7 +263,13 @@ public class CtrlConfApiCallHandler
             ApiOperation.makeModifyOperation()
         );
 
-        return scopeRunner
+        String autoHttpsKey = ApiConsts.NAMESPC_REST + "/" + ApiConsts.KEY_AUTO_HTTPS;
+        boolean autoHttpsTouched = overridePropsRef.containsKey(autoHttpsKey) ||
+            deletePropKeysRef.contains(autoHttpsKey) ||
+            deletePropNamespacesRef.contains(ApiConsts.NAMESPC_REST);
+        boolean autoHttpsBefore = autoHttpsTouched && isAutoHttpsEnabled();
+
+        Flux<ApiCallRc> flux = scopeRunner
             .fluxInTransactionalScope(
                 "modifyCtrl",
                 lockGuardFactory.buildDeferred(WRITE, LockObj.CTRL_CONFIG),
@@ -269,6 +281,20 @@ public class CtrlConfApiCallHandler
                 MDC.getCopyOfContextMap()
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
+
+        if (autoHttpsTouched)
+        {
+            flux = flux.doFinally(ignored ->
+            {
+                boolean autoHttpsAfter = isAutoHttpsEnabled();
+                if (autoHttpsBefore != autoHttpsAfter)
+                {
+                    restartGrizzlyHttpService();
+                }
+            });
+        }
+
+        return flux;
     }
 
     private Flux<ApiCallRc> handleAutoQuorum(
@@ -2134,5 +2160,29 @@ public class CtrlConfApiCallHandler
             );
         }
         return isValid;
+    }
+
+    private boolean isAutoHttpsEnabled()
+    {
+        try
+        {
+            @Nullable String autoHttps = systemConfRepository
+                .getCtrlConfForView(peerAccCtx.get())
+                .getProp(ApiConsts.KEY_AUTO_HTTPS, ApiConsts.NAMESPC_REST);
+            return Boolean.parseBoolean(autoHttps);
+        }
+        catch (AccessDeniedException ignored)
+        {
+            return false;
+        }
+    }
+
+    private void restartGrizzlyHttpService()
+    {
+        SystemService svc = systemServicesMap.get(GrizzlyHttpService.INSTANCE_NAME);
+        if (svc instanceof GrizzlyHttpService grizzlyHttpService)
+        {
+            grizzlyHttpService.restart();
+        }
     }
 }
