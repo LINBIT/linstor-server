@@ -259,6 +259,11 @@ public interface DeviceLayer extends Comparable<DeviceLayer>
     @Override
     default int compareTo(DeviceLayer other)
     {
-        return Integer.compare(this.getKind().getOrder(), other.getKind().getOrder());
+        int cmp = Integer.compare(this.getKind().getOrder(), other.getKind().getOrder());
+        if (cmp == 0)
+        {
+            cmp = this.getKind().name().compareTo(other.getKind().name());
+        }
+        return cmp;
     }
 }
