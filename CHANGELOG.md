@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Systemd-notify: Use SDNotify library instead of calling "systemd-notify"
 - Fixed bug that could lead to NPE when multiple cache layers are processed in one DevMgr cycle
 - Fixed some issues with ReconnectorTask when multiple peers representing the same nodes try to reconnect
+- Fixed PREPARE_SHIPPING backups didn't count as active shippings
 
 ## [1.33.1] - 2025-12-22
 

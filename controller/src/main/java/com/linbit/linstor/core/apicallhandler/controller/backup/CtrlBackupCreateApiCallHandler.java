@@ -936,10 +936,12 @@ public class CtrlBackupCreateApiCallHandler
             while (remoteIter.hasNext())
             {
                 String remoteName = remoteIter.next();
+                @Nullable String shippingStatus = sourceProps.getProp(
+                    InternalApiConsts.KEY_SHIPPING_STATUS, remoteName
+                );
                 if (
-                    InternalApiConsts.VALUE_SHIPPING.equals(
-                        sourceProps.getProp(InternalApiConsts.KEY_SHIPPING_STATUS, remoteName)
-                    )
+                    InternalApiConsts.VALUE_SHIPPING.equals(shippingStatus) ||
+                        InternalApiConsts.VALUE_PREPARE_SHIPPING.equals(shippingStatus)
                 )
                 {
                     activeShippings++;
