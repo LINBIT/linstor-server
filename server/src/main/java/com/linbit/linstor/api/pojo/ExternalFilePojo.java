@@ -2,6 +2,8 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.annotation.Nullable;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class ExternalFilePojo implements Comparable<ExternalFilePojo>
@@ -11,6 +13,7 @@ public class ExternalFilePojo implements Comparable<ExternalFilePojo>
     private final long flags;
     private final @Nullable byte[] content;
     private final @Nullable byte[] contentChecksum;
+    private final List<String> altSuffixes;
     private final @Nullable Long fullSyncId;
     private final @Nullable Long updateId;
 
@@ -20,6 +23,7 @@ public class ExternalFilePojo implements Comparable<ExternalFilePojo>
         long flagsRef,
         @Nullable byte[] contentRef,
         @Nullable byte[] contentChecksumRef,
+        List<String> altSuffixesRef,
         @Nullable Long fullsyncidRef,
         @Nullable Long updateIdRef
     )
@@ -29,6 +33,7 @@ public class ExternalFilePojo implements Comparable<ExternalFilePojo>
         flags = flagsRef;
         content = contentRef;
         contentChecksum = contentChecksumRef;
+        altSuffixes = altSuffixesRef == null ? Collections.emptyList() : altSuffixesRef;
         fullSyncId = fullsyncidRef;
         updateId = updateIdRef;
     }
@@ -56,6 +61,11 @@ public class ExternalFilePojo implements Comparable<ExternalFilePojo>
     public byte[] getContentChecksum()
     {
         return contentChecksum;
+    }
+
+    public List<String> getAltSuffixes()
+    {
+        return altSuffixes;
     }
 
     public @Nullable Long getFullSyncId()

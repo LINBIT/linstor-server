@@ -577,7 +577,8 @@ public class GenCrdV1_33_1
                     (String) setters.get(GeneratedDatabaseTables.Files.PATH).accept(data),
                     (long) setters.get(GeneratedDatabaseTables.Files.FLAGS).accept(data),
                     (byte[]) setters.get(GeneratedDatabaseTables.Files.CONTENT).accept(data),
-                    (String) setters.get(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM).accept(data)
+                    (String) setters.get(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.Files.ALT_SUFFIXES).accept(data)
                 ).getCrd();
             }
             case "KEY_VALUE_STORE":
@@ -1443,7 +1444,8 @@ public class GenCrdV1_33_1
         String path,
         long flags,
         byte[] content,
-        String contentChecksum
+        String contentChecksum,
+        byte[] altSuffixes
     )
     {
         return new Files(
@@ -1452,7 +1454,8 @@ public class GenCrdV1_33_1
                 path,
                 flags,
                 content,
-                contentChecksum
+                contentChecksum,
+                altSuffixes
             )
         );
     }
@@ -1474,6 +1477,7 @@ public class GenCrdV1_33_1
         @JsonProperty("flags") public final long flags;
         @JsonProperty("content") public final byte[] content;
         @JsonProperty("content_checksum") public final String contentChecksum;
+        @JsonProperty("alt_suffixes") public final byte[] altSuffixes;
 
         @JsonIgnore
         public static FilesSpec fromRawParameters(RawParameters rawParamsRef)
@@ -1483,7 +1487,8 @@ public class GenCrdV1_33_1
                 rawParamsRef.get(GeneratedDatabaseTables.Files.PATH),
                 rawParamsRef.get(GeneratedDatabaseTables.Files.FLAGS),
                 rawParamsRef.get(GeneratedDatabaseTables.Files.CONTENT),
-                rawParamsRef.get(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM)
+                rawParamsRef.get(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM),
+                rawParamsRef.get(GeneratedDatabaseTables.Files.ALT_SUFFIXES)
             );
         }
 
@@ -1493,7 +1498,8 @@ public class GenCrdV1_33_1
             @JsonProperty("path") String pathRef,
             @JsonProperty("flags") long flagsRef,
             @JsonProperty("content") byte[] contentRef,
-            @JsonProperty("content_checksum") String contentChecksumRef
+            @JsonProperty("content_checksum") String contentChecksumRef,
+            @JsonProperty("alt_suffixes") byte[] altSuffixesRef
         )
         {
             uuid = uuidRef;
@@ -1501,6 +1507,7 @@ public class GenCrdV1_33_1
             flags = flagsRef;
             content = contentRef;
             contentChecksum = contentChecksumRef;
+            altSuffixes = altSuffixesRef;
 
             formattedPrimaryKey = String.format(
                 FilesSpec.PK_FORMAT,
@@ -1529,6 +1536,7 @@ public class GenCrdV1_33_1
             ret.put("FLAGS", flags);
             ret.put("CONTENT", content);
             ret.put("CONTENT_CHECKSUM", contentChecksum);
+            ret.put("ALT_SUFFIXES", altSuffixes);
             return ret;
         }
 
@@ -1549,6 +1557,8 @@ public class GenCrdV1_33_1
                     return content;
                 case "CONTENT_CHECKSUM":
                     return contentChecksum;
+                case "ALT_SUFFIXES":
+                    return altSuffixes;
                 default:
                     throw new ImplementationError("Unknown database column. Table: FILES, Column: " + clmNameStr);
             }
@@ -9265,6 +9275,7 @@ public class GenCrdV1_33_1
             public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
             public static final ColumnImpl CONTENT = new ColumnImpl("CONTENT", Types.BLOB, false, false);
             public static final ColumnImpl CONTENT_CHECKSUM = new ColumnImpl("CONTENT_CHECKSUM", Types.VARCHAR, false, false);
+            public static final ColumnImpl ALT_SUFFIXES = new ColumnImpl("ALT_SUFFIXES", Types.BLOB, false, false);
 
             public static final Column[] ALL = new Column[]
             {
@@ -9272,7 +9283,8 @@ public class GenCrdV1_33_1
                 PATH,
                 FLAGS,
                 CONTENT,
-                CONTENT_CHECKSUM
+                CONTENT_CHECKSUM,
+                ALT_SUFFIXES
             };
 
             @Override
@@ -11144,6 +11156,7 @@ public class GenCrdV1_33_1
             Files.FLAGS.table = FILES;
             Files.CONTENT.table = FILES;
             Files.CONTENT_CHECKSUM.table = FILES;
+            Files.ALT_SUFFIXES.table = FILES;
             KeyValueStore.UUID.table = KEY_VALUE_STORE;
             KeyValueStore.KVS_NAME.table = KEY_VALUE_STORE;
             KeyValueStore.KVS_DSP_NAME.table = KEY_VALUE_STORE;

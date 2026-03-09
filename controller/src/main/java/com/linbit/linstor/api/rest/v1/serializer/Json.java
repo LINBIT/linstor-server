@@ -1221,6 +1221,7 @@ public class Json
         {
             json.content = Base64.encode(pojo.getContent());
         }
+        json.alt_suffixes = pojo.getAltSuffixes();
         return json;
     }
 

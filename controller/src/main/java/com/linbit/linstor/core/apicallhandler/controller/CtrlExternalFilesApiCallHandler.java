@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -147,7 +148,7 @@ public class CtrlExternalFilesApiCallHandler
         return allowed;
     }
 
-    public Flux<ApiCallRc> set(String extFileNameStr, byte[] content)
+    public Flux<ApiCallRc> set(String extFileNameStr, @Nullable byte[] content, @Nullable List<String> altSuffixesRef)
     {
         ResponseContext context = makeExtFilesContext(
             ApiOperation.makeModifyOperation(),
@@ -157,18 +158,18 @@ public class CtrlExternalFilesApiCallHandler
         return scopeRunner.fluxInTransactionalScope(
             "Set external file",
             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.EXT_FILE_MAP),
-            () -> setInTransaction(extFileNameStr, content)
+            () -> setInTransaction(extFileNameStr, content, altSuffixesRef)
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
     private Flux<ApiCallRc> setInTransaction(
         String extFileNameStr,
-        byte[] contentRef
+        @Nullable byte[] contentRef,
+        @Nullable List<String> altSuffixesRef
     )
     {
         ExternalFileName extFileName = LinstorParsingUtils.asExtFileName(extFileNameStr);
-        ExternalFile extFile = ctrlApiDataLoader.loadExtFile(extFileName, false);
-
+        @Nullable ExternalFile extFile = ctrlApiDataLoader.loadExtFile(extFileName, false);
         try
         {
             if (extFile == null)
@@ -177,8 +178,14 @@ public class CtrlExternalFilesApiCallHandler
                 {
                     checkValidContent(contentRef);
                     checkValidPath(extFileNameStr);
+                    checkValidAltSuffixes(altSuffixesRef);
 
-                    extFile = extFileFactory.create(peerAccCtx.get(), extFileName, contentRef);
+                    extFile = extFileFactory.create(
+                        peerAccCtx.get(),
+                        extFileName,
+                        contentRef,
+                        altSuffixesRef
+                    );
                     extFileRepository.put(apiCtx, extFile);
                 }
                 catch (AccessDeniedException exc)
@@ -196,21 +203,26 @@ public class CtrlExternalFilesApiCallHandler
             }
             else
             {
-                if (contentRef != null && contentRef.length > 0)
+                try
                 {
-                    checkValidContent(contentRef);
-                    try
+                    if (contentRef != null && contentRef.length > 0)
                     {
+                        checkValidContent(contentRef);
                         extFile.setContent(peerAccCtx.get(), contentRef);
                     }
-                    catch (AccessDeniedException exc)
+                    if (altSuffixesRef != null)
                     {
-                        throw new ApiAccessDeniedException(
-                            exc,
-                            "modify " + getExtFileDescription(extFileNameStr),
-                            ApiConsts.FAIL_ACC_DENIED_EXT_FILE
-                        );
+                        checkValidAltSuffixes(altSuffixesRef);
+                        extFile.setAltSuffixes(peerAccCtx.get(), altSuffixesRef);
                     }
+                }
+                catch (AccessDeniedException exc)
+                {
+                    throw new ApiAccessDeniedException(
+                        exc,
+                        "modify " + getExtFileDescription(extFileNameStr),
+                        ApiConsts.FAIL_ACC_DENIED_EXT_FILE
+                    );
                 }
             }
         }
@@ -224,7 +236,7 @@ public class CtrlExternalFilesApiCallHandler
     }
 
 
-    private void checkValidContent(byte[] contentRef)
+    private void checkValidContent(@Nullable byte[] contentRef)
     {
         if (contentRef == null || contentRef.length == 0)
         {
@@ -237,9 +249,29 @@ public class CtrlExternalFilesApiCallHandler
         }
     }
 
-    private void checkValidPath(String extFileNameStr)
+    private void checkValidAltSuffixes(@Nullable List<String> altSuffixesRef)
     {
-        if (extFileNameStr == null || extFileNameStr.length() == 0)
+        if (altSuffixesRef != null)
+        {
+            for (String suffix : altSuffixesRef)
+            {
+                if (suffix.contains("/") || suffix.contains(".."))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_EXT_FILE,
+                            "Alternative suffixes must not contain path separators or '..': " + suffix,
+                            true
+                        )
+                    );
+                }
+            }
+        }
+    }
+
+    private void checkValidPath(@Nullable String extFileNameStr)
+    {
+        if (extFileNameStr == null || extFileNameStr.isEmpty())
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(

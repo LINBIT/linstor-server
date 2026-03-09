@@ -1566,7 +1566,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setUuid(ProtoUuidUtils.serialize(extFile.getUuid()))
                 .setName(extFile.getName().extFileName)
                 .setFlags(extFile.getFlags().getFlagsBits(serializerCtx))
-                .setContentChecksum(ByteString.copyFrom(extFile.getContentCheckSum(serializerCtx)));
+                .setContentChecksum(ByteString.copyFrom(extFile.getContentCheckSum(serializerCtx)))
+                .addAllAltSuffixes(extFile.getAltSuffixes(serializerCtx));
             if (includeContentRef)
             {
                 builder = builder.setContent(ByteString.copyFrom(extFile.getContent(serializerCtx)));

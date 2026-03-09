@@ -8613,6 +8613,16 @@ components:
           description: The contents of the file, in base64 encoding
           type: string
           example: 'SGVsbG8sIFdvcmxkIQo='
+        alt_suffixes:
+          description: |
+            List of alternative file suffixes. If the file exists with any of these
+            suffixes appended to the path, LINSTOR will not recreate the original file
+            but instead update the existing alternative.
+          type: array
+          default: null
+          items:
+            type: string
+          example: ['.disabled']
     ExtFileCheckResult:
       type: object
       properties:

@@ -7,6 +7,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 ### Added
   - Added /v1/controller/database/export
   - Added satellite's platform and OS variant to v1/nodes
+  - Added ExternalFile.alt_suffixes
 
 ### Deprecated
   - Deprecated /v1/controller/backup/db in favor of /v1/controller/database/export.

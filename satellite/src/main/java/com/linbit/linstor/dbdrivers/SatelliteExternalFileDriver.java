@@ -2,6 +2,7 @@ package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
@@ -13,6 +14,7 @@ public class SatelliteExternalFileDriver
 {
     private final SingleColumnDatabaseDriver<ExternalFile, byte[]> contentDriver;
     private final SingleColumnDatabaseDriver<ExternalFile, byte[]> contentCheckSumDriver;
+    private final CollectionDatabaseDriver<ExternalFile, String> altSuffixesDriver;
     private final StateFlagsPersistence<ExternalFile> stateFlagsDriver;
 
     @Inject
@@ -20,6 +22,7 @@ public class SatelliteExternalFileDriver
     {
         contentDriver = getNoopColumnDriver();
         contentCheckSumDriver = getNoopColumnDriver();
+        altSuffixesDriver = getNoopCollectionDriver();
         stateFlagsDriver = getNoopFlagDriver();
     }
 
@@ -33,6 +36,12 @@ public class SatelliteExternalFileDriver
     public SingleColumnDatabaseDriver<ExternalFile, byte[]> getContentCheckSumDriver()
     {
         return contentCheckSumDriver;
+    }
+
+    @Override
+    public CollectionDatabaseDriver<ExternalFile, String> getAltSuffixesDriver()
+    {
+        return altSuffixesDriver;
     }
 
     @Override

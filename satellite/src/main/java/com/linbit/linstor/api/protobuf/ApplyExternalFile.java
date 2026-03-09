@@ -52,6 +52,7 @@ public class ApplyExternalFile implements ApiCall
             proto.getFlags(),
             proto.getContent().toByteArray(),
             proto.getContentChecksum().toByteArray(),
+            proto.getAltSuffixesList(),
             fullSyncId,
             updateId
         );

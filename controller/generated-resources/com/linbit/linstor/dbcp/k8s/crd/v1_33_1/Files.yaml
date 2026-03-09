@@ -28,6 +28,9 @@ spec:
                 format: "byte"
               content_checksum:
                 type: "string"
+              alt_suffixes:
+                type: "string"
+                format: "byte"
   - name: "v1-31-1"
     served: true
     storage: false

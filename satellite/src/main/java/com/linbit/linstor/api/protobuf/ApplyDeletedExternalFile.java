@@ -11,6 +11,7 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_APPLY_DELETED_EXTERNAL_FILE,
@@ -52,6 +53,7 @@ public class ApplyDeletedExternalFile implements ApiCall
             0,
             null,
             null,
+            Collections.emptyList(),
             fullSyncId,
             updateId
         );

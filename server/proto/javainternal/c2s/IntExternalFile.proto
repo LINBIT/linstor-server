@@ -12,4 +12,5 @@ message IntExternalFile
     sint64          flags = 3;
     bytes           content_checksum = 4;
     bytes           content = 5;            // optional, only included if requested by satellite
+    repeated string alt_suffixes = 6;
 }

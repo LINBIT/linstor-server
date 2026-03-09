@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -17,6 +18,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Singleton
@@ -47,7 +50,8 @@ public class ExternalFileControllerFactory
     public ExternalFile create(
         AccessContext accCtxRef,
         ExternalFileName nameRef,
-        byte[] contentRef
+        byte[] contentRef,
+        @Nullable List<String> altSuffixesRef
     )
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
@@ -68,6 +72,7 @@ public class ExternalFileControllerFactory
             0,
             contentRef,
             ByteUtils.checksumSha256(contentRef),
+            altSuffixesRef != null ? altSuffixesRef : Collections.emptyList(),
             dbDriver,
             transObjFactory,
             transMgrProvider

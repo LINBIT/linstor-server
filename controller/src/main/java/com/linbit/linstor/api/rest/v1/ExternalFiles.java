@@ -149,7 +149,8 @@ public class ExternalFiles
             JsonGenTypes.ExternalFile extFileJson = objectMapper.readValue(jsonData, JsonGenTypes.ExternalFile.class);
             Flux<ApiCallRc> flux = extFilesHandler.set(
                 URLDecoder.decode(extFileName, StandardCharsets.UTF_8),
-                Base64.decode(extFileJson.content)
+                extFileJson.content == null ? null : Base64.decode(extFileJson.content),
+                extFileJson.alt_suffixes
             );
 
             requestHelper.doFlux(

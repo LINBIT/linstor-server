@@ -1855,6 +1855,12 @@ public class JsonGenTypes
          * The contents of the file, in base64 encoding
          */
         public @Nullable String content;
+        /**
+         * List of alternative file suffixes. If the file exists with any of these
+         * suffixes appended to the path, LINSTOR will not recreate the original file
+         * but instead update the existing alternative.
+         */
+        public @Nullable List<String> alt_suffixes = null;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

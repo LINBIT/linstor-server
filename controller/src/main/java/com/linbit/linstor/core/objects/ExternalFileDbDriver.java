@@ -13,6 +13,7 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -26,6 +27,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.ByteUtils;
 import com.linbit.utils.Pair;
 
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Files.ALT_SUFFIXES;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Files.CONTENT;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Files.CONTENT_CHECKSUM;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Files.FLAGS;
@@ -37,6 +39,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.function.Function;
 
 @Singleton
@@ -49,6 +52,7 @@ public final class ExternalFileDbDriver extends AbsProtectedDatabaseDriver<Exter
 
     final SingleColumnDatabaseDriver<ExternalFile, byte[]> contentDriver;
     final SingleColumnDatabaseDriver<ExternalFile, byte[]> contentChecksumDriver;
+    final CollectionDatabaseDriver<ExternalFile, String> altSuffixesDriver;
     final StateFlagsPersistence<ExternalFile> flagsDriver;
 
     @Inject
@@ -79,6 +83,9 @@ public final class ExternalFileDbDriver extends AbsProtectedDatabaseDriver<Exter
             Function.identity()
         );
 
+        setColumnSetter(ALT_SUFFIXES, extFile -> toBlob(extFile.getAltSuffixes(dbCtxRef)));
+        altSuffixesDriver = generateCollectionToJsonStringArrayDriver(ALT_SUFFIXES);
+
         flagsDriver = generateFlagDriver(FLAGS, ExternalFile.Flags.class);
         contentChecksumDriver = generateSingleColumnDriver(
             CONTENT_CHECKSUM,
@@ -103,6 +110,12 @@ public final class ExternalFileDbDriver extends AbsProtectedDatabaseDriver<Exter
     public SingleColumnDatabaseDriver<ExternalFile, byte[]> getContentCheckSumDriver()
     {
         return contentChecksumDriver;
+    }
+
+    @Override
+    public CollectionDatabaseDriver<ExternalFile, String> getAltSuffixesDriver()
+    {
+        return altSuffixesDriver;
     }
 
     @Override
@@ -142,6 +155,7 @@ public final class ExternalFileDbDriver extends AbsProtectedDatabaseDriver<Exter
                 initFlags,
                 content,
                 contentCheckSum,
+                new ArrayList<>(raw.getAsStringListNonNull(ALT_SUFFIXES)),
                 this,
                 transObjFactory,
                 transMgrProvider

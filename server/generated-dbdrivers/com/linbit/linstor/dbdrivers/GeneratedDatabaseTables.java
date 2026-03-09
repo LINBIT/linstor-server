@@ -79,6 +79,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
         public static final ColumnImpl CONTENT = new ColumnImpl("CONTENT", Types.BLOB, false, false);
         public static final ColumnImpl CONTENT_CHECKSUM = new ColumnImpl("CONTENT_CHECKSUM", Types.VARCHAR, false, false);
+        public static final ColumnImpl ALT_SUFFIXES = new ColumnImpl("ALT_SUFFIXES", Types.BLOB, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -86,7 +87,8 @@ public class GeneratedDatabaseTables
             PATH,
             FLAGS,
             CONTENT,
-            CONTENT_CHECKSUM
+            CONTENT_CHECKSUM,
+            ALT_SUFFIXES
         };
 
         @Override
@@ -1958,6 +1960,7 @@ public class GeneratedDatabaseTables
         Files.FLAGS.table = FILES;
         Files.CONTENT.table = FILES;
         Files.CONTENT_CHECKSUM.table = FILES;
+        Files.ALT_SUFFIXES.table = FILES;
         KeyValueStore.UUID.table = KEY_VALUE_STORE;
         KeyValueStore.KVS_NAME.table = KEY_VALUE_STORE;
         KeyValueStore.KVS_DSP_NAME.table = KEY_VALUE_STORE;

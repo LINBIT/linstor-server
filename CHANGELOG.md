@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added property "ExtCmd/IoStallTimeout"
 - Added property "ExtCmd/IoPollInterval"
 - Added Linstor/Drbd/OutsideAddress property for DRBD's outside-address for setups using a NAT
+- Added optional alternative suffixes for external files
 
 ### Changed
 

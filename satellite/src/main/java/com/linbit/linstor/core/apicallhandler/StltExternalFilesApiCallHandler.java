@@ -72,7 +72,8 @@ class StltExternalFilesApiCallHandler
                 extFilePojo.getUuid(),
                 LinstorParsingUtils.asExtFileName(extFilePojo.getFileName()),
                 extFilePojo.getFlags(),
-                newContent
+                newContent,
+                extFilePojo.getAltSuffixes()
             );
 
             localExtFile.getFlags().resetFlagsTo(apiCtx, ExternalFile.Flags.restoreFlags(extFilePojo.getFlags()));
@@ -81,6 +82,7 @@ class StltExternalFilesApiCallHandler
                 localExtFile.setContent(apiCtx, newContent);
                 localExtFile.setAlreadyWritten(false);
             }
+            localExtFile.setAltSuffixes(apiCtx, extFilePojo.getAltSuffixes());
 
             if (!Arrays.equals(localExtFile.getContentCheckSum(apiCtx), extFilePojo.getContentChecksum()))
             {

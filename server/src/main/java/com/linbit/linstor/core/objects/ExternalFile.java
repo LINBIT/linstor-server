@@ -13,6 +13,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -37,6 +38,7 @@ public class ExternalFile extends AbsCoreObj<ExternalFile> implements ProtectedO
 
     private final TransactionSimpleObject<ExternalFile, byte[]> content;
     private final TransactionSimpleObject<ExternalFile, byte[]> contentCheckSum;
+    private final TransactionList<ExternalFile, String> altSuffixes;
     private final TransactionSimpleObject<ExternalFile, Boolean> alreadyWritten; // stlt only
 
     private final ObjectProtection objProt;
@@ -50,6 +52,7 @@ public class ExternalFile extends AbsCoreObj<ExternalFile> implements ProtectedO
         long initFlagsRef,
         byte[] contentRef,
         byte[] contentCheckSumRef,
+        List<String> altSuffixesRef,
         ExternalFileDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef
@@ -69,6 +72,11 @@ public class ExternalFile extends AbsCoreObj<ExternalFile> implements ProtectedO
             contentCheckSumRef,
             dbDriver.getContentCheckSumDriver()
         );
+        altSuffixes = transObjFactory.createTransactionPrimitiveList(
+            this,
+            altSuffixesRef,
+            dbDriver.getAltSuffixesDriver()
+        );
         alreadyWritten = transObjFactory.createTransactionSimpleObject(
             this,
             false,
@@ -83,7 +91,7 @@ public class ExternalFile extends AbsCoreObj<ExternalFile> implements ProtectedO
             initFlagsRef
         );
 
-        transObjs = Arrays.asList(content, flags);
+        transObjs = Arrays.asList(content, altSuffixes, flags);
     }
 
     @Override
@@ -138,6 +146,22 @@ public class ExternalFile extends AbsCoreObj<ExternalFile> implements ProtectedO
     public String getContentCheckSumHex(AccessContext accCtx) throws AccessDeniedException
     {
         return ByteUtils.bytesToHex(getContentCheckSum(accCtx));
+    }
+
+    public List<String> getAltSuffixes(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return altSuffixes;
+    }
+
+    public void setAltSuffixes(AccessContext accCtx, List<String> altSuffixesRef)
+        throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        altSuffixes.clear();
+        altSuffixes.addAll(altSuffixesRef);
     }
 
     /*
@@ -196,6 +220,7 @@ public class ExternalFile extends AbsCoreObj<ExternalFile> implements ProtectedO
             flags.getFlagsBits(accCtx),
             content.get(),
             contentCheckSum.get(),
+            new ArrayList<>(altSuffixes),
             fullSyncId,
             updateId
         );

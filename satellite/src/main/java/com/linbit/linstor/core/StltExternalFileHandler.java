@@ -31,8 +31,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -248,9 +250,50 @@ public class StltExternalFileHandler
         return true;
     }
 
+    /**
+     * Resolves the actual file path to use for an external file. Checks whether an alternative
+     * suffixed path already exists on disk (e.g. foo.toml.disabled) and returns that path instead
+     * of the canonical path.
+     *
+     * @return the path where the file actually exists, or the canonical path if no alternative exists
+     */
+    private Path resolveActualPath(ExternalFile externalFile) throws StorageException
+    {
+        String canonical = externalFile.getName().extFileName;
+
+        List<Path> existingPaths = new ArrayList<>();
+        Path canonicalPath = Paths.get(canonical);
+        if (Files.exists(canonicalPath))
+        {
+            existingPaths.add(canonicalPath);
+        }
+        try
+        {
+            List<String> suffixes = externalFile.getAltSuffixes(wrkCtx);
+            for (String suffix : suffixes)
+            {
+                Path altPath = Paths.get(canonical + suffix);
+                if (Files.exists(altPath))
+                {
+                    existingPaths.add(altPath);
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return switch (existingPaths.size())
+        {
+            case 0 -> canonicalPath;
+            case 1 -> existingPaths.get(0);
+            default -> throw new StorageException("Multiple alternatives of the file exist: " + existingPaths);
+        };
+    }
+
     private void rewrite(ExternalFile externalFile) throws StorageException, DatabaseException
     {
-        Path path = Paths.get(externalFile.getName().extFileName);
+        Path path = resolveActualPath(externalFile);
         Path tmpFile;
         try
         {
@@ -301,10 +344,29 @@ public class StltExternalFileHandler
     {
         try
         {
-            errorReporter.logTrace("Deleting external file: %s", extFileNameRef.extFileName);
-            Files.deleteIfExists(Paths.get(extFileNameRef.extFileName));
-
             ExternalFile extFile = extFileMap.get(extFileNameRef);
+            String canonical = extFileNameRef.extFileName;
+
+            errorReporter.logTrace("Deleting external file: %s", canonical);
+            Files.deleteIfExists(Paths.get(canonical));
+
+            // also delete all alternative-suffix variants
+            try
+            {
+                for (String suffix : extFile.getAltSuffixes(wrkCtx))
+                {
+                    Path altPath = Paths.get(canonical + suffix);
+                    if (Files.deleteIfExists(altPath))
+                    {
+                        errorReporter.logTrace("Deleted alternative external file: %s", altPath);
+                    }
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+
             if (!extFile.isDeleted())
             {
                 extFile.setAlreadyWritten(false);
