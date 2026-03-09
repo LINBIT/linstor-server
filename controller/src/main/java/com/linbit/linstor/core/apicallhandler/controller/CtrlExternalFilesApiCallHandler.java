@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.Nullable;
@@ -9,6 +10,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.ExtFileStatusPojo;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -29,8 +31,12 @@ import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntReqExtFileStatusOuterClass.MsgIntReqExtFileStatus;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntExtFileStatusOuterClass.MsgIntExtFileStatus;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -42,6 +48,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +60,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Singleton
 public class CtrlExternalFilesApiCallHandler
@@ -120,6 +130,70 @@ public class CtrlExternalFilesApiCallHandler
         return ret;
     }
 
+    public Mono<ExtFileStatusPojo> getStatus(String extFileNameStr, String nodeNameStr)
+    {
+        return scopeRunner.fluxInTransactionlessScope(
+            "Query external file status",
+            lockGuardFactory.buildDeferred(LockType.READ, LockObj.EXT_FILE_MAP, LockObj.NODES_MAP),
+            () -> getStatusInTransaction(extFileNameStr, nodeNameStr)
+        ).next();
+    }
+
+    private Flux<ExtFileStatusPojo> getStatusInTransaction(String extFileNameStr, String nodeNameStr)
+    {
+        Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
+        Peer peer;
+        try
+        {
+            @Nullable Peer tmpPeer = node.getPeer(peerAccCtx.get());
+            if (tmpPeer == null)
+            {
+                throw new ImplementationError("Node '" + nodeNameStr + "' unexpectedly does not have a peer");
+            }
+            peer = tmpPeer;
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "access peer for node '" + nodeNameStr + "'",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+
+        byte[] reqMsg;
+        try
+        {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            MsgIntReqExtFileStatus.newBuilder()
+                .setExternalFileName(extFileNameStr)
+                .build()
+                .writeDelimitedTo(baos);
+            reqMsg = baos.toByteArray();
+        }
+        catch (IOException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return peer.apiCall(InternalApiConsts.API_REQUEST_EXT_FILE_STATUS, reqMsg)
+            .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
+            .map(this::parseExtFileStatus);
+    }
+
+    private ExtFileStatusPojo parseExtFileStatus(ByteArrayInputStream responseData)
+    {
+        try
+        {
+            MsgIntExtFileStatus respMsg = MsgIntExtFileStatus.parseDelimitedFrom(responseData);
+            return new ExtFileStatusPojo(respMsg.getActualPath(), respMsg.getContentMatch());
+        }
+        catch (IOException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
     /**
      * Checks if the given file-path is whitelisted in the stltConfig of the given node
      *
@@ -184,7 +258,8 @@ public class CtrlExternalFilesApiCallHandler
                         peerAccCtx.get(),
                         extFileName,
                         contentRef,
-                        altSuffixesRef
+                        // not sure where the parameter comes from, so we make a copy of it, just to be sure
+                        altSuffixesRef == null ? new ArrayList<>() : new ArrayList<>(altSuffixesRef)
                     );
                     extFileRepository.put(apiCtx, extFile);
                 }

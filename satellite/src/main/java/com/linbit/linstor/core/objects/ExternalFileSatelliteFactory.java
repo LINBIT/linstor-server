@@ -17,6 +17,7 @@ import com.linbit.linstor.utils.ByteUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,7 +67,8 @@ public class ExternalFileSatelliteFactory
                     initflags,
                     content == null ? new byte[0] : content,
                     content == null ? new byte[0] : ByteUtils.checksumSha256(content),
-                    altSuffixesRef,
+                    // not sure where the parameter comes from, so we make a copy of it, just to be sure
+                    new ArrayList<>(altSuffixesRef),
                     driver,
                     transObjFactory,
                     transMgrProvider

@@ -91,6 +91,7 @@ public class InternalApiConsts
     public static final String API_APPLY_EXTERNAL_FILE = "ApplyExternalFile";
     public static final String API_APPLY_DELETED_EXTERNAL_FILE = "ApplyDeletedExternalFile";
     public static final String API_NOTIFY_EXTERNAL_FILE_APPLIED = "NotifyExternalFileApplied";
+    public static final String API_REQUEST_EXT_FILE_STATUS = "RequestExtFileStatus";
     /*
      * Event stream actions
      */

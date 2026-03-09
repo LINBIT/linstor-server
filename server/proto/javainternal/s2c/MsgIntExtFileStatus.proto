@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+// Satellite response for external file status query
+message MsgIntExtFileStatus
+{
+    string actual_path = 1;         // the path where the file currently exists on disk (empty if not found)
+    bool   content_match = 2;       // true if the file's content checksum matches LINSTOR's expected checksum
+}

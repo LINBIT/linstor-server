@@ -1869,6 +1869,19 @@ public class JsonGenTypes
         public @Nullable Boolean allowed;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ExtFileStatusResult
+    {
+        /**
+         * The path where the file currently exists on disk. Omitted if the file was not found.
+         */
+        public @Nullable String actual_path;
+        /**
+         * true if the file's content checksum matches LINSTOR's expected checksum
+         */
+        public @Nullable Boolean content_match;
+    }
+
     /**
      * ToggleDisk optional payload data
      */

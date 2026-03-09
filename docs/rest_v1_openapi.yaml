@@ -5881,6 +5881,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExtFileCheckResult'
+  /v1/files/{extFileName}/status/{node}:
+    parameters:
+      - $ref: '#/components/parameters/ExternalFileName'
+      - $ref: '#/components/parameters/Node'
+    get:
+      tags:
+        - developers
+      summary: queries on-demand status of an external file on a satellite
+      description: >
+        Queries the satellite for the current on-disk status of the external file.
+        Returns the actual path where the file exists (which may differ from the
+        canonical path if an alternative suffix is in use) and whether the content
+        matches LINSTOR's expected checksum.
+      responses:
+        '200':
+          description: returns the external file status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtFileStatusResult'
+        '503':
+          description: Satellite not connected
   /v1/queries/resource-groups/query-all-size-info:
     post:
       tags:
@@ -8627,6 +8649,18 @@ components:
       type: object
       properties:
         allowed:
+          type: boolean
+    ExtFileStatusResult:
+      type: object
+      properties:
+        actual_path:
+          description: >
+            The path where the file currently exists on disk.
+            Omitted if the file was not found.
+          type: string
+        content_match:
+          description: >
+            true if the file's content checksum matches LINSTOR's expected checksum
           type: boolean
     ToggleDiskDiskful:
       type: object

@@ -134,6 +134,49 @@ public class ExternalFiles
         );
     }
 
+    @GET
+    @Path("{extFileName}/status/{node}")
+    public void getFileStatus(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("extFileName") String extFileName,
+        @PathParam("node") String nodeName
+    )
+    {
+        String decodedExtFileName = URLDecoder.decode(extFileName, StandardCharsets.UTF_8);
+
+        requestHelper.doFlux(
+            ApiConsts.API_LST_EXT_FILES,
+            request,
+            asyncResponse,
+            extFilesHandler.getStatus(decodedExtFileName, nodeName)
+                .map(status ->
+                {
+                    JsonGenTypes.ExtFileStatusResult json = new JsonGenTypes.ExtFileStatusResult();
+                    json.actual_path = status.getActualPath();
+                    json.content_match = status.isContentMatch();
+                    try
+                    {
+                        return Response
+                            .status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(json))
+                            .type(MediaType.APPLICATION_JSON)
+                            .build();
+                    }
+                    catch (IOException exc)
+                    {
+                        throw new RuntimeException(exc);
+                    }
+                })
+                .switchIfEmpty(reactor.core.publisher.Mono.just(
+                    Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                        .entity("{\"message\": \"Satellite not connected\"}")
+                        .type(MediaType.APPLICATION_JSON)
+                        .build()
+                ))
+        );
+    }
+
     @PUT
     @Path("{extFileName}")
     @Consumes(MediaType.APPLICATION_JSON)

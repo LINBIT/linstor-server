@@ -18,8 +18,10 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.api.pojo.ExtFileStatusPojo;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.utils.ByteUtils;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
@@ -32,6 +34,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -338,6 +341,41 @@ public class StltExternalFileHandler
         }
         errorReporter.logInfo("External file %s written successfully", path.toString());
         externalFile.setAlreadyWritten(true);
+    }
+
+    public ExtFileStatusPojo getStatus(ExternalFileName extFileNameRef) throws StorageException
+    {
+        ExternalFile externalFile = extFileMap.get(extFileNameRef);
+        if (externalFile == null)
+        {
+            throw new StorageException("Unknown external file: " + extFileNameRef.extFileName);
+        }
+
+        Path actualPath = resolveActualPath(externalFile);
+        boolean contentMatch = false;
+        String actualPathStr = "";
+
+        if (Files.exists(actualPath))
+        {
+            actualPathStr = actualPath.toString();
+            try
+            {
+                byte[] diskContent = Files.readAllBytes(actualPath);
+                byte[] diskChecksum = ByteUtils.checksumSha256(diskContent);
+                byte[] expectedChecksum = externalFile.getContentCheckSum(wrkCtx);
+                contentMatch = Arrays.equals(diskChecksum, expectedChecksum);
+            }
+            catch (IOException exc)
+            {
+                throw new StorageException("Failed to read external file: " + actualPath, exc);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+
+        return new ExtFileStatusPojo(actualPathStr, contentMatch);
     }
 
     private void delete(ExternalFileName extFileNameRef) throws StorageException, DatabaseException
