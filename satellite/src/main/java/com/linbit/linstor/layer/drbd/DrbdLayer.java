@@ -1753,7 +1753,6 @@ public class DrbdLayer implements DeviceLayer
 
                 // Set the resource primary (--force) to trigger an initial sync of all
                 // fat provisioned volumes
-                rsc.unsetCreatePrimary();
                 if (haveFatVlm)
                 {
                     errorReporter.logTrace("Setting resource primary on %s", drbdRscData.getSuffixedResourceName());
@@ -1778,6 +1777,7 @@ public class DrbdLayer implements DeviceLayer
                         throw new StorageException("Failed to become secondary again after creating filesystem", exc);
                     }
                 }
+                rsc.unsetCreatePrimary();
             }
         }
         catch (InvalidKeyException invalidKeyExc)
