@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.drbd.utils;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.Platform;
+import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ChildProcessHandler.TimeoutType;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
@@ -27,6 +28,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
@@ -61,23 +63,28 @@ public class DrbdAdm
     public static final int WAIT_CONNECT_RES_TIME = 10;
     private static final long DOWN_WAIT_TIMEOUT_SEC = 5;
 
+    private static final ExtToolsInfo.Version DRBD_UTILS_WITH_BITMAP_BLOCK_SIZE = new ExtToolsInfo.Version(9, 33, 0);
+
     private final ExtCmdFactory extCmdFactory;
     private final AccessContext sysCtx;
     private final StltConfigAccessor stltCfgAccessor;
     private final DrbdEventService drbdEventService;
+    private final DrbdVersion drbdVersion;
 
     @Inject
     public DrbdAdm(
         ExtCmdFactory extCmdFactoryRef,
         @SystemContext AccessContext sysCtxRef,
         StltConfigAccessor stltCfgAccessorRef,
-        DrbdEventService drbdEventServiceRef
+        DrbdEventService drbdEventServiceRef,
+        DrbdVersion drbdVersionRef
     )
     {
         extCmdFactory = extCmdFactoryRef;
         sysCtx = sysCtxRef;
         stltCfgAccessor = stltCfgAccessorRef;
         drbdEventService = drbdEventServiceRef;
+        drbdVersion = drbdVersionRef;
     }
 
     /**
@@ -378,15 +385,24 @@ public class DrbdAdm
      * Calls drbdadm to create the metadata information for a volume.
      * Uses I/O progress monitoring so large volumes don't get killed prematurely.
      */
-    public void createMd(DrbdVlmData<Resource> drbdVlmData, int peers) throws ExtCmdFailedException
+    public void createMd(DrbdVlmData<Resource> drbdVlmData, int peers, int bitmapBlockSize) throws ExtCmdFailedException
     {
+        List<String> args = new ArrayList<>();
+        args.add("--max-peers");
+        args.add(Integer.toString(peers));
+        if (drbdVersion.getUtilsVsn().greaterOrEqual(DRBD_UTILS_WITH_BITMAP_BLOCK_SIZE))
+        {
+            args.add("--bitmap-block-size");
+            args.add(Integer.toString(bitmapBlockSize));
+        }
+        args.add("--");
+        args.add("--force");
+        args.add("create-md");
+
         ioAwareAdmCommand(
             drbdVlmData.getRscLayerObject(),
             drbdVlmData.getVlmNr(),
-            "--max-peers", Integer.toString(peers),
-            "--",
-            "--force",
-            "create-md"
+            args.toArray(new String[0])
         );
     }
 

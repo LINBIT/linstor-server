@@ -59,6 +59,7 @@ public class LayerPayload
         public @Nullable Short reservedPeerSlotCount;
         public @Nullable Integer alStripes;
         public @Nullable Long alStripeSize;
+        public @Nullable Integer bitmapBlockSizeNewResource;
     }
 
     public static class DrbdVlmDfnPayload
@@ -112,6 +113,9 @@ public class LayerPayload
         try
         {
             drbdRscDfn.peerSlotsNewResource = asShort(prioProps.getProp(ApiConsts.KEY_PEER_SLOTS_NEW_RESOURCE));
+            drbdRscDfn.bitmapBlockSizeNewResource = asInteger(
+                prioProps.getProp(ApiConsts.KEY_BITMAP_BLOCK_SIZE_NEW_RESOURCE)
+            );
         }
         catch (InvalidKeyException exc)
         {
@@ -123,6 +127,11 @@ public class LayerPayload
     private Short asShort(String str)
     {
         return parseNumber(Short::parseShort, str);
+    }
+
+    private Integer asInteger(String str)
+    {
+        return parseNumber(Integer::parseInt, str);
     }
 
     private <T> T parseNumber(Function<String, T> func, String str)

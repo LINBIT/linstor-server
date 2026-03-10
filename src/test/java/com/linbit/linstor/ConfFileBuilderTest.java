@@ -506,9 +506,9 @@ public class ConfFileBuilderTest
                 new NodeId(13),
                 null,
                 null,
-                null, // copied from rscDfnData
-                null, // copied from rscDfnData
-                null, // copied from rscDfnData
+                null, // peerSlots - copied from rscDfnData
+                null, // alStripes - copied from rscDfnData
+                null, // alStripeSize - copied from rscDfnData
                 resource.isDrbdDiskless(accessContext) ?
                     DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue : 0,
                 mockedTcpPool,

@@ -14,6 +14,9 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("checkstyle:magicnumber")
 public class MetaDataApiTest
 {
+    // Default bitmap block size in KiB (4096 bytes = 4 KiB)
+    private static final int DEFAULT_BM_BLOCK_SIZE_KIB = 4;
+
     private MetaDataApi md;
 
     public MetaDataApiTest()
@@ -33,7 +36,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getNetSize(40960L, (short) 7, alStripes, 64);
+            md.getNetSize(40960L, (short) 7, alStripes, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getNetSize: allows alStripes == -1");
         }
         catch (IllegalArgumentException ignored)
@@ -42,7 +45,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getGrossSize(40960L, (short) 7, alStripes, 64);
+            md.getGrossSize(40960L, (short) 7, alStripes, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getGrossSize: allows alStripes == -1");
         }
         catch (IllegalArgumentException ignored)
@@ -51,7 +54,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getExternalMdSize(40960L, (short) 7, alStripes, 64);
+            md.getExternalMdSize(40960L, (short) 7, alStripes, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getExternalMdSize: allows alStripes == -1");
         }
         catch (IllegalArgumentException ignored)
@@ -66,7 +69,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getNetSize(40960L, (short) 7, alStripes, 64);
+            md.getNetSize(40960L, (short) 7, alStripes, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getNetSize: allows alStripes == 0");
         }
         catch (AlStripesException ignored)
@@ -75,7 +78,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getGrossSize(40960L, (short) 7, alStripes, 64);
+            md.getGrossSize(40960L, (short) 7, alStripes, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getGrossSize: allows alStripes == 0");
         }
         catch (AlStripesException ignored)
@@ -84,7 +87,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getExternalMdSize(40960L, (short) 7, alStripes, 64);
+            md.getExternalMdSize(40960L, (short) 7, alStripes, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getExternalMdSize: allows alStripes == 0");
         }
         catch (AlStripesException ignored)
@@ -100,7 +103,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getNetSize(40960L, (short) 7, alStripes, alStripeSize);
+            md.getNetSize(40960L, (short) 7, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getNetSize: allows exceeding the maximum activity log size");
         }
         catch (AlStripesException | MaxAlSizeException ignored)
@@ -109,7 +112,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getGrossSize(40960L, (short) 7, alStripes, alStripeSize);
+            md.getGrossSize(40960L, (short) 7, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getGrossSize: allows exceeding the maximum activity log size");
         }
         catch (AlStripesException | MaxAlSizeException ignored)
@@ -118,7 +121,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getExternalMdSize(40960L, (short) 7, alStripes, alStripeSize);
+            md.getExternalMdSize(40960L, (short) 7, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getExternalMdSize: allows exceeding the maximum activity log size");
         }
         catch (AlStripesException | MaxAlSizeException ignored)
@@ -134,7 +137,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getNetSize(40960L, (short) 7, alStripes, alStripeSize);
+            md.getNetSize(40960L, (short) 7, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getNetSize: failed to throw MinAlSizeException");
         }
         catch (MinAlSizeException ignored)
@@ -143,7 +146,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getGrossSize(40960L, (short) 7, alStripes, alStripeSize);
+            md.getGrossSize(40960L, (short) 7, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getGrossSize: allows exceeding the maximum activity log size");
         }
         catch (MinAlSizeException ignored)
@@ -152,7 +155,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getExternalMdSize(40960L, (short) 7, alStripes, alStripeSize);
+            md.getExternalMdSize(40960L, (short) 7, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getExternalMdSize: allows exceeding the maximum activity log size");
         }
         catch (MinAlSizeException ignored)
@@ -165,7 +168,7 @@ public class MetaDataApiTest
     {
         try
         {
-            md.getNetSize(1099511627777L, (short) 31, 1, 32);
+            md.getNetSize(1099511627777L, (short) 31, 1, 32, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getNetSize: failed to throw MaxSizeException");
         }
         catch (MaxSizeException ignored)
@@ -174,7 +177,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getGrossSize(1098471440349L, (short) 31, 1, 32);
+            md.getGrossSize(1098471440349L, (short) 31, 1, 32, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getGrossSize: failed to throw MaxSizeException");
         }
         catch (MaxSizeException ignored)
@@ -183,7 +186,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getExternalMdSize(1099511627777L, (short) 31, 1, 32);
+            md.getExternalMdSize(1099511627777L, (short) 31, 1, 32, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getExternalMdSize: failed to throw MaxSizeException");
         }
         catch (MaxSizeException ignored)
@@ -196,7 +199,7 @@ public class MetaDataApiTest
     {
         try
         {
-            md.getNetSize(67L, (short) 1, 1, 32);
+            md.getNetSize(67L, (short) 1, 1, 32, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getNetSize: failed to throw MinSizeException");
         }
         catch (MinSizeException ignored)
@@ -214,7 +217,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getNetSize(40960L, peers, 1, 64);
+            md.getNetSize(40960L, peers, 1, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getNetSize: failed to throw PeerCountException");
         }
         catch (PeerCountException ignored)
@@ -223,7 +226,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getGrossSize(40960L, peers, 1, 64);
+            md.getGrossSize(40960L, peers, 1, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getGrossSize: failed to throw PeerCountException");
         }
         catch (PeerCountException ignored)
@@ -232,7 +235,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getExternalMdSize(40960L, peers, 1, 64);
+            md.getExternalMdSize(40960L, peers, 1, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getExternalMdSize: failed to throw PeerCountException");
         }
         catch (PeerCountException ignored)
@@ -247,7 +250,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getNetSize(40960L, peers, 1, 64);
+            md.getNetSize(40960L, peers, 1, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getNetSize: failed to throw PeerCountException");
         }
         catch (PeerCountException ignored)
@@ -256,7 +259,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getGrossSize(40960L, peers, 1, 64);
+            md.getGrossSize(40960L, peers, 1, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getGrossSize: failed to throw PeerCountException");
         }
         catch (PeerCountException ignored)
@@ -265,7 +268,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getExternalMdSize(40960L, peers, 1, 64);
+            md.getExternalMdSize(40960L, peers, 1, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getExternalMdSize: failed to throw PeerCountException");
         }
         catch (PeerCountException ignored)
@@ -280,7 +283,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getNetSize(40960L, peers, 1, 64);
+            md.getNetSize(40960L, peers, 1, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getNetSize: failed to throw IllegalArgumentException");
         }
         catch (IllegalArgumentException ignored)
@@ -289,7 +292,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getGrossSize(40960L, peers, 1, 64);
+            md.getGrossSize(40960L, peers, 1, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getGrossSize: failed to throw IllegalArgumentException");
         }
         catch (IllegalArgumentException ignored)
@@ -298,7 +301,7 @@ public class MetaDataApiTest
 
         try
         {
-            md.getExternalMdSize(40960L, peers, 1, 64);
+            md.getExternalMdSize(40960L, peers, 1, 64, DEFAULT_BM_BLOCK_SIZE_KIB);
             fail("getExternalMdSize: failed to throw IllegalArgumentException");
         }
         catch (IllegalArgumentException ignored)
@@ -318,7 +321,7 @@ public class MetaDataApiTest
         long alStripeSize = 32L;
 
         long expResult = 2008L;
-        long result = md.getNetSize(grossSize, peers, alStripes, alStripeSize);
+        long result = md.getNetSize(grossSize, peers, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
         assertEquals(expResult, result);
     }
 
@@ -335,7 +338,7 @@ public class MetaDataApiTest
 
         long expResult = 2184L;
 
-        long result = md.getGrossSize(netSize, peers, alStripes, alStripeSize);
+        long result = md.getGrossSize(netSize, peers, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
         assertEquals(expResult, result);
     }
 
@@ -352,7 +355,7 @@ public class MetaDataApiTest
         long alStripeSize = 2048L;
 
         long expResult = 90676L;
-        long result = md.getInternalMdSize(mode, size, peers, alStripes, alStripeSize);
+        long result = md.getInternalMdSize(mode, size, peers, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
         assertEquals(expResult, result);
     }
 
@@ -368,7 +371,7 @@ public class MetaDataApiTest
         long alStripeSize = 4096L;
 
         long expResult = 137288L;
-        long result = md.getExternalMdSize(size, peers, alStripes, alStripeSize);
+        long result = md.getExternalMdSize(size, peers, alStripes, alStripeSize, DEFAULT_BM_BLOCK_SIZE_KIB);
         assertEquals(expResult, result);
     }
 }

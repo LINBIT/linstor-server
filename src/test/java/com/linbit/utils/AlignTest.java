@@ -75,7 +75,7 @@ public class AlignTest
     {
         Long[] data = new Long[]
         {
-            new Long(0), new Long(-1), new Long(-543245), Long.MIN_VALUE
+            0L, -1L, -543245L, Long.MIN_VALUE
         };
         return Arrays.asList(data);
     }

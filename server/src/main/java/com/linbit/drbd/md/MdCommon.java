@@ -11,11 +11,13 @@ public class MdCommon
     public static final int     MAX_AL_STRIPES      = 0xFFFF;
     public static final long    MAX_AL_STRIPE_SIZE  = 0xFFFFFFFFl;
 
-    protected void checkValid(final long size, final short peers, final int alStripes, final long alStripeSize)
-        throws IllegalArgumentException
+    protected void checkValid(long size, short peers, int alStripes, long alStripeSize, int bitmapBlockSize)
+        throws IllegalArgumentException, MinSizeException, MaxSizeException,
+               MinAlSizeException, MaxAlSizeException, AlStripesException, PeerCountException
     {
         if (size < 0 || peers < 0 || alStripes < 0 || alStripeSize < 0 ||
-            peers > MAX_PEERS || alStripes > MAX_AL_STRIPES || alStripeSize > MAX_AL_STRIPE_SIZE)
+            peers > MAX_PEERS || alStripes > MAX_AL_STRIPES || alStripeSize > MAX_AL_STRIPE_SIZE ||
+            bitmapBlockSize < 0)
         {
             throw new IllegalArgumentException();
         }

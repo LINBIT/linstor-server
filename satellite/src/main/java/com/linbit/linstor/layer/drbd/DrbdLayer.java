@@ -6,6 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.drbd.md.GidGenerator;
 import com.linbit.drbd.md.GidGenerator.GidGeneratorException;
+import com.linbit.drbd.md.MetaData;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
@@ -24,6 +25,7 @@ import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -1502,9 +1504,51 @@ public class DrbdLayer implements DeviceLayer
     {
         try
         {
+            int bitmapBlockSizeKiB = MetaData.DRBD_DEFAULT_BM_BIT_COVER_kiB;
+            final AbsVolume absVlm = drbdVlmData.getVolume();
+            if (absVlm instanceof Volume vlm)
+            {
+                final Props vlmProps = vlm.getProps(workerCtx);
+                final @Nullable String valueStr = vlmProps.getProp(ApiConsts.KEY_BITMAP_BLOCK_SIZE);
+                if (valueStr != null)
+                {
+                    try
+                    {
+                        bitmapBlockSizeKiB = Integer.parseInt(valueStr);
+                    }
+                    catch (NumberFormatException ignored)
+                    {
+                    }
+                }
+            }
+            final int bitmapBlockSize;
+            try
+            {
+                if (bitmapBlockSizeKiB <= 0)
+                {
+                    throw new ArithmeticException("Bitmap block size is negative or zero: " + bitmapBlockSizeKiB);
+                }
+                bitmapBlockSize = Math.multiplyExact(bitmapBlockSizeKiB, 1024);
+            }
+            catch (ArithmeticException mathExc)
+            {
+                throw new StorageException(
+                    "Unable to create DRBD meta data, " + bitmapBlockSizeKiB +
+                    " is not a valid value for bitmap block size",
+                    "Cannot create DRBD meta data with the specified bitmap block size",
+                    "The bitmap block size is out of range",
+                    "Specify a valid bitmap block size in kiB as the value of the associated property",
+                    "The properties for specifying bitmap block size are " +
+                    ApiConsts.KEY_BITMAP_BLOCK_SIZE + " or " + ApiConsts.KEY_BITMAP_BLOCK_SIZE_NEW_RESOURCE + ". " +
+                    "Refer to LINSTOR documentation for information on which property is relevant for your use case.",
+                    mathExc
+                );
+            }
+
             drbdUtils.createMd(
                 drbdVlmData,
-                drbdVlmData.getRscLayerObject().getPeerSlots()
+                drbdVlmData.getRscLayerObject().getPeerSlots(),
+                bitmapBlockSize
             );
             errorReporter.logInfo("DRBD meta data created for %s/%d",
                 drbdVlmData.getRscLayerObject().getSuffixedResourceName(),

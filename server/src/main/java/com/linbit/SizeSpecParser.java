@@ -437,13 +437,15 @@ public class SizeSpecParser
         {
             throw strReasonExcHandler.apply("Parser was configured to not allow absolute results");
         }
-        @Nullable SizeConv.SizeUnit unit = switch (specRef)
+        @Nullable SizeConv.SizeUnit unit;
+        if (specRef instanceof SizeSpec.Abs spec)
         {
-            case SizeSpec.Abs spec -> spec.unit();
-            default -> throw strReasonExcHandler.apply(
-                "Unknown / unexpected size: " + specRef + " " + specRef.getClass()
-            );
-        };
+            unit = spec.unit();
+        }
+        else
+        {
+            throw strReasonExcHandler.apply("Unknown / unexpected size: " + specRef + " " + specRef.getClass());
+        }
         if (unit == null)
         {
             if (!cfgRef.allowNoUnit)

@@ -1,6 +1,7 @@
 package com.linbit.drbd.md;
 
 import javax.inject.Inject;
+import com.linbit.drbd.md.MetaDataApi.SizeSpec;
 
 /**
  * Calculates DRBD data / meta data size
@@ -9,6 +10,11 @@ import javax.inject.Inject;
  */
 public class MetaData extends MdCommon implements MetaDataApi
 {
+    // Alignment of the data device
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
+    public static final int DRBD_DATA_ALIGN_kiB = 4;
+
     // Alignment of the metadata area
     // Naming convention exception: SI unit capitalization rules
     @SuppressWarnings("checkstyle:constantname")
@@ -23,15 +29,19 @@ public class MetaData extends MdCommon implements MetaDataApi
     // The bitmap size is increased or decreased in steps of DRBD_BM_PEER_ALIGN bytes.
     public static final int DRBD_BM_PEER_ALIGN = 8;
 
-    // Data size in kiB covered by one bitmap bit
+    // Minimum data size in kiB covered by one bitmap bit
     // Naming convention exception: SI unit capitalization rules
     @SuppressWarnings("checkstyle:constantname")
-    public static final int DRBD_BM_BIT_COVER_kiB = 4;
+    public static final int DRBD_MIN_BM_BIT_COVER_kiB = 4;
 
-    // Data size covered by one bitmap byte
+    // Maximum data size in kiB covered by one bitmap bit
     // Naming convention exception: SI unit capitalization rules
     @SuppressWarnings("checkstyle:constantname")
-    public static final int DRBD_BM_BYTE_COVER_kiB = 32;
+    public static final int DRBD_MAX_BM_BIT_COVER_kiB = 1024;
+
+    // Default data size in kiB covered by one bitmap bit
+    @SuppressWarnings("checkstyle:constantname")
+    public static final int DRBD_DEFAULT_BM_BIT_COVER_kiB = 4;
 
     // Default size of the activity log
     // Naming convention exception: SI unit capitalization rules
@@ -59,10 +69,9 @@ public class MetaData extends MdCommon implements MetaDataApi
     public static final int DRBD_MD_SUPERBLK_kiB = 4;
 
     // Maximum size in kiB of a DRBD-replicated device
-    // Must be a multiple of DRBD_BM_BIT_COVER_kiB
+    // Must be a multiple of DRBD_MAX_BM_BIT_COVER_kiB
     // Naming convention exception: SI unit capitalization rules
-    // MagicNumber exception: shift value
-    @SuppressWarnings({"checkstyle:constantname", "checkstyle:magicnumber"})
+    @SuppressWarnings("checkstyle:constantname")
     public static final long DRBD_MAX_kiB = 1L << 40;
 
     // Minimum gross size (including metadata) of a DRBD-replicated device
@@ -86,8 +95,10 @@ public class MetaData extends MdCommon implements MetaDataApi
     @SuppressWarnings("checkstyle:constantname")
     public static final long DIVISOR_kiB = 1024;
 
+    // Minimum size of external meta data
+    // Naming convention exception: SI unit capitalization rules
     @SuppressWarnings("checkstyle:constantname")
-    private static final long DRBD_MIN_EXT_META_SIZE_kiB = 1024;
+    private static final long DRBD_MIN_EXT_MD_kiB = 1024;
 
     @Inject
     public MetaData()
@@ -95,39 +106,54 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
     @Override
-    public long getNetSize(final long grossSize, final short peers, final int alStripes, final long alStripeSize)
-        throws IllegalArgumentException, MinSizeException, MaxSizeException,
-               MinAlSizeException, MaxAlSizeException, AlStripesException, PeerCountException
+    public long getNetSize(
+        final long      grossSize,
+        final short     peers,
+        final int       alStripes,
+        final long      alStripeSize,
+        final int       bitmapBlockSize
+    )
+        throws MinSizeException, MaxSizeException,
+               MinAlSizeException, MaxAlSizeException, AlStripesException,
+               PeerCountException, BitmapBlockSizeException
     {
-        checkValid(grossSize, peers, alStripes, alStripeSize);
+        checkValid(grossSize, peers, alStripes, alStripeSize, bitmapBlockSize);
         checkMaxDrbdSize(grossSize);
 
-        long bitmapSize = getBitmapInternalSizeGross(grossSize, peers);
-        long alSize = getAlSize(alStripes, alStripeSize);
-        long mdSize = alignUp(bitmapSize + alSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
-        long grossSizeEff = alignDown(grossSize, DRBD_BM_BIT_COVER_kiB);
+        final long bitmapSize = getBitmapInternalSizeGross(grossSize, peers, bitmapBlockSize);
+        final long alSize = getAlSize(alStripes, alStripeSize);
+        final long mdSize = ceilingAlign(bitmapSize + alSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
+        final long alignedGrossSize = floorAlign(grossSize, DRBD_DATA_ALIGN_kiB);
 
-        if (mdSize >= grossSizeEff)
+        if (mdSize >= alignedGrossSize)
         {
             throw new MinSizeException();
         }
 
-        long netSize = grossSizeEff - mdSize;
+        final long netSize = alignedGrossSize - mdSize;
 
         return netSize;
     }
 
-    @Override
-    public long getGrossSize(final long netSize, final short peers, final int alStripes, final long alStripeSize)
-        throws IllegalArgumentException, MinSizeException, MaxSizeException,
-               MinAlSizeException, MaxAlSizeException, AlStripesException, PeerCountException
-    {
-        checkValid(netSize, peers, alStripes, alStripeSize);
 
-        long bitmapSize = getBitmapInternalSizeNet(netSize, peers, alStripes, alStripeSize);
-        long alSize = getAlSize(alStripes, alStripeSize);
-        long mdSize = alignUp(bitmapSize + alSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
-        long grossSize = alignUp(netSize, DRBD_BM_BIT_COVER_kiB) + mdSize;
+    @Override
+    public long getGrossSize(
+        final long      netSize,
+        final short     peers,
+        final int       alStripes,
+        final long      alStripeSize,
+        final int       bitmapBlockSize
+    )
+        throws MinSizeException, MaxSizeException,
+               MinAlSizeException, MaxAlSizeException, AlStripesException,
+               PeerCountException, BitmapBlockSizeException
+    {
+        checkValid(netSize, peers, alStripes, alStripeSize, bitmapBlockSize);
+
+        final long bitmapSize = getBitmapInternalSizeNet(netSize, peers, alStripes, alStripeSize, bitmapBlockSize);
+        final long alSize = getAlSize(alStripes, alStripeSize);
+        final long mdSize = ceilingAlign(bitmapSize + alSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
+        long grossSize = ceilingAlign(netSize, bitmapBlockSize) + mdSize;
 
         checkMaxDrbdSize(grossSize);
 
@@ -142,31 +168,35 @@ public class MetaData extends MdCommon implements MetaDataApi
 
     @Override
     public long getInternalMdSize(
-        final SizeSpec mode,
-        final long     size,
-        final short    peers,
-        final int      alStripes,
-        final long     alStripeSize
+        final SizeSpec  mode,
+        final long      size,
+        final short     peers,
+        final int       alStripes,
+        final long      alStripeSize,
+        final int       bitmapBlockSize
     )
         throws IllegalArgumentException, MinSizeException, MaxSizeException,
-               MinAlSizeException, MaxAlSizeException, AlStripesException, PeerCountException
+               MinAlSizeException, MaxAlSizeException, AlStripesException,
+               PeerCountException, BitmapBlockSizeException
     {
-        checkValid(size, peers, alStripes, alStripeSize);
+        checkValid(size, peers, alStripes, alStripeSize, bitmapBlockSize);
+        checkBitmapBlockSize(bitmapBlockSize);
 
-        long sizeEff = alignUp(size, DRBD_BM_BIT_COVER_kiB);
+        final long alignedSize = ceilingAlign(size, bitmapBlockSize);
 
-        long alSize = getAlSize(alStripes, alStripeSize);
+        final long alSize = getAlSize(alStripes, alStripeSize);
         long mdSize = switch (mode)
         {
             case NET_SIZE ->
             {
-                long bitmapSize = getBitmapInternalSizeNet(sizeEff, peers, alStripes, alStripeSize);
-                yield alignUp(alSize + bitmapSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
+                long bitmapSize =
+                    getBitmapInternalSizeNet(alignedSize, peers, alStripes, alStripeSize, bitmapBlockSize);
+                yield ceilingAlign(alSize + bitmapSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
             }
             case GROSS_SIZE ->
             {
-                long bitmapSize = getBitmapInternalSizeGross(sizeEff, peers);
-                yield alignUp(alSize + bitmapSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
+                long bitmapSize = getBitmapInternalSizeGross(alignedSize, peers, bitmapBlockSize);
+                yield ceilingAlign(alSize + bitmapSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
             }
             default -> throw new IllegalArgumentException();
         };
@@ -176,38 +206,30 @@ public class MetaData extends MdCommon implements MetaDataApi
 
 
     @Override
-    public long getExternalMdSize(final long size, final short peers, final int alStripes, final long alStripeSize)
-        throws IllegalArgumentException, MinSizeException, MaxSizeException,
-               MinAlSizeException, MaxAlSizeException, AlStripesException, PeerCountException
+    public long getExternalMdSize(
+        final long      size,
+        final short     peers,
+        final int       alStripes,
+        final long      alStripeSize,
+        final int       bitmapBlockSize
+    )
+        throws MinSizeException, MaxSizeException,
+               MinAlSizeException, MaxAlSizeException, AlStripesException,
+               PeerCountException, BitmapBlockSizeException
     {
-        checkValid(size, peers, alStripes, alStripeSize);
+        checkValid(size, peers, alStripes, alStripeSize, bitmapBlockSize);
+        checkBitmapBlockSize(bitmapBlockSize);
 
         checkMaxDrbdSize(size);
         checkPeers(peers);
 
-        long sizeEff = alignUp(size, DRBD_BM_BIT_COVER_kiB);
+        final long alignedSize = ceilingAlign(size, DRBD_DATA_ALIGN_kiB);
 
-        long alSize = getAlSize(alStripes, alStripeSize);
-        long bitmapSize = getBitmapExternalSize(sizeEff, peers);
-        long mdSize = alignUp(alSize + bitmapSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
+        final long alSize = getAlSize(alStripes, alStripeSize);
+        final long bitmapSize = getBitmapExternalSize(alignedSize, peers, bitmapBlockSize);
+        long mdSize = ceilingAlign(alSize + bitmapSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
 
-        if (mdSize < DRBD_MIN_EXT_META_SIZE_kiB)
-        {
-            /*
-             * copied from drbdmeta.c
-             *
-             * reiserfs sb offset is 64k plus
-             * align it to 4k, in case someone has unusual hard sect size (!= 512),
-             * otherwise direct io will fail with EINVAL
-             *
-             * copied from drbd_nl.c
-             *
-             * at least one MB, otherwise it does not make sense
-             */
-            mdSize = DRBD_MIN_EXT_META_SIZE_kiB;
-        }
-
-        return mdSize;
+        return Math.max(mdSize, DRBD_MIN_EXT_MD_kiB);
     }
 
 
@@ -222,26 +244,26 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    private static long alignUp(final long value, final long alignment)
+    private static long ceilingAlign(final long value, final long alignment)
     {
-        long alValue = value;
-        if (alValue % alignment != 0)
+        long result = value;
+        if (value % alignment != 0)
         {
-            alValue = ((alValue / alignment) + 1) * alignment;
+            result = ((value / alignment) + 1) * alignment;
         }
-        return alValue;
+        return result;
     }
 
 
-    private static long alignDown(final long value, final long alignment)
+    private static long floorAlign(final long value, final long alignment)
     {
         return (value / alignment) * alignment;
     }
 
 
     private static long getAlSize(
-        final int  alStripes,
-        final long alStripeSize
+        final int   alStripes,
+        final long  alStripeSize
     )
         throws AlStripesException, MaxAlSizeException, MinAlSizeException
     {
@@ -256,7 +278,7 @@ public class MetaData extends MdCommon implements MetaDataApi
         }
 
         long alSize = alStripeSize * alStripes;
-        alSize = alignUp(alSize, DRBD_AL_ALIGN_kiB);
+        alSize = ceilingAlign(alSize, DRBD_AL_ALIGN_kiB);
 
         if (alSize < DRBD_MIN_AL_kiB)
         {
@@ -277,6 +299,17 @@ public class MetaData extends MdCommon implements MetaDataApi
         if (peers < DRBD_MIN_PEERS || peers > DRBD_MAX_PEERS)
         {
             throw new PeerCountException();
+        }
+    }
+
+
+    public static void checkBitmapBlockSize(final int bitmapBlockSize) throws BitmapBlockSizeException
+    {
+        // bitmapBlockSize must be in range and must also be a power of 2
+        if (bitmapBlockSize < DRBD_MIN_BM_BIT_COVER_kiB || bitmapBlockSize > DRBD_MAX_BM_BIT_COVER_kiB ||
+            Integer.bitCount(bitmapBlockSize) != 1)
+        {
+            throw new BitmapBlockSizeException();
         }
     }
 
@@ -308,46 +341,46 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    private static long getBitmapExternalSize(final long size, final short peers)
-        throws MinSizeException, MaxSizeException, PeerCountException
+    private static long getBitmapExternalSize(final long size, final short peers, final int bitmapBlockSize)
+        throws MinSizeException, MaxSizeException, PeerCountException, BitmapBlockSizeException
     {
         checkMinDrbdSizeNet(size);
         checkMaxDrbdSize(size);
         checkPeers(peers);
+        checkBitmapBlockSize(bitmapBlockSize);
 
-        long sizeEff = alignUp(size, DRBD_BM_BIT_COVER_kiB);
+        final long alignedSize = ceilingAlign(size, DRBD_DATA_ALIGN_kiB);
 
-        long bitmapPeerBytes = ceilingDivide(sizeEff, DRBD_BM_BYTE_COVER_kiB);
-        bitmapPeerBytes = alignUp(bitmapPeerBytes, DRBD_BM_PEER_ALIGN);
-        long bitmapBytes = bitmapPeerBytes * peers;
-        long bitmapSize = alignUp(alignUp(bitmapBytes, DIVISOR_kiB) / DIVISOR_kiB, DRBD_BM_ALIGN_kiB);
+        final int byteCoverSize = bitmapBlockSize << 3;
+        long bitmapPeerBytes = ceilingDivide(alignedSize, byteCoverSize);
+        bitmapPeerBytes = ceilingAlign(bitmapPeerBytes, DRBD_BM_PEER_ALIGN);
+        final long bitmapBytes = bitmapPeerBytes * peers;
+        final long alignedBitmapBytes = ceilingAlign(bitmapBytes, DIVISOR_kiB);
+        final long bitmapSize = ceilingAlign(alignedBitmapBytes / DIVISOR_kiB, DRBD_BM_ALIGN_kiB);
 
         return bitmapSize;
     }
 
 
     private static long getBitmapInternalSizeNet(
-        final long  netSize,
-        final short peers,
-        final int   alStripes,
-        final long  alStripeSize
+        final long      netSize,
+        final short     peers,
+        final int       alStripes,
+        final long      alStripeSize,
+        final int       bitmapBlockSize
     )
-        throws MinSizeException, MaxSizeException, PeerCountException,
-               AlStripesException, MaxAlSizeException, MinAlSizeException
+        throws MinSizeException, MaxSizeException,
+               AlStripesException, MaxAlSizeException, MinAlSizeException,
+               PeerCountException, BitmapBlockSizeException
     {
         checkMinDrbdSizeNet(netSize);
         checkMaxDrbdSize(netSize);
         checkPeers(peers);
+        checkBitmapBlockSize(bitmapBlockSize);
 
-        long netSizeEff = alignUp(netSize, DRBD_BM_BIT_COVER_kiB);
+        final long alignedNetSize = ceilingAlign(netSize, DRBD_DATA_ALIGN_kiB);
 
-        long alSize = getAlSize(alStripes, alStripeSize);
-
-        // Base size for the recalculation of the gross size
-        // in each iteration of the sequence limit loop
-        // The base size is the net data + activity log + superblock,
-        // but without the bitmap
-        long baseSize = netSizeEff + alSize + DRBD_MD_SUPERBLK_kiB;
+        final long alSize = getAlSize(alStripes, alStripeSize);
 
         // Calculate the size of the bitmap required to cover the
         // gross size of the device, which includes the size of the bitmap.
@@ -360,26 +393,27 @@ public class MetaData extends MdCommon implements MetaDataApi
         // more precise bitmap size with every iteration, until the precision is sufficient
         // for the size of data to be covered by the bitmap, and the bitmap is sized sufficiently large
         // to cover the gross data size, including the bitmap itself.
-        long grossSize = baseSize;
+        long grossSize = alignedNetSize + alSize + DRBD_MD_SUPERBLK_kiB;
         long bitmapSize = 0;
         long bitmapCoverSize = 0;
+        final int byteCoverSize = bitmapBlockSize << 3;
         while (bitmapCoverSize < grossSize)
         {
             // Bitmap size required to cover the gross size on each peer
-            long bitmapPeerBytes = ceilingDivide(grossSize, DRBD_BM_BYTE_COVER_kiB);
+            long bitmapPeerBytes = ceilingDivide(grossSize, byteCoverSize);
             // Align to the per-peer bitmap granularity
-            bitmapPeerBytes = alignUp(bitmapPeerBytes, DRBD_BM_PEER_ALIGN);
+            bitmapPeerBytes = ceilingAlign(bitmapPeerBytes, DRBD_BM_PEER_ALIGN);
 
             // Bitmap size for all peers
             long bitmapBytes = bitmapPeerBytes * peers;
 
             // Gross size covered by the current bitmap size
-            bitmapCoverSize = bitmapPeerBytes * DRBD_BM_BYTE_COVER_kiB;
+            bitmapCoverSize = bitmapPeerBytes * byteCoverSize;
 
             // Actual size of the bitmap in the DRBD metadata area (after alignment)
-            bitmapSize = alignUp(alignUp(bitmapBytes, DIVISOR_kiB) / DIVISOR_kiB, DRBD_BM_ALIGN_kiB);
+            bitmapSize = ceilingAlign(ceilingAlign(bitmapBytes, DIVISOR_kiB) / DIVISOR_kiB, DRBD_BM_ALIGN_kiB);
             // Resulting gross size after including the bitmap size
-            grossSize = baseSize + bitmapSize;
+            grossSize = alignedNetSize + ceilingAlign(alSize + DRBD_MD_SUPERBLK_kiB + bitmapSize, DRBD_DATA_ALIGN_kiB);
         }
 
         checkMaxDrbdSize(grossSize);
@@ -388,19 +422,22 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    private static long getBitmapInternalSizeGross(final long  grossSize, final short peers)
-        throws MinSizeException, MaxSizeException, PeerCountException
+    private static long getBitmapInternalSizeGross(final long grossSize, final short peers, final int bitmapBlockSize)
+        throws MinSizeException, MaxSizeException, PeerCountException, BitmapBlockSizeException
     {
         checkMinDrbdSizeGross(grossSize);
         checkMaxDrbdSize(grossSize);
         checkPeers(peers);
+        checkBitmapBlockSize(bitmapBlockSize);
 
-        long grossSizeEff = alignUp(grossSize, DRBD_BM_BIT_COVER_kiB);
+        final long alignedGrossSize = ceilingAlign(grossSize, DRBD_DATA_ALIGN_kiB);
 
-        long bitmapPeerBytes = ceilingDivide(grossSizeEff, DRBD_BM_BYTE_COVER_kiB);
-        bitmapPeerBytes = alignUp(bitmapPeerBytes, DRBD_BM_PEER_ALIGN);
-        long bitmapBytes = bitmapPeerBytes * peers;
-        long bitmapSize = alignUp(alignUp(bitmapBytes, DIVISOR_kiB) / DIVISOR_kiB, DRBD_BM_ALIGN_kiB);
+        final int byteCoverSize = bitmapBlockSize << 3;
+        long bitmapPeerBytes = ceilingDivide(alignedGrossSize, byteCoverSize);
+        bitmapPeerBytes = ceilingAlign(bitmapPeerBytes, DRBD_BM_PEER_ALIGN);
+        final long bitmapBytes = bitmapPeerBytes * peers;
+        final long alignedBitmapBytes = ceilingAlign(bitmapBytes, DIVISOR_kiB);
+        final long bitmapSize = ceilingAlign(alignedBitmapBytes / DIVISOR_kiB, DRBD_BM_ALIGN_kiB);
 
         return bitmapSize;
     }

@@ -23,9 +23,9 @@ import java.util.List;
 /**
  * Provides volume-level storage layer information for a resource.
  *
- * Main difference between this interface and {@link VlmLayerObject} is that
- * this interface does not have {@link VlmLayerObject#getDataDevice()} and
- * LayerObject#getChildren() methods.
+ * Main difference between this interface and VlmLayerObject is that
+ * this interface does not have VlmLayerObject.getDataDevice and
+ * LayerObject.getChildren methods.
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
