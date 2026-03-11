@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -9,7 +10,6 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -28,6 +28,7 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.netcom.PeerTask;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
+import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -46,7 +47,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -164,14 +164,11 @@ public class BalanceResources
      * @return A list of resources that should stay in place.
      * @throws AccessDeniedException shouldn't happen as we use the sysCtx
      */
-    private List<Resource> getFixedResources(
-        List<Resource> resources, Map<Resource, Integer> onlineNodeIds) throws AccessDeniedException
+    private List<Resource> getFixedResources(List<Resource> resources) throws AccessDeniedException
     {
         var fixed = new ArrayList<Resource>();
         for (var rsc : resources)
         {
-            var onlineNodeIdsNotSelf = new HashMap<>(onlineNodeIds);
-            onlineNodeIdsNotSelf.remove(rsc);
             // do not delete:
             // * diskless resources
             // * resource created within the grace period
@@ -182,17 +179,21 @@ public class BalanceResources
             }
             else
             {
-                SatelliteResourceState stltRscState = rsc.getNode().getPeer(sysCtx)
-                    .getSatelliteState()
-                    .getResourceStates()
-                    .get(rsc.getResourceDefinition().getName());
-
-                if (stltRscState == null ||
-                    Boolean.TRUE.equals(stltRscState.isInUse()) ||
-                    !stltRscState.allVolumesUpToDate() ||
-                    !stltRscState.isReady(onlineNodeIdsNotSelf.values()))
+                @Nullable Peer peer = rsc.getNode().getPeer(sysCtx);
+                if (peer != null)
                 {
-                    fixed.add(rsc);
+                    @Nullable SatelliteState stltState = peer.getSatelliteState();
+                    if (stltState != null)
+                    {
+                        @Nullable SatelliteResourceState stltRscState = stltState
+                            .getResourceStates()
+                            .get(rsc.getResourceDefinition().getName());
+
+                        if (stltRscState == null || Boolean.TRUE.equals(stltRscState.isInUse()))
+                        {
+                            fixed.add(rsc);
+                        }
+                    }
                 }
             }
         }
@@ -411,11 +412,7 @@ public class BalanceResources
                 }
                 else if (notDeletedDiskfulCount > replicaCount)
                 {
-                    var onlineNodeIds = CtrlRscCrtApiHelper.getOnlineNodeIds(rscDfn, sysCtx);
-                    var fixedResources = getFixedResources(
-                        rscDfn.streamResource(sysCtx).collect(Collectors.toList()),
-                        onlineNodeIds
-                    );
+                    var fixedResources = getFixedResources(rscDfn.streamResource(sysCtx).collect(Collectors.toList()));
 
                     // loop through rscDfn resources, until we meet replicaCount or are out of resource to delete
                     Resource toDelete = autoUnplacer.unplace(rscDfn, fixedResources);
