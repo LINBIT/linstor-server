@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upated debian package compat version to 11
 - linstor-controller.service: switch to DynamicUser (i.e., execute as non-root user).
 - Systemd-notify: Use SDNotify library instead of calling "systemd-notify"
+- AutoUnplacer now prefers non-UpToDate resources after AP-settings-violating resources before choosing any.
 
 ### Removed
 

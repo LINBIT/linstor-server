@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -15,7 +16,10 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
+import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -93,7 +97,8 @@ public class AutoUnplacer
         try
         {
             ResourceDefinition rscDfn = cfgRef.getRscDfn();
-            errorReporter.logTrace("AutoUnplacer: Finding resource to unplace for '%s'", rscDfn.getName().displayValue);
+            ResourceName rscName = rscDfn.getName();
+            errorReporter.logTrace("AutoUnplacer: Finding resource to unplace for '%s'", rscName.displayValue);
 
             Map<Resource, Long> unplaceScore = initializeUnplaceScoreMap(cfgRef, rscDfn);
 
@@ -135,6 +140,8 @@ public class AutoUnplacer
                         true
                     );
 
+                var onlineNodeIds = CtrlRscCrtApiHelper.getOnlineNodeIds(rscDfn, apiAccCtx);
+
                 final Resource[] rscArr = unplaceScore.keySet().toArray(size -> new Resource[size]);
                 for (int idx1 = 0; idx1 < rscArr.length; idx1++)
                 {
@@ -158,6 +165,32 @@ public class AutoUnplacer
                     soloRating += getViolationsCountReplicasOnDifferentWithValueList(replicasOnDifferent, node1Props);
                     soloRating += getViolationsCountReplicasOnSameWithValueList(replicasOnSame, node1Props);
                     soloRating += getViolationsCountXReplicasOnDifferentMap(xReplicasOnDiffMapWithValues, node1Props);
+
+                    @Nullable Peer peer1 = node1.getPeer(apiAccCtx);
+                    if (peer1 != null)
+                    {
+                        @Nullable SatelliteState stltState = peer1.getSatelliteState();
+                        if (stltState != null)
+                        {
+                            @Nullable SatelliteResourceState stltRscState = stltState
+                                .getResourceStates()
+                                .get(rscName);
+                            if (stltRscState != null)
+                            {
+                                var onlineNodeIdsNotSelf = new HashMap<>(onlineNodeIds);
+                                onlineNodeIdsNotSelf.remove(rsc1);
+
+                                if (!stltRscState.allVolumesUpToDate())
+                                {
+                                    soloRating += 1;
+                                }
+                                if (!stltRscState.isReady(onlineNodeIdsNotSelf.values()))
+                                {
+                                    soloRating += 1;
+                                }
+                            }
+                        }
+                    }
 
                     // TODO: maybe add some weights for the different violation types?
                     // TODO: make those weights configurable
