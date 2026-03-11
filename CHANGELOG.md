@@ -18,12 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added property "ExtCmd/KillTimeout"
 - Added property "ExtCmd/IoStallTimeout"
 - Added property "ExtCmd/IoPollInterval"
-- Added Linstor/Drbd/OutsideAddress property for DRBD's outside-address for setups using a NAT
+- Added "Linstor/Drbd/OutsideAddress" property for DRBD's outside-address for setups using a NAT
 - Added optional alternative suffixes for external files
 - Added status check (current path + content as expected) for external files
 - Added property "Rest/AutoHTTPs", if enabled will automatically create a SSL certificate and re-start SSL server
 - Added token authentication API and implementation, if enabled only allows Authentication Bearer token access
 - Added property "Clone/DdBlocksize" to configure the DD clone blocksize used
+- Added "BalanceResourcesSkipDiskLimit" property to skip balancing resources with more than X skipDisk resources (default 1)
 
 ### Changed
 

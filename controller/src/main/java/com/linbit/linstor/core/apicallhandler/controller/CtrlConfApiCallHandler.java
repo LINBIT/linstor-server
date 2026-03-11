@@ -997,6 +997,8 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.KEY_BALANCE_RESOURCES_ENABLED: // fall-through
                         case ApiConsts.KEY_BALANCE_RESOURCES_GRACE_PERIOD:
                             // fall-through
+                        case ApiConsts.KEY_BALANCE_RESOURCES_SKIP_DISK_LIMIT:
+                            // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION:
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_AFTER_TIME:

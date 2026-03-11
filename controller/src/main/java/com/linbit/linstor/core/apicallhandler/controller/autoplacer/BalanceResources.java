@@ -72,6 +72,7 @@ public class BalanceResources
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
 
     private static final long DEFAULT_GRACE_PERIOD_SECS = 3600;
+    private static final int DFLT_SKIP_DISK_LIMIT = 1;
 
     @Inject
     public BalanceResources(
@@ -236,10 +237,12 @@ public class BalanceResources
         );
     }
 
+    @SuppressWarnings("checkstyle:returncount")
     private boolean shouldIgnoreRscDfn(ResourceDefinition rscDfn) throws AccessDeniedException
     {
         boolean someRscIgnored = false;
-        for (var rsc : rscDfn.streamResource(sysCtx).collect(Collectors.toList()))
+        List<Resource> resources = rscDfn.streamResource(sysCtx).toList();
+        for (var rsc : resources)
         {
             if (isResourceInGracePeriod(rsc))
             {
@@ -285,6 +288,42 @@ public class BalanceResources
                 rscDfn.getName()
             );
             return true;
+        }
+
+        { // check SkipDiskLimit
+            PriorityProps prioProps = new PriorityProps(
+                rscDfn.getProps(sysCtx),
+                rscDfn.getResourceGroup().getProps(sysCtx),
+                systemConfRepository.getCtrlConfForView(sysCtx)
+            );
+            @Nullable String skipDiskLimitStr = prioProps.getProp(ApiConsts.KEY_BALANCE_RESOURCES_SKIP_DISK_LIMIT);
+            int skipDiskLimit;
+            try
+            {
+                skipDiskLimit = skipDiskLimitStr == null ? DFLT_SKIP_DISK_LIMIT : Integer.parseInt(skipDiskLimitStr);
+            }
+            catch (NumberFormatException nfe)
+            {
+                log.logWarning(
+                    "BalanceResources/%s: Failed to parse '%s'. Defaulting to %d as SkipDiskLimit",
+                    rscDfn.getName(),
+                    skipDiskLimitStr,
+                    DFLT_SKIP_DISK_LIMIT
+                );
+                skipDiskLimit = DFLT_SKIP_DISK_LIMIT;
+            }
+            List<Resource> skipDiskResources = getResourcesWithSkipDisk(resources);
+            if (skipDiskResources.size() > skipDiskLimit)
+            {
+                log.logDebug(
+                    "BalanceResourcesTask/%s: Ignore because rscDfn has already %d resources with SkipDisk, " +
+                        "max %d tolerated",
+                    rscDfn.getName(),
+                    skipDiskResources.size(),
+                    skipDiskLimit
+                );
+                return true;
+            }
         }
 
         return false;
@@ -358,17 +397,24 @@ public class BalanceResources
      */
     private void filterDiskfull(List<Resource> resources) throws AccessDeniedException
     {
+        List<Resource> skipDiskResources = getResourcesWithSkipDisk(resources);
+        resources.removeAll(skipDiskResources);
+    }
+
+    private List<Resource> getResourcesWithSkipDisk(List<Resource> resources) throws AccessDeniedException
+    {
         List<Resource> toRemove = new ArrayList<>();
-        for(var res : resources)
+        for (var res : resources)
         {
-            String skipDiskProp = res.getProps(sysCtx).getProp(
+            @Nullable String skipDiskProp = res.getProps(sysCtx)
+                .getProp(
                 ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS);
             if (StringUtils.propTrueOrYes(skipDiskProp))
             {
                 toRemove.add(res);
             }
         }
-        resources.removeAll(toRemove);
+        return toRemove;
     }
 
     /**
