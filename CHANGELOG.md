@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- AutoUnplacer now prefers non-UpToDate resources after AP-settings-violating resources before choosing any.
+
 ### Fixed
 
 - Fixed the clone status check if no DRBD connection states have been received yet
