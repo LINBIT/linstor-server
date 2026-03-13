@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed potential ConcurrentModificationException when serializing properties
 - Fixed race condition in updateController() that leads to uncompleted ChangedController answers (client timeout)
 - Fixed bug that could lead to NPE when multiple cache layers are processed in one DevMgr cycle
+- Fixed possible bug that could have caused orphaned DRBD resources being left on the satellite
 
 ## [1.33.1] - 2025-12-22
 

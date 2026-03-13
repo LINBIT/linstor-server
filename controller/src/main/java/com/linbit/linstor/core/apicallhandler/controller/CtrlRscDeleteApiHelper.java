@@ -197,11 +197,19 @@ public class CtrlRscDeleteApiHelper
             }
         }
 
+        NodeName[] nodeNamesArr = nodeNames.toArray(new NodeName[nodeNames.size()]);
         Flux<ApiCallRc> flux;
         if (rscDfn != null)
         {
             Flux<ApiCallRc> nextStep = deleteData(contextRef, nodeNames, rscName);
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                rscDfn,
+                // will result in only a WARN ApiCallRc, but delivered as Flux.error. This prevents deleting database
+                // entries when the node is offline / did not clean up properly. Otherwise we would leave orphaned
+                // DRBD resources behind
+                CtrlSatelliteUpdateCaller.notConnectedErrorForNodesWarnForOthers(nodeNamesArr),
+                nextStep
+            )
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     errorReporter,
                     updateResponses,
