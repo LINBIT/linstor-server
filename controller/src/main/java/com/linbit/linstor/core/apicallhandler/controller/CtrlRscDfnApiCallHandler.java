@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SizeSpecParser;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -524,25 +525,7 @@ public class CtrlRscDfnApiCallHandler
                 Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilder.get()
                     .buildPropsChangedListeners(peerAccCtx.get(), rscDfn, specialPropFluxes);
 
-                // ExactSize check
-                @Nullable String exactSizeValue = overrideProps.get(
-                    ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE
-                );
-                if (Boolean.parseBoolean(exactSizeValue) && rscDfn.getResourceCount() > 0)
-                {
-                    String msg = String.format(
-                        "The property '%s/%s' cannot be set to True while there are currently deployed resources(%d).",
-                        ApiConsts.NAMESPC_DRBD_OPTIONS,
-                        ApiConsts.KEY_DRBD_EXACT_SIZE,
-                        rscDfn.getResourceCount());
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_PROP,
-                            msg,
-                            true
-                        )
-                    );
-                }
+                checkProps(overrideProps, rscDfn);
 
                 notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
@@ -645,6 +628,35 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
+    }
+
+    private void checkProps(Map<String, String> overrideProps, ResourceDefinition rscDfn)
+    {
+        // ExactSize check
+        @Nullable String exactSizeValue = overrideProps.get(
+            ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE
+        );
+        if (Boolean.parseBoolean(exactSizeValue) && rscDfn.getResourceCount() > 0)
+        {
+            String msg = String.format(
+                "The property '%s/%s' cannot be set to True while there are currently deployed resources(%d).",
+                ApiConsts.NAMESPC_DRBD_OPTIONS,
+                ApiConsts.KEY_DRBD_EXACT_SIZE,
+                rscDfn.getResourceCount());
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_PROP,
+                    msg,
+                    true
+                )
+            );
+        }
+
+        @Nullable String minFreeSpaceValue = overrideProps.get(Autoplacer.MIN_FREE_SPACE_PROP);
+        if (minFreeSpaceValue != null)
+        {
+            SizeSpecParser.ensureParsableWithPercent(minFreeSpaceValue);
+        }
     }
 
     private int getDiskfulResourceCount(ResourceDefinition rscDfnRef)
@@ -1790,7 +1802,6 @@ public class CtrlRscDfnApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-
             throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "create " + getRscDfnDescriptionInline(rscNameStr),

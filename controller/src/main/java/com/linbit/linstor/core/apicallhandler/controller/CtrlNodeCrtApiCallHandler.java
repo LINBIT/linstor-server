@@ -1,9 +1,11 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.SizeSpecParser;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -12,6 +14,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -168,6 +171,8 @@ public class CtrlNodeCrtApiCallHandler
         {
             Node.Type nodeType = LinstorParsingUtils.asNodeType(nodeTypeStr);
 
+            checkProps(propsMap);
+
             if (nodeType.isSpecial())
             {
                 node = ctrlNodeApiCallHandler.createSpecialSatellite(
@@ -204,6 +209,15 @@ public class CtrlNodeCrtApiCallHandler
             );
         }
         return flux;
+    }
+
+    private void checkProps(Map<String, String> propsMap)
+    {
+        @Nullable String minFreeSpaceValue = propsMap.get(Autoplacer.MIN_FREE_SPACE_PROP);
+        if (minFreeSpaceValue != null)
+        {
+            SizeSpecParser.ensureParsableWithPercent(minFreeSpaceValue);
+        }
     }
 
     public Flux<ApiCallRc> createEbsNode(

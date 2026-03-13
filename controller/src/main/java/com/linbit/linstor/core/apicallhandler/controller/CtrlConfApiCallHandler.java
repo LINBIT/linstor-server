@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
+import com.linbit.SizeSpecParser;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.extproc.ChildProcessHandler;
@@ -25,6 +26,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
@@ -986,7 +988,11 @@ public class CtrlConfApiCallHandler
                             updateBalanceResourcesTaskSchedule(normalized);
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                         }
-                        break;
+                            break;
+                        case Autoplacer.MIN_FREE_SPACE_PROP:
+                            SizeSpecParser.ensureParsableWithPercent(normalized);
+                            setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
+                            break;
                         case ApiConsts.KEY_AUTOPLACE_ALLOW_TARGET: // fall-through
                         case ApiConsts.KEY_SEARCH_DOMAIN: // fall-through
                         case ApiConsts.KEY_STOR_POOL_MAX_FREE_CAPACITY_OVERSUBSCRIPTION_RATIO: // fall-through

@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SizeSpecParser;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
@@ -9,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -582,6 +584,11 @@ public class CtrlPropsHelper
                         ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM))
                     {
                         targetProps.setProp(ApiConsts.KEY_QUORUM_SET_BY, "user", ApiConsts.NAMESPC_INTERNAL_DRBD);
+                    }
+
+                    if (key.equals(Autoplacer.MIN_FREE_SPACE_PROP))
+                    {
+                        SizeSpecParser.ensureParsableWithPercent(normalized);
                     }
                 }
                 catch (AccessDeniedException exc)

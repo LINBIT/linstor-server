@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SizeSpecParser;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -1113,6 +1114,12 @@ public class CtrlNodeApiCallHandler
         if (maxConcurrentShippingsChanged)
         {
             retFlux = retFlux.concatWith(ctrlBackupQueueHandler.maxConcurrentShippingsChangedForNode(node));
+        }
+
+        @Nullable String minFreeSpaceValue = overrideProps.get(Autoplacer.MIN_FREE_SPACE_PROP);
+        if (minFreeSpaceValue != null)
+        {
+            SizeSpecParser.ensureParsableWithPercent(minFreeSpaceValue);
         }
 
         return retFlux;

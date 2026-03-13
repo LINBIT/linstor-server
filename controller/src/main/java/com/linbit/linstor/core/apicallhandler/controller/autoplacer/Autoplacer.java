@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlMinIoSizeHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscStateHelper;
@@ -24,6 +25,9 @@ import java.util.TreeSet;
 @Singleton
 public class Autoplacer
 {
+    public static final String MIN_FREE_SPACE_PROP = ApiConsts.NAMESPC_AUTOPLACER + "/" +
+        ApiConsts.KEY_AUTOPLACE_MIN_THIN_FREE_SPACE;
+
     private final AccessContext apiAccCtx;
     private final StorPoolFilter filter;
     private final StrategyHandler strategyHandler;

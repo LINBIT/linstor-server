@@ -1,7 +1,10 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.SizeSpecParser;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
@@ -13,6 +16,7 @@ import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
@@ -185,56 +189,7 @@ public class CtrlStorPoolApiCallHandler
 
             Props props = ctrlPropsHelper.getProps(storPool);
 
-            // check if specified preferred network interface exists
-            ctrlPropsHelper.checkPrefNic(
-                peerAccCtx.get(),
-                storPool.getNode(),
-                overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
-                ApiConsts.MASK_STOR_POOL
-            );
-            ctrlPropsHelper.checkPrefNic(
-                peerAccCtx.get(),
-                storPool.getNode(),
-                overrideProps.get(ApiConsts.NAMESPC_NVME + "/" + ApiConsts.KEY_PREF_NIC),
-                ApiConsts.MASK_STOR_POOL
-            );
-            // check if specified "outside address" network interface exists
-            ctrlPropsHelper.checkPrefOutsideAddress(
-                peerAccCtx.get(),
-                storPool.getNode(),
-                overrideProps.get(
-                    ApiConsts.NAMESPC_LINSTOR_DRBD + "/" + ApiConsts.KEY_DRBD_OUTSIDE_ADDRESS
-                ),
-                ApiConsts.MASK_STOR_POOL
-            );
-
-            for (Map.Entry<String, String> entry : overrideProps.entrySet())
-            {
-                if (entry.getKey().startsWith(ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR))
-                {
-                    if (!storPool.getNode().getPeer(peerAccCtx.get()).isConnected(true))
-                    {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.MASK_ERROR | ApiConsts.MASK_STOR_POOL | ApiConsts.FAIL_INVLD_PROP,
-                            "Cannot change SED password while node not connected.",
-                            true
-                        ));
-                    }
-
-                    if (securityObjects.getCryptKey() == null)
-                    {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.MASK_ERROR | ApiConsts.MASK_STOR_POOL | ApiConsts.FAIL_INVLD_PROP,
-                            "Need master-passphrase to change SED password.",
-                            true
-                        ));
-                    }
-
-                    // on the fly encrypt new SED password
-                    byte[] sedEncBytePassword = encryptionHelper.encrypt(entry.getValue());
-                    entry.setValue(Base64.encode(sedEncBytePassword));
-                }
-            }
+            checkProps(overrideProps, storPool);
 
             notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
@@ -291,6 +246,68 @@ public class CtrlStorPoolApiCallHandler
         return Flux.<ApiCallRc>just(apiCallRcs)
             .concatWith(flux)
             .concatWith(Flux.merge(specialPropFluxes));
+    }
+
+    private void checkProps(Map<String, String> overrideProps, StorPool storPool)
+        throws InvalidNameException, LinStorException
+    {
+        // check if specified preferred network interface exists
+        ctrlPropsHelper.checkPrefNic(
+            peerAccCtx.get(),
+            storPool.getNode(),
+            overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+            ApiConsts.MASK_STOR_POOL
+        );
+        ctrlPropsHelper.checkPrefNic(
+            peerAccCtx.get(),
+            storPool.getNode(),
+            overrideProps.get(ApiConsts.NAMESPC_NVME + "/" + ApiConsts.KEY_PREF_NIC),
+            ApiConsts.MASK_STOR_POOL
+        );
+
+        // check if specified "outside address" network interface exists
+        ctrlPropsHelper.checkPrefOutsideAddress(
+            peerAccCtx.get(),
+            storPool.getNode(),
+            overrideProps.get(
+                ApiConsts.NAMESPC_LINSTOR_DRBD + "/" + ApiConsts.KEY_DRBD_OUTSIDE_ADDRESS
+            ),
+            ApiConsts.MASK_STOR_POOL
+        );
+
+        for (Map.Entry<String, String> entry : overrideProps.entrySet())
+        {
+            if (entry.getKey().startsWith(ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR))
+            {
+                if (!storPool.getNode().getPeer(peerAccCtx.get()).isConnected(true))
+                {
+                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                        ApiConsts.MASK_ERROR | ApiConsts.MASK_STOR_POOL | ApiConsts.FAIL_INVLD_PROP,
+                        "Cannot change SED password while node not connected.",
+                        true
+                    ));
+                }
+
+                if (securityObjects.getCryptKey() == null)
+                {
+                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                        ApiConsts.MASK_ERROR | ApiConsts.MASK_STOR_POOL | ApiConsts.FAIL_INVLD_PROP,
+                        "Need master-passphrase to change SED password.",
+                        true
+                    ));
+                }
+
+                // on the fly encrypt new SED password
+                byte[] sedEncBytePassword = encryptionHelper.encrypt(entry.getValue());
+                entry.setValue(Base64.encode(sedEncBytePassword));
+            }
+        }
+
+        @Nullable String minFreeSpaceValue = overrideProps.get(Autoplacer.MIN_FREE_SPACE_PROP);
+        if (minFreeSpaceValue != null)
+        {
+            SizeSpecParser.ensureParsableWithPercent(minFreeSpaceValue);
+        }
     }
 
     public Flux<ApiCallRc> deleteStorPool(

@@ -1,6 +1,11 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.ImplementationError;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
+import com.linbit.SizeSpec;
+import com.linbit.SizeSpecParser;
+import com.linbit.linstor.LinstorParsingException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
@@ -45,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
@@ -53,6 +59,8 @@ import java.util.regex.Pattern;
 @Singleton
 public class StorPoolFilter
 {
+    private static final SizeSpec DFLT_MIN_FREE_SPACE = new SizeSpec.Percent(10f);
+
     private final AccessContext apiAccCtx;
     private final Provider<AccessContext> peerAccCtx;
     private final StorPoolDefinitionMap storPoolDfnMap;
@@ -534,6 +542,23 @@ public class StorPoolFilter
                             sizeInKib
                         );
                     }
+                    else if (sp.getDeviceProviderKind().usesThinProvisioning())
+                    {
+                        long minFreeSpace = getMinFreeSpace(sp, rscDfnRef);
+                        storPoolMatches = freeCapacity >= minFreeSpace;
+                        if (!storPoolMatches)
+                        {
+                            errorReporter.logTrace(
+                                "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool " +
+                                    "does not have enough free space. Free space (KiB): %d. Configured minimum free " +
+                                    "space (KiB): %d",
+                                sp.getName().displayValue,
+                                sp.getNode().getName().displayValue,
+                                freeCapacity,
+                                minFreeSpace
+                            );
+                        }
+                    }
                 }
                 else
                 {
@@ -608,6 +633,46 @@ public class StorPoolFilter
             }
         }
         return filteredList;
+    }
+
+    private long getMinFreeSpace(StorPool spRef, @Nullable ResourceDefinition rscDfnRef) throws AccessDeniedException
+    {
+        PriorityProps prioProps = new PriorityProps(spRef.getProps(apiAccCtx));
+        if (rscDfnRef != null)
+        {
+            prioProps.addProps(rscDfnRef.getProps(apiAccCtx));
+            prioProps.addProps(rscDfnRef.getResourceGroup().getProps(apiAccCtx));
+        }
+        prioProps.addProps(spRef.getNode().getProps(apiAccCtx));
+        prioProps.addProps(ctrlPropsHelper.getCtrlPropsForView());
+
+        @Nullable String minFreeSpaceStr = prioProps.getProp(Autoplacer.MIN_FREE_SPACE_PROP);
+        SizeSpec sizeSpec = DFLT_MIN_FREE_SPACE;
+        if (minFreeSpaceStr != null)
+        {
+            try
+            {
+                sizeSpec = SizeSpecParser.parse(minFreeSpaceStr, SizeSpecParser.PARSER_WITH_PERCENT);
+            }
+            catch (LinstorParsingException exc)
+            {
+                errorReporter.reportError(
+                    exc,
+                    apiAccCtx,
+                    null,
+                    "Failed to parse '" + minFreeSpaceStr + "'. Defaulting to 10% minFreeSpace"
+                );
+            }
+        }
+        return switch (sizeSpec)
+        {
+            case SizeSpec.Percent(float num) -> {
+                Optional<Long> totalCapacity = spRef.getFreeSpaceTracker().getTotalCapacity(apiAccCtx);
+                long cap = totalCapacity.orElse(0L);
+                yield (long) Math.ceil(cap / 100f * num);
+            }
+            case SizeSpec.Abs(long num, SizeUnit unit) -> SizeConv.convert(num, unit, SizeUnit.UNIT_KiB);
+        };
     }
 
     private Boolean nodeDoNoPlaceWithFilters(

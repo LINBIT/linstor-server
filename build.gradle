@@ -50,6 +50,11 @@ allprojects {
     plugins.withType(JavaPlugin) {
         sourceCompatibility = 21
     }
+    plugins.withType(CheckstylePlugin) {
+        checkstyle {
+            toolVersion = "10.21.4" // Support for Java 21 Record pattern matching
+        }
+    }
 }
 
 subprojects {

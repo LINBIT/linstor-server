@@ -170,12 +170,17 @@ public class SizeSpecParser
         }
     }
 
-    public static void testParse(String strRef) throws ApiRcException
+    public static void ensureParsable(String strRef) throws ApiRcException
     {
-        testParse(strRef, new Config());
+        ensureParsable(strRef, new Config());
     }
 
-    public static void testParse(String strRef, Config cfgRef) throws ApiRcException
+    public static void ensureParsableWithPercent(String strRef)
+    {
+        ensureParsable(strRef, PARSER_WITH_PERCENT);
+    }
+
+    public static void ensureParsable(String strRef, Config cfgRef) throws ApiRcException
     {
         parseImpl(
             strRef,
@@ -214,7 +219,7 @@ public class SizeSpecParser
      * the string or the configure default suffix.</p>
      *
      * @param <EXC> The type of exception the caller wants to receive if the given string cannot be parsed. Mostly
-     * introduced to be able to unify {@link #parse(String)} and {@link #testParse(String)}.
+     * introduced to be able to unify {@link #parse(String)} and {@link #ensureParsable(String)}.
      * @param strRef The actual string that should be parsed
      * @param cfgRef The configuration to use for parsing
      * @param throwableExcHandler The exception generator in case a different exception occurred while parsing (Most

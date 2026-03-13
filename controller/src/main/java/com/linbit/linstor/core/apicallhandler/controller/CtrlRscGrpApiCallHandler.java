@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.SizeSpecParser;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -31,6 +32,7 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -274,6 +276,8 @@ public class CtrlRscGrpApiCallHandler
             List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
             prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
+            checkProps(rscGrpPojoRef.getProps());
+
             ctrlPropsHelper.fillProperties(
                 responses,
                 LinStorObject.RSC_DFN,
@@ -328,6 +332,31 @@ public class CtrlRscGrpApiCallHandler
         }
 
         return responses;
+    }
+
+    private void checkProps(Map<String, String> overridePropsRef)
+    {
+        if (overridePropsRef.containsKey(ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE))
+        {
+            // currently we can only whitelist props for RD _and_ RG combined. in this case however, we only want to
+            // allow this property on RD level.
+            // FIXME: this should change with the properties rework
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property key")
+                    .setCause(
+                        "The key '" + ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE +
+                            "' is not whitelisted."
+                    )
+                    .build()
+            );
+        }
+
+        @Nullable String minFreeSpaceValue = overridePropsRef.get(Autoplacer.MIN_FREE_SPACE_PROP);
+        if (minFreeSpaceValue != null)
+        {
+            SizeSpecParser.ensureParsableWithPercent(minFreeSpaceValue);
+        }
     }
 
     private void addUnknownStoragePoolWarning(ResourceGroup rscGrpRef, ApiCallRcImpl responsesRef)
@@ -519,21 +548,7 @@ public class CtrlRscGrpApiCallHandler
                 rscGrpData.setDescription(peerCtx, descriptionRef);
             }
 
-            if (overrideProps.containsKey(ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE))
-            {
-                // currently we can only whitelist props for RD _and_ RG combined. in this case however, we only want to
-                // allow this property on RD level.
-                // FIXME: this should change with the properties rework
-                throw new ApiRcException(
-                    ApiCallRcImpl
-                        .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property key")
-                        .setCause(
-                            "The key '" + ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE +
-                                "' is not whitelisted."
-                        )
-                        .build()
-                );
-            }
+            checkProps(overrideProps);
 
             if (!overrideProps.isEmpty() || !deletePropKeysRef.isEmpty() || !deleteNamespacesRef.isEmpty())
             {
