@@ -2,6 +2,7 @@ package com.linbit.utils;
 
 import com.linbit.linstor.annotation.Nullable;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -153,7 +154,7 @@ public class StringUtils
     public static String randomString(char[] candidateChars, int length)
     {
         StringBuilder sb = new StringBuilder();
-        Random random = new Random();
+        Random random = new SecureRandom();
         for (int i = 0; i < length; i++)
         {
             sb.append(candidateChars[random.nextInt(candidateChars.length)]);
