@@ -10,11 +10,24 @@ StartLimitBurst=5
 
 [Service]
 Type=notify
-ExecStart=/usr/share/linstor-server/bin/Controller --logs=/var/log/linstor-controller --config-directory=/etc/linstor
+ExecStart=/usr/share/linstor-server/bin/Controller --logs=/var/log/linstor-controller --config-directory=${CONFIGURATION_DIRECTORY}
 # if killed by signal 143 -> SIGTERM, 129 -> SIGHUP
 SuccessExitStatus=0 143 129
-User=root
-PrivateTmp=yes
+DynamicUser=true
+User=linstor-controller
+Group=linstor
+ConfigurationDirectory=linstor
+# we can not use StateDirectory or LogsDirectory
+# these want to create dirs in /var/lib/private/<name> and symlink to them from /var/lib/<name>
+# if such a directory already exists, the service fails to start.
+# we also can not run "migration scripts" in ExecStartPre for these, because setting up these dirs/symlinks happens before ExecStartPre.
+# The best we can do is to manually add them to ReadWritePaths
+# We therefore have to do the chowns ourselves. This is also criticial in HA setups where /var/lib/linstor is a mountpoint
+ReadWritePaths=/var/lib/linstor /var/log/linstor-controller
+ExecStartPre=+/usr/bin/chown -hPR linstor-controller:root /var/lib/linstor /var/log/linstor-controller
+# ConfigurationDirectory is created for user/group if it does not exist
+# if it already exists, systemd does no chowns, so:
+ExecStartPre=+/usr/bin/chown -hPR root:linstor ${CONFIGURATION_DIRECTORY}
 TimeoutStartSec=240s
 # 70 -> critical error(e.g.: uuid mismatch)
 RestartForceExitStatus=70

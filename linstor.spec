@@ -62,6 +62,8 @@ cp %{_builddir}/%{NAME_VERS}/scripts/linstor-resources.res %{buildroot}/%{_sysco
 touch %{buildroot}/%{LS_PREFIX}/{.server,.satellite,.controller}
 mkdir -p %{buildroot}/%{_sysconfdir}/linstor
 cp %{_builddir}/%{NAME_VERS}/scripts/linstor_satellite-example.toml %{buildroot}/%{_sysconfdir}/linstor/
+# dirs we expect (controller)
+for d in /var/lib/linstor /var/log/linstor-controller; do install -d -m750 %{buildroot}/$d; done
 
 ### common
 %package common
@@ -104,6 +106,8 @@ Linstor controller manages linstor satellites and persistant data storage.
 %{LS_PREFIX}/bin/controller.postinst.sh
 %{_unitdir}/linstor-controller.service
 %{FIREWALLD_SERVICES}/linstor-controller.xml
+%dir /var/lib/linstor
+%dir /var/log/linstor-controller
 
 %posttrans controller
 %{LS_PREFIX}/bin/controller.postinst.sh
