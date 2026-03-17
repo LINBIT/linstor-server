@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved old property "ExtCmdWaitTimeout" -> "ExtCmd/WaitTimeout"
 - SOS report: 'tar' command now only times out if there was no IO for 45s
 - Don't call shred on ZFS devices as those are guaranteed to always read 0
+- Upated debian package compat version to 11
 
 ### Removed
 

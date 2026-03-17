@@ -3,7 +3,7 @@ Maintainer: LINBIT HA Solutions GmbH <drbd-user@lists.linbit.com>
 Uploaders: Roland Kammerer <roland.kammerer@linbit.com>
 Section: admin
 Priority: optional
-Build-Depends: debhelper (>= 9),
+Build-Depends: debhelper (>= 11),
                java-runtime-headless (>= 21),
 #               gradle (>= 6.8.3),
                python3-all (>= 3.5)
