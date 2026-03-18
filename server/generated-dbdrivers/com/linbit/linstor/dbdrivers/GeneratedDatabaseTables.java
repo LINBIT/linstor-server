@@ -1578,7 +1578,7 @@ public class GeneratedDatabaseTables
         }
 
         // Primary Key
-        public static final ColumnImpl ENTRY_DATE = new ColumnImpl("ENTRY_DATE", Types.DATE, true, false);
+        public static final ColumnImpl ENTRY_DATE = new ColumnImpl("ENTRY_DATE", Types.TIMESTAMP, true, false);
 
         public static final ColumnImpl CAPACITY = new ColumnImpl("CAPACITY", Types.BLOB, false, false);
 
@@ -1653,7 +1653,7 @@ public class GeneratedDatabaseTables
 
         // Primary Key
 
-        public static final ColumnImpl ENTRY_DATE = new ColumnImpl("ENTRY_DATE", Types.DATE, false, false);
+        public static final ColumnImpl ENTRY_DATE = new ColumnImpl("ENTRY_DATE", Types.TIMESTAMP, false, false);
 
         public static final Column[] ALL = new Column[]
         {

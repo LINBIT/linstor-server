@@ -811,15 +811,13 @@ public class SQLEngine implements DbEngine
                     case Types.CLOB -> stmtRef.setString(idxRef, (String) objRef);
                     case Types.TIMESTAMP ->
                     {
-                        Timestamp timestamp;
-                        if (objRef instanceof Timestamp ts)
-                        {
-                            timestamp = ts;
-                        }
-                        else
-                        {
-                            timestamp = new Timestamp((Long) objRef);
-                        }
+                        Timestamp timestamp =
+                            switch (objRef)
+                            {
+                                case Timestamp ts -> ts;
+                                case Instant inst -> new Timestamp(inst.toEpochMilli());
+                                default -> new Timestamp((Long) objRef);
+                            };
                         stmtRef.setTimestamp(idxRef, timestamp);
                     }
                     case Types.DATE ->

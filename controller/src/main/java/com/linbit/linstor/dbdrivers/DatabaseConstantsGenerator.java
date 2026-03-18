@@ -531,13 +531,10 @@ public final class DatabaseConstantsGenerator
             "com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext",
             "com.linbit.linstor.utils.ByteUtils",
             "com.linbit.utils.ExceptionThrowingFunction",
-            "com.linbit.utils.TimeUtils",
             "", // empty line
             "java.nio.charset.StandardCharsets",
             genDbTablesJavaCodeRef != null ? "java.sql.Types" : null,
-            "java.time.format.DateTimeFormatter",
             // "java.util.ArrayList",
-            "java.util.Date",
             "java.util.HashMap",
             "java.util.HashSet",
             "java.util.Map",
@@ -591,10 +588,6 @@ public final class DatabaseConstantsGenerator
         {
             appendLine("public static final String VERSION = \"%s\";", asYamlVersionString(currentVersionRef));
             appendLine("public static final String GROUP = \"%s\";", CRD_GROUP);
-            appendLine(
-                "private static final DateTimeFormatter RFC3339 = " +
-                    "DateTimeFormatter.ofPattern(\"yyyy-MM-dd'T'HH:mm:ssXXX\");"
-            );
             appendLine("private static final Map<String, String> KEY_LUT = new HashMap<>();");
             appendLine("private static final HashSet<String> USED_K8S_KEYS = new HashSet<>();");
             appendLine("private static final AtomicLong NEXT_ID = new AtomicLong();");
@@ -1253,10 +1246,7 @@ public final class DatabaseConstantsGenerator
                                 String clmName = camelCase(clm.name.toLowerCase().toCharArray());
                                 if (clm.sqlType.equals("DATE"))
                                 {
-                                    appendLine(
-                                        "RFC3339.format(TimeUtils.toLocalZonedDateTime(%s.getTime())),",
-                                        clmName
-                                    );
+                                    throw new ImplementationError("We should not use DATE type. Use TIMESTAMP instead");
                                 }
                                 else
                                 {
