@@ -181,6 +181,47 @@ public class AutoUnplacerTest extends GenericDbBase
         expectUnplaced(rsc);
     }
 
+    /**
+     * Scenario: replicas-on-different "Aux/site" is configured. Resources exist on a1 (site A), b1 (site B),
+     * and a new diskful resource was manually created on a2 (site A) and marked as inUse (fixed).
+     * b1 has a lower storage pool score than a1 (so b1 would be preferred for removal by the tiebreaker).
+     *
+     * Expected: The autounplacer must remove a1 (not b1), because removing b1 would leave a1 + a2 both on
+     * site A, violating replicas-on-different. Removing a1 leaves a2 + b1 on different sites.
+     */
+    @Test
+    public void removeViolationInReplOnDifferentWithFixedRscAndLowerSpScoreTest() throws Exception
+    {
+        // auto-placed resources
+        Resource rscA1 = createRsc("a1");
+        createRsc("b1");
+
+        // manually added diskful on a2, will be marked as "fixed" (inUse)
+        Resource rscA2 = createRsc("a2");
+
+        // diskless tiebreaker (should not affect the outcome, but included for realism)
+        createDisklessRsc("tb1");
+
+        // site assignments
+        setNodeProp("a1", "Aux/site", "A");
+        setNodeProp("a2", "Aux/site", "A");
+        setNodeProp("b1", "Aux/site", "B");
+
+        // configure replicas-on-different site
+        setReplicasOnDifferent("Aux/site");
+
+        // make b1's storage pool score lower than a1's so the autounplacer would prefer removing b1
+        long totalCap = 1_000_000;
+        setSpCapacity("a1", 500_000, totalCap);   // high free space -> high score
+        setSpCapacity("a2", 500_000, totalCap);
+        setSpCapacity("b1", 100, totalCap); // low free space -> low score
+
+        // a2 is fixed (inUse) -> autounplacer must choose between a1 and b1
+        // correct answer: remove a1 (leaves a2 on site A + b1 on site B -> no violation)
+        // wrong answer:   remove b1 (leaves a1 on site A + a2 on site A -> violation!)
+        expectUnplaced(Collections.singleton(rscA2), rscA1);
+    }
+
     @Test
     public void cornerCaseNoResourcesTest() throws Exception
     {
