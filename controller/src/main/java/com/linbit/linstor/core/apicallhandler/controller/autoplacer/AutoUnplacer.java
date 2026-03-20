@@ -292,7 +292,10 @@ public class AutoUnplacer
                 highestScore = value;
                 rscsWithHighestScore.clear();
             }
-            rscsWithHighestScore.add(rsc);
+            if (highestScore == value)
+            {
+                rscsWithHighestScore.add(rsc);
+            }
         }
 
         return rscsWithHighestScore;
