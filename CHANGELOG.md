@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed PREPARE_SHIPPING backups didn't count as active shippings
 - Fixed possible bug that could have caused orphaned DRBD resources being left on the satellite
 - Fixed autounplacer not prioritizing autoplacer-settings violations over free space properly
+- Fixed EventStreamClosed exception if toggle-disk a single diskful resource
 
 ## [1.33.1] - 2025-12-22
 
