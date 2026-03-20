@@ -46,6 +46,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -1002,6 +1003,10 @@ public class CtrlRscCrtApiHelper
                                             )
                                         )
                                     .onErrorResume(TimeoutException.class, te -> makeRdyTimeoutApiRc(nodeName))
+                                    .onErrorResume(
+                                        EventStreamClosedException.class,
+                                        ignored -> Mono.empty()
+                                    )
                             );
                         }
                     }
