@@ -319,7 +319,7 @@ public class StltApiCallHandlerUtils
                         try
                         {
                             AbsStorageProvider<?, ?, ?> storProvider = (AbsStorageProvider<?, ?, ?>) devProvider;
-                            storProvider.updateMinIoSize(storPoolObj, propsChange);
+                            storProvider.updateBlockDeviceInfo(storPoolObj, propsChange);
                         }
                         catch (ClassCastException ignored)
                         {

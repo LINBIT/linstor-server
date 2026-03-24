@@ -15,6 +15,22 @@ public class BlockSizeConsts
     public static final long DFLT_SPECIAL_PHY_IO_SIZE = (1L << 12);
 
     /*
+     * Discard Granularity, aka discard_granularity constants
+     */
+    /**
+     * Minimum value for discard_granularity.
+     * NOTE: 0 means "no discard support"
+     */
+    public static final long MIN_DISC_GRAN = 0;
+    /**
+     * Default value for discard_granularity, within [MIN_DISC_GRAN, MAX_DISC_GRAN]
+     * NOTE: 0 means "no discard support"
+     */
+    public static final long DFLT_DISC_GRAN = 0;
+    /** Maximum value for discard_granularity (currently unbounded / bounded by long) */
+    public static final long MAX_DISC_GRAN = Long.MAX_VALUE;
+
+    /*
      * Optimal IO Size, aka optimal_io_size constants
      */
     /**

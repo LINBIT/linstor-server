@@ -16,6 +16,7 @@ public class StorageConstants
     public static final String BLK_DEV_MIN_IO_SIZE      = "minIoSize";
     public static final String BLK_DEV_MIN_IO_SIZE_AUTO = "minIoSizeAuto";
     public static final String BLK_DEV_MAX_BIO_SIZE     = "maxBioSize";
+    public static final String BLK_DEV_DISC_GRAN        = "discardGranularity";
 
     /*
      * LVM

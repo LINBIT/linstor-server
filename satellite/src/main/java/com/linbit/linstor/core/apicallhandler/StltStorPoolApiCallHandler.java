@@ -397,8 +397,8 @@ class StltStorPoolApiCallHandler
             {
                 final AbsStorageProvider<?, ?, ?> storProvider = (AbsStorageProvider<?, ?, ?>) devProvider;
                 LocalPropsChangePojo propsChange = new LocalPropsChangePojo();
-                errorReporter.logDebug("%s", "min-io-size: invoke updateMinIoSize");
-                storProvider.updateMinIoSize(storPoolRef, propsChange);
+                errorReporter.logDebug("block-device-info: invoke updateBlockDeviceInfo");
+                storProvider.updateBlockDeviceInfo(storPoolRef, propsChange);
 
                 // Merge any changes into the storage pool properties
                 if (!propsChange.changedStorPoolProps.isEmpty())

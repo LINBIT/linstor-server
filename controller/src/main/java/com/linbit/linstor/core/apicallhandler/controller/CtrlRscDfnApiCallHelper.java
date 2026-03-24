@@ -41,8 +41,12 @@ import java.util.TreeSet;
 public class CtrlRscDfnApiCallHelper
 {
     public static final String KEY_PROP_DRBD_OPT_DISK_RS_DISC_GRAN = "rs-discard-granularity";
-    public static final String FULL_KEY_DISC_GRAN = ApiConsts.NAMESPC_DRBD_DISK_OPTIONS + "/" +
+    public static final String FULL_KEY_RS_DISC_GRAN = ApiConsts.NAMESPC_DRBD_DISK_OPTIONS + "/" +
         KEY_PROP_DRBD_OPT_DISK_RS_DISC_GRAN;
+
+    public static final String KEY_PROP_DRBD_OPT_DISK_DISC_GRAN = "discard-granularity";
+    public static final String FULL_KEY_DISCARD_GRAN = ApiConsts.NAMESPC_DRBD_DISK_OPTIONS + "/" +
+        KEY_PROP_DRBD_OPT_DISK_DISC_GRAN;
 
     private static final int DRBD_DISC_GRAN_MIN = 4 * 1024; // min 4k
     private static final int DRBD_DISC_GRAN_MAX = 1 * 1024 * 1024; // max 1M
@@ -60,6 +64,19 @@ public class CtrlRscDfnApiCallHelper
         sysConfRepo = sysConfRepoRef;
     }
 
+    /**
+     * Automatically updates the DRBD rs-discard-granularity and discard-granularity properties
+     * for all volume definitions of the given resource definition.
+     *
+     * <p>For each volume definition, this method checks whether automatic management is enabled
+     * for the respective property. If enabled, the property is recalculated based on the underlying
+     * storage. If disabled, the property is removed unless it was explicitly set by the user
+     * (indicated by the auto-flag being set to {@code false} on the volume definition level).
+     *
+     * @param rscDfnRef the resource definition whose volume definitions should be updated
+     *
+     * @return {@code true} if any DRBD properties were actually changed, {@code false} otherwise
+     */
     public boolean updateDrbdProps(ResourceDefinition rscDfnRef)
     {
         final AccessContext peerCtx = peerAccCtx.get();
@@ -85,14 +102,45 @@ public class CtrlRscDfnApiCallHelper
                     // unset rs-discard-granularity unless explicitly set
                     // we consider the prop to be explicitly set if the auto-* is disabled on vlmDfn level
                     Props vlmDfnProps = vlmDfn.getProps(peerCtx);
-                    String autoProp = vlmDfnProps
+                    @Nullable String autoProp = vlmDfnProps
                         .getProp(
                             ApiConsts.KEY_DRBD_AUTO_RS_DISCARD_GRANULARITY,
                             ApiConsts.NAMESPC_DRBD_OPTIONS
                         );
+                    // TODO the prop was set on vlmdfn to mark that it is set by Linstor
+                    // We still need to rework this, but need Linstor to know who set each property
+                    // that is why it is removed here
                     if (!ApiConsts.VAL_FALSE.equalsIgnoreCase(autoProp))
                     {
-                        String removedProp = vlmDfnProps.removeProp(FULL_KEY_DISC_GRAN);
+                        @Nullable String removedProp = vlmDfnProps.removeProp(FULL_KEY_RS_DISC_GRAN);
+                        ret |= removedProp != null;
+                    }
+                }
+
+                if (isAutoManagingEnabled(
+                    vlmDfn,
+                    ApiConsts.KEY_DRBD_AUTO_DISCARD_GRANULARITY,
+                    ApiConsts.NAMESPC_LINSTOR_DRBD,
+                    peerCtx
+                ))
+                {
+                    ret |= updateDiscardGranProp(vlmDfn, peerCtx);
+                }
+                else
+                {
+                    Props vlmDfnProps = vlmDfn.getProps(peerCtx);
+                    @Nullable String autoProp = vlmDfnProps
+                        .getProp(
+                            ApiConsts.KEY_DRBD_AUTO_DISCARD_GRANULARITY,
+                            ApiConsts.NAMESPC_LINSTOR_DRBD
+                        );
+                    // autoProp == null -> default true
+                    // TODO the prop was set on vlmdfn to mark that it is set by Linstor
+                    // We still need to rework this, but need Linstor to know who set each property
+                    // that is why it is removed here
+                    if (!ApiConsts.VAL_FALSE.equalsIgnoreCase(autoProp))
+                    {
+                        @Nullable String removedProp = vlmDfnProps.removeProp(FULL_KEY_DISCARD_GRAN);
                         ret |= removedProp != null;
                     }
                 }
@@ -156,14 +204,14 @@ public class CtrlRscDfnApiCallHelper
         {
             String newProp = Long.toString(chooseDrbdDiscGran);
             String oldProp = vlmDfnProps.setProp(
-                FULL_KEY_DISC_GRAN,
+                FULL_KEY_RS_DISC_GRAN,
                 newProp
             );
             propChanged = !newProp.equals(oldProp);
         }
         else
         {
-            String oldProp = vlmDfnProps.removeProp(FULL_KEY_DISC_GRAN);
+            String oldProp = vlmDfnProps.removeProp(FULL_KEY_RS_DISC_GRAN);
             propChanged = oldProp != null;
         }
         return propChanged;
@@ -186,7 +234,7 @@ public class CtrlRscDfnApiCallHelper
             rscGrp.getProps(peerCtxRef),
             sysConfRepo.getCtrlConfForView(peerCtxRef)
         );
-        final String setBy = prioProps.getProp(keyRef, namespcRef);
+        final @Nullable String setBy = prioProps.getProp(keyRef, namespcRef);
         return setBy == null || setBy.equalsIgnoreCase(ApiConsts.VAL_TRUE);
     }
 
@@ -224,7 +272,7 @@ public class CtrlRscDfnApiCallHelper
         TreeSet<Long> maxDiscGrans = new TreeSet<>();
         for (Resource rsc : rscsRef)
         {
-            Property dynProp = rsc.getNode().getPeer(accCtxRef).getDynamicProperty(FULL_KEY_DISC_GRAN);
+            Property dynProp = rsc.getNode().getPeer(accCtxRef).getDynamicProperty(FULL_KEY_RS_DISC_GRAN);
             if (dynProp instanceof RangeProperty rangeProp)
             {
                 maxDiscGrans.add(rangeProp.getMax());
@@ -240,5 +288,81 @@ public class CtrlRscDfnApiCallHelper
             ret = maxDiscGrans.first();
         }
         return ret;
+    }
+
+    private boolean updateDiscardGranProp(
+        final VolumeDefinition vlmDfnRef,
+        final AccessContext peerCtx
+    )
+        throws AccessDeniedException, InvalidValueException, DatabaseException
+    {
+        boolean propChanged = false;
+        final VolumeNumber vlmNr = vlmDfnRef.getVolumeNumber();
+        final Props vlmDfnProps = vlmDfnRef.getProps(peerCtx);
+
+        final TreeSet<Long> discGrans = new TreeSet<>();
+        final Iterator<Resource> rscIt = vlmDfnRef.getResourceDefinition().iterateResource(peerCtx);
+        while (rscIt.hasNext())
+        {
+            final Resource rsc = rscIt.next();
+            final Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
+                rsc.getLayerData(peerCtx),
+                DeviceLayerKind.DRBD
+            );
+            for (AbsRscLayerObject<Resource> drbdRscData : drbdRscDataSet)
+            {
+                // We need the discard granularity of the block device immediately below DRBD,
+                // which may be LUKS / CACHE / BCACHE / NVME / WRITECACHE / STORAGE. The satellite
+                // populates getDiscGran() per layer via lsblk against each layer's device path.
+                AbsRscLayerObject<Resource> childRscData = drbdRscData.getChildBySuffix(
+                    RscLayerSuffixes.SUFFIX_DATA
+                );
+                VlmProviderObject<Resource> childVlmData = childRscData.getVlmProviderObject(vlmNr);
+                discGrans.add(childVlmData.getDiscGran());
+            }
+        }
+
+        @Nullable Long chosenDiscGran = chooseDiscardGran(discGrans);
+
+        if (chosenDiscGran != null)
+        {
+            String newProp = Long.toString(chosenDiscGran);
+            @Nullable String oldProp = vlmDfnProps.setProp(
+                FULL_KEY_DISCARD_GRAN,
+                newProp
+            );
+            propChanged = !newProp.equals(oldProp);
+        }
+        else
+        {
+            @Nullable String oldProp = vlmDfnProps.removeProp(FULL_KEY_DISCARD_GRAN);
+            propChanged = oldProp != null;
+        }
+        return propChanged;
+    }
+
+    /**
+     * Aggregation for discard-granularity:
+     * - If no values collected: null (don't write)
+     * - If any value is 0: return 0 (explicitly disable discards)
+     * - Otherwise: return max of all values
+     */
+    private @Nullable Long chooseDiscardGran(TreeSet<Long> discGransRef)
+    {
+        discGransRef.remove(VlmProviderObject.UNINITIALIZED_SIZE);
+        @Nullable Long selected;
+        if (discGransRef.isEmpty())
+        {
+            selected = null;
+        }
+        else if (discGransRef.contains(0L))
+        {
+            selected = 0L;
+        }
+        else
+        {
+            selected = discGransRef.last();
+        }
+        return selected;
     }
 }

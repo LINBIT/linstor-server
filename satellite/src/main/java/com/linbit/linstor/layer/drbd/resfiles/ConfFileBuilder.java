@@ -68,6 +68,8 @@ import org.slf4j.event.Level;
 public class ConfFileBuilder
 {
     private static final ResourceNameComparator RESOURCE_NAME_COMPARATOR = new ResourceNameComparator();
+    public static final ExtToolsInfo.Version VERSION_9_34_0 = new ExtToolsInfo.Version(9, 34, 0);
+    public static final ExtToolsInfo.Version VERSION_9_23_1 = new ExtToolsInfo.Version(9, 23, 1);
 
     private final ErrorReporter errorReporter;
     private final AccessContext accCtx;
@@ -745,10 +747,17 @@ public class ConfFileBuilder
         int substrFrom = namespace.length() + 1;
 
         StringBuilder confLine = new StringBuilder();
+        ExtToolsInfo.Version drbdUtilsVersion = drbdVersion.getUtilsVsn();
         for (Entry<String, MultiResult> entry : map.entrySet())
         {
             if (isPeerRsc && entry.getKey().endsWith("resync-after") &&
-                !drbdVersion.getUtilsVsn().greaterOrEqual(new ExtToolsInfo.Version(9, 23, 1)))
+                !drbdUtilsVersion.greaterOrEqual(VERSION_9_23_1))
+            {
+                continue;
+            }
+
+            if (entry.getKey().endsWith("/discard-granularity") &&
+                !drbdUtilsVersion.greaterOrEqual(VERSION_9_34_0))
             {
                 continue;
             }

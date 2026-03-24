@@ -3,10 +3,13 @@ package com.linbit.linstor.layer.storage.utils;
 import com.linbit.utils.MathUtils;
 import com.linbit.utils.SymbolicLinkResolver;
 
+import static com.linbit.linstor.layer.storage.BlockSizeConsts.DFLT_DISC_GRAN;
 import static com.linbit.linstor.layer.storage.BlockSizeConsts.DFLT_OPT_IO_SIZE;
 import static com.linbit.linstor.layer.storage.BlockSizeConsts.DFLT_PHY_IO_SIZE;
+import static com.linbit.linstor.layer.storage.BlockSizeConsts.MAX_DISC_GRAN;
 import static com.linbit.linstor.layer.storage.BlockSizeConsts.MAX_OPT_IO_SIZE;
 import static com.linbit.linstor.layer.storage.BlockSizeConsts.MAX_PHY_IO_SIZE;
+import static com.linbit.linstor.layer.storage.BlockSizeConsts.MIN_DISC_GRAN;
 import static com.linbit.linstor.layer.storage.BlockSizeConsts.MIN_OPT_IO_SIZE;
 import static com.linbit.linstor.layer.storage.BlockSizeConsts.MIN_PHY_IO_SIZE;
 
@@ -20,6 +23,7 @@ public class BlockSizeInfo
     private static final int DFLT_BUF_SIZE_FOR_NUMBERS = 32;
     private static final String QUEUE_PHY_BLK_SIZE = "queue/physical_block_size";
     private static final String QUEUE_OPT_IO_SIZE = "queue/optimal_io_size";
+    private static final String QUEUE_DISC_GRAN = "queue/discard_granularity";
 
     /**
      * Determines the blocksize, aka minimum I/O size, for the specified backing storage path.
@@ -62,6 +66,15 @@ public class BlockSizeInfo
     public static long getOptimalIoSize(final Path storageObjRef)
     {
         return getSize(storageObjRef, QUEUE_OPT_IO_SIZE, DFLT_OPT_IO_SIZE, MIN_OPT_IO_SIZE, MAX_OPT_IO_SIZE);
+    }
+
+    /**
+     * Returns <code>/sys/block/.../queue/discard_granularity</code> of the given device.
+     * A value of 0 means the device does not support discard operations.
+     */
+    public static long getDiscardGranularity(final Path storageObjRef)
+    {
+        return getSize(storageObjRef, QUEUE_DISC_GRAN, DFLT_DISC_GRAN, MIN_DISC_GRAN, MAX_DISC_GRAN);
     }
 
     private static long getSize(

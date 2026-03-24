@@ -42,6 +42,14 @@ public class ConfFileBuilderAutoRules
                 false
             )
         );
+        autoRules.put(
+            ApiConsts.NAMESPC_DRBD_DISK_OPTIONS + "/discard-granularity",
+            new AutoRule(
+                ApiConsts.NAMESPC_LINSTOR_DRBD + "/" + ApiConsts.KEY_DRBD_AUTO_DISCARD_GRANULARITY,
+                drbdVlmDataRef.getVolume().getVolumeDefinition().getProps(accCtxRef),
+                false
+            )
+        );
     }
 
     public @Nullable AutoRule get(String keyWithNamespaceRef)

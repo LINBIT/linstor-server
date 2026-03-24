@@ -88,6 +88,7 @@ public class PropsChangedListenerBuilder
         builder.setRscListSupplier(builder.buildRscListSupplierFromRscDfnSupplier(accCtx));
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
+        builder.addDrbdOptionsDiskDiscardGranularity();
         builder.addSkipDisk();
         builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
@@ -106,6 +107,7 @@ public class PropsChangedListenerBuilder
         builder.setRscListSupplier(builder.buildRscListSupplierFromRscDfnSupplier(accCtx));
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
+        builder.addDrbdOptionsDiskDiscardGranularity();
         builder.addSkipDisk();
         builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
@@ -125,6 +127,7 @@ public class PropsChangedListenerBuilder
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addLuksAllowDiscards();
+        builder.addDrbdOptionsDiskDiscardGranularity();
         return builder.propsChangedListeners;
     }
 
@@ -141,6 +144,7 @@ public class PropsChangedListenerBuilder
         builder.setRscListSupplier(builder.buildRscListSupplierFromRscDfnSupplier(accCtx));
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
+        builder.addDrbdOptionsDiskDiscardGranularity();
         builder.addSkipDisk();
         builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
@@ -160,6 +164,7 @@ public class PropsChangedListenerBuilder
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addLuksAllowDiscards();
+        builder.addDrbdOptionsDiskDiscardGranularity();
         return builder.propsChangedListeners;
     }
 
@@ -296,7 +301,7 @@ public class PropsChangedListenerBuilder
             require(currentPropSupplier, "current property supplier");
             require(rscDfnsSupplier, "rscDfns supplier");
             propsChangedListeners.put(
-                CtrlRscDfnApiCallHelper.FULL_KEY_DISC_GRAN,
+                CtrlRscDfnApiCallHelper.FULL_KEY_RS_DISC_GRAN,
                 (ignoredKey, newVal, oldValue) ->
                 {
                     if (!Objects.equals(newVal, oldValue))
@@ -336,6 +341,70 @@ public class PropsChangedListenerBuilder
             propsChangedListeners.put(
                 ApiConsts.NAMESPC_DRBD_OPTIONS + "/" +
                     ApiConsts.KEY_DRBD_AUTO_RS_DISCARD_GRANULARITY,
+                (ignoredKey, newVal, oldValue) ->
+                {
+                    if (!Objects.equals(newVal, oldValue))
+                    {
+                        for (ResourceDefinition rscDfn : rscDfnsSupplier.supply())
+                        {
+                            fluxes.add(ctrlRscDfnHandler.updateProps(rscDfn));
+                        }
+                    }
+                }
+            );
+        }
+
+        /**
+         * If the users sets the regular {@value CtrlRscDfnApiCallHelper.FULL_KEY_DISCARD_GRAN} property on the current
+         * propsContainer, we automatically disable Linstor/Drbd/auto-discard-granularity.
+         */
+
+        void addDrbdOptionsDiskDiscardGranularity()
+        {
+            CtrlRscDfnApiCallHandler ctrlRscDfnHandler = ctrlRscDfnApiCallHandlerProvider.get();
+            require(currentPropSupplier, "current property supplier");
+            require(rscDfnsSupplier, "rscDfns supplier");
+            propsChangedListeners.put(
+                CtrlRscDfnApiCallHelper.FULL_KEY_DISCARD_GRAN,
+                (ignoredKey, newVal, oldValue) ->
+                {
+                    if (!Objects.equals(newVal, oldValue))
+                    {
+                        try
+                        {
+                            if (newVal != null)
+                            {
+                                // disable the auto-prop on the current level
+                                currentPropSupplier.supply()
+                                    .setProp(
+                                        ApiConsts.NAMESPC_LINSTOR_DRBD + "/" +
+                                            ApiConsts.KEY_DRBD_AUTO_DISCARD_GRANULARITY,
+                                        ApiConsts.VAL_FALSE
+                                    );
+                            }
+                            for (ResourceDefinition rscDfn : rscDfnsSupplier.supply())
+                            {
+                                fluxes.add(ctrlRscDfnHandler.updateProps(rscDfn));
+                            }
+                        }
+                        catch (InvalidKeyException | InvalidValueException exc)
+                        {
+                            throw new ImplementationError(exc);
+                        }
+                    }
+                }
+            );
+            addDrbdOptionsAutoDiscardGranularity();
+        }
+
+        void addDrbdOptionsAutoDiscardGranularity()
+        {
+            require(currentPropSupplier, "current property supplier");
+            require(rscDfnsSupplier, "rscDfns supplier");
+            CtrlRscDfnApiCallHandler ctrlRscDfnHandler = ctrlRscDfnApiCallHandlerProvider.get();
+            propsChangedListeners.put(
+                ApiConsts.NAMESPC_LINSTOR_DRBD + "/" +
+                    ApiConsts.KEY_DRBD_AUTO_DISCARD_GRANULARITY,
                 (ignoredKey, newVal, oldValue) ->
                 {
                     if (!Objects.equals(newVal, oldValue))
