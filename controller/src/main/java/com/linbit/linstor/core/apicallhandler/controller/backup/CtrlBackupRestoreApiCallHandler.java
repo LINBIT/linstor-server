@@ -108,6 +108,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
 import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
@@ -520,6 +521,7 @@ public class CtrlBackupRestoreApiCallHandler
             ApiCallRcImpl responses = new ApiCallRcImpl();
             List<Snapshot> allSnaps = new ArrayList<>();
             Map<Snapshot, Snapshot> restoreOrder = new TreeMap<>();
+
             for (PairNonNull<S3MetafileNameInfo, BackupMetaDataPojo> metadata : metadataChain)
             {
                 Snapshot snap = createSnapshotByS3Meta(
@@ -777,7 +779,8 @@ public class CtrlBackupRestoreApiCallHandler
             rscDfn,
             snapDfn,
             snapVlmDfns,
-            resetData
+            resetData,
+            srcMasterKey
         );
 
         // 4. Create snapshots
@@ -1024,7 +1027,8 @@ public class CtrlBackupRestoreApiCallHandler
         ResourceDefinition rscDfn,
         SnapshotDefinition snapDfn,
         Map<Integer, SnapshotVolumeDefinition> snapVlmDfns,
-        boolean resetData
+        boolean resetData,
+        @Nullable byte[] remoteMasterKey
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -1071,9 +1075,53 @@ public class CtrlBackupRestoreApiCallHandler
                 vlmDfnMetaEntry.getValue().getSnapVlmDfnProps(),
                 snapVlmDfn.getSnapVlmDfnProps(peerAccCtx.get())
             );
+
+            reencryptSnapVlmDfnLuksKeysIfNeeded(snapVlmDfn, remoteMasterKey);
+
             snapVlmDfns.put(vlmDfnMetaEntry.getKey(), snapVlmDfn);
         }
         return totalSize;
+    }
+
+    private void reencryptSnapVlmDfnLuksKeysIfNeeded(
+        SnapshotVolumeDefinition snapVlmDfnRef,
+        @Nullable byte[] remoteMasterKey
+    )
+        throws AccessDeniedException
+    {
+        Props vlmDfnProps = snapVlmDfnRef.getVlmDfnPropsForChange(sysCtx);
+        @Nullable String value = vlmDfnProps.getProp(ApiConsts.KEY_PASSPHRASE, ApiConsts.NAMESPC_ENCRYPTION);
+        if (value != null)
+        {
+            if (remoteMasterKey == null)
+            {
+                throw new ImplementationError(
+                    "Source cluster master key could not be restored. Is the passphrase correct?"
+                );
+            }
+            try
+            {
+                byte[] decodedLuksKey = Base64.decode(value);
+                byte[] decryptedLuksKey = decHelper.decrypt(remoteMasterKey, decodedLuksKey);
+                byte[] reencrLuksKey = encHelper.encrypt(decryptedLuksKey);
+                String encodedReencryptedLuksKey = Base64.encode(reencrLuksKey);
+                vlmDfnProps.setProp(ApiConsts.KEY_PASSPHRASE, encodedReencryptedLuksKey, ApiConsts.NAMESPC_ENCRYPTION);
+            }
+            catch (InvalidValueException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (LinStorException exc)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                        "De- or encrypting the volume definition passwords failed."
+                    ),
+                    exc
+                );
+            }
+        }
     }
 
     /**
@@ -1339,6 +1387,10 @@ public class CtrlBackupRestoreApiCallHandler
                 data.isDownloadOnly(),
                 data.isForceRestore()
             );
+
+            @Nullable LuksLayerMetaPojo luksInfo = data.getMetaData().getLuksInfo();
+            @Nullable byte[] remoteMasterKey = getRemoteMasterKeyIfAvailable(data.getSrcClusterId(), luksInfo);
+
             // 10. create vlmDfn(s)
             // 11. create snapVlmDfn(s)
             long totalSize = createSnapVlmDfnForBackupRestore(
@@ -1347,7 +1399,8 @@ public class CtrlBackupRestoreApiCallHandler
                 rscDfn,
                 snapDfn,
                 snapVlmDfns,
-                data.isResetData()
+                data.isResetData(),
+                remoteMasterKey
             );
             Snapshot incrementalBaseSnap = null;
             if (data.getDstBaseSnapName() != null)
@@ -1506,12 +1559,10 @@ public class CtrlBackupRestoreApiCallHandler
                 );
                 if (!luksLayerData.isEmpty())
                 {
-                    LuksLayerMetaPojo luksInfo = data.getMetaData().getLuksInfo();
                     if (luksInfo == null)
                     {
                         throw new ImplementationError("Cannot receive LUKS data without LuksInfo");
                     }
-                    @Nullable byte[] remoteMasterKey = getRemoteMasterKey(data.getSrcClusterId(), luksInfo);
                     if (remoteMasterKey == null)
                     {
                         throw new ImplementationError(
@@ -1594,6 +1645,24 @@ public class CtrlBackupRestoreApiCallHandler
         catch (InvalidKeyException | InvalidValueException | InvalidNameException | MaxSizeException exc)
         {
             throw new ImplementationError(exc);
+        }
+        return ret;
+    }
+
+    private @Nullable byte[] getRemoteMasterKeyIfAvailable(String srcClusterIdRef, @Nullable LuksLayerMetaPojo luksInfo)
+        throws AccessDeniedException
+    {
+        @Nullable byte[] ret = null;
+        if (luksInfo != null)
+        {
+            ret = getRemoteMasterKey(srcClusterIdRef, luksInfo);
+            if (ret == null)
+            {
+                throw new ImplementationError(
+                    "Source cluster master key could not be restored. Is the passphrase correct?"
+                );
+
+            }
         }
         return ret;
     }

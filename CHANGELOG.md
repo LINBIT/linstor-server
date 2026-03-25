@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cloning of shared storagepool resource definitions
 - Fixed resource create if no .resource object was given
 - Prevent NPE if make-available is tried on a resource-definition with no active resources
+- Properly reencrypt user-passphrase in VlmDfn during "backup ship"
 
 ## [1.33.2] - 2026-04-08
 
