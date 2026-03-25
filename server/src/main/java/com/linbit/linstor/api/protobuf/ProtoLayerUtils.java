@@ -471,7 +471,8 @@ public class ProtoLayerUtils
             protoLuksVlm.getDiskState(),
             protoLuksVlm.getDiscGran(),
             false,
-            modifyPassword
+            modifyPassword,
+            protoLuksVlm.getCorruptedKey()
         );
     }
 

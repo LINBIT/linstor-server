@@ -124,6 +124,8 @@ public class LuksRscPojo implements RscLayerDataApi
         private final long discGran;
         @JsonIgnore
         private final boolean exists;
+        @JsonIgnore
+        private final boolean corruptedKey;
 
         public LuksVlmPojo(
             int vlmNrRef,
@@ -136,7 +138,8 @@ public class LuksRscPojo implements RscLayerDataApi
             @Nullable String diskStateRef,
             long discGranRef,
             boolean existsRef,
-            @Nullable byte[] modifyPasswordRef
+            @Nullable byte[] modifyPasswordRef,
+            boolean corruptedKeyRef
         )
         {
             vlmNr = vlmNrRef;
@@ -150,6 +153,7 @@ public class LuksRscPojo implements RscLayerDataApi
             discGran = discGranRef;
             exists = existsRef;
             modifyPassword = modifyPasswordRef;
+            corruptedKey = corruptedKeyRef;
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -169,6 +173,7 @@ public class LuksRscPojo implements RscLayerDataApi
             discGran = VlmProviderObject.UNINITIALIZED_SIZE;
             exists = false;
             modifyPassword = null;
+            corruptedKey = false;
         }
 
         @Override
@@ -243,6 +248,11 @@ public class LuksRscPojo implements RscLayerDataApi
         public boolean exists()
         {
             return exists;
+        }
+
+        public boolean isCorruptedKey()
+        {
+            return corruptedKey;
         }
     }
 }

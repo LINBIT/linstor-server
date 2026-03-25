@@ -53,9 +53,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -238,7 +238,7 @@ public class LuksLayer implements DeviceLayer
                 vlmData.setModifyPassword(null);
             }
 
-            byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
+            @Nullable byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
             if (deleteVlm || deactivateRsc)
             {
                 /*
@@ -296,10 +296,12 @@ public class LuksLayer implements DeviceLayer
 
         resourceProcessorProvider.get().processResource(rscData.getSingleChild(), apiCallRc);
 
+        List<Volume> vlmsWithCorruptKey = new ArrayList<>();
         for (LuksVlmData<Resource> vlmData : luksRscData.getVlmLayerObjects().values())
         {
+            Volume vlm = (Volume) vlmData.getVolume();
             boolean deleteVlm = deleteRsc ||
-                ((Volume) vlmData.getVolume()).getFlags()
+                vlm.getFlags()
                     .isSomeSet(
                         sysCtx,
                         Volume.Flags.DELETE,
@@ -327,7 +329,7 @@ public class LuksLayer implements DeviceLayer
 
                         String providedDev = cryptSetup.createLuksDevice(
                             vlmData.getDataDevice(),
-                            vlmData.getDecryptedPassword(),
+                            decryptedPassphrase,
                             identifier,
                             additionalOptions
                         );
@@ -362,7 +364,7 @@ public class LuksLayer implements DeviceLayer
                         cryptSetup.openLuksDevice(
                             vlmData.getDataDevice(),
                             identifier,
-                            vlmData.getDecryptedPassword(),
+                            decryptedPassphrase,
                             false,
                             additionalOptions
                         );
@@ -413,6 +415,10 @@ public class LuksLayer implements DeviceLayer
                 vlmData.setExists(true);
                 vlmData.setFailed(false);
             }
+            if (!deleteVlm && vlmData.hasCorruptedKey())
+            {
+                vlmsWithCorruptKey.add(vlm);
+            }
         }
         if (failedMissingDecryptedPassphrase)
         {
@@ -424,6 +430,13 @@ public class LuksLayer implements DeviceLayer
                     rscData.getSuffixedResourceName()
                 )
             );
+        }
+        if (!vlmsWithCorruptKey.isEmpty())
+        {
+            boolean plural = vlmsWithCorruptKey.size() > 1;
+            String msg = "Volume" + (plural ? "s " : " ") + "of resource " + rscData.getResourceName().displayValue +
+                (plural ? " have " : " has ") + "corrupted LUKS key. Resource is still usable but cannot be re-opened!";
+            apiCallRc.add(ApiCallRcImpl.simpleEntry(ApiConsts.WARN_CORRUPT_CRYPT_KEY, msg));
         }
     }
 

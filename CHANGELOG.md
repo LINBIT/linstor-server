@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cloning of shared storagepool resource definitions
 - Fixed resource create if no .resource object was given
 - Prevent NPE if make-available is tried on a resource-definition with no active resources
+- If a satellite cannot decrypt a LUKS key it no longer goes into FULLSYNC_FAILED, but just marks the resource to have corrupted crypt key
 
 ## [1.33.2] - 2026-04-08
 

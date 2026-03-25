@@ -209,6 +209,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         luksVlmData.setDiscGran(vlmPojoRef.getDiscGran());
         luksVlmData.setEncryptedKey(vlmPojoRef.getEncryptedPassword());
         luksVlmData.setModifyPassword(vlmPojoRef.getModifyPassword());
+        luksVlmData.setCorruptedKey(vlmPojoRef.isCorruptedKey());
     }
 
     @Override

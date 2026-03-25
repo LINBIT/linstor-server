@@ -11,6 +11,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Added /v1/files/{extFileName}/status/{node}
   - Added ExtFileStatusResult (actual_path + content_match)
   - Added /v1/controller/auth/ api, to create/modify/revoke tokens and initialize the linstor-controller
+  - Added corrupted_key to LUKSVolume
 
 ### Deprecated
   - Deprecated /v1/controller/backup/db in favor of /v1/controller/database/export.

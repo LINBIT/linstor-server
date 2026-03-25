@@ -142,48 +142,71 @@ public class StltCryptApiCallHelper
     private Set<ResourceName> decryptLuksVlmKeys(final byte[] masterKey) throws AccessDeniedException
     {
         final Set<ResourceName> decryptedResources = new TreeSet<>();
-        for (ResourceDefinition rscDfn : rscDfnMap.values())
+        try
         {
-            Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
-            while (rscIt.hasNext())
+            for (ResourceDefinition rscDfn : rscDfnMap.values())
             {
-                Resource rsc = rscIt.next();
-                AbsRscLayerObject<Resource> layerData = rsc.getLayerData(apiCtx);
-                List<AbsRscLayerObject<Resource>> rscDataList = LayerUtils.getChildLayerDataByKind(
-                    layerData,
-                    DeviceLayerKind.LUKS
-                );
-
-                try
+                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+                while (rscIt.hasNext())
                 {
-                    boolean reactivate = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.REACTIVATE);
-                    for (AbsRscLayerObject<Resource> rscData : rscDataList)
+                    Resource rsc = rscIt.next();
+                    boolean success = decryptLuksKey(masterKey, rsc);
+                    if (success)
                     {
-                        for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
-                        {
-                            LuksVlmData<Resource> cryptVlmData = (LuksVlmData<Resource>) vlmData;
-                            if (reactivate || cryptVlmData.getDecryptedPassword() == null)
-                            {
-                                byte[] encryptedKey = cryptVlmData.getEncryptedKey();
-                                byte[] decryptedKey = decryptionHelper.decrypt(masterKey, encryptedKey);
-
-                                cryptVlmData.setDecryptedPassword(decryptedKey);
-                                decryptedResources.add(rscDfn.getName());
-                            }
-                        }
+                        decryptedResources.add(rscDfn.getName());
                     }
-                }
-                catch (LinStorException linExc)
-                {
-                    errorReporter.logError("Unable to decrypt luks layer key with master key for resource %s", rsc);
-                    throw new ImplementationError(
-                        String.format("Unable to decrypt luks layer key with master key for resource %s", rsc),
-                        linExc
-                    );
                 }
             }
         }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
         return decryptedResources;
+    }
+
+    /**
+     * Returns true iff all LUKS keys of all volumes of the given resource could be decrypted.
+     */
+    private boolean decryptLuksKey(final byte[] masterKey, Resource rsc)
+        throws AccessDeniedException
+    {
+        boolean success = true;
+        AbsRscLayerObject<Resource> layerData = rsc.getLayerData(apiCtx);
+        List<AbsRscLayerObject<Resource>> rscDataList = LayerUtils.getChildLayerDataByKind(
+            layerData,
+            DeviceLayerKind.LUKS
+        );
+        boolean reactivate = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.REACTIVATE);
+        for (AbsRscLayerObject<Resource> rscData : rscDataList)
+        {
+            for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
+            {
+                LuksVlmData<Resource> cryptVlmData = (LuksVlmData<Resource>) vlmData;
+                try
+                {
+                    if (reactivate || cryptVlmData.getDecryptedPassword() == null)
+                    {
+                        byte[] encryptedKey = cryptVlmData.getEncryptedKey();
+                        byte[] decryptedKey = decryptionHelper.decrypt(masterKey, encryptedKey);
+
+                        cryptVlmData.setDecryptedPassword(decryptedKey);
+                    }
+                }
+                catch (LinStorException exc)
+                {
+                    errorReporter.logError(
+                        "Unable to decrypt luks layer key with master key for %s/%d",
+                        rsc,
+                        vlmData.getVlmNr().value
+                    );
+                    errorReporter.reportError(exc);
+                    cryptVlmData.setCorruptedKey(true);
+                    success = false;
+                }
+            }
+        }
+        return success;
     }
 
     /**

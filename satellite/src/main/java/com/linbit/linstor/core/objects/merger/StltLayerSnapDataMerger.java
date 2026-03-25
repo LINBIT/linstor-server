@@ -353,6 +353,7 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             // ignoring opened
             // ignoring diskState
             // ignoring usableSize
+            // ignoring corruptedKey
         }
     }
 

@@ -1865,7 +1865,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setAllocatedSize(luksVlmPojo.getAllocatedSize())
                 .setUsableSize(luksVlmPojo.getUsableSize())
                 .setDiscGran(luksVlmPojo.getDiscGran())
-                .setOpened(luksVlmPojo.isOpen());
+                .setOpened(luksVlmPojo.isOpen())
+                .setCorruptedKey(luksVlmPojo.isCorruptedKey());
             if (luksVlmPojo.getDevicePath() != null)
             {
                 builder.setDevicePath(luksVlmPojo.getDevicePath());

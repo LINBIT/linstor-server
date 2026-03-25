@@ -43,6 +43,11 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     private @Nullable byte[] modifyPassword = null;
     private final List<? extends State> unmodStates;
     private @Nullable Size sizeState;
+    /**
+     * If true, the satellite failed to decrypt the key, not because of missing master-key but due to some
+     * error during decrypting.
+     */
+    private boolean corruptedKey = false;
 
     // TODO maybe introduce States like "OPEN", "CLOSED", "UNINITIALIZED" or something...
 
@@ -190,6 +195,10 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     public void setDecryptedPassword(byte[] decryptedPasswordRef)
     {
         decryptedPassword = decryptedPasswordRef;
+        if (decryptedPasswordRef != null)
+        {
+            corruptedKey = false;
+        }
     }
 
     public @Nullable byte[] getModifyPassword()
@@ -213,6 +222,16 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         identifier = identifierRef;
     }
 
+    public void setCorruptedKey(boolean corruptedKeyRef)
+    {
+        corruptedKey = corruptedKeyRef;
+    }
+
+    public boolean hasCorruptedKey()
+    {
+        return corruptedKey;
+    }
+
     @Override
     public LuksVlmPojo asPojo(AccessContext accCtxRef)
     {
@@ -227,7 +246,9 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
             diskState,
             discGran.get(),
             exists.get(),
-            modifyPassword
+            modifyPassword,
+            corruptedKey
         );
     }
+
 }

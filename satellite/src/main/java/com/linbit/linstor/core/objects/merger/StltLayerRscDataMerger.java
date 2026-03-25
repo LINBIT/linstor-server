@@ -390,6 +390,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             // ignoring opened
             // ignoring diskState
             // ignoring usableSize
+            // ignoring corruptedKey (makes only sense to send from stlt -> ctrl, not vice versa)
         }
     }
 

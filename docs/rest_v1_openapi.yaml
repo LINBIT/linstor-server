@@ -7132,6 +7132,8 @@ components:
           description: String describing current volume state
         opened:
           type: boolean
+        corrupted_key:
+          type: boolean
 
     StorageVolume:
       type: object

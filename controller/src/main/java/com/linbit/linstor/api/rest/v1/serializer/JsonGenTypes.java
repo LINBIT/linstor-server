@@ -582,6 +582,7 @@ public class JsonGenTypes
          */
         public @Nullable String disk_state;
         public @Nullable Boolean opened;
+        public @Nullable Boolean corrupted_key;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -96,10 +96,10 @@ import com.linbit.utils.PairNonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -767,6 +767,7 @@ public class Json
         luksVolume.usable_size_kib = luksVlmPojo.getUsableSize();
         luksVolume.opened = luksVlmPojo.isOpen();
         luksVolume.disk_state = luksVlmPojo.getDiskState();
+        luksVolume.corrupted_key = luksVlmPojo.isCorruptedKey();
         return luksVolume;
     }
 
