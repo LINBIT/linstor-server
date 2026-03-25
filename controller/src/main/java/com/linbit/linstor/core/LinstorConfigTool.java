@@ -17,6 +17,7 @@ import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrdInitializer;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
+import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StderrErrorReporter;
@@ -52,6 +53,8 @@ import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.moandjiezana.toml.Toml;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -74,7 +77,8 @@ public class LinstorConfigTool
         CmdSqlScript.class,
         CmdMigrateDatabaseConfig.class,
         CmdRunMigration.class,
-        CmdAllMigrationsApplied.class
+        CmdAllMigrationsApplied.class,
+        CmdDisableTokenAuth.class
     })
     private static class LinstorConfigCmd implements Callable<Object>
     {
@@ -437,6 +441,71 @@ public class LinstorConfigTool
             databasePair.objB.shutdown(true);
 
             return result;
+        }
+    }
+
+    @CommandLine.Command(
+        name = "disable-token-auth",
+        description = "Disable token authentication in the LINSTOR database."
+    )
+    private static class CmdDisableTokenAuth implements Callable<Object>
+    {
+        @CommandLine.Option(names = {"-c", "--config-directory"},
+            description = "Configuration directory for the controller"
+        )
+        private String configurationDirectory = "/etc/linstor";
+
+        @Override
+        public Object call() throws Exception
+        {
+            CtrlConfig cfg = new CtrlConfig(new String[]{"-c", configurationDirectory});
+            ErrorReporter reporter = new StderrErrorReporter("linstor-config");
+            DatabaseDriverInfo.DatabaseType dbType = Controller.checkDatabaseConfig(reporter, cfg);
+
+            switch (dbType)
+            {
+                case SQL -> disableTokenAuthSql(cfg);
+                case K8S_CRD -> disableTokenAuthK8s();
+                default -> throw new ImplementationError(
+                    String.format("Unrecognized database type '%s'", dbType));
+            }
+
+            System.out.println(
+                "Token authentication disabled.\n" +
+                    "Please restart the linstor-controller for this to take effect."
+            );
+            return null;
+        }
+    }
+
+    private static void disableTokenAuthSql(CtrlConfig cfg) throws Exception
+    {
+        try (PoolingDataSource<PoolableConnection> dataSource =
+                 initConnectionProvider(
+                     cfg.getDbConnectionUrl(),
+                     cfg.getDbUser(),
+                     cfg.getDbPassword());
+             Connection con = dataSource.getConnection())
+        {
+            con.setSchema(DATABASE_SCHEMA_NAME);
+            SQLUtils.executeStatement(con,
+                "DELETE FROM PROPS_CONTAINERS " +
+                    "WHERE PROPS_INSTANCE='/CTRL' AND PROP_KEY='Auth/TokenAuthenticationEnabled'");
+            con.commit();
+        }
+    }
+
+    private static void disableTokenAuthK8s()
+    {
+        String propKey = "Auth/TokenAuthenticationEnabled";
+
+        String k8sResourceName = GenCrdCurrent.deriveKey("/CTRL:" + propKey);
+
+        try (KubernetesClient k8sClient = new KubernetesClientBuilder().build())
+        {
+            k8sClient.resources(GenCrdCurrent.PropsContainers.class)
+                .withName(k8sResourceName)
+                .delete();
         }
     }
 

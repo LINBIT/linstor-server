@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added property "Clone/DdBlocksize" to configure the DD clone blocksize used
 - Added "BalanceResourcesSkipDiskLimit" property to skip balancing resources with more than X skipDisk resources (default 1)
 - Added property "Autoplacer/MinThinFreeSpace" that disqualifies storPools with less free space than specified
+- Added linstor-config disable-token-auth command
 
 ### Changed
 
