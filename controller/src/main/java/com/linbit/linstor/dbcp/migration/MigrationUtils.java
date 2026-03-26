@@ -120,7 +120,25 @@ public class MigrationUtils
         {
             if (!typeRef.equals("BOOL") && !typeRef.equals("BOOLEAN"))
             {
-                defaultVal = "'" + defaultValRef + "'";
+                if (defaultValRef.startsWith("X'") && defaultValRef.endsWith("'"))
+                {
+                    // do not wrap hex strings in additional '...'
+                    if (DatabaseInfo.DbProduct.POSTGRESQL.equals(database))
+                    {
+                        // however postgres requires again a bit of a different syntax
+                        // "X'<hex>'" -> "\x'<hex>'"
+                        String hexContent = defaultValRef.substring(2, defaultValRef.length() - 1);
+                        defaultVal = "'\\x" + hexContent + "'";
+                    }
+                    else
+                    {
+                        defaultVal = defaultValRef;
+                    }
+                }
+                else
+                {
+                    defaultVal = "'" + defaultValRef + "'";
+                }
             }
             else
             {

@@ -23,7 +23,7 @@ public class Migration_2026_03_09_AddFilesAltSuffixes extends LinstorMigration
                 "ALT_SUFFIXES",
                 "BLOB",
                 false,
-                "[]",
+                "X'5B5D'", // "[]"
                 null
             )
         );
