@@ -43,7 +43,9 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.Commands;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.ShellUtils;
 
@@ -251,7 +253,7 @@ public class LuksLayer implements DeviceLayer
                     vlmData.setOpened(false);
                     vlmData.setExists(false);
 
-                    if (deleteVlm)
+                    if (deleteVlm && !allStorageChildrenZfs(luksRscData))
                     {
                         cryptSetup.deleteHeaders(vlmData.getDataDevice());
                     }
@@ -570,5 +572,24 @@ public class LuksLayer implements DeviceLayer
             throw new ImplementationError(exc);
         }
         return additionalOptions;
+    }
+
+    private boolean allStorageChildrenZfs(LuksRscData<Resource> luksRscDataRef)
+    {
+        boolean allZfs = true;
+        List<AbsRscLayerObject<Resource>> storageRscList =
+            LayerUtils.getChildLayerDataByKind(luksRscDataRef, DeviceLayerKind.STORAGE);
+        for (AbsRscLayerObject<Resource> storageRsc : storageRscList)
+        {
+            for (VlmProviderObject<Resource> vlm : storageRsc.getVlmLayerObjects().values())
+            {
+                DeviceProviderKind kind = vlm.getProviderKind();
+                if (kind != DeviceProviderKind.ZFS && kind != DeviceProviderKind.ZFS_THIN)
+                {
+                    allZfs = false;
+                }
+            }
+        }
+        return allZfs;
     }
 }
