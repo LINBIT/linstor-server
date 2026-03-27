@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed free space reporting of thin storage spaces (Windows) pool
 - Fixed race condition where after a reconnect storage pools might not show correct capacities and freespaces.
 - Fixed PREPARE_SHIPPING backups didn't count as active shippings
+- Fixed the clone status check if no DRBD connection states have been received yet
 
 ## [1.33.2] - 2026-04-08
 
