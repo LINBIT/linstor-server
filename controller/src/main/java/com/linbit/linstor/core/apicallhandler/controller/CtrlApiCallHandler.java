@@ -1321,22 +1321,12 @@ public class CtrlApiCallHandler
                             {
                                 isReady = false;
 
-                                anyFailed = rscState.getConnectionStates().values()
-                                    .stream()
-                                    .flatMap(f -> f.values().stream())
-                                    .anyMatch("StandAlone"::equalsIgnoreCase);
-
-                                if (anyFailed)
-                                {
-                                    break;
-                                }
-
                                 boolean allDrbdConnected = rscState.getConnectionStates().values()
                                     .stream()
                                     .flatMap(f -> f.values().stream())
                                     .allMatch("Connected"::equalsIgnoreCase);
 
-                                if (allDrbdConnected)
+                                if (allDrbdConnected && !rscState.getConnectionStates().isEmpty())
                                 {
                                     anyFailed = rscState.getVolumeStates().values().stream().anyMatch(
                                         vlmState ->

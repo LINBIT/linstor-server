@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed the clone status check if no DRBD connection states have been received yet
+
 ## [1.33.2] - 2026-04-08
 
 ### Changed
