@@ -2,7 +2,7 @@ package com.linbit.linstor.storage.kinds;
 
 public enum ExtTools
 {
-    DRBD9_KERNEL, DRBD9_UTILS, DRBD_PROXY,
+    DRBD9_KERNEL, DRBD9_UTILS, DRBD_PROXY, DRBD_REACTOR,
     CRYPT_SETUP,
     LVM, LVM_THIN, THIN_SEND_RECV,
     ZFS_KMOD, ZFS_UTILS,

@@ -247,6 +247,153 @@ paths:
                   satellite_encryption_type: Plain
                   is_active: true
         description: Node to add to Linstor
+  /v1/nodes/exec/drbd-reactorctl/status:
+    post:
+      tags:
+        - developers
+      summary: get drbd-reactor status from nodes
+      operationId: nodeExecDrbdReactorStatus
+      description: |
+        Executes 'drbd-reactorctl status --json' on specified nodes and returns the output.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReactorExecRequest'
+            example:
+              nodes: ["nodeA", "nodeB"]
+      responses:
+        '200':
+          description: drbd-reactor status results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReactorExecResponse'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/exec/drbd-reactorctl/evict:
+    post:
+      tags:
+        - developers
+      summary: evict drbd-reactor resources on nodes
+      operationId: nodeExecDrbdReactorEvict
+      description: |
+        Executes 'drbd-reactorctl evict <resource>' on specified nodes.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReactorExecRequest'
+            example:
+              nodes: ["nodeA"]
+              resource: "linstor_controller"
+      responses:
+        '200':
+          description: evict command results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReactorExecResponse'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/exec/drbd-reactorctl/disable:
+    post:
+      tags:
+        - developers
+      summary: disable drbd-reactor plugin on nodes
+      operationId: nodeExecDrbdReactorDisable
+      description: |
+        Executes 'drbd-reactorctl disable <config>' on specified nodes.
+        If 'now' is true, also stops the drbd-services target immediately
+        (equivalent to 'drbd-reactorctl disable --now <config>').
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReactorPluginRequest'
+            example:
+              nodes: ["nodeA"]
+              config: "linstor_controller"
+              now: false
+      responses:
+        '200':
+          description: disable command results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReactorExecResponse'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/exec/drbd-reactorctl/enable:
+    post:
+      tags:
+        - developers
+      summary: enable drbd-reactor plugin on nodes
+      operationId: nodeExecDrbdReactorEnable
+      description: |
+        Executes 'drbd-reactorctl enable <config>' on specified nodes.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReactorPluginRequest'
+            example:
+              nodes: ["nodeA"]
+              config: "linstor_controller"
+      responses:
+        '200':
+          description: enable command results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReactorExecResponse'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/exec/drbd-reactorctl/restart:
+    post:
+      tags:
+        - developers
+      summary: restart drbd-reactor plugin on nodes
+      operationId: nodeExecDrbdReactorRestart
+      description: |
+        Executes 'drbd-reactorctl restart <config>' on specified nodes.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReactorPluginRequest'
+            example:
+              nodes: ["nodeA"]
+              config: "linstor_controller"
+      responses:
+        '200':
+          description: restart command results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReactorExecResponse'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
   /v1/stats/nodes:
     get:
       tags:
@@ -9098,3 +9245,66 @@ components:
         no_https:
           type: boolean
           default: false
+
+    ReactorExecRequest:
+      type: object
+      required:
+        - nodes
+      properties:
+        nodes:
+          type: array
+          items:
+            type: string
+        resource:
+          type: string
+          description: The resource name for evict operation
+        wait:
+          type: boolean
+          default: false
+          description: |
+            For evict only: if true, the command runs synchronously and the response
+            includes active_node (the node that took over). Use only when the evicted
+            service is not the LINSTOR controller itself, as evicting the controller
+            drops the satellite connection.
+
+    ReactorPluginRequest:
+      type: object
+      required:
+        - nodes
+        - config
+      properties:
+        nodes:
+          type: array
+          items:
+            type: string
+        config:
+          type: string
+          description: The plugin config name (e.g., linstor_controller)
+        now:
+          type: boolean
+          default: false
+          description: |
+            For disable only: if true, also stops the drbd-services target immediately
+            (equivalent to 'drbd-reactorctl disable --now'). Defaults to false.
+
+    ReactorExecResponse:
+      type: object
+      required:
+        - node
+        - exit_code
+      properties:
+        node:
+          type: string
+        exit_code:
+          type: integer
+        stdout_utf8:
+          type: string
+          description: The stdout content as a UTF-8 string
+        stderr_utf8:
+          type: string
+          description: The stderr content as a UTF-8 string
+        active_node:
+          type: string
+          description: |
+            For evict with wait=true: the node that took over after eviction.
+            Absent if eviction was async, no takeover occurred, or output could not be parsed.

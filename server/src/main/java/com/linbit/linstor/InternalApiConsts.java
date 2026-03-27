@@ -86,6 +86,9 @@ public class InternalApiConsts
     public static final String API_REQ_SOS_REPORT_CLEANUP = "CleanupSosReport";
     public static final String API_RSP_SOS_REPORT_CLEANUP_FINISHED = "ResponseSosReportFinished";
 
+    public static final String API_REQ_DRBD_REACTOR_EXEC = "RequestDrbdReactorExec";
+    public static final String API_RSP_DRBD_REACTOR_EXEC = "ResponseDrbdReactorExec";
+
     public static final String API_CHANGED_EXTERNAL_FILE = "ChangedExternalFile";
     public static final String API_REQUEST_EXTERNAL_FILE = "RequestExternalFile";
     public static final String API_APPLY_EXTERNAL_FILE = "ApplyExternalFile";

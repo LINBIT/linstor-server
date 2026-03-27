@@ -2139,6 +2139,58 @@ public class JsonGenTypes
         public boolean no_https = false;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ReactorExecRequest
+    {
+        public List<String> nodes = Collections.emptyList();
+        /**
+         * The resource name for evict operation
+         */
+        public @Nullable String resource;
+        /**
+         * For evict only: if true, the command runs synchronously and the response
+         * includes active_node (the node that took over). Use only when the evicted
+         * service is not the LINSTOR controller itself, as evicting the controller
+         * drops the satellite connection.
+         */
+        public boolean wait = false;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ReactorPluginRequest
+    {
+        public List<String> nodes = Collections.emptyList();
+        /**
+         * The plugin config name (e.g., linstor_controller)
+         */
+        public String config;
+        /**
+         * For disable only: if true, also stops the drbd-services target immediately
+         * (equivalent to 'drbd-reactorctl disable --now'). Defaults to false.
+         */
+        public boolean now = false;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ReactorExecResponse
+    {
+        public String node;
+        public int exit_code;
+        /**
+         * The stdout content as a UTF-8 string
+         */
+        public @Nullable String stdout_utf8;
+        /**
+         * The stderr content as a UTF-8 string
+         */
+        public @Nullable String stderr_utf8;
+        /**
+         * For evict with wait=true: the node that took over after eviction.
+         * Absent if eviction was async, no takeover occurred, or output could not be parsed.
+         */
+        public @Nullable String active_node;
+    }
+
     private JsonGenTypes()
     {
     }

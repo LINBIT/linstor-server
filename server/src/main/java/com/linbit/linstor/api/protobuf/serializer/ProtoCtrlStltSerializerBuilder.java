@@ -1420,6 +1420,13 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
+    public CtrlStltSerializer.CtrlStltSerializerBuilder drbdReactorExecResponse(int exitCode, byte[] stdout, byte[] stderr)
+    {
+        super.drbdReactorExecResponse(exitCode, stdout, stderr);
+        return this;
+    }
+
+    @Override
     public CtrlStltSerializer.CtrlStltSerializerBuilder physicalDevices(List<LsBlkEntry> entries)
     {
         try

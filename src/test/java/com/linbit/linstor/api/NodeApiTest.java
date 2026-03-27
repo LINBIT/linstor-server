@@ -5,13 +5,17 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.DoNotSeedDefaultPeer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlExecNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.DrbdReactorCommand;
+import com.linbit.linstor.proto.responses.MsgRspDrbdReactorExecOuterClass.MsgRspDrbdReactorExec;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.DummySecurityInitializer;
@@ -21,6 +25,8 @@ import com.linbit.linstor.security.SecurityLevel;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +34,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import com.google.protobuf.ByteString;
 import com.google.inject.Key;
 import com.google.inject.testing.fieldbinder.Bind;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -35,9 +42,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import reactor.core.publisher.Flux;
+import reactor.util.context.Context;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class NodeApiTest extends ApiTestBase
 {
+    @Inject private Provider<CtrlExecNodeApiCallHandler> execNodeApiCallHandlerProvider;
     @Inject private Provider<CtrlNodeApiCallHandler> nodeApiCallHandlerProvider;
     @Inject private Provider<CtrlNodeCrtApiCallHandler> nodeCrtApiCallHandlerProvider;
 
@@ -199,6 +211,69 @@ public class NodeApiTest extends ApiTestBase
                 .clearNetIfApis()
                 .addNetIfApis("net0", "0::0::0")
         );
+    }
+
+    @Test
+    public void execDrbdReactorEmptyResponseIsFailure() throws Exception
+    {
+        Mockito.when(mockSatellite.isOnline()).thenReturn(true);
+        Mockito.when(mockSatellite.apiCall(Mockito.anyString(), Mockito.any())).thenReturn(Flux.empty());
+
+        List<JsonGenTypes.ReactorExecResponse> responses = execNodeApiCallHandlerProvider.get()
+            .nodeExecDrbdReactor(List.of(testNodeName.displayValue), DrbdReactorCommand.STATUS, null, false)
+            .collectList()
+            .contextWrite(Context.of(ApiModule.API_CALL_NAME, "test", AccessContext.class, BOB_ACC_CTX))
+            .block();
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).node).isEqualTo(testNodeName.displayValue);
+        assertThat(responses.get(0).exit_code).isEqualTo(-1);
+        assertThat(responses.get(0).stderr_utf8).contains("No response received");
+    }
+
+    @Test
+    public void execDrbdReactorPeerErrorReturnsPerNodeFailure() throws Exception
+    {
+        Mockito.when(mockSatellite.isOnline()).thenReturn(true);
+        Mockito.when(mockSatellite.apiCall(Mockito.anyString(), Mockito.any()))
+            .thenReturn(Flux.error(new RuntimeException("boom")));
+
+        List<JsonGenTypes.ReactorExecResponse> responses = execNodeApiCallHandlerProvider.get()
+            .nodeExecDrbdReactor(List.of(testNodeName.displayValue), DrbdReactorCommand.STATUS, null, false)
+            .collectList()
+            .contextWrite(Context.of(ApiModule.API_CALL_NAME, "test", AccessContext.class, BOB_ACC_CTX))
+            .block();
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).node).isEqualTo(testNodeName.displayValue);
+        assertThat(responses.get(0).exit_code).isEqualTo(-1);
+        assertThat(responses.get(0).stderr_utf8).contains("Communication error: boom");
+    }
+
+    @Test
+    public void execDrbdReactorResponseContainsUtf8Aliases() throws Exception
+    {
+        Mockito.when(mockSatellite.isOnline()).thenReturn(true);
+
+        MsgRspDrbdReactorExec protoResp = MsgRspDrbdReactorExec.newBuilder()
+            .setExitCode(0)
+            .setStdout(ByteString.copyFromUtf8("stdout-value"))
+            .setStderr(ByteString.copyFromUtf8("stderr-value"))
+            .build();
+        ByteArrayOutputStream serializedResp = new ByteArrayOutputStream();
+        protoResp.writeDelimitedTo(serializedResp);
+        Mockito.when(mockSatellite.apiCall(Mockito.anyString(), Mockito.any()))
+            .thenReturn(Flux.just(new ByteArrayInputStream(serializedResp.toByteArray())));
+
+        List<JsonGenTypes.ReactorExecResponse> responses = execNodeApiCallHandlerProvider.get()
+            .nodeExecDrbdReactor(List.of(testNodeName.displayValue), DrbdReactorCommand.STATUS, null, false)
+            .collectList()
+            .contextWrite(Context.of(ApiModule.API_CALL_NAME, "test", AccessContext.class, BOB_ACC_CTX))
+            .block();
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).stdout_utf8).isEqualTo("stdout-value");
+        assertThat(responses.get(0).stderr_utf8).isEqualTo("stderr-value");
     }
 
 /*

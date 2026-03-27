@@ -14,6 +14,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.logging.ErrorReportResult;
+import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.DrbdReactorCommand;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import java.time.Instant;
@@ -125,6 +126,10 @@ public interface CommonSerializer
         );
 
         CommonSerializerBuilder cleanupSosReport(String sosReportNameRef);
+
+        CommonSerializerBuilder drbdReactorExecRequest(DrbdReactorCommand command, String config, boolean wait);
+
+        CommonSerializerBuilder drbdReactorExecResponse(int exitCode, byte[] stdout, byte[] stderr);
 
         CommonSerializerBuilder filter(
             Set<NodeName> nodesFilter,

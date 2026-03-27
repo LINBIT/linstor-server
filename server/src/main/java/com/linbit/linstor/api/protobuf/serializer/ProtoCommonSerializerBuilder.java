@@ -137,6 +137,8 @@ import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
 import com.linbit.linstor.proto.requests.MsgDelErrorReportsOuterClass.MsgDelErrorReports;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
+import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.DrbdReactorCommand;
+import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.MsgReqDrbdReactorExec;
 import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.MsgReqSosReportFiles;
 import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.ReqFile;
 import com.linbit.linstor.proto.requests.MsgReqSosReportListOuterClass.MsgReqSosReportList;
@@ -144,6 +146,7 @@ import com.linbit.linstor.proto.responses.FileOuterClass;
 import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
+import com.linbit.linstor.proto.responses.MsgRspDrbdReactorExecOuterClass.MsgRspDrbdReactorExec;
 import com.linbit.linstor.proto.responses.MsgReqSosCleanupOuterClass.MsgReqSosCleanup;
 import com.linbit.linstor.proto.responses.MsgSosReportFilesReplyOuterClass.MsgSosReportFilesReply;
 import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.FileInfo;
@@ -1013,6 +1016,46 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
+    public CommonSerializerBuilder drbdReactorExecRequest(DrbdReactorCommand command, String config, boolean wait)
+    {
+        try
+        {
+            MsgReqDrbdReactorExec.Builder builder = MsgReqDrbdReactorExec.newBuilder()
+                .setCommand(command)
+                .setWait(wait);
+            if (config != null && !config.isEmpty())
+            {
+                builder.setConfig(config);
+            }
+            builder.build().writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializerBuilder drbdReactorExecResponse(int exitCode, byte[] stdout, byte[] stderr)
+    {
+        try
+        {
+            MsgRspDrbdReactorExec.newBuilder()
+                .setExitCode(exitCode)
+                .setStdout(ByteString.copyFrom(stdout))
+                .setStderr(ByteString.copyFrom(stderr))
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
     public CommonSerializer.CommonSerializerBuilder filter(
         Set<NodeName> nodesFilter,
         Set<StorPoolName> storPoolFilter,
@@ -1564,6 +1607,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case DRBD9_KERNEL -> ExternalTools.DRBD9;
             case DRBD9_UTILS -> ExternalTools.DRBD_UTILS;
             case DRBD_PROXY -> ExternalTools.DRBD_PROXY;
+            case DRBD_REACTOR -> ExternalTools.DRBD_REACTOR;
             case LVM -> ExternalTools.LVM;
             case LVM_THIN -> ExternalTools.LVM_THIN;
             case THIN_SEND_RECV -> ExternalTools.THIN_SEND_RECV;

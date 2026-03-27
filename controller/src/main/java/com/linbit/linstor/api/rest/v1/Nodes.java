@@ -12,6 +12,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.Node;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.NodeRestore;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlExecNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
@@ -24,6 +25,7 @@ import com.linbit.linstor.core.apis.SatelliteConfigApi;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.DrbdReactorCommand;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -56,6 +58,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Path("v1/nodes")
 @Produces(MediaType.APPLICATION_JSON)
@@ -67,6 +70,7 @@ public class Nodes
     private final CtrlNodeCrtApiCallHandler ctrlNodeCrtApiCallHandler;
     private final CtrlNodeDeleteApiCallHandler ctrlNodeDeleteApiCallHandler;
     private final CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandler;
+    private final CtrlExecNodeApiCallHandler ctrlExecNodeApiCallHandler;
     private final ObjectMapper objectMapper;
     private final ErrorReporter errorReporter;
     private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
@@ -79,6 +83,7 @@ public class Nodes
         CtrlNodeCrtApiCallHandler ctrlNodeCrtApiCallHandlerRef,
         CtrlNodeDeleteApiCallHandler ctrlNodeDeleteApiCallHandlerRef,
         CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandlerRef,
+        CtrlExecNodeApiCallHandler ctrlExecNodeApiCallHandlerRef,
         ErrorReporter errorReporterRef,
         CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
@@ -89,9 +94,75 @@ public class Nodes
         ctrlNodeCrtApiCallHandler = ctrlNodeCrtApiCallHandlerRef;
         ctrlNodeDeleteApiCallHandler = ctrlNodeDeleteApiCallHandlerRef;
         ctrlNodeLostApiCallHandler = ctrlNodeLostApiCallHandlerRef;
+        ctrlExecNodeApiCallHandler = ctrlExecNodeApiCallHandlerRef;
         errorReporter = errorReporterRef;
         ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
         objectMapper = new ObjectMapper();
+    }
+
+    @POST
+    @Path("exec/drbd-reactorctl/status")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public void nodeExecDrbdReactorStatus(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        execDrbdReactorNodes(request, asyncResponse, jsonData, DrbdReactorCommand.STATUS);
+    }
+
+    @POST
+    @Path("exec/drbd-reactorctl/evict")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public void nodeExecDrbdReactorEvict(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        execDrbdReactorNodes(request, asyncResponse, jsonData, DrbdReactorCommand.EVICT);
+    }
+
+    @POST
+    @Path("exec/drbd-reactorctl/disable")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public void nodeExecDrbdReactorDisable(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        execDrbdReactorPlugin(request, asyncResponse, jsonData, DrbdReactorCommand.DISABLE);
+    }
+
+    @POST
+    @Path("exec/drbd-reactorctl/enable")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public void nodeExecDrbdReactorEnable(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        execDrbdReactorPlugin(request, asyncResponse, jsonData, DrbdReactorCommand.ENABLE);
+    }
+
+    @POST
+    @Path("exec/drbd-reactorctl/restart")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public void nodeExecDrbdReactorRestart(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        execDrbdReactorPlugin(request, asyncResponse, jsonData, DrbdReactorCommand.RESTART);
     }
 
     @GET
@@ -688,5 +759,105 @@ public class Nodes
             },
             false
         );
+    }
+
+    private void execDrbdReactorNodes(
+        Request request,
+        AsyncResponse asyncResponse,
+        String jsonData,
+        DrbdReactorCommand command
+    )
+    {
+        try
+        {
+            JsonGenTypes.ReactorExecRequest execReq = objectMapper.readValue(
+                jsonData, JsonGenTypes.ReactorExecRequest.class
+            );
+            if (execReq.nodes == null || execReq.nodes.isEmpty())
+            {
+                asyncResponse.resume(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"error\":\"'nodes' must be a non-empty list\"}")
+                        .build()
+                );
+                return;
+            }
+            doExecDrbdReactor(
+                request, asyncResponse, command, execReq.nodes, execReq.resource, execReq.wait
+            );
+        }
+        catch (IOException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
+    }
+
+    private void execDrbdReactorPlugin(
+        Request request,
+        AsyncResponse asyncResponse,
+        String jsonData,
+        DrbdReactorCommand command
+    )
+    {
+        try
+        {
+            JsonGenTypes.ReactorPluginRequest execReq = objectMapper.readValue(
+                jsonData, JsonGenTypes.ReactorPluginRequest.class
+            );
+            if (execReq.nodes == null || execReq.nodes.isEmpty())
+            {
+                asyncResponse.resume(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"error\":\"'nodes' must be a non-empty list\"}")
+                        .build()
+                );
+                return;
+            }
+            if (execReq.config == null || execReq.config.isEmpty())
+            {
+                asyncResponse.resume(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"error\":\"'config' is required\"}")
+                        .build()
+                );
+                return;
+            }
+            DrbdReactorCommand cmd = (command == DrbdReactorCommand.DISABLE && execReq.now)
+                ? DrbdReactorCommand.DISABLE_NOW : command;
+            doExecDrbdReactor(request, asyncResponse, cmd, execReq.nodes, execReq.config, false);
+        }
+        catch (IOException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
+    }
+
+    private void doExecDrbdReactor(
+        Request request,
+        AsyncResponse asyncResponse,
+        DrbdReactorCommand command,
+        List<String> nodes,
+        String config,
+        boolean wait
+    )
+    {
+        Mono<Response> mono = ctrlExecNodeApiCallHandler
+            .nodeExecDrbdReactor(nodes, command, config, wait)
+            .collectList()
+            .map(resList ->
+            {
+                try
+                {
+                    return Response.ok(objectMapper.writeValueAsString(resList)).build();
+                }
+                catch (JsonProcessingException exc)
+                {
+                    return ApiCallRcRestUtils.toResponse(
+                        ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage()),
+                        Response.Status.INTERNAL_SERVER_ERROR
+                    );
+                }
+            });
+        requestHelper.doFlux(InternalApiConsts.API_REQ_DRBD_REACTOR_EXEC, request, asyncResponse, mono);
     }
 }

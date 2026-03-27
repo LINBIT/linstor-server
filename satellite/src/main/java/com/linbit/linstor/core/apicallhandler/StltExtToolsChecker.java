@@ -54,6 +54,8 @@ public class StltExtToolsChecker
 
     private static final Pattern DRBD_PROXY_VERSION_PATTERN = Pattern
         .compile("(?:[Dd]rbd-proxy(?:-rs)? )?(\\d+)\\.(\\d+)\\.(\\d+)");
+    private static final Pattern DRBD_REACTOR_VERSION_PATTERN = Pattern
+        .compile("(?:drbd-reactorctl\\s+)?(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern CRYPTSETUP_VERSION_PATTERN = Pattern
         .compile("(?:cryptsetup )?(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern LVM_VERSION_PATTERN = Pattern
@@ -172,6 +174,7 @@ public class StltExtToolsChecker
             ExtToolsInfoChecker.checkBoth(this::getDrbdUtilsInfo),
             ExtToolsInfoChecker.checkWindows(this::getStorageSpacesInfo),
             ExtToolsInfoChecker.checkLinux(this::getDrbdProxyInfo),
+            ExtToolsInfoChecker.checkLinux(this::getDrbdReactorInfo),
             ExtToolsInfoChecker.checkLinux(this::getCryptSetupInfo),
             ExtToolsInfoChecker.checkLinux(this::getLvmInfo),
             ExtToolsInfoChecker.checkLinux(this::getLvmThinInfo),
@@ -394,6 +397,16 @@ public class StltExtToolsChecker
     private ExtToolsInfo getDrbdProxyInfo()
     {
         return infoBy3MatchGroupPattern(DRBD_PROXY_VERSION_PATTERN, ExtTools.DRBD_PROXY, "drbd-proxy", "--version");
+    }
+
+    private ExtToolsInfo getDrbdReactorInfo()
+    {
+        return infoBy3MatchGroupPattern(
+            DRBD_REACTOR_VERSION_PATTERN,
+            ExtTools.DRBD_REACTOR,
+            "drbd-reactorctl",
+            "--version"
+        );
     }
 
     private ExtToolsInfo getCryptSetupInfo()

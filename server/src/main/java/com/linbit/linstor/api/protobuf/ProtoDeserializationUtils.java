@@ -32,6 +32,7 @@ import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.ReqFile;
 import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
+import com.linbit.linstor.proto.responses.MsgRspDrbdReactorExecOuterClass.MsgRspDrbdReactorExec;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -98,6 +99,12 @@ public class ProtoDeserializationUtils
         return new ApiCallRcImpl(apiCallRcs.stream()
             .map(apiCallResponse -> parseApiCallRc(apiCallResponse, messagePrefix))
             .collect(Collectors.toList()));
+    }
+
+    public static MsgRspDrbdReactorExec parseDrbdReactorExecResponse(ByteArrayInputStream inputStream)
+        throws IOException
+    {
+        return MsgRspDrbdReactorExec.parseDelimitedFrom(inputStream);
     }
 
     public static ApiCallRc parseApiCallAnswerMsg(
@@ -373,6 +380,9 @@ public class ProtoDeserializationUtils
                 break;
             case DRBD_PROXY:
                 tool = ExtTools.DRBD_PROXY;
+                break;
+            case DRBD_REACTOR:
+                tool = ExtTools.DRBD_REACTOR;
                 break;
             case CRYPT_SETUP:
                 tool = ExtTools.CRYPT_SETUP;

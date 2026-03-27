@@ -238,5 +238,8 @@ public interface CtrlStltSerializer extends CommonSerializer
             DeviceProviderKind providerKindRef,
             String poolName
         );
+
+        @Override
+        CtrlStltSerializerBuilder drbdReactorExecResponse(int exitCode, byte[] stdout, byte[] stderr);
     }
 }

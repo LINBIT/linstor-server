@@ -34,7 +34,8 @@ message ExternalToolsInfo
         EBS_TARGET = 23;
         STORAGE_SPACES = 25;
         STORAGE_SPACES_THIN = 26;
-        // next id: 27
+        DRBD_REACTOR = 27;
+        // next id: 28
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

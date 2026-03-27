@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.responses;
+
+message MsgRspDrbdReactorExec
+{
+    int32 exit_code = 1;
+    bytes stdout = 2;
+    bytes stderr = 3;
+}

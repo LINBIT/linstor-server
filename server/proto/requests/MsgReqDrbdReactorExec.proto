@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.requests;
+
+enum DrbdReactorCommand
+{
+    UNKNOWN = 0;
+    STATUS = 1;
+    EVICT = 2;
+    DISABLE = 3;
+    ENABLE = 4;
+    RESTART = 5;
+    // drbd-reactorctl disable --now: also stops the drbd-services target immediately
+    DISABLE_NOW = 6;
+}
+
+message MsgReqDrbdReactorExec
+{
+    DrbdReactorCommand command = 1;
+    string config = 2;
+    // If true, evict runs synchronously and returns the full output including
+    // which node took over. If false (default), evict runs asynchronously.
+    bool wait = 3;
+}
