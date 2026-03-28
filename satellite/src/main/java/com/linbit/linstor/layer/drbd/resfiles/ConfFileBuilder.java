@@ -35,6 +35,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -868,15 +869,11 @@ public class ConfFileBuilder
         if (((Volume) vlmData.getVolume()).getFlags().isUnset(localAccCtx, Volume.Flags.DELETE))
         {
             final String disk;
+            boolean isDrbdLayerDiskless = vlmData.getRscLayerObject().getFlags()
+                .isSet(localAccCtx, DrbdRscObject.DrbdRscFlags.DISKLESS);
             if ((!isPeerRsc && vlmData.getDataDevice() == null) ||
-                (isPeerRsc &&
-                // FIXME: vlmData.getRscLayerObject().getFlags should be used here
-                     vlmData.getVolume().getAbsResource().disklessForDrbdPeers(accCtx)
-                ) ||
-                (!isPeerRsc &&
-                // FIXME: vlmData.getRscLayerObject().getFlags should be used here
-                     vlmData.getVolume().getAbsResource().isDrbdDiskless(accCtx)
-                )
+                (isPeerRsc && isDrbdLayerDiskless) ||
+                (!isPeerRsc && isDrbdLayerDiskless)
             )
             {
                 disk = "none";
