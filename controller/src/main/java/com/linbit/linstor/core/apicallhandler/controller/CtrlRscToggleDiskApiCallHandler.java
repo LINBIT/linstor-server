@@ -1046,10 +1046,20 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     }
 
     /**
-     * Although we need to rebuild the layerData as the layerList might have changed, if we do not
-     * deactivate (i.e. down) the current resource, we need to make sure that deleting DrbdRscData
-     * and recreating a new DrbdRscData ends up with the same node-id and TCP ports as before.
+     * Copies DRBD settings (node-id and TCP ports) from the existing DrbdRscData into the payload
+     * before removeLayerData() deletes them. This ensures that recreated DrbdRscData ends up with
+     * the same node-id and TCP ports as before.
+     *
+     * TCP ports must be preserved because if the satellite misses the update (e.g. due to controller
+     * restart or connectivity issues), it will keep the old ports while peers receive the new ones,
+     * causing DRBD connections to fail with StandAlone state.
      */
+    private void copyDrbdSettings(Resource rsc, LayerPayload payload) throws ImplementationError
+    {
+        copyDrbdNodeIdIfExists(rsc, payload);
+        copyDrbdTcpPortsIfExists(rsc, payload);
+    }
+
     private void copyDrbdNodeIdIfExists(Resource rsc, LayerPayload payload) throws ImplementationError
     {
         Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
@@ -1066,17 +1076,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             payload.drbdRsc.replacingOldLayerRscId = drbdRscData.getRscLayerId();
             payload.drbdRsc.nodeId = drbdRscData.getNodeId().value;
         }
-        copyDrbdTcpPortsIfExists(rsc, payload);
     }
 
-    /**
-     * Preserves existing TCP ports during toggle-disk operations.
-     *
-     * When removeLayerData() deletes DrbdRscData, the TCP ports are freed from the number pool.
-     * If ensureStackDataExists() then allocates different ports, and the satellite misses the update
-     * (e.g. due to controller restart or connectivity issues), the satellite keeps the old ports
-     * while peers get the new ones, causing DRBD connections to fail with StandAlone state.
-     */
     private void copyDrbdTcpPortsIfExists(Resource rsc, LayerPayload payload) throws ImplementationError
     {
         Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
@@ -1353,15 +1354,17 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             /*
              * We also have to remove the possible meta-children of previous StorageRscData.
              * LayerData will be recreated with ensureStackDataExists.
-             * However, we still need to remember our node-id if we had / have DRBD in the list
+             * However, we still need to remember our DRBD settings if we had / have DRBD in the list
              */
-            copyDrbdNodeIdIfExists(rsc, payload);
+            copyDrbdSettings(rsc, payload);
             layerList = removeLayerData(rsc);
         }
         else
         {
             markDiskAdded(rsc);
-            ctrlLayerStackHelper.resetStoragePools(rsc);
+            // Pass false to skip redundant ensureStackDataExists call within resetStoragePools,
+            // since we call it explicitly below with the correct payload
+            ctrlLayerStackHelper.resetStoragePools(rsc, false);
         }
         ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
 
