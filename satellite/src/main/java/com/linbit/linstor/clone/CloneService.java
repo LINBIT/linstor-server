@@ -7,15 +7,19 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
@@ -77,6 +81,7 @@ public class CloneService implements SystemService
     private final CtrlStltSerializer ctrlStltSerializer;
     private final VolumeDiskStateEvent volumeDiskStateEvent;
     private final ExtCmdFactory extCmdFactory;
+    private final StltConfigAccessor stltConfigAccessor;
 
     private final ServiceName instanceName;
     private final ConcurrentSkipListSet<CloneInfo> activeClones;
@@ -94,6 +99,7 @@ public class CloneService implements SystemService
         CtrlStltSerializer ctrlStltSerializerRef,
         VolumeDiskStateEvent volumeDiskStateEventRef,
         ExtCmdFactory extCmdFactoryRef,
+        StltConfigAccessor stltConfigAccessorRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         Provider<DeviceHandler> resourceProcessorRef,
         @SystemContext AccessContext sysCtxRef
@@ -104,6 +110,7 @@ public class CloneService implements SystemService
         ctrlStltSerializer = ctrlStltSerializerRef;
         volumeDiskStateEvent = volumeDiskStateEventRef;
         extCmdFactory = extCmdFactoryRef;
+        stltConfigAccessor = stltConfigAccessorRef;
         reconfigurationLock = reconfigurationLockRef;
         resourceProcessorProvider = resourceProcessorRef;
         sysCtx = sysCtxRef;
@@ -469,6 +476,41 @@ public class CloneService implements SystemService
                         case DD:
                         default:
                         {
+                            String ddBlocksize = "64k";
+                            try
+                            {
+                                ResourceDefinition dstRscDfn = dstVlmData.getRscLayerObject()
+                                    .getAbsResource().getResourceDefinition();
+                                ResourceDefinition srcRscDfn = srcVlmData.getRscLayerObject()
+                                    .getAbsResource().getResourceDefinition();
+                                PriorityProps prioProps = new PriorityProps();
+                                prioProps.addProps(dstRscDfn.getProps(sysCtx));
+                                prioProps.addProps(dstRscDfn.getResourceGroup().getProps(sysCtx));
+                                prioProps.addProps(srcRscDfn.getProps(sysCtx));
+                                prioProps.addProps(srcRscDfn.getResourceGroup().getProps(sysCtx));
+                                if (dstVlmData.getStorPool() != null)
+                                {
+                                    prioProps.addProps(dstVlmData.getStorPool().getProps(sysCtx));
+                                }
+                                if (srcVlmData.getStorPool() != null)
+                                {
+                                    prioProps.addProps(srcVlmData.getStorPool().getProps(sysCtx));
+                                }
+                                prioProps.addProps(stltConfigAccessor.getReadonlyProps());
+                                @Nullable String bsProp = prioProps.getProp(
+                                    ApiConsts.KEY_CLONE_DD_BLOCKSIZE,
+                                    ApiConsts.NAMESPC_CLONE);
+                                if (bsProp != null && !bsProp.isEmpty())
+                                {
+                                    ddBlocksize = bsProp;
+                                }
+                            }
+                            catch (AccessDeniedException exc)
+                            {
+                                throw new StorageException(
+                                    "Access denied reading clone dd blocksize property", exc);
+                            }
+
                             var ddConv = new ArrayList<>();
                             ddConv.add("nocreat");
                             if (dstVlmData.getProviderKind().usesThinProvisioning())
@@ -480,7 +522,7 @@ public class CloneService implements SystemService
                                     "dd",
                                     "if=" + srcVlmData.getCloneDevicePath(),
                                     "of=" + dstVlmData.getCloneDevicePath(),
-                                    "bs=64k", // According to the internet this seems currently to be a better default
+                                    "bs=" + ddBlocksize,
                                     "conv=" + StringUtils.join(ddConv, ","),
                                     "oflag=direct"
                                 };
