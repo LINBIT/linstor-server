@@ -184,7 +184,7 @@ public class CtrlAuthHandler
                 apiCallRc.addEntry(
                     ApiCallRcImpl.entryBuilder(
                         ApiConsts.CREATED,
-                        "Token authentication initialized successfully"
+                        String.format("Token authentication initialized successfully. Init token %s", createPair.objA)
                     )
                     .putObjRef("token", createPair.objA)
                     .build()
