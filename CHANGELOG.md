@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added property "Autoplacer/MinThinFreeSpace" that disqualifies storPools with less free space than specified
 - Added linstor-config disable-token-auth command
 - Property Clone/BalanceAfterClone to autoplace an extra diskful resource after a clone operation
+- Property Snapshot/BalanceAfterRestore to autoplace an extra diskful resource after a snapshot restore
 
 ### Changed
 

@@ -1026,6 +1026,8 @@ public class CtrlConfApiCallHandler
                             // fall-through
                         case ApiConsts.NAMESPC_CLONE + "/" + ApiConsts.KEY_BALANCE_AFTER_CLONE:
                             // fall-through
+                        case ApiConsts.NAMESPC_SNAPSHOT + "/" + ApiConsts.KEY_BALANCE_AFTER_RESTORE:
+                            // fall-through
                         case ZfsRollbackStrategy.FULL_KEY_USE_ZFS_ROLLBACK_PROP:
                             // fall-through
                         case ZfsDeleteStrategy.FULL_KEY_ZFS_DELETE_STRATEGY:

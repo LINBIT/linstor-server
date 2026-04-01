@@ -95,6 +95,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final BackupInfoManager backupInfoMgr;
     private final CtrlSatelliteUpdateCaller ctrlStltUpdateCaller;
+    private final CtrlRscAutoBalanceHelper ctrlRscAutoBalanceHelper;
 
     @Inject
     public CtrlSnapshotRestoreApiCallHandler(
@@ -112,7 +113,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         CtrlRscAutoHelper ctrlRscAutoHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         BackupInfoManager backupInfoMgrRef,
-        CtrlSatelliteUpdateCaller ctrlStltUpdateCallerRef
+        CtrlSatelliteUpdateCaller ctrlStltUpdateCallerRef,
+        CtrlRscAutoBalanceHelper ctrlRscAutoBalanceHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -130,6 +132,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         backupInfoMgr = backupInfoMgrRef;
         ctrlStltUpdateCaller = ctrlStltUpdateCallerRef;
+        ctrlRscAutoBalanceHelper = ctrlRscAutoBalanceHelperRef;
     }
 
     private ResponseContext makeSnapshotRestoreContext(String rscNameStr)
@@ -362,6 +365,9 @@ public class CtrlSnapshotRestoreApiCallHandler
 
             checkDrbdInitializedState(toRscDfn);
 
+            Flux<ApiCallRc> balanceFlux = ctrlRscAutoBalanceHelper.balanceAfterOperation(
+                toRscDfn, peerAccCtx.get(), ApiConsts.KEY_BALANCE_AFTER_RESTORE, ApiConsts.NAMESPC_SNAPSHOT);
+
             ctrlTransactionHelper.commit();
 
             if (toRscDfn.getVolumeDfnCount(peerAccCtx.get()) == 0)
@@ -401,6 +407,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             return Flux.<ApiCallRc>just(responses)
                 .concatWith(deploymentResponses)
                 .concatWith(autoFlux)
+                .concatWith(balanceFlux)
                 .concatWith(cleanupFlux)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> cleanupFlux)
                 .onErrorResume(

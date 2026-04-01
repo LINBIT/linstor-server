@@ -3,15 +3,13 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoBalanceHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
@@ -23,12 +21,10 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
@@ -36,7 +32,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Base64;
-import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 
@@ -58,8 +53,7 @@ public class RscDfnInternalCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlRscCrtApiHelper ctrlRscCrtHelper;
-    private final SystemConfRepository systemConfRepository;
-    private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
+    private final CtrlRscAutoBalanceHelper ctrlRscAutoBalanceHelper;
     private final Provider<Peer> peer;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
@@ -74,8 +68,7 @@ public class RscDfnInternalCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlRscCrtApiHelper crtlRscCrtHelperRef,
-        CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef,
-        SystemConfRepository systemConfRepositoryRef,
+        CtrlRscAutoBalanceHelper ctrlRscAutoBalanceHelperRef,
         Provider<Peer> peerRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
@@ -88,13 +81,12 @@ public class RscDfnInternalCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlRscCrtHelper = crtlRscCrtHelperRef;
+        ctrlRscAutoBalanceHelper = ctrlRscAutoBalanceHelperRef;
         peer = peerRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
-        ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
-        systemConfRepository = systemConfRepositoryRef;
     }
 
     private Flux<ApiCallRc> markRscDfnFailed(String rscName)
@@ -273,7 +265,8 @@ public class RscDfnInternalCallHandler
                         "Notified {0} that {1} is being updated on Node(s)"
                         )
                     )
-                    .concatWith(balanceClone(rscDfn)
+                    .concatWith(ctrlRscAutoBalanceHelper.balanceAfterOperation(
+                        rscDfn, apiCtx, ApiConsts.KEY_BALANCE_AFTER_CLONE, ApiConsts.NAMESPC_CLONE)
                     ).concatWith(
                         scopeRunner.fluxInTransactionalScope(
                             "Finish clone update unset CLONING",
@@ -328,39 +321,4 @@ public class RscDfnInternalCallHandler
         }
     }
 
-    private Flux<ApiCallRc> balanceClone(ResourceDefinition rscDfn)
-        throws AccessDeniedException
-    {
-        Props rscGrpProps = rscDfn.getResourceGroup().getProps(apiCtx);
-        PriorityProps clonePrioProps = new PriorityProps(
-            rscDfn.getProps(apiCtx), rscGrpProps, systemConfRepository.getCtrlConfForView(apiCtx)
-        );
-        Flux<ApiCallRc> flux = Flux.empty();
-        if (StringUtils.propTrueOrYes(clonePrioProps.getProp(
-            ApiConsts.KEY_BALANCE_AFTER_CLONE, ApiConsts.NAMESPC_CLONE, "false")))
-        {
-            flux = scopeRunner
-                .fluxInTransactionalScope(
-                    "Balance clone (autoplace+1)",
-                    lockGuardFactory.create()
-                        .write(LockGuardFactory.LockObj.RSC_DFN_MAP, LockGuardFactory.LockObj.NODES_MAP)
-                        .buildDeferred(),
-                    () -> balanceCloneInTransaction(rscDfn)
-                );
-        }
-        return flux;
-    }
-
-    private Flux<ApiCallRc> balanceCloneInTransaction(ResourceDefinition rscDfn)
-    {
-        AutoSelectFilterPojo selFilter =  AutoSelectFilterPojo.copy(
-            rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData());
-        selFilter.setAdditionalPlaceCount(1);
-        return ctrlRscAutoPlaceApiCallHandler.autoPlace(
-            rscDfn.getName().displayValue,
-            selFilter,
-            false,
-            Collections.emptyList()
-        );
-    }
 }
