@@ -4,7 +4,7 @@ Uploaders: Roland Kammerer <roland.kammerer@linbit.com>
 Section: admin
 Priority: optional
 Build-Depends: debhelper (>= 9),
-               default-jdk-headless (>= 1.11),
+               default-jdk-headless (>= 1.11) | openjdk-11-jdk-headless,
 #               gradle (>= 6.8.3),
                python3-all (>= 3.5)
 Standards-Version: 3.9.6
