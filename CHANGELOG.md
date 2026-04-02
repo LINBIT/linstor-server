@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Changed the mechanism how LINSTOR sets DRBD volumes as UptoDate
+
 ### Removed
 
 - WinDRBD specific patches regarding missing sha1 and hmac crypto algorithms

@@ -48,6 +48,8 @@ import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -83,6 +85,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -573,6 +576,37 @@ public class RscDrbdLayerHelper extends
             drbdRscData,
             drbdVlmDfnData
         );
+
+        if (!vlm.getAbsResource().isDrbdDiskless(apiCtx))
+        {
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+            Props vlmDfnProps = vlmDfn.getProps(apiCtx);
+            @Nullable String winner = vlmDfnProps.getProp(InternalApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON);
+            if (winner == null)
+            {
+                Optional<Resource> primaryRsc = vlm.getAbsResource().getResourceDefinition().anyResourceInUse(apiCtx);
+                if (primaryRsc.isPresent())
+                {
+                    winner = primaryRsc.get().getNode().getName().value;
+                }
+                else
+                {
+                    winner = vlm.getAbsResource().getNode().getName().value;
+                }
+
+                try
+                {
+                    vlmDfnProps.setProp(
+                        InternalApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON,
+                        winner
+                    );
+                }
+                catch (InvalidKeyException | InvalidValueException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+            }
+        }
 
         return drbdVlmData;
     }

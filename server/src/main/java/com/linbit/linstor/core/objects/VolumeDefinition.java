@@ -464,6 +464,13 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         getFlags().enableFlags(accCtx, VolumeDefinition.Flags.DELETE);
     }
 
+    public void uninitializeDrbd(AccessContext apiCtxRef) throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        vlmDfnProps.removeProp(InternalApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON);
+        flags.disableFlags(apiCtxRef, Flags.DRBD_INITIALIZED);
+    }
+
     @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
@@ -672,7 +679,8 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         ENCRYPTED(1L << 1),
         RESIZE(1L << 2),
         GROSS_SIZE(1L << 3),
-        RESIZE_SHRINK(RESIZE.getFlagValue() | 1L << 4);
+        RESIZE_SHRINK(RESIZE.getFlagValue() | 1L << 4),
+        DRBD_INITIALIZED(1L << 5);
 
         public final long flagValue;
 

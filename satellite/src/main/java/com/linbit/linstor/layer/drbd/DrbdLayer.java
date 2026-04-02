@@ -2,7 +2,10 @@ package com.linbit.linstor.layer.drbd;
 
 import com.linbit.ImplementationError;
 import com.linbit.Platform;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.DrbdVersion;
+import com.linbit.drbd.md.GidGenerator;
+import com.linbit.drbd.md.GidGenerator.GidGeneratorException;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
@@ -23,10 +26,12 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
-import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
+import com.linbit.linstor.core.types.MinorNumber;
+import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer;
@@ -40,9 +45,9 @@ import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
 import com.linbit.linstor.layer.drbd.drbdstate.NoInitialStateException;
 import com.linbit.linstor.layer.drbd.drbdstate.ResourceObserver;
-import com.linbit.linstor.layer.drbd.helper.ReadyForPrimaryNotifier;
 import com.linbit.linstor.layer.drbd.resfiles.DrbdResourceFileUtils;
 import com.linbit.linstor.layer.drbd.utils.DrbdAdm;
+import com.linbit.linstor.layer.drbd.utils.DrbdGiStringBuilder;
 import com.linbit.linstor.layer.drbd.utils.MdSuperblockBuffer;
 import com.linbit.linstor.layer.drbd.utils.WindowsFirewall;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -81,7 +86,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -91,10 +95,6 @@ import org.slf4j.event.Level;
 public class DrbdLayer implements DeviceLayer
 {
     public static final String DRBD_DEVICE_PATH_FORMAT = "/dev/drbd%d";
-
-    private static final long HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT = 2000;
-
-    private static final String DRBD_NEW_GI = "0000000000000004";
 
     private final AccessContext workerCtx;
     private final DrbdAdm drbdUtils;
@@ -925,7 +925,11 @@ public class DrbdLayer implements DeviceLayer
                 recoverAfterSkipdisk(drbdRscData);
 
                 setDevicePaths(drbdRscData);
-                condInitialOrSkipSync(drbdRscData);
+                if (!skipDisk)
+                {
+                    // mkfs must run after device paths were set
+                    runPostInitializationIfNeeded(drbdRscData);
+                }
             }
             catch (ExtCmdFailedException exc)
             {
@@ -936,6 +940,65 @@ public class DrbdLayer implements DeviceLayer
             }
         }
         return contProcess;
+    }
+
+    private void runPostInitializationIfNeeded(DrbdRscData<Resource> drbdRscDataRef)
+        throws StorageException, AccessDeniedException
+    {
+        List<Integer> initializedVlmNrList = new ArrayList<>();
+        for (DrbdVlmData<Resource> drbdVlmData : drbdRscDataRef.getVlmLayerObjects().values())
+        {
+            if (hasLocalStltWonUpToDateRace(drbdVlmData))
+            {
+                initializedVlmNrList.add(drbdVlmData.getVlmNr().value);
+            }
+        }
+        if (!initializedVlmNrList.isEmpty())
+        {
+            sendNotifyCtrlVlmNrsWereInitialized(drbdRscDataRef, initializedVlmNrList);
+
+            // TODO we should move the mkfs outside of the devMgr, but that is a different issue/MR
+            Resource rsc = drbdRscDataRef.getAbsResource();
+            if (MkfsUtils.needsToCreateFs(rsc, workerCtx))
+            {
+                /*
+                 * primary needs to be done with --force since we might have configured quorum, but did not give
+                 * DRBD enough time to connect to peers.
+                 *
+                 * we need to be primary even if autoPromote is deactivated to create the filesystem
+                 */
+                try (var ignored = drbdUtils.primaryAutoClose(drbdRscDataRef, true, false))
+                {
+                    MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
+                }
+                catch (ExtCmdFailedException exc)
+                {
+                    throw new StorageException("Failed to become secondary again after creating filesystem", exc);
+                }
+            }
+        }
+    }
+
+    private void sendNotifyCtrlVlmNrsWereInitialized(
+        DrbdRscData<Resource> drbdRscDataRef,
+        List<Integer> initializedVlmNrListRef
+    )
+    {
+        String rscName = drbdRscDataRef.getResourceName().displayValue;
+        byte[] data = interComSerializer
+            .onewayBuilder(InternalApiConsts.API_NOTIFY_DRBD_SET_VLM_UP_TO_DATE)
+            .notifyUpToDateVlm(rscName, initializedVlmNrListRef)
+            .build();
+        errorReporter.logTrace(
+            "Notifying that we set DRBD volume UpToDate for resource: %s, volume(s): %s",
+            rscName,
+            initializedVlmNrListRef
+        );
+        controllerPeerConnector.getControllerPeer()
+            .sendMessage(
+                data,
+                InternalApiConsts.API_NOTIFY_DRBD_SET_VLM_UP_TO_DATE
+            );
     }
 
     private void setDevicePaths(DrbdRscData<Resource> drbdRscData) throws AccessDeniedException, DatabaseException
@@ -1380,10 +1443,43 @@ public class DrbdLayer implements DeviceLayer
             DrbdRscData<Resource> drbdRscData = drbdVlmData.getRscLayerObject();
             drbdRscData.setAdjustRequired(true);
 
-            if (DrbdLayerUtils.skipInitSync(workerCtx, drbdVlmData))
+            boolean runSetGi = false;
+            DrbdGiStringBuilder localNodeIdGiBuilder = new DrbdGiStringBuilder();
+            DrbdGiStringBuilder otherNodeIdGiBuilder = new DrbdGiStringBuilder();
+            if (hasLocalStltWonUpToDateRace(drbdVlmData))
             {
-                String currentGi = getCurrentGiFromVlmDfnProp(drbdVlmData);
+                // same logic for both, thick and thin winner
 
+                // random yes, but make sure to use the same random for all peerslots
+                final String randomGid = GidGenerator.generateRandomGid();
+                final String day0 = getCurrentGiFromVlmDfnProp(drbdVlmData);
+                localNodeIdGiBuilder.withCurrentUUID(randomGid)
+                    .withBitmapBaseDataUUID(day0)
+                    .withConsistent(true)
+                    .withUpToDate(true);
+                // deliberately no currentUuid, not consistent and not UpToDate.
+                otherNodeIdGiBuilder.withBitmapBaseDataUUID(day0);
+                runSetGi = true;
+            }
+            else
+            {
+                if (DrbdLayerUtils.skipInitSync(workerCtx, drbdVlmData))
+                {
+                    final String day0 = getCurrentGiFromVlmDfnProp(drbdVlmData);
+                    // Deliberately neither consistent nor UpToDate. Also no flags. Just day0
+                    localNodeIdGiBuilder.withCurrentUUID(day0);
+                    otherNodeIdGiBuilder.withCurrentUUID(day0);
+                    runSetGi = true;
+                }
+                else
+                {
+                    // noop. thick loser just leaves metadata in NEW_UUID / just_created state.
+                    runSetGi = false;
+                }
+            }
+
+            if (runSetGi)
+            {
                 String metaDiskPath = drbdVlmData.getMetaDiskPath();
                 boolean internal = false;
                 if (metaDiskPath == null)
@@ -1392,15 +1488,19 @@ public class DrbdLayer implements DeviceLayer
                     metaDiskPath = drbdVlmData.getDataDevice();
                     internal = true;
                 }
-                drbdUtils.setGi(
-                    drbdVlmData.getRscLayerObject().getNodeId(),
-                    drbdVlmData.getVlmDfnLayerObject().getMinorNr(),
-                    metaDiskPath,
-                    currentGi,
-                    null,
-                    !drbdVlmData.getRscLayerObject().getFlags().isSet(workerCtx, DrbdRscFlags.INITIALIZED),
-                    internal
-                );
+
+                MinorNumber minorNr = drbdVlmData.getVlmDfnLayerObject().getMinorNr();
+                final int localNodeId = drbdRscData.getNodeId().value;
+                for (int nodeId = 0; nodeId <= NodeId.NODE_ID_MAX; nodeId++)
+                {
+                    drbdUtils.setGi(
+                        new NodeId(nodeId),
+                        minorNr,
+                        metaDiskPath,
+                        nodeId == localNodeId ? localNodeIdGiBuilder : otherNodeIdGiBuilder,
+                        internal
+                    );
+                }
                 errorReporter.logInfo("DRBD skipping initial sync for %s/%s",
                     drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
                     drbdVlmData.getVlmNr().getValue());
@@ -1417,6 +1517,36 @@ public class DrbdLayer implements DeviceLayer
                 exc
             );
         }
+        catch (GidGeneratorException | ValueOutOfRangeException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private boolean hasLocalStltWonUpToDateRace(DrbdVlmData<Resource> drbdVlmDataRef) throws AccessDeniedException
+    {
+        boolean ret = false;
+        VolumeDefinition vlmDfn = drbdVlmDataRef.getVolume().getVolumeDefinition();
+        // if DRBD_INITIALIZED is set, the race is over. It does not matter if we won back then or not.
+        if (!vlmDfn.getFlags().isSet(workerCtx, VolumeDefinition.Flags.DRBD_INITIALIZED))
+        {
+            DrbdRscData<Resource> drbdRscData = drbdVlmDataRef.getRscLayerObject();
+            ret = drbdRscData.getNodeName().value.equalsIgnoreCase(getNodeNameForUpTodate(vlmDfn));
+        }
+        return ret;
+    }
+
+    private String getNodeNameForUpTodate(VolumeDefinition vlmDfn) throws AccessDeniedException
+    {
+        @Nullable String val = vlmDfn.getProps(workerCtx)
+            .getProp(InternalApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON);
+        if (val == null)
+        {
+            throw new ImplementationError(
+                InternalApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON + " was unexpectedly null"
+            );
+        }
+        return val;
     }
 
     private String getCurrentGiFromVlmDfnProp(DrbdVlmData<Resource> drbdVlmData)
@@ -1714,233 +1844,6 @@ public class DrbdLayer implements DeviceLayer
             }
         }
         return notGeneratedList;
-    }
-
-    private void condInitialOrSkipSync(DrbdRscData<Resource> drbdRscData)
-        throws AccessDeniedException, StorageException
-    {
-        try
-        {
-            Resource rsc = drbdRscData.getAbsResource();
-            ResourceDefinition rscDfn = rsc.getResourceDefinition();
-
-            if (rscDfn.getProps(workerCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
-                    !rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DRBD_DISKLESS)
-            )
-            {
-                boolean alreadyInitialized;
-                try
-                {
-                    alreadyInitialized = !allVlmsMetaDataNew(drbdRscData);
-                }
-                catch (ExtCmdFailedException exc)
-                {
-                    throw new StorageException("Could not check if metadata is new", exc);
-                }
-
-                errorReporter.logTrace(
-                    "Requesting primary on %s; already initialized: %b",
-                    drbdRscData.getSuffixedResourceName(),
-                    alreadyInitialized
-                );
-                // Send a primary request even when volumes have already been initialized so that the controller can
-                // save DrbdPrimarySetOn so that subsequently added nodes do not request to be primary
-                sendRequestPrimaryResource(
-                    rscDfn.getName().getDisplayName(), // intentionally not suffixedRscName
-                    rsc.getUuid(),
-                    alreadyInitialized
-                );
-            }
-            else
-            if (rsc.isCreatePrimary() && !drbdRscData.isPrimary())
-            {
-                // First, skip the resync on all thinly provisioned volumes
-                boolean haveFatVlm = false;
-                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
-                {
-                    if (
-                        !VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false) ||
-                            DrbdLayerUtils.isForceInitialSyncSet(workerCtx, drbdRscData)
-                    )
-                    {
-                        haveFatVlm = true;
-                        break;
-                    }
-                }
-
-                // Set the resource primary (--force) to trigger an initial sync of all
-                // fat provisioned volumes
-                rsc.unsetCreatePrimary();
-                if (haveFatVlm)
-                {
-                    errorReporter.logTrace("Setting resource primary on %s", drbdRscData.getSuffixedResourceName());
-                    setResourceUpToDate(drbdRscData);
-                }
-
-
-                if (MkfsUtils.needsToCreateFs(rsc, workerCtx))
-                {
-                    /*
-                     * primary needs to be done with --force since we might have configured quorum, but did not give
-                     * DRBD enough time to connect to peers.
-                     *
-                     * we need to be primary even if autoPromote is deactivated to create the filesystem
-                     */
-                    try (var ignored = drbdUtils.primaryAutoClose(drbdRscData, true, false))
-                    {
-                        MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
-                    }
-                    catch (ExtCmdFailedException exc)
-                    {
-                        throw new StorageException("Failed to become secondary again after creating filesystem", exc);
-                    }
-                }
-            }
-        }
-        catch (InvalidKeyException invalidKeyExc)
-        {
-            throw new ImplementationError("Invalid hardcoded property key", invalidKeyExc);
-        }
-
-    }
-
-    private boolean allVlmsMetaDataNew(DrbdRscData<Resource> rscState)
-        throws AccessDeniedException, StorageException, ImplementationError, ExtCmdFailedException
-    {
-        boolean allNew = true;
-        for (DrbdVlmData<Resource> drbdVlmData : rscState.getVlmLayerObjects().values())
-        {
-            boolean isMetadataNew = false;
-            if (drbdVlmData.isMetaDataNew())
-            {
-                isMetadataNew = true;
-            }
-            else
-            {
-                String currentGiFromVlmDfn = getCurrentGiFromVlmDfnProp(drbdVlmData);
-                String allGisFromMetaData;
-                {
-                    String metaDiskPath = drbdVlmData.getMetaDiskPath();
-                    boolean externalMd = metaDiskPath != null;
-                    if (!externalMd)
-                    {
-                        // internal meta data
-                        metaDiskPath = drbdVlmData.getDataDevice();
-                    }
-                    allGisFromMetaData = drbdUtils.getCurrentGID(
-                        metaDiskPath,
-                        drbdVlmData.getVlmDfnLayerObject().getMinorNr().value,
-                        externalMd ? "flex-external" : "internal"
-                    );
-                }
-                String currentGiFromMetaData = allGisFromMetaData.split(":")[0];
-                isMetadataNew = currentGiFromVlmDfn.equalsIgnoreCase(currentGiFromMetaData) ||
-                    currentGiFromMetaData.equals(DRBD_NEW_GI);
-            }
-
-            if (!isMetadataNew)
-            {
-                allNew = false;
-                break;
-            }
-        }
-        return allNew;
-    }
-
-    private void setResourceUpToDate(DrbdRscData<Resource> drbdRscData) throws StorageException
-    {
-        waitForValidStateForPrimary(drbdRscData);
-
-        @Nullable DrbdResource drbdResource = null;
-        try
-        {
-            drbdResource = drbdState.getDrbdResource(drbdRscData.getSuffixedResourceName());
-        }
-        catch (NoInitialStateException ignored)
-        {
-        }
-        if (drbdResource != null)
-        {
-            // we need to suppress the next primary event from getting fired to the controller so that the controller
-            // does not freeze the block-size for this primary event.
-            drbdResource.suppressRscEventsWhenPrimary(true);
-        }
-        try (var ignored = drbdUtils.primaryAutoClose(drbdRscData, true, false))
-        {
-            // setting to secondary because of two reasons:
-            // * bug in drbdsetup: cannot down a primary resource
-            // * let the user choose which satellite should be primary (or let it be handled by auto-promote)
-            assert true; // "fix" checkstyle empty statement
-        }
-        catch (ExtCmdFailedException | StorageException cmdExc)
-        {
-            throw new StorageException(
-                "Starting the initial resync of the DRBD resource '" + drbdRscData.getSuffixedResourceName() +
-                    " failed",
-                getAbortMsg(drbdRscData),
-                "The external command for changing the DRBD resource's role failed",
-                    "- Check whether the required software is installed\n" +
-                        "- Check whether the application's search path includes the location\n" +
-                        "  of the external software\n" +
-                        "- Check whether the application has execute permission for the external command\n",
-                null,
-                cmdExc
-            );
-        }
-        finally
-        {
-            if (drbdResource != null)
-            {
-                drbdResource.suppressRscEventsWhenPrimary(false);
-            }
-        }
-    }
-
-    private void waitForValidStateForPrimary(DrbdRscData<Resource> drbdRscData) throws StorageException
-    {
-        try
-        {
-            final Object syncObj = new Object();
-            synchronized (syncObj)
-            {
-                String rscNameStr = drbdRscData.getSuffixedResourceName();
-                ReadyForPrimaryNotifier resourceObserver = new ReadyForPrimaryNotifier(rscNameStr, syncObj);
-                drbdState.addObserver(resourceObserver, DrbdStateTracker.OBS_DISK);
-                if (!resourceObserver.hasValidStateForPrimary(drbdState.getDrbdResource(rscNameStr)))
-                {
-                    syncObj.wait(HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT);
-                }
-                if (!resourceObserver.hasValidStateForPrimary(drbdState.getDrbdResource(rscNameStr)))
-                {
-                    throw new StorageException(
-                        "Device did not get ready within " + HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT + "ms"
-                    );
-                }
-                drbdState.removeObserver(resourceObserver);
-            }
-        }
-        catch (NoInitialStateException exc)
-        {
-            throw new StorageException("No initial drbd state", exc);
-        }
-        catch (InterruptedException exc)
-        {
-            throw new StorageException("Interrupted", exc);
-        }
-    }
-
-    private void sendRequestPrimaryResource(
-        final String rscName,
-        final UUID rscUuid,
-        boolean alreadyInitialized
-    )
-    {
-        byte[] data = interComSerializer
-            .onewayBuilder(InternalApiConsts.API_REQUEST_PRIMARY_RSC)
-            .primaryRequest(rscName, rscUuid, alreadyInitialized)
-            .build();
-
-        controllerPeerConnector.getControllerPeer().sendMessage(data, InternalApiConsts.API_REQUEST_PRIMARY_RSC);
     }
 
     /*

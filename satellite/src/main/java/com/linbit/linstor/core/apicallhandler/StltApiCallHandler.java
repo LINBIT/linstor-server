@@ -109,7 +109,6 @@ public class StltApiCallHandler
     private final ApplicationLifecycleManager applicationLifecycleManager;
 
     private final StltNodeApiCallHandler nodeHandler;
-    private final StltRscDfnApiCallHandler rscDfnHandler;
     private final StltRscApiCallHandler rscHandler;
     private final StltStorPoolApiCallHandler storPoolHandler;
     private final StltSnapshotApiCallHandler snapshotHandler;
@@ -159,7 +158,6 @@ public class StltApiCallHandler
         DeviceManager deviceManagerRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
         StltNodeApiCallHandler nodeHandlerRef,
-        StltRscDfnApiCallHandler rscDfnHandlerRef,
         StltRscApiCallHandler rscHandlerRef,
         StltStorPoolApiCallHandler storPoolHandlerRef,
         StltSnapshotApiCallHandler snapshotHandlerRef,
@@ -200,7 +198,6 @@ public class StltApiCallHandler
         deviceManager = deviceManagerRef;
         applicationLifecycleManager = applicationLifecycleManagerRef;
         nodeHandler = nodeHandlerRef;
-        rscDfnHandler = rscDfnHandlerRef;
         rscHandler = rscHandlerRef;
         storPoolHandler = storPoolHandlerRef;
         snapshotHandler = snapshotHandlerRef;
@@ -883,18 +880,6 @@ public class StltApiCallHandler
                 errorReporter.logWarning("Ignoring received outdated update. ");
             }
         }
-    }
-
-    public void handlePrimaryResource(
-        String rscNameStr,
-        UUID rscUuid
-    )
-    {
-        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
-        {
-            rscDfnHandler.primaryResource(rscNameStr, rscUuid);
-        }
-
     }
 
     public void backupShippingFinished(String rscName, String snapName, String remoteName)

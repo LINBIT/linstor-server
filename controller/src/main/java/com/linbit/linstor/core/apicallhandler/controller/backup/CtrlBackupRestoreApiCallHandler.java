@@ -1113,7 +1113,7 @@ public class CtrlBackupRestoreApiCallHandler
         PropsUtils.resetProps(metadata.getRscDfn().getRscDfnProps(), snapRscDfnProps);
         // force the node to become primary afterwards in case we needed to recreate
         // the metadata
-        snapRscDfnProps.removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+        snapRscDfnProps.removeProp(InternalApiConsts.DEPRECATED_PROP_PRIMARY_SET);
 
         Props snapDfnProps = snapDfn.getSnapDfnProps(peerAccCtx.get());
         String propsNamespc = BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC;
@@ -1241,7 +1241,7 @@ public class CtrlBackupRestoreApiCallHandler
 
                 // force the node to become primary afterwards in case we needed to recreate
                 // the metadata
-                rscDfnProps.removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+                rscDfnProps.removeProp(InternalApiConsts.DEPRECATED_PROP_PRIMARY_SET);
 
                 // if we already reset data, we can also move the resource-group, regardless if --force-rsc-grp was set
                 // or not

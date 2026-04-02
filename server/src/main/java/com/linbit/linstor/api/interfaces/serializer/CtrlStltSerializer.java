@@ -46,7 +46,7 @@ public interface CtrlStltSerializer extends CommonSerializer
         /*
          * Controller -> Satellite
          */
-        CtrlStltSerializerBuilder primaryRequest(String rscName, UUID rscUuid, boolean alreadyInitialized);
+        CtrlStltSerializerBuilder notifyUpToDateVlm(String rscNameRef, List<Integer> vlmNrList);
 
         CtrlStltSerializerBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret, UUID ctrlUuid);
 

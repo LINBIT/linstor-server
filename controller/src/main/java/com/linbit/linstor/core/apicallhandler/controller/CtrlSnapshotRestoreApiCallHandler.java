@@ -360,6 +360,8 @@ public class CtrlSnapshotRestoreApiCallHandler
 
             autoFlux = autoHelper.manage(new AutoHelperContext(responses, context, toRscDfn)).getFlux();
 
+            checkDrbdInitializedState(toRscDfn);
+
             ctrlTransactionHelper.commit();
 
             if (toRscDfn.getVolumeDfnCount(peerAccCtx.get()) == 0)
@@ -421,6 +423,48 @@ public class CtrlSnapshotRestoreApiCallHandler
             else
             {
                 return Flux.error(exc);
+            }
+        }
+    }
+
+    /*
+     * When a snapshot was received as a backup, it is marked to re-create its local metadata. Before the
+     * snapshot was sent the new DRBD_INITIALIZED flag and the VlmDfn property InitialUpToDateOn were
+     * cleared. If DRBD_INITIALZED would be set, no peer would even read the property (on purpose).
+     * Without the property, no peer would think of itself as a winner, thus the DRBD resource would never
+     * become UpToDate.
+     * To avoid this, this method sets the InitialUpToDateOn property to let the first resource win the
+     * race, so it can become UpToDate and therefore also pull the other peers eventually into UpToDate state.
+     *
+     * If the given SnapDfn had also non-backup snapshots, those should be able to keep their metadata.
+     * In that case we do not have to do anything. If however all snapshots are descendants from backups
+     * we must pick one and decide the UpToDate race upfront so that the winner can set its local DRBD
+     * as UpToDate, which also triggers the controller to set the DRBD_INITIALZED flag eventually.
+     */
+    private void checkDrbdInitializedState(ResourceDefinition rscDfnRef) throws AccessDeniedException
+    {
+        AccessContext accCtx = peerAccCtx.get();
+        if (DrbdLayerUtils.isForceInitialSyncSet(accCtx, rscDfnRef) && rscDfnRef.getDiskfulCount(accCtx) > 0)
+        {
+            String winnerNodeName = rscDfnRef.getDiskfulResources(accCtx).get(0).getNode().getName().value;
+            Iterator<VolumeDefinition> vlmDfnIt = rscDfnRef.iterateVolumeDfn(accCtx);
+            while (vlmDfnIt.hasNext())
+            {
+                VolumeDefinition vlmDfn = vlmDfnIt.next();
+                try
+                {
+                    vlmDfn.getProps(accCtx)
+                        .setProp(InternalApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON, winnerNodeName);
+                    vlmDfn.getFlags().disableFlags(accCtx, VolumeDefinition.Flags.DRBD_INITIALIZED);
+                }
+                catch (InvalidKeyException | InvalidValueException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+                catch (DatabaseException dbExc)
+                {
+                    throw new ApiDatabaseException(dbExc);
+                }
             }
         }
     }
@@ -671,7 +715,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         }
         if (forceInitSync)
         {
-            rsc.getResourceDefinition().getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+            rsc.getResourceDefinition().getProps(peerAccCtx.get()).removeProp(InternalApiConsts.DEPRECATED_PROP_PRIMARY_SET);
         }
         unsetFlags(toRscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
 

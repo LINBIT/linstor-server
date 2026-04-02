@@ -90,7 +90,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.Cha
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.ChangedSnapshot;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.MsgIntChangedData;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntCloneUpdateOuterClass.MsgIntCloneUpdate;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntDrbdSetVlmUpToDateOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateLocalNodeChangeOuterClass;
@@ -776,14 +776,13 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
      * Satellite -> Controller
      */
     @Override
-    public ProtoCtrlStltSerializerBuilder primaryRequest(String rscName, UUID rscUuid, boolean alreadyInitialized)
+    public ProtoCtrlStltSerializerBuilder notifyUpToDateVlm(String rscName, final List<Integer> vlmNrList)
     {
         try
         {
-            MsgIntPrimaryOuterClass.MsgIntPrimary.newBuilder()
+            MsgIntDrbdSetVlmUpToDateOuterClass.MsgIntDrbdSetVlmUpToDate.newBuilder()
                 .setRscName(rscName)
-                .setRscUuid(ProtoUuidUtils.serialize(rscUuid))
-                .setAlreadyInitialized(alreadyInitialized)
+                .addAllVlmNrToUpToDate(vlmNrList)
                 .build()
                 .writeDelimitedTo(baos);
         }

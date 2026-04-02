@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import com.google.inject.testing.fieldbinder.Bind;
@@ -673,6 +674,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Mockito.when(mockedPeer.isOnline()).thenReturn(true);
         Mockito.when(mockedPeer.getConnectionStatus()).thenReturn(ConnectionStatus.ONLINE);
         Mockito.when(mockedPeer.getExtToolsManager()).thenReturn(extToolsMgr);
+        ReentrantReadWriteLock peerLock = new ReentrantReadWriteLock(true);
+        Mockito.when(mockedPeer.getSatelliteStateLock()).thenReturn(peerLock);
 
         try
         {

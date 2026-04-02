@@ -21,6 +21,7 @@ import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
+import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -786,10 +787,14 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
             Peer nodePeer = rsc.getNode().getPeer(accCtx);
             if (nodePeer != null)
             {
-                Boolean inUse;
+                @Nullable Boolean inUse = null;
                 try (LockGuard ignored = LockGuard.createLocked(nodePeer.getSatelliteStateLock().readLock()))
                 {
-                    inUse = nodePeer.getSatelliteState().getFromResource(resourceName, SatelliteResourceState::isInUse);
+                    @Nullable SatelliteState satelliteState = nodePeer.getSatelliteState();
+                    if (satelliteState != null)
+                    {
+                        inUse = satelliteState.getFromResource(resourceName, SatelliteResourceState::isInUse);
+                    }
                 }
                 if (inUse != null && inUse)
                 {

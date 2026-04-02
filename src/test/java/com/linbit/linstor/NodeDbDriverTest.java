@@ -619,7 +619,11 @@ public class NodeDbDriverTest extends GenericDbBase
                                 StorageConstants.NAMESPACE_INTERNAL
                             )
                         );
-                        assertEquals(2, volDfnProps.size());
+                        assertEquals(
+                            nodeName.compareTo(nodeName2) < 0 ? nodeName.value : nodeName2.value,
+                            volDfnProps.getProp(InternalApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON)
+                        );
+                        assertEquals(3, volDfnProps.size());
                     }
                     assertEquals(res.getResourceDefinition(), volDfn.getResourceDefinition());
                     assertEquals(volDfnUuid, volDfn.getUuid());
