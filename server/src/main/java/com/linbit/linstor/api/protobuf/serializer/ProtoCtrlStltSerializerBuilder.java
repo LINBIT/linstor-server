@@ -58,6 +58,7 @@ import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPo
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgDeleteDevicePoolOuterClass.MsgDeleteDevicePool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyAuthTokenOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyControllerOuterClass.MsgIntApplyController;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedNodeOuterClass.MsgIntApplyDeletedNode;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedRscOuterClass.MsgIntApplyDeletedRsc;
@@ -70,7 +71,6 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgInt
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySharedStorPoolLocksOuterClass.MsgIntApplySharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
-import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyAuthTokenOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntBackupShippingFinishedOuterClass.MsgIntBackupShippingFinished;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
@@ -91,7 +91,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.Cha
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.ChangedSnapshot;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.MsgIntChangedData;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntCloneUpdateOuterClass.MsgIntCloneUpdate;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntDrbdSetVlmUpToDateOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateLocalNodeChangeOuterClass;
@@ -110,8 +110,8 @@ import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -794,14 +794,13 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
      * Satellite -> Controller
      */
     @Override
-    public ProtoCtrlStltSerializerBuilder primaryRequest(String rscName, UUID rscUuid, boolean alreadyInitialized)
+    public ProtoCtrlStltSerializerBuilder notifyUpToDateVlm(String rscName, final List<Integer> vlmNrList)
     {
         try
         {
-            MsgIntPrimaryOuterClass.MsgIntPrimary.newBuilder()
+            MsgIntDrbdSetVlmUpToDateOuterClass.MsgIntDrbdSetVlmUpToDate.newBuilder()
                 .setRscName(rscName)
-                .setRscUuid(ProtoUuidUtils.serialize(rscUuid))
-                .setAlreadyInitialized(alreadyInitialized)
+                .addAllVlmNrToUpToDate(vlmNrList)
                 .build()
                 .writeDelimitedTo(baos);
         }

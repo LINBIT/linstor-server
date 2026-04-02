@@ -392,18 +392,6 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
         }
 
         @Override
-        public boolean checkFileSystem()
-        {
-            throw new ImplementationError(IMPL_ERR_TEXT);
-        }
-
-        @Override
-        public void disableCheckFileSystem()
-        {
-            throw new ImplementationError(IMPL_ERR_TEXT);
-        }
-
-        @Override
         public void setShouldSuspendIo(boolean suspendRef) throws DatabaseException
         {
             throw new ImplementationError(IMPL_ERR_TEXT);

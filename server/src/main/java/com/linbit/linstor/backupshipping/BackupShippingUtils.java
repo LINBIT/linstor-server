@@ -20,6 +20,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
@@ -131,6 +132,11 @@ public class BackupShippingUtils
             vlmDfnPropsRef = new TreeMap<>(vlmDfnPropsRef);
             // necessary to get the gross-size-flag, even though flags might have changed in the meantime
             long vlmDfnFlagsRef = snapVlmDfn.getVolumeDefinition().getFlags().getFlagsBits(accCtx);
+
+            // pretend this vlmDfn was never initialized
+            vlmDfnFlagsRef &= ~VolumeDefinition.Flags.DRBD_INITIALIZED.flagValue; // remove the DRBD_INITIALIZED flag
+            vlmDfnPropsRef.remove(InternalApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON);
+
             long sizeRef = snapVlmDfn.getVolumeSize(accCtx);
             vlmDfnsRef
                 .put(

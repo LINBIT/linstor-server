@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+import "common/ids/Uuid.proto";
+
+// Internal message to request setting the (sending-) satellite local volume as UpToDate
+message MsgIntDrbdSetVlmUpToDate
+{
+    // Resource name
+    string rsc_name = 1;
+
+    // Resource uuid
+    common.ids.Uuid rsc_uuid = 2;
+
+    // The list of volume numbers that the local satellite can now set as UpToDate
+    repeated int32 vlm_nr_to_up_to_date = 3;
+}

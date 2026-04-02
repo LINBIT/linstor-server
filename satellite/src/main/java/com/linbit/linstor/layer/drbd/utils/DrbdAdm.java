@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.drbd.utils;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ImplementationError;
 import com.linbit.Platform;
 import com.linbit.extproc.ChildProcessHandler.TimeoutType;
 import com.linbit.extproc.ExtCmd;
@@ -490,6 +491,35 @@ public class DrbdAdm
         };
     }
 
+    public void setGi(DrbdVlmData<Resource> drbdVlmData, DrbdGiStringBuilder drbdGiStringBuilderRef)
+        throws ExtCmdFailedException
+    {
+        setGi(drbdVlmData, drbdGiStringBuilderRef, null);
+    }
+
+    public void setGi(
+        DrbdVlmData<Resource> drbdVlmData,
+        DrbdGiStringBuilder drbdGiStringBuilderRef,
+        @Nullable NodeId targetNodeId
+    )
+        throws ExtCmdFailedException
+    {
+        boolean internal = false;
+        @Nullable String metaDisk = drbdVlmData.getMetaDiskPath();
+        if (metaDisk == null)
+        {
+            metaDisk = drbdVlmData.getDataDevice();
+            internal = true;
+        }
+        setGi(
+            targetNodeId == null ? drbdVlmData.getRscLayerObject().getNodeId() : targetNodeId,
+            drbdVlmData.getVlmDfnLayerObject().getMinorNr(),
+            metaDisk,
+            drbdGiStringBuilderRef,
+            internal
+        );
+    }
+
     /**
      * Calls drbdmeta to create the metadata information for a volume
      */
@@ -497,22 +527,17 @@ public class DrbdAdm
         NodeId nodeId,
         MinorNumber minorNr,
         String blockDevPath,
-        String currentGi,
-        @Nullable String history1Gi,
-        boolean upToDateData,
+        DrbdGiStringBuilder drbdGiStringBuilderRef,
         boolean internal
     )
         throws ExtCmdFailedException
     {
-        String giData = currentGi + ":";
-        if (upToDateData || history1Gi != null)
+        String giString = drbdGiStringBuilderRef.build();
+        if (drbdGiStringBuilderRef.isUpToDate() && drbdGiStringBuilderRef.getCurrentUuid() == null)
         {
-            String checkedHistory1Gi = history1Gi == null ? "0" : history1Gi;
-            giData += "0:" + checkedHistory1Gi + ":0:";
-            if (upToDateData)
-            {
-                giData += "1:1:";
-            }
+            throw new ImplementationError(
+                "Current GI must not be null when setting volume as UpToDate. GI: " + giString
+            );
         }
         execute(
             DRBDMETA_UTIL,
@@ -522,7 +547,7 @@ public class DrbdAdm
             "v09",
             blockDevPath,
             internal ? "internal" : "flex-external",
-            "set-gi", giData
+            "set-gi", giString
         );
     }
 

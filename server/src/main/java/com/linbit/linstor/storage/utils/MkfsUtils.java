@@ -17,6 +17,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.utils.ShellUtils;
 
@@ -28,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class MkfsUtils
 {
@@ -99,10 +99,12 @@ public class MkfsUtils
         throws InvalidKeyException, AccessDeniedException
     {
         boolean ret = false;
-        if (rsc.getLayerData(wrkCtx).checkFileSystem())
+        AbsRscLayerObject<Resource> rscData = rsc.getLayerData(wrkCtx);
+        for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
-            for (AbsVolume<Resource> vlm : rsc.streamVolumes().collect(Collectors.toList()))
+            if (vlmData.checkFileSystem())
             {
+                AbsVolume<Resource> vlm = vlmData.getVolume();
                 VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
                 ResourceDefinition rscDfn = vlm.getResourceDefinition();
                 ResourceGroup rscGrp = rscDfn.getResourceGroup();
@@ -132,11 +134,13 @@ public class MkfsUtils
     )
         throws StorageException, AccessDeniedException, InvalidKeyException
     {
-        if (rsc.getLayerData(wrkCtx).checkFileSystem())
+        AbsRscLayerObject<Resource> rscData = rsc.getLayerData(wrkCtx);
+        for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
-            rsc.getLayerData(wrkCtx).disableCheckFileSystem();
-            for (AbsVolume<Resource> vlm : rsc.streamVolumes().collect(Collectors.toList()))
+            if (vlmData.checkFileSystem())
             {
+                vlmData.disableCheckFileSystem();
+                AbsVolume<Resource> vlm = vlmData.getVolume();
                 VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
                 ResourceDefinition rscDfn = vlm.getResourceDefinition();
                 ResourceGroup rscGrp = rscDfn.getResourceGroup();

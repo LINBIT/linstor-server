@@ -1,9 +1,11 @@
 package com.linbit.linstor.utils.layer;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -98,9 +100,14 @@ public class DrbdLayerUtils
         throws InvalidKeyException,
         AccessDeniedException
     {
-        String forceSync = drbdRscData.getAbsResource()
-            .getResourceDefinition()
-            .getProps(accCtx)
+        return isForceInitialSyncSet(accCtx, drbdRscData.getAbsResource().getResourceDefinition());
+    }
+
+    public static boolean isForceInitialSyncSet(AccessContext accCtx, ResourceDefinition rscDfn)
+        throws InvalidKeyException,
+        AccessDeniedException
+    {
+        @Nullable String forceSync = rscDfn.getProps(accCtx)
             .getProp(InternalApiConsts.KEY_FORCE_INITIAL_SYNC_PERMA, ApiConsts.NAMESPC_DRBD_OPTIONS);
         return forceSync != null && Boolean.parseBoolean(forceSync);
     }

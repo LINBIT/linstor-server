@@ -80,11 +80,7 @@ public class Resource extends AbsResource<Resource>
 
     private final ResourceDatabaseDriver dbDriver;
 
-
-    private boolean createPrimary = false;
-
     private final ResourceKey rscKey;
-
 
     Resource(
         UUID objIdRef,
@@ -383,24 +379,6 @@ public class Resource extends AbsResource<Resource>
 
             deleted.set(true);
         }
-    }
-
-    public void setCreatePrimary()
-    {
-        checkDeleted();
-        createPrimary = true;
-    }
-
-    public void unsetCreatePrimary()
-    {
-        checkDeleted();
-        createPrimary = false;
-    }
-
-    public boolean isCreatePrimary()
-    {
-        checkDeleted();
-        return createPrimary;
     }
 
     public boolean isDrbdDiskless(AccessContext accCtx) throws AccessDeniedException

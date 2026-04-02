@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Don't call shred on ZFS devices as those are guaranteed to always read 0
 - Upated debian package compat version to 11
 - linstor-controller.service: switch to DynamicUser (i.e., execute as non-root user).
+- Changed the mechanism how LINSTOR sets DRBD volumes as UptoDate
 
 ### Removed
 
@@ -59,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed possible bug that could have caused orphaned DRBD resources being left on the satellite
 - Fixed autounplacer not prioritizing autoplacer-settings violations over free space properly
 - Fixed EventStreamClosed exception if toggle-disk a single diskful resource
+- Fixed that additional volumes now also run mkfs if configured
 
 ## [1.33.1] - 2025-12-22
 

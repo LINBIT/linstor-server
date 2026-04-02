@@ -34,8 +34,6 @@ public class InternalApiConsts
     public static final String API_NOTIFY_VLM_DRBD_RESIZED = "NotifyDrbdVlmResized";
     public static final String API_NOTIFY_RSC_APPLIED    = "NotifyRscApplied";
     public static final String API_NOTIFY_RSC_FAILED     = "NotifyRscFailed";
-    public static final String API_REQUEST_PRIMARY_RSC   = "RequestPrimaryRsc";
-    public static final String API_PRIMARY_RSC           = "PrimaryRsc";
 
     public static final String API_CHANGED_RSC       = "ChangedRsc";
     public static final String API_REQUEST_RSC       = "RequestRsc";
@@ -113,7 +111,12 @@ public class InternalApiConsts
 
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 
-    public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
+    /** Deprecated. This RD prop was replaced by VD based {@link #KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON} */
+    public static final String DEPRECATED_PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
+    public static final String KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON = ApiConsts.NAMESPC_LINSTOR_DRBD + "/" +
+        ApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON;
+    public static final String API_NOTIFY_DRBD_SET_VLM_UP_TO_DATE = "NotifyDrbdSetVlmUpToDate";
+
     public static final String PROP_NVME_TARGET_NODE_NAME = "NvmeTargetNodeName";
 
     /*

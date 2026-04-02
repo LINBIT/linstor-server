@@ -3,17 +3,12 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
-import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
@@ -29,30 +24,23 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
-import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Base64;
 
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
@@ -62,18 +50,13 @@ public class RscDfnInternalCallHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final CtrlStltSerializer ctrlStltSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final CtrlRscCrtApiHelper ctrlRscCrtHelper;
     private final Provider<Peer> peer;
-    private final Provider<AccessContext> peerAccCtx;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
-    private final ReadWriteLock rscDfnMapLock;
     private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
 
     @Inject
@@ -81,14 +64,9 @@ public class RscDfnInternalCallHandler
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CtrlRscCrtApiHelper crtlRscCrtHelperRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
@@ -98,81 +76,14 @@ public class RscDfnInternalCallHandler
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        ctrlStltSerializer = ctrlStltSerializerRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         ctrlRscCrtHelper = crtlRscCrtHelperRef;
         peer = peerRef;
-        peerAccCtx = peerAccCtxRef;
-        rscDfnMapLock = rscDfnMapLockRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
     }
-
-    public void handlePrimaryResourceRequest(
-        String rscNameStr,
-        UUID rscUuid,
-        boolean alreadyInitialized
-    )
-    {
-        Peer currentPeer = peer.get();
-        try (LockGuard ignored = LockGuard.createLocked(rscDfnMapLock.writeLock()))
-        {
-            Resource res = ctrlApiDataLoader.loadRsc(currentPeer.getNode().getName().displayValue, rscNameStr, true);
-            ResourceDefinition resDfn = res.getResourceDefinition();
-
-            Props resDfnProps = ctrlPropsHelper.getProps(resDfn);
-            if (resDfnProps.getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)
-            {
-                resDfnProps.setProp(
-                    InternalApiConsts.PROP_PRIMARY_SET,
-                    res.getNode().getName().value
-                );
-
-                ctrlTransactionHelper.commit();
-
-                errorReporter.logInfo(
-                    "%s primary set on %s; already initialized: %b",
-                    rscNameStr,
-                    currentPeer.getNode().getName().getDisplayName(),
-                    alreadyInitialized
-                );
-
-                ctrlSatelliteUpdater.updateSatellites(resDfn);
-
-                if (!alreadyInitialized)
-                {
-                    currentPeer.sendMessage(
-                        ctrlStltSerializer
-                            .onewayBuilder(InternalApiConsts.API_PRIMARY_RSC)
-                            .primaryRequest(rscNameStr, res.getUuid(), false)
-                            .build()
-                    );
-                }
-            }
-        }
-        catch (InvalidKeyException | InvalidValueException | AccessDeniedException ignored)
-        {
-        }
-        catch (DatabaseException sqlExc)
-        {
-            String errorMessage = String.format(
-                "A database error occurred while trying to rollback the deletion of " +
-                    "resource definition '%s'.",
-                rscNameStr
-            );
-            errorReporter.reportError(
-                sqlExc,
-                peerAccCtx.get(),
-                currentPeer,
-                errorMessage
-            );
-        }
-    }
-
 
     private Flux<ApiCallRc> markRscDfnFailed(String rscName)
     {

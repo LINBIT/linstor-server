@@ -482,7 +482,12 @@ public class CtrlRscDeleteApiHelper
     {
         try
         {
-            rscDfn.getProps(apiCtx).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+            rscDfn.getProps(apiCtx).removeProp(InternalApiConsts.DEPRECATED_PROP_PRIMARY_SET);
+            Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(apiCtx);
+            while (vlmDfnIt.hasNext())
+            {
+                vlmDfnIt.next().uninitializeDrbd(apiCtx);
+            }
         }
         catch (InvalidKeyException | AccessDeniedException exc)
         {
