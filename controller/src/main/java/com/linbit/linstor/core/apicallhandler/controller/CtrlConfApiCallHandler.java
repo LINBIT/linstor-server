@@ -992,6 +992,8 @@ public class CtrlConfApiCallHandler
                             // fall-through
                         case ZfsDeleteStrategy.FULL_KEY_ZFS_DELETE_STRATEGY:
                             // fall-through
+                        case ApiConsts.NAMESPC_LINSTOR_DRBD + "/" + ApiConsts.KEY_DRBD_AUTO_BLOCK_SIZE:
+                            // fall-through
                         case ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE:
                             // no need to update stlts
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
