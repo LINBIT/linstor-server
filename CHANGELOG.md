@@ -74,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed autounplacer not prioritizing autoplacer-settings violations over free space properly
 - Fixed EventStreamClosed exception if toggle-disk a single diskful resource
 - Fixed that additional volumes now also run mkfs if configured
+- Fixed property "Linstor/Drbd/auto-block-size": Now works properly on controller level
 
 ## [1.33.1] - 2025-12-22
 
