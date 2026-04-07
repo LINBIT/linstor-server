@@ -8,11 +8,11 @@ import java.util.HashMap;
 
 @K8sCrdMigration(
     description = "Rename ExtCmdWaitTimeout to ExtCmd/WaitTimeout",
-    version = 30
+    version = 31
 )
-public class Migration_30_v1_31_1_RenameExtCmdWaitTo extends BaseK8sCrdMigration
+public class Migration_31_v1_31_1_RenameExtCmdWaitTo extends BaseK8sCrdMigration
 {
-    public Migration_30_v1_31_1_RenameExtCmdWaitTo()
+    public Migration_31_v1_31_1_RenameExtCmdWaitTo()
     {
         super(
             GenCrdV1_31_1.createMigrationContext()

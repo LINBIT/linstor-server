@@ -8,11 +8,11 @@ import java.util.Collection;
 
 @K8sCrdMigration(
     description = "Change SpaceTracking tables from using DATE to TIMESTAMP",
-    version = 31
+    version = 32
 )
-public class Migration_31_v1_33_1_ChangeSpaceTrackingFromDateToTimestamp extends BaseK8sCrdMigration
+public class Migration_32_v1_33_1_ChangeSpaceTrackingFromDateToTimestamp extends BaseK8sCrdMigration
 {
-    public Migration_31_v1_33_1_ChangeSpaceTrackingFromDateToTimestamp()
+    public Migration_32_v1_33_1_ChangeSpaceTrackingFromDateToTimestamp()
     {
         super(
             GenCrdV1_31_1.createMigrationContext(),

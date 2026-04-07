@@ -6,11 +6,11 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_33_1;
 
 @K8sCrdMigration(
     description = "Add auth tokens table",
-    version = 32
+    version = 33
 )
-public class Migration_32_v1_33_1_AddAuthTokensTable extends BaseK8sCrdMigration
+public class Migration_33_v1_33_1_AddAuthTokensTable extends BaseK8sCrdMigration
 {
-    public Migration_32_v1_33_1_AddAuthTokensTable()
+    public Migration_33_v1_33_1_AddAuthTokensTable()
     {
         super(
             GenCrdV1_31_1.createMigrationContext(),
