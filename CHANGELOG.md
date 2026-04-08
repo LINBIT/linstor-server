@@ -35,11 +35,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Don't call shred on ZFS devices as those are guaranteed to always read 0
 - Upated debian package compat version to 11
 - linstor-controller.service: switch to DynamicUser (i.e., execute as non-root user).
-- Changed the mechanism how LINSTOR sets DRBD volumes as UptoDate
+- Systemd-notify: Use SDNotify library instead of calling "systemd-notify"
 
 ### Removed
 
 - ETCD database support is now removed, please convert to SQL or CRD DB, before upgrade
+
+### Fixed
+
+- Fixed incorrect default LUKS2 header size calculation
+- Parse errors during ctrl -> stlt authentication now result in "AUTHENTICATION_ERROR" instead of "OFFLINE" (regression introduced in 1.32.0-rc.1)
+- Fixed free space reporting of thin storage spaces (Windows) pool
+- Fixed race condition where after a reconnect storage pools might not show correct capacities and freespaces.
+- Fixed PREPARE_SHIPPING backups didn't count as active shippings
+
+## [1.33.2] - 2026-04-08
+
+### Changed
+
+- Changed the mechanism how LINSTOR sets DRBD volumes as UptoDate
+
+### Removed
+
 - WinDRBD specific patches regarding missing sha1 and hmac crypto algorithms
 
 ### Fixed
@@ -47,16 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed resource definition delete setting DELETE flag when resources are still in use
 - Fixed retry deletion of already deleting resource (no longer fails if it is the second to last diskful resource)
 - Satellite now properly merges remote nodes + their data (props, netIfs)
-- Fixed incorrect default LUKS2 header size calculation
 - Fixed potential ConcurrentModificationException when serializing properties
-- Parse errors during ctrl -> stlt authentication now result in "AUTHENTICATION_ERROR" instead of "OFFLINE" (regression introduced in 1.32.0-rc.1)
-- Fixed free space reporting of thin storage spaces (Windows) pool
-- Fixed race condition where after a reconnect storage pools might not show correct capacities and freespaces.
 - Fixed race condition in updateController() that leads to uncompleted ChangedController answers (client timeout)
-- Systemd-notify: Use SDNotify library instead of calling "systemd-notify"
 - Fixed bug that could lead to NPE when multiple cache layers are processed in one DevMgr cycle
 - Fixed some issues with ReconnectorTask when multiple peers representing the same nodes try to reconnect
-- Fixed PREPARE_SHIPPING backups didn't count as active shippings
 - Fixed possible bug that could have caused orphaned DRBD resources being left on the satellite
 - Fixed autounplacer not prioritizing autoplacer-settings violations over free space properly
 - Fixed EventStreamClosed exception if toggle-disk a single diskful resource

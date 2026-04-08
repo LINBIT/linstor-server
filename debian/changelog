@@ -1,3 +1,43 @@
+linstor-server (1.33.2-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * grizzly: update UI help text
+  * logback.xml: fix logback file format pattern
+  * rscdfn: fixed delete set DELETE flag if a resource was InUse
+  * makefile/rpm: prevent server*.jar in controller and satellite packages
+  * fix: synchronize updateController() to prevent race with clearImpl()
+  * toggle-disk: Fix EventStreamClosed exception on single diskful toggle
+  * debian-control: default-jdk-headless | openjdk-11-jdk-headless
+  * gitlab-ci: use working build-helpers
+  * debian: also allow java-sdk-headless as build-dep
+
+  [ Gabor Hernadi ]
+  * Drbd,rsc,del: Fix inaccurate calculation of remaining diskful resources
+  * StltRscACH: Properly merge remote nodes
+  * ReconnectorTask: Avoid .getName when possible
+  * NodeICH: add double checking
+  * Props: use cloneMap() instead of map() before passing to serializer
+  * DevLayer: Fix compareTo for DevLayerKinds
+  * CtrlStltUpdaterCaller: Properly handle PeerNotConnectedExc
+  * Rsc,delete: FluxError if stlt offline
+  * AutoUnplacer: Fix preference of violations over Sp free space
+  * Drbd,UpToDate: Changed method how vlms are set UpToDate
+  * Db,ETCD: Added migration to backport
+  * ReconnectorTask: Properly handle multiple peers to same node
+  * ReconnectorTask: Fix minor issues
+  * ReconnectorTask: Reworked setNextNetIf
+  * ReconnectorTask: Ignore completed but stale connected events
+  * AutoBlockSize: Write into correct propscontainer
+  * Drbd,mkfs: Also create FS on new volume
+
+  [ Christian Wohlert ]
+  * auto-verify-algo: Do not clear property with only one satellite connected
+
+  [ Johannes Khoshnazar-Thoma ]
+  * Removed windrbd crypto algorithm patches.
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 08 Apr 2026 08:02:38 +0000
+
 linstor-server (1.33.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
