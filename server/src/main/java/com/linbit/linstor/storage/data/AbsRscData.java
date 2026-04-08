@@ -56,7 +56,6 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, Boolean> suspend;
 
     // volatile satellite only
-    private boolean checkFileSystem;
     private @Nullable Boolean isSuspended = null; // unknown
 
     private final Map<AbsRscLayerObject<?>, Boolean> clonePassthroughModeMap = new HashMap<>(); // not cloning if empty
@@ -89,7 +88,6 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
             null
         );
 
-        checkFileSystem = true;
 
         transObjs = new ArrayList<>();
         transObjs.add(rsc);
@@ -267,18 +265,6 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     public void clearIgnoreReasons() throws DatabaseException
     {
         ignoreReasons.get().clear();
-    }
-
-    @Override
-    public boolean checkFileSystem()
-    {
-        return checkFileSystem;
-    }
-
-    @Override
-    public void disableCheckFileSystem()
-    {
-        this.checkFileSystem = false;
     }
 
     @Override

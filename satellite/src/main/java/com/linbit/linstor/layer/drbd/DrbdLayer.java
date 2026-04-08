@@ -45,6 +45,7 @@ import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
 import com.linbit.linstor.layer.drbd.drbdstate.NoInitialStateException;
 import com.linbit.linstor.layer.drbd.drbdstate.ResourceObserver;
+import com.linbit.linstor.layer.drbd.helper.ReadyForPrimaryNotifier;
 import com.linbit.linstor.layer.drbd.resfiles.DrbdResourceFileUtils;
 import com.linbit.linstor.layer.drbd.utils.DrbdAdm;
 import com.linbit.linstor.layer.drbd.utils.DrbdGiStringBuilder;
@@ -95,6 +96,8 @@ import org.slf4j.event.Level;
 public class DrbdLayer implements DeviceLayer
 {
     public static final String DRBD_DEVICE_PATH_FORMAT = "/dev/drbd%d";
+
+    private static final long HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT = 2000;
 
     private final AccessContext workerCtx;
     private final DrbdAdm drbdUtils;
@@ -967,6 +970,7 @@ public class DrbdLayer implements DeviceLayer
                  *
                  * we need to be primary even if autoPromote is deactivated to create the filesystem
                  */
+                waitForValidStateForPrimary(drbdRscDataRef);
                 try (var ignored = drbdUtils.primaryAutoClose(drbdRscDataRef, true, false))
                 {
                     MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
@@ -976,6 +980,39 @@ public class DrbdLayer implements DeviceLayer
                     throw new StorageException("Failed to become secondary again after creating filesystem", exc);
                 }
             }
+        }
+    }
+
+    private void waitForValidStateForPrimary(DrbdRscData<Resource> drbdRscData) throws StorageException
+    {
+        try
+        {
+            final Object syncObj = new Object();
+            synchronized (syncObj)
+            {
+                String rscNameStr = drbdRscData.getSuffixedResourceName();
+                ReadyForPrimaryNotifier resourceObserver = new ReadyForPrimaryNotifier(rscNameStr, syncObj);
+                drbdState.addObserver(resourceObserver, DrbdStateTracker.OBS_DISK);
+                if (!resourceObserver.hasValidStateForPrimary(drbdState.getDrbdResource(rscNameStr)))
+                {
+                    syncObj.wait(HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT);
+                }
+                if (!resourceObserver.hasValidStateForPrimary(drbdState.getDrbdResource(rscNameStr)))
+                {
+                    throw new StorageException(
+                        "Device did not get ready within " + HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT + "ms"
+                    );
+                }
+                drbdState.removeObserver(resourceObserver);
+            }
+        }
+        catch (NoInitialStateException exc)
+        {
+            throw new StorageException("No initial drbd state", exc);
+        }
+        catch (InterruptedException exc)
+        {
+            throw new StorageException("Interrupted", exc);
         }
     }
 

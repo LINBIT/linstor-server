@@ -49,10 +49,6 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
 
     void remove(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException, DatabaseException;
 
-    boolean checkFileSystem();
-
-    void disableCheckFileSystem();
-
     boolean exists();
 
     void setIsSuspended(boolean suspend) throws DatabaseException;

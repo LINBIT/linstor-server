@@ -36,6 +36,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
 
     // not persisted, not serialized, stlt only
     protected transient long originalSize = UNINITIALIZED_SIZE;
+    private boolean checkFileSystem = true;
 
     // holds the clone device path while cloning in process
     // not serializable, not persisted, stlt only
@@ -165,6 +166,18 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     public void setCloneDevicePath(@Nullable String cloneDevicePathRef)
     {
         cloneDevicePath = cloneDevicePathRef;
+    }
+
+    @Override
+    public boolean checkFileSystem()
+    {
+        return checkFileSystem;
+    }
+
+    @Override
+    public void disableCheckFileSystem()
+    {
+        checkFileSystem = false;
     }
 
     @Override

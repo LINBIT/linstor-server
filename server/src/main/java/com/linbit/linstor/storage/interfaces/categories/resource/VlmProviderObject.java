@@ -163,4 +163,9 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
     {
         return getVolumeKey().compareTo(oRef.getVolumeKey());
     }
+
+    boolean checkFileSystem();
+
+    void disableCheckFileSystem();
+
 }
