@@ -84,7 +84,6 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -644,25 +643,34 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 }
             }
 
-            Supplier<ApiRcException> createExc = () -> new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_VLM_SIZE,
-                    "Deployed volumes can only grow in size, not shrink. Changing volume's size from " +
-                        "usable (net) to allocated (gross) could require the volume to shrink"
-                )
-            );
             for (DeviceLayerKind kind : layerKindSet)
             {
                 if (!kind.isShrinkingSupported())
                 {
-                    throw createExc.get();
+                    throw new ApiRcException(
+                        ApiCallRcImpl.entryBuilder(
+                            ApiConsts.FAIL_INVLD_VLM_SIZE,
+                            "Shrinking volumes is not supported by layer '" + kind.name() + "'. " +
+                                "Volumes can only grow in size."
+                        )
+                            .setSkipErrorReport(true)
+                            .build()
+                    );
                 }
             }
             for (DeviceProviderKind kind : providerKindSet)
             {
                 if (!kind.isShrinkingSupported())
                 {
-                    throw createExc.get();
+                    throw new ApiRcException(
+                        ApiCallRcImpl.entryBuilder(
+                            ApiConsts.FAIL_INVLD_VLM_SIZE,
+                            "Shrinking volumes is not supported by storage provider '" + kind.name() + "'. " +
+                                "Volumes can only grow in size."
+                        )
+                            .setSkipErrorReport(true)
+                            .build()
+                    );
                 }
             }
         }
