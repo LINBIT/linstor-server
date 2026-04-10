@@ -7,7 +7,7 @@ public enum DeviceLayerKind
     DRBD(
         80,
         false,
-        true,
+        false,
         ExtTools.DRBD9_KERNEL,
         ExtTools.DRBD9_UTILS
     ),
