@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Systemd-notify: Use SDNotify library instead of calling "systemd-notify"
 - AutoUnplacer now prefers non-UpToDate resources after AP-settings-violating resources before choosing any.
 - Improved error message for shrink operations
+- Disabled DRBD shrink support (It didn't work correctly anyway)
 
 ### Removed
 
