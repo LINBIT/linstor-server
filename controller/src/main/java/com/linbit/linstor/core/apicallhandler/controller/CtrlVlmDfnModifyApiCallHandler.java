@@ -210,7 +210,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         @Nullable UUID vlmDfnUuid,
         String rscNameStr,
         int vlmNrInt,
-        Long size,
+        @Nullable Long size,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         List<String> vlmDfnFlagsRef
@@ -315,16 +315,18 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             updateForResize = true;
         }
 
-        boolean shrink = false;
         if (size != null)
         {
             long diffSize = size - getVlmDfnSize(vlmDfn);
 
-            shrink = diffSize < 0;
+            boolean shrink = diffSize < 0;
             if (shrink)
             {
                 ensureShrinkingIsSupported(vlmDfn);
                 setFlag(vlmDfn, VolumeDefinition.Flags.RESIZE_SHRINK);
+                updateForResize = true;
+                notifyStlts = true;
+                setVlmDfnSize(vlmDfn, size);
             }
             else if (diffSize == 0)
             {
