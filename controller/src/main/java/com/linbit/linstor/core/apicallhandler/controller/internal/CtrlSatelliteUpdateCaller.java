@@ -650,7 +650,7 @@ public class CtrlSatelliteUpdateCaller
      * Sends the atomic update to all given nodes.
      *
      * Different AtomicUpdates to different nodes must be handled outside of this class (or we need a new method for
-     * that which uses something like Map<Node, AtomitUpdateSatelliteData>)
+     * that which uses something like {@code Map<Node, AtomitUpdateSatelliteData>})
      */
     public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
         Collection<Node> nodesRef,

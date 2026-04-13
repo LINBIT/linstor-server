@@ -65,7 +65,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     private static final ArrayList<String> AVAILABLE_LETTERS_COMMON = new ArrayList<>();
     private static final ArrayList<String> AVAILABLE_LETTERS_HVM = new ArrayList<>();
 
-    /** Map<StorageName + "/" + LvId, Pair<EBS-vol-id, devicePath>> */
+    /** {@code Map<StorageName + "/" + LvId, Pair<EBS-vol-id, devicePath>>} */
     private final Map<String, Pair<String, String>> lookupTable = new HashMap<>();
 
     private final @Nullable String ec2InstanceId;

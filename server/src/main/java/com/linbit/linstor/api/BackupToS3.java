@@ -71,7 +71,7 @@ public class BackupToS3
     private final ErrorReporter errorReporter;
     /**
      * Caches the .metafile content from s3. cache structure:
-     * Map<Remote, Map<S3Key, Pair<Etag, content of .meta file>>>
+     * {@code Map<Remote, Map<S3Key, Pair<Etag, content of .meta file>>>}
      * The content of the .meta file is stored as String and is re-parsed as BackupMetaDataPojo with each request to
      * ensure immutability
      */

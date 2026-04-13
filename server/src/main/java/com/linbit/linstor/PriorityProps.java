@@ -238,7 +238,7 @@ public class PriorityProps
     }
 
     /**
-     * Returns a list of <Value, PropsContainer-Description> of all property containers containing
+     * Returns a list of values with PropsContainer-descriptions of all property containers containing
      * the key. If a property container does not contain the requested key, it will be skipped from the
      * result.
      */

@@ -396,7 +396,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     }
 
     /**
-     * Returns a map of <ResourceNameSuffix, RscDfnLayerObject> where the RscDfnLayerObject has
+     * Returns a {@code Map<ResourceNameSuffix, RscDfnLayerObject>} where the RscDfnLayerObject has
      * the same DeviceLayerKind as the given argument
      *
      */

@@ -60,7 +60,7 @@ public class NameShortener
     private final AccessContext accCtx;
 
     /**
-     * Map of <BaseString, digitCount> to specific numberPools
+     * Map of {@code <BaseString, digitCount>} to specific numberPools
      */
     private final Map<String, NumberPool> namePools;
     /**
@@ -301,10 +301,8 @@ public class NameShortener
     }
 
     /**
-     * Returns the NumberPool for the Pair of <baseName, digitCount> with lazy initialization.
+     * Returns the NumberPool for the {@code Pair<baseName, digitCount>} with lazy initialization.
      * The baseName is calculated from the given parameters.
-     *
-     *
      */
     private @Nullable NumberPool getNumberPool(String baseName, boolean createFlag)
     {

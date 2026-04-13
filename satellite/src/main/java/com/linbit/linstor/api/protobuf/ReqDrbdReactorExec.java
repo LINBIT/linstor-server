@@ -10,6 +10,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.DrbdReactorCommand;
 import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.MsgReqDrbdReactorExec;
 
+import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -17,8 +18,6 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-
-import javax.inject.Inject;
 
 /**
  * Handles requests to execute drbd-reactorctl commands on the satellite node.
@@ -128,7 +127,11 @@ public class ReqDrbdReactorExec implements ApiCall
         }
 
         byte[] build = interComSerializer.answerBuilder(InternalApiConsts.API_RSP_DRBD_REACTOR_EXEC, apiCallId.get())
-            .drbdReactorExecResponse(exitCode, stdout.getBytes(StandardCharsets.UTF_8), stderr.getBytes(StandardCharsets.UTF_8))
+            .drbdReactorExecResponse(
+                exitCode,
+                stdout.getBytes(StandardCharsets.UTF_8),
+                stderr.getBytes(StandardCharsets.UTF_8)
+            )
             .build();
 
         controllerPeerConnector.getControllerPeer().sendMessage(
@@ -140,45 +143,27 @@ public class ReqDrbdReactorExec implements ApiCall
     /**
      * Returns the actual command line arguments for the given command.
      */
-    @SuppressWarnings("StatementSwitchToExpressionSwitch")
+    @SuppressWarnings("checkstyle:NoWhitespaceAfter")
     private String[] getCommandArgs(DrbdReactorCommand command, String config)
     {
-        switch (command)
+        String[] ret;
+        if (command != DrbdReactorCommand.STATUS && (config == null || config.isEmpty()))
         {
-            case STATUS:
-                return new String[] {"drbd-reactorctl", "status", "--json"};
-            case EVICT:
-                if (config == null || config.isEmpty())
-                {
-                    return new String[0];
-                }
-                return new String[] {"drbd-reactorctl", "evict", config};
-            case DISABLE:
-                if (config == null || config.isEmpty())
-                {
-                    return new String[0];
-                }
-                return new String[] {"drbd-reactorctl", "disable", config};
-            case ENABLE:
-                if (config == null || config.isEmpty())
-                {
-                    return new String[0];
-                }
-                return new String[] {"drbd-reactorctl", "enable", config};
-            case RESTART:
-                if (config == null || config.isEmpty())
-                {
-                    return new String[0];
-                }
-                return new String[] {"drbd-reactorctl", "restart", config};
-            case DISABLE_NOW:
-                if (config == null || config.isEmpty())
-                {
-                    return new String[0];
-                }
-                return new String[] {"drbd-reactorctl", "disable", "--now", config};
-            default:
-                return new String[0];
+            ret = new String[0];
         }
+        else
+        {
+            ret = switch (command)
+            {
+                case STATUS -> new String[] { "drbd-reactorctl", "status", "--json" };
+                case EVICT -> new String[] { "drbd-reactorctl", "evict", config };
+                case DISABLE -> new String[] { "drbd-reactorctl", "disable", config };
+                case ENABLE -> new String[] { "drbd-reactorctl", "enable", config };
+                case RESTART -> new String[] { "drbd-reactorctl", "restart", config };
+                case DISABLE_NOW -> new String[] { "drbd-reactorctl", "disable", "--now", config };
+                case UNKNOWN, UNRECOGNIZED -> new String[0];
+            };
+        }
+        return ret;
     }
 }

@@ -86,17 +86,21 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Creates and ships a backup to a linstor cluster, using the following steps:</br>
- * 1) find all snapshots that can function as a base snap for an incremental shipping and send their uuids to the target
- * cluster</br>
- * ~~~ continue when target cluster responds with the chosen base snap uuid ~~~</br>
- * 2) create the snapshot and use the base snap the target cluster decided on to find out which node(s) can do the
- * shipping </br>
- * 2a) if there is no node available to do the shipping, queue it instead and delay the following steps until it is
- * processed from the queue</br>
- * 3) create the stlt-remote and tell the target cluster to start receiving</br>
- * ~~~ continue when target cluster responds with the port it is listening on ~~~</br>
- * 4) start sending the backup to the target cluster
+ * Creates and ships a backup to a linstor cluster, using the following steps:
+ * <ol>
+ *  <li>find all snapshots that can function as a base snap for an incremental shipping and send their uuids to the
+ *      target cluster
+ *      <p>~~~ continue when target cluster responds with the chosen base snap uuid ~~~</p></li>
+ *  <li>create the snapshot and use the base snap the target cluster decided on to find out which node(s) can do the
+ *      shipping
+ *    <ul>
+ *     <li>if there is no node available to do the shipping, queue it instead and delay the following steps until it is
+ *         processed from the queue</li>
+ *    </ul></li>
+ *  <li>create the stlt-remote and tell the target cluster to start receiving
+ *      <p>~~~ continue when target cluster responds with the port it is listening on ~~~</p></li>
+ *  <li>start sending the backup to the target cluster</li>
+ * </ol>
  */
 @Singleton
 public class CtrlBackupL2LSrcApiCallHandler
@@ -165,9 +169,9 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     /**
-     * (see class-javadoc for overview)</br>
+     * (see class-javadoc for overview)<br/>
      * 1) find all snapshots that can function as a base snap for an incremental shipping and send their uuids to the
-     * target cluster</br>
+     * target cluster<br/>
      * also do a bunch of checks to ensure the shipping is possible in the first place
      */
     public Flux<ApiCallRc> shipBackup(
@@ -393,9 +397,9 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     /**
-     * (see class-javadoc for overview)</br>
+     * (see class-javadoc for overview)<br/>
      * 2) create the snapshot and use the base snap the target cluster decided on to find out which node(s) can do the
-     * shipping </br>
+     * shipping <br/>
      * 2a) if there is no node available to do the shipping, queue it instead and delay the following steps until it is
      * processed from the queue
      */
@@ -492,8 +496,8 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     /**
-     * (see class-javadoc for overview)</br>
-     * 3) create the stlt-remote</br>
+     * (see class-javadoc for overview)<br/>
+     * 3) create the stlt-remote<br/>
      * also calls updateSatellites
      */
     public Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingSrcData data, Node node)
@@ -572,7 +576,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     /**
-     * (see class-javadoc for overview)</br>
+     * (see class-javadoc for overview)<br/>
      * 3) create the stlt-remote and tell the target cluster to start receiving
      */
     private Flux<ApiCallRc> prepareShippingInTransaction(BackupShippingSrcData data)
@@ -661,7 +665,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     /**
-     * (see class-javadoc for overview)</br>
+     * (see class-javadoc for overview)<br/>
      * 4) start sending the backup to the target cluster
      * Updates stltRemote with received IP/Port and starts shipment
      */

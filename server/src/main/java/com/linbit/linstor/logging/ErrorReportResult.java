@@ -12,7 +12,7 @@ public class ErrorReportResult
     private long totalCount;
     private final ArrayList<ErrorReport> errorReports = new ArrayList<>();
     /**
-     * The key of this map is a Pair<NodeName,Module>.
+     * The key of this map is a {@code Pair<NodeName,Module>}.
      */
     private final HashMap<Pair<String, String>, Long> nodeCounts = new HashMap<>();
 

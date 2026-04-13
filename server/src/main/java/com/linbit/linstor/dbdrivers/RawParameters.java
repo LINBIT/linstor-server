@@ -20,7 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * This class is basically only a wrapper for an Map<Column, Object].
+ * This class is basically only a wrapper for an {@code Map<Column, Object>}.
  */
 public class RawParameters
 {
