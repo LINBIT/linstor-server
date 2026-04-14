@@ -11,6 +11,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -110,6 +111,7 @@ public class CtrlConfApiCallHandler
     private static final int MAX_REMOTE_NAME_LEN = 10;
 
     private final ErrorReporter errorReporter;
+    private final AccessContext sysCtx;
     private final SystemConfRepository systemConfRepository;
     private final DynamicNumberPool minorNrPool;
     private final DynamicNumberPool backupShipPortPool;
@@ -172,6 +174,7 @@ public class CtrlConfApiCallHandler
     @Inject
     public CtrlConfApiCallHandler(
         ErrorReporter errorReporterRef,
+        @SystemContext AccessContext sysCtxRef,
         SystemConfRepository systemConfRepositoryRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @Named(
@@ -206,6 +209,7 @@ public class CtrlConfApiCallHandler
     )
     {
         errorReporter = errorReporterRef;
+        sysCtx = sysCtxRef;
         systemConfRepository = systemConfRepositoryRef;
         minorNrPool = minorNrPoolRef;
         backupShipPortPool = backupShipPortPoolRef;
@@ -2179,7 +2183,7 @@ public class CtrlConfApiCallHandler
         try
         {
             @Nullable String autoHttps = systemConfRepository
-                .getCtrlConfForView(peerAccCtx.get())
+                .getCtrlConfForView(sysCtx)
                 .getProp(ApiConsts.KEY_AUTO_HTTPS, ApiConsts.NAMESPC_REST);
             return Boolean.parseBoolean(autoHttps);
         }
