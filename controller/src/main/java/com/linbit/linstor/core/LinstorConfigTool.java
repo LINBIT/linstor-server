@@ -235,9 +235,10 @@ public class LinstorConfigTool
                  Connection con = dataSource.getConnection())
             {
                 con.setSchema(DATABASE_SCHEMA_NAME);
-                final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
-                    "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'";
-                SQLUtils.executeStatement(con, String.format(stmt, controllerPort));
+                SQLUtils.executeStatement(con, String.format(
+                    "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
+                        "WHERE PROPS_INSTANCE='/CTRL' AND PROP_KEY='netcom/PlainConnector/port'",
+                    controllerPort));
                 con.commit();
                 System.out.println("Controller plain port set to " + controllerPort);
             }
@@ -262,9 +263,10 @@ public class LinstorConfigTool
                  Connection con = dataSource.getConnection())
             {
                 con.setSchema(DATABASE_SCHEMA_NAME);
-                final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
-                    "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'";
-                SQLUtils.executeStatement(con, String.format(stmt, listenAddress));
+                SQLUtils.executeStatement(con, String.format(
+                    "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
+                        "WHERE PROPS_INSTANCE='/CTRL' AND PROP_KEY='netcom/PlainConnector/bindaddress'",
+                    listenAddress));
                 con.commit();
 
                 System.out.println("Controller plain listen address set to " + listenAddress);
