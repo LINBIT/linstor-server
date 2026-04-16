@@ -962,6 +962,11 @@ public class DrbdLayer implements DeviceLayer
             Resource rsc = drbdRscDataRef.getAbsResource();
             if (MkfsUtils.needsToCreateFs(rsc, workerCtx))
             {
+                // we need to be primary even if autoPromote is deactivated to create the filesystem
+                // regardless if we need to switch to primary and back afterwards or if we are already primary (i.e.
+                // other volumes might already be in use), we still need to wait until the just created volume can
+                // technically be set to primary before running mkfs
+                waitForValidStateForPrimary(drbdRscDataRef);
                 if (drbdRscDataRef.isPrimary())
                 {
                     MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
@@ -971,10 +976,7 @@ public class DrbdLayer implements DeviceLayer
                     /*
                      * primary needs to be done with --force since we might have configured quorum, but did not give
                      * DRBD enough time to connect to peers.
-                     *
-                     * we need to be primary even if autoPromote is deactivated to create the filesystem
                      */
-                    waitForValidStateForPrimary(drbdRscDataRef);
                     try (var ignored = drbdUtils.primaryAutoClose(drbdRscDataRef, true, false))
                     {
                         MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
