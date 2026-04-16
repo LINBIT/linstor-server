@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed PREPARE_SHIPPING backups didn't count as active shippings
 - Fixed the clone status check if no DRBD connection states have been received yet
 - Fixed volume set size (shrinking) never trigger the actual shrink operation
+- Only call "secondary" after an "mkfs" command if LINSTOR was the one that set the DRBD resource primary
 
 ## [1.33.2] - 2026-04-08
 
