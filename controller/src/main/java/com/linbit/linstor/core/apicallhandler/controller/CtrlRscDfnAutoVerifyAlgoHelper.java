@@ -220,7 +220,7 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                 }
                 else
                 {
-                    if (nodeCryptos.size() != 1)
+                    if (nodeCryptos.size() > 1)
                     {
                         final String msg = String.format(
                             "No common DRBD verify algorithm found for '%s', clearing prop",
