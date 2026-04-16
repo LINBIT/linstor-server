@@ -964,20 +964,27 @@ public class DrbdLayer implements DeviceLayer
             Resource rsc = drbdRscDataRef.getAbsResource();
             if (MkfsUtils.needsToCreateFs(rsc, workerCtx))
             {
-                /*
-                 * primary needs to be done with --force since we might have configured quorum, but did not give
-                 * DRBD enough time to connect to peers.
-                 *
-                 * we need to be primary even if autoPromote is deactivated to create the filesystem
-                 */
-                waitForValidStateForPrimary(drbdRscDataRef);
-                try (var ignored = drbdUtils.primaryAutoClose(drbdRscDataRef, true, false))
+                if (drbdRscDataRef.isPrimary())
                 {
                     MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
                 }
-                catch (ExtCmdFailedException exc)
+                else
                 {
-                    throw new StorageException("Failed to become secondary again after creating filesystem", exc);
+                    /*
+                     * primary needs to be done with --force since we might have configured quorum, but did not give
+                     * DRBD enough time to connect to peers.
+                     *
+                     * we need to be primary even if autoPromote is deactivated to create the filesystem
+                     */
+                    waitForValidStateForPrimary(drbdRscDataRef);
+                    try (var ignored = drbdUtils.primaryAutoClose(drbdRscDataRef, true, false))
+                    {
+                        MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
+                    }
+                    catch (ExtCmdFailedException exc)
+                    {
+                        throw new StorageException("Failed to become secondary again after creating filesystem", exc);
+                    }
                 }
             }
         }
