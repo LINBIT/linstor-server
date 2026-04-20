@@ -275,7 +275,21 @@ public class BackupShippingInternal
                 )
             );
         }
-        ApiCallRcRestUtils.mapToMonoResponse(responses).subscribe(asyncResponse::resume);
+        ApiCallRcRestUtils.mapToMonoResponse(responses)
+            .onErrorResume(exc ->
+            {
+                errorReporter.reportError(exc);
+                return Mono.just(
+                    ApiCallRcRestUtils.toResponse(
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            exc.getMessage()
+                        ),
+                        Response.Status.INTERNAL_SERVER_ERROR
+                    )
+                );
+            })
+            .subscribe(asyncResponse::resume);
     }
 
     @POST
@@ -332,7 +346,21 @@ public class BackupShippingInternal
                 )
             );
         }
-        ApiCallRcRestUtils.mapToMonoResponse(responses).subscribe(asyncResponse::resume);
+        ApiCallRcRestUtils.mapToMonoResponse(responses)
+            .onErrorResume(exc ->
+            {
+                errorReporter.reportError(exc);
+                return Mono.just(
+                    ApiCallRcRestUtils.toResponse(
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            exc.getMessage()
+                        ),
+                        Response.Status.INTERNAL_SERVER_ERROR
+                    )
+                );
+            })
+            .subscribe(asyncResponse::resume);
     }
 
     @POST
