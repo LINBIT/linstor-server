@@ -32,6 +32,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 
 public abstract class BaseK8sCrdMigration extends AbsMigration
 {
+    public static final int UPDATE_TABLES_WAIT_TIME_MS = 500;
+    public static final int ROLLBACK_CRD_WAIT_TIME_MS = 1_000;
     protected final int version;
     protected final String description;
     protected final K8sCrdMigrationContext fromCtx;
@@ -141,8 +143,11 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
 
             tablesToUpdate.removeAll(updatedTables);
 
+            if (!tablesToUpdate.isEmpty())
+            {
+                Delay.sleep(UPDATE_TABLES_WAIT_TIME_MS);
+            }
             sleep = maxWaitUntil - System.currentTimeMillis();
-            Delay.sleep(2_000);
         }
         if (!tablesToUpdate.isEmpty())
         {
@@ -195,8 +200,11 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
                 }
             }
 
+            if (!isRollbackReady)
+            {
+                Delay.sleep(ROLLBACK_CRD_WAIT_TIME_MS);
+            }
             sleep = maxWaitUntil - System.currentTimeMillis();
-            Delay.sleep(2_000);
         }
 
         if (!isRollbackReady)
