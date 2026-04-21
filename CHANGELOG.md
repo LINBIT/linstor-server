@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added linstor-config disable-token-auth command
 - Property Clone/BalanceAfterClone to autoplace an extra diskful resource after a clone operation
 - Property Snapshot/BalanceAfterRestore to autoplace an extra diskful resource after a snapshot restore
+- SOS report now includes drbd-reactor config files, logs, and status
 
 ### Changed
 
