@@ -229,6 +229,7 @@ public class StltSosReportApiCallHandler
         try
         {
             File outFile = sosReportDirRef.resolve(fileName).toFile();
+            outFile.getParentFile().mkdirs();
             String errFileName = fileName + SUFFIX_CMD_STDERR;
             File errFile = sosReportDirRef.resolve(errFileName).toFile();
 
@@ -363,6 +364,10 @@ public class StltSosReportApiCallHandler
      * <tr><td>log-kern.log</td><td>'cat /var/log/kern.log'</td></tr>
      * <tr><td>log-messages</td><td>'cat /var/log/messages'</td></tr>
      * <tr><td>release</td><td>'cat /etc/redhat-release /etc/lsb-release /etc/os-release'</td></tr>
+     * <tr><td>journalctl-drbd-reactor</td><td>'journalctl -u drbd-reactor --since $since'</td></tr>
+     * <tr><td>drbd-reactor.toml</td><td>'cat /etc/drbd-reactor.toml'</td></tr>
+     * <tr><td>drbd-reactorctl-status</td><td>'drbd-reactorctl status --json'</td></tr>
+     * <tr><td>drbd-reactor.d/*.toml</td><td>All files from /etc/drbd-reactor.d/*.toml</td></tr>
      * <tr><td>res/*.res</td><td>All files from /var/lib/linstor.d/*.res</td></tr>
      * <tr><td>logs/*</td><td>All '*{mv.db,log}' from /var/log/linstor (unless overridden) </td></tr>
      * </table>
@@ -448,6 +453,41 @@ public class StltSosReportApiCallHandler
         reportTypes.add(new SosCommandType("zpool-list", now, "zpool", "list"));
         reportTypes.add(new SosCommandType("zpool-status", now, "zpool", "status"));
 
+        reportTypes.add(
+            new SosCommandType(
+                "journalctl-drbd-reactor",
+                now,
+                "journalctl",
+                "-u",
+                "drbd-reactor",
+                "--since",
+                TimeUtils.JOURNALCTL_DF.format(sinceRef)
+            )
+        );
+        reportTypes.add(new SosCommandType("drbd-reactor.toml", now, "cat", "/etc/drbd-reactor.toml"));
+        reportTypes.add(
+            new SosCommandType("drbd-reactorctl-status", now, "drbd-reactorctl", "status", "--json")
+        );
+
+        try (Stream<Path> reactorFileStream = Files.list(Paths.get("/etc/drbd-reactor.d")))
+        {
+            reactorFileStream
+                .filter(file -> file.getFileName().toString().endsWith(".toml"))
+                .forEach(
+                    file -> reportTypes.add(
+                        new SosCommandType(
+                            "drbd-reactor.d/" + file.getFileName(),
+                            now,
+                            "cat",
+                            file.toString()
+                        )
+                    )
+                );
+        }
+        catch (IOException ignored)
+        {
+            // /etc/drbd-reactor.d/ may not exist if drbd-reactor is not installed
+        }
 
         String linstorDDir = LinStor.CONFIG_PATH;
         try (

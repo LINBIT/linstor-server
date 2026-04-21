@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- SOS report now includes drbd-reactor config files, logs, and status
+
 ### Changed
 
 - AutoUnplacer now prefers non-UpToDate resources after AP-settings-violating resources before choosing any.
