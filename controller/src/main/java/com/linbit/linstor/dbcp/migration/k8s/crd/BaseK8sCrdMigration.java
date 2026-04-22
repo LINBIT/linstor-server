@@ -21,14 +21,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
+import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
 
 public abstract class BaseK8sCrdMigration extends AbsMigration
 {
@@ -223,7 +229,112 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
     protected void createOrReplaceCrdSchema(KubernetesClient k8s, String yamlLocation)
     {
         Resource<CustomResourceDefinition> crd = loadK8sCustomResource(k8s, yamlLocation);
+        pruneObsoleteStoredVersions(k8s, crd.item());
         crd.forceConflicts().serverSideApply();
+    }
+
+    /**
+     * Prepares the existing CRD so that the next apply of {@code newCrd} - whose {@code spec.versions} has been
+     * trimmed of retired schema versions - is accepted by the Kubernetes API server.
+     *
+     * Two invariants must hold before {@code spec.versions} is shrunk:
+     * <ol>
+     *   <li>No CR in etcd is still encoded under a version that is about to be removed. Otherwise a subsequent read
+     *       fails with {@code "request to convert CR from an invalid group/version: ..."} because the API server no
+     *       longer knows that source version. This is fixed by listing every CR (while the old versions are still in
+     *       {@code spec.versions}) and issuing a PUT against each one, which re-writes it under the current storage
+     *       version.</li>
+     *   <li>{@code status.storedVersions} must be a subset of the new {@code spec.versions}. Otherwise the apply
+     *       fails with {@code "status.storedVersions[N]: Invalid value: \"vX-Y-Z\": must appear in spec.versions"}.
+     *       This is fixed by PATCHing the /status subresource to drop retired names.</li>
+     * </ol>
+     *
+     * Both steps are guarded: when the CRD does not yet exist, has no status, or every stored version still appears
+     * in the new yaml, the method is a no-op, so it is safe to call on every apply.
+     */
+    private void pruneObsoleteStoredVersions(KubernetesClient k8s, CustomResourceDefinition newCrd)
+    {
+        String crdName = newCrd.getMetadata().getName();
+        Resource<CustomResourceDefinition> existingResource = k8s.apiextensions()
+            .v1()
+            .customResourceDefinitions()
+            .withName(crdName);
+
+        @Nullable CustomResourceDefinition existing = existingResource.get();
+        if (existing != null && existing.getStatus() != null)
+        {
+            @Nullable List<String> stored = existing.getStatus().getStoredVersions();
+            if (stored != null && !stored.isEmpty())
+            {
+                Set<String> newVersionNames = new HashSet<>();
+                for (CustomResourceDefinitionVersion ver : newCrd.getSpec().getVersions())
+                {
+                    newVersionNames.add(ver.getName());
+                }
+
+                List<String> pruned = new ArrayList<>(stored.size());
+                for (String ver : stored)
+                {
+                    if (newVersionNames.contains(ver))
+                    {
+                        pruned.add(ver);
+                    }
+                }
+
+                if (pruned.size() != stored.size())
+                {
+                    rewriteAllCrsToStorageVersion(k8s, existing);
+
+                    existingResource.editStatus(
+                        current ->
+                        {
+                            current.getStatus().setStoredVersions(pruned);
+                            return current;
+                        }
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Re-writes every CR of the given CRD by issuing an update at the current storage version. Each PUT promotes the
+     * etcd encoding to that storage version, which must be completed while the retired versions are still present in
+     * {@code spec.versions} - otherwise the API server cannot convert old-version CRs during the subsequent list.
+     */
+    private void rewriteAllCrsToStorageVersion(KubernetesClient k8s, CustomResourceDefinition existing)
+    {
+        @Nullable String storageVersion = null;
+        for (CustomResourceDefinitionVersion ver : existing.getSpec().getVersions())
+        {
+            if (Boolean.TRUE.equals(ver.getStorage()))
+            {
+                storageVersion = ver.getName();
+            }
+        }
+
+        if (storageVersion != null)
+        {
+            ResourceDefinitionContext rdc = new ResourceDefinitionContext.Builder()
+                .withGroup(existing.getSpec().getGroup())
+                .withVersion(storageVersion)
+                .withKind(existing.getSpec().getNames().getKind())
+                .withPlural(existing.getSpec().getNames().getPlural())
+                .withNamespaced("Namespaced".equals(existing.getSpec().getScope()))
+                .build();
+
+            MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList,
+                Resource<GenericKubernetesResource>> op = k8s.genericKubernetesResources(rdc);
+
+            @Nullable GenericKubernetesResourceList list = op.list();
+            if (list != null && list.getItems() != null)
+            {
+                for (GenericKubernetesResource cr : list.getItems())
+                {
+                    op.resource(cr).update();
+                }
+            }
+        }
     }
 
     private void deleteCrdSchema(KubernetesClient k8s, String yamlLocation)
