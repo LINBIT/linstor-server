@@ -64,7 +64,8 @@ public class SnapshotRestoreResource
                 rscName,
                 snapName,
                 snapRestore.to_resource,
-                snapRestore.stor_pool_rename == null ? Collections.emptyMap() : snapRestore.stor_pool_rename
+                snapRestore.stor_pool_rename == null ? Collections.emptyMap() : snapRestore.stor_pool_rename,
+                snapRestore.rebalance
             );
 
             requestHelper.doFlux(

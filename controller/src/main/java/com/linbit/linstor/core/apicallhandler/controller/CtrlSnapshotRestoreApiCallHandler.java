@@ -95,6 +95,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final BackupInfoManager backupInfoMgr;
     private final CtrlSatelliteUpdateCaller ctrlStltUpdateCaller;
+    private final CtrlRscRebalanceHelper rscRebalanceHelper;
 
     @Inject
     public CtrlSnapshotRestoreApiCallHandler(
@@ -112,7 +113,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         CtrlRscAutoHelper ctrlRscAutoHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         BackupInfoManager backupInfoMgrRef,
-        CtrlSatelliteUpdateCaller ctrlStltUpdateCallerRef
+        CtrlSatelliteUpdateCaller ctrlStltUpdateCallerRef,
+        CtrlRscRebalanceHelper rscRebalanceHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -130,6 +132,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         backupInfoMgr = backupInfoMgrRef;
         ctrlStltUpdateCaller = ctrlStltUpdateCallerRef;
+        rscRebalanceHelper = rscRebalanceHelperRef;
     }
 
     private ResponseContext makeSnapshotRestoreContext(String rscNameStr)
@@ -151,7 +154,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         String fromRscNameStr,
         String fromSnapshotNameStr,
         String toRscNameStr,
-        Map<String, String> renameStorPoolMap
+        Map<String, String> renameStorPoolMap,
+        @Nullable Boolean rebalance
     )
     {
         ResponseContext context = makeSnapshotRestoreContext(toRscNameStr);
@@ -163,7 +167,8 @@ public class CtrlSnapshotRestoreApiCallHandler
                 LinstorParsingUtils.asRscName(fromRscNameStr),
                 LinstorParsingUtils.asSnapshotName(fromSnapshotNameStr),
                 LinstorParsingUtils.asRscName(toRscNameStr),
-                renameStorPoolMap
+                renameStorPoolMap,
+                rebalance
             ).transform(responses -> responseConverter.reportingExceptions(context, responses));
         }
         catch (ApiRcException exc)
@@ -178,7 +183,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         ResourceName fromRscName,
         SnapshotName fromSnapshotName,
         ResourceName toRscName,
-        Map<String, String> renameStorPoolMap
+        Map<String, String> renameStorPoolMap,
+        @Nullable Boolean rebalance
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -194,7 +200,8 @@ public class CtrlSnapshotRestoreApiCallHandler
                 toRscName,
                 false,
                 true,
-                renameStorPoolMap
+                renameStorPoolMap,
+                rebalance
             )
         );
     }
@@ -220,7 +227,8 @@ public class CtrlSnapshotRestoreApiCallHandler
                 toRscName,
                 false,
                 false,
-                renameStorPoolMap
+                renameStorPoolMap,
+                null
             )
         );
     }
@@ -245,7 +253,8 @@ public class CtrlSnapshotRestoreApiCallHandler
                 toRscName,
                 true,
                 false,
-                Collections.emptyMap() // rename-storpool already happened during download
+                Collections.emptyMap(), // rename-storpool already happened during download
+                null
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -257,7 +266,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         ResourceName toRscName,
         boolean fromBackup,
         boolean fromApi,
-        Map<String, String> renameStorPoolMap
+        Map<String, String> renameStorPoolMap,
+        @Nullable Boolean rebalance
     )
     {
         Flux<ApiCallRc> deploymentResponses = Flux.just();
@@ -401,6 +411,13 @@ public class CtrlSnapshotRestoreApiCallHandler
             return Flux.<ApiCallRc>just(responses)
                 .concatWith(deploymentResponses)
                 .concatWith(autoFlux)
+                .concatWith(Boolean.TRUE.equals(rebalance)
+                    ? rscRebalanceHelper.trigger(toRscDfn)
+                        .onErrorResume(exc -> {
+                            errorReporter.reportError(exc);
+                            return Flux.empty();
+                        })
+                    : Flux.empty())
                 .concatWith(cleanupFlux)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> cleanupFlux)
                 .onErrorResume(

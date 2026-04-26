@@ -625,7 +625,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                 rscName,
                 safetySnapDfn.getName(),
                 rscName,
-                Collections.emptyMap()
+                Collections.emptyMap(),
+                null
             );
             if (updateRscDfn)
             {

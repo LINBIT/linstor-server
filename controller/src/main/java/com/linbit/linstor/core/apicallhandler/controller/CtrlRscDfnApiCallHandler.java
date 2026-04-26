@@ -168,6 +168,7 @@ public class CtrlRscDfnApiCallHandler
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
     private final Autoplacer autoplacer;
     private final BackgroundRunner backgroundRunner;
+    private final CtrlRscRebalanceHelper rscRebalanceHelper;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -205,7 +206,8 @@ public class CtrlRscDfnApiCallHandler
         CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelperRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
         Autoplacer autoplacerRef,
-        BackgroundRunner backgroundRunnerRef
+        BackgroundRunner backgroundRunnerRef,
+        CtrlRscRebalanceHelper rscRebalanceHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -243,6 +245,7 @@ public class CtrlRscDfnApiCallHandler
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
         autoplacer = autoplacerRef;
         backgroundRunner = backgroundRunnerRef;
+        rscRebalanceHelper = rscRebalanceHelperRef;
     }
 
     public @Nullable ResourceDefinition createResourceDefinition(
@@ -832,7 +835,8 @@ public class CtrlRscDfnApiCallHandler
         @Nullable String intoRscGrpName,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deleteNamespaces
+        Set<String> deleteNamespaces,
+        @Nullable Boolean rebalance
     )
     {
         ResponseContext context = makeResourceDefinitionContext(
@@ -872,7 +876,8 @@ public class CtrlRscDfnApiCallHandler
                                             intoRscGrpName,
                                             overrideProps,
                                             deletePropKeys,
-                                            deleteNamespaces
+                                            deleteNamespaces,
+                                            rebalance
                                         )
                                     )
                                     .transform(responses -> responseConverter.reportingExceptions(context, responses))
@@ -1326,7 +1331,8 @@ public class CtrlRscDfnApiCallHandler
         @Nullable String intoRscGrpName,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deleteNamespaces)
+        Set<String> deleteNamespaces,
+        @Nullable Boolean rebalance)
     {
         Flux<ApiCallRc> flux;
 
@@ -1543,6 +1549,13 @@ public class CtrlRscDfnApiCallHandler
                 .concatWith(resumeIOAndClearCloneProp(srcRscDfn, clonedRscName))
                 .concatWith(deploymentResponses)
                 .concatWith(removeStartCloning(clonedRscDfn))
+                .concatWith(Boolean.TRUE.equals(rebalance)
+                    ? rscRebalanceHelper.trigger(clonedRscDfn)
+                        .onErrorResume(exc -> {
+                            errorReporter.reportError(exc);
+                            return Flux.empty();
+                        })
+                    : Flux.empty())
                 .onErrorResume(exception -> resumeIOAndClearCloneProp(srcRscDfn, clonedRscName));
         }
         catch (ApiRcException exc)

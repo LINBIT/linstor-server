@@ -1356,6 +1356,10 @@ public class JsonGenTypes
          */
         public List<String> nodes = Collections.emptyList();
         public Map<String, String> stor_pool_rename = Collections.emptyMap();
+        /**
+         * If true, after restore completes, replicas will be migrated to the autoplacer-optimal nodes via migrate-disk.
+         */
+        public @Nullable Boolean rebalance;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1926,6 +1930,10 @@ public class JsonGenTypes
         public Map<String, String> override_props = Collections.emptyMap();
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
+        /**
+         * If true, after cloning completes, replicas will be migrated to the autoplacer-optimal nodes via migrate-disk.
+         */
+        public @Nullable Boolean rebalance;
     }
 
     /**
