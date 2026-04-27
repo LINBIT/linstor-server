@@ -89,6 +89,7 @@ public class PropsChangedListenerBuilder
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addSkipDisk();
+        builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
     }
 
@@ -106,6 +107,7 @@ public class PropsChangedListenerBuilder
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addSkipDisk();
+        builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
     }
 
@@ -122,6 +124,7 @@ public class PropsChangedListenerBuilder
         builder.setRscListSupplier(builder.buildRscListSupplierFromRscDfnSupplier(accCtx));
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
+        builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
     }
 
@@ -139,6 +142,7 @@ public class PropsChangedListenerBuilder
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addSkipDisk();
+        builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
     }
 
@@ -155,6 +159,7 @@ public class PropsChangedListenerBuilder
         builder.setRscListSupplier(builder.buildRscListSupplierFromRscDfnSupplier(accCtx));
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
+        builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
     }
 
@@ -172,6 +177,7 @@ public class PropsChangedListenerBuilder
         builder.setRscListSupplier(() -> getRscsBy(accCtx, nodeRef));
 
         builder.addSkipDisk();
+        builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
     }
 
@@ -201,6 +207,7 @@ public class PropsChangedListenerBuilder
         builder.setRscListSupplier(() -> getRscsBy(accCtx, storPoolRef));
 
         builder.addSkipDisk();
+        builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
     }
 
@@ -228,6 +235,7 @@ public class PropsChangedListenerBuilder
         builder.setRscListSupplier(() -> Collections.singleton(rscRef));
 
         builder.addSkipDisk();
+        builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
     }
 
@@ -344,6 +352,39 @@ public class PropsChangedListenerBuilder
         void addSkipDisk()
         {
             addRecalculateVolatileDataProperty(ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_SKIP_DISK);
+        }
+
+        void addLuksAllowDiscards()
+        {
+            CtrlRscDfnApiCallHandler ctrlRscDfnHandler = ctrlRscDfnApiCallHandlerProvider.get();
+            propsChangedListeners.put(
+                ApiConsts.NAMESPC_LUKS + "/" + ApiConsts.KEY_LUKS_ALLOW_DISCARDS,
+                (ignoredKey, newVal, oldValue) ->
+                {
+                    if (!Objects.equals(newVal, oldValue))
+                    {
+                        Set<ResourceDefinition> rscDfnsToUpdate = new TreeSet<>();
+                        if (rscDfnsSupplier != null)
+                        {
+                            for (ResourceDefinition rscDfn : rscDfnsSupplier.supply())
+                            {
+                                rscDfnsToUpdate.add(rscDfn);
+                            }
+                        }
+                        else if (rscsSupplier != null)
+                        {
+                            for (Resource rsc : rscsSupplier.supply())
+                            {
+                                rscDfnsToUpdate.add(rsc.getResourceDefinition());
+                            }
+                        }
+                        for (ResourceDefinition rscDfn : rscDfnsToUpdate)
+                        {
+                            fluxes.add(ctrlRscDfnHandler.updateProps(rscDfn));
+                        }
+                    }
+                }
+            );
         }
 
         void addRecalculateVolatileDataProperty(String propRef)

@@ -12,6 +12,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.CtrlSnapLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.ebs.EbsStatusManagerService;
@@ -56,6 +57,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -79,6 +81,7 @@ public class RscInternalCallHandler
     private final RetryResourcesTask retryResourceTask;
     private final CtrlSatelliteUpdater stltUpdater;
     private final EbsStatusManagerService ebsStatusMgr;
+    private final Provider<CtrlRscDfnApiCallHelper> rscDfnApiCallHelperProvider;
 
     @Inject
     public RscInternalCallHandler(
@@ -95,7 +98,8 @@ public class RscInternalCallHandler
         RetryResourcesTask retryResourceTaskRef,
         CtrlApiDataLoader ctrlApiDataLoader,
         CtrlSatelliteUpdater stltUpdaterRef,
-        EbsStatusManagerService ebsStatusMgrRef
+        EbsStatusManagerService ebsStatusMgrRef,
+        Provider<CtrlRscDfnApiCallHelper> rscDfnApiCallHelperProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -112,6 +116,7 @@ public class RscInternalCallHandler
         apiDataLoader = ctrlApiDataLoader;
         stltUpdater = stltUpdaterRef;
         ebsStatusMgr = ebsStatusMgrRef;
+        rscDfnApiCallHelperProvider = rscDfnApiCallHelperProviderRef;
     }
 
     public void handleResourceRequest(
@@ -225,6 +230,13 @@ public class RscInternalCallHandler
             {
                 rsc.setCreateTimestamp(apiCtx, Instant.now());
             }
+
+            // Capture per-volume discGran of the layer below DRBD before the merge so we can later
+            // tell whether this satellite report actually changed something the auto-rs-discard-
+            // granularity calculation cares about. Without this gate we'd recompute (and frequently
+            // flap) the rs-discard-granularity property on every NotifyRscApplied, sending extra
+            // ChangedRsc messages that race with operations like clone_DD.
+            Map<Integer, Long> discGranBefore = collectDrbdChildDiscGrans(rsc);
 
             layerRscDataMerger.mergeLayerData(rsc, rscLayerDataPojoRef, false);
             mergeStltProps(rscPropsRef, rsc.getProps(apiCtx));
@@ -349,6 +361,18 @@ public class RscInternalCallHandler
                 updateSatellite = true;
             }
 
+            // Only run the auto-rs-discard-granularity recompute if this satellite's report
+            // actually changed the discGran of the layer below DRBD. Recomputing on every report
+            // causes the rs-discard-granularity property to flap between set and removed (because
+            // chooseDrbdDiscGran returns null whenever any peer is transiently UNINITIALIZED),
+            // which sends extra ChangedRsc messages that race with operations like clone_DD.
+            Map<Integer, Long> discGranAfter = collectDrbdChildDiscGrans(rsc);
+            if (!discGranBefore.equals(discGranAfter) &&
+                rscDfnApiCallHelperProvider.get().updateDrbdProps(rscDfn))
+            {
+                updateSatellite = true;
+            }
+
             retryResourceTask.remove(rsc);
             ctrlTransactionHelper.commit();
 
@@ -396,6 +420,35 @@ public class RscInternalCallHandler
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    /**
+     * Collects the discGran of every volume of the layer immediately below DRBD (the SUFFIX_DATA
+     * child). This is exactly the value that {@code CtrlRscDfnApiCallHelper.updateRsDiscardGranProp}
+     * consults, so comparing pre- and post-merge maps tells us whether the satellite's report
+     * could possibly change the auto-rs-discard-granularity outcome.
+     */
+    private Map<Integer, Long> collectDrbdChildDiscGrans(Resource rsc) throws AccessDeniedException
+    {
+        Map<Integer, Long> result = new HashMap<>();
+        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
+            rsc.getLayerData(apiCtx),
+            DeviceLayerKind.DRBD
+        );
+        for (AbsRscLayerObject<Resource> drbdRscData : drbdRscDataSet)
+        {
+            @Nullable AbsRscLayerObject<Resource> childRscData = drbdRscData.getChildBySuffix(
+                RscLayerSuffixes.SUFFIX_DATA
+            );
+            if (childRscData != null)
+            {
+                for (VlmProviderObject<Resource> vlmData : childRscData.getVlmLayerObjects().values())
+                {
+                    result.put(vlmData.getVlmNr().value, vlmData.getDiscGran());
+                }
+            }
+        }
+        return result;
     }
 
     private void mergeStltProps(@Nullable Map<String, String> srcPropsMap, Props targetProps)

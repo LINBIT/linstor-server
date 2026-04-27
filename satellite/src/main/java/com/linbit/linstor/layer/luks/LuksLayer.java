@@ -366,12 +366,19 @@ public class LuksLayer implements DeviceLayer
                             false,
                             additionalOptions
                         );
+                        // Invalidate cached discGran so DeviceHandlerImpl re-runs lsblk and the
+                        // controller's auto-rs-discard-granularity sees the new state.
+                        vlmData.setDiscGran(VlmProviderObject.UNINITIALIZED_SIZE);
                     }
                     else
                     {
                         failedMissingDecryptedPassphrase = true;
                         vlmData.setFailed(true);
                     }
+                }
+                else
+                {
+                    warnOnAllowDiscardsMismatch(vlmData, identifier, apiCallRc);
                 }
 
                 if (((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.RESIZE) &&
@@ -403,6 +410,7 @@ public class LuksLayer implements DeviceLayer
                 vlmData.setSizeState(Size.AS_EXPECTED);
 
                 vlmData.setOpened(true);
+                vlmData.setExists(true);
                 vlmData.setFailed(false);
             }
         }
@@ -440,6 +448,32 @@ public class LuksLayer implements DeviceLayer
         }
 
         return identifier;
+    }
+
+    private void warnOnAllowDiscardsMismatch(
+        LuksVlmData<Resource> vlmData,
+        String identifier,
+        ApiCallRcImpl apiCallRc
+    )
+        throws StorageException
+    {
+        boolean wanted = isAllowDiscardsEnabled(vlmData);
+        boolean live = cryptSetup.getActiveFlags(identifier).contains("discards");
+        if (wanted != live)
+        {
+            String msg = String.format(
+                "LUKS device '%s' is already open with a different discard setting " +
+                    "(wanted: %s, active: %s). Deactivate and reactivate the resource " +
+                    "for %s/%s to take effect.",
+                vlmData.getDevicePath(),
+                wanted,
+                live,
+                ApiConsts.NAMESPC_LUKS,
+                ApiConsts.KEY_LUKS_ALLOW_DISCARDS
+            );
+            errorReporter.logWarning(msg);
+            apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.MASK_WARN | ApiConsts.MASK_VLM, msg));
+        }
     }
 
     @Override
@@ -531,47 +565,71 @@ public class LuksLayer implements DeviceLayer
 
     public List<String> getOpenOptions(final LuksVlmData<Resource> vlmData)
     {
-        return getOptions(vlmData, ApiConsts.KEY_STOR_DRIVER_LUKS_OPEN_OPTIONS);
+        List<String> opts = getOptions(vlmData, ApiConsts.KEY_STOR_DRIVER_LUKS_OPEN_OPTIONS);
+        if (isAllowDiscardsEnabled(vlmData) && !opts.contains("--allow-discards"))
+        {
+            opts.add("--allow-discards");
+        }
+        return opts;
     }
 
     public List<String> getOptions(final LuksVlmData<Resource> vlmData, final String optionsKey)
     {
-        List<String> additionalOptions;
         try
         {
-            Volume vlm = (Volume) vlmData.getVolume();
-            Resource rsc = vlm.getAbsResource();
-            ResourceDefinition rscDfn = vlm.getResourceDefinition();
-            ResourceGroup rscGrp = rscDfn.getResourceGroup();
-            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-
-            PriorityProps prioProps = new PriorityProps(
-                vlm.getProps(sysCtx),
-                rsc.getProps(sysCtx)
-            );
-            for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlmData, sysCtx))
-            {
-                prioProps.addProps(storPool.getProps(sysCtx));
-            }
-            prioProps.addProps(
-                rsc.getNode().getProps(sysCtx),
-                vlmDfn.getProps(sysCtx),
-                rscDfn.getProps(sysCtx),
-                rscGrp.getVolumeGroupProps(sysCtx, vlmDfn.getVolumeNumber()),
-                rscGrp.getProps(sysCtx),
-                stltConfigAccessor.getReadonlyProps()
-            );
-
+            PriorityProps prioProps = buildPriorityProps(vlmData);
             final @Nullable String userOptProp = prioProps.getProp(optionsKey, STOR_DRIVER_NAMESPACE);
-            additionalOptions = userOptProp != null ?
-                ShellUtils.shellSplit(userOptProp) :
-                new ArrayList<>();
+            return userOptProp != null ? ShellUtils.shellSplit(userOptProp) : new ArrayList<>();
         }
         catch (AccessDeniedException | InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }
-        return additionalOptions;
+    }
+
+    public boolean isAllowDiscardsEnabled(final LuksVlmData<Resource> vlmData)
+    {
+        try
+        {
+            PriorityProps prioProps = buildPriorityProps(vlmData);
+            final @Nullable String val = prioProps.getProp(
+                ApiConsts.KEY_LUKS_ALLOW_DISCARDS,
+                ApiConsts.NAMESPC_LUKS
+            );
+            return ApiConsts.VAL_TRUE.equalsIgnoreCase(val);
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private PriorityProps buildPriorityProps(final LuksVlmData<Resource> vlmData)
+        throws AccessDeniedException
+    {
+        Volume vlm = (Volume) vlmData.getVolume();
+        Resource rsc = vlm.getAbsResource();
+        ResourceDefinition rscDfn = vlm.getResourceDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+
+        PriorityProps prioProps = new PriorityProps(
+            vlm.getProps(sysCtx),
+            rsc.getProps(sysCtx)
+        );
+        for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlmData, sysCtx))
+        {
+            prioProps.addProps(storPool.getProps(sysCtx));
+        }
+        prioProps.addProps(
+            rsc.getNode().getProps(sysCtx),
+            vlmDfn.getProps(sysCtx),
+            rscDfn.getProps(sysCtx),
+            rscGrp.getVolumeGroupProps(sysCtx, vlmDfn.getVolumeNumber()),
+            rscGrp.getProps(sysCtx),
+            stltConfigAccessor.getReadonlyProps()
+        );
+        return prioProps;
     }
 
     private boolean allStorageChildrenZfs(LuksRscData<Resource> luksRscDataRef)

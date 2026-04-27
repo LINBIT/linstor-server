@@ -60,7 +60,7 @@ public class CtrlRscDfnApiCallHelper
         sysConfRepo = sysConfRepoRef;
     }
 
-    boolean updateDrbdProps(ResourceDefinition rscDfnRef)
+    public boolean updateDrbdProps(ResourceDefinition rscDfnRef)
     {
         final AccessContext peerCtx = peerAccCtx.get();
         boolean ret = false;

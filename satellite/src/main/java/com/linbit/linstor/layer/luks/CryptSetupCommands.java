@@ -16,6 +16,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.Luks;
 import com.linbit.utils.ShellUtils;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -24,7 +25,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -329,6 +332,49 @@ public class CryptSetupCommands implements Luks
             );
         }
         return open;
+    }
+
+    public Set<String> getActiveFlags(String identifier) throws StorageException
+    {
+        Set<String> flags = new HashSet<>();
+        ExtCmd extCmd = extCmdFactory.create();
+        try
+        {
+            OutputData outputData = extCmd.exec(CRYPTSETUP, "status", CRYPT_PREFIX + identifier);
+            // exit code 0: device is active; 4: device inactive. Anything else: real error.
+            if (outputData.exitCode == 0)
+            {
+                String stdOut = new String(outputData.stdoutData, StandardCharsets.UTF_8);
+                for (String line : StringUtils.split(stdOut, "\n"))
+                {
+                    String trimmed = line.trim();
+                    if (trimmed.startsWith("flags:"))
+                    {
+                        String remainder = trimmed.substring("flags:".length()).trim();
+                        if (!remainder.isEmpty())
+                        {
+                            for (String tok : StringUtils.split(remainder, "\\s+"))
+                            {
+                                if (!tok.isEmpty())
+                                {
+                                    flags.add(tok);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        catch (ChildProcessTimeoutException exc)
+        {
+            throw new StorageException("cryptsetup status timed out", exc);
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException("Failed to query cryptsetup status", exc);
+        }
+        return flags;
     }
 
     public void grow(LuksVlmData<Resource> vlmDataRef, byte[] passphrase) throws StorageException
