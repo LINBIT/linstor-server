@@ -40,6 +40,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -1052,6 +1053,22 @@ public class ConfFileBuilder
             {
                 appendLine("disk        %s;", disk);
 
+                if (drbdVersionSupportsTiebreaker())
+                {
+                    appendLine(
+                        "tiebreaker %s;",
+                        vlmData.getRscLayerObject().getFlags().isSet(localAccCtx, DrbdRscFlags.CLIENT) ? "no" : "yes"
+                    );
+                }
+                else
+                {
+                    appendLine(
+                        "# tiebreaker yes;   # DRBD utils: %s, kmod: %s",
+                        drbdVersion.getUtilsVsn(),
+                        drbdVersion.getKModVsn()
+                    );
+                }
+
                 ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
                 ResourceGroup rscGrp = rscDfn.getResourceGroup();
                 ReadOnlyProps rscDfnProps = rscDfn.getProps(accCtx);
@@ -1109,6 +1126,13 @@ public class ConfFileBuilder
                 // TODO: add "disk { ... }" section
             }
         }
+    }
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private boolean drbdVersionSupportsTiebreaker()
+    {
+        return drbdVersion.getKModVsn().greaterOrEqual(9, 3, 1) &&
+            drbdVersion.getUtilsVsn().greaterOrEqual(9, 34, 0);
     }
 
     private void appendIndent()

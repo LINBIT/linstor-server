@@ -507,6 +507,7 @@ public class JsonGenTypes
         public List<Integer> drbd_tcp_ports = Collections.emptyList();
         public List<String> snap_names = Collections.emptyList();
         public @Nullable Boolean copy_all_snaps;
+        public @Nullable Boolean drbd_client;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -528,6 +529,8 @@ public class JsonGenTypes
         public Map<String, String> override_props = Collections.emptyMap();
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
+        public @Nullable Boolean drbd_tiebreaker;
+        public @Nullable Boolean drbd_client;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1892,6 +1895,7 @@ public class JsonGenTypes
         /**
          * The type of the toggle-disk operation
          * INTO_DRBD_DISKLESS -> toggles the resource into a DRBD diskless resource (with quorum vote)
+         * INTO_DRBD_CLIENT -> toggles the resource into a DRBD client resource (without quorum vote)
          * INTO_DRBD_DISKFUL -> toggles the resource into a DRBD diskful resource (always with quorum vote)
          */
         public @Nullable String operation;

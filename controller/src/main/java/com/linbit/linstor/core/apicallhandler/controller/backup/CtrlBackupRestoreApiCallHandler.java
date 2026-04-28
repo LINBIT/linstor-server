@@ -102,6 +102,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.PropsUtils;
+import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
@@ -2383,7 +2384,8 @@ public class CtrlBackupRestoreApiCallHandler
             layerStackStr,
             null,
             null,
-            null
+            null,
+            DrbdLayerUtils.isDrbdClient(sysCtx, copyFromRsc)
         );
     }
 }

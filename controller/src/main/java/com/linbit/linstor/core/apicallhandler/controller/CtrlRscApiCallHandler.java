@@ -13,6 +13,8 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -37,6 +39,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.locks.LockGuardFactory;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -83,6 +86,7 @@ public class CtrlRscApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final StltConfigAccessor stltCfgAccessor;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProvider;
+    private final Provider<CtrlRscAutoHelper> ctrlRscAutoHelperProvider;
 
     @Inject
     public CtrlRscApiCallHandler(
@@ -100,7 +104,8 @@ public class CtrlRscApiCallHandler
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         StltConfigAccessor stltCfgAccessorRef,
-        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProviderRef
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProviderRef,
+        Provider<CtrlRscAutoHelper> ctrlRscAutoHelperProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -118,6 +123,7 @@ public class CtrlRscApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         stltCfgAccessor = stltCfgAccessorRef;
         propsChangeListenerBuilderProvider = propsChangeListenerBuilderProviderRef;
+        ctrlRscAutoHelperProvider = ctrlRscAutoHelperProviderRef;
     }
 
     public Flux<ApiCallRc> modify(
@@ -126,7 +132,9 @@ public class CtrlRscApiCallHandler
         String rscNameStr,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deletePropNamespaces
+        Set<String> deletePropNamespaces,
+        @Nullable Boolean tiebreakerFlagRef,
+        @Nullable Boolean drbdClientFlagRef
     )
     {
         ResponseContext context = makeRscContext(
@@ -149,6 +157,8 @@ public class CtrlRscApiCallHandler
                     overrideProps,
                     deletePropKeys,
                     deletePropNamespaces,
+                    tiebreakerFlagRef,
+                    drbdClientFlagRef,
                     context
                 )
             )
@@ -162,6 +172,8 @@ public class CtrlRscApiCallHandler
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deletePropNamespacesRef,
+        @Nullable Boolean tiebreakerFlagRef,
+        @Nullable Boolean drbdClientFlagRef,
         ResponseContext context
     )
     {
@@ -229,6 +241,38 @@ public class CtrlRscApiCallHandler
                 propsChangedListeners
             ) || notifyStlts;
 
+            boolean flagsChanged = false;
+            if (tiebreakerFlagRef != null && tiebreakerFlagRef && drbdClientFlagRef != null && drbdClientFlagRef)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_CONF,
+                        "Tiebreaker flag and DRBD client flag are mutually exclusive flags, but both were set"
+                    )
+                );
+            }
+            if (tiebreakerFlagRef != null)
+            {
+                flagsChanged |= DrbdLayerUtils.setTiebreaker(apiCtx, rsc, tiebreakerFlagRef);
+            }
+            if (drbdClientFlagRef != null)
+            {
+                flagsChanged |= DrbdLayerUtils.setClientFlag(apiCtx, rsc, drbdClientFlagRef);
+            }
+
+            Flux<ApiCallRc> autoFlux;
+            if (flagsChanged)
+            {
+                notifyStlts = true;
+                AutoHelperResult autoHelperResult = ctrlRscAutoHelperProvider.get()
+                    .manage(new AutoHelperContext(apiCallRcs, context, rsc.getResourceDefinition()));
+                autoFlux = autoHelperResult.getFlux();
+            }
+            else
+            {
+                autoFlux = Flux.empty();
+            }
+
             ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
@@ -238,7 +282,8 @@ public class CtrlRscApiCallHandler
             {
                 flux = ctrlSatelliteUpdateCaller
                         .updateSatellites(rsc.getResourceDefinition(), Flux.empty())
-                        .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                    .concatWith(autoFlux);
             }
         }
         catch (Exception | ImplementationError exc)

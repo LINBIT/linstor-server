@@ -54,9 +54,11 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
+import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
@@ -112,6 +114,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         INTO_DRBD_DISKFUL(false),
         INTO_DRBD_DISKLESS(true),
+        INTO_DRBD_CLIENT(true),
         INTO_DRBD_TIEBREAKER(true);
 
         private final boolean removeDisk;
@@ -133,6 +136,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             {
                 case "into_drbd_diskful" -> INTO_DRBD_DISKFUL;
                 case "into_drbd_diskless" -> INTO_DRBD_DISKLESS;
+                case "into_drbd_client" -> INTO_DRBD_CLIENT;
                 // "into tiebreaker" is not (yet) exposed via API. This will be part of a different MR
                 // case "into_drbd_tiebreaker" -> INTO_DRBD_TIEBREAKER;
                 default -> throw new ApiRcException(
@@ -144,6 +148,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                                 // skipping tiebreaker here since it is not exposed towards the user (yet)
                                 // otherwise we could replace this list with ToggleOp.values()
                                 INTO_DRBD_DISKFUL,
+                                INTO_DRBD_CLIENT,
                                 INTO_DRBD_DISKLESS
                             )
                     )
@@ -176,6 +181,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final MixedStorPoolHelper mixedStorPoolHelper;
     private final CopySnapsHelper copySnapHelper;
     private final FreeCapacityFetcher freeCapacityFetcher;
+    private final CtrlRscApiCallHandler ctrlRscApiCallHandler;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -201,7 +207,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         Provider<AutoDiskfulTask> autoDiskfulTaskProviderRef,
         MixedStorPoolHelper mixedStorPoolHelperRef,
         CopySnapsHelper copySnapHelperRef,
-        FreeCapacityFetcher freeCapacityFetcherRef
+        FreeCapacityFetcher freeCapacityFetcherRef,
+        CtrlRscApiCallHandler ctrlRscApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -228,6 +235,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         mixedStorPoolHelper = mixedStorPoolHelperRef;
         copySnapHelper = copySnapHelperRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
+        ctrlRscApiCallHandler = ctrlRscApiCallHandlerRef;
     }
 
     @Override
@@ -272,7 +280,23 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             }
             else
             {
-                toggleOp = ToggleOp.INTO_DRBD_DISKLESS;
+                Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
+                    rsc.getLayerData(apiCtx),
+                    DeviceLayerKind.DRBD
+                );
+                for (AbsRscLayerObject<Resource> drbdRscObj : drbdRscDataSet)
+                {
+                    DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) drbdRscObj;
+                    if (drbdRscData.getFlags().isSet(apiCtx, DrbdRscFlags.CLIENT))
+                    {
+                        toggleOp = ToggleOp.INTO_DRBD_CLIENT;
+                        break;
+                    }
+                }
+                if (toggleOp == null)
+                {
+                    toggleOp = ToggleOp.INTO_DRBD_DISKLESS;
+                }
             }
         }
         return toggleOp;
@@ -493,25 +517,94 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     }
 
     /**
-     * Noop action. Only returns a message like "Resource &lt;rsc&gt; is already diskful/diskless" to the client.
-     * No further fluxes are chained.
+     * <p>No toggle-disk operation is executed by this method. The resource is already in the expected diskful/diskless
+     * state</p>
+     * <p>However, for convenience we still check if tiebreaker/client/diskless options might have changed and if
+     * so we delegate this Flux call as if would be a "resource modify ..." call with the appropriate options.
      */
     private Flux<ApiCallRc> handleNoopAction(Resource rscRef, CtrlRscToggleDiskApiCallHandler.ToggleOp toggleOpRef)
     {
-        String state = toggleOpRef.removeDisk ? "diskless" : "diskful";
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        responses.addEntry(ApiCallRcImpl.simpleEntry(
-            ApiConsts.INFO_NOOP,
-            "Resource '" + rscRef.getResourceDefinition().getName().displayValue + "' on node '" +
-                rscRef.getNode().getName().displayValue + "' is already " + state
-        ));
-        return Flux.just(responses);
+        Flux<ApiCallRc> ret;
+        if (!toggleOpRef.removeDisk)
+        {
+            // we are diskful. tiebreaker/drbdClient are ignored
+            ApiCallRcImpl responses = new ApiCallRcImpl();
+            responses.addEntry(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.INFO_NOOP,
+                    "Resource '" + rscRef.getResourceDefinition().getName().displayValue + "' on node '" +
+                        rscRef.getNode().getName().displayValue + "' is already diskful"
+                )
+            );
+            ret = Flux.just(responses);
+        }
+        else
+        {
+            boolean isClient;
+            boolean isTiebreaker;
+            try
+            {
+                isClient = DrbdLayerUtils.isDrbdClient(apiCtx, rscRef);
+                isTiebreaker = DrbdLayerUtils.isTiebreaker(apiCtx, rscRef);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ImplementationError(accDeniedExc);
+            }
+
+            boolean disklessTypeChange = switch (toggleOpRef)
+            {
+                case INTO_DRBD_CLIENT -> !isClient;
+                case INTO_DRBD_TIEBREAKER -> !isTiebreaker;
+                case INTO_DRBD_DISKLESS -> isClient || isTiebreaker;
+                case INTO_DRBD_DISKFUL -> false;
+            };
+            if (disklessTypeChange)
+            {
+                ret = ctrlRscApiCallHandler.modify(
+                    rscRef.getUuid(),
+                    rscRef.getNode().getName().displayValue,
+                    rscRef.getResourceDefinition().getName().displayValue,
+                    Collections.emptyMap(),
+                    Collections.emptySet(),
+                    Collections.emptySet(),
+                    toggleOpRef == ToggleOp.INTO_DRBD_TIEBREAKER,
+                    toggleOpRef == ToggleOp.INTO_DRBD_CLIENT
+                );
+            }
+            else
+            {
+                ApiCallRcImpl responses = new ApiCallRcImpl();
+                String state;
+                if (toggleOpRef == ToggleOp.INTO_DRBD_TIEBREAKER)
+                {
+                    state = "a tiebreaker";
+                }
+                else if (toggleOpRef == ToggleOp.INTO_DRBD_CLIENT)
+                {
+                    state = "a diskless client";
+                }
+                else
+                {
+                    state = "diskless";
+                }
+                responses.addEntry(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.INFO_NOOP,
+                        "Resource '" + rscRef.getResourceDefinition().getName().displayValue + "' on node '" +
+                            rscRef.getNode().getName().displayValue + "' is already " + state
+                    )
+                );
+                ret = Flux.just(responses);
+            }
+        }
+        return ret;
     }
 
     /**
      * Retries a toggle disk. Besides a message to the client this method does not change any flags or properties
      * but just continues the Flux starting with
-     * {@link #updateAndAdjustDisk(NodeName, ResourceName, boolean, boolean, ResponseContext)}.
+     * {@link CtrlRscToggleDiskApiCallHandler#updateAndAdjustDisk(NodeName, ResourceName, ToggleOp, ResponseContext)}.
      */
     private Flux<ApiCallRc> handleRetryAction(
         Resource rscRef,
@@ -1718,6 +1811,18 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     Resource.Flags.DRBD_DISKLESS,
                 Resource.Flags.DISK_REMOVING
             );
+            if (toggleOpRef == ToggleOp.INTO_DRBD_CLIENT)
+            {
+                Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
+                    rsc.getLayerData(apiCtx),
+                    DeviceLayerKind.DRBD
+                );
+                for (AbsRscLayerObject<Resource> drbdRscObj : drbdRscDataSet)
+                {
+                    DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) drbdRscObj;
+                    drbdRscData.getFlags().enableFlags(apiCtx, DrbdRscFlags.CLIENT);
+                }
+            }
         }
         catch (AccessDeniedException | DatabaseException exc)
         {

@@ -242,7 +242,8 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                         candidate,
                                         null,
                                         selectFilter.getLayerStackList(),
-                                        selectFilter.getDrbdPortCount()
+                                        selectFilter.getDrbdPortCount(),
+                                        false // we want diskful replacements for our evicted resource, not diskless.
                                     );
                                 ctrlTransactionHelper.commit();
                                 ctx.additionalFluxList

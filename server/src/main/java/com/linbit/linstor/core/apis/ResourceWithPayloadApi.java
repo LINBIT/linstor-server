@@ -15,4 +15,7 @@ public interface ResourceWithPayloadApi
 
     @Nullable
     Integer getPortCount();
+
+    @Nullable
+    Boolean isDrbdClient();
 }

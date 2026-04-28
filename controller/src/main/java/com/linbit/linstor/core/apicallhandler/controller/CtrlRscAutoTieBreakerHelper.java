@@ -43,6 +43,7 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 
@@ -202,7 +203,10 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                 null,
                                 Collections.emptyMap(),
                                 Collections.emptyList(),
-                                null
+                                null,
+                                // tiebreaker should never be client-only. that would go entirely against the purpose
+                                // of tiebreaker :)
+                                false
                             ).objB.extractApiCallRc(ctx.responses);
 
                             ctx.responses.addEntries(
@@ -331,6 +335,7 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         try
         {
             flags.disableFlags(accCtx, Resource.Flags.DRBD_DELETE, Resource.Flags.DELETE);
+            DrbdLayerUtils.setClientFlag(accCtx, rsc, false);
 
             Iterator<Volume> vlmsIt = rsc.iterateVolumes();
             while (vlmsIt.hasNext())
@@ -491,7 +496,8 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         boolean eligibleStoragePool = LayerVlmUtils.getStorPools(rsc, peerAccCtx)
                             .stream()
                             .allMatch(isEligibleTieBreakerStorPool);
-                        if (eligibleStoragePool && !rscFlags.isSet(peerAccCtx, Resource.Flags.TIE_BREAKER))
+                        if (eligibleStoragePool && !rscFlags.isSet(peerAccCtx, Resource.Flags.TIE_BREAKER) &&
+                            !DrbdLayerUtils.isDrbdClient(peerAccCtx, rsc))
                         {
                             // We only count non-tie-breaker diskless resource, which are also "eligible"
                             // to be tiebreakers, i.e. the autoplacer could have chosen this node, assuming

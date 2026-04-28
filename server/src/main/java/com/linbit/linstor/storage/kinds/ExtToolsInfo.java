@@ -216,19 +216,29 @@ public class ExtToolsInfo
         public boolean greaterOrEqual(Version vsnRef, boolean compareAdditionalInfoRef)
         {
             // DO NOT rely on compareTo method, because of different handling of null values
-            int cmp = (major == null || vsnRef.major == null) ? 1 : Integer.compare(major, vsnRef.major);
+            boolean ret = greaterOrEqual(vsnRef.major, vsnRef.minor, vsnRef.patch);
+            if (ret && compareAdditionalInfoRef)
+            {
+                ret = additionalInfo == null || vsnRef.additionalInfo == null ||
+                    additionalInfo.compareTo(vsnRef.additionalInfo) >= 0;
+            }
+            return ret;
+        }
+
+        public boolean greaterOrEqual(
+            @Nullable Integer otherMajor,
+            @Nullable Integer otherMinor,
+            @Nullable Integer otherPatch
+        )
+        {
+            // DO NOT rely on compareTo method, because of different handling of null values
+            int cmp = (major == null || otherMajor == null) ? 1 : Integer.compare(major, otherMajor);
             if (cmp == 0)
             {
-                cmp = minor == null || vsnRef.minor == null ? 1 : Integer.compare(minor, vsnRef.minor);
+                cmp = minor == null || otherMinor == null ? 1 : Integer.compare(minor, otherMinor);
                 if (cmp == 0)
                 {
-                    cmp = patch == null || vsnRef.patch == null ? 1 : Integer.compare(patch, vsnRef.patch);
-                    if (cmp == 0 && compareAdditionalInfoRef)
-                    {
-                        cmp = additionalInfo == null || vsnRef.additionalInfo == null ?
-                            1 :
-                            additionalInfo.compareTo(vsnRef.additionalInfo);
-                    }
+                    cmp = patch == null || otherPatch == null ? 1 : Integer.compare(patch, otherPatch);
                 }
             }
             return cmp >= 0;

@@ -3187,7 +3187,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     portCount,
                     null,
                     Collections.emptyList(),
-                    Resource.DiskfulBy.USER
+                    Resource.DiskfulBy.USER,
+                    false
                 );
             }
 

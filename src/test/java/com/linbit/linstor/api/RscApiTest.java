@@ -248,6 +248,7 @@ public class RscApiTest extends ApiTestBase
         private List<String> layerStackList;
         private @Nullable Integer portCount;
         private @Nullable List<Integer> ports;
+        private @Nullable Boolean drbdClient = null;
 
         RscWithPayloadApiData(Rsc rscRef)
         {
@@ -289,6 +290,12 @@ public class RscApiTest extends ApiTestBase
         public @Nullable List<Integer> getPorts()
         {
             return ports;
+        }
+
+        @Override
+        public @Nullable Boolean isDrbdClient()
+        {
+            return drbdClient;
         }
     }
 }

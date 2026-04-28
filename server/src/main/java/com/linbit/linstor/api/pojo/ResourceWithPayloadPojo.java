@@ -12,13 +12,15 @@ public class ResourceWithPayloadPojo implements ResourceWithPayloadApi
     private final @Nullable Integer drbdNodeId;
     private final @Nullable Integer drbdPortCount;
     private final @Nullable List<Integer> drbdPorts;
+    private final @Nullable Boolean drbdClient;
 
     public ResourceWithPayloadPojo(
         RscPojo rscPojoRef,
         List<String> layerStackStrRef,
         @Nullable Integer drbdNodeIdRef,
         @Nullable Integer drbdPortCountRef,
-        @Nullable List<Integer> drbdPortsRef
+        @Nullable List<Integer> drbdPortsRef,
+        @Nullable Boolean drbdClientRef
     )
     {
         rscPojo = rscPojoRef;
@@ -26,7 +28,7 @@ public class ResourceWithPayloadPojo implements ResourceWithPayloadApi
         drbdNodeId = drbdNodeIdRef;
         drbdPortCount = drbdPortCountRef;
         drbdPorts = drbdPortsRef;
-
+        drbdClient = drbdClientRef;
     }
 
     @Override
@@ -57,5 +59,11 @@ public class ResourceWithPayloadPojo implements ResourceWithPayloadApi
     public @Nullable List<Integer> getPorts()
     {
         return drbdPorts;
+    }
+
+    @Override
+    public @Nullable Boolean isDrbdClient()
+    {
+        return drbdClient;
     }
 }

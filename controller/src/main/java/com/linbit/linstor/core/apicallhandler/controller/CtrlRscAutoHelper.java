@@ -11,19 +11,15 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionProtectionRepository;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -86,7 +82,7 @@ public class CtrlRscAutoHelper
         AutoRePlace,
         VerifyAlgorithm,
         All,
-    };
+    }
 
     @Inject
     public CtrlRscAutoHelper(
@@ -264,28 +260,6 @@ public class CtrlRscAutoHelper
             );
         }
         return ret;
-    }
-
-    public void removeTiebreakerFlag(Resource tiebreakerRef)
-    {
-        try
-        {
-            StateFlags<Flags> flags = tiebreakerRef.getStateFlags();
-            flags.disableFlags(peerAccCtx.get(), Resource.Flags.TIE_BREAKER);
-            flags.enableFlags(peerAccCtx.get(), Resource.Flags.DRBD_DISKLESS);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "remove tiebreaker flag from resource",
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
     }
 
     public static class AutoHelperContext

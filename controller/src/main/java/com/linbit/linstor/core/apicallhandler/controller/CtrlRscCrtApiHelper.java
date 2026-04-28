@@ -67,6 +67,7 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -129,7 +130,6 @@ public class CtrlRscCrtApiHelper
     private final Provider<AccessContext> peerAccCtx;
     private final ResourceCreateCheck resourceCreateCheck;
     private final CtrlRscLayerDataFactory layerDataHelper;
-    private final Provider<CtrlRscAutoHelper> autoHelper;
     private final Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelper;
     private final SharedResourceManager sharedRscMgr;
     private final BackupInfoManager backupInfoMgr;
@@ -158,7 +158,6 @@ public class CtrlRscCrtApiHelper
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ResourceCreateCheck resourceCreateCheckRef,
         CtrlRscLayerDataFactory layerDataHelperRef,
-        Provider<CtrlRscAutoHelper> autoHelperRef,
         Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelperRef,
         SharedResourceManager sharedRscMgrRef,
         BackupInfoManager backupInfoMgrRef,
@@ -186,7 +185,6 @@ public class CtrlRscCrtApiHelper
         peerAccCtx = peerAccCtxRef;
         resourceCreateCheck = resourceCreateCheckRef;
         layerDataHelper = layerDataHelperRef;
-        autoHelper = autoHelperRef;
         toggleDiskHelper = toggleDiskHelperRef;
         sharedRscMgr = sharedRscMgrRef;
         backupInfoMgr = backupInfoMgrRef;
@@ -222,7 +220,8 @@ public class CtrlRscCrtApiHelper
         @Nullable Integer portCountRef,
         @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
         List<String> layerStackStrListRef,
-        @Nullable Resource.DiskfulBy diskfulByRef
+        @Nullable Resource.DiskfulBy diskfulByRef,
+        @Nullable Boolean drbdClientRef
     )
     {
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
@@ -298,8 +297,9 @@ public class CtrlRscCrtApiHelper
         String storPoolName = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
         if (rscForToggleDiskful != null)
         {
+            // rsc is diskless
             rsc = rscForToggleDiskful;
-            autoHelper.get().removeTiebreakerFlag(rscForToggleDiskful); // just in case this was a tiebreaker
+
             String storPoolNameStr = storPoolName;
             StorPool storPool = storPoolNameStr == null ?
                 null : ctrlApiDataLoader.loadStorPool(storPoolNameStr, nodeNameStr, false);
@@ -309,7 +309,8 @@ public class CtrlRscCrtApiHelper
                 FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DRBD_DISKLESS) ||
                 FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.NVME_INITIATOR) ||
                 FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.EBS_INITIATOR) ||
-                (storPool != null && storPool.getDeviceProviderKind().equals(DeviceProviderKind.DISKLESS));
+                (storPool != null && storPool.getDeviceProviderKind().equals(DeviceProviderKind.DISKLESS)) ||
+                (drbdClientRef != null && drbdClientRef);
 
             if (FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.INACTIVE))
             {
@@ -318,6 +319,9 @@ public class CtrlRscCrtApiHelper
 
             if (!isDiskless)
             {
+                // just in case this was a tiebreaker
+                disableTiebreakerFlag(rscForToggleDiskful);
+
                 // target resource is diskful
                 autoFlux.add(
                     toggleDiskHelper.get().resourceToggleDisk(
@@ -333,7 +337,13 @@ public class CtrlRscCrtApiHelper
             }
             else
             {
-                if (isFlagSet(rscForToggleDiskful, Resource.Flags.TIE_BREAKER))
+                boolean changed = disableTiebreakerFlag(rscForToggleDiskful);
+                if (drbdClientRef != null)
+                {
+                    // default: unchanged
+                    changed |= setClientFlag(rscForToggleDiskful, drbdClientRef);
+                }
+                if (changed)
                 {
                     // target resource is diskless.
                     NodeName tiebreakerNodeName = rscForToggleDiskful.getNode().getName();
@@ -349,7 +359,7 @@ public class CtrlRscCrtApiHelper
                                     updateResponses,
                                     rscDfn.getName(),
                                     Collections.singleton(tiebreakerNodeName),
-                                    "Removed TIE_BREAKER flag from resource {1} on {0}",
+                                    "Updated resource {1} on {0}",
                                     "Update of resource {1} on '" + tiebreakerNodeName + "' applied on node {0}"
                                 )
                             )
@@ -424,6 +434,16 @@ public class CtrlRscCrtApiHelper
             boolean isDrbdDisklessSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DRBD_DISKLESS);
             boolean isNvmeInitiatorSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.NVME_INITIATOR);
             boolean isEbsInitiatorSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.EBS_INITIATOR);
+
+            if (drbdClientRef != null && drbdClientRef && (isStorPoolDiskless || storPool == null))
+            {
+                adjustedFlags |= Resource.Flags.DRBD_DISKLESS.flagValue;
+                isDrbdDisklessSet = true;
+
+                payload.drbdRsc.rscFlags = payload.drbdRsc.rscFlags == null ?
+                    DrbdRscObject.DrbdRscFlags.CLIENT.flagValue :
+                    payload.drbdRsc.rscFlags | DrbdRscObject.DrbdRscFlags.CLIENT.flagValue;
+            }
 
             if (
                 (isDisklessSet && !isDrbdDisklessSet && !isNvmeInitiatorSet && !isEbsInitiatorSet) ||
@@ -551,6 +571,49 @@ public class CtrlRscCrtApiHelper
         return new PairNonNull<>(autoFlux, new ApiCallRcWith<>(responses, rsc));
     }
 
+    private boolean disableTiebreakerFlag(Resource rscRef)
+    {
+        boolean changed;
+        try
+        {
+            changed = DrbdLayerUtils.setTiebreaker(peerAccCtx.get(), rscRef, false);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "remove tiebreaker flag from resource",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        return changed;
+    }
+
+    private boolean setClientFlag(Resource rscRef, @Nullable Boolean enableRef)
+    {
+        boolean changed;
+        try
+        {
+            changed = DrbdLayerUtils.setClientFlag(peerAccCtx.get(), rscRef, enableRef);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                (enableRef ? "set" : "unset") + " DRBD client flag from resource",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        return changed;
+    }
     private void rscMinIoSizeCheck(
         final Resource rsc,
         final List<DeviceLayerKind> layerStack,

@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Property Clone/BalanceAfterClone to autoplace an extra diskful resource after a clone operation
 - Property Snapshot/BalanceAfterRestore to autoplace an extra diskful resource after a snapshot restore
 - Added property "Luks/AllowDiscards" to enable discard/TRIM pass-through on LUKS volumes; when LUKS sits below DRBD, rs-discard-granularity is also set automatically
+- Added "Client" as DRBD state (non-voting diskless peer)
 
 ### Changed
 

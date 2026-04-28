@@ -778,7 +778,10 @@ public class CtrlRscMakeAvailableApiCallHandler
             layerStack.stream().map(DeviceLayerKind::name).collect(Collectors.toList()),
             null,
             autoSelect.getDrbdPortCount(),
-            drbdTcpPortsRef
+            drbdTcpPortsRef,
+            // rscs via make-available are always treated as drbd-clients (unless the given SP is diskful, but that is
+            // handled in the createResource ACH)
+            true
         );
         ctrlTransactionHelper.commit();
         return ctrlRscCrtApiCallHandler.createResource(
@@ -958,6 +961,10 @@ public class CtrlRscMakeAvailableApiCallHandler
                             .map(DeviceLayerKind::name).collect(Collectors.toList()),
                         nodeId,
                         null,
+                        null,
+                        // rscs via make-available are always treated as drbd-clients, unless they are shared-resources
+                        // in that case they should not be diskless at all, but shared diskful (regardless if DRBD is
+                        // used or not)
                         null
                     );
                 }

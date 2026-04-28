@@ -195,6 +195,12 @@ public class Resources
         {
             return rscPayload.drbd_tcp_ports;
         }
+
+        @Override
+        public @Nullable Boolean isDrbdClient()
+        {
+            return rscPayload.drbd_client;
+        }
     }
 
     @POST
@@ -289,7 +295,9 @@ public class Resources
             rscName,
             modifyData.override_props,
             new HashSet<>(modifyData.delete_props),
-            new HashSet<>(modifyData.delete_namespaces)
+            new HashSet<>(modifyData.delete_namespaces),
+            modifyData.drbd_tiebreaker,
+            modifyData.drbd_client
         );
 
         requestHelper.doFlux(

@@ -7065,6 +7065,8 @@ components:
             type: string
         copy_all_snaps:
           type: boolean
+        drbd_client:
+          type: boolean
     ResourceMakeAvailable:
       type: object
       properties:
@@ -7100,6 +7102,10 @@ components:
           type: array
           items:
             type: string
+        drbd_tiebreaker:
+          type: boolean
+        drbd_client:
+          type: boolean
     VolumeModify:
       type: object
       properties:
@@ -8939,8 +8945,9 @@ components:
           description: |
             The type of the toggle-disk operation
             INTO_DRBD_DISKLESS -> toggles the resource into a DRBD diskless resource (with quorum vote)
+            INTO_DRBD_CLIENT -> toggles the resource into a DRBD client resource (without quorum vote)
             INTO_DRBD_DISKFUL -> toggles the resource into a DRBD diskful resource (always with quorum vote)
-          enum: [INTO_DRBD_DISKFUL, INTO_DRBD_DISKLESS]
+          enum: [INTO_DRBD_DISKFUL, INTO_DRBD_CLIENT, INTO_DRBD_DISKLESS]
         storage_pool:
           type: string
           description: The name of the target storage pool to toggle into

@@ -280,7 +280,7 @@ public class RscDrbdLayerHelper extends
 
         NodeId nodeId = getNodeId(rscRef, payloadRef, rscNameSuffixRef, layerListRef, drbdRscDfnData, null);
 
-        long initFlags = 0;
+        long initFlags = payloadRef.drbdRsc.rscFlags == null ? 0 : payloadRef.drbdRsc.rscFlags;
         @Nullable Short peerSlotsForNewRsc = null;
         // some flags that might already be set on resource level should be copied to DrbdRscData level
         if (isResourceDiskless(rscRef))

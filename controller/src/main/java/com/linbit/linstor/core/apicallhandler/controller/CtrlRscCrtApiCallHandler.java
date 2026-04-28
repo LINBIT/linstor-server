@@ -170,17 +170,18 @@ public class CtrlRscCrtApiCallHandler
 
             PairNonNull<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper
                 .createResourceDb(
-                rscapi.getNodeName(),
-                rscapi.getName(),
-                rscapi.getFlags(),
-                rscapi.getProps(),
-                rscapi.getVlmList(),
-                rscWithPayloadApi.getDrbdNodeId(),
-                rscWithPayloadApi.getPorts(),
-                rscWithPayloadApi.getPortCount(),
-                thinFreeCapacities,
-                rscWithPayloadApi.getLayerStack(),
-                diskfulByRef
+                    rscapi.getNodeName(),
+                    rscapi.getName(),
+                    rscapi.getFlags(),
+                    rscapi.getProps(),
+                    rscapi.getVlmList(),
+                    rscWithPayloadApi.getDrbdNodeId(),
+                    rscWithPayloadApi.getPorts(),
+                    rscWithPayloadApi.getPortCount(),
+                    thinFreeCapacities,
+                    rscWithPayloadApi.getLayerStack(),
+                    diskfulByRef,
+                    rscWithPayloadApi.isDrbdClient()
             );
 
             autoFlux.addAll(createdRsc.objA);

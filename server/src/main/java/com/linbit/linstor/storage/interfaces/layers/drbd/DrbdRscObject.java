@@ -49,7 +49,8 @@ public interface DrbdRscObject<RSC extends AbsResource<RSC>>
         INITIALIZED(1L << 7),
         FROM_BACKUP(1L << 8),
         FORCE_NEW_METADATA(1L << 9),
-        INVALIDATE(1L << 10);
+        INVALIDATE(1L << 10),
+        CLIENT(1L << 11);
 
         public final long flagValue;
 

@@ -13,6 +13,8 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Added /v1/controller/auth/ api, to create/modify/revoke tokens and initialize the linstor-controller
   - Added corrupted_key to LUKSVolume
   - Added /v1/resource-definitions/{resource}/resources/{node}/toggle-disk to unify all toggle-disk API calls
+  - Added drbd_client property to ResourceCreate component
+  - Added drbd_client and drbd_tiebreaker property to ResourceModify component
 
 ### Deprecated
   - Deprecated /v1/controller/backup/db in favor of /v1/controller/database/export.

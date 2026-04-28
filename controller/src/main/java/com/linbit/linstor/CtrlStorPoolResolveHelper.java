@@ -302,10 +302,15 @@ public class CtrlStorPoolResolveHelper
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(FAIL_INVLD_STOR_POOL_NAME,
                               "Storage pool with backing disk not allowed with diskless resource.")
-                .setCause(String.format("Resource '%s' flagged as diskless, but a storage pool '%s' " +
+                .setCause(
+                    String.format(
+                        "Resource '%s' on node '%s' flagged as diskless, but a storage pool '%s' " +
                         "with backing disk was specified.",
-                    rsc.getResourceDefinition().getName().displayValue,
-                    storPool.getName().displayValue))
+                        rsc.getResourceDefinition().getName().displayValue,
+                        rsc.getNode().getName().displayValue,
+                        storPool.getName().displayValue
+                    )
+                )
                 .setCorrection("Use a storage pool with a diskless driver or remove the diskless flag.")
                 .build(),
                 new LinStorException("Incorrect storage pool used.")

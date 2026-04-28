@@ -373,7 +373,9 @@ public class CtrlApiCallHandler
         String rscName,
         Map<String, String> overridePropsRef,
         Set<String> deletePropKeysRef,
-        Set<String> deletePropNamespaces
+        Set<String> deletePropNamespaces,
+        @Nullable Boolean tiebreakerRef,
+        @Nullable Boolean drbdClientRef
     )
     {
         Flux<ApiCallRc> apiCallRc;
@@ -397,7 +399,9 @@ public class CtrlApiCallHandler
                 rscName,
                 overrideProps,
                 deletePropKeys,
-                deletePropNamespaces
+                deletePropNamespaces,
+                tiebreakerRef,
+                drbdClientRef
             );
         }
 

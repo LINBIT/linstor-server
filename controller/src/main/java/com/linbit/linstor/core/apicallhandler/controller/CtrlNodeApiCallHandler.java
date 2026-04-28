@@ -1836,7 +1836,8 @@ public class CtrlNodeApiCallHandler
                                             .collect(Collectors.toList()),
                                         null,
                                         null,
-                                        null
+                                        null,
+                                        false // will be diskful
                                     );
                                     createOrToggleDiskFlux = ctrlRscCrtApiCallHandler.createResource(
                                         Collections.singletonList(createRscPojo),

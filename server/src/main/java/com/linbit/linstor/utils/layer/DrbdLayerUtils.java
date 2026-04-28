@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -15,6 +16,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.VolumeUtils;
@@ -135,5 +137,71 @@ public class DrbdLayerUtils
             }
         }
         return skipInitSync;
+    }
+
+    public static boolean isTiebreaker(AccessContext accCtxRef, Resource rscRef) throws AccessDeniedException
+    {
+        StateFlags<Flags> flags = rscRef.getStateFlags();
+        return flags.isSet(accCtxRef, Resource.Flags.TIE_BREAKER);
+    }
+
+    public static boolean setTiebreaker(AccessContext accCtx, Resource tiebreakerRef, boolean enableRef)
+        throws AccessDeniedException, DatabaseException
+    {
+        StateFlags<Flags> flags = tiebreakerRef.getStateFlags();
+        boolean changed = enableRef != flags.isSet(accCtx, Resource.Flags.TIE_BREAKER);
+        if (changed)
+        {
+            if (enableRef)
+            {
+                flags.enableFlags(accCtx, Resource.Flags.TIE_BREAKER);
+            }
+            else
+            {
+                flags.disableFlags(accCtx, Resource.Flags.TIE_BREAKER);
+                flags.enableFlags(accCtx, Resource.Flags.DRBD_DISKLESS);
+            }
+        }
+        return changed;
+    }
+
+    public static boolean setClientFlag(AccessContext accCtxRef, Resource rscRef, boolean enableRef)
+        throws AccessDeniedException, DatabaseException
+    {
+        boolean changed;
+        AbsRscLayerObject<Resource> rscData = rscRef.getLayerData(accCtxRef);
+        if (rscData instanceof DrbdRscData<Resource> drbdRscData)
+        {
+            StateFlags<DrbdRscObject.DrbdRscFlags> flags = drbdRscData.getFlags();
+            changed = enableRef != flags.isSet(accCtxRef, DrbdRscObject.DrbdRscFlags.CLIENT);
+            if (changed)
+            {
+                if (enableRef)
+                {
+                    flags.enableFlags(accCtxRef, DrbdRscObject.DrbdRscFlags.CLIENT);
+                }
+                else
+                {
+                    flags.disableFlags(accCtxRef, DrbdRscObject.DrbdRscFlags.CLIENT);
+                }
+            }
+        }
+        else
+        {
+            changed = false;
+        }
+        return changed;
+    }
+
+    public static boolean isDrbdClient(AccessContext accCtxRef, Resource rscRef) throws AccessDeniedException
+    {
+        boolean ret = false;
+        AbsRscLayerObject<Resource> rscData = rscRef.getLayerData(accCtxRef);
+        if (rscData instanceof DrbdRscData<Resource> drbdRscData)
+        {
+            StateFlags<DrbdRscObject.DrbdRscFlags> flags = drbdRscData.getFlags();
+            ret = flags.isSet(accCtxRef, DrbdRscObject.DrbdRscFlags.CLIENT);
+        }
+        return ret;
     }
 }

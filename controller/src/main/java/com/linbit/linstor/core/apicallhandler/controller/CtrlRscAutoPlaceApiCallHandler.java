@@ -202,6 +202,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         int additionalPlaceCount;
         @Nullable Integer additionalReplicaCount = mergedSelectFilter.getAdditionalReplicaCount();
         String disklessType = mergedSelectFilter.getDisklessType();
+        boolean asDiskful = disklessType == null || disklessType.isEmpty();
         if (additionalReplicaCount != null && additionalReplicaCount > 0)
         {
             additionalPlaceCount = additionalReplicaCount;
@@ -219,7 +220,7 @@ public class CtrlRscAutoPlaceApiCallHandler
              */
             @Nullable Integer replCtInteger = mergedSelectFilter.getReplicaCount();
             int replCt = replCtInteger == null ? 0 : replCtInteger;
-            if (disklessType == null || disklessType.isEmpty())
+            if (asDiskful)
             {
                 additionalPlaceCount = replCt - alreadyPlacedDiskfulNotDeleting.size();
             }
@@ -242,7 +243,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         if (additionalPlaceCount == 0 && (disklessOnRemaining == null || !disklessOnRemaining))
         {
             List<Resource> listForResponse;
-            if (disklessType == null || disklessType.isEmpty())
+            if (asDiskful)
             {
                 listForResponse = alreadyPlacedDiskfulNotDeleting;
             }
@@ -297,7 +298,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                     candidate,
                     null,
                     mergedSelectFilter.getLayerStackList(),
-                    mergedSelectFilter.getDrbdPortCount()
+                    mergedSelectFilter.getDrbdPortCount(),
+                    !asDiskful
                 );
 
                 autoFlux = autoHelperProvider.get()
@@ -400,7 +402,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         Set<StorPool> selectedStorPoolSet,
         @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
         List<DeviceLayerKind> layerStackList,
-        @Nullable Integer rscPortCountRef
+        @Nullable Integer rscPortCountRef,
+        @Nullable Boolean drbdClientRef
     )
     {
         List<Flux<ApiCallRc>> autoFlux = new ArrayList<>();
@@ -422,18 +425,19 @@ public class CtrlRscAutoPlaceApiCallHandler
 
             PairNonNull<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper
                 .createResourceDb(
-                storPool.getNode().getName().displayValue,
-                rscNameStr,
-                0L,
-                rscPropsMap,
-                Collections.emptyList(),
-                null,
-                null,
-                rscPortCountRef,
-                thinFreeCapacities,
-                layerStackStrList,
-                Resource.DiskfulBy.AUTO_PLACER
-            );
+                    storPool.getNode().getName().displayValue,
+                    rscNameStr,
+                    0L,
+                    rscPropsMap,
+                    Collections.emptyList(),
+                    null,
+                    null,
+                    rscPortCountRef,
+                    thinFreeCapacities,
+                    layerStackStrList,
+                    Resource.DiskfulBy.AUTO_PLACER,
+                    drbdClientRef
+                );
             Resource rsc = createdRsc.objB.extractApiCallRc(responses);
             autoFlux.addAll(createdRsc.objA);
             deployedResources.add(rsc);
@@ -473,7 +477,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                                 null,
                                 thinFreeCapacities,
                                 layerStackStrList,
-                                null
+                                null,
+                                true // diskless on remaining are by default client-only (no quorum vote)
                         );
                         deployedResources.add(createdRsc.objB.extractApiCallRc(responses));
                         autoFlux.addAll(createdRsc.objA);
