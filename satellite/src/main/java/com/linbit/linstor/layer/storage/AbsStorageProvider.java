@@ -359,6 +359,11 @@ public abstract class AbsStorageProvider<
                                     lvId
                                 );
                             }
+                            // this LV is needed by a shared resource so we must not delete it.
+                            // the local VlmData however should be deleted.
+                            // In order to not confuse other components/layers
+                            // we still mark ourselves as "successfully deleted".
+                            vlmData.setExists(false);
                         }
                         else
                         {
