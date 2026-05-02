@@ -65,6 +65,11 @@ public class DrbdAdm
 
     private static final ExtToolsInfo.Version DRBD_UTILS_WITH_BITMAP_BLOCK_SIZE = new ExtToolsInfo.Version(9, 33, 0);
 
+    private static final int SECONDARY_RETRY_MAX_ATTEMPTS = 7;
+    private static final long SECONDARY_RETRY_INITIAL_BACKOFF_MS = 250L;
+    private static final long SECONDARY_RETRY_MAX_BACKOFF_MS = 2_000L;
+    private static final String DEVICE_HELD_OPEN_ERR_MSG = "Device is held open by someone";
+
     private final ExtCmdFactory extCmdFactory;
     private final AccessContext sysCtx;
     private final StltConfigAccessor stltCfgAccessor;
@@ -333,6 +338,22 @@ public class DrbdAdm
     public void secondary(DrbdRscData<Resource> drbdRscData) throws ExtCmdFailedException
     {
         simpleAdmCommand(drbdRscData, "secondary");
+    }
+
+    /**
+     * Switches a resource to secondary mode after mkfs, retrying when DRBD reports the device as
+     * held open by another process. On Talos and other systems with active block-device probing
+     * (machined/udev/multipathd), the kernel uevent for a freshly-promoted device may cause an
+     * external probe to open the device just before LINSTOR demotes it back to Secondary, producing
+     * "Device is held open by someone" (errno -12) and aborting resource initialization. Probes
+     * typically release the fd within milliseconds, so a short retry with exponential backoff is
+     * sufficient to win the race without changing the contract of {@link #secondary}.
+     *
+     * Related upstream issue: https://github.com/LINBIT/linstor-server/issues/268
+     */
+    public void secondaryAfterMkfs(DrbdRscData<Resource> drbdRscData) throws ExtCmdFailedException
+    {
+        execAdmCommand(drbdRscData, null, this::executeWithRetryOnDeviceHeldOpen, "secondary");
     }
 
     /**
@@ -882,6 +903,64 @@ public class DrbdAdm
         }
     }
 
+    private void executeWithRetryOnDeviceHeldOpen(List<String> commandList) throws ExtCmdFailedException
+    {
+        String[] command = commandList.toArray(new String[0]);
+        File nullDevice = new File(Platform.nullDevice());
+        OutputData lastOutput = null;
+        for (int attempt = 1; attempt <= SECONDARY_RETRY_MAX_ATTEMPTS; attempt++)
+        {
+            try
+            {
+                ExtCmd extCmd = extCmdFactory.create();
+                if (Platform.isWindows())
+                {
+                    extCmd.setTimeout(TimeoutType.WAIT, DFLT_WINDOWS_TIMEOUT_MS);
+                }
+                lastOutput = extCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), command);
+                if (lastOutput.exitCode == 0)
+                {
+                    return;
+                }
+                if (!isDeviceHeldOpenError(lastOutput) || attempt == SECONDARY_RETRY_MAX_ATTEMPTS)
+                {
+                    throw new ExtCmdFailedException(command, lastOutput);
+                }
+            }
+            catch (ChildProcessTimeoutException timeoutExc)
+            {
+                throw new ExtCmdFailedException(command, timeoutExc);
+            }
+            catch (IOException ioExc)
+            {
+                throw new ExtCmdFailedException(command, ioExc);
+            }
+            long sleepMs = Math.min(
+                SECONDARY_RETRY_INITIAL_BACKOFF_MS * (1L << (attempt - 1)),
+                SECONDARY_RETRY_MAX_BACKOFF_MS
+            );
+            try
+            {
+                Thread.sleep(sleepMs);
+            }
+            catch (InterruptedException ie)
+            {
+                Thread.currentThread().interrupt();
+                throw new ExtCmdFailedException(command, lastOutput);
+            }
+        }
+    }
+
+    static boolean isDeviceHeldOpenError(OutputData outputData)
+    {
+        if (outputData == null || outputData.stderrData == null)
+        {
+            return false;
+        }
+        String stderr = new String(outputData.stderrData, StandardCharsets.UTF_8);
+        return stderr.contains(DEVICE_HELD_OPEN_ERR_MSG);
+    }
+
     public static class DrbdPrimary implements AutoCloseable
     {
         private final DrbdAdm drbdAdm;
@@ -900,7 +979,7 @@ public class DrbdAdm
         @Override
         public void close() throws ExtCmdFailedException
         {
-            drbdAdm.secondary(drbdRscData);
+            drbdAdm.secondaryAfterMkfs(drbdRscData);
         }
     }
 }
