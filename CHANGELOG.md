@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed node properties not properly applied after LINSTOR's FullSync
 - Fixed deletion of inactive shared storagepool resources
 - Fixed cloning of shared storagepool resource definitions
+- Fixed resource create if no .resource object was given
 
 ## [1.33.2] - 2026-04-08
 

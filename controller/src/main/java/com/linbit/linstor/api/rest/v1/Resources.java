@@ -251,6 +251,10 @@ public class Resources
         {
             // stuff single resource in a array and forward to the multiple resource creator
             JsonGenTypes.ResourceCreate rscData = objectMapper.readValue(jsonData, JsonGenTypes.ResourceCreate.class);
+            if (rscData.resource == null)
+            {
+                rscData.resource = new JsonGenTypes.Resource();
+            }
             rscData.resource.node_name = nodeName;
             ArrayList<JsonGenTypes.ResourceCreate> rscDatas = new ArrayList<>();
             rscDatas.add(rscData);
