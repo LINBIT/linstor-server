@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed unconditional 2-4s wait time between CRD migrations
 - Fixed node properties not properly applied after LINSTOR's FullSync
 - Fixed deletion of inactive shared storagepool resources
+- Fixed cloning of shared storagepool resource definitions
 
 ## [1.33.2] - 2026-04-08
 

@@ -49,6 +49,7 @@ import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.ExternalFile;
@@ -113,9 +114,12 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -123,6 +127,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -167,6 +172,7 @@ public class CtrlRscDfnApiCallHandler
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
     private final Autoplacer autoplacer;
     private final BackgroundRunner backgroundRunner;
+    private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -204,7 +210,8 @@ public class CtrlRscDfnApiCallHandler
         CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelperRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
         Autoplacer autoplacerRef,
-        BackgroundRunner backgroundRunnerRef
+        BackgroundRunner backgroundRunnerRef,
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -242,6 +249,7 @@ public class CtrlRscDfnApiCallHandler
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
         autoplacer = autoplacerRef;
         backgroundRunner = backgroundRunnerRef;
+        ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
     }
 
     public @Nullable ResourceDefinition createResourceDefinition(
@@ -828,49 +836,212 @@ public class CtrlRscDfnApiCallHandler
             clonedRscName
         );
 
-        return scopeRunner.fluxInTransactionalScope(
-            "Preparing clone " + srcRscName + " -> " + clonedRscName,
-            lockGuardFactory.buildDeferred(LockGuardFactory.LockType.READ, NODES_MAP, RSC_DFN_MAP),
-            () -> getNodeNamesForClone(srcRscName)
-        )
-            .flatMap(
-                nodeNameList -> backgroundRunner.syncWithBackgroundFluxes(
-                    new RunConfig<>(
-                        0,
-                        "BackgroundRunner for cloning " + srcRscName + " -> " + clonedRscName,
-                        () -> freeCapacityFetcher.fetchThinFreeCapacities(nodeNameList)
-                            .flatMapMany(
-                                thinFreeCapacities -> scopeRunner
-                                    .fluxInTransactionalScope(
-                                        "Clone resource-definition",
-                                        lockGuardFactory.buildDeferred(
-                                            LockGuardFactory.LockType.WRITE,
-                                            NODES_MAP,
-                                            RSC_DFN_MAP
-                                        ),
-                                        () -> cloneRscDfnInTransaction(
-                                            srcRscName,
-                                            clonedRscName,
-                                            clonedExtName,
-                                            useZfsClone,
-                                            volumePassphrases,
-                                            layerList,
-                                            context,
-                                            thinFreeCapacities,
-                                            intoRscGrpName,
-                                            overrideProps,
-                                            deletePropKeys,
-                                            deleteNamespaces
+        return ensureOneActiveSourceForClone(srcRscName)
+            .concatWith(Flux.defer(() -> scopeRunner.fluxInTransactionalScope(
+                "Preparing clone " + srcRscName + " -> " + clonedRscName,
+                lockGuardFactory.buildDeferred(LockGuardFactory.LockType.READ, NODES_MAP, RSC_DFN_MAP),
+                () -> getNodeNamesForClone(srcRscName)
+            )
+                .flatMap(
+                    nodeNameList -> backgroundRunner.syncWithBackgroundFluxes(
+                        new RunConfig<>(
+                            0,
+                            "BackgroundRunner for cloning " + srcRscName + " -> " + clonedRscName,
+                            () -> freeCapacityFetcher.fetchThinFreeCapacities(nodeNameList)
+                                .flatMapMany(
+                                    thinFreeCapacities -> scopeRunner
+                                        .fluxInTransactionalScope(
+                                            "Clone resource-definition",
+                                            lockGuardFactory.buildDeferred(
+                                                LockGuardFactory.LockType.WRITE,
+                                                NODES_MAP,
+                                                RSC_DFN_MAP
+                                            ),
+                                            () -> cloneRscDfnInTransaction(
+                                                srcRscName,
+                                                clonedRscName,
+                                                clonedExtName,
+                                                useZfsClone,
+                                                volumePassphrases,
+                                                layerList,
+                                                context,
+                                                thinFreeCapacities,
+                                                intoRscGrpName,
+                                                overrideProps,
+                                                deletePropKeys,
+                                                deleteNamespaces
+                                            )
                                         )
-                                    )
-                                    .transform(responses -> responseConverter.reportingExceptions(context, responses))
-                            ),
-                        apiCtx,
-                        nodeNameList,
-                        false
+                                        .transform(
+                                            responses -> responseConverter.reportingExceptions(context, responses))
+                                ),
+                            apiCtx,
+                            nodeNameList,
+                            false
+                        )
                     )
                 )
+            ));
+    }
+
+    private Flux<ApiCallRc> ensureOneActiveSourceForClone(String srcRscName)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Check active source for clone " + srcRscName,
+            lockGuardFactory.buildDeferred(LockGuardFactory.LockType.READ, NODES_MAP, RSC_DFN_MAP),
+            () -> ensureOneActiveSourceForCloneInTrans(srcRscName)
+        );
+    }
+
+    private Flux<ApiCallRc> ensureOneActiveSourceForCloneInTrans(String srcRscName)
+    {
+        /*
+         * TODO: Technically this method has some problems but only if we consider more complex setups.
+         * For example if resources are based on more than one shared storage pools - and different resources (i.e. on
+         * different nodes) use actually different shared storage pools. Such a case would introduce new combination
+         * that this algorithm does not handle properly
+         */
+
+        Flux<ApiCallRc> ret = Flux.empty();
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(srcRscName, true);
+        try
+        {
+            AccessContext accCtx = peerAccCtx.get();
+            List<Resource> diskfulRscs = rscDfn.getDiskfulResources(accCtx);
+
+            List<Resource> toActivate = new ArrayList<>();
+            if (!diskfulRscs.isEmpty())
+            {
+                // Group diskful rscs by the shared storage pool names they use.
+                Map<SharedStorPoolName, Set<Resource>> spToRscs = new LinkedHashMap<>();
+                for (Resource rsc : diskfulRscs)
+                {
+                    for (StorPool sp : LayerVlmUtils.getStorPools(rsc, accCtx))
+                    {
+                        if (sp.isShared())
+                        {
+                            spToRscs.computeIfAbsent(sp.getSharedStorPoolName(), ignored -> new LinkedHashSet<>())
+                                .add(rsc);
+                        }
+                    }
+                }
+
+                // Walk the SP -> rscs map until empty. For each group: keep an already-active rsc,
+                // or activate a random INACTIVE one (skipping INACTIVE_PERMANENTLY - those can't be
+                // reactivated). After picking, drop every entry whose SP is covered by that rsc. If a
+                // group has only INACTIVE_PERMANENTLY candidates, drop that entry - SP stays uncovered.
+                while (!spToRscs.isEmpty())
+                {
+                    Iterator<Set<Resource>> firstEntryIt = spToRscs.values().iterator();
+                    Set<Resource> rscs = firstEntryIt.next();
+                    @Nullable Resource picked = pickFromGroup(rscs, accCtx, toActivate);
+                    if (picked == null)
+                    {
+                        firstEntryIt.remove();
+                    }
+                    else
+                    {
+                        final Resource pickedFinal = picked;
+                        spToRscs.values().removeIf(rscSet -> rscSet.contains(pickedFinal));
+                    }
+                }
+
+                // Fallback: ensure at least one diskful rsc is currently active or being activated.
+                // Mainly relevant when no rsc has any shared SP at all; a no-op if anything is
+                // already active.
+                if (toActivate.isEmpty())
+                {
+                    pickFromGroup(diskfulRscs, accCtx, toActivate);
+                }
+            }
+
+            if (!toActivate.isEmpty())
+            {
+                String nodes = toActivate.stream()
+                    .map(rsc -> "'" + rsc.getNode().getName().displayValue + "'")
+                    .collect(Collectors.joining(", "));
+
+                ApiCallRcImpl info = new ApiCallRcImpl();
+                info.addEntry(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.MASK_INFO | ApiConsts.MASK_RSC,
+                    String.format(
+                        "Auto-activating diskful resource(s) of '%s' on %s for cloning.",
+                        srcRscName,
+                        nodes
+                    )
+                ));
+
+                Flux<ApiCallRc> flux = Flux.just(info);
+                for (Resource rsc : toActivate)
+                {
+                    flux = flux.concatWith(
+                        ctrlRscActivateApiCallHandler.activateRsc(
+                            rsc.getNode().getName().displayValue,
+                            srcRscName
+                        )
+                    );
+                }
+                ret = flux;
+            }
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ApiAccessDeniedException(
+                accExc,
+                "check resource active state for cloning " + srcRscName,
+                ApiConsts.FAIL_ACC_DENIED_RSC
             );
+        }
+        return ret;
+    }
+
+    private static Resource pickRandom(Collection<Resource> rscs)
+    {
+        List<Resource> list = new ArrayList<>(rscs);
+        return list.get(ThreadLocalRandom.current().nextInt(list.size()));
+    }
+
+    /**
+     * Returns a representative for the given rsc group. If any rsc is currently active it is
+     * returned as-is. Otherwise a random INACTIVE rsc is picked (skipping INACTIVE_PERMANENTLY
+     * candidates), added to {@code toActivate}, and returned. Returns {@code null} if every rsc
+     * is INACTIVE_PERMANENTLY.
+     */
+    private static @Nullable Resource pickFromGroup(
+        Collection<Resource> rscs,
+        AccessContext accCtx,
+        List<Resource> toActivate
+    )
+        throws AccessDeniedException
+    {
+        @Nullable Resource alreadyActive = null;
+        List<Resource> activatable = new ArrayList<>();
+        for (Resource rsc : rscs)
+        {
+            if (!rsc.getStateFlags().isSet(accCtx, Resource.Flags.INACTIVE_PERMANENTLY))
+            {
+                activatable.add(rsc);
+                if (!rsc.getStateFlags().isSet(accCtx, Resource.Flags.INACTIVE))
+                {
+                    alreadyActive = rsc;
+                    break;
+                }
+            }
+        }
+        @Nullable Resource picked = null;
+        if (alreadyActive != null)
+        {
+            picked = alreadyActive;
+        }
+        else
+        {
+            if (!activatable.isEmpty())
+            {
+                picked = pickRandom(activatable);
+                toActivate.add(picked);
+            }
+        }
+        return picked;
     }
 
     private Flux<Set<NodeName>> getNodeNamesForClone(String srcRscNameRef)
@@ -879,7 +1050,9 @@ public class CtrlRscDfnApiCallHandler
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(srcRscNameRef, true);
         try
         {
-            for (Resource rsc : rscDfn.getDiskfulResources(apiCtx))
+            List<Resource> diskfulRscs = rscDfn.getDiskfulResources(apiCtx);
+            removeInactiveResources(diskfulRscs, apiCtx);
+            for (Resource rsc : diskfulRscs)
             {
                 ret.add(rsc.getNode().getName());
             }
@@ -909,6 +1082,7 @@ public class CtrlRscDfnApiCallHandler
         try
         {
             var diskfulRscs = rscDfn.getDiskfulResources(apiCtx);
+            removeInactiveResources(diskfulRscs, apiCtx);
             for (var diskRsc : diskfulRscs)
             {
                 setCloneSnapshotPropPrivileged(diskRsc, cloneRscName);
@@ -1219,6 +1393,7 @@ public class CtrlRscDfnApiCallHandler
         AutoSelectFilterPojo autoSelectFilterPojo = AutoSelectFilterPojo.copy(
             clonedRscDfn.getResourceGroup().getAutoPlaceConfig().getApiData());
         List<Resource> diskfulRscs = srcRscDfn.getDiskfulResources(peerAccCtx.get());
+        removeInactiveResources(diskfulRscs, peerAccCtx.get());
         autoSelectFilterPojo.setPlaceCount(diskfulRscs.size());
         autoSelectFilterPojo.setNodeNameList(diskfulRscs.stream()
             .map(diskRsc -> diskRsc.getNode().getName().displayValue).collect(Collectors.toList()));
@@ -1234,6 +1409,21 @@ public class CtrlRscDfnApiCallHandler
 
         return possibleStorPools.stream().collect(
             Collectors.toMap(storPool -> storPool.getNode().getName(), storPool -> storPool));
+    }
+
+    private void removeInactiveResources(List<Resource> diskfulRscs, AccessContext accCtx)
+    {
+        diskfulRscs.removeIf(rsc -> {
+            try
+            {
+                return rsc.getStateFlags().isSet(accCtx, Resource.Flags.INACTIVE);
+            }
+            catch (AccessDeniedException ignored)
+            {
+                // ignored
+            }
+            return false;
+        });
     }
 
     private void failIfDrbdMetadataConversion(Resource srcRsc, Resource cloneRsc) throws AccessDeniedException
@@ -1408,14 +1598,17 @@ public class CtrlRscDfnApiCallHandler
 
             storeVolumePassphrasesToVlmDfn(clonedRscDfn, volumePassphrases);
 
-            Map<NodeName, StorPool> possibleStorPools = findCloneStoragePools(srcRscDfn, clonedRscDfn);
-
             Set<Resource> deployedResources = new TreeSet<>();
-            Iterator<Resource> it = srcRscDfn.iterateResource(peerAccCtx.get());
-            while (it.hasNext())
+            List<Resource> srcResources = new ArrayList<>();
+            Iterator<Resource> srcRscIt = srcRscDfn.iterateResource(peerAccCtx.get());
+            while (srcRscIt.hasNext())
             {
-                Resource rsc = it.next();
-
+                srcResources.add(srcRscIt.next());
+            }
+            removeInactiveResources(srcResources, peerAccCtx.get());
+            Map<NodeName, StorPool> possibleStorPools = findCloneStoragePools(srcRscDfn, clonedRscDfn);
+            for (Resource rsc : srcResources)
+            {
                 failIfWrongRscState(rsc);
                 checkFreeSpace(rsc, thinFreeCapacities);
 
