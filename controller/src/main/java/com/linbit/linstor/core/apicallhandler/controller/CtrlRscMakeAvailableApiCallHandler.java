@@ -179,7 +179,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         ResponseContext contextRef
     )
     {
-        Flux<ApiCallRc> flux;
+        Flux<ApiCallRc> flux = Flux.empty();
 
         ResourceDefinition rscDfn = dataLoader.loadRscDfn(rscNameRef, true);
         Resource rsc = dataLoader.loadRsc(nodeNameRef, rscNameRef, false);
@@ -307,55 +307,65 @@ public class CtrlRscMakeAvailableApiCallHandler
         }
         else
         {
-            ResourceWithPayloadApi createRscPojo;
             // first, check if there is a shared storage pool already containing the shared resource on the given node
-
             Node node = dataLoader.loadNode(nodeNameRef, true);
-            createRscPojo = getSharedResourceCreationPojo(rscDfn, node);
+            @Nullable ResourceWithPayloadApi createRscPojo = getSharedResourceCreationPojo(rscDfn, node);
             if (createRscPojo != null)
             {
                 errorReporter.logTrace("Trying to place new shared resource");
 
                 // try to deactivate already active resource first
-                Resource activeRsc = getActiveRsc(createRscPojo, node, rscDfn);
-                flux = ctrlRscActivateApiCallHandler.deactivateRsc(
-                    activeRsc.getNode().getName().displayValue,
-                    activeRsc.getResourceDefinition().getName().displayValue
-                ).concatWith(
-                    freeCapacityFetcher.fetchThinFreeCapacities(Collections.singleton(node.getName())).flatMapMany(
-                        // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
-                        // the freeCapacities parameter here
-                        ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
-                            "create resource",
-                            lockGuardFactory.buildDeferred(
-                                LockType.WRITE,
-                                LockObj.NODES_MAP,
-                                LockObj.RSC_DFN_MAP,
-                                LockObj.STOR_POOL_DFN_MAP
-                            ),
-                            () -> ctrlRscCrtApiCallHandler.createResource(
-                                Collections.singletonList(createRscPojo),
-                                Resource.DiskfulBy.MAKE_AVAILABLE,
-                                copyAllSnapsRef,
-                                snapNamesToCopyRef,
-                                false
+                @Nullable Resource activeRsc = getActiveRsc(createRscPojo, node, rscDfn);
+                if (activeRsc != null)
+                {
+                    flux = ctrlRscActivateApiCallHandler.deactivateRsc(
+                        activeRsc.getNode().getName().displayValue,
+                        activeRsc.getResourceDefinition().getName().displayValue
+                    ).concatWith(
+                        freeCapacityFetcher.fetchThinFreeCapacities(Collections.singleton(node.getName())).flatMapMany(
+                            // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
+                            // the freeCapacities parameter here
+                            ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
+                                "create resource",
+                                lockGuardFactory.buildDeferred(
+                                    LockType.WRITE,
+                                    LockObj.NODES_MAP,
+                                    LockObj.RSC_DFN_MAP,
+                                    LockObj.STOR_POOL_DFN_MAP
+                                ),
+                                () -> ctrlRscCrtApiCallHandler.createResource(
+                                    Collections.singletonList(createRscPojo),
+                                    Resource.DiskfulBy.MAKE_AVAILABLE,
+                                    copyAllSnapsRef,
+                                    snapNamesToCopyRef,
+                                    false
+                                )
                             )
                         )
-                    )
-                ).onErrorResume(
-                    error -> abortDeactivateOldRsc(activeRsc, null)
-                        .concatWith(
-                            placeAnywhere(
-                                nodeNameRef,
-                                rscDfn,
-                                layerStack,
-                                diskfulRequestedRef,
-                                drbdTcpPortsRef,
-                                copyAllSnapsRef,
-                                snapNamesToCopyRef
+                    ).onErrorResume(
+                        error -> abortDeactivateOldRsc(activeRsc, null)
+                            .concatWith(
+                                placeAnywhere(
+                                    nodeNameRef,
+                                    rscDfn,
+                                    layerStack,
+                                    diskfulRequestedRef,
+                                    drbdTcpPortsRef,
+                                    copyAllSnapsRef,
+                                    snapNamesToCopyRef
+                                )
                             )
+                    );
+                }
+                else
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_RSC,
+                            "No active resource found for shared resource " + rscDfn.getName().displayValue
                         )
-                );
+                    );
+                }
             }
             else
             {
@@ -825,7 +835,7 @@ public class CtrlRscMakeAvailableApiCallHandler
 
     private @Nullable ResourceWithPayloadApi getSharedResourceCreationPojo(ResourceDefinition rscDfnRef, Node nodeRef)
     {
-        ResourceWithPayloadApi ret = null;
+        @Nullable ResourceWithPayloadApi ret = null;
         try
         {
             // build Map<SharedStorPoolName, StorPool> of current node
