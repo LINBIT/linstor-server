@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed only reset auto-verify-algo, if at least two nodes reported their crypto entries
 - Fixed set-plain-port, set-plain-listen in linstor-config tool using wrong property instances
 - Fixed unconditional 2-4s wait time between CRD migrations
+- Fixed node properties not properly applied after LINSTOR's FullSync
 
 ## [1.33.2] - 2026-04-08
 

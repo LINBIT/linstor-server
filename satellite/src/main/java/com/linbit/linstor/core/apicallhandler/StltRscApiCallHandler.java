@@ -626,9 +626,19 @@ class StltRscApiCallHandler
             Node.Flags.restoreFlags(otherRscRawRef.getNodeFlags())
         );
         checkUuid(remoteNode, otherRscRawRef);
-        Map<String, String> propsMap = remoteNode.getProps(apiCtx).map();
-        propsMap.clear();
-        propsMap.putAll(otherRscRawRef.getNodeProps());
+        // The remote node's props (and netIfs) are not included in the OtherRscPojo during a
+        // FullSync; they're delivered separately in the IntNode proto messages and applied via
+        // StltNodeApiCallHandler.applyChanges() before this code runs. If we unconditionally
+        // clear+putAll here when the pojo's prop map is empty, we wipe all peer-node properties
+        // (PrefNic, NodeUname, Aux/*, etc.) that were just correctly populated, breaking
+        // anything that later reads peer node props (DRBD path generation via PrefNic, etc.).
+        // Mirrors the existing guard on the netIf case in mergeNetIfs() below.
+        if (!otherRscRawRef.getNodeProps().isEmpty())
+        {
+            Map<String, String> propsMap = remoteNode.getProps(apiCtx).map();
+            propsMap.clear();
+            propsMap.putAll(otherRscRawRef.getNodeProps());
+        }
 
         mergeNetIfs(remoteNode, otherRscRawRef);
 
