@@ -331,22 +331,16 @@ public class BitmapPool implements NumberPool
     @Override
     public boolean allocate(final int nr)
     {
+        check(nr);
         boolean allocated;
-        if (nr >= 0 && nr < poolSize)
+        poolWrLock.lock();
+        try
         {
-            poolWrLock.lock();
-            try
-            {
-                allocated = uncheckedAllocateImpl(nr);
-            }
-            finally
-            {
-                poolWrLock.unlock();
-            }
+            allocated = uncheckedAllocateImpl(nr);
         }
-        else
+        finally
         {
-            throw new IllegalArgumentException();
+            poolWrLock.unlock();
         }
         return allocated;
     }
@@ -359,21 +353,15 @@ public class BitmapPool implements NumberPool
     @Override
     public void deallocate(final int nr)
     {
-        if (nr >= 0 && nr < poolSize)
+        check(nr);
+        poolWrLock.lock();
+        try
         {
-            poolWrLock.lock();
-            try
-            {
-                uncheckedDeallocateImpl(nr);
-            }
-            finally
-            {
-                poolWrLock.unlock();
-            }
+            uncheckedDeallocateImpl(nr);
         }
-        else
+        finally
         {
-            throw new IllegalArgumentException();
+            poolWrLock.unlock();
         }
     }
 
@@ -392,13 +380,7 @@ public class BitmapPool implements NumberPool
     @Override
     public Map<Integer, Boolean> multiAllocate(final List<Integer> nrList)
     {
-        for (int nr : nrList)
-        {
-            if (!(nr >= 0 && nr < poolSize))
-            {
-                throw new IllegalArgumentException();
-            }
-        }
+        nrList.forEach(this::check);
         Map<Integer, Boolean> resultMap = new TreeMap<>();
         poolWrLock.lock();
         try
@@ -426,10 +408,7 @@ public class BitmapPool implements NumberPool
     {
         for (int nr : nrList)
         {
-            if (!(nr >= 0 && nr < poolSize))
-            {
-                throw new IllegalArgumentException();
-            }
+            check(nr);
         }
         poolWrLock.lock();
         try
@@ -455,10 +434,7 @@ public class BitmapPool implements NumberPool
     {
         for (int nr : nrList)
         {
-            if (!(nr >= 0 && nr < poolSize))
-            {
-                throw new IllegalArgumentException();
-            }
+            check(nr);
         }
         poolWrLock.lock();
         try
@@ -486,16 +462,8 @@ public class BitmapPool implements NumberPool
     public int findUnallocated(final int rangeStart, final int rangeEnd)
         throws ExhaustedPoolException
     {
-        int result;
-        if (rangeStart >= 0 && rangeEnd < poolSize && rangeStart <= rangeEnd)
-        {
-            result = uncheckedFind(rangeStart, rangeEnd, false);
-        }
-        else
-        {
-            throw new IllegalArgumentException();
-        }
-        return result;
+        checkRange(rangeStart, rangeEnd);
+        return uncheckedFind(rangeStart, rangeEnd, false);
     }
 
     /**
@@ -515,16 +483,8 @@ public class BitmapPool implements NumberPool
     public int findUnallocatedFromOffset(final int rangeStart, final int rangeEnd, final int offset)
         throws ExhaustedPoolException
     {
-        int result;
-        if (rangeStart >= 0 && rangeEnd < poolSize && rangeStart <= rangeEnd)
-        {
-            result = uncheckedFindFromOffset(rangeStart, rangeEnd, offset, false);
-        }
-        else
-        {
-            throw new IllegalArgumentException();
-        }
-        return result;
+        checkRange(rangeStart, rangeEnd);
+        return uncheckedFindFromOffset(rangeStart, rangeEnd, offset, false);
     }
 
     /**
@@ -539,16 +499,8 @@ public class BitmapPool implements NumberPool
     public int autoAllocate(final int rangeStart, final int rangeEnd)
         throws ExhaustedPoolException
     {
-        int result;
-        if (rangeStart >= 0 && rangeEnd < poolSize && rangeStart <= rangeEnd)
-        {
-            result = uncheckedFind(rangeStart, rangeEnd, true);
-        }
-        else
-        {
-            throw new IllegalArgumentException();
-        }
-        return result;
+        checkRange(rangeStart, rangeEnd);
+        return uncheckedFind(rangeStart, rangeEnd, true);
     }
 
     /**
@@ -568,17 +520,8 @@ public class BitmapPool implements NumberPool
     public int autoAllocateFromOffset(final int rangeStart, final int rangeEnd, final int offset)
         throws ExhaustedPoolException
     {
-        int result;
-        if (rangeStart >= 0 && rangeEnd < poolSize && rangeStart <= rangeEnd &&
-            rangeStart <= offset && offset <= rangeEnd)
-        {
-            result = uncheckedFindFromOffset(rangeStart, rangeEnd, offset, true);
-        }
-        else
-        {
-            throw new IllegalArgumentException();
-        }
-        return result;
+        checkRangeWithOffset(rangeStart, rangeEnd, offset);
+        return uncheckedFindFromOffset(rangeStart, rangeEnd, offset, true);
     }
 
     private int uncheckedFind(int rangeStart, int rangeEnd, boolean allocFlag)
@@ -1423,6 +1366,56 @@ public class BitmapPool implements NumberPool
             {
                 rootLevel = new Bitmap(poolSize, false);
             }
+        }
+    }
+
+    private void check(int nrRef)
+    {
+        if (nrRef < 0)
+        {
+            throw new IllegalArgumentException("Number " + nrRef + " is negative");
+        }
+        if (nrRef >= poolSize)
+        {
+            throw new IllegalArgumentException("Number " + nrRef + " too large (pool size: " + poolSize + ")");
+        }
+    }
+
+    private void checkRange(int rangeStartRef, int rangeEndRef)
+    {
+        if (rangeStartRef < 0)
+        {
+            throw new IllegalArgumentException("Invalid range. Start must not be negative, but was " + rangeStartRef);
+        }
+        if (rangeEndRef >= poolSize)
+        {
+            throw new IllegalArgumentException(
+                "Invalid range. End must be smaller than pool size. End: " + rangeEndRef + ", pool size: " + poolSize
+            );
+        }
+        if (rangeStartRef > rangeEndRef)
+        {
+            throw new IllegalArgumentException(
+                "Invalid range. End must be larger than start. Start: " + rangeStartRef + ", end: " + rangeEndRef
+            );
+        }
+    }
+
+    private void checkRangeWithOffset(int rangeStartRef, int rangeEndRef, int offsetRef)
+    {
+        checkRange(rangeStartRef, rangeEndRef);
+        if (rangeStartRef > offsetRef)
+        {
+            throw new IllegalArgumentException(
+                "Invalid offset. Offset must not be smaller than start. Offset: " + offsetRef + ", start: " +
+                    rangeStartRef
+            );
+        }
+        if (offsetRef > rangeEndRef)
+        {
+            throw new IllegalArgumentException(
+                "Invalid offset. Offset must not be larger than end. Offset: " + offsetRef + ", end: " + rangeEndRef
+            );
         }
     }
 
