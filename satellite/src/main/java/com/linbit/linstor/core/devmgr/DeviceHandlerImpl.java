@@ -87,6 +87,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Singleton
 public class DeviceHandlerImpl implements DeviceHandler
@@ -484,6 +485,10 @@ public class DeviceHandlerImpl implements DeviceHandler
                 {
                     throw new ImplementationError(exc);
                 }
+                catch (DeviceLayer.BlockedPortsException blockedPortsExc)
+                {
+                    apiCallRc = buildBlockedPortsResponse(rsc, blockedPortsExc);
+                }
                 catch (Exception | ImplementationError exc)
                 {
                     apiCallRc = handleException(rsc, exc);
@@ -491,6 +496,35 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
             notificationListener.notifyResourceDispatchResponse(rscName, apiCallRc);
         }
+    }
+
+    /**
+     * Builds an INFO-level {@link ApiCallRcImpl} that signals "ports blocked during DRBD adjust" to
+     * the controller on the existing apiCall response stream. Picked up by the controller's
+     * SatelliteRetcodeDispatcher / DrbdAdjustBlockedPortHandler, which repicks the port and
+     * retries.
+     *
+     * <p>Intentionally does not route through {@link #handleException}: this is normal control
+     * flow, not an unexpected failure — no error trace, no notifyResourceFailed.
+     */
+    private ApiCallRcImpl buildBlockedPortsResponse(Resource rsc, DeviceLayer.BlockedPortsException exc)
+    {
+        List<Integer> blocked = exc.getBlockedPorts();
+        errorReporter.logTrace(
+            "Ports %s blocked on satellite for resource '%s'; signalling controller to repick.",
+            blocked, rsc.getResourceDefinition().getName().displayValue
+        );
+        String blockedCsv = blocked.stream()
+            .map(String::valueOf)
+            .collect(Collectors.joining(","));
+        return ApiCallRcImpl.singletonApiCallRc(
+            ApiCallRcImpl.entryBuilder(
+                exc.getRetCode(),
+                "Ports blocked on satellite: " + blocked
+            )
+                .putObjRef(ApiConsts.KEY_BLOCKED_PORTS_LIST, blockedCsv)
+                .build()
+        );
     }
 
     private ApiCallRcImpl handleException(Resource rsc, Throwable exc)
@@ -1402,7 +1436,8 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     @Override
     public void processResource(AbsRscLayerObject<Resource> rscLayerDataRef, ApiCallRcImpl apiCallRcRef)
-        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException,
+        AbortLayerProcessingException
     {
         processGeneric(
             rscLayerDataRef,
@@ -1437,7 +1472,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         ProcessInterface<RSC> procFctRef,
         Function<AbsRscLayerObject<RSC>, String> dataDescrFct
     )
-        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException,
+        AbortLayerProcessingException
     {
         boolean processedChildren = false;
         DeviceLayer currentLayer = layerFactory.getDeviceLayer(rscLayerData.getLayerKind());

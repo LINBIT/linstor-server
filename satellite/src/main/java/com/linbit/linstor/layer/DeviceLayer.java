@@ -32,6 +32,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -205,6 +206,42 @@ public interface DeviceLayer extends Comparable<DeviceLayer>
         {
             super(stringRef);
             rscLayerObject = rscLayerObjectRef;
+        }
+    }
+
+    class BlockedPortsException extends AbortLayerProcessingException
+    {
+        private static final long serialVersionUID = -9127363761130307850L;
+        private final List<Integer> blockedPorts;
+        private final long retCode;
+
+        public BlockedPortsException(
+            AbsRscLayerObject<?> rscLayerObjectRef,
+            List<Integer> blockedPortsRef,
+            long retCodeRef
+        )
+        {
+            super(
+                rscLayerObjectRef,
+                "Layer '" + rscLayerObjectRef.getLayerKind().name() + "' aborted due to blocked ports (" +
+                    blockedPortsRef + ") for " +
+                    (rscLayerObjectRef.getAbsResource() instanceof Resource ?
+                        "resource '" + rscLayerObjectRef.getSuffixedResourceName() :
+                        "snapshot '" + ((Snapshot) rscLayerObjectRef.getAbsResource()).getSnapshotName().displayValue +
+                            "' of resource '" + rscLayerObjectRef.getSuffixedResourceName())
+            );
+            blockedPorts = blockedPortsRef;
+            retCode = retCodeRef;
+        }
+
+        public List<Integer> getBlockedPorts()
+        {
+            return blockedPorts;
+        }
+
+        public long getRetCode()
+        {
+            return retCode;
         }
     }
 

@@ -33,6 +33,7 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.core.types.TcpPortNumber;
+import com.linbit.linstor.core.utils.TcpPortUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.drbd.drbdstate.DiskState;
@@ -607,6 +608,9 @@ public class DrbdLayer implements DeviceLayer
 
     /**
      * Adjusts (creates or modifies) a given DRBD resource
+     *
+     * @throws BlockedPortsException if {@code drbdadm adjust} detected one or more TCP ports
+     *     already in use on the satellite; the controller is expected to repick and retry.
      */
     private boolean adjustDrbd(
         DrbdRscData<Resource> drbdRscData,
@@ -614,8 +618,8 @@ public class DrbdLayer implements DeviceLayer
         boolean childAlreadyProcessed,
         @Nullable String drbdSetupStatus
     )
-        throws AccessDeniedException, StorageException, DatabaseException,
-            ResourceException, VolumeException
+        throws AccessDeniedException, StorageException, DatabaseException, ResourceException, VolumeException,
+        AbortLayerProcessingException
     {
         boolean contProcess = true;
         updateRequiresAdjust(drbdRscData);
@@ -886,6 +890,14 @@ public class DrbdLayer implements DeviceLayer
 
                 if (drbdRscData.isAdjustRequired())
                 {
+                    if (!isDrbdRscUp(drbdRscData))
+                    {
+                        // currently we only run the blocked port check if the DRBD resource is down.
+                        // we might want to change this in the future, especially as soon as the user
+                        // can somehow trigger changing ports, where the DRBD resource will most likely
+                        // be up and running but the new port might still be blocked by something else
+                        checkBlockedPorts(drbdRscData);
+                    }
                     try
                     {
                         drbdUtils.adjust(
@@ -1646,6 +1658,21 @@ public class DrbdLayer implements DeviceLayer
         return currentGi;
     }
 
+    private boolean isDrbdRscUp(DrbdRscData<Resource> drbdRscData)
+    {
+        boolean ret;
+        try
+        {
+            @Nullable DrbdResource drbdRscState = drbdState.getDrbdResource(drbdRscData.getSuffixedResourceName());
+            ret = drbdRscState != null;
+        }
+        catch (NoInitialStateException exc)
+        {
+            ret = false;
+        }
+        return ret;
+    }
+
     private void updateResourceToCurrentDrbdState(DrbdRscData<Resource> drbdRscData)
         throws AccessDeniedException, StorageException, DatabaseException
     {
@@ -2049,6 +2076,27 @@ public class DrbdLayer implements DeviceLayer
         catch (ExtCmdFailedException | AccessDeniedException exc)
         {
             throw new StorageException("drbdmeta check-resize failed", exc);
+        }
+    }
+
+    private void checkBlockedPorts(DrbdRscData<Resource> drbdRscDataRef) throws BlockedPortsException
+    {
+        // we pass null as IP (aka 0.0.0.0) here due to 2 reasons:
+        // 1) we would need to determine here all the IP/Port combinations to each of our peers which involves
+        // checking PrefNic, Node-/Rsc-Connections, etc.. (complicated + cumbersome. would require extracting
+        // methods of the reworked ConfFileBuilder for path-mesh)
+        // 2) the controller (currently) only has 1 list of blocked ports, not one per IP / NetIf. It does not
+        // really make sense to check only for a given IP but then tell the controller this nodes (not netIfs)
+        // port is blocked (aka "globally" on this node).
+        List<Integer> blockedPorts = TcpPortUtils.getBlockedPortsAsIntList(null, drbdRscDataRef.getTcpPortList());
+        if (!blockedPorts.isEmpty())
+        {
+            errorReporter.logWarning(
+                "DrbdLayer: Port%s %s blocked by external process. Notifying Controller.",
+                blockedPorts.size() == 1 ? "" : "s",
+                blockedPorts.toString()
+            );
+            throw new BlockedPortsException(drbdRscDataRef, blockedPorts, ApiConsts.FAIL_PORT_BLOCKED_DRBD_ADJUST);
         }
     }
 

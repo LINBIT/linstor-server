@@ -30,8 +30,7 @@ public interface DeviceHandler
         AbsRscLayerObject<Resource> rscLayerData,
         ApiCallRcImpl apiCallRc
     )
-        throws StorageException, ResourceException, VolumeException, AccessDeniedException,
-        DatabaseException;
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException;
 
     void processSnapshot(
         AbsRscLayerObject<Snapshot> snapLayerData,

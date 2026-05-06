@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
  * {@link SatelliteRetcodeDispatcher} and registered via Guice multibinder.
  *
  * <p>Each handler claims exactly one {@link ApiCallRc} return code. The expectation is that the
- * retcode is specific enough (e.g. {@code INFO_PORT_BLOCKED_DRBD_ADJUST}) that the response is
+ * retcode is specific enough (e.g. {@code FAIL_PORT_BLOCKED_DRBD_ADJUST}) that the response is
  * invariant across callers — there is one canonical reaction for the event the retcode names.
  *
  * <p>Each handler also declares a {@code CTX} type parameter — a handler-private state object the

@@ -29,6 +29,7 @@ import com.linbit.locks.LockGuard;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -45,6 +46,7 @@ import com.google.common.base.Objects;
 
 import static java.util.stream.Collectors.toList;
 
+@Singleton
 public class NodeInternalCallHandler
 {
     private final ErrorReporter errorReporter;
