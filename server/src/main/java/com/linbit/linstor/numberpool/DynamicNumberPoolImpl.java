@@ -8,8 +8,11 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.range.Range;
 
-import java.util.regex.Matcher;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class DynamicNumberPoolImpl implements DynamicNumberPool
 {
@@ -26,8 +29,9 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
 
     private final NumberPool numberPool;
 
-    private int rangeMin;
-    private int rangeMax;
+    private List<Range> ranges;
+    private List<Range> blockedRanges;
+    private List<Range> effectiveRanges;
 
     public DynamicNumberPoolImpl(
         ErrorReporter errorReporterRef,
@@ -48,16 +52,18 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         defaultMin = defaultMinRef;
         defaultMax = defaultMaxRef;
 
-        rangeMin = defaultMinRef;
-        rangeMax = defaultMaxRef;
+        ranges = new ArrayList<>();
+        ranges.add(new Range(defaultMinRef, defaultMaxRef));
 
         numberPool = new BitmapPool(hardMax + 1);
+        blockedRanges = new ArrayList<>();
+        effectiveRanges = new ArrayList<>();
     }
 
     @Override
     public void reloadRange()
     {
-        String strRange;
+        @Nullable String strRange;
         try
         {
             // it's possible that there are only the default values, so check for that
@@ -69,43 +75,49 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
             {
                 strRange = null;
             }
-            Matcher matcher;
-            boolean useDefaults = true;
 
-            if (strRange != null)
+            List<Range> newRanges;
+            if (strRange == null)
             {
-                matcher = NumberPoolModule.RANGE_PATTERN.matcher(strRange);
-                if (matcher.find())
-                {
-                    try
-                    {
-                        rangeMin = Integer.parseInt(matcher.group("min"));
-                        rangeMax = Integer.parseInt(matcher.group("max"));
-
-                        rangeLimitChecker.check(rangeMin);
-                        rangeLimitChecker.check(rangeMax);
-                        useDefaults = false;
-                    }
-                    catch (ValueOutOfRangeException | NumberFormatException exc)
-                    {
-                        errorReporter.reportError(
-                            exc,
-                            null,
-                            null,
-                            "Unable to parse range from '" + strRange + "'"
-                        );
-                    }
-                }
-                else
+                newRanges = new ArrayList<>();
+            }
+            else
+            {
+                newRanges = Range.parseList(strRange);
+                if (newRanges.isEmpty())
                 {
                     errorReporter.logError("Unable to extract range from '" + strRange + "'");
                 }
+                else
+                {
+                    Iterator<Range> rangesIt = newRanges.iterator();
+                    while (rangesIt.hasNext())
+                    {
+                        Range range = rangesIt.next();
+                        try
+                        {
+                            rangeLimitChecker.check(range.from());
+                            rangeLimitChecker.check(range.to());
+                        }
+                        catch (ValueOutOfRangeException exc)
+                        {
+                            errorReporter.reportError(
+                                exc,
+                                null,
+                                null,
+                                range + " outside of allowed range"
+                            );
+                            rangesIt.remove();
+                        }
+                    }
+                }
             }
-            if (useDefaults)
+            if (newRanges.isEmpty())
             {
-                rangeMin = defaultMin;
-                rangeMax = defaultMax;
+                newRanges.add(new Range(defaultMin, defaultMax));
             }
+            ranges = newRanges;
+            recaculateEffecitveRanges();
         }
         catch (InvalidKeyException invldKeyExc)
         {
@@ -114,6 +126,17 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
                 invldKeyExc
             );
         }
+    }
+
+    public void setBlockedRanges(List<Range> blockedRangesRef)
+    {
+        blockedRanges = blockedRangesRef;
+        recaculateEffecitveRanges();
+    }
+
+    private void recaculateEffecitveRanges()
+    {
+        effectiveRanges = RangeUtils.subtract(ranges, blockedRanges);
     }
 
     @Override
@@ -136,10 +159,7 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
     public int autoAllocate()
         throws ExhaustedPoolException
     {
-        return numberPool.autoAllocate(
-            rangeMin,
-            rangeMax
-        );
+        return numberPool.autoAllocate(effectiveRanges);
     }
 
     @Override

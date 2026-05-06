@@ -1,6 +1,8 @@
 package com.linbit.linstor.numberpool;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.linstor.range.Range;
+
 import java.util.List;
 import java.util.Map;
 
@@ -93,8 +95,19 @@ public interface NumberPool
      * @return the lowest-value unallocated number in the specified allocation range
      * @throws ExhaustedPoolException if all numbers within the specified allocation range are allocated
      */
-    int findUnallocated(int rangeStart, int rangeEnd)
-        throws ExhaustedPoolException;
+    default int findUnallocated(int rangeStart, int rangeEnd) throws ExhaustedPoolException
+    {
+        return findUnallocated(new Range(rangeStart, rangeEnd));
+    }
+
+    /**
+     * Finds the first unallocated number within the given range (inclusively)
+     *
+     * @param range The allocation range
+     * @return the lowest-value unallocated number in the specified allocation range
+     * @throws ExhaustedPoolException if all numbers within the specified allocation range are allocated
+     */
+    int findUnallocated(Range range) throws ExhaustedPoolException;
 
     /**
      * Finds the  first unallocated number within the range rangeStart - rangeEnd, starting at the
@@ -109,8 +122,23 @@ public interface NumberPool
      * @return An unallocated number within the specified allocation range,
      *         preferably greater than or equal to offset
      */
-    int findUnallocatedFromOffset(int rangeStart, int rangeEnd, int offset)
-        throws ExhaustedPoolException;
+    default int findUnallocatedFromOffset(int rangeStart, int rangeEnd, int offset) throws ExhaustedPoolException
+    {
+        return findUnallocatedFromOffset(new Range(rangeStart, rangeEnd), offset);
+    }
+
+    /**
+     * Finds the  first unallocated number within the given range, starting at the specified offset.
+     * If all numbers greater than offset are allocated, the search continues at rangeStart.
+     *
+     * Offset is an absolute value (not relative to rangeStart or rangeEnd).
+     *
+     * @param range The allocation range
+     * @param offset Start offset for the search for unallocated numbers
+     * @return An unallocated number within the specified allocation range,
+     *         preferably greater than or equal to offset
+     */
+    int findUnallocatedFromOffset(Range range, int offset) throws ExhaustedPoolException;
 
     /**
      * Allocates the first unallocated number within the range rangeStart - rangeEnd (inclusively)
@@ -120,8 +148,31 @@ public interface NumberPool
      * @return the lowest-value unallocated number in the specified allocation range
      * @throws ExhaustedPoolException if all numbers within the specified allocation range are allocated
      */
-    int autoAllocate(int rangeStart, int rangeEnd)
-        throws ExhaustedPoolException;
+    default int autoAllocate(int rangeStart, int rangeEnd) throws ExhaustedPoolException
+    {
+        return autoAllocate(List.of(new Range(rangeStart, rangeEnd)));
+    }
+
+    /**
+     * Allocates the first unallocated number within the given range (inclusively)
+     *
+     * @param range The allocation range
+     * @return the lowest-value unallocated number in the specified allocation range
+     * @throws ExhaustedPoolException if all numbers within the specified allocation range are allocated
+     */
+    default int autoAllocate(Range range) throws ExhaustedPoolException
+    {
+        return autoAllocate(List.of(range));
+    }
+
+    /**
+     * Allocates the first unallocated number within the given ranges (inclusively)
+     *
+     * @param ranges List of ranges to choose from
+     * @return the lowest-value unallocated number in the specified allocation range
+     * @throws ExhaustedPoolException if all numbers within the specified allocation range are allocated
+     */
+    int autoAllocate(List<Range> ranges) throws ExhaustedPoolException;
 
     /**
      * Allocates the  first unallocated number within the range rangeStart - rangeEnd, starting at the
@@ -136,8 +187,24 @@ public interface NumberPool
      * @return An unallocated number within the specified allocation range,
      *         preferably greater than or equal to offset
      */
-    int autoAllocateFromOffset(int rangeStart, int rangeEnd, int offset)
-        throws ExhaustedPoolException;
+
+    default int autoAllocateFromOffset(int rangeStart, int rangeEnd, int offset) throws ExhaustedPoolException
+    {
+        return autoAllocateFromOffset(new Range(rangeStart, rangeEnd), offset);
+    }
+
+    /**
+     * Allocates the  first unallocated number within the given range, starting at the specified offset.
+     * If all numbers greater than offset are allocated, the search continues at rangeStart.
+     *
+     * Offset is an absolute value (not relative to where range starts or ends).
+     *
+     * @param range The allocation range
+     * @param offset Start offset for the search for unallocated numbers
+     * @return An unallocated number within the specified allocation range,
+     *         preferably greater than or equal to offset
+     */
+    int autoAllocateFromOffset(Range range, int offset) throws ExhaustedPoolException;
 
     /**
      * Clears the pool by resetting the state of all numbers to unallocated

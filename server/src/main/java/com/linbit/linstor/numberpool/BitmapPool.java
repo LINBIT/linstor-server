@@ -5,6 +5,7 @@ package com.linbit.linstor.numberpool;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.range.Range;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -453,86 +454,85 @@ public class BitmapPool implements NumberPool
     /**
      * Finds the first unallocated number within the range rangeStart - rangeEnd (inclusively)
      *
-     * @param rangeStart The lowest-value number in the allocation range
-     * @param rangeEnd The highest-value number in the allocation range
+     * @param range The allocation range
      * @return the lowest-value unallocated number in the specified allocation range
      * @throws ExhaustedPoolException if all numbers within the specified allocation range are allocated
      */
     @Override
-    public int findUnallocated(final int rangeStart, final int rangeEnd)
-        throws ExhaustedPoolException
+    public int findUnallocated(final Range range) throws ExhaustedPoolException
     {
-        checkRange(rangeStart, rangeEnd);
-        return uncheckedFind(rangeStart, rangeEnd, false);
+        checkRange(range);
+        return uncheckedFind(List.of(range), false);
     }
 
     /**
-     * Finds the  first unallocated number within the range rangeStart - rangeEnd, starting at the
-     * specified offset. If all numbers greater than offset are allocated, the search continues
-     * at rangeStart.
+     * Finds the  first unallocated number within the given range starting at the specified offset. If all numbers
+     * greater than offset are allocated, the search continues at rangeStart.
      *
      * Offset is an absolute value (not relative to rangeStart or rangeEnd).
      *
-     * @param rangeStart The lowest-value number in the allocation range
-     * @param rangeEnd The highest-value number in the allocation range
+     * @param range The allocation range
      * @param offset Start offset for the search for unallocated numbers
      * @return An unallocated number within the specified allocation range,
      *         preferably greater than or equal to offset
      */
     @Override
-    public int findUnallocatedFromOffset(final int rangeStart, final int rangeEnd, final int offset)
-        throws ExhaustedPoolException
+    public int findUnallocatedFromOffset(final Range range, final int offset) throws ExhaustedPoolException
     {
-        checkRange(rangeStart, rangeEnd);
-        return uncheckedFindFromOffset(rangeStart, rangeEnd, offset, false);
+        checkRange(range);
+        return uncheckedFindFromOffset(range, offset, false);
     }
 
     /**
-     * Allocates the first unallocated number within the range rangeStart - rangeEnd (inclusively)
+     * Allocates the first unallocated number within the given range (inclusively)
      *
-     * @param rangeStart The lowest-value number in the allocation range
-     * @param rangeEnd The highest-value number in the allocation range
+     * @param ranges The list of allocation ranges
      * @return the lowest-value unallocated number in the specified allocation range
      * @throws ExhaustedPoolException if all numbers within the specified allocation range are allocated
      */
     @Override
-    public int autoAllocate(final int rangeStart, final int rangeEnd)
+    public int autoAllocate(final List<Range> ranges)
         throws ExhaustedPoolException
     {
-        checkRange(rangeStart, rangeEnd);
-        return uncheckedFind(rangeStart, rangeEnd, true);
+        ranges.forEach(this::checkRange);
+        return uncheckedFind(ranges, true);
     }
 
     /**
-     * Allocates the  first unallocated number within the range rangeStart - rangeEnd, starting at the
-     * specified offset. If all numbers greater than offset are allocated, the search continues
-     * at rangeStart.
+     * Allocates the  first unallocated number within the given range, starting at the specified offset.
+     * If all numbers greater than offset are allocated, the search continues at rangeStart.
      *
      * Offset is an absolute value (not relative to rangeStart or rangeEnd).
      *
-     * @param rangeStart The lowest-value number in the allocation range
-     * @param rangeEnd The highest-value number in the allocation range
+     * @param range The allocation range
      * @param offset Start offset for the search for unallocated numbers
      * @return An unallocated number within the specified allocation range,
      *         preferably greater than or equal to offset
      */
     @Override
-    public int autoAllocateFromOffset(final int rangeStart, final int rangeEnd, final int offset)
+    public int autoAllocateFromOffset(final Range range, final int offset)
         throws ExhaustedPoolException
     {
-        checkRangeWithOffset(rangeStart, rangeEnd, offset);
-        return uncheckedFindFromOffset(rangeStart, rangeEnd, offset, true);
+        checkRangeWithOffset(range, offset);
+        return uncheckedFindFromOffset(range, offset, true);
     }
 
-    private int uncheckedFind(int rangeStart, int rangeEnd, boolean allocFlag)
+    private int uncheckedFind(final List<Range> ranges, final boolean allocFlag)
         throws ExhaustedPoolException
     {
-        int result;
+        int result = POOL_EXHAUSTED;
 
         poolWrLock.lock();
         try
         {
-            result = uncheckedFindImpl(rangeStart, rangeEnd, allocFlag);
+            for (Range range : ranges)
+            {
+                result = uncheckedFindImpl(range, allocFlag);
+                if (result != POOL_EXHAUSTED)
+                {
+                    break;
+                }
+            }
         }
         finally
         {
@@ -546,7 +546,7 @@ public class BitmapPool implements NumberPool
         return result;
     }
 
-    private int uncheckedFindFromOffset(int rangeStart, int rangeEnd, int offset, boolean allocFlag)
+    private int uncheckedFindFromOffset(final Range range, final int offset, final boolean allocFlag)
         throws ExhaustedPoolException
     {
         int result;
@@ -554,17 +554,17 @@ public class BitmapPool implements NumberPool
         poolWrLock.lock();
         try
         {
-            if (offset > rangeStart)
+            if (offset > range.from())
             {
-                result = uncheckedFindImpl(offset, rangeEnd, allocFlag);
+                result = uncheckedFindImpl(new Range(offset, range.to()), allocFlag);
                 if (result == POOL_EXHAUSTED)
                 {
-                    result = uncheckedFindImpl(rangeStart, offset - 1, allocFlag);
+                    result = uncheckedFindImpl(new Range(range.from(), offset - 1), allocFlag);
                 }
             }
             else
             {
-                result = uncheckedFindImpl(rangeStart, rangeEnd, allocFlag);
+                result = uncheckedFindImpl(range, allocFlag);
             }
         }
         finally
@@ -851,15 +851,16 @@ public class BitmapPool implements NumberPool
     /**
      * Searches for an unallocated number within the specified range
      *
-     * @param rangeStart Lower bound for the search (inclusive)
-     * @param rangeEnd Upper bound for the search (inclusive)
+     * @param range The range, both ends inclusive
      * @param allocate if true, and an unallocated number is found, the number is allocated; if false, the
      *     number remains unallocated
      * @return An unallocated number within the specified range, or -1 if no unallocated number is available
      */
-    private int uncheckedFindImpl(final int rangeStart, final int rangeEnd, boolean allocate)
+    private int uncheckedFindImpl(final Range range, boolean allocate)
     {
         int result = POOL_EXHAUSTED;
+        final int rangeStart = range.from();
+        final int rangeEnd = range.to();
         int nr = rangeStart;
         if (levels > 0)
         {
@@ -1381,40 +1382,33 @@ public class BitmapPool implements NumberPool
         }
     }
 
-    private void checkRange(int rangeStartRef, int rangeEndRef)
+    private void checkRange(Range range)
     {
-        if (rangeStartRef < 0)
+        if (range.from() < 0)
         {
-            throw new IllegalArgumentException("Invalid range. Start must not be negative, but was " + rangeStartRef);
+            throw new IllegalArgumentException("Invalid range. Start must not be negative, but was " + range.from());
         }
-        if (rangeEndRef >= poolSize)
+        if (range.to() >= poolSize)
         {
             throw new IllegalArgumentException(
-                "Invalid range. End must be smaller than pool size. End: " + rangeEndRef + ", pool size: " + poolSize
-            );
-        }
-        if (rangeStartRef > rangeEndRef)
-        {
-            throw new IllegalArgumentException(
-                "Invalid range. End must be larger than start. Start: " + rangeStartRef + ", end: " + rangeEndRef
+                "Invalid range. End must be smaller than pool size. End: " + range.to() + ", pool size: " + poolSize
             );
         }
     }
 
-    private void checkRangeWithOffset(int rangeStartRef, int rangeEndRef, int offsetRef)
+    private void checkRangeWithOffset(final Range range, int offset)
     {
-        checkRange(rangeStartRef, rangeEndRef);
-        if (rangeStartRef > offsetRef)
+        checkRange(range);
+        if (range.from() > offset)
         {
             throw new IllegalArgumentException(
-                "Invalid offset. Offset must not be smaller than start. Offset: " + offsetRef + ", start: " +
-                    rangeStartRef
+                "Invalid offset. Offset must not be smaller than start. Offset: " + offset + ", start: " + range.from()
             );
         }
-        if (offsetRef > rangeEndRef)
+        if (offset > range.to())
         {
             throw new IllegalArgumentException(
-                "Invalid offset. Offset must not be larger than end. Offset: " + offsetRef + ", end: " + rangeEndRef
+                "Invalid offset. Offset must not be larger than end. Offset: " + offset + ", end: " + range.to()
             );
         }
     }

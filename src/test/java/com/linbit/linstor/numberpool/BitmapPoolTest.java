@@ -1,6 +1,7 @@
 package com.linbit.linstor.numberpool;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.linstor.range.Range;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +15,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 @RunWith(JUnitParamsRunner.class)
 public class BitmapPoolTest
@@ -245,6 +247,37 @@ public class BitmapPoolTest
         assertThat(bitmapPool.getAvailableCount()).as("available count check")
             .isEqualTo(poolConfiguration.getSize() - 2);
         assertThat(bitmapPool.isEmpty()).as("isEmpty check").isFalse();
+    }
+
+    @Test
+    public void testAutoAllocateMultipleRanges()
+        throws Exception
+    {
+        BitmapPool bitmapPool = new BitmapPool(100);
+        List<Range> ranges = List.of(new Range(10, 15), new Range(20, 25));
+        List<Integer> expectedAllocations = new ArrayList<>();
+        for (Range range : ranges)
+        {
+            for (int expectedNr = range.from(); expectedNr <= range.to(); expectedNr++)
+            {
+                expectedAllocations.add(expectedNr);
+            }
+        }
+
+        List<Integer> allocatedNumbers = new ArrayList<>();
+        try
+        {
+            while (allocatedNumbers.size() < 110) // 110 is just a safety guard to prevent unnecessarily long loop
+            {
+                allocatedNumbers.add(bitmapPool.autoAllocate(ranges));
+            }
+            fail("pool should have been exhausted");
+        }
+        catch (ExhaustedPoolException expected)
+        {
+            // ignored
+        }
+        assertThat(allocatedNumbers).isEqualTo(expectedAllocations);
     }
 
     @Test
