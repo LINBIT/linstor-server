@@ -1011,7 +1011,7 @@ public class CtrlNodeApiCallHandler
         Set<String> deletePropKeys,
         Set<String> deleteNamespaces
     )
-        throws AccessDeniedException, InvalidNameException
+        throws AccessDeniedException, InvalidNameException, DatabaseException
     {
         /*
          * Checks that throw exceptions
@@ -1093,7 +1093,11 @@ public class CtrlNodeApiCallHandler
             }
             else if (key.equals(ApiConsts.KEY_TCP_PORT_AUTO_RANGE))
             {
-                node.getTcpPortPool(apiCtx).reloadRange();
+                node.getTcpPortPool(apiCtx).reloadRange(node.getProps(apiCtx));
+            }
+            else if (key.equals(ApiConsts.KEY_TCP_PORTS_BLOCKED))
+            {
+                node.getTcpPortPool(apiCtx).reloadBlockedRange(node.getProps(apiCtx));
             }
         }
         for (String key : deletePropKeys)
@@ -1109,6 +1113,10 @@ public class CtrlNodeApiCallHandler
             else if (key.equals(ApiConsts.KEY_TCP_PORT_AUTO_RANGE))
             {
                 node.getTcpPortPool(apiCtx).reloadRange();
+            }
+            else if (key.equals(ApiConsts.KEY_TCP_PORTS_BLOCKED))
+            {
+                node.getTcpPortPool(apiCtx).reloadBlockedRange();
             }
         }
         Flux<ApiCallRc> retFlux = Flux.empty();

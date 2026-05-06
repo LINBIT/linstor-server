@@ -259,6 +259,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
             errorReporter,
             new PriorityProps(roNodeProps, ctrlPropsRef),
             ApiConsts.KEY_TCP_PORT_AUTO_RANGE,
+            ApiConsts.KEY_TCP_PORTS_BLOCKED,
             nodeName + "'s " + TCP_PORT_ELEMENT_NAME,
             TcpPortNumber::tcpPortNrCheck,
             TcpPortNumber.PORT_NR_MAX,

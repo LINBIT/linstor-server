@@ -63,6 +63,7 @@ public class NumberPoolModule extends AbstractModule
             errorReporter,
             new PriorityProps(ctrlConfRef),
             ApiConsts.KEY_MINOR_NR_AUTO_RANGE,
+            null,
             MINOR_NR_ELEMENT_NAME,
             MinorNumber::minorNrCheck,
             MinorNumber.MINOR_NR_MAX,
@@ -83,6 +84,7 @@ public class NumberPoolModule extends AbstractModule
             errorReporter,
             new PriorityProps(ctrlConfRef),
             ApiConsts.KEY_SPEC_STLT_PORT_AUTO_RANGE,
+            null,
             SPEC_STLT_TCP_ELEMENT_NAME,
             TcpPortNumber::tcpPortNrCheck,
             TcpPortNumber.PORT_NR_MAX,
@@ -102,6 +104,7 @@ public class NumberPoolModule extends AbstractModule
         return new DynamicNumberPoolImpl(
             errorReporter,
             new PriorityProps(ctrlConfRef),
+            null,
             null,
             LAYER_RSC_ID_ELEMENT_NAME,
             rscId -> Checks.genericRangeCheck(
@@ -128,6 +131,7 @@ public class NumberPoolModule extends AbstractModule
             errorReporter,
             new PriorityProps(ctrlConfRef),
             ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_TCP_PORT_RANGE,
+            null, // as long as this pool is used globally for all satellites, blocked ports make no sense
             BACK_SHIP_PORT_ELEMENT_NAME,
             TcpPortNumber::tcpPortNrCheck,
             TcpPortNumber.PORT_NR_MAX,

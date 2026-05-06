@@ -3,6 +3,8 @@ package com.linbit.linstor.numberpool;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
+import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.propscon.Props;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -16,7 +18,13 @@ public class SatelliteDynamicNumberPool implements DynamicNumberPool
     }
 
     @Override
-    public void reloadRange()
+    public void reloadRange(@Nullable Props ignoredRef)
+    {
+        // no-op
+    }
+
+    @Override
+    public void reloadBlockedRange(@Nullable Props ignoredRef)
     {
         // no-op
     }
