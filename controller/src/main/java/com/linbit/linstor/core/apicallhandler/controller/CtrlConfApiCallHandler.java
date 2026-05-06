@@ -61,6 +61,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.range.Range;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
@@ -99,7 +100,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
-import java.util.regex.Matcher;
 
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
@@ -2027,13 +2027,24 @@ public class CtrlConfApiCallHandler
     )
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException
     {
-        Matcher matcher = NumberPoolModule.RANGE_PATTERN.matcher(value);
-        if (matcher.find())
+        List<Range> ranges = Range.parseList(value);
+
+        if (ranges.isEmpty())
         {
-            if (
-                isValidTcpPort(matcher.group("min"), apiCallRc) &&
-                isValidTcpPort(matcher.group("max"), apiCallRc)
-            )
+            apiCallRc.addEntry(
+                "Value '" + value + "' did not contain a value range",
+                ApiConsts.FAIL_INVLD_TCP_PORT
+            );
+        }
+        else
+        {
+            boolean allRangesValid = true;
+            for (Range range : ranges)
+            {
+                allRangesValid &= isValidTcpPort(range.from(), apiCallRc) &&
+                    isValidTcpPort(range.to(), apiCallRc);
+            }
+            if (allRangesValid)
             {
                 @Nullable String oldValue = systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
                 if (poolToReloadRef != null)
@@ -2056,53 +2067,23 @@ public class CtrlConfApiCallHandler
                 );
             }
         }
-        else
-        {
-            String errMsg = "The given value '" + value + "' is not a valid range. '" +
-                NumberPoolModule.RANGE_PATTERN.pattern() + "'";
-            apiCallRc.addEntry(
-                errMsg,
-                ApiConsts.FAIL_INVLD_TCP_PORT
-            );
-        }
     }
 
-    private boolean isValidTcpPort(String strTcpPort, ApiCallRcImpl apiCallRc)
+    private boolean isValidTcpPort(int tcpPort, ApiCallRcImpl apiCallRc)
     {
         boolean validTcpPortNr = false;
         try
         {
-            TcpPortNumber.tcpPortNrCheck(Integer.parseInt(strTcpPort));
+            TcpPortNumber.tcpPortNrCheck(tcpPort);
             validTcpPortNr = true;
         }
-        catch (NumberFormatException | ValueOutOfRangeException exc)
+        catch (ValueOutOfRangeException exc)
         {
-            String errorMsg;
-            long rc;
-            if (exc instanceof NumberFormatException)
-            {
-                errorMsg = "The given tcp port number is not a valid integer: '" + strTcpPort + "'.";
-            }
-            else
-            {
-                errorMsg = "The given tcp port number is not valid: '" + strTcpPort + "'.";
-            }
-            rc = ApiConsts.FAIL_INVLD_TCP_PORT;
-
-            apiCallRc.addEntry(
-                errorMsg,
-                rc
-            );
-            errorReporter.reportError(
-                exc,
-                peerAccCtx.get(),
-                null,
-                errorMsg
-            );
+            String errorMsg = "The given tcp port number is not valid: '" + tcpPort + "'.";
+            apiCallRc.addEntry(errorMsg, ApiConsts.FAIL_INVLD_TCP_PORT);
         }
         return validTcpPortNr;
     }
-
 
     private void setMinorNr(
         String key,
@@ -2113,65 +2094,69 @@ public class CtrlConfApiCallHandler
     )
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
-        Matcher matcher = NumberPoolModule.RANGE_PATTERN.matcher(value);
-        if (matcher.find())
+        try
         {
-            if (
-                isValidMinorNr(matcher.group("min"), apiCallRc) &&
-                isValidMinorNr(matcher.group("max"), apiCallRc)
-            )
+            List<Range> ranges = Range.parseList(value);
+            if (ranges.size() != 1)
             {
-                String oldValue = systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
-                minorNrPool.reloadRange();
-
-                if (propChangedListenerRef != null)
+                if (ranges.isEmpty())
                 {
-                    propChangedListenerRef.changed(key, value, oldValue);
+                    apiCallRc.addEntry(
+                        "Value '" + value + "' did not contain a value range",
+                        ApiConsts.FAIL_INVLD_MINOR_NR
+                    );
                 }
+                else
+                {
+                    apiCallRc.addEntry(
+                        "Currently only one range of minor numbers is supported",
+                        ApiConsts.FAIL_INVLD_MINOR_NR
+                    );
 
-                apiCallRc.addEntry(
-                    "The Minor range was successfully updated to: " + value,
-                    ApiConsts.MODIFIED
-                );
+                }
+            }
+            else
+            {
+                Range range = ranges.get(0);
+                if (isValidMinorNr(range.from(), apiCallRc) &&
+                    isValidMinorNr(range.to(), apiCallRc))
+                {
+                    String oldValue = systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
+                    minorNrPool.reloadRange();
+
+                    if (propChangedListenerRef != null)
+                    {
+                        propChangedListenerRef.changed(key, value, oldValue);
+                    }
+
+                    apiCallRc.addEntry(
+                        "The Minor range was successfully updated to: " + value,
+                        ApiConsts.MODIFIED
+                    );
+                }
             }
         }
-        else
+        catch (NumberFormatException nfe)
         {
-            String errMsg = "The given value '" + value + "' is not a valid range. '" +
-                NumberPoolModule.RANGE_PATTERN.pattern() + "'";
             apiCallRc.addEntry(
-                errMsg,
+                "Value '" + value + "' is not a valid range",
                 ApiConsts.FAIL_INVLD_MINOR_NR
             );
         }
     }
 
-    private boolean isValidMinorNr(String strMinorNr, ApiCallRcImpl apiCallRc)
+    private boolean isValidMinorNr(int minorNr, ApiCallRcImpl apiCallRc)
     {
         boolean isValid = false;
         try
         {
-            MinorNumber.minorNrCheck(Integer.parseInt(strMinorNr));
+            MinorNumber.minorNrCheck(minorNr);
             isValid = true;
         }
-        catch (NumberFormatException | ValueOutOfRangeException exc)
+        catch (ValueOutOfRangeException exc)
         {
-            String errorMsg;
-            long rc;
-            if (exc instanceof NumberFormatException)
-            {
-                errorMsg = "The given minor number is not a valid integer: '" + strMinorNr + "'.";
-            }
-            else
-            {
-                errorMsg = "The given minor number is not valid: '" + strMinorNr + "'.";
-            }
-            rc = ApiConsts.FAIL_INVLD_MINOR_NR;
-
-            apiCallRc.addEntry(
-                errorMsg,
-                rc
-            );
+            String errorMsg = "The given minor number is not valid: '" + minorNr + "'.";
+            apiCallRc.addEntry(errorMsg, ApiConsts.FAIL_INVLD_MINOR_NR);
             errorReporter.reportError(
                 exc,
                 peerAccCtx.get(),

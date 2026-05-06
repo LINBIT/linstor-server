@@ -1091,6 +1091,10 @@ public class CtrlNodeApiCallHandler
             {
                 maxConcurrentShippingsChanged = true;
             }
+            else if (key.equals(ApiConsts.KEY_TCP_PORT_AUTO_RANGE))
+            {
+                node.getTcpPortPool(apiCtx).reloadRange();
+            }
         }
         for (String key : deletePropKeys)
         {
@@ -1101,6 +1105,10 @@ public class CtrlNodeApiCallHandler
             else if (key.equals(BackupConsts.CONCURRENT_BACKUPS_KEY))
             {
                 maxConcurrentShippingsChanged = true;
+            }
+            else if (key.equals(ApiConsts.KEY_TCP_PORT_AUTO_RANGE))
+            {
+                node.getTcpPortPool(apiCtx).reloadRange();
             }
         }
         Flux<ApiCallRc> retFlux = Flux.empty();
