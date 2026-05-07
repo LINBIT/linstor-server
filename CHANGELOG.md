@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Throw a CriticalError(restart) if a JDK spawn helper exception was caught (usually a JDK version mismatch)
 - Fixed bug where taking a snapshot on a not-only-DRBD resource could hang indefinitely
 - Attempt to fix rare bug causing "shipping in progress" that can only be cleared by restarting the controller
+- Fixed rare race condition when changing the LUKS passphrase
 
 ## [1.33.3] - 2026-05-11
 

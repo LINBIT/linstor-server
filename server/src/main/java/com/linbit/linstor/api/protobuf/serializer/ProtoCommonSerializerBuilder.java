@@ -136,9 +136,9 @@ import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.PeerState;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
 import com.linbit.linstor.proto.requests.MsgDelErrorReportsOuterClass.MsgDelErrorReports;
-import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.DrbdReactorCommand;
 import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.MsgReqDrbdReactorExec;
+import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.MsgReqSosReportFiles;
 import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.ReqFile;
 import com.linbit.linstor.proto.requests.MsgReqSosReportListOuterClass.MsgReqSosReportList;
@@ -146,8 +146,8 @@ import com.linbit.linstor.proto.responses.FileOuterClass;
 import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
-import com.linbit.linstor.proto.responses.MsgRspDrbdReactorExecOuterClass.MsgRspDrbdReactorExec;
 import com.linbit.linstor.proto.responses.MsgReqSosCleanupOuterClass.MsgReqSosCleanup;
+import com.linbit.linstor.proto.responses.MsgRspDrbdReactorExecOuterClass.MsgRspDrbdReactorExec;
 import com.linbit.linstor.proto.responses.MsgSosReportFilesReplyOuterClass.MsgSosReportFilesReply;
 import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.FileInfo;
 import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.MsgSosReportListReply;
@@ -1878,10 +1878,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             if (luksVlmPojo.getDiskState() != null)
             {
                 builder.setDiskState(luksVlmPojo.getDiskState());
-            }
-            if (luksVlmPojo.getModifyPassword() != null)
-            {
-                builder.setModifyPassword(ByteString.copyFrom(luksVlmPojo.getModifyPassword()));
             }
             return builder.build();
         }

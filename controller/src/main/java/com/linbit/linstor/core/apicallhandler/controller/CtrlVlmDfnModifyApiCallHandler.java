@@ -52,7 +52,6 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
-import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
@@ -480,12 +479,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 if (!luksRscLayerSet.isEmpty())
                 {
                     passModified = true;
-                    for (var rscLayer : luksRscLayerSet)
-                    {
-                        LuksRscData<Resource> luksRscData = (LuksRscData<Resource>) rscLayer;
-                        var vlmLuksLayer = luksRscData.getVlmLayerObjects().get(vlmDfn.getVolumeNumber());
-                        vlmLuksLayer.setModifyPassword(encPassphrase);
-                    }
+                    break;
                 }
             }
             if (!passModified)

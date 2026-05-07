@@ -47,6 +47,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
+import com.linbit.utils.Base64;
 import com.linbit.utils.ShellUtils;
 
 import javax.inject.Inject;
@@ -214,28 +215,25 @@ public class LuksLayer implements DeviceLayer
                     );
             vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
 
-            // if modify password is set, we are supposed to change the luks password to it.
-            if (vlmData.getModifyPassword() != null)
+            @Nullable byte[] expectedEncrPw = getExpectedEncryptedLuksPassword(vlmData);
+            if (expectedEncrPw != null && !Arrays.equals(expectedEncrPw, vlmData.getEncryptedKey()))
             {
-                if (!Arrays.equals(vlmData.getModifyPassword(), vlmData.getEncryptedKey()))
+                // if modify password is set, we are supposed to change the luks password to it.
+                byte[] masterKey = secObjs.getCryptKey();
+                try
                 {
-                    byte[] masterKey = secObjs.getCryptKey();
-                    try
-                    {
-                        byte[] plainModifyPassword = decryptionHelper.decrypt(masterKey, vlmData.getModifyPassword());
-                        cryptSetup.changeKey(
-                            vlmData.getDataDevice(), vlmData.getDecryptedPassword(), plainModifyPassword);
+                    byte[] plainModifyPassword = decryptionHelper.decrypt(masterKey, expectedEncrPw);
+                    cryptSetup.changeKey(
+                        vlmData.getDataDevice(), vlmData.getDecryptedPassword(), plainModifyPassword
+                    );
 
-                        vlmData.setEncryptedKey(vlmData.getModifyPassword());
-                        vlmData.setDecryptedPassword(plainModifyPassword);
-                    }
-                    catch (LinStorException exc)
-                    {
-                        throw new StorageException("Unable to decrypt modify password key.", exc);
-                    }
+                    vlmData.setEncryptedKey(expectedEncrPw);
+                    vlmData.setDecryptedPassword(plainModifyPassword);
                 }
-
-                vlmData.setModifyPassword(null);
+                catch (LinStorException exc)
+                {
+                    throw new StorageException("Unable to decrypt modify password key.", exc);
+                }
             }
 
             @Nullable byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
@@ -438,6 +436,30 @@ public class LuksLayer implements DeviceLayer
                 (plural ? " have " : " has ") + "corrupted LUKS key. Resource is still usable but cannot be re-opened!";
             apiCallRc.add(ApiCallRcImpl.simpleEntry(ApiConsts.WARN_CORRUPT_CRYPT_KEY, msg));
         }
+    }
+
+    /**
+     * Returns the base64-decoded value of the volume-definition's "Encryption/Passphrase" property,
+     * or {@code null} if the property is not set. If the returned (non-null) value differs from
+     * {@link LuksVlmData#getEncryptedKey()}, the LUKS key on disk needs to be updated to match.
+     */
+    private @Nullable byte[] getExpectedEncryptedLuksPassword(LuksVlmData<Resource> vlmDataRef)
+    {
+        @Nullable byte[] ret = null;
+        try
+        {
+            @Nullable String propVal = vlmDataRef.getVolume().getVolumeDefinition().getProps(sysCtx)
+                .getProp(ApiConsts.KEY_PASSPHRASE, ApiConsts.NAMESPC_ENCRYPTION);
+            if (propVal != null)
+            {
+                ret = Base64.decode(propVal);
+            }
+        }
+        catch (InvalidKeyException | AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
     }
 
     @Override

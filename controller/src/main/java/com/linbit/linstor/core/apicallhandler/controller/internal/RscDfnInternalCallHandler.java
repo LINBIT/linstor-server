@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -20,18 +19,13 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
-import com.linbit.utils.Base64;
 
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 
@@ -40,7 +34,6 @@ import javax.inject.Provider;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -145,33 +138,6 @@ public class RscDfnInternalCallHandler
             });
     }
 
-    private void modifyEncryptionPassword(Collection<Resource> resources) throws AccessDeniedException
-    {
-        for (Resource rsc : resources)
-        {
-            var luksRscLayerSet = LayerRscUtils.getRscDataByLayer(rsc.getLayerData(apiCtx), DeviceLayerKind.LUKS);
-
-            Iterator<VolumeDefinition> itVlmDfn = rsc.getResourceDefinition().iterateVolumeDfn(apiCtx);
-            while (itVlmDfn.hasNext())
-            {
-                VolumeDefinition vlmDfn = itVlmDfn.next();
-                @Nullable String passphrase = vlmDfn.getProps(apiCtx).getProp(
-                    ApiConsts.KEY_PASSPHRASE, ApiConsts.NAMESPC_ENCRYPTION);
-                if (passphrase != null)
-                {
-                    errorReporter.logInfo(
-                        "Encryption clone modify password for " + rsc.getResourceDefinition().getName());
-                    for (var rscLayer : luksRscLayerSet)
-                    {
-                        LuksRscData<Resource> luksRscData = (LuksRscData<Resource>) rscLayer;
-                        var vlmLuksLayer = luksRscData.getVlmLayerObjects().get(vlmDfn.getVolumeNumber());
-                        vlmLuksLayer.setModifyPassword(Base64.decode(passphrase));
-                    }
-                }
-            }
-        }
-    }
-
     public Flux<ApiCallRc> handleCloneUpdateInTransaction(String rscName, int vlmNr, boolean success) {
         Flux<ApiCallRc> flux = Flux.empty();
         Peer currentPeer = peer.get();
@@ -237,7 +203,6 @@ public class RscDfnInternalCallHandler
 
             if (allCloned)
             {
-                modifyEncryptionPassword(resources);
                 for (Resource rsc : resources)
                 {
                     for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))

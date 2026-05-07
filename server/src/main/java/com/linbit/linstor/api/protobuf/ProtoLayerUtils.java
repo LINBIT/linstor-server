@@ -458,8 +458,6 @@ public class ProtoLayerUtils
 
     private static LuksVlmPojo extractLuksVlm(LuksVlm protoLuksVlm)
     {
-        @Nullable byte[] modifyPassword = protoLuksVlm.hasModifyPassword() ?
-            ProtoDeserializationUtils.extractByteArray(protoLuksVlm.getModifyPassword()) : null;
         return new LuksVlmPojo(
             protoLuksVlm.getVlmNr(),
             ProtoDeserializationUtils.extractByteArray(protoLuksVlm.getEncryptedPassword()),
@@ -471,7 +469,6 @@ public class ProtoLayerUtils
             protoLuksVlm.getDiskState(),
             protoLuksVlm.getDiscGran(),
             false,
-            modifyPassword,
             protoLuksVlm.getCorruptedKey()
         );
     }
