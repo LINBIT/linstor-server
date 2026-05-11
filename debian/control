@@ -1,5 +1,5 @@
 Source: linstor-server
-Maintainer: LINBIT HA Solutions GmbH <drbd-user@lists.linbit.com>
+Maintainer: LINBIT HA Solutions GmbH <drbd-dev@lists.linux.dev>
 Uploaders: Roland Kammerer <roland.kammerer@linbit.com>
 Section: admin
 Priority: optional
