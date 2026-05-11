@@ -364,14 +364,15 @@ public class ResourceGroups
         @Context Request request,
         @Suspended AsyncResponse asyncResponse,
         @PathParam("rscGrpName") String rscGrpName,
-        String jsonData
+        @Nullable String jsonData
     )
         throws JsonProcessingException
     {
-        String nonEmptyJsonData = jsonData == null || jsonData.isEmpty() ? "{}" : jsonData;
-        JsonGenTypes.QuerySizeInfoRequest qsiReq = objectMapper.readValue(
-            nonEmptyJsonData,
-            JsonGenTypes.QuerySizeInfoRequest.class
+        JsonGenTypes.QuerySizeInfoRequest qsiReq = RequestHelper.parseJsonOrDefault(
+            objectMapper,
+            jsonData,
+            JsonGenTypes.QuerySizeInfoRequest.class,
+            JsonGenTypes.QuerySizeInfoRequest::new
         );
 
         Mono<Response> flux = ctrlRscGrpApiCallHandler.querySizeInfo(

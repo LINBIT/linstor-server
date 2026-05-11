@@ -75,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prevent NPE if make-available is tried on a resource-definition with no active resources
 - If a satellite cannot decrypt a LUKS key it no longer goes into FULLSYNC_FAILED, but just marks the resource to have corrupted crypt key
 - Properly reencrypt user-passphrase in VlmDfn during "backup ship"
+- Better handle "null" value inputs for json body rest requests with working defaults (nodes/{restore, evacuate), ...)
 
 ## [1.33.2] - 2026-04-08
 

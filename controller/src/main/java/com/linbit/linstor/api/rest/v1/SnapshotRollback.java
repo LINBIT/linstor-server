@@ -54,15 +54,12 @@ public class SnapshotRollback
     {
         try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
         {
-            JsonGenTypes.SnapshotRollback data;
-            if (jsonData != null && !jsonData.isEmpty())
-            {
-                data = objectMapper.readValue(jsonData, JsonGenTypes.SnapshotRollback.class);
-            }
-            else
-            {
-                data = new JsonGenTypes.SnapshotRollback();
-            }
+            JsonGenTypes.SnapshotRollback data = RequestHelper.parseJsonOrDefault(
+                objectMapper,
+                jsonData,
+                JsonGenTypes.SnapshotRollback.class,
+                JsonGenTypes.SnapshotRollback::new
+            );
             Flux<ApiCallRc> flux = ctrlSnapshotRollbackApiCallHandler.rollbackSnapshot(
                 rscName,
                 snapName,
