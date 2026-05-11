@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AutoUnplacer now prefers non-UpToDate resources after AP-settings-violating resources before choosing any.
 - Improved error message for shrink operations
 - Disabled DRBD shrink support (It didn't work correctly anyway)
+- DRBD: Thin volumes are now set again as UpToDate
 
 ### Removed
 
