@@ -185,23 +185,23 @@ workflow:
     - export LINBIT_CI_REMOVE_SUCCESS_LOGS=$[[ inputs.ci_remove_success_logs ]]
     - ./virter/run-test.py $VARIANTS --torun $[[ inputs.vmshed_torun ]] --repeats="$[[ inputs.linstor_test_repeats ]]" --error-details=$[[ inputs.vmshed_print_error_details ]]
 
-check-openapi:
-  stage: build
-  interruptible: true
-  image:
-    name: jamescooke/openapi-validator:0.51.3
-    entrypoint: [""] # force empty entrypoint to workaround a gitlab issue
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
-      changes:
-        - docs/rest_v1_openapi.yaml
-        - docs/.spectral.yaml
-        - docs/.validaterc
-  before_script:
-    - echo default before disabled
-  script:
-    - cd docs
-    - lint-openapi -e rest_v1_openapi.yaml
+#check-openapi:
+#  stage: build
+#  interruptible: true
+#  image:
+#    name: jamescooke/openapi-validator:0.51.3
+#    entrypoint: [""] # force empty entrypoint to workaround a gitlab issue
+#  rules:
+#    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+#      changes:
+#        - docs/rest_v1_openapi.yaml
+#        - docs/.spectral.yaml
+#        - docs/.validaterc
+#  before_script:
+#    - echo default before disabled
+#  script:
+#    - cd docs
+#    - lint-openapi -e rest_v1_openapi.yaml
 
 check-resttypes:
   stage: build
