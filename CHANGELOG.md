@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.33.3] - 2026-05-11
+
 ### Added
 
 - SOS report now includes drbd-reactor config files, logs, and status
