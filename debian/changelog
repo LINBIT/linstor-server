@@ -1,3 +1,32 @@
+linstor-server (1.33.3-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * clone-status: Fix failed state if no DRBD connection states received yet
+  * vlmdfnmodify: fix shrinking to work at all
+  * vlmdfnmodify: improve shrink not supported messages
+  * disable DRBD shrink support
+  * auto-verify-algo: only reset, if at least two nodes reported their cry [...]
+  * linstor-config-tool: fix set-plain-{port,listen} using old props instance
+  * crd-migrations: Do NOT unconditional wait 2-4 seconds for each migration
+  * sos-report: include drbd-reactor config files, logs, and status
+  * backupshipping: report errors on requests
+  * shared-storagepool: fix delete of inactive resources
+  * shared-storagepools: Fixed cloning
+  * rsc-create: Fixed resource create if no .resource object was given
+  * Prevent NPE if make-available is tried on a rsc-dfn with no active resources
+  * rest: Better handle "null" value inputs with defaults
+  * gitlab-ci: disable openapi check
+
+  [ Gabor Hernadi ]
+  * AutoUnplacer: Prefer not-ready and not-UpToDate resources
+  * Drbd,mkfs: Only set primary if needed
+  * Drbd,mkfs: Fix race-condition
+  * Stlt,ApplyRsc: Do not clear node-props unconditionally
+  * Backup,ship: Properly re-encrypt VlmDfn user passphrase
+  * LvmThin: Set all thin volumes UpToDate again
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 11 May 2026 11:53:42 +0000
+
 linstor-server (1.33.2-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

@@ -29,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added linstor-config disable-token-auth command
 - Property Clone/BalanceAfterClone to autoplace an extra diskful resource after a clone operation
 - Property Snapshot/BalanceAfterRestore to autoplace an extra diskful resource after a snapshot restore
-- SOS report now includes drbd-reactor config files, logs, and status
 - Added property "Luks/AllowDiscards" to enable discard/TRIM pass-through on LUKS volumes; when LUKS sits below DRBD, rs-discard-granularity is also set automatically
 
 ### Changed
@@ -44,10 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upated debian package compat version to 11
 - linstor-controller.service: switch to DynamicUser (i.e., execute as non-root user).
 - Systemd-notify: Use SDNotify library instead of calling "systemd-notify"
-- AutoUnplacer now prefers non-UpToDate resources after AP-settings-violating resources before choosing any.
-- Improved error message for shrink operations
-- Disabled DRBD shrink support (It didn't work correctly anyway)
-- DRBD: Thin volumes are now set again as UpToDate
 
 ### Removed
 
@@ -62,6 +57,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed free space reporting of thin storage spaces (Windows) pool
 - Fixed race condition where after a reconnect storage pools might not show correct capacities and freespaces.
 - Fixed PREPARE_SHIPPING backups didn't count as active shippings
+- If a satellite cannot decrypt a LUKS key it no longer goes into FULLSYNC_FAILED, but just marks the resource to have corrupted crypt key
+
+## [1.33.3] - 2026-05-11
+
+### Added
+
+- SOS report now includes drbd-reactor config files, logs, and status
+
+### Changed
+
+- AutoUnplacer now prefers non-UpToDate resources after AP-settings-violating resources before choosing any.
+- Improved error message for shrink operations
+- Disabled DRBD shrink support (It didn't work correctly anyway)
+- DRBD: Thin volumes are now set again as UpToDate
+
+### Fixed
+
 - Fixed the clone status check if no DRBD connection states have been received yet
 - Fixed volume set size (shrinking) never trigger the actual shrink operation
 - Only call "secondary" after an "mkfs" command if LINSTOR was the one that set the DRBD resource primary
@@ -73,7 +85,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cloning of shared storagepool resource definitions
 - Fixed resource create if no .resource object was given
 - Prevent NPE if make-available is tried on a resource-definition with no active resources
-- If a satellite cannot decrypt a LUKS key it no longer goes into FULLSYNC_FAILED, but just marks the resource to have corrupted crypt key
 - Properly reencrypt user-passphrase in VlmDfn during "backup ship"
 - Better handle "null" value inputs for json body rest requests with working defaults (nodes/{restore, evacuate), ...)
 
