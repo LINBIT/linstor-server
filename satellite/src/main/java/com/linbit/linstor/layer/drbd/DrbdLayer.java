@@ -1512,8 +1512,8 @@ public class DrbdLayer implements DeviceLayer
                 if (DrbdLayerUtils.skipInitSync(workerCtx, drbdVlmData))
                 {
                     final String day0 = getCurrentGiFromVlmDfnProp(drbdVlmData);
-                    // Deliberately neither consistent nor UpToDate. Also no flags. Just day0
-                    localNodeIdGiBuilder.withCurrentUUID(day0);
+                    localNodeIdGiBuilder.withCurrentUUID(day0)
+                        .withUpToDate(true);
                     otherNodeIdGiBuilder.withCurrentUUID(day0);
                     runSetGi = true;
                 }
