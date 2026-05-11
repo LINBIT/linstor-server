@@ -41,6 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -370,6 +371,32 @@ public class RequestHelper
                 ApiCallRcRestUtils.toResponse(apiExc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR)
             );
         }
+    }
+
+    /**
+     * Parses {@code jsonData} into the given type, falling back to {@code defaultSupplier} when
+     * the body is missing, empty, or the JSON literal {@code null} (which Jackson deserializes as
+     * a {@code null} object reference and would NPE on subsequent field access).
+     */
+    public static <T> T parseJsonOrDefault(
+        ObjectMapper objectMapper,
+        @Nullable String jsonData,
+        Class<T> type,
+        Supplier<T> defaultSupplier
+    )
+        throws JsonProcessingException
+    {
+        if (jsonData != null && !jsonData.trim().isEmpty())
+        {
+            T parsed = objectMapper.readValue(jsonData, type);
+            // Jackson returns null for the JSON 'null' literal; static analysis misses this case.
+            //noinspection ConstantValue
+            if (parsed != null)
+            {
+                return parsed;
+            }
+        }
+        return defaultSupplier.get();
     }
 
     static Response notFoundResponse(final long retcode, final String message)

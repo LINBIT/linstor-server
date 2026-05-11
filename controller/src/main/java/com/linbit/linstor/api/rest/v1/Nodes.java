@@ -311,16 +311,10 @@ public class Nodes
     {
         try
         {
-            JsonGenTypes.NodeRestore data;
-            if (jsonData != null && !jsonData.isEmpty())
-            {
-                data = objectMapper.readValue(jsonData, JsonGenTypes.NodeRestore.class);
-            }
-            else
-            {
-                // values will be uninitialized / null -> will not delete resources or snapshots
-                data = new NodeRestore();
-            }
+            // missing/null body -> uninitialized values -> will not delete resources or snapshots
+            JsonGenTypes.NodeRestore data = RequestHelper.parseJsonOrDefault(
+                objectMapper, jsonData, JsonGenTypes.NodeRestore.class, NodeRestore::new
+            );
             final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler
                 .restoreNode(
                     nodeName,
@@ -369,15 +363,9 @@ public class Nodes
     {
         try
         {
-            JsonGenTypes.NodeEvacuate data;
-            if (jsonData != null && !jsonData.isEmpty())
-            {
-                data = objectMapper.readValue(jsonData, JsonGenTypes.NodeEvacuate.class);
-            }
-            else
-            {
-                data = new JsonGenTypes.NodeEvacuate();
-            }
+            JsonGenTypes.NodeEvacuate data = RequestHelper.parseJsonOrDefault(
+                objectMapper, jsonData, JsonGenTypes.NodeEvacuate.class, JsonGenTypes.NodeEvacuate::new
+            );
             final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.evacuateNode(
                 nodeName,
                 data.target,

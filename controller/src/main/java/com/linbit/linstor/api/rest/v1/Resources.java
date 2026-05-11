@@ -305,7 +305,7 @@ public class Resources
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("rscName") String rscName,
-        @DefaultValue("False") @QueryParam("keep_tiebreaker") boolean keepTiebreakerRef
+        @DefaultValue("false") @QueryParam("keep_tiebreaker") boolean keepTiebreakerRef
     )
     {
         try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
@@ -424,18 +424,15 @@ public class Resources
     {
         try
         {
-            List<String> layerList = null;
-            if (jsonData != null && !jsonData.trim().isEmpty())
-            {
-                ToggleDiskDiskful data = objectMapper.readValue(jsonData, JsonGenTypes.ToggleDiskDiskful.class);
-                layerList = data.layer_list;
-            }
+            ToggleDiskDiskful data = RequestHelper.parseJsonOrDefault(
+                objectMapper, jsonData, JsonGenTypes.ToggleDiskDiskful.class, ToggleDiskDiskful::new
+            );
             Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
                 nodeName,
                 rscName,
                 storagePool,
                 null,
-                layerList,
+                data.layer_list,
                 false,
                 Resource.DiskfulBy.USER
             );
@@ -480,18 +477,15 @@ public class Resources
     {
         try
         {
-            List<String> layerList = null;
-            if (jsonData != null && !jsonData.trim().isEmpty())
-            {
-                ToggleDiskDiskful data = objectMapper.readValue(jsonData, JsonGenTypes.ToggleDiskDiskful.class);
-                layerList = data.layer_list;
-            }
+            ToggleDiskDiskful data = RequestHelper.parseJsonOrDefault(
+                objectMapper, jsonData, JsonGenTypes.ToggleDiskDiskful.class, ToggleDiskDiskful::new
+            );
             Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
                 nodeName,
                 rscName,
                 storagePool,
                 fromNode,
-                layerList,
+                data.layer_list,
                 false,
                 Resource.DiskfulBy.USER
             );

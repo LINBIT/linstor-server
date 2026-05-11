@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.QueryAllSizeInfoResponsePojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
@@ -50,14 +51,15 @@ public class Queries
     public void resourceGroupsQueryAllSizeInfo(
         @Context Request request,
         @Suspended AsyncResponse asyncResponse,
-        String jsonData
+        @Nullable String jsonData
     )
         throws JsonProcessingException
     {
-        String nonEmptyJsonData = jsonData == null || jsonData.isEmpty() ? "{}" : jsonData;
-        JsonGenTypes.QueryAllSizeInfoRequest qasiReq = objectMapper.readValue(
-            nonEmptyJsonData,
-            JsonGenTypes.QueryAllSizeInfoRequest.class
+        JsonGenTypes.QueryAllSizeInfoRequest qasiReq = RequestHelper.parseJsonOrDefault(
+            objectMapper,
+            jsonData,
+            JsonGenTypes.QueryAllSizeInfoRequest.class,
+            JsonGenTypes.QueryAllSizeInfoRequest::new
         );
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
