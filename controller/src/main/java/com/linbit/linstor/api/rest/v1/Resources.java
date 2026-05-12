@@ -15,10 +15,12 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandle
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscMakeAvailableApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler.ToggleOp;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.DiskfulBy;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
@@ -360,6 +362,48 @@ public class Resources
     }
 
     @PUT
+    @Path("{nodeName}/toggle-disk")
+    public void toggleDisk(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("rscName") String rscName,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.ToggleDiskRequest req = RequestHelper.parseJsonOrDefault(
+                objectMapper,
+                jsonData,
+                JsonGenTypes.ToggleDiskRequest.class,
+                JsonGenTypes.ToggleDiskRequest::new
+            );
+            Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
+                nodeName,
+                rscName,
+                req.storage_pool,
+                req.migrate_from,
+                req.layer_list,
+                CtrlRscToggleDiskApiCallHandler.ToggleOp.parse(req.operation),
+                DiskfulBy.USER // ACH will ignore this if we toggle into any kind of diskless
+            );
+
+            requestHelper.doFlux(
+                ApiConsts.API_TOGGLE_DISK,
+                request,
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(flux)
+            );
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+    }
+
+    @Deprecated(since = "v1.34.0")
+    @PUT
     @Path("{nodeName}/toggle-disk/diskless")
     public void toggleDiskDiskless(
         @Context Request request,
@@ -371,6 +415,7 @@ public class Resources
         toggleDiskDiskless(request, asyncResponse, nodeName, rscName, null);
     }
 
+    @Deprecated(since = "v1.34.0")
     @PUT
     @Path("{nodeName}/toggle-disk/diskless/{disklessPool}")
     public void toggleDiskDiskless(
@@ -387,7 +432,7 @@ public class Resources
             disklessPool,
             null,
             null,
-            true,
+            ToggleOp.INTO_DRBD_DISKLESS,
             null
         );
 
@@ -399,6 +444,7 @@ public class Resources
         );
     }
 
+    @Deprecated(since = "v1.34.0")
     @PUT
     @Path("{nodeName}/toggle-disk/diskful")
     public void toggleDiskDiskful(
@@ -411,6 +457,8 @@ public class Resources
         toggleDiskDiskful(request, asyncResponse, nodeName, rscName, null, null);
     }
 
+    @SuppressWarnings("removal")
+    @Deprecated(since = "v1.34.0")
     @PUT
     @Path("{nodeName}/toggle-disk/diskful/{storagePool}")
     public void toggleDiskDiskful(
@@ -433,7 +481,7 @@ public class Resources
                 storagePool,
                 null,
                 data.layer_list,
-                false,
+                ToggleOp.INTO_DRBD_DISKFUL,
                 Resource.DiskfulBy.USER
             );
 
@@ -450,6 +498,7 @@ public class Resources
         }
     }
 
+    @Deprecated(since = "v1.34.0")
     @PUT
     @Path("{nodeName}/migrate-disk/{fromNode}")
     public void migrateDisk(
@@ -463,6 +512,8 @@ public class Resources
         migrateDisk(request, asyncResponse, nodeName, fromNode, rscName, null, null);
     }
 
+    @SuppressWarnings("removal")
+    @Deprecated(since = "v1.34.0")
     @PUT
     @Path("{nodeName}/migrate-disk/{fromNode}/{storagePool}")
     public void migrateDisk(
@@ -486,7 +537,7 @@ public class Resources
                 storagePool,
                 fromNode,
                 data.layer_list,
-                false,
+                ToggleOp.INTO_DRBD_DISKFUL,
                 Resource.DiskfulBy.USER
             );
 

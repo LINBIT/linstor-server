@@ -19,6 +19,7 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler.ToggleOp;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.AllocationGranularityHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -325,7 +326,7 @@ public class CtrlRscCrtApiHelper
                         storPoolNameStr,
                         null,
                         layerStackStrListRef,
-                        false,
+                        ToggleOp.INTO_DRBD_DISKFUL,
                         diskfulByRef
                     )
                 );

@@ -16,6 +16,7 @@ import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler.ToggleOp;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
@@ -266,7 +267,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                         sp.getName().displayValue,
                         null,
                         layerStackRef,
-                        false,
+                        ToggleOp.INTO_DRBD_DISKFUL,
                         Resource.DiskfulBy.MAKE_AVAILABLE
                     );
                     updateSatellite = false;

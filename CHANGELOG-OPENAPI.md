@@ -12,9 +12,18 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Added ExtFileStatusResult (actual_path + content_match)
   - Added /v1/controller/auth/ api, to create/modify/revoke tokens and initialize the linstor-controller
   - Added corrupted_key to LUKSVolume
+  - Added /v1/resource-definitions/{resource}/resources/{node}/toggle-disk to unify all toggle-disk API calls
 
 ### Deprecated
   - Deprecated /v1/controller/backup/db in favor of /v1/controller/database/export.
+  - Deprecated the following entry points in favor of /v1/resource-definitions/{resource}/resources/{node}/toggle-disk:
+    - /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless
+    - /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless/{disklesspool}
+    - /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskful
+    - /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskful/{storagepool}
+    - /v1/resource-definitions/{resource}/resources/{node}/migrate-disk/{fromnode}
+    - /v1/resource-definitions/{resource}/resources/{node}/migrate-disk/{fromnode}/{storagepool}
+  - Deprecated ToggleDiskDiskful schema in favor of ToggleDiskRequest (using the new entry point)
 
 ## [1.27.0]
 

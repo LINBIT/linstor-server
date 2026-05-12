@@ -13,6 +13,7 @@ import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler.ToggleOp;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.SelectionManager;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
@@ -356,9 +357,8 @@ class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         null,
                         null,
                         null,
-                        true,
-                        null,
-                        true
+                        ToggleOp.INTO_DRBD_TIEBREAKER,
+                        null
                     )
                 );
 

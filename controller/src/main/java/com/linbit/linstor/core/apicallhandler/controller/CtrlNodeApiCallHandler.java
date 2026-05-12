@@ -33,6 +33,7 @@ import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler.ToggleOp;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.CopySnapsHelper;
@@ -1808,9 +1809,8 @@ public class CtrlNodeApiCallHandler
                                             sp.getName().displayValue,
                                             nodeNameEvacuateSourceStrRef,
                                             null,
-                                            false,
+                                            ToggleOp.INTO_DRBD_DISKFUL,
                                             Resource.DiskfulBy.AUTO_PLACER,
-                                            false,
                                             copyAllSnaps,
                                             Collections.emptyList(),
                                             true,

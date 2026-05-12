@@ -2509,16 +2509,46 @@ paths:
                 'sys/fs/blkio_throttle_write':
                   info: 'Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device'
                   prop_type: 'long'
-  /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless:
+  /v1/resource-definitions/{resource}/resources/{node}/toggle-disk:
     parameters:
       - $ref: '#/components/parameters/Resource'
       - $ref: '#/components/parameters/Node'
     put:
       tags:
         - developers
+      summary: toggle a resource into diskless or diskful
+      operationId: resourceToggleDisk
+      description: toggle a diskful resource to a diskless/client resource or vice versa
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleDiskRequest'
+            example:
+              operation: 'INTO_DRBD_DISKLESS'
+              storage_pool: 'MyDisklessPool'
+      responses:
+        '200':
+          description: resource toggled to diskless
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
+    put:
+      deprecated: true
+      tags:
+        - developers
       summary: toggle a resource to diskless
       operationId: resourceToggleDiskless
-      description: toggle a resource to a diskless resource
+      description: Deprecated. Use /v1/resource-definitions/{resource}/resources/{node}/toggle-disk instead
 
       responses:
         '200':
@@ -2543,12 +2573,12 @@ paths:
         schema:
           type: string
     put:
+      deprecated: true
       tags:
         - developers
       summary: toggle a resource to diskless resource
       operationId: resourceToggleDisklessDisklesspool
-      description: |
-        toggle a resource to a diskless.
+      description: Deprecated. Use /v1/resource-definitions/{resource}/resources/{node}/toggle-disk instead
 
       responses:
         '200':
@@ -2566,12 +2596,12 @@ paths:
       - $ref: '#/components/parameters/Resource'
       - $ref: '#/components/parameters/Node'
     put:
+      deprecated: true
       tags:
         - developers
       summary: toggle a resource to a diskful resource
       operationId: resourceToggleDiskful
-      description: |
-        toggle a resource to a diskful resource using the default storage pool
+      description: Deprecated. Use /v1/resource-definitions/{resource}/resources/{node}/toggle-disk instead
 
       requestBody:
         content:
@@ -2598,11 +2628,12 @@ paths:
       - $ref: '#/components/parameters/Node'
       - $ref: '#/components/parameters/StoragePool'
     put:
+      deprecated: true
       tags:
         - developers
       summary: toggle a resource to a diskful resource
       operationId: resourceToggleDiskfulStoragepool
-      description: toggle a resource to a diskful resource
+      description: Deprecated. Use /v1/resource-definitions/{resource}/resources/{node}/toggle-disk instead
 
       requestBody:
         content:
@@ -2634,12 +2665,12 @@ paths:
         schema:
           type: string
     put:
+      deprecated: true
       tags:
         - developers
       summary: migrate a resource to another node
       operationId: resourceMigrateDisk
-      description: |
-        migrate a resource to another node without reducing the redundancy count
+      description: Deprecated. Use /v1/resource-definitions/{resource}/resources/{node}/toggle-disk instead
 
       requestBody:
         content:
@@ -2672,12 +2703,12 @@ paths:
           type: string
       - $ref: '#/components/parameters/StoragePool'
     put:
+      deprecated: true
       tags:
         - developers
       summary: migrate a resource to another node
       operationId: resourceMigrateDiskStoragepool
-      description: |
-        migrate a resource to another node without reducing the redundency count
+      description: Deprecated. Use /v1/resource-definitions/{resource}/resources/{node}/toggle-disk instead
 
       responses:
         '200':
@@ -8899,8 +8930,30 @@ components:
           description: >
             true if the file's content checksum matches LINSTOR's expected checksum
           type: boolean
+    ToggleDiskRequest:
+      type: object
+      description: ToggleDisk optional payload data
+      properties:
+        operation:
+          type: string
+          description: |
+            The type of the toggle-disk operation
+            INTO_DRBD_DISKLESS -> toggles the resource into a DRBD diskless resource (with quorum vote)
+            INTO_DRBD_DISKFUL -> toggles the resource into a DRBD diskful resource (always with quorum vote)
+          enum: [INTO_DRBD_DISKFUL, INTO_DRBD_DISKLESS]
+        storage_pool:
+          type: string
+          description: The name of the target storage pool to toggle into
+        migrate_from:
+          type: string
+          description: The node name from which the source-resource should be deleted after DRBD finished syncing
+        layer_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'
     ToggleDiskDiskful:
       type: object
+      deprecated: true
       description: ToggleDisk optional payload data
       properties:
         layer_list:

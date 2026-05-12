@@ -16,6 +16,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler.ToggleOp;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoUnplacer;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.objects.Node;
@@ -398,7 +399,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                             null,
                             null, // TODO: could be a bad idea if not all layers from peer-resources are supported by
                                   // the local node...
-                            false,
+                            ToggleOp.INTO_DRBD_DISKFUL,
                             Resource.DiskfulBy.AUTO_DISKFUL
                         )
                             .concatWith(removeExcessFlux(rsc))

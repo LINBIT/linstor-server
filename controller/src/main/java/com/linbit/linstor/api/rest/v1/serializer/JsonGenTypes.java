@@ -1887,9 +1887,33 @@ public class JsonGenTypes
      * ToggleDisk optional payload data
      */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ToggleDiskRequest
+    {
+        /**
+         * The type of the toggle-disk operation
+         * INTO_DRBD_DISKLESS -> toggles the resource into a DRBD diskless resource (with quorum vote)
+         * INTO_DRBD_DISKFUL -> toggles the resource into a DRBD diskful resource (always with quorum vote)
+         */
+        public @Nullable String operation;
+        /**
+         * The name of the target storage pool to toggle into
+         */
+        public @Nullable String storage_pool;
+        /**
+         * The node name from which the source-resource should be deleted after DRBD finished syncing
+         */
+        public @Nullable String migrate_from;
+        public List<String> layer_list = Collections.emptyList();
+    }
+
+    /**
+     * ToggleDisk optional payload data
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated(forRemoval = true)
     public static class ToggleDiskDiskful
     {
-        public List<String> layer_list = Collections.emptyList();
+        @Deprecated(forRemoval = true) public List<String> layer_list = Collections.emptyList();
     }
 
 //    /**
