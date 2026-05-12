@@ -52,7 +52,7 @@ allprojects {
     }
     plugins.withType(CheckstylePlugin) {
         checkstyle {
-            toolVersion = "10.21.4" // Support for Java 21 Record pattern matching
+            toolVersion = "13.4.2"
         }
     }
 }
@@ -111,28 +111,28 @@ project(':server') {
 //      compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
         api group: 'com.google.protobuf', name: 'protobuf-java', version: '4.' + protobufVersion
 
-        api 'io.sentry:sentry:5.6.1'
+        api 'io.sentry:sentry:8.41.0'
         api 'info.picocli:picocli:4.7.7'
 
         // project-reactor
-        api platform('io.projectreactor:reactor-bom:2023.0.18')
+        api platform('io.projectreactor:reactor-bom:2023.0.19')
         // add dependencies without a version number
         api 'io.projectreactor:reactor-core'
 
         compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
-        api group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.14'
-        api 'org.apache.httpcomponents.client5:httpclient5:5.4.4'
-        api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.18.+'
-        api 'com.fasterxml.jackson.core:jackson-databind:2.18.+'
+        api group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.32'
+        api 'org.apache.httpcomponents.client5:httpclient5:5.6.1'
+        api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.+'
+        api 'com.fasterxml.jackson.core:jackson-databind:2.21.+'
 
-        api group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.13.0'
-        api group: 'org.apache.commons', name: 'commons-pool2', version: '2.12.1'
+        api group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.14.0'
+        api group: 'org.apache.commons', name: 'commons-pool2', version: '2.13.1'
         api group: 'com.h2database', name: 'h2', version: '1.4.197'
 
         // prometheus client
         api group: 'io.prometheus', name: 'simpleclient_common', version: '0.16.0'
 
-        api platform('com.amazonaws:aws-java-sdk-bom:1.12.784') // switching to awssdk 2.x needs some more work
+        api platform('com.amazonaws:aws-java-sdk-bom:1.12.797') // switching to awssdk 2.x needs some more work
         api 'com.amazonaws:aws-java-sdk-s3'
         api 'com.amazonaws:aws-java-sdk-ebs'
         api 'com.amazonaws:aws-java-sdk-ec2'
@@ -144,11 +144,11 @@ project(':server') {
 
         api group: 'io.fabric8', name: 'kubernetes-client', version: '7.3.1'
 
-        api group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.8.4'
+        api group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.9.8'
 
         api group: 'info.faljse', name: 'SDNotify', version: '1.6'
 
-        testImplementation(platform('org.junit:junit-bom:5.13.0'))
+        testImplementation(platform('org.junit:junit-bom:6.0.3'))
     }
 
     sourceSets {
@@ -330,7 +330,7 @@ project(':controller').version = version
 project(':satellite').version = version
 project(':jclcrypto').version = version
 
-def jerseyVersion = '2.46'
+def jerseyVersion = '2.48'
 
 project(':controller') {
     apply plugin: 'application'
@@ -350,8 +350,8 @@ project(':controller') {
         // prometheus client library
         implementation group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.16.0'
 
-        runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.1.4'
-        runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
+        runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.8'
+        runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.11'
     }
 
     sourceSets {
