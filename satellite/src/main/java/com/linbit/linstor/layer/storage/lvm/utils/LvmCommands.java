@@ -603,7 +603,12 @@ public class LvmCommands
         );
     }
 
-    public static synchronized OutputData listPhysicalVolumes(ExtCmd extCmdRef, String volumeGroupRef, String lvmConfig)
+    public static synchronized OutputData listPhysicalVolumes(
+        ExtCmd extCmdRef,
+        String volumeGroupRef,
+        String lvmConfig,
+        Collection<String> options
+    )
         throws StorageException
     {
         final String failMsg = "Failed to get physical devices for volume group: " + volumeGroupRef;
@@ -612,7 +617,7 @@ public class LvmCommands
             buildCmd(
                 "pvdisplay",
                 LVM_CONF_IGNORE_DRBD_DEVICES, // always ignore DRBD devices
-                (Collection<String>) null,
+                options,
                 "--columns",
                 "-o", "pv_name",
                 "-S", "vg_name=" + volumeGroupRef,
@@ -622,6 +627,12 @@ public class LvmCommands
             failMsg,
             failMsg
         );
+    }
+
+    public static synchronized OutputData listPhysicalVolumes(ExtCmd extCmdRef, String volumeGroupRef, String lvmConfig)
+        throws StorageException
+    {
+        return listPhysicalVolumes(extCmdRef, volumeGroupRef, lvmConfig, null);
     }
 
 
