@@ -686,13 +686,17 @@ public class LvmUtils
         }
     }
 
-    public static List<String> getPhysicalVolumes(ExtCmdFactory extCmdFactory, String volumeGroup)
+    public static List<String> getPhysicalVolumes(
+        ExtCmdFactory extCmdFactory,
+        String volumeGroup,
+        Collection<String> options
+    )
         throws StorageException
     {
         // no lvm config here. this method is used to build the --config param. using execWithRetry here would cause an
         // endless-recursion!
 
-        final OutputData output = LvmCommands.listPhysicalVolumes(extCmdFactory.create(), volumeGroup, "");
+        final OutputData output = LvmCommands.listPhysicalVolumes(extCmdFactory.create(), volumeGroup, "", options);
         final String stdOut = new String(output.stdoutData, StandardCharsets.UTF_8);
         final List<String> pvs = new ArrayList<>();
         final String[] lines = StringUtils.split(stdOut, "\n");
@@ -705,6 +709,12 @@ public class LvmUtils
             }
         }
         return pvs;
+    }
+
+    public static List<String> getPhysicalVolumes(ExtCmdFactory extCmdFactory, String volumeGroup)
+        throws StorageException
+    {
+        return getPhysicalVolumes(extCmdFactory, volumeGroup, null);
     }
 
     public static OutputData execWithRetry(

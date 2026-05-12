@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 @Singleton
 public class LvmProvider
@@ -291,8 +292,16 @@ public class LvmProvider
         throws StorageException, AccessDeniedException, DatabaseException
     {
         List<String> additionalOptions = ShellUtils.shellSplit(getLvcreateOptions(vlmData));
-        String[] additionalOptionsArr = new String[additionalOptions.size()];
-        additionalOptions.toArray(additionalOptionsArr);
+        Stream<String> additionalOptionsStream = additionalOptions.stream();
+        List<String> pvSelection = ShellUtils.shellSplit(getLvcreatePvSelection(vlmData));
+        if (!pvSelection.isEmpty())
+        {
+            additionalOptionsStream = Stream.concat(
+                additionalOptionsStream,
+                LvmUtils.getPhysicalVolumes(extCmdFactory, vlmData.getVolumeGroup(), pvSelection).stream()
+            );
+        }
+        String[] additionalOptionsArr = additionalOptionsStream.toArray(String[]::new);
 
         if (additionalOptions.contains("--config"))
         {
@@ -408,6 +417,16 @@ public class LvmProvider
             ApiConsts.NAMESPC_STORAGE_DRIVER,
             ApiConsts.KEY_STOR_POOL_LVCREATE_OPTIONS,
             ""
+        );
+    }
+
+    protected String getLvcreatePvSelection(LvmData<Resource> vlmDataRef)
+    {
+        return getProp(
+            vlmDataRef,
+            ApiConsts.NAMESPC_STORAGE_DRIVER,
+            ApiConsts.KEY_STOR_POOL_LVCREATE_PV_SELECTION,
+            "--sort pv_used"
         );
     }
 

@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upated debian package compat version to 11
 - linstor-controller.service: switch to DynamicUser (i.e., execute as non-root user).
 - Systemd-notify: Use SDNotify library instead of calling "systemd-notify"
+- Thick LVM: New volumes are now placed on the least-used PVs by default. This behavior can be customized via the new "StorDriver/LvcreatePvSelection" property.
 
 ### Removed
 
