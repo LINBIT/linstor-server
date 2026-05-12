@@ -11,7 +11,7 @@ buildscript {
 }
 
 plugins {
-    id("net.ltgt.errorprone") version "5.0.0" apply false
+    id("net.ltgt.errorprone") version "5.1.0" apply false
 }
 
 apply plugin: 'java'
@@ -66,7 +66,7 @@ subprojects {
         apply plugin: 'net.ltgt.errorprone'
 
         dependencies {
-            errorprone("com.google.errorprone:error_prone_core:2.47.0")
+            errorprone("com.google.errorprone:error_prone_core:2.49.0")
         }
     }
 

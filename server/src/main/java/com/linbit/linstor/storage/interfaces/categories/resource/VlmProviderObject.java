@@ -25,7 +25,7 @@ import java.util.List;
  *
  * Main difference between this interface and {@link VlmLayerObject} is that
  * this interface does not have {@link VlmLayerObject#getDataDevice()} and
- * {@link LayerObject#getChildren()} methods.
+ * LayerObject#getChildren() methods.
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
