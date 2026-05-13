@@ -24,6 +24,7 @@ public class LsBlkEntry
     private String state = "";
     private String type = "";
     private long discGran;
+    private long discMax;
 
     public enum LsBlkFields {
         NAME("NAME"),
@@ -38,7 +39,8 @@ public class LsBlkEntry
         SERIAL("SERIAL"),
         WWN("WWN"),
         STATE("STATE"),
-        DISC_GRAN("DISC-GRAN");
+        DISC_GRAN("DISC-GRAN"),
+        DISC_MAX("DISC-MAX");
 
         private final String value;
 
@@ -57,6 +59,10 @@ public class LsBlkEntry
             else if (strVal.equals(DISC_GRAN.value))
             {
                 ret = DISC_GRAN;
+            }
+            else if (strVal.equals(DISC_MAX.value))
+            {
+                ret = DISC_MAX;
             }
             else
             {
@@ -138,6 +144,7 @@ public class LsBlkEntry
             case STATE -> { state = value; }
             case TYPE -> { type = value; }
             case DISC_GRAN -> { discGran = Long.parseLong(value); }
+            case DISC_MAX -> { discMax = value.isEmpty() ? 0 : Long.parseLong(value); }
             default -> throw new RuntimeException(String.format("Field name '%s' unknown.", fieldName));
         }
     }
@@ -210,6 +217,11 @@ public class LsBlkEntry
     public long getDiscGran()
     {
         return discGran;
+    }
+
+    public long getDiscMax()
+    {
+        return discMax;
     }
 
     public Map<String, String> asMap()

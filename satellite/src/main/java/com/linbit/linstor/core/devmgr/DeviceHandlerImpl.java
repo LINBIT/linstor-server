@@ -1711,7 +1711,12 @@ public class DeviceHandlerImpl implements DeviceHandler
                     try
                     {
                         List<LsBlkEntry> lsblkEntry = LsBlkUtils.lsblk(extCmdFactory.create(), devicePath);
-                        vlmData.setDiscGran(lsblkEntry.get(0).getDiscGran());
+                        // discard_granularity in /sys reports a non-zero value even on devices
+                        // that don't actually support discards (e.g. dm-crypt opened without
+                        // --allow-discards). The authoritative "discards supported" signal is
+                        // discard_max_bytes: when that is 0, treat the effective granularity as 0.
+                        LsBlkEntry entry = lsblkEntry.get(0);
+                        vlmData.setDiscGran(entry.getDiscMax() == 0 ? 0L : entry.getDiscGran());
                         discGranUpdated = true;
                     }
                     catch (StorageException exc)
