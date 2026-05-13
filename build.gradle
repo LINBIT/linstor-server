@@ -119,7 +119,7 @@ project(':server') {
         // add dependencies without a version number
         api 'io.projectreactor:reactor-core'
 
-        compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
+        compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.18'
         api group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.32'
         api 'org.apache.httpcomponents.client5:httpclient5:5.6.1'
         api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.+'
@@ -507,7 +507,7 @@ dependencies {
     testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: powerMockVersion
     testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: powerMockVersion
 
-    testCompileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
+    testCompileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.18'
     testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.27.+'
     testImplementation group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
 
