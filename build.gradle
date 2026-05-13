@@ -514,7 +514,7 @@ dependencies {
     testImplementation group: 'com.cronutils', name: 'cron-utils', version: cronVersion
 
     testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '6.0.0'
-    testImplementation group: 'io.projectreactor', name: 'reactor-test', version: '3.6.+'
+    testImplementation group: 'io.projectreactor', name: 'reactor-test', version: '3.8.+'
 }
 
 /////////////////////////// Start scripts ///////////////////////////
