@@ -65,6 +65,7 @@ public class CtrlSatelliteUpdateCaller
     private final Provider<RetryResourcesTask> retryResourceTaskProvider;
     private final SatelliteConnectorImpl stltConnector;
     private final NodeRepository nodeRepo;
+    private final SatelliteRetcodeDispatcher retcodeDispatcher;
 
     @Inject
     private CtrlSatelliteUpdateCaller(
@@ -72,7 +73,8 @@ public class CtrlSatelliteUpdateCaller
         CtrlStltSerializer serializerRef,
         Provider<RetryResourcesTask> retryResourceTaskProviderRef,
         SatelliteConnectorImpl stltConnectorRef,
-        NodeRepository nodeRepoRef
+        NodeRepository nodeRepoRef,
+        SatelliteRetcodeDispatcher retcodeDispatcherRef
     )
     {
         apiCtx = apiCtxRef;
@@ -80,6 +82,7 @@ public class CtrlSatelliteUpdateCaller
         retryResourceTaskProvider = retryResourceTaskProviderRef;
         stltConnector = stltConnectorRef;
         nodeRepo = nodeRepoRef;
+        retcodeDispatcher = retcodeDispatcherRef;
     }
 
     /**
@@ -392,6 +395,8 @@ public class CtrlSatelliteUpdateCaller
 
                 .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
 
+                .transform(retcodeDispatcher.forResource(currentRsc))
+
                 .onErrorResume(
                     PeerNotConnectedException.class,
                     ignored ->
@@ -403,7 +408,19 @@ public class CtrlSatelliteUpdateCaller
                         return notConnectedHandler.handleNotConnected(nodeName);
                     }
                 )
-                .doOnError(ignored -> retryResourceTaskProvider.get().add(currentRsc, nextStepRef));
+                .doOnError(err ->
+                {
+                    // SatelliteSignalException is the dispatcher's own in-flight retry signal —
+                    // it should never escape, so don't queue. Everything else, *including* the
+                    // dispatcher's own RetcodeRetryExhaustedException, queues for later retry:
+                    // exhaustion conditions (e.g. blocked TCP ports) are often transient and
+                    // each retry round persists discovered constraints (e.g. TcpPortsBlocked),
+                    // so a later attempt picks fresh state and the cluster converges.
+                    if (!retcodeDispatcher.isDispatcherError(err))
+                    {
+                        retryResourceTaskProvider.get().add(currentRsc, nextStepRef);
+                    }
+                });
         }
 
         return response;

@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.core.apicallhandler.controller.internal.SatelliteRetcodeHandler;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
 
@@ -19,5 +21,9 @@ public class CtrlApiCallHandlerModule extends AbstractModule
         commandsBinder.addBinding().to(CtrlVlmDfnModifyApiCallHandler.class);
         commandsBinder.addBinding().to(CtrlSnapshotDeleteApiCallHandler.class);
         commandsBinder.addBinding().to(CtrlSnapshotRollbackApiCallHandler.class);
+
+        // Handlers for SatelliteRetcodeDispatcher. Empty by default — concrete handlers (e.g. for
+        // blocked DRBD-adjust ports) bind here.
+        Multibinder.newSetBinder(binder(), SatelliteRetcodeHandler.class);
     }
 }
