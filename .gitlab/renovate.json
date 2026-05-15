@@ -50,5 +50,6 @@
             "enabled": false
         }
     ],
-    "automerge": false
+    "automerge": false,
+    "rebaseWhen": "never"
 }
