@@ -2,11 +2,11 @@ spec:
   inputs:
     virter_version:
       type: string
-      default: v0.27.0
+      default: v1.0.0
       description: virter version to use
     vmshed_version:
       type: string
-      default: v0.24.0
+      default: v0.27.0
       description: vmshed version to use
     build_helpers_version:
       type: string
