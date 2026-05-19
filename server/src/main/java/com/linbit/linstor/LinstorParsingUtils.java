@@ -228,6 +228,16 @@ public class LinstorParsingUtils
      */
     public static StorPoolName asStorPoolName(String storPoolNameStr)
     {
+        return asStorPoolName(storPoolNameStr, false);
+    }
+
+    /**
+     * Returns the given String as a {@link StorPoolName} if possible. If the String is not a valid
+     * {@link StorPoolName} an exception is thrown.
+     *
+     */
+    public static StorPoolName asStorPoolName(String storPoolNameStr, boolean skipErrorReport)
+    {
         StorPoolName storPoolName;
         try
         {
@@ -237,7 +247,8 @@ public class LinstorParsingUtils
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
-                "The given storage pool name '" + storPoolNameStr + "' is invalid."
+                "The given storage pool name '" + storPoolNameStr + "' is invalid.",
+                skipErrorReport
             ), invalidNameExc);
         }
         return storPoolName;

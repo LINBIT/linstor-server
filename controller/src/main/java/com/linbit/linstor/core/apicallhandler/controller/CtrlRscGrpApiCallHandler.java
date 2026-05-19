@@ -508,7 +508,7 @@ public class CtrlRscGrpApiCallHandler
 
     private Flux<ApiCallRc> modifyInTransaction(
         String rscGrpNameStrRef,
-        String descriptionRef,
+        @Nullable String descriptionRef,
         Map<String, String> overrideProps,
         HashSet<String> deletePropKeysRef,
         HashSet<String> deleteNamespacesRef,
@@ -538,6 +538,12 @@ public class CtrlRscGrpApiCallHandler
                             true
                         )
                 );
+            }
+
+            if (autoApiRef != null)
+            {
+                validateStorPoolNames(autoApiRef.getStorPoolNameList());
+                validateStorPoolNames(autoApiRef.getStorPoolDisklessNameList());
             }
 
             ResourceGroup rscGrpData = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStrRef, true);
@@ -851,25 +857,36 @@ public class CtrlRscGrpApiCallHandler
         }
     }
 
+    private static void validateStorPoolNames(@Nullable List<String> storPoolNameList)
+    {
+        if (storPoolNameList != null)
+        {
+            for (String spName : storPoolNameList)
+            {
+                LinstorParsingUtils.asStorPoolName(spName, true);
+            }
+        }
+    }
+
     private ResourceGroup createResourceGroup(RscGrpPojo rscGrpPojoRef)
     {
-        AutoSelectFilterApi autoSelectFilter = rscGrpPojoRef.getAutoSelectFilter();
+        @Nullable AutoSelectFilterApi autoSelectFilter = rscGrpPojoRef.getAutoSelectFilter();
 
         ResourceGroup rscGrp;
         try
         {
-            List<String> nodeNameList = null;
-            Integer replicaCount = null;
-            List<String> storPoolNameList = null;
-            List<String> storPoolDisklessNameList = null;
-            List<String> doNotPlaceWithRscList = null;
-            String doNotPlaceWithRscRegex = null;
-            List<DeviceLayerKind> layerStackList = null;
-            List<String> replicasOnSameList = null;
-            List<String> replicasOnDifferentList = null;
-            Map<String, Integer> xReplicasOnDifferentMap = null;
-            List<DeviceProviderKind> providerList = null;
-            Boolean disklessOnRemaining = null;
+            @Nullable List<String> nodeNameList = null;
+            @Nullable Integer replicaCount = null;
+            @Nullable List<String> storPoolNameList = null;
+            @Nullable List<String> storPoolDisklessNameList = null;
+            @Nullable List<String> doNotPlaceWithRscList = null;
+            @Nullable String doNotPlaceWithRscRegex = null;
+            @Nullable List<DeviceLayerKind> layerStackList = null;
+            @Nullable List<String> replicasOnSameList = null;
+            @Nullable List<String> replicasOnDifferentList = null;
+            @Nullable Map<String, Integer> xReplicasOnDifferentMap = null;
+            @Nullable List<DeviceProviderKind> providerList = null;
+            @Nullable Boolean disklessOnRemaining = null;
 
             if (autoSelectFilter != null)
             {
@@ -877,6 +894,8 @@ public class CtrlRscGrpApiCallHandler
                 nodeNameList = autoSelectFilter.getNodeNameList();
                 storPoolNameList = autoSelectFilter.getStorPoolNameList();
                 storPoolDisklessNameList = autoSelectFilter.getStorPoolDisklessNameList();
+                validateStorPoolNames(storPoolNameList);
+                validateStorPoolNames(storPoolDisklessNameList);
                 doNotPlaceWithRscList = autoSelectFilter.getDoNotPlaceWithRscList();
                 doNotPlaceWithRscRegex = autoSelectFilter.getDoNotPlaceWithRscRegex();
                 replicasOnSameList = autoSelectFilter.getReplicasOnSameList();
