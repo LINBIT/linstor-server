@@ -13,6 +13,11 @@ public class CriticalError extends Error
         super(message);
     }
 
+    public CriticalError(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
     /**
      * This will call System.exit(), so make sure no locks are currently held while using this call.
      */

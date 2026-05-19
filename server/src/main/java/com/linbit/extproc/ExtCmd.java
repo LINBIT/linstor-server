@@ -4,6 +4,7 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.core.CriticalError;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
@@ -129,7 +130,21 @@ public class ExtCmd extends ChildProcessHandler
         synchronized (conditionsWithDescriptions)
         {
             checkForConditions();
-            child = pBuilder.start();
+            try
+            {
+                child = pBuilder.start();
+            }
+            catch (IOException startExc)
+            {
+                String msg = startExc.getMessage();
+                if (msg != null && msg.contains("Failed to exec spawn helper"))
+                {
+                    // JDK spawn helper failure - typically caused by an in-place JDK update
+                    // mismatching the running JVM. Only a process restart can recover.
+                    throw new CriticalError("JDK spawn helper failure detected, restarting process: " + msg, startExc);
+                }
+                throw startExc;
+            }
             startTime = System.currentTimeMillis();
             setChild(child);
             outReceiver = new OutputReceiver(

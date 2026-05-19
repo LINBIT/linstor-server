@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed PREPARE_SHIPPING backups didn't count as active shippings
 - If a satellite cannot decrypt a LUKS key it no longer goes into FULLSYNC_FAILED, but just marks the resource to have corrupted crypt key
 - Fixed auto-rs-discard-granularity staying set on devices that don't support discards (e.g. LUKS without AllowDiscards)
+- Throw a CriticalError(restart) if a JDK spawn helper exception was caught (usually a JDK version mismatch)
 
 ## [1.33.3] - 2026-05-11
 
