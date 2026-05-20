@@ -148,7 +148,7 @@ project(':server') {
 
         api group: 'info.faljse', name: 'SDNotify', version: '1.6'
 
-        testImplementation(platform('org.junit:junit-bom:6.0.3'))
+        testImplementation(platform('org.junit:junit-bom:6.1.0'))
     }
 
     sourceSets {
