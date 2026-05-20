@@ -610,26 +610,33 @@ public class DeviceHandlerImpl implements DeviceHandler
         throws AccessDeniedException
     {
         boolean processResource = true;
-        for (LayerIgnoreReason ignoreReason : curRscData.getIgnoreReasons())
+        if (curRscData.isSuspended() != null && curRscData.isSuspended())
         {
-            if (ignoreReason.isPreventExecution())
+            processResource = false;
+        }
+        else
+        {
+            for (LayerIgnoreReason ignoreReason : curRscData.getIgnoreReasons())
             {
-                if (shouldAbsRscBeDeleted || hasLayerSpecificDeleteFlagSet(curRscData))
+                if (ignoreReason.isPreventExecution())
                 {
-                    if (ignoreReason.isPreventExecutionWhenDeleting())
+                    if (shouldAbsRscBeDeleted || hasLayerSpecificDeleteFlagSet(curRscData))
+                    {
+                        if (ignoreReason.isPreventExecutionWhenDeleting())
+                        {
+                            processResource = false;
+                        }
+                    }
+                    else
                     {
                         processResource = false;
                     }
                 }
-                else
+                if (!processResource)
                 {
-                    processResource = false;
+                    // cannot get true anymore
+                    break;
                 }
-            }
-            if (!processResource)
-            {
-                // cannot get true anymore
-                break;
             }
         }
         return processResource;

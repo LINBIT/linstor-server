@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - If a satellite cannot decrypt a LUKS key it no longer goes into FULLSYNC_FAILED, but just marks the resource to have corrupted crypt key
 - Fixed auto-rs-discard-granularity staying set on devices that don't support discards (e.g. LUKS without AllowDiscards)
 - Throw a CriticalError(restart) if a JDK spawn helper exception was caught (usually a JDK version mismatch)
+- Fixed bug where taking a snapshot on a not-only-DRBD resource could hang indefinitely
 
 ## [1.33.3] - 2026-05-11
 
