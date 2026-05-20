@@ -22,7 +22,10 @@ public class ChangeLogLevelTest
     {
         reporter = new StdErrorReporter(
             "test",
-            Paths.get("."),
+            Paths.get(
+                // do not use "." otherwise we keep getting created an error-report.mv.db in the project root dir
+                "build/test-logs/changeLogLevel"
+            ),
             true,
             "node",
             "INFO",
