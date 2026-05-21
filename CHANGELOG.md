@@ -68,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug where taking a snapshot on a not-only-DRBD resource could hang indefinitely
 - Attempt to fix rare bug causing "shipping in progress" that can only be cleared by restarting the controller
 - Fixed rare race condition when changing the LUKS passphrase
+- Fixed bug where trying to start a backup shipment of a rsc that isn't UpToDate lead to an AccessToDeletedDataException
 
 ## [1.33.3] - 2026-05-11
 

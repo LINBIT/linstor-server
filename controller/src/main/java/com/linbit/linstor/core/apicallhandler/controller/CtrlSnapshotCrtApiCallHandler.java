@@ -580,7 +580,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 }
             }
         }
-        return ret;
+        return ret.concatWith(Flux.error(exception));
     }
 
     private Flux<ApiCallRc> abortSnapshotInTransaction(
