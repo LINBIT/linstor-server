@@ -215,27 +215,6 @@ public class LuksLayer implements DeviceLayer
                     );
             vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
 
-            @Nullable byte[] expectedEncrPw = getExpectedEncryptedLuksPassword(vlmData);
-            if (expectedEncrPw != null && !Arrays.equals(expectedEncrPw, vlmData.getEncryptedKey()))
-            {
-                // if modify password is set, we are supposed to change the luks password to it.
-                byte[] masterKey = secObjs.getCryptKey();
-                try
-                {
-                    byte[] plainModifyPassword = decryptionHelper.decrypt(masterKey, expectedEncrPw);
-                    cryptSetup.changeKey(
-                        vlmData.getDataDevice(), vlmData.getDecryptedPassword(), plainModifyPassword
-                    );
-
-                    vlmData.setEncryptedKey(expectedEncrPw);
-                    vlmData.setDecryptedPassword(plainModifyPassword);
-                }
-                catch (LinStorException exc)
-                {
-                    throw new StorageException("Unable to decrypt modify password key.", exc);
-                }
-            }
-
             @Nullable byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
             if (deleteVlm || deactivateRsc)
             {
@@ -379,6 +358,27 @@ public class LuksLayer implements DeviceLayer
                 else
                 {
                     warnOnAllowDiscardsMismatch(vlmData, identifier, apiCallRc);
+                }
+
+                @Nullable byte[] expectedEncrPw = getExpectedEncryptedLuksPassword(vlmData);
+                if (expectedEncrPw != null && !Arrays.equals(expectedEncrPw, vlmData.getEncryptedKey()))
+                {
+                    // if modify password is set, we are supposed to change the luks password to it.
+                    byte[] masterKey = secObjs.getCryptKey();
+                    try
+                    {
+                        byte[] plainModifyPassword = decryptionHelper.decrypt(masterKey, expectedEncrPw);
+                        cryptSetup.changeKey(
+                            vlmData.getDataDevice(), vlmData.getDecryptedPassword(), plainModifyPassword
+                        );
+
+                        vlmData.setEncryptedKey(expectedEncrPw);
+                        vlmData.setDecryptedPassword(plainModifyPassword);
+                    }
+                    catch (LinStorException exc)
+                    {
+                        throw new StorageException("Unable to decrypt modify password key.", exc);
+                    }
                 }
 
                 if (((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.RESIZE) &&
