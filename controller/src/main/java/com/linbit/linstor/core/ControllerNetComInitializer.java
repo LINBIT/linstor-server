@@ -593,7 +593,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
             throw new RuntimeException();
         }
 
-        if (loadProp(configProp, PROPSCON_KEY_NETCOM_ENABLED, "true").equals("true"))
+        if (loadProp(configProp, PROPSCON_KEY_NETCOM_ENABLED, "true").equalsIgnoreCase("true"))
         {
             createNetComService(serviceName, configProp, errorLogRef, initCtx);
         }

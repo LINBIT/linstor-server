@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Systemd-notify: Use SDNotify library instead of calling "systemd-notify"
 - Thick LVM: New volumes are now placed on the least-used PVs by default. This behavior can be customized via the new "StorDriver/LvcreatePvSelection" property.
 - Check for valid storage pool names on resource-group select filter
+- Controller now ignores case when checking if a NetCom is enabled or not
 
 ### Removed
 
