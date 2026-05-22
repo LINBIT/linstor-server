@@ -19,6 +19,7 @@ import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler.BackupSnapshotObj;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRestClient;
@@ -71,6 +72,7 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -84,6 +86,7 @@ import java.util.UUID;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 /**
  * Creates and ships a backup to a linstor cluster, using the following steps:
@@ -124,6 +127,10 @@ public class CtrlBackupL2LSrcApiCallHandler
     private final CtrlBackupQueueInternalCallHandler queueHandler;
     private final TaskScheduleService taskScheduleService;
     private final BackgroundRunner backgroundRunner;
+    private final Provider<CtrlRemoteApiCallHandler> ctrlRemoteApiCallHandler;
+
+    private static final int REQUEST_SHIP_MAX_RETRIES = 3;
+    private static final Duration REQUEST_SHIP_RETRY_DELAY = Duration.ofSeconds(1);
 
     @Inject
     public CtrlBackupL2LSrcApiCallHandler(
@@ -144,7 +151,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         CtrlBackupQueueInternalCallHandler queueHandlerRef,
         TaskScheduleService taskScheduleServiceRef,
         ErrorReporter errorReporterRef,
-        BackgroundRunner backgroundRunnerRef
+        BackgroundRunner backgroundRunnerRef,
+        Provider<CtrlRemoteApiCallHandler> ctrlRemoteApiCallHandlerRef
     )
     {
         sysCtx = sysCtxRef;
@@ -166,6 +174,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         taskScheduleService = taskScheduleServiceRef;
         errorReporter = errorReporterRef;
         backgroundRunner = backgroundRunnerRef;
+        ctrlRemoteApiCallHandler = ctrlRemoteApiCallHandlerRef;
     }
 
     /**
@@ -374,11 +383,13 @@ public class CtrlBackupL2LSrcApiCallHandler
                 ),
                 linstorRemote,
                 sysCtx
-            ).doOnError(IOException.class, exc ->
+            ).retryWhen(buildIoExceptionRetrySpec("prevSnap", remote.getName().displayValue, null))
+            .doOnError(IOException.class, exc ->
             {
                 errorReporter.logError(
                     "sending prevSnap request to remote " + remote +
-                        "failed. Removing all backups queued to this remote"
+                        " failed after " + REQUEST_SHIP_MAX_RETRIES +
+                        " retries. Removing all backups queued to this remote"
                 );
                 backupInfoMgr.deleteFromQueue(remote);
                 errorReporter.reportError(exc);
@@ -619,15 +630,13 @@ public class CtrlBackupL2LSrcApiCallHandler
             // tell target cluster "Hey! Listen!"
             flux = Flux.merge(
                 restClient.sendBackupRequest(data, peerAccCtx.get())
-                    .doOnError(IOException.class, exc ->
-                    {
-                        errorReporter.logError(
-                            "sending backup request to remote " + data.getLinstorRemote() +
-                                "failed. Removing all backups queued to this remote"
-                        );
-                        backupInfoMgr.deleteFromQueue(data.getLinstorRemote());
-                        errorReporter.reportError(exc);
-                    })
+                    .retryWhen(
+                        buildIoExceptionRetrySpec(
+                            "requestShip",
+                            data.getLinstorRemote().getName().displayValue,
+                            data
+                        )
+                    )
                     .map(
                         restResponse -> scopeRunner.fluxInTransactionalScope(
                             "Backup shipping L2L: Starting shipment",
@@ -638,6 +647,9 @@ public class CtrlBackupL2LSrcApiCallHandler
                             () -> confirmBackupShippingRequestArrived(restResponse, data)
                         )
                     )
+            ).onErrorResume(IOException.class, exc ->
+                cleanupAfterRequestShipFailureFlux(data, exc)
+                    .concatWith(Mono.error(exc))
             );
         }
         catch (AccessDeniedException exc)
@@ -662,6 +674,125 @@ public class CtrlBackupL2LSrcApiCallHandler
                 responseRef.responses
             )
         );
+    }
+
+    /**
+     * Retries on IOException up to {@link #REQUEST_SHIP_MAX_RETRIES} times with a fixed
+     * {@link #REQUEST_SHIP_RETRY_DELAY} between attempts. After retries are exhausted the original
+     * IOException is propagated (not wrapped in RetryExhaustedException), so downstream
+     * {@code onErrorResume(IOException.class, ...)} stays effective.
+     * <p>
+     * If {@code dataOrNull} is given, the stale {@code l2lSrcData} entry left over by the failed
+     * {@link BackupShippingRestClient#sendBackupRequest} attempt is removed before the next retry
+     * so the next attempt's {@code addL2LSrcData} starts from a clean slate.
+     *
+     * @param requestNameForLog short name like "requestShip" / "prevSnap" used in log lines
+     * @param remoteNameForLog display name of the linstor-remote
+     * @param dataOrNull shipping data whose {@code l2lSrcData} entry needs scrubbing between
+     *     attempts; {@code null} when the request never adds such an entry (prevSnap)
+     */
+    private Retry buildIoExceptionRetrySpec(
+        String requestNameForLog,
+        String remoteNameForLog,
+        @Nullable BackupShippingSrcData dataOrNull
+    )
+    {
+        return Retry.fixedDelay(REQUEST_SHIP_MAX_RETRIES, REQUEST_SHIP_RETRY_DELAY)
+            .filter(IOException.class::isInstance)
+            .doBeforeRetry(retrySignal ->
+            {
+                errorReporter.logWarning(
+                    "Sending %s to remote '%s' failed with IOException (attempt %d of %d), retrying: %s",
+                    requestNameForLog,
+                    remoteNameForLog,
+                    retrySignal.totalRetries() + 1,
+                    REQUEST_SHIP_MAX_RETRIES,
+                    retrySignal.failure().getMessage()
+                );
+                if (dataOrNull != null && dataOrNull.getStltRemote() != null)
+                {
+                    // sendBackupRequest puts an entry into l2lSrcData before the REST call.
+                    // Drop it so the next attempt's put is the only one that survives.
+                    backupInfoMgr.removeL2LSrcData(
+                        dataOrNull.getLinstorRemote().getName(),
+                        dataOrNull.getStltRemote().getName()
+                    );
+                }
+            })
+            .onRetryExhaustedThrow((spec, retrySignal) -> retrySignal.failure());
+    }
+
+    /**
+     * Builds the cleanup flux that runs after all {@code requestShip} retries have been exhausted.
+     * Removes the stale entries that {@link BackupShippingRestClient#sendBackupRequest} and
+     * {@link #prepareShippingInTransaction} left behind in {@link BackupInfoManager} and in the
+     * remote repository, so a subsequent ship attempt for the same resource is not blocked by
+     * "still in progress" state until the controller restarts.
+     * <p>
+     * The source snapshot itself is intentionally left in place — failure here means the ship
+     * never started, so the user can re-issue the command or delete the snapshot manually.
+     */
+    private Flux<ApiCallRc> cleanupAfterRequestShipFailureFlux(
+        BackupShippingSrcData data,
+        IOException exc
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Backup shipping L2L: Cleanup after requestShip failure",
+            lockGuardFactory.create()
+                .write(LockObj.REMOTE_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            () -> cleanupAfterRequestShipFailureInTransaction(data, exc)
+        );
+    }
+
+    private Flux<ApiCallRc> cleanupAfterRequestShipFailureInTransaction(
+        BackupShippingSrcData data,
+        IOException exc
+    )
+    {
+        errorReporter.logError(
+            "sending requestShip to remote '%s' failed after %d retries — cleaning up stale state",
+            data.getLinstorRemote().getName().displayValue,
+            REQUEST_SHIP_MAX_RETRIES
+        );
+        errorReporter.reportError(exc);
+
+        backupInfoMgr.deleteFromQueue(data.getLinstorRemote());
+        backupInfoMgr.removeL2LSrcData(
+            data.getLinstorRemote().getName(),
+            data.getStltRemote().getName()
+        );
+
+        Snapshot srcSnap = data.getSrcSnapshot();
+        Set<RemoteName> emptyRemotes;
+        if (srcSnap != null && !srcSnap.isDeleted())
+        {
+            emptyRemotes = backupInfoMgr.abortCreateDeleteEntries(
+                srcSnap.getNodeName(),
+                srcSnap.getSnapshotDefinition().getSnapDfnKey()
+            );
+        }
+        else
+        {
+            emptyRemotes = Collections.emptySet();
+        }
+
+        // The StltRemote was created in createStltRemote() and put into the remoteRepo.
+        // It is a transient (non-persisted) object — a simple remove is enough.
+        try
+        {
+            remoteRepo.remove(sysCtx, data.getStltRemote().getName());
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ImplementationError(accExc);
+        }
+
+        ctrlTransactionHelper.commit();
+
+        return ctrlRemoteApiCallHandler.get().cleanupRemotesIfNeeded(emptyRemotes);
     }
 
     /**
