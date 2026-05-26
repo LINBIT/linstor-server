@@ -679,7 +679,7 @@ public class ReconnectorTask implements Task
                         props.getProp(
                             ApiConsts.KEY_AUTO_EVICT_AFTER_TIME,
                             ApiConsts.NAMESPC_DRBD_OPTIONS,
-                            "60" // 1 hour
+                            "720" // 12 hours
                         )
                     ) * 60 * 1000; // to milliseconds
                     final boolean allowEviction = Boolean.parseBoolean(

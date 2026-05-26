@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Thick LVM: New volumes are now placed on the least-used PVs by default. This behavior can be customized via the new "StorDriver/LvcreatePvSelection" property.
 - Check for valid storage pool names on resource-group select filter
 - Controller now ignores case when checking if a NetCom is enabled or not
+- Default evict timeout was increased from 1h to 12h
 
 ### Removed
 
