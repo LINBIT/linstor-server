@@ -13,6 +13,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
@@ -1085,6 +1086,22 @@ public class CtrlConfApiCallHandler
                 apiCallRc.addEntry(entry);
             }
         }
+        catch (ApiRcException apiRcExc)
+        {
+            boolean createErrorReport = false;
+            for (RcEntry rcEntry : apiRcExc.getApiCallRc())
+            {
+                if (!rcEntry.skipErrorReport())
+                {
+                    createErrorReport = true;
+                    break;
+                }
+            }
+            if (createErrorReport)
+            {
+                errorReporter.reportError(apiRcExc);
+            }
+        }
         catch (Exception exc)
         {
             String errorMsg;
@@ -2066,10 +2083,14 @@ public class CtrlConfApiCallHandler
                     ApiConsts.MODIFIED
                 );
             }
+            else
+            {
+                throw new ApiRcException(apiCallRc);
+            }
         }
     }
 
-    private boolean isValidTcpPort(int tcpPort, ApiCallRcImpl apiCallRc)
+    public static boolean isValidTcpPort(int tcpPort, ApiCallRcImpl apiCallRc)
     {
         boolean validTcpPortNr = false;
         try
@@ -2080,7 +2101,11 @@ public class CtrlConfApiCallHandler
         catch (ValueOutOfRangeException exc)
         {
             String errorMsg = "The given tcp port number is not valid: '" + tcpPort + "'.";
-            apiCallRc.addEntry(errorMsg, ApiConsts.FAIL_INVLD_TCP_PORT);
+            apiCallRc.add(
+                ApiCallRcImpl.entryBuilder(ApiConsts.FAIL_INVLD_TCP_PORT, errorMsg)
+                    .setSkipErrorReport(true)
+                    .build()
+            );
         }
         return validTcpPortNr;
     }

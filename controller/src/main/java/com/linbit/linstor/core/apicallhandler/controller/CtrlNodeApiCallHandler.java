@@ -85,6 +85,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyConfigResponseOuterClass.MsgIntApplyConfigResponse;
+import com.linbit.linstor.range.Range;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -1081,8 +1082,11 @@ public class CtrlNodeApiCallHandler
 
         boolean hasKeyInDrbdOptions = false;
         boolean maxConcurrentShippingsChanged = false;
-        for (String key : overrideProps.keySet())
+        boolean allRangesValid = true;
+        for (Map.Entry<String, String> entry : overrideProps.entrySet())
         {
+            final String key = entry.getKey();
+            final String value = entry.getValue();
             if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
             {
                 hasKeyInDrbdOptions = true;
@@ -1093,12 +1097,24 @@ public class CtrlNodeApiCallHandler
             }
             else if (key.equals(ApiConsts.KEY_TCP_PORT_AUTO_RANGE))
             {
-                node.getTcpPortPool(apiCtx).reloadRange(node.getProps(apiCtx));
+                allRangesValid &= checkRangesValid(apiCallRcsRef, value);
+                if (allRangesValid)
+                {
+                    node.getTcpPortPool(apiCtx).reloadRange(node.getProps(apiCtx));
+                }
             }
             else if (key.equals(ApiConsts.KEY_TCP_PORTS_BLOCKED))
             {
-                node.getTcpPortPool(apiCtx).reloadBlockedRange(node.getProps(apiCtx));
+                allRangesValid &= checkRangesValid(apiCallRcsRef, value);
+                if (allRangesValid)
+                {
+                    node.getTcpPortPool(apiCtx).reloadBlockedRange(node.getProps(apiCtx));
+                }
             }
+        }
+        if (!allRangesValid)
+        {
+            throw new ApiRcException(apiCallRcsRef);
         }
         for (String key : deletePropKeys)
         {
@@ -1140,6 +1156,18 @@ public class CtrlNodeApiCallHandler
         }
 
         return retFlux;
+    }
+
+    public boolean checkRangesValid(ApiCallRcImpl apiCallRcsRef, String propValue)
+    {
+        boolean ret = true;
+        List<Range> ranges = Range.parseList(propValue);
+        for (Range range : ranges)
+        {
+            ret &= CtrlConfApiCallHandler.isValidTcpPort(range.from(), apiCallRcsRef) &&
+                CtrlConfApiCallHandler.isValidTcpPort(range.to(), apiCallRcsRef);
+        }
+        return ret;
     }
 
     public static String getNodeDescription(String nodeNameStr)
