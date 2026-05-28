@@ -1,3 +1,256 @@
+linstor-server (1.34.0~rc.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * build: use better java minimum package requirements
+  * gitlab: upload to pulp
+  * grizzly: update UI help text
+  * logback.xml: fix logback file format pattern
+  * rscdfn: fixed delete set DELETE flag if a resource was InUse
+  * gitlab-ci: use master build-helper container now
+  * gitlab: fix build-helpers bug
+  * etcd: remove DBDriver and support
+  * dbdriver: getParsed -> get and buildParsed -> build
+  * java-21 is now minimum and drop rhel7 support
+  * protlayerutils: use switch expression
+  * gradle: introduce errorprone and fix errors
+  * makefile/rpm: prevent server*.jar in controller and satellite packages
+  * docker: fix linstor-controller docker container with java-21
+  * docker: fix docker build dependencies
+  * Update OpenAPI validator to ibmdevxsdk/openapi-validator:1.37.11
+  * enable ErrorProne static analysis with project-specific configuration
+  * fix all errorprone javadoc warnings across codebase
+  * convert statement switches to expression switches
+  * use pattern matching instanceof across codebase
+  * use explicit UTF-8 charset instead of platform default
+  * convert multi-line string concatenations to text blocks
+  * remove unused variables, fields, and parameters across codebase
+  * replace java.util.Date with java.time
+  * reduce visibility of effectively private members in inner classes
+  * make enum fields final, suppress ImmutableEnumChecker for mutable types
+  * remove unnecessary parentheses across codebase
+  * make inner classes static where they don't reference enclosing instance
+  * add grouping parentheses to clarify operator precedence
+  * replace obsolete JDK types: LinkedList to ArrayList/ArrayDeque, Hashta [...]
+  * add StringUtils.split() wrapper and use it to preserve trailing empty  [...]
+  * remove fields that shadow inherited parent class fields
+  * use value equality (.equals) instead of reference equality (==)
+  * use instanceof pattern matching instead of getClass() in equals methods
+  * remove unused private methods and constructors
+  * qualify inner class imports to avoid ambiguous BadImport warnings
+  * replace lambda-returning helper with direct method reference (Unnecess [...]
+  * rename shadowing type parameter in ClassMap.get() (TypeParameterShadowing)
+  * make WorkerThread.pool field final (SynchronizeOnNonFinalField)
+  * return immutable list from deleteErrorReports (MixedMutabilityReturnType)
+  * suppress NonAtomicVolatileUpdate on intentionally non-atomic counter
+  * widen int multiplication to long to prevent overflow (NarrowCalculation)
+  * use canonical type name LinstorConfig.RestAccessLogMode (NonCanonicalType)
+  * remove redundant instanceof check on typed map value (BadInstanceof)
+  * close Files.list() stream with try-with-resources (StreamResourceLeak)
+  * use long literal in bit shift to prevent int overflow (IntLongMath)
+  * remove @Inject from abstract class constructor (InjectOnConstructorOfA [...]
+  * inline single-use format string constants at their usage sites (Inline [...]
+  * use explicit timezone instead of implicit (JavaTimeDefaultTimeZone)
+  * make protected members package-private in final classes (ProtectedMemb [...]
+  * add missing @Override annotations on ContainerLifecycleListener method [...]
+  * use Entry.setValue() instead of Map.put() while iterating (ModifyColle [...]
+  * replace Boolean.TRUE/FALSE.toString() with string literals (BooleanLiteral)
+  * remove unnecessary qualifier annotations on non-injected parameters (U [...]
+  * use == instead of Objects.equals() for primitive type comparisons (Obj [...]
+  * use float literals instead of int-to-float casts (IntLiteralCast)
+  * remove @Nullable from primitive boolean field and method (NullablePrimitive)
+  * use format placeholders instead of string concatenation in printf (For [...]
+  * move static field assignment from constructor to static initializer (S [...]
+  * ignore NullableOptional errorprone warning
+  * fix equals() on types with undefined equality semantics (UndefinedEquals)
+  * suppress FutureReturnValueIgnored on shutdown() that already blocks
+  * replace deprecated Class.newInstance() with getDeclaredConstructor().n [...]
+  * avoid implicit toString() on types without meaningful toString (Object [...]
+  * suppress InlineMeSuggester on deprecated interface override (InlineMeS [...]
+  * suppress TypeParameterUnusedInFormals on intentional convenience cast  [...]
+  * add explicit long-to-double casts for Prometheus metrics (LongDoubleCo [...]
+  * remove Enum.ordinal() usage: drop from error messages, use getValue()  [...]
+  * remove redundant conditions that are already determined by control flo [...]
+  * fix collections modified but never read: add missing builder.build(),  [...]
+  * suppress Finally warning for intentional throw-from-finally pattern (F [...]
+  * move lock() before try block to prevent unlock of unacquired lock (Loc [...]
+  * build.gradle: remove useless junit5 deps
+  * errorprone: suppress false positive ByteBufferBackingArray
+  * errorprone: fix WaitInLoop warnings
+  * errorprone: fix/suppress CatchAndPrintStackTrace warnings
+  * gradle: threat warnings as errors
+  * fix: synchronize updateController() to prevent race with clearImpl()
+  * backup-create: PREPARE_SHIPPING should also count as active shippings
+  * toggle-disk: Fix EventStreamClosed exception on single diskful toggle
+  * grizzly: add nullable annotations
+  * dbengine: simplify date -> sql.timestamp handling
+  * StringUtils: add missing @Nullable
+  * dbdriver: add getNotNull method to avoid @Nullable
+  * stringutils: use secure random for randomString
+  * grizzly: Add an AutoHTTPS option to enable self signed https server
+  * grizzlyhttpserver: restart service if autohttps is enabled/disabled
+  * Implement basic token-based authentication for LINSTOR REST API
+  * lukslayer: don't call shred on ZFS backing storage
+  * packaging/deb: update minimum debhelper compat to 11
+  * debian/control: fix incorrect build-dep for deb packages
+  * update versions to v1.33.2 release
+  * clone-status: Fix failed state if no DRBD connection states received yet
+  * token-auth: show initial token to the user
+  * clone: Add Clone/DdBlocksize property for configurable dd blocksize
+  * vlmdfnmodify: fix shrinking to work at all
+  * vlmdfnmodify: improve shrink not supported messages
+  * disable DRBD shrink support
+  * ctrlconf: use sysctx for isAutoHttpsEnabled check
+  * auto-verify-algo: only reset, if at least two nodes reported their cry [...]
+  * linstor-config: add disable-token-auth command
+  * linstor-config-tool: fix set-plain-{port,listen} using old props instance
+  * clone: Added Clone/BalanceAfterClone option
+  * snapshot/restore: Add a Snapshot/BalanceAfterRestore property
+  * crd-migrations: Do NOT unconditional wait 2-4 seconds for each migration
+  * sos-report: include drbd-reactor config files, logs, and status
+  * backupshipping: report errors on requests
+  * LUKS/layer: Added Luks/AllowDiscards to support discard with LUKS devices
+  * shared-storagepool: fix delete of inactive resources
+  * shared-storagepools: Fixed cloning
+  * rsc-create: Fixed resource create if no .resource object was given
+  * Prevent NPE if make-available is tried on a rsc-dfn with no active resources
+  * drbd: support discard-granularity disk option (drbd-utils >= 9.34)
+  * rest: Better handle "null" value inputs with defaults
+  * update versions v1.33.3 release
+  * gradle: update errorprone
+  * gradle: update libraries
+  * Stlt,DeviceHandler: Use discard_max_bytes to gate discard_granularity
+  * renovate: do not automatically rebase MR's
+  * gitlab-ci: use latest virter/vmshed
+  * extcmd: check for exec spawn helper ioexceptions and throw CriticalError
+  * RscGrp: validate storage pool names on create and modify
+  * node-evict: increase default timeout to 12 hours
+  * docker: fix mkdir /var/log/linstor-controller
+
+  [ Gabor Hernadi ]
+  * Toggle-disk: Refactored apiCallHandler
+  * Toggle-disk: Add retry/abort
+  * Drbd,rsc,del: Fix inaccurate calculation of remaining diskful resources
+  * StltRscACH: Properly merge remote nodes
+  * Docs: Add How-To guide for DB table creation
+  * AbsStorProv: Also collect optimal_io_size
+  * LuksSizeCalc: Take optimal_io_size into account
+  * ReconnectorTask: Avoid .getName when possible
+  * Gradle: instruct plugins (like IDEs) to switch to Java 21
+  * Sos: Use DbExporter instead of old dbDump
+  * DbExport: Split export and write
+  * ExportDb: Add new API
+  * NodeICH: add double checking
+  * Props: use cloneMap() instead of map() before passing to serializer
+  * Stlt: Add try/catch when parsing MsgIntAuth
+  * Stlt,FullSync: Fix race-condition leading to empty SP capacity/freespace
+  * Systemd-notify: Change to SDNotify library
+  * DevMgr: Print AssertionErrors
+  * DevLayer: Fix compareTo for DevLayerKinds
+  * CtrlStltUpdaterCaller: Properly handle PeerNotConnectedExc
+  * ReconnectorTask: Properly handle multiple peers to same node
+  * ReconnectorTask: Fix minor issues
+  * ReconnectorTask: Reworked setNextNetIf
+  * ReconnectorTask: Ignore completed but stale connected events
+  * ExtCmd: Introduce IoProgressMode
+  * DRBD: Use IoProgressMode for create-md
+  * Mkfs: use IoProgressMode for mkfs.ext4 and mkfs.xfs
+  * ExtCmd: Add safeguard for new ioProgressMode for Windows
+  * ExtCmd: Add properties for remaining timeouts
+  * ExtCmd: Make dflt* fields private
+  * ExtCmd* props: Moved to dedicated namespace
+  * SOS,ctrl: use IoProgressMode for 'tar' command
+  * Drbd: Add Linstor/Drbd/OutsideAddress
+  * Db,SpcTrc: Added migration to use long/TIMESTAMP instead of DATE
+  * Rsc,delete: FluxError if stlt offline
+  * AutoUnplacer: Fix preference of violations over Sp free space
+  * DB,ExtFiles: Add ALT_SUFFIXES column
+  * ExtFiles: Add status check
+  * ExtFiles,Suffix: Fixed migration
+  * Drbd,UpToDate: Changed method how vlms are set UpToDate
+  * Db,K8s: Fix migration order
+  * AutoBlockSize: Write into correct propscontainer
+  * Checkstyle: Fix checkstyle issues
+  * AutoUnplacer: Prefer not-ready and not-UpToDate resources
+  * BalanceResources: Only consider inUse resources as fixed
+  * BalanceResources: Introduce BalanceResourcesSkipDiskLimit
+  * SizeSpec: Introduce size parser
+  * Autoplacer: Introduce minimum 10% free space rule
+  * Drbd,mkfs: Only set primary if needed
+  * Drbd,mkfs: Fix race-condition
+  * DB,K8s: Consolidate K8s Migrations older than 2023
+  * DB,K8s: Updated/Removed yaml files
+  * DB,SQL: Consolidate SQL Migrations older than 2023
+  * DB,SQL: Delete obsolete .sql files
+  * DB,K8s: Properly delete old versions from K8S CRD
+  * Stlt,ApplyRsc: Do not clear node-props unconditionally
+  * Stlt,ApplyRsc: Corrupted crypt key no longer cause failure
+  * Backup,ship: Properly re-encrypt VlmDfn user passphrase
+  * LvmThin: Set all thin volumes UpToDate again
+  * ToggleDisk: Reworked API and added ToggleOp
+  * Drbd: Add client role
+  * DevHandler: Do not process suspended device
+  * Ctrl,NetComInit: Ignore case when checking if enabled property is set
+  * BackupShipping: retry requestShip on IOException and clean up stale state
+  * Vd,mp: Fixed race condition
+  * Luks: move changeKey after children are processed
+  * Range: Added utility class + tests
+  * BitmapPool: Unified checks and error messages
+  * BitmapPool: Now uses new Range parameter
+  * Node: Allowed TcpPortAutoRange on node level
+  * Node: Added TcpPortsBlocked
+  * Ctrl: Generic satellite-retcode retry mechanism
+  * Drbd: Repick blocked TCP ports via satellite-retcode dispatcher
+  * Unit tests: Fix flaky tests
+  * TcpPortAutoRange: Improved error messages
+
+  [ Michael Troutman ]
+  * capitalize admonition types
+
+  [ Christian Wohlert ]
+  * auto-verify-algo: Do not clear property with only one satellite connected
+
+  [ Johannes Khoshnazar-Thoma ]
+  * Have satellites report platform and OS variant
+  * Storage Spaces: report same capacity for thin as for thick.
+  * Removed windrbd crypto algorithm patches.
+
+  [ Ryan Ronnander ]
+  * Fix spelling and grammar errors across codebase
+
+  [ Roland Kammerer ]
+  * linstor-controller: turn on DynamicUser
+
+  [ Liang Li ]
+  * drbd-reactor: Add REST endpoints for drbd-reactorctl commands
+
+  [ Sergei Nikolaev ]
+  * feat: add StorDriver/LvcreatePvSelection prop
+
+  [ Renovate Bot ]
+  * Add renovate.json
+
+  [ LINBOT ]
+  * fix(deps): update dependency org.slf4j:slf4j-api to v2.0.18
+  * fix(deps): update dependency io.projectreactor:reactor-test to 3.8.+
+  * fix(deps): update mockito monorepo to v5
+  * fix(deps): update dependency org.junit:junit-bom to v6.1.0
+  * Update dependency io.sentry:sentry to v8.43.0
+  * Update dependency ch.qos.logback:logback-classic to v1.5.33
+
+  [ Christoph Böhmwalder ]
+  * debian: update mailing list address
+
+  [ Johanna Kucera ]
+  * BackupShipping: fix AccessToDeletedDataExc when rsc not UpToDate
+
+  [ Andrei Kvapil ]
+  * Drbd,toggle-disk: preserve TCP ports during toggle-disk operations
+
+  [ Robert Altnoeder ]
+  * DRBD: Support variable bitmap block size
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 28 May 2026 07:29:40 +0000
+
 linstor-server (1.33.3-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

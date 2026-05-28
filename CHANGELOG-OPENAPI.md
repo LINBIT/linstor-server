@@ -2,7 +2,7 @@
 
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
-## [unreleased]
+## [1.28.0]
 
 ### Added
   - Added /v1/controller/database/export
