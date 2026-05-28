@@ -86,7 +86,7 @@ RUN curl --fail --location "https://dl.k8s.io/$(curl --fail --location https://d
 
 RUN groupadd linstor
 RUN useradd -m -g linstor linstor
-RUN mkdir /var/log/linstor-controller
+RUN mkdir -p /var/log/linstor-controller
 RUN chown -R root:linstor /etc/linstor /var/lib/linstor /var/log/linstor-controller
 RUN chmod g+w /etc/linstor /var/lib/linstor /var/log/linstor-controller
 
