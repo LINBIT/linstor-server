@@ -45,7 +45,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     private final Object syncObj = new Object();
     private final byte[] masterKey;
 
-    private boolean running = false;
+    private volatile boolean running = false;
     private @Nullable Process cmdProcess;
     private boolean afterTerminationSent = false;
     private boolean doneFirst = true;
@@ -325,15 +325,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
                     }
                     catch (SdkClientException exc)
                     {
-                        if (exc.getClass() == AmazonS3Exception.class)
-                        {
-                            AmazonS3Exception s3Exc = (AmazonS3Exception) exc;
-                            if (s3Exc.getStatusCode() != 404)
-                            {
-                                errorReporter.reportError(exc);
-                            }
-                        }
-                        else
+                        if (!isMissingMultipartUploadException(exc))
                         {
                             errorReporter.reportError(exc);
                         }
@@ -363,15 +355,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
                     }
                     catch (SdkClientException exc)
                     {
-                        if (exc.getClass() == AmazonS3Exception.class)
-                        {
-                            AmazonS3Exception s3Exc = (AmazonS3Exception) exc;
-                            if (s3Exc.getStatusCode() != 404)
-                            {
-                                errorReporter.reportError(exc);
-                            }
-                        }
-                        else
+                        if (!isMissingMultipartUploadException(exc))
                         {
                             errorReporter.reportError(exc);
                         }
@@ -386,6 +370,16 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     }
 
     /**
+     * A 404 ("NoSuchUpload") from S3 means the multipart upload no longer exists. This is expected once a
+     * shipment has been aborted (abortMultipart deletes the upload), so a racing uploadPart or abortMultipart
+     * call should not be reported as an error.
+     */
+    private static boolean isMissingMultipartUploadException(Throwable exc)
+    {
+        return exc instanceof AmazonS3Exception s3Exc && s3Exc.getStatusCode() == 404;
+    }
+
+    /**
      * Simple event forcing this thread to kill itself
      */
     private static class PoisonEvent implements Event
@@ -397,8 +391,8 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     {
         Runnable run = () ->
         {
-            threadFinished(false, false);
             running = false;
+            threadFinished(false, false);
             handler.stop(false);
             cmdThread.interrupt();
             s3Thread.interrupt();
