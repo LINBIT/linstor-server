@@ -3,7 +3,7 @@ Upstream-Name: linstor
 Source: https://www.linbit.com
 
 Files: *
-Copyright: Copyright (C) 2016 - 2018, LINBIT HA-Solutions GmbH
+Copyright: Copyright (C) 2016 - 2026, LINBIT HA-Solutions GmbH
 License: GPL-2+
  This program is free software; you can redistribute it
  and/or modify it under the terms of the GNU General Public
@@ -27,7 +27,7 @@ License: GPL-2+
  `/usr/share/common-licenses/GPL-2'.
 
 Files: debian/*
-Copyright: Copyright (C) 2016 - 2018, LINBIT HA-Solutions GmbH
+Copyright: Copyright (C) 2016 - 2026, LINBIT HA-Solutions GmbH
 License: GPL-2+
  This program is free software; you can redistribute it
  and/or modify it under the terms of the GNU General Public

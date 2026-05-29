@@ -1,6 +1,6 @@
 Source: linstor-server
 Maintainer: LINBIT HA Solutions GmbH <drbd-dev@lists.linux.dev>
-Uploaders: Roland Kammerer <roland.kammerer@linbit.com>
+Uploaders: Rene Peinthor <rene.peinthor@linbit.com>
 Section: admin
 Priority: optional
 Build-Depends: debhelper (>= 11),
@@ -33,7 +33,7 @@ Depends: ${misc:Depends},
          linstor-common (= ${binary:Version}),
          tar,
          thin-provisioning-tools
-Suggests: drbd-utils (>= 9.7.0),
+Suggests: drbd-utils (>= 9.32.0),
           socat,
           zstd,
           thin-send-recv
