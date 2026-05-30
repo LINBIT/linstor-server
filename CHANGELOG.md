@@ -115,6 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed auto block-size not considering resource group and controller properties for initial min-IO size
 - Fixed resource definition delete setting DELETE flag when resources are still in use
 - Fixed retry deletion of already deleting resource (no longer fails if it is the second to last diskful resource)
 - Satellite now properly merges remote nodes + their data (props, netIfs)

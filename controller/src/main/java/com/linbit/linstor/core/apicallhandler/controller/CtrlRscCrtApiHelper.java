@@ -703,6 +703,42 @@ public class CtrlRscCrtApiHelper
                 }
 
                 final boolean autoMinIoSizeForVlmDfn = minIoSizeHelper.isAutoMinIoSize(vlmDfn, apiCtx);
+
+                // Consider configured block-size from resource group / volume group hierarchy
+                // so that volumes on storage pools with smaller min-IO size (e.g. 512) are created
+                // with the larger configured block-size (e.g. 4096), enabling later placement on
+                // storage pools with larger min-IO size
+                long effectiveBlockSize = poolBlockSize;
+                if (autoMinIoSizeForVlmDfn && vlmBlockSizeStr == null)
+                {
+                    final PriorityProps blockSizePrioProps = new PriorityProps(
+                        vlmDfn.getProps(apiCtx),
+                        rscDfn.getProps(apiCtx),
+                        rscDfn.getResourceGroup().getVolumeGroupProps(apiCtx, vlmDfn.getVolumeNumber()),
+                        rscDfn.getResourceGroup().getProps(apiCtx),
+                        ctrlPropsHelper.getStltPropsForView()
+                    );
+                    final @Nullable String cfgBlockSizeStr = blockSizePrioProps.getProp(
+                        InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
+                        ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                    );
+                    if (cfgBlockSizeStr != null)
+                    {
+                        try
+                        {
+                            final long cfgBlockSize = MathUtils.bounds(
+                                BlockSizeConsts.MIN_IO_SIZE,
+                                Long.parseLong(cfgBlockSizeStr),
+                                BlockSizeConsts.MAX_IO_SIZE
+                            );
+                            effectiveBlockSize = Math.max(poolBlockSize, cfgBlockSize);
+                        }
+                        catch (NumberFormatException ignored)
+                        {
+                        }
+                    }
+                }
+
                 boolean minIoNeedsUpdate;
                 if (vlmBlockSizeStr == null)
                 {
@@ -719,7 +755,7 @@ public class CtrlRscCrtApiHelper
                     if (canChangeMinIo)
                     {
                         // Set the changed minIoSize
-                        vlmDfn.setMinIoSize(poolBlockSize, apiCtx);
+                        vlmDfn.setMinIoSize(effectiveBlockSize, apiCtx);
                         if (rscDfn.getResourceCount() > 1)
                         {
                             // Only enable the "restart DRBD" property if this is NOT the very first resource we are
