@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed DRBD auto verify algorithm being recomputed over an incomplete node set while satellites reconnect, which could change the algorithm and force an already connected resource into StandAlone without automatic reconnect
+
 ## [1.34.0-rc.1] - 2026-05-28
 
 ### Added

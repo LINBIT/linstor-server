@@ -99,6 +99,44 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                 rsc -> rsc.getNode().getSupportedCryptos()));
     }
 
+    /**
+     * Returns {@code true} only if every node that has this resource definition deployed with a DRBD layer is
+     * currently connected and has finished its full-sync (and has therefore already reported its supported crypto
+     * algorithms).
+     *
+     * <p>The DRBD verify algorithm must be identical on all nodes of a resource. The auto-selection derives it from
+     * the intersection of the crypto algorithms supported by all nodes. If this is recalculated while only a subset
+     * of the nodes has reported its crypto entries - which happens for example during controller startup, when the
+     * satellites reconnect and finish their full-sync one after another - the intersection (and therefore the selected
+     * algorithm) can change with every additional node that reports. Pushing such an intermediate algorithm to the
+     * already deployed resource and then correcting it a moment later makes {@code drbdadm adjust} change the
+     * connection's 'verify-alg', which forces the affected DRBD connection into StandAlone without an automatic
+     * reconnect.</p>
+     *
+     * <p>Waiting until all DRBD nodes have reported avoids these intermediate values and keeps the computed algorithm
+     * stable.</p>
+     */
+    private boolean allDrbdNodesReportedCryptos(ResourceDefinition rscDfn)
+        throws AccessDeniedException
+    {
+        final AccessContext peerCtx = peerCtxProvider.get();
+        boolean allReported = true;
+        for (Resource rsc : rscDfn.streamResource(peerCtx).collect(Collectors.toList()))
+        {
+            if (!rsc.getNode().isDeleted() &&
+                LayerRscUtils.getLayerStack(rsc, peerCtx).contains(DeviceLayerKind.DRBD))
+            {
+                final @Nullable Peer peer = rsc.getNode().getPeer(peerCtx);
+                if (peer == null || !peer.isFullSyncApplied())
+                {
+                    allReported = false;
+                    break;
+                }
+            }
+        }
+        return allReported;
+    }
+
     private ApiCallRc checkVerifyAlgorithm(ResourceDefinition rscDfn)
     {
         final ApiCallRcImpl rc = new ApiCallRcImpl();
@@ -168,8 +206,16 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
 
             final @Nullable String disableAuto = prioProps.getProp(ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO,
                 ApiConsts.NAMESPC_DRBD_OPTIONS);
-            if (StringUtils.propFalseOrNull(disableAuto) &&
-                rscDfn.usesLayer(peerCtx, DeviceLayerKind.DRBD))
+            final boolean autoVerifyAlgoEnabled = StringUtils.propFalseOrNull(disableAuto) &&
+                rscDfn.usesLayer(peerCtx, DeviceLayerKind.DRBD);
+
+            // Only (re)compute once every DRBD node of the resource definition has finished its full-sync and has
+            // therefore reported its supported crypto algorithms. Computing over a subset of the nodes (e.g. while
+            // satellites are still reconnecting after a controller restart) can select an intermediate algorithm that
+            // gets corrected once the remaining nodes report - and applying that correction to an already
+            // connecting/connected DRBD resource forces the connection into StandAlone. While nodes are still missing
+            // neither branch runs, so the current value is kept until all nodes have reported.
+            if (autoVerifyAlgoEnabled && allDrbdNodesReportedCryptos(rscDfn))
             {
                 final Map<String, List<ProcCryptoEntry>> nodeCryptos = getCryptoEntryMap(rscDfn);
 
@@ -233,7 +279,7 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                     }
                 }
             }
-            else
+            else if (!autoVerifyAlgoEnabled)
             {
                 // Auto Verify Algo is disabled, so delete the property if it is set
                 final Props rscDfnProps = rscDfn.getProps(peerCtx);
