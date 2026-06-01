@@ -550,7 +550,11 @@ public class CtrlBackupL2LDstApiCallHandler
                         lockGuardFactory.buildDeferred(
                             LockType.WRITE,
                             LockObj.NODES_MAP,
-                            LockObj.RSC_DFN_MAP
+                            LockObj.RSC_DFN_MAP,
+                            // restoreBackupL2LInTransaction can move the resource definition into the target
+                            // resource group (force-move-resource-group), which mutates ResourceGroup objects.
+                            // Lock RSC_GRP_MAP to serialize against resource-group create/modify/delete.
+                            LockObj.RSC_GRP_MAP
                         ),
                         () -> backupRestoreApiCallHandler.restoreBackupL2LInTransaction(
                             data

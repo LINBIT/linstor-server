@@ -266,7 +266,10 @@ public class CtrlBackupRestoreApiCallHandler
             ).flatMapMany(
                 ignored -> scopeRunner.fluxInTransactionalScope(
                     "restore backup", lockGuardFactory.buildDeferred(
-                        LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP
+                        // restoreBackupInTransaction can move the resource definition into the target resource
+                        // group (force-move-resource-group), which mutates ResourceGroup objects. Lock
+                        // RSC_GRP_MAP to serialize against resource-group create/modify/delete.
+                        LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP
                     ),
                     () -> restoreBackupInTransaction(
                         srcRscName,
