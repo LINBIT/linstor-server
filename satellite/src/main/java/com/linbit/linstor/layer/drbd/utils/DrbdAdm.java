@@ -920,7 +920,7 @@ public class DrbdAdm
                 lastOutput = extCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), command);
                 if (lastOutput.exitCode == 0)
                 {
-                    return;
+                    break;
                 }
                 if (!isDeviceHeldOpenError(lastOutput) || attempt == SECONDARY_RETRY_MAX_ATTEMPTS)
                 {
@@ -953,12 +953,17 @@ public class DrbdAdm
 
     static boolean isDeviceHeldOpenError(OutputData outputData)
     {
+        boolean ret;
         if (outputData == null || outputData.stderrData == null)
         {
-            return false;
+            ret = false;
         }
-        String stderr = new String(outputData.stderrData, StandardCharsets.UTF_8);
-        return stderr.contains(DEVICE_HELD_OPEN_ERR_MSG);
+        else
+        {
+            String stderr = new String(outputData.stderrData, StandardCharsets.UTF_8);
+            ret = stderr.contains(DEVICE_HELD_OPEN_ERR_MSG);
+        }
+        return ret;
     }
 
     public static class DrbdPrimary implements AutoCloseable
