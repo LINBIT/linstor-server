@@ -1,0 +1,91 @@
+# GitHub Actions CI for LINSTOR server.
+#
+# Create checkstyle / errorProne / JUnit feedback automatically.
+#
+# The three checks run as independent parallel jobs (fail-fast: false), and each
+# uses `--continue` so a single category reports *all* of its problems at once.
+# The goal is that the contributor sees every category of problem in one review,
+# instead of fixing checkstyle only to then discover errorProne, then test failures.
+#
+# Triggers:
+#   - pull_request : runs on every PR (this is what catches contributions)
+#   - push         : runs when GL/master is pushed to GH/master
+#   - workflow_dispatch : lets you trigger a run manually from the Actions tab
+name: build & test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+# Cancel an in-progress run if the same PR/branch gets a new push.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      # Do NOT cancel the other checks when one fails: we want every category
+      # (checkstyle / errorProne / test) reported in the same run.
+      fail-fast: false
+      matrix:
+        include:
+          - name: checkstyle
+            # --continue: report violations in all modules, not just the first.
+            cmd: ./gradlew --continue -PversionOverride= checkstyleMain
+          - name: errorprone
+            # errorProne runs as part of compilation, triggered by `assemble`.
+            cmd: ./gradlew --continue -PversionOverride= assemble
+          - name: test
+            # Disable errorProne here (build.gradle supports -PdisableErrorProne)
+            # so this job reports JUnit results independently of style issues;
+            # it still fails on genuine compile errors, which is unavoidable.
+            cmd: JAVA_OPTS="-ea" ./gradlew --continue -PversionOverride= -PdisableErrorProne test
+
+    name: ${{ matrix.name }}
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          # linstor-common is a git submodule and is required for code generation.
+          submodules: recursive
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle (with caching)
+        uses: gradle/actions/setup-gradle@v4
+
+      # protoc is downloaded into tools/ by the getProtoc task; cache it so we
+      # don't re-download on every run. Key on the protobuf version in build.gradle.
+      - name: Cache protoc
+        uses: actions/cache@v4
+        with:
+          path: tools
+          key: protoc-${{ runner.os }}-${{ hashFiles('build.gradle') }}
+
+      - name: Download protoc
+        run: ./gradlew getProtoc
+
+      - name: Run ${{ matrix.name }}
+        run: ${{ matrix.cmd }}
+
+      # Always upload reports so failures are easy to inspect from the run's
+      # Artifacts section (HTML checkstyle reports, JUnit XML, etc.).
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ matrix.name }}
+          path: |
+            **/build/reports/
+            **/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
