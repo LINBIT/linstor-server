@@ -2,6 +2,9 @@ openapi: 3.0.2
 servers:
   - url: http://localhost:3370
     description: Local Linstor controller
+security:
+  - bearerAuth: []
+  - {}
 info:
   description: |
     Linstor REST API V1
@@ -6186,6 +6189,10 @@ paths:
         '500':
           $ref: '#/components/responses/OperationFailed'
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
   parameters:
     Resource:
       name: resource
