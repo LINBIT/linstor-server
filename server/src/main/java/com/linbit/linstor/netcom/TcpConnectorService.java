@@ -999,7 +999,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             String localAddrText = null;
             String remoteAddrText = null;
 
-            try
+            if (localAddr instanceof InetSocketAddress)
             {
                 final InetSocketAddress localInetAddr = (InetSocketAddress) localAddr;
                 final InetAddress ipAddress = localInetAddr.getAddress();
@@ -1008,12 +1008,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     localAddrText = ipAddress.getHostAddress();
                 }
             }
-            catch (ClassCastException ignored)
-            {
-                // ignored
-            }
 
-            try
+            if (remoteAddr instanceof InetSocketAddress)
             {
                 final InetSocketAddress remoteInetAddr = (InetSocketAddress) remoteAddr;
                 final InetAddress ipAddress = remoteInetAddr.getAddress();
@@ -1021,10 +1017,6 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 {
                     remoteAddrText = ipAddress.getHostAddress();
                 }
-            }
-            catch (ClassCastException ignored)
-            {
-                // ignored
             }
 
             final String errorDescription =
