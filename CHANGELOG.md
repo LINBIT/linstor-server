@@ -59,6 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resources that have a backing disk for DRBD can be chosen (GitHub issue #515, supersedes GitHub PR #519)
 - Fixed mk-avail creating EBS initiator resources as DRBD-client. EBS- and NVMe-initiators are now treated as diskful
   DRBD peers, even if the resources have no "local" disk (GitHub issue #513, supersedes GitHub PR #514)
+- Fixed special-satellites rejected with DUPLICATE_UNAME. They no longer participate in uname-uniqueness
+  (GitHub issue #505, PR #510)
 
 ## [1.35.2] - 2026-09-14
 
