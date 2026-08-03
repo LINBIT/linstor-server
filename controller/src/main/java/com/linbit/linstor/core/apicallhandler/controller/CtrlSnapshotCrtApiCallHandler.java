@@ -990,7 +990,7 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         try
         {
-            ebsStatusMgr.pollAndWait(EbsStatusManagerService.DFLT_POlL_WAIT);
+            ebsStatusMgr.pollAndWait(EbsStatusManagerService.DFLT_POLL_WAIT);
         }
         catch (InterruptedException exc)
         {

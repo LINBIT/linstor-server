@@ -69,7 +69,7 @@ import com.amazonaws.services.ec2.model.VolumeModification;
 @Singleton
 public class EbsStatusManagerService implements SystemService
 {
-    public static final long DFLT_POlL_WAIT = 5_000;
+    public static final long DFLT_POLL_WAIT = 5_000;
 
     private static final long DFLT_POLL_TIMEOUT_MS = 60_000;
     // private static final long DFLT_POLL_TIMEOUT_MS = 10_000;

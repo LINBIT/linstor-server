@@ -7,7 +7,6 @@ import com.linbit.linstor.core.CriticalError;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteDatabaseDriver;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -75,7 +74,7 @@ public class EbsRemoteSatelliteFactory
             if (!remote.getUuid().equals(uuid))
             {
                 CriticalError.dieUuidMissmatch(
-                    S3Remote.class.getSimpleName(),
+                    EbsRemote.class.getSimpleName(),
                     remote.getName().displayValue,
                     remoteNameRef.displayValue,
                     remote.getUuid(),
