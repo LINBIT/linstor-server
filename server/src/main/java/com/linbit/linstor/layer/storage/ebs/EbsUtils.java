@@ -42,7 +42,8 @@ public class EbsUtils
     public static final String EBS_VLM_STATE_COMPLETED = "completed";
 
     public static final String EBS_SNAP_STATE_COMPLETED = "completed";
-
+    public static final String EBS_SNAP_STATE_PENDING = "pending";
+    public static final String EBS_SNAP_STATE_ERROR = "error";
 
     private EbsUtils()
     {
@@ -194,15 +195,48 @@ public class EbsUtils
         return hasEbsVlm;
     }
 
-    public static boolean isSnapshotCompleted(Snapshot snapshotRef)
+    public static boolean isSnapshotRestorable(Snapshot snapshotRef)
     {
         boolean allCompleted = true;
         Iterator<SnapshotVolume> snapVlmIt = snapshotRef.iterateVolumes();
         while (snapVlmIt.hasNext())
         {
             SnapshotVolume snapVlm = snapVlmIt.next();
-            allCompleted &= snapVlm.getState().equals(EBS_SNAP_STATE_COMPLETED);
+            if (!isSnapshotStateRestorable(snapVlm.getState()))
+            {
+                allCompleted = false;
+                break;
+            }
         }
         return allCompleted;
+    }
+
+    /**
+     * An AWS snapshot can only be restored / rolled back if it is fully completed. Pending state is <b>not</b>
+     * good enough.
+     */
+    public static boolean isSnapshotStateRestorable(@Nullable String stateRef)
+    {
+        /*
+         * Own method just in case AWS at some point extends which states can also be considered as
+         * "snapshot is restorable"
+         */
+        boolean ret = false;
+        if (stateRef != null)
+        {
+            ret = stateRef.equalsIgnoreCase(EBS_SNAP_STATE_COMPLETED);
+        }
+        return ret;
+    }
+
+    public static boolean isSnapshotStateCompletedOrPending(@Nullable String stateRef)
+    {
+        boolean ret = false;
+        if (stateRef != null)
+        {
+            ret = stateRef.equalsIgnoreCase(EBS_SNAP_STATE_COMPLETED) ||
+                stateRef.toLowerCase().startsWith(EBS_SNAP_STATE_PENDING);
+        }
+        return ret;
     }
 }

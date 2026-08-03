@@ -11,7 +11,6 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.netcom.Peer;
 
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -73,7 +72,7 @@ public class CtrlSnapshotHelper
         for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
         {
             if (EbsUtils.isEbs(snapshot) &&
-                !EbsUtils.isSnapshotCompleted(snapshot))
+                !EbsUtils.isSnapshotRestorable(snapshot))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

@@ -112,7 +112,7 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
         return state;
     }
 
-    public void setState(String stateRef) throws DatabaseException
+    public void setState(String stateRef)
     {
         checkDeleted();
         state = stateRef;

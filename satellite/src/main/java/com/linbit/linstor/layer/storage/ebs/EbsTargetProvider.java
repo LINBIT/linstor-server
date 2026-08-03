@@ -400,7 +400,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         );
         String snapshotId = createSnapshotResult.getSnapshot().getSnapshotId();
 
-        EbsProviderUtils.waitUntilSnapshotCreated(errorReporter, client, snapshotId);
+        EbsProviderUtils.waitUntilSnapshotCreatedOrPending(errorReporter, client, snapshotId);
 
         errorReporter.logTrace("EBS Snapshot created. EBS Snapshot ID: %s", snapshotId);
         setEbsSnapId(snapVlmRef, snapshotId);

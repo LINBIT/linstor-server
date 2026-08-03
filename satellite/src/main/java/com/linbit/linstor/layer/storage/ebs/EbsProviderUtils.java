@@ -22,10 +22,6 @@ public class EbsProviderUtils
     private static final int DFLT_WAIT_TIMEOUT = 60_000;
     private static final int ONE_SECOND = 1000;
 
-    private static final String SNAP_CREATE_STATE_COMPLETED = "completed";
-    private static final String SNAP_CREATE_STATE_PENDING = "pending";
-    private static final String SNAP_CREATE_STATE_ERROR = "error";
-
     private EbsProviderUtils()
     {
         // utility class
@@ -118,14 +114,14 @@ public class EbsProviderUtils
         }
     }
 
-    public static void waitUntilSnapshotCreated(
+    public static void waitUntilSnapshotCreatedOrPending(
         ErrorReporter errReporter,
         AmazonEC2 client,
         String ebsSnapId
     )
         throws StorageException
     {
-        waitUntilSnapshotCreated(
+        waitUntilSnapshotCreatedOrPending(
             errReporter,
             client,
             DFLT_WAIT_TIMEOUT,
@@ -133,7 +129,7 @@ public class EbsProviderUtils
         );
     }
 
-    public static void waitUntilSnapshotCreated(
+    public static void waitUntilSnapshotCreatedOrPending(
         ErrorReporter errReporter,
         AmazonEC2 client,
         int waitTimeoutInMs,
@@ -158,14 +154,12 @@ public class EbsProviderUtils
             }
             String snapshotState = describeSnapshots.getSnapshots().get(0).getState();
 
-            if (snapshotState.equalsIgnoreCase(SNAP_CREATE_STATE_ERROR))
+            if (snapshotState.equalsIgnoreCase(EbsUtils.EBS_SNAP_STATE_ERROR))
             {
                 throw new StorageException("EBS snapshot has state: '" + snapshotState + "'");
             }
 
-            created = snapCount == 1 &&
-                (snapshotState.equalsIgnoreCase(SNAP_CREATE_STATE_COMPLETED) ||
-                    snapshotState.equalsIgnoreCase(SNAP_CREATE_STATE_PENDING));
+            created = snapCount == 1 && EbsUtils.isSnapshotStateCompletedOrPending(snapshotState);
 
             try
             {

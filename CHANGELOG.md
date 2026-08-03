@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   made `since`/`to` filters of the error-report listing miss recent reports
 - Satellite: Fixed .res file's 'disk' (drbd-peer-options) section not including controller properties when a
   resource-connection exists. Now node-connection and controller properties are also included.
+- Fixed potential NPE when checking the status of an EBS snapshot (GitHub issue #516, supersedes GitHub PR #517)
 
 ## [1.35.2] - 2026-09-14
 
