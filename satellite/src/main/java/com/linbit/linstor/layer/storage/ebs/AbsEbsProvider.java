@@ -104,7 +104,6 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
 
     protected static final HashSet<String> LINSTOR_TAGS = new HashSet<>();
     protected static final String TAG_KEY_LINSTOR_ID = "LinstorID";
-    protected static final String TAG_KEY_LINSTOR_INIT_DEV = "LinstorInitDevice";
 
     protected static final int WAIT_AFTER_RESIZE_COUNT = 300;
     protected static final long WAIT_AFTER_RESIZE_TIMEOUT_IN_MS = 100;
@@ -118,7 +117,6 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     static
     {
         LINSTOR_TAGS.add(TAG_KEY_LINSTOR_ID);
-        LINSTOR_TAGS.add(TAG_KEY_LINSTOR_INIT_DEV);
     }
 
     private final Map<EbsRemote, AmazonEC2> amazonEc2ClientLUT;

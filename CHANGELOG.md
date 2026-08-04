@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Controller: REST stack upgraded to Jersey 4 (Jakarta REST 4.0), HK2 4 and Guice 7; the REST API itself is unchanged
 - Controller: The Kubernetes CRD database backend now uses the JDK HTTP client instead of Vert.x/Netty, removing
   ~6 MB of dependencies (and their CVE exposure) from the distribution
+- EBS initiators no longer tag AWS volumes with "LinstorInitDevice"
 
 ### Fixed
 
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed potential NPE when checking the status of an EBS snapshot (GitHub issue #516, supersedes GitHub PR #517)
 - Fixed EBS initiators failing to find the attached volume on Nitro-based EC2 instances (/dev/nvme*n1). Devices are
   now identified by their serial number (GitHub issue #508, supersedes GitHub PR #509)
+- Fixed EBS initiator volumes losing their device path after a satellite restart
 
 ## [1.35.2] - 2026-09-14
 

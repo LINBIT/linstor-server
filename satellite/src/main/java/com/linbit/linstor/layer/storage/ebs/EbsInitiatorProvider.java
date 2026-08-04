@@ -27,7 +27,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.utils.Pair;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -47,13 +46,10 @@ import java.util.regex.Pattern;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.AttachVolumeRequest;
-import com.amazonaws.services.ec2.model.CreateTagsRequest;
-import com.amazonaws.services.ec2.model.DeleteTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeVolumesRequest;
 import com.amazonaws.services.ec2.model.DescribeVolumesResult;
 import com.amazonaws.services.ec2.model.DetachVolumeRequest;
 import com.amazonaws.services.ec2.model.Filter;
-import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.VolumeAttachment;
 
 @Singleton
@@ -71,8 +67,8 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 
     private static final int TOLERANCE_FACTOR = 3;
 
-    /** {@code Map<StorageName + "/" + LvId, Pair<EBS-vol-id, devicePath>>} */
-    private final Map<String, Pair<String, String>> lookupTable = new HashMap<>();
+    /** {@code Map<StorageName + "/" + LvId, devicePath>} */
+    private final Map<String, String> lvIdToDevicePathLut = new HashMap<>();
 
     private final @Nullable String ec2InstanceId;
     /** Unmodifiable list containing only {@code ec2InstanceId}'s content if {@code ec2InstanceId} is non-null.
@@ -153,19 +149,21 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 
         for (EbsData<?> vlmData : combinedList)
         {
-            final com.amazonaws.services.ec2.model.Volume amaVlm = amaVlmLut.get(getEbsVlmId(vlmData));
+            @Nullable String ebsVlmId = getEbsVlmId(vlmData);
+            final com.amazonaws.services.ec2.model.Volume amaVlm = amaVlmLut.get(ebsVlmId);
             final LsBlkEntry lsblkEntry;
 
             final String devPath;
-            if (vlmData.getDevicePath() == null && amaVlm != null)
+            if (vlmData.getDevicePath() == null && amaVlm != null && ebsVlmId != null)
             {
                 // ctrl got restarted but the amazonVlm is still be connected
-                devPath = getFromTags(amaVlm.getTags(), TAG_KEY_LINSTOR_INIT_DEV);
+                devPath = findDeviceBySerial(ebsVlmId, infoListCache.values());
             }
             else
             {
                 devPath = vlmData.getDevicePath();
             }
+
             lsblkEntry = infoListCache.get(devPath);
 
             updateInfo(vlmData, lsblkEntry, amaVlm);
@@ -244,7 +242,15 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
                 throw new StorageException("Target volume unexpectedly does not exist: " + vlmDataLvId);
             }
             vlmDataRef.setExists(true);
-            vlmDataRef.setDevicePath(getFromTags(amaVlmRef.getTags(), TAG_KEY_LINSTOR_INIT_DEV));
+            if (vlmDataRef.getVolume() instanceof Volume)
+            {
+                setDevicePath((EbsData<Resource>) vlmDataRef, lsblkEntryRef.getName());
+            }
+            else
+            {
+                // EbsData<Snapshots> are not cached
+                vlmDataRef.setDevicePath(lsblkEntryRef.getName());
+            }
             vlmDataRef.setAllocatedSize(SizeConv.convert(amaVlmRef.getSize(), SizeUnit.UNIT_GiB, SizeUnit.UNIT_KiB));
         }
     }
@@ -263,7 +269,11 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 
         String devicePathForRequest = getDevicePathForRequest(client);
 
-        String ebsVlmId = getEbsVlmId(initiatorVlmDataRef);
+        @Nullable String ebsVlmId = getEbsVlmId(initiatorVlmDataRef);
+        if (ebsVlmId == null)
+        {
+            throw new StorageException("EBS VlmId was unexpectedly null for: " + asLvIdentifier(initiatorVlmDataRef));
+        }
         client.attachVolume(
             new AttachVolumeRequest(
                 ebsVlmId,
@@ -281,18 +291,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         );
 
         String actualDevice = waitForDevice(ebsVlmId);
-
-        initiatorVlmDataRef.setDevicePath(actualDevice);
-        lookupTable.put(
-            getStorageName(initiatorVlmDataRef) + "/" + asLvIdentifier(initiatorVlmDataRef),
-            new Pair<>(ebsVlmId, actualDevice)
-        );
-
-        client.createTags(
-            new CreateTagsRequest()
-                .withResources(ebsVlmId)
-                .withTags(new Tag(TAG_KEY_LINSTOR_INIT_DEV, actualDevice))
-        );
+        setDevicePath(initiatorVlmDataRef, actualDevice);
     }
 
     /**
@@ -550,14 +549,15 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         client.detachVolume(
             new DetachVolumeRequest(ebsVlmId)
         );
-        client.deleteTags(
-            new DeleteTagsRequest()
-                .withResources(ebsVlmId)
-                .withTags(new Tag(TAG_KEY_LINSTOR_INIT_DEV))
-        );
         // volume is most likely in "detaching" state
         EbsProviderUtils.waitUntilVolumeHasState(errorReporter, client, ebsVlmId, "available", "in-use", "detaching");
         vlmDataRef.setExists(false);
+        lvIdToDevicePathLut.remove(buildFqLvId(vlmDataRef));
+    }
+
+    private String buildFqLvId(EbsData<Resource> vlmDataRef) throws DatabaseException, StorageException
+    {
+        return getStorageName(vlmDataRef) + "/" + asLvIdentifier(vlmDataRef);
     }
 
     @Override
@@ -594,14 +594,15 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     @Override
     public @Nullable String getDevicePath(String storageNameRef, String lvIdRef)
     {
-        Pair<String, String> pair = lookupTable.get(storageNameRef + "/" + lvIdRef);
-        return pair == null ? null : pair.objB;
+        return lvIdToDevicePathLut.get(storageNameRef + "/" + lvIdRef);
     }
 
     @Override
-    protected void setDevicePath(EbsData<Resource> vlmDataRef, String devicePathRef) throws DatabaseException
+    protected void setDevicePath(EbsData<Resource> vlmDataRef, @Nullable String devicePathRef)
+        throws DatabaseException, StorageException
     {
         vlmDataRef.setDevicePath(devicePathRef);
+        lvIdToDevicePathLut.put(buildFqLvId(vlmDataRef), devicePathRef);
     }
 
     @Override

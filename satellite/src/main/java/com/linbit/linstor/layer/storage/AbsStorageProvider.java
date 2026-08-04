@@ -2306,7 +2306,8 @@ public abstract class AbsStorageProvider<
     protected abstract String getStorageName(LAYER_DATA vlmData)
         throws DatabaseException, StorageException;
 
-    protected abstract void setDevicePath(LAYER_DATA vlmData, @Nullable String devicePath) throws DatabaseException;
+    protected abstract void setDevicePath(LAYER_DATA vlmData, @Nullable String devicePath)
+        throws DatabaseException, StorageException;
 
     protected abstract void setAllocatedSize(LAYER_DATA vlmData, long size) throws DatabaseException;
 
