@@ -1,11 +1,11 @@
 package com.linbit.linstor.layer.storage.ebs;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
@@ -35,62 +35,49 @@ import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.AttachVolumeRequest;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DeleteTagsRequest;
+import com.amazonaws.services.ec2.model.DescribeVolumesRequest;
+import com.amazonaws.services.ec2.model.DescribeVolumesResult;
 import com.amazonaws.services.ec2.model.DetachVolumeRequest;
+import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Tag;
+import com.amazonaws.services.ec2.model.VolumeAttachment;
 
 @Singleton
 public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 {
     public static final String EC2_INSTANCE_ID_PATH = "/sys/devices/virtual/dmi/id/board_asset_tag";
 
+    private static final Pattern DEVICES_FOR_REQUEST_PATTERN = Pattern.compile("/dev/(?:sd|xvd)(?<letter>.)");
+
     private static final int WAIT_NEW_DEV_APPEAR_MS = 500;
     private static final int WAIT_NEW_DEV_APPEAR_COUNT = 30_000 / WAIT_NEW_DEV_APPEAR_MS;
-    private static final int WAIT_NEW_DEV_RECONNECT_COUNT = 5;
 
     private static final String EBS_VLM_STATE_ATTACHING = "attaching";
     private static final String EBS_VLM_STATE_IN_USE = "in-use";
 
     private static final int TOLERANCE_FACTOR = 3;
-    private static final ArrayList<String> AVAILABLE_LETTERS_COMMON = new ArrayList<>();
-    private static final ArrayList<String> AVAILABLE_LETTERS_HVM = new ArrayList<>();
 
     /** {@code Map<StorageName + "/" + LvId, Pair<EBS-vol-id, devicePath>>} */
     private final Map<String, Pair<String, String>> lookupTable = new HashMap<>();
 
     private final @Nullable String ec2InstanceId;
-
-    static
-    {
-        /*
-         * common device letters
-         */
-        for (char chr = 'z'; chr >= 'b'; chr--)// sda is usually reserved for root
-        {
-            AVAILABLE_LETTERS_COMMON.add(String.valueOf(chr));
-        }
-
-        /*
-         * HVM specific device letters
-         */
-        for (char firstCh = 'c'; firstCh >= 'b'; firstCh--)
-        {
-            for (char secondCh = 'z'; secondCh >= 'a'; secondCh--)
-            {
-                AVAILABLE_LETTERS_HVM.add(firstCh + "" + secondCh);
-            }
-        }
-
-    }
+    /** Unmodifiable list containing only {@code ec2InstanceId}'s content if {@code ec2InstanceId} is non-null.
+     * Empty otherwise. */
+    private final List<String> ec2InstanceIdAsList;
 
     @Inject
     public EbsInitiatorProvider(AbsEbsProviderIniit superInitRef)
@@ -99,8 +86,20 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         super(superInitRef, "EBS", DeviceProviderKind.EBS_INIT);
 
         ec2InstanceId = getEc2InstanceId(errorReporter, extCmdFactory);
+        ec2InstanceIdAsList = ec2InstanceId == null ?
+            Collections.emptyList() :
+            Collections.singletonList(ec2InstanceId);
     }
 
+    /**
+     * This method returns the instance id, read from {@code /sys/devices/virtual/dmi/id/board_asset_tag}. However this
+     * file only exists on Nitro based EC2 machines, not on the old Xen instances. This is simply a limitation of
+     * LINSTOR that it only works with Nitro based instances.
+     *
+     * <p>One difficulty with Xen based instances would also be the cumbersome finding of attached devices. Nitro
+     * attaches the devices as nvme devices with a serial number that matches the EBS ID, which LINSTOR already have
+     * and can precisely match instead of comparing before/after "lsblk" runs.</p>
+     */
     public static @Nullable String getEc2InstanceId(ErrorReporter errorReporterRef, ExtCmdFactory extCmdFactoryRef)
     {
         @Nullable String ret;
@@ -254,22 +253,22 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     protected void createLvImpl(EbsData<Resource> vlmDataRef)
         throws StorageException, DatabaseException
     {
-        connect(vlmDataRef, true);
+        connect(vlmDataRef);
     }
 
-    private void connect(EbsData<Resource> initiatorVlmDataRef, boolean findDeviceRef)
+    private void connect(EbsData<Resource> initiatorVlmDataRef)
         throws StorageException, DatabaseException
     {
         AmazonEC2 client = getClient(initiatorVlmDataRef.getStorPool());
 
-        List<LsBlkEntry> lsblkPreConnect = LsBlkUtils.lsblk(extCmdFactory.create());
-        String deviceLettersForAttach = findUnusedDevice(lsblkPreConnect);
+        String devicePathForRequest = getDevicePathForRequest(client);
+
         String ebsVlmId = getEbsVlmId(initiatorVlmDataRef);
         client.attachVolume(
             new AttachVolumeRequest(
                 ebsVlmId,
                 ec2InstanceId,
-                "/dev/sd" + deviceLettersForAttach
+                devicePathForRequest
             )
         );
 
@@ -281,57 +280,139 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
             EBS_VLM_STATE_ATTACHING
         );
 
-        if (findDeviceRef)
-        {
-            String actualDevice = waitForDevice(lsblkPreConnect, initiatorVlmDataRef);
+        String actualDevice = waitForDevice(ebsVlmId);
 
-            initiatorVlmDataRef.setDevicePath(actualDevice);
-            lookupTable.put(
-                getStorageName(initiatorVlmDataRef) + "/" + asLvIdentifier(initiatorVlmDataRef),
-                new Pair<>(ebsVlmId, actualDevice)
-            );
+        initiatorVlmDataRef.setDevicePath(actualDevice);
+        lookupTable.put(
+            getStorageName(initiatorVlmDataRef) + "/" + asLvIdentifier(initiatorVlmDataRef),
+            new Pair<>(ebsVlmId, actualDevice)
+        );
 
-            client.createTags(
-                new CreateTagsRequest()
-                    .withResources(ebsVlmId)
-                    .withTags(new Tag(TAG_KEY_LINSTOR_INIT_DEV, actualDevice))
-            );
-
-        }
+        client.createTags(
+            new CreateTagsRequest()
+                .withResources(ebsVlmId)
+                .withTags(new Tag(TAG_KEY_LINSTOR_INIT_DEV, actualDevice))
+        );
     }
 
-    private String waitForDevice(
-        List<LsBlkEntry> lsblkPreConnect,
-        EbsData<Resource> vlmDataRef
-    )
-        throws StorageException, DatabaseException
+    /**
+     * Older versions tried to scan here for existing (aka local) {@code /dev/sd[a-z]} or {@code /dev/xvd...} to see
+     * which device LINSTOR should include in the next attachVolume request, although AWS could receive a request like
+     * {@code /dev/sdz} but (in old Xen versions, which are not supported by LINSTOR) attach a device that comes up as
+     * {@code /dev/xvdz} or even with a different last letter. Nitro based EC2 instances on the other hand result in
+     * {@code /dev/nvme[0..26]n1}. So the old approach (scan for local devices) does not work in Nitro setups, and only
+     * in most cases worked in Xen setups (not always).
+     *
+     * <p>Instead of keeping track of the devices we already sent to AWS, we simply ask AWS directly and choose an
+     * unused device based on the AWS response</p>
+     */
+    private String getDevicePathForRequest(AmazonEC2 clientRef)
+        throws StorageException
     {
-        String actualDevice = null;
+        if (ec2InstanceIdAsList.isEmpty())
+        {
+            throw new StorageException(
+                "No EC2 instance ID found in " + EC2_INSTANCE_ID_PATH +
+                    ". Only Nitro-based EC2 instances have this file / are supported."
+            );
+        }
+        DescribeVolumesResult describeVolumesResult = clientRef.describeVolumes(
+            new DescribeVolumesRequest().withFilters(new Filter("attachment.instance-id", ec2InstanceIdAsList))
+        );
+        Set<Character> previouslyRequestedDeviceLetters = new HashSet<>();
+        for (com.amazonaws.services.ec2.model.Volume ec2Vlm : describeVolumesResult.getVolumes())
+        {
+            for (VolumeAttachment ec2VlmAttachment : ec2Vlm.getAttachments())
+            {
+                // the device of the original request, i.e. "/dev/sdz"
+                @Nullable String device = ec2VlmAttachment.getDevice();
+                if (device != null)
+                {
+                    // we want to strip "/dev/sd" or "/dev/xvd" and the trailing number (if exists)
+                    // currently we simply do not request "/dev/nvme..." devices, so there is no need
+                    // to check for that
+                    Matcher matcher = DEVICES_FOR_REQUEST_PATTERN.matcher(device);
+                    if (matcher.find())
+                    {
+                        previouslyRequestedDeviceLetters.add(matcher.group("letter").charAt(0));
+                    }
+                    else
+                    {
+                        errorReporter.logWarning("Ignoring unrecognized device of original request: %s", device);
+                    }
+                }
+            }
+        }
+        char selectedLetter = selectLetter(previouslyRequestedDeviceLetters);
+        return "/dev/sd" + selectedLetter;
+    }
+
+    /**
+     * <p>https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/device_naming.html as of 2026 Aug. 04:
+     *
+     * > (Linux instances) Some custom kernels might have restrictions that limit use to /dev/sd[f-p] or
+     * > /dev/sd[f-p][1-6]. If you're having trouble using /dev/sd[q-z] or /dev/sd[q-z][1-6], try switching to
+     * > /dev/sd[f-p] or /dev/sd[f-p][1-6].
+     * </p>
+     *
+     * <p>This means that LINSTOR first tries the letters [f-p], then [q-z] and [b-e] only as last.</p>
+     *
+     * @throws StorageException if all letters are exhausted
+     */
+    private char selectLetter(Set<Character> previouslyRequestedDeviceLettersRef) throws StorageException
+    {
+        // technically we could split here 'f-p' and then 'q-z', but since 'q' is the next char after 'p', we can also
+        // merge the two searches.
+        @Nullable Character ret = selectLetter(previouslyRequestedDeviceLettersRef, 'f', 'z');
+        if (ret == null)
+        {
+            ret = selectLetter(previouslyRequestedDeviceLettersRef, 'b', 'e');
+        }
+        if (ret == null)
+        {
+            throw new StorageException("No available device names left!");
+        }
+        return ret;
+    }
+
+    private @Nullable Character selectLetter(
+        Set<Character> previouslyRequestedDeviceLettersRef,
+        char minLetterRef,
+        char maxLetterRef
+    )
+    {
+        @Nullable Character ret = null;
+        if (minLetterRef > maxLetterRef)
+        {
+            throw new ImplementationError(
+                "minLetter ('" + minLetterRef + "') must be smaller than maxLetter ('" + maxLetterRef + "')!"
+            );
+        }
+        for (char ch = minLetterRef; ch <= maxLetterRef; ch++)
+        {
+            if (!previouslyRequestedDeviceLettersRef.contains(ch))
+            {
+                ret = ch;
+                break;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Finds the device by scanning NVMe devices for the given serial number.
+     *
+     * @return The device path, for example {@code "/dev/nvme1n1"}
+     */
+    private String waitForDevice(String ebsVlmId)
+        throws StorageException
+    {
+        @Nullable String actualDevice = null;
         int searchCount = WAIT_NEW_DEV_APPEAR_COUNT;
-        int reconnectCount = WAIT_NEW_DEV_RECONNECT_COUNT;
         while (searchCount > 0)
         {
-            List<LsBlkEntry> lsblkPostConnect = LsBlkUtils.lsblk(extCmdFactory.create());
-            try
-            {
-                actualDevice = findAttachedDevice(
-                    lsblkPreConnect,
-                    lsblkPostConnect
-                );
-            }
-            catch (TooManyDevicesException exc)
-            {
-                if (reconnectCount <= 0)
-                {
-                    throw new StorageException("Failed to find connected EBS device", exc);
-                }
-                else
-                {
-                    disconnect(vlmDataRef);
-                    reconnectCount--;
-                    connect(vlmDataRef, false);
-                }
-            }
+            List<LsBlkEntry> lsblk = LsBlkUtils.lsblk(extCmdFactory.create());
+            actualDevice = findDeviceBySerial(ebsVlmId, lsblk);
             if (actualDevice == null)
             {
                 searchCount--;
@@ -341,6 +422,8 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
                 }
                 catch (InterruptedException ignored)
                 {
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
             else
@@ -355,80 +438,27 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         return actualDevice;
     }
 
-    private String findUnusedDevice(List<LsBlkEntry> lsblkEntryList) throws StorageException
-    {
-        LinkedHashSet<String> availableLetters = new LinkedHashSet<>(AVAILABLE_LETTERS_COMMON);
-        // for now we simply assume that we run on HVM
-        availableLetters.addAll(AVAILABLE_LETTERS_HVM);
-
-        for (LsBlkEntry entry : lsblkEntryList)
-        {
-            String kernelName = entry.getKernelName();
-            // kernelName should be "/dev/<whatever>". id should now only be the "<whatever>" part
-            String id = kernelName.substring(5); // 5 == "/dev/".length()
-
-            // cut of the prefix "sd" or "xvd" so we only have the last letter(s) left
-            if (id.startsWith("sd"))
-            {
-                id = id.substring(2);
-            }
-            else if (id.startsWith("xvd"))
-            {
-                id = id.substring(3);
-            }
-
-            availableLetters.remove(id);
-        }
-        if (availableLetters.isEmpty())
-        {
-            throw new StorageException("No availble device names left!");
-        }
-        return availableLetters.iterator().next();
-    }
-
     /**
-     * Finds the newly attached device path after an EBS volume connect.
-     *
-     * @return either the "/dev/..." path or null if no new devices were created.
-     *
-     * @throws TooManyDevicesException if more than 1 new devices were created.
+     * Scans "lsblk -o +SERIAL" for the given ebsVlmId
      */
-    private @Nullable String findAttachedDevice(
-        List<LsBlkEntry> lsblkPreConnectRef,
-        List<LsBlkEntry> lsblkPostConnectRef
-    )
-        throws TooManyDevicesException
+    private @Nullable String findDeviceBySerial(String ebsVlmIdRef, Collection<LsBlkEntry> lsblkRef)
     {
-        final String ret;
-        final HashSet<String> devices = new HashSet<>();
+        @Nullable String foundDevice = null;
+        // ebsVlmId is something like "vol-[0-9a-f]+", but the SERIAL field from lsblk does not contain the "-"
+        // just for completeness sake, we still check both.
+        String strippedEbsVlmId = ebsVlmIdRef.replace("-", "");
 
-        // collect devices existing AFTER the connect command
-        for (LsBlkEntry entry : lsblkPostConnectRef)
+        for (LsBlkEntry lsBlkEntry : lsblkRef)
         {
-            devices.add(entry.getKernelName());
+            @Nullable String serial = lsBlkEntry.getSerial();
+            if (ebsVlmIdRef.equalsIgnoreCase(serial) || strippedEbsVlmId.equalsIgnoreCase(serial))
+            {
+                foundDevice = lsBlkEntry.getName();
+                break;
+            }
         }
 
-        // remove devices that existed BEFORE the connect command
-        for (LsBlkEntry entry : lsblkPreConnectRef)
-        {
-            devices.remove(entry.getKernelName());
-        }
-
-        if (devices.size() > 1)
-        {
-            throw new TooManyDevicesException();
-        }
-
-        if (devices.isEmpty())
-        {
-            ret = null;
-        }
-        else
-        {
-            ret = devices.iterator().next();
-        }
-
-        return ret;
+        return foundDevice;
     }
 
     protected PriorityProps getPrioProps(EbsData<Resource> vlmDataRef)
@@ -579,15 +609,5 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         throws StorageException
     {
         return fetchOrigAllocatedSizes(vlmDataListRef);
-    }
-
-    private static class TooManyDevicesException extends LinStorException
-    {
-        private static final long serialVersionUID = 8499402298289612696L;
-
-        TooManyDevicesException()
-        {
-            super("Too many devices appeared");
-        }
     }
 }
