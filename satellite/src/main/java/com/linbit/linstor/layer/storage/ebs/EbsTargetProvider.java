@@ -390,7 +390,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
 
         CreateSnapshotResult createSnapshotResult = client.createSnapshot(
             new CreateSnapshotRequest()
-                .withVolumeId(getEbsVlmId(vlmDataRef))
+                .withVolumeId(getEbsVlmIdNonNull(vlmDataRef))
                 .withDescription(snapLvIdentifier)
                 .withTagSpecifications(
                     new TagSpecification()
@@ -419,7 +419,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         throws StorageException, DatabaseException
     {
         // we will need to delete the old volume if the rollback/restore worked
-        String oldEbsVlmId = getEbsVlmId(vlmDataRef);
+        String oldEbsVlmId = getEbsVlmIdNonNull(vlmDataRef);
 
         // will override the EbsVlmId property
         createEbsVolume(vlmDataRef, getEbsSnapId(rollbackToSnapVlmDataRef));
@@ -505,11 +505,9 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         throws StorageException, DatabaseException
     {
         AmazonEC2 client = getClient(vlmDataRef.getStorPool());
-
-        String ebsVlmId = getEbsVlmId(vlmDataRef);
+        String ebsVlmId = getEbsVlmIdNonNull(vlmDataRef);
         errorReporter.logTrace("Deleting EBS volumd ID: %s", ebsVlmId);
         client.deleteVolume(new DeleteVolumeRequest(ebsVlmId));
-
         vlmDataRef.setExists(false);
     }
 

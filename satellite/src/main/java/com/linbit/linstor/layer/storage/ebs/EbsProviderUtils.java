@@ -1,15 +1,10 @@
 package com.linbit.linstor.layer.storage.ebs;
 
-import com.linbit.extproc.ExtCmd;
-import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.StorageException;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeSnapshotsRequest;
@@ -25,18 +20,6 @@ public class EbsProviderUtils
     private EbsProviderUtils()
     {
         // utility class
-    }
-
-    public static HashMap<String, LsBlkEntry> getEbsInfo(ExtCmd extCmd) throws StorageException
-    {
-        HashMap<String, LsBlkEntry> ret = new HashMap<>();
-        List<LsBlkEntry> lsblk = LsBlkUtils.lsblk(extCmd);
-
-        for (LsBlkEntry entry : lsblk)
-        {
-            ret.put(entry.getName(), entry);
-        }
-        return ret;
     }
 
     public static void waitUntilVolumeHasState(

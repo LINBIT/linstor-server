@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 
 public class SymbolicLinkResolver
@@ -41,7 +42,7 @@ public class SymbolicLinkResolver
      * {@code /dev/disk/by-id/...}) merely to obtain the kernel name of the underlying block device
      * special file ({@code dm-5}, {@code nvme1n1}, ...), which is then used to build the
      * {@code /sys/block/<name>/queue/...} lookup path. Only {@link Path#getFileName()} of the result is
-     * consumed there, so whether the directory part is canonical is irrelevant — and since {@code ".."}
+     * consumed there, so whether the directory part is canonical is irrelevant - and since {@code ".."}
      * in a link target can only ever change the directory part, the final name stays correct even in the
      * textual-normalization edge case described above. In addition, this method fails deterministically
      * after {@link #MAX_REDIRECTS} hops with a descriptive message instead of depending on the operating
@@ -74,7 +75,9 @@ public class SymbolicLinkResolver
         do
         {
             final BasicFileAttributes attr = Files.readAttributes(
-                curPath, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS
+                curPath,
+                BasicFileAttributes.class,
+                LinkOption.NOFOLLOW_LINKS
             );
             isLink = attr.isSymbolicLink();
             if (isLink)
@@ -101,5 +104,25 @@ public class SymbolicLinkResolver
             throw new IOException("Unable to resolve symbolic link \"" + symLink + "\": Too many redirects");
         }
         return curPath;
+    }
+
+    /**
+     * <p>Returns whether or not the two given paths point to the same file/directory.</p>
+     * <p>Returns {@code false} in case of {@link IOException}</p>
+     */
+    public static boolean pathsEquals(String pathA, String pathB)
+    {
+        boolean equals;
+        try
+        {
+            Path realPathA = Paths.get(pathA).toRealPath();
+            Path realPathB = Paths.get(pathB).toRealPath();
+            equals = realPathA.equals(realPathB);
+        }
+        catch (IOException ignored)
+        {
+            equals = false;
+        }
+        return equals;
     }
 }

@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Controller: The Kubernetes CRD database backend now uses the JDK HTTP client instead of Vert.x/Netty, removing
   ~6 MB of dependencies (and their CVE exposure) from the distribution
 - EBS initiators no longer tag AWS volumes with "LinstorInitDevice"
+- Satellite: EBS initiator now uses the reboot-stable /dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_* path
+  instead of /dev/nvme*n1
 
 ### Fixed
 

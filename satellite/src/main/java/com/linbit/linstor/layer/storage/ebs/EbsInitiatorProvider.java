@@ -27,6 +27,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.utils.SymbolicLinkResolver;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -56,6 +57,7 @@ import com.amazonaws.services.ec2.model.VolumeAttachment;
 public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 {
     public static final String EC2_INSTANCE_ID_PATH = "/sys/devices/virtual/dmi/id/board_asset_tag";
+    private static final String NVME_BY_ID_PREFIX = "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_";
 
     private static final Pattern DEVICES_FOR_REQUEST_PATTERN = Pattern.compile("/dev/(?:sd|xvd)(?<letter>.)");
 
@@ -77,7 +79,6 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 
     @Inject
     public EbsInitiatorProvider(AbsEbsProviderIniit superInitRef)
-        throws StorageException
     {
         super(superInitRef, "EBS", DeviceProviderKind.EBS_INIT);
 
@@ -132,7 +133,25 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     )
         throws StorageException, DatabaseException
     {
-        return EbsProviderUtils.getEbsInfo(extCmdFactory.create());
+        Map<String, LsBlkEntry> ret = new HashMap<>();
+
+        List<LsBlkEntry> lsblk = LsBlkUtils.lsblk(extCmdFactory.create());
+
+        // snapshots are not accessible via a local device, therefore we do not need to iterate over them
+        for (EbsData<Resource> vlmData : vlmDataListRef)
+        {
+            @Nullable String ebsVlmId = getEbsVlmId(vlmData);
+            if (ebsVlmId != null)
+            {
+                @Nullable LsBlkEntry lsblkEntry = findLsblkEntryBySerial(ebsVlmId, lsblk);
+                if (lsblkEntry != null)
+                {
+                    ret.put(ebsVlmId, lsblkEntry);
+                }
+            }
+        }
+
+        return ret;
     }
 
     @Override
@@ -153,18 +172,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
             final com.amazonaws.services.ec2.model.Volume amaVlm = amaVlmLut.get(ebsVlmId);
             final LsBlkEntry lsblkEntry;
 
-            final String devPath;
-            if (vlmData.getDevicePath() == null && amaVlm != null && ebsVlmId != null)
-            {
-                // ctrl got restarted but the amazonVlm is still be connected
-                devPath = findDeviceBySerial(ebsVlmId, infoListCache.values());
-            }
-            else
-            {
-                devPath = vlmData.getDevicePath();
-            }
-
-            lsblkEntry = infoListCache.get(devPath);
+            lsblkEntry = infoListCache.get(ebsVlmId);
 
             updateInfo(vlmData, lsblkEntry, amaVlm);
 
@@ -244,7 +252,22 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
             vlmDataRef.setExists(true);
             if (vlmDataRef.getVolume() instanceof Volume)
             {
-                setDevicePath((EbsData<Resource>) vlmDataRef, lsblkEntryRef.getName());
+                @Nullable String ebsVlmId = getEbsVlmId(vlmDataRef);
+                if (ebsVlmId != null)
+                {
+                    setDevicePath(
+                        (EbsData<Resource>) vlmDataRef,
+                        findDeviceByLsblk(ebsVlmId, lsblkEntryRef)
+                    );
+                }
+                else
+                {
+                    errorReporter.logWarning(
+                        "Cannot set device path for volume %s since it unexpectedly does not have an " +
+                            "EBS volume ID set!",
+                        asGenericLvIdentifier(vlmDataRef)
+                    );
+                }
             }
             else
             {
@@ -269,11 +292,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 
         String devicePathForRequest = getDevicePathForRequest(client);
 
-        @Nullable String ebsVlmId = getEbsVlmId(initiatorVlmDataRef);
-        if (ebsVlmId == null)
-        {
-            throw new StorageException("EBS VlmId was unexpectedly null for: " + asLvIdentifier(initiatorVlmDataRef));
-        }
+        String ebsVlmId = getEbsVlmIdNonNull(initiatorVlmDataRef);
         client.attachVolume(
             new AttachVolumeRequest(
                 ebsVlmId,
@@ -437,27 +456,49 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         return actualDevice;
     }
 
+    private @Nullable String findDeviceBySerial(String ebsVlmIdRef, Collection<LsBlkEntry> lsblkRef)
+    {
+        return findDeviceByLsblk(ebsVlmIdRef, findLsblkEntryBySerial(ebsVlmIdRef, lsblkRef));
+    }
+
+    private @Nullable String findDeviceByLsblk(String ebsVlmIdRef, @Nullable LsBlkEntry lsblkEntryRef)
+    {
+        @Nullable String ret = null;
+        if (lsblkEntryRef != null)
+        {
+            ret = lsblkEntryRef.getName();
+            String deviceById = buildStableDevicePath(ebsVlmIdRef);
+            if (SymbolicLinkResolver.pathsEquals(deviceById, ret))
+            {
+                ret = deviceById; // more robust, survives reboots
+            }
+            // else: deviceById did not point to the device with the correct SERIAL number. Keep / return the path found
+            // by lsblk
+        }
+
+        return ret;
+    }
+
     /**
      * Scans "lsblk -o +SERIAL" for the given ebsVlmId
      */
-    private @Nullable String findDeviceBySerial(String ebsVlmIdRef, Collection<LsBlkEntry> lsblkRef)
+    private @Nullable LsBlkEntry findLsblkEntryBySerial(String ebsVlmIdRef, Collection<LsBlkEntry> lsblkRef)
     {
-        @Nullable String foundDevice = null;
         // ebsVlmId is something like "vol-[0-9a-f]+", but the SERIAL field from lsblk does not contain the "-"
         // just for completeness sake, we still check both.
         String strippedEbsVlmId = ebsVlmIdRef.replace("-", "");
 
+        @Nullable LsBlkEntry ret = null;
         for (LsBlkEntry lsBlkEntry : lsblkRef)
         {
             @Nullable String serial = lsBlkEntry.getSerial();
             if (ebsVlmIdRef.equalsIgnoreCase(serial) || strippedEbsVlmId.equalsIgnoreCase(serial))
             {
-                foundDevice = lsBlkEntry.getName();
+                ret = lsBlkEntry;
                 break;
             }
         }
-
-        return foundDevice;
+        return ret;
     }
 
     protected PriorityProps getPrioProps(EbsData<Resource> vlmDataRef)
@@ -484,9 +525,10 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     protected void resizeLvImpl(EbsData<Resource> vlmDataRef)
         throws StorageException, DatabaseException
     {
+        String ebsVlmId = getEbsVlmIdNonNull(vlmDataRef);
         waitUntilResizeFinished(
             getClient(vlmDataRef.getStorPool()),
-            getEbsVlmId(vlmDataRef),
+            ebsVlmId,
             SizeConv.convert(vlmDataRef.getExpectedSize(), SizeUnit.UNIT_KiB, SizeUnit.UNIT_GiB)
         );
         // also wait until local device got resized
@@ -502,26 +544,27 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
             }
             catch (InterruptedException ignored)
             {
+                Thread.currentThread().interrupt();
+                break;
             }
-            List<LsBlkEntry> lsblkPostResize = LsBlkUtils.lsblk(extCmdFactory.create());
-            for (LsBlkEntry entry : lsblkPostResize)
+            @Nullable LsBlkEntry lsblkEntryBySerial = findLsblkEntryBySerial(
+                ebsVlmId,
+                LsBlkUtils.lsblk(extCmdFactory.create())
+            );
+            if (lsblkEntryBySerial != null)
             {
-                if (entry.getKernelName().equals(devicePath))
-                {
-                    entrySizeInKib = SizeConv.convert(
-                        entry.getSize(),
-                        SizeUnit.UNIT_B,
-                        SizeUnit.UNIT_KiB
-                    );
-                    resized = entrySizeInKib == vlmDataRef.getExpectedSize();
-                    break;
-                }
+                entrySizeInKib = SizeConv.convert(
+                    lsblkEntryBySerial.getSize(),
+                    SizeUnit.UNIT_B,
+                    SizeUnit.UNIT_KiB
+                );
+                resized = entrySizeInKib == vlmDataRef.getExpectedSize();
             }
         }
         if (!resized)
         {
             throw new StorageException(
-                "Device [" + devicePath + "] did not resize. Size: " + entrySizeInKib + "kib, expected: " +
+                "Device [" + devicePath + "] did not resize in time. Size: " + entrySizeInKib + "kib, expected: " +
                     vlmDataRef.getExpectedSize() + "kib"
             );
         }
@@ -545,7 +588,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         throws StorageException, DatabaseException
     {
         AmazonEC2 client = getClient(vlmDataRef.getStorPool());
-        String ebsVlmId = getEbsVlmId(vlmDataRef);
+        String ebsVlmId = getEbsVlmIdNonNull(vlmDataRef);
         client.detachVolume(
             new DetachVolumeRequest(ebsVlmId)
         );
@@ -589,6 +632,11 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     protected boolean waitForSnapshotDevice()
     {
         return false;
+    }
+
+    private String buildStableDevicePath(String ebsVlmId)
+    {
+        return NVME_BY_ID_PREFIX + ebsVlmId.replace("-", "");
     }
 
     @Override

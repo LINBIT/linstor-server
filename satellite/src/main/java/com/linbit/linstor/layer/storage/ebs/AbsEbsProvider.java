@@ -386,6 +386,18 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
         }
     }
 
+    protected String getEbsVlmIdNonNull(EbsData<?> vlmDataRef) throws StorageException
+    {
+        @Nullable String ebsVlmId = getEbsVlmId(vlmDataRef);
+        if (ebsVlmId == null)
+        {
+            throw new StorageException(
+                "EBS VlmId was unexpectedly null for volume:" + asGenericLvIdentifier(vlmDataRef)
+            );
+        }
+        return ebsVlmId;
+    }
+
     protected @Nullable String getEbsVlmId(EbsData<?> vlmDataRef)
     {
         try
