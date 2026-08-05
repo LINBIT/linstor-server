@@ -432,6 +432,12 @@ public class RscStorageLayerHelper extends
     public static String getAvailabilityZone(RemoteMap remoteMap, StorPool ebsStorPool)
         throws ImplementationError
     {
+        return getEbsRemote(remoteMap, ebsStorPool).getAvailabilityZone();
+    }
+
+    public static EbsRemote getEbsRemote(RemoteMap remoteMap, StorPool ebsStorPool)
+        throws ImplementationError
+    {
         AbsRemote remote;
         try
         {
@@ -457,7 +463,7 @@ public class RscStorageLayerHelper extends
                     remote.getClass().getSimpleName())
             );
         }
-        return ebsRemote.getAvailabilityZone();
+        return ebsRemote;
     }
 
     private static PairNonNull<String, Resource> findUnusedTargetEbsPair(
@@ -502,7 +508,34 @@ public class RscStorageLayerHelper extends
 
             if (targetEbsVlmId == null)
             {
-                throw new ImplementationError("Target volume '" + targetVlm + "' does not have an EBSVlmId");
+                /*
+                 * The EBS volume-id is set by the EBS target satellite *after* it successfully created the volume in
+                 * AWS. Not having it yet is therefore a legitimate, transient state - not an implementation error.
+                 *
+                 * By far the most common cause is a controller that was (re)started without the master passphrase:
+                 * an EbsRemote's access- and secret-key are only stored encrypted, and are decrypted into memory when
+                 * the passphrase is entered. Without them the target satellite cannot talk to AWS at all, so the
+                 * volume-id will never show up.
+                 */
+                if (getEbsRemote(remoteMap, storPool).getDecryptedAccessKey() == null)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                            "The EBS remote's credentials are not available, therefore the EBS target volume for '" +
+                                targetVlm + "' could not be created.\n" +
+                                "Please enter the master passphrase ('linstor encryption enter-passphrase') and " +
+                                "retry."
+                        )
+                    );
+                }
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_MISSING_EBS_TARGET,
+                        "The EBS target volume for '" + targetVlm + "' is not provisioned yet. Please retry once the" +
+                            " target resource has been created."
+                    )
+                );
             }
 
             ret = new PairNonNull<>(targetEbsVlmId, targetRsc);

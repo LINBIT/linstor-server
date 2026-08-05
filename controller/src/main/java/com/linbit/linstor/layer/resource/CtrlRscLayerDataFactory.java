@@ -179,6 +179,10 @@ public class CtrlRscLayerDataFactory
                 exc
             );
         }
+        catch (ApiRcException exc)
+        {
+            throw exc;
+        }
         catch (Exception exc)
         {
             throw new ApiRcException(
