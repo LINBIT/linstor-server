@@ -857,7 +857,6 @@ public class CtrlRscCrtApiHelper
                                 case REMOTE_SPDK: // fall-through
                                 case EBS_INIT: // fall-through
                                 case EBS_TARGET: // fall-through
-                                case STORAGE_SPACES:
                                     hasFatStorPool = true;
                                     break;
                                 case FILE:
@@ -869,14 +868,15 @@ public class CtrlRscCrtApiHelper
                                     discardZerosIfAligned = true;
                                     break;
                                 case ZFS:
+                                case STORAGE_SPACES:
                                     hasFatStorPool = true;
                                     discardZerosIfAligned = true;
                                     break;
                                 case ZFS_THIN:
+                                case STORAGE_SPACES_THIN:
                                     discardZerosIfAligned = true;
                                     // fall-through
                                 case FILE_THIN:
-                                case STORAGE_SPACES_THIN:
                                     hasThinStorPool = true;
                                     break;
                                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
