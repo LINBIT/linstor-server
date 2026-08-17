@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModul
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlConfigModule;
 import com.linbit.linstor.core.ebs.EbsStatusManagerService;
+import com.linbit.linstor.core.utils.ThreadUtils;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
@@ -437,15 +438,7 @@ public final class Controller
             cfg.getLogLevelLinstor()
         );
 
-        // register CriticalError die error handler
-        // We cannot directly call System.exit on a Critical error, because the code calling the exit
-        // can still have locks and the applicationmanager also needs locks for a prober shutdown
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-            if (throwable instanceof CriticalError criticalError)
-            {
-                CriticalError.die(errorLog, criticalError);
-            }
-        });
+        ThreadUtils.setDefaultUncaughtExceptionHandler(errorLog);
 
         // check database type
         DatabaseDriverInfo.DatabaseType dbType = checkDatabaseConfig(errorLog, cfg);

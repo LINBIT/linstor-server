@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EBS initiators no longer tag AWS volumes with "LinstorInitDevice"
 - Satellite: EBS initiator now uses the reboot-stable /dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_* path
   instead of /dev/nvme*n1
+- Controller,Satellite: Uncaught exceptions in background threads are now logged and create an error report instead
+  of silently killing a thread
 
 ### Fixed
 

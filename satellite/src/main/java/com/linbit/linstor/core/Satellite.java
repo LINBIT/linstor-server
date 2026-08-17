@@ -23,6 +23,7 @@ import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.devmgr.DevMgrModule;
 import com.linbit.linstor.core.migration.SatelliteMigrationsModule;
+import com.linbit.linstor.core.utils.ThreadUtils;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -347,15 +348,7 @@ public final class Satellite
             cfg.getLogLevelLinstor()
         );
 
-        // register CriticalError die error handler
-        // We cannot directly call System.exit on a Critical error, because the code calling the exit
-        // can still have locks and the applicationmanager also needs locks for a prober shutdown
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-            if (throwable instanceof CriticalError criticalError)
-            {
-                CriticalError.die(errorLog, criticalError);
-            }
-        });
+        ThreadUtils.setDefaultUncaughtExceptionHandler(errorLog);
 
         try
         {
