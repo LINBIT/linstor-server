@@ -41,6 +41,7 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -278,27 +279,13 @@ public class CtrlRscDeleteApiHelper
                 );
             }
 
-            try
+            Flux<ApiCallRc> ebsStatusUpdateFlux = Flux.empty();
+            if (updateEbsStatus)
             {
-                if (updateEbsStatus)
-                {
-                    // TODO: we could use a flux version of this so it can run either in parallel or at least not block
-                    // a
-                    // controller-thread
-                    ebsStatusManagerService.pollAndWait(EbsStatusManagerService.DFLT_POLL_WAIT);
-                }
-            }
-            catch (InterruptedException interruptedExc)
-            {
-                Thread.currentThread().interrupt();
-                errorReporter.reportError(interruptedExc);
-                throw new ApiRcException(
-                    ApiCallRcImpl.singleApiCallRc(
-                        ApiConsts.FAIL_UNKNOWN_ERROR,
-                        "Waiting for EBS status update was interrupted"
-                    ),
-                    interruptedExc,
-                    false
+                ebsStatusUpdateFlux = ebsStatusManagerService.pollFlux(
+                    EbsStatusManagerService.DFLT_POLL_WAIT,
+                    Collections.singleton(rscName),
+                    null
                 );
             }
 
@@ -365,6 +352,7 @@ public class CtrlRscDeleteApiHelper
             errorReporter.logInfo("Resource deleted %s/%s", nodeNames, rscName);
 
             flux = Flux.<ApiCallRc>just(apiCallRc)
+                .concatWith(ebsStatusUpdateFlux)
                 .concatWith(autoFlux);
         }
 

@@ -43,6 +43,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed EBS initiator throwing ImplementationError when the controller was started without passphrase or EBS target
   was not provisioned yet. Now a more descriptive error message is shown
 - Fixed EBS target still shown as "InUse" after their initiator resource was deleted
+- Fixed potential AccessToDeletedData in the EBS-status manager
+- Fixed the EBS status manager never purging entries (even for deleted snapshots and remotes)
+- Snapshot restore and rollback of EBS snapshots now refresh (once) the AWS snapshot state for not yet "completed"
+  snapshots before reporting an error
 
 ## [1.35.2] - 2026-09-14
 

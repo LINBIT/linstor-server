@@ -57,12 +57,6 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -77,7 +71,12 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import reactor.core.publisher.Flux;
+
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
 public class CtrlSnapshotRestoreApiCallHandler
@@ -186,20 +185,26 @@ public class CtrlSnapshotRestoreApiCallHandler
         Map<String, String> renameStorPoolMap
     )
     {
-        return scopeRunner.fluxInTransactionalScope(
-            "Restore Snapshot Resource",
-            lockGuardFactory.createDeferred()
-                .read(LockObj.NODES_MAP)
-                .write(LockObj.RSC_DFN_MAP)
-                .build(),
-            () -> restoreResourceInTransaction(
-                nodeNameStrs,
-                fromRscName,
-                fromSnapshotName,
-                toRscName,
-                false,
-                true,
-                renameStorPoolMap
+        return ctrlSnapshotHelper.refreshEbsSnapStateIfNeededFlux(
+            fromRscName.displayValue,
+            fromSnapshotName.displayValue
+        )
+            .concatWith(
+                scopeRunner.fluxInTransactionalScope(
+                    "Restore Snapshot Resource",
+                    lockGuardFactory.createDeferred()
+                        .read(LockObj.NODES_MAP)
+                        .write(LockObj.RSC_DFN_MAP)
+                        .build(),
+                    () -> restoreResourceInTransaction(
+                        nodeNameStrs,
+                        fromRscName,
+                        fromSnapshotName,
+                        toRscName,
+                        false,
+                        true,
+                        renameStorPoolMap
+                    )
             )
         );
     }
@@ -212,21 +217,27 @@ public class CtrlSnapshotRestoreApiCallHandler
         Map<String, String> renameStorPoolMap
     )
     {
-        return scopeRunner.fluxInTransactionalScope(
-            "Restore Snapshot Resource for Rollback",
-            lockGuardFactory.createDeferred()
-                .read(LockObj.NODES_MAP)
-                .write(LockObj.RSC_DFN_MAP)
-                .build(),
-            () -> restoreResourceInTransaction(
-                nodeNameStrs,
-                fromRscName,
-                fromSnapshotName,
-                toRscName,
-                false,
-                false,
-                renameStorPoolMap
-            )
+        return ctrlSnapshotHelper.refreshEbsSnapStateIfNeededFlux(
+            fromRscName.displayValue,
+            fromSnapshotName.displayValue
+        )
+            .concatWith(
+                scopeRunner.fluxInTransactionalScope(
+                    "Restore Snapshot Resource for Rollback",
+                    lockGuardFactory.createDeferred()
+                        .read(LockObj.NODES_MAP)
+                        .write(LockObj.RSC_DFN_MAP)
+                        .build(),
+                    () -> restoreResourceInTransaction(
+                        nodeNameStrs,
+                        fromRscName,
+                        fromSnapshotName,
+                        toRscName,
+                        false,
+                        false,
+                        renameStorPoolMap
+                    )
+                )
         );
     }
 
@@ -237,6 +248,8 @@ public class CtrlSnapshotRestoreApiCallHandler
     )
     {
         ResponseContext context = makeSnapshotRestoreContext(toRscName.displayValue);
+
+        // no need to check for EBS state, since linstor backups do not work with EBS snapshots.
         return scopeRunner.fluxInTransactionalScope(
             "Restore Snapshot Resource from backup",
             lockGuardFactory.createDeferred()

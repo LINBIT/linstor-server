@@ -5,20 +5,23 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.SystemServiceStopException;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.repository.SystemConfRepository;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -40,18 +43,21 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Consumer;
 
-import com.amazonaws.AbortedException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
@@ -63,17 +69,18 @@ import com.amazonaws.services.ec2.model.DescribeVolumesModificationsRequest;
 import com.amazonaws.services.ec2.model.DescribeVolumesModificationsResult;
 import com.amazonaws.services.ec2.model.DescribeVolumesRequest;
 import com.amazonaws.services.ec2.model.DescribeVolumesResult;
-import com.amazonaws.services.ec2.model.Volume;
+import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.VolumeModification;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Singleton
 public class EbsStatusManagerService implements SystemService
 {
     public static final long DFLT_POLL_WAIT = 5_000;
 
-    private static final long DFLT_POLL_TIMEOUT_MS = 60_000;
-    // private static final long DFLT_POLL_TIMEOUT_MS = 10_000;
-    private static final int MAX_ENTRIES_PER_PAGE = 1000;
+    private static final long DFLT_POLL_TASK_TIMEOUT_MS = 60_000;
+    private static final int MAX_ENTRIES_PER_PAGE = 100;
 
     public static final ServiceName SERVICE_NAME;
     public static final String SERVICE_INFO = "EbsStatusPoll";
@@ -94,12 +101,15 @@ public class EbsStatusManagerService implements SystemService
     private final ServiceName instanceName;
 
     private boolean initialized = false;
-    private volatile boolean keepRunning = true;
+    private volatile boolean keepRunning = false;
     private @Nullable Thread thread;
 
     private final Object syncQueueAndThread = new Object();
-    private final ArrayBlockingQueue<PollStatus> queue = new ArrayBlockingQueue<>(2);
-    private final Map<EbsRemote, EbsRemoteIds> idsByRemote = new HashMap<>();
+    /**
+     * Guarded by syncQueueAndThread. At most one poll request is pending;
+     * further requests merge into it until the poll thread claims it.
+     */
+    private @Nullable PollStatus pendingPollStatus = null;
 
     private final ErrorReporter errorReporter;
     private final CtrlSecurityObjects secObjs;
@@ -108,9 +118,6 @@ public class EbsStatusManagerService implements SystemService
     private final SystemConfRepository sysCfgRepo;
     private final TaskScheduleService taskScheduleService;
     private final LockGuardFactory lockGuardFactory;
-
-    private final Set<Resource> knownRscs;
-    private final Set<Snapshot> knownSnaps;
 
     @Inject
     public EbsStatusManagerService(
@@ -131,9 +138,6 @@ public class EbsStatusManagerService implements SystemService
         taskScheduleService = taskScheduleServiceRef;
         lockGuardFactory = lockGuardFactoryRef;
 
-        knownRscs = new HashSet<>();
-        knownSnaps = new HashSet<>();
-
         instanceName = SERVICE_NAME;
     }
 
@@ -143,7 +147,7 @@ public class EbsStatusManagerService implements SystemService
         synchronized (syncQueueAndThread)
         {
             if (!initialized)
-        {
+            {
                 initialized = true;
                 initialize();
             }
@@ -185,53 +189,7 @@ public class EbsStatusManagerService implements SystemService
 
     public void initialize()
     {
-        for (ResourceDefinition rscDfn : rscDfnMap.values())
-        {
-            Iterator<Resource> rscIt = rscDfn.iterateResource();
-            while (rscIt.hasNext())
-            {
-                addIfEbs(rscIt.next());
-            }
-
-            for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns())
-            {
-                for (Snapshot snap : snapDfn.getAllSnapshots())
-                {
-                    addIfEbs(snap);
-                }
-            }
-        }
-
-        taskScheduleService.addTask(new EbsStatusPollTask(this, DFLT_POLL_TIMEOUT_MS));
-    }
-
-    public void addIfEbs(Resource rscRef)
-    {
-        genericAddIfEbs(rscRef, knownRscs, this::addVolume);
-    }
-
-    public void addIfEbs(Snapshot snapRef)
-    {
-        genericAddIfEbs(snapRef, knownSnaps, this::addSnap);
-    }
-
-    private <RSC extends AbsResource<RSC>> void genericAddIfEbs(
-        RSC rscOrSnapRef,
-        Set<RSC> knownRscOrSnapRef,
-        Consumer<EbsData<RSC>> consumerRef
-    )
-    {
-        if (EbsUtils.isEbs(rscOrSnapRef))
-        {
-            synchronized (knownRscOrSnapRef)
-            {
-                if (!knownRscOrSnapRef.contains(rscOrSnapRef))
-                {
-                    addAllEbsData(rscOrSnapRef, consumerRef);
-                    knownRscOrSnapRef.add(rscOrSnapRef);
-                }
-            }
-        }
+        taskScheduleService.addTask(new EbsStatusPollTask(this, DFLT_POLL_TASK_TIMEOUT_MS));
     }
 
     private <RSC extends AbsResource<RSC>> void addAllEbsData(RSC absRscRef, Consumer<EbsData<RSC>> addFunctionRef)
@@ -254,89 +212,162 @@ public class EbsStatusManagerService implements SystemService
 
     public void pollAsync()
     {
-        offer();
+        offer(null, null);
     }
 
-    private PollStatus offer()
+    private PollStatus offer(
+        @Nullable Collection<ResourceName> rscDfnsToPollRef,
+        @Nullable Collection<SnapshotDefinition.Key> snapDfnKeysToPollRef
+    )
     {
         PollStatus ret;
         synchronized (syncQueueAndThread)
         {
-            boolean found = !queue.isEmpty();
-            if (found)
+            if (!keepRunning)
             {
-                ret = queue.peek();
+                // service is stopped or stopping, instant-fail instead of letting the caller wait
+                // for whatever timeout they configured
+                ret = new PollStatus(null, null);
+                ret.future.completeExceptionally(new SystemServiceStopException("EbsStatusManager is not running"));
             }
             else
             {
-                ret = new PollStatus();
-                queue.add(ret);
+                if (pendingPollStatus != null)
+                {
+                    ret = pendingPollStatus;
+                    ret.merge(rscDfnsToPollRef, snapDfnKeysToPollRef);
+                }
+                else
+                {
+                    ret = new PollStatus(rscDfnsToPollRef, snapDfnKeysToPollRef);
+                    pendingPollStatus = ret;
+                    syncQueueAndThread.notifyAll();
+                }
             }
         }
         return ret;
     }
 
-    public boolean pollAndWait(long timeoutInMs) throws InterruptedException
+    public Flux<ApiCallRc> pollFlux(
+        long timeoutInMs,
+        @Nullable Collection<ResourceName> rscNamesToPollRef,
+        @Nullable Collection<SnapshotDefinition.Key> snapDfnsToPollRef
+    )
     {
-        final PollStatus pollStatus;
-        synchronized (syncQueueAndThread)
-        {
-            pollStatus = offer();
+        return pollMono(timeoutInMs, rscNamesToPollRef, snapDfnsToPollRef)
+            .thenMany(Flux.empty());
+    }
 
-            long start = System.currentTimeMillis();
-            long remainingTimeout = timeoutInMs;
-            while (keepRunning && !pollStatus.answerReceived && remainingTimeout > 0)
-            {
-                synchronized (pollStatus)
-                {
-                    pollStatus.wait(remainingTimeout);
-                }
-                if (!pollStatus.answerReceived)
-                {
-                    remainingTimeout = Math.max(0, timeoutInMs - (System.currentTimeMillis() - start));
-                }
-            }
+    public Mono<Boolean> pollMono(
+        long timeoutInMs,
+        @Nullable Collection<ResourceName> rscDfnsToPollRef,
+        @Nullable Collection<SnapshotDefinition.Key> snapDfnKeysToPollRef
+    )
+    {
+        // instead of Mono.defer(...).thenReturn, we use this future.thenApply method because the Mono variant would
+        // lead to the unwanted situation that if one subscribe-waiter is canceled or times out, all other waiters are
+        // also canceled. using the future.thenApply decouples the waiters from each other.
+        return Mono.defer(
+            () -> Mono.fromFuture(
+                offer(rscDfnsToPollRef, snapDfnKeysToPollRef).future.thenApply(ignored -> Boolean.TRUE)
+            )
+        )
+            .timeout(Duration.ofMillis(timeoutInMs))
+            .onErrorReturn(Boolean.FALSE);
+    }
+
+    /**
+     * <p>The caller of this method <b>MUST NOT</b> hold {@link LockObj#RSC_DFN_MAP} or {@link LockObj#REMOTE_MAP}.
+     * Otherwise the caller will block the polling thread so the caller is guaranteed to run into the configured
+     * timeout.</p>
+     *
+     * <p>Blocks until either the requested resources/snapshots are updated or the timeout is reached.</p>
+     */
+    public boolean pollAndWait(
+        long timeoutInMs,
+        @Nullable Collection<ResourceName> rscDfnsToPollRef,
+        @Nullable Collection<SnapshotDefinition.Key> snapDfnKeysToPollRef
+    )
+        throws InterruptedException
+    {
+        errorReporter.logTrace("Starting poll and wait for EBS updates. Waiting for max %dms", timeoutInMs);
+        boolean success;
+        try
+        {
+            offer(rscDfnsToPollRef, snapDfnKeysToPollRef).future
+                .get(timeoutInMs, TimeUnit.MILLISECONDS);
+            success = true;
         }
-        return pollStatus.answerReceived;
+        catch (InterruptedException | ExecutionException | TimeoutException exc)
+        {
+            errorReporter.reportError(exc);
+            success = false;
+        }
+        errorReporter.logTrace("EBS update done. Received response: %b", success);
+        return success;
     }
 
     private void run()
     {
         while (keepRunning)
         {
-            PollStatus pollStatus = null;
+            @Nullable PollStatus pollStatus = null;
+            @Nullable Collection<ResourceName> rscsToPoll = null;
+            @Nullable Collection<SnapshotDefinition.Key> snapDfnsToPoll = null;
+
             try
             {
-                pollStatus = queue.take();
+                synchronized (syncQueueAndThread)
+                {
+                    while (pendingPollStatus == null && keepRunning)
+                    {
+                        syncQueueAndThread.wait();
+                    }
+
+                    pollStatus = pendingPollStatus;
+                    // claim it. later offer() calls will create a new PollStatus and manage/merge further requests
+                    // into it while we are busy processing the current pollStatus
+                    pendingPollStatus = null;
+                    if (pollStatus != null)
+                    {
+                        // just to be sure, make a copy of the collections. This is not strictly needed but rather an
+                        // additional defensive step
+                        rscsToPoll = pollStatus.copyRscsToPoll();
+                        snapDfnsToPoll = pollStatus.copySnapDfnsToPoll();
+                    }
+                }
             }
             catch (InterruptedException exc)
             {
-                // ignored
                 Thread.currentThread().interrupt(); // re-interrupt to keep / restore the interrupted flag
             }
             if (pollStatus != null)
             {
                 try
                 {
-                    pollEbsStatus();
-
-                    synchronized (pollStatus)
-                    {
-                        pollStatus.answerReceived = true;
-                        pollStatus.notifyAll();
-                    }
+                    pollEbsStatus(rscsToPoll, snapDfnsToPoll);
+                    pollStatus.future.complete(null);
                 }
-                catch (AbortedException exc)
+                catch (Exception | ImplementationError exc)
                 {
                     if (keepRunning) // otherwise, ignore exception
                     {
                         errorReporter.reportError(exc);
                     }
+                    pollStatus.future.completeExceptionally(exc);
                 }
             }
         }
-        synchronized (this)
+        synchronized (syncQueueAndThread)
         {
+            // do not leave waiters of a not-yet-claimed request hanging until their timeout
+            if (pendingPollStatus != null)
+            {
+                pendingPollStatus.future.completeExceptionally(
+                    new SystemServiceStopException("EbsStatusManager is shutting down")
+                );
+                pendingPollStatus = null;
+            }
             if (Thread.currentThread().equals(thread))
             {
                 thread = null;
@@ -344,83 +375,164 @@ public class EbsStatusManagerService implements SystemService
         }
     }
 
-    public void addVolume(EbsData<Resource> vlmData)
-    {
-        synchronized (idsByRemote)
-        {
-            lazyGet(getEbsRemote(vlmData)).allVlmIds.put(EbsUtils.getEbsVlmId(vlmData), vlmData);
-        }
-    }
-
-    private EbsRemote getEbsRemote(EbsData<?> vlmDataRef)
-    {
-        return EbsUtils.getEbsRemote(
-            remoteMap,
-            vlmDataRef.getStorPool(),
-            sysCfgRepo.getStltConfForView()
-        );
-    }
-
-    public void addSnap(EbsData<Snapshot> snapData)
-    {
-        synchronized (idsByRemote)
-        {
-            lazyGet(getEbsRemote(snapData)).allSnapIds.put(EbsUtils.getEbsSnapId(snapData), snapData);
-        }
-    }
-
-    private void pollEbsStatus()
+    private void pollEbsStatus(
+        @Nullable Collection<ResourceName> rscsToPollRef,
+        @Nullable Collection<SnapshotDefinition.Key> snapDfnsToPollRef
+    )
     {
         // check if we have master passphrase
         if (secObjs.areAllSet())
         {
-            Map<EbsRemote, EbsRemoteIds> localIdsByRemote;
-            synchronized (idsByRemote)
+            Map<AmazonEC2, EbsRemoteIds> localIdsByAmazonClient = buildIdsByAwsClient(rscsToPollRef, snapDfnsToPollRef);
+            for (Map.Entry<AmazonEC2, EbsRemoteIds> entry : localIdsByAmazonClient.entrySet())
             {
-                // shallow copy, the inner Sets are still references that can still be updated from a different
-                // thread!
-                localIdsByRemote = new HashMap<>(idsByRemote);
-            }
-            for (Map.Entry<EbsRemote, EbsRemoteIds> entry : localIdsByRemote.entrySet())
-            {
-                EbsRemote remote = entry.getKey();
+                AmazonEC2 client = entry.getKey();
                 EbsRemoteIds ids = entry.getValue();
 
                 try
                 {
-                    AmazonEC2 client = getClient(remote);
-                    if (client != null)
-                    {
-                        updateVolumes(client, ids.allVlmIds);
-                        updateSnapshots(client, ids.allSnapIds);
-                    }
+                    updateVolumes(client, ids.allVlmIds);
+                    updateSnapshots(client, ids.allSnapIds);
                 }
-                catch (DatabaseException exc)
+                catch (Exception | ImplementationError sdkExc)
                 {
-                    errorReporter.reportError(new ImplementationError(exc));
-                    errorReporter.logError("EbsStatusManager shutting down.");
-                    keepRunning = false;
+                    errorReporter.reportError(sdkExc);
+                }
+                finally
+                {
+                    client.shutdown();
                 }
             }
         }
     }
 
+    private Map<AmazonEC2, EbsRemoteIds> buildIdsByAwsClient(
+        @Nullable Collection<ResourceName> rscsToPollRef,
+        @Nullable Collection<SnapshotDefinition.Key> snapDfnsToPollRef
+    )
+    {
+        Map<AmazonEC2, EbsRemoteIds> ret = new HashMap<>();
+        try (LockGuard lockGuard = createLock())
+        {
+            // helper map so we do not resolve the EbsRemote for every single EbsVlmData, but first group by
+            // storPools, which should reduce the EbsRemote lookups significantly.
+            Map<StorPool, EbsRemoteIds> idsByStorPool = new HashMap<>();
+            for (ResourceDefinition rscDfn : rscDfnMap.values())
+            {
+                if (rscsToPollRef == null || rscsToPollRef.contains(rscDfn.getName()))
+                {
+                    for (Resource rsc : rscDfn.getNotDeletedDiskful())
+                    {
+                        if (EbsUtils.isEbs(rsc))
+                        {
+                            addAllEbsData(
+                                rsc,
+                                ebsVlm -> idsByStorPool.computeIfAbsent(
+                                    ebsVlm.getStorPool(),
+                                    ignored -> new EbsRemoteIds()
+                                )
+                                    .addVlm(ebsVlm)
+                            );
+                        }
+                    }
+                }
+                for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns())
+                {
+                    if (snapDfnsToPollRef == null || snapDfnsToPollRef.contains(snapDfn.getSnapDfnKey()))
+                    {
+                        for (Snapshot snap : snapDfn.getAllNotDeletingSnapshots())
+                        {
+                            if (EbsUtils.isEbs(snap))
+                            {
+                                addAllEbsData(
+                                    snap,
+                                    ebsSnapVlm -> idsByStorPool.computeIfAbsent(
+                                        ebsSnapVlm.getStorPool(),
+                                        ignored -> new EbsRemoteIds()
+                                    )
+                                        .addSnapVlm(ebsSnapVlm)
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            Map<EbsRemote, AmazonEC2> ebsRemoteToClient = new HashMap<>();
+            for (Map.Entry<StorPool, EbsRemoteIds> entry : idsByStorPool.entrySet())
+            {
+                StorPool sp = entry.getKey();
+                try
+                {
+                    EbsRemote ebsRemote = EbsUtils.getEbsRemote(
+                        remoteMap,
+                        sp,
+                        sysCfgRepo.getStltConfForView()
+                    );
+                    // use the same client for the same ebsRemote so we can group the EbsRemoteIds properly
+                    @Nullable AmazonEC2 client = ebsRemoteToClient.computeIfAbsent(ebsRemote, this::getClient);
+                    if (client != null)
+                    {
+                        ret.computeIfAbsent(client, ignore -> new EbsRemoteIds())
+                            .mergeWith(entry.getValue());
+                    }
+                }
+                catch (Exception | ImplementationError exc)
+                {
+                    // do not let one exc / implError cancel all requests, if we have multiple ebsRemotes for example
+                    errorReporter.reportError(exc, null, "Exception/Error occurred while processing " + sp.getKey());
+                }
+            }
+        }
+        return ret;
+    }
+
+    private LockGuard createLock()
+    {
+        return lockGuardFactory.create().read(LockObj.RSC_DFN_MAP, LockObj.REMOTE_MAP).build();
+    }
+
     private void updateVolumes(AmazonEC2 client, Map<String, EbsData<Resource>> vlmsMapRef)
     {
-        Map<String, EbsData<Resource>> vlmsMapCopy = new HashMap<>(vlmsMapRef);
+        if (!vlmsMapRef.isEmpty())
+        {
+            final ArrayList<DescribeVolumesResult> descrVlmResultList = new ArrayList<>();
+            final Map<String, VolumeModification> vlmModByEbsId = new HashMap<>();
 
-        /*
-         * https://docs.amazonaws.cn/en_us/AWSEC2/latest/UserGuide/ebs-describing-volumes.html
-         *
-         * describeVolumes.state:
-         *  "in-use" / "available" / "creating" / "deleting" / "deleted" / "error"
-         * describeVolumeModifications.modificationState(if exists):
-         *  "" / "optimizing"
-         * describeVolumeModifications.progress (if exists):
-         *  "0" / ... / "99"
-         */
+            // send requests and gather all results in descrVlmResultList and vlmModByEbsId
+            gatherPagedVolumeDescriptions(client, vlmsMapRef.keySet(), descrVlmResultList, vlmModByEbsId);
 
-        final ArrayList<String> vlmIdList = new ArrayList<>(vlmsMapCopy.keySet());
+            // process the above gathered results
+            try (LockGuard lg = createLock())
+            {
+                for (DescribeVolumesResult describeVolumesResult : descrVlmResultList)
+                {
+                    for (com.amazonaws.services.ec2.model.Volume amaVlm : describeVolumesResult.getVolumes())
+                    {
+                        @Nullable EbsData<Resource> vlmData = vlmsMapRef.get(amaVlm.getVolumeId());
+
+                        // vlmData might be null... might be a linstor-external EBS. noop
+                        if (vlmData != null)
+                        {
+                            updateLinstorRscStatesFromAmazonState(
+                                amaVlm,
+                                vlmData,
+                                vlmModByEbsId.get(amaVlm.getVolumeId())
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void gatherPagedVolumeDescriptions(
+        AmazonEC2 clientRef,
+        Set<String> keySetRef,
+        ArrayList<DescribeVolumesResult> descrVlmResultListRef,
+        Map<String, VolumeModification> vlmModByEbsIdRef
+    )
+    {
+        final ArrayList<String> vlmIdList = new ArrayList<>(keySetRef);
         final int vlmIdListSize = vlmIdList.size();
         final int vlmIdListPages = vlmIdListSize / MAX_ENTRIES_PER_PAGE;
         for (int page = 0; page <= vlmIdListPages; page++)
@@ -430,105 +542,168 @@ public class EbsStatusManagerService implements SystemService
                 Math.min((page + 1) * MAX_ENTRIES_PER_PAGE, vlmIdListSize)
             );
 
-            DescribeVolumesResult describeVolumesResult = client.describeVolumes(
-                new DescribeVolumesRequest().withVolumeIds(currentVlmIdList)
-            );
+            Filter awsVlmIdFilter = new Filter("volume-id").withValues(currentVlmIdList);
 
-            DescribeVolumesModificationsResult describeVlmMods = client.describeVolumesModifications(
-                new DescribeVolumesModificationsRequest()
-            );
-            Map<String, VolumeModification> vlmModByEbsId = new HashMap<>();
-            for (VolumeModification vlmMod : describeVlmMods.getVolumesModifications())
+            @Nullable String nextToken = null;
+            do
             {
-                vlmModByEbsId.put(vlmMod.getVolumeId(), vlmMod);
+                DescribeVolumesResult describeVolumesResult = clientRef.describeVolumes(
+                    new DescribeVolumesRequest()
+                        // DO NOT use .withVolumeIds since that will throw NotFound exception if a requested VlmId no
+                        // longer exist. This can easily be the case in an async setup (i.e. if LINSTOR is just about to
+                        // delete the EBS volume while this code runs concurrently)
+                        .withFilters(awsVlmIdFilter)
+                        .withNextToken(nextToken)
+                );
+                descrVlmResultListRef.add(describeVolumesResult);
+                nextToken = describeVolumesResult.getNextToken();
             }
+            while (nextToken != null && !nextToken.isEmpty());
 
-            for (Volume amaVlm : describeVolumesResult.getVolumes())
+            nextToken = null;
+            do
             {
-                // remove from map so we can easily track which local vlmData were deleted in the meantime
-                // so we can get rid of them after this loop
-                EbsData<Resource> vlmData = vlmsMapCopy.remove(amaVlm.getVolumeId());
-
-                // vlmData might be null... might be a linstor-external EBS. noop
-                if (vlmData != null)
+                DescribeVolumesModificationsResult describeVolumesModifications = clientRef
+                    .describeVolumesModifications(
+                        new DescribeVolumesModificationsRequest()
+                            // DO NOT use .withVolumeIds since that will throw NotFound exception if a requested VlmId
+                            // no longer exist. This can easily be the case in an async setup (i.e. if LINSTOR is just
+                            // about to delete the EBS volume while this code runs concurrently)
+                            .withFilters(awsVlmIdFilter)
+                            .withNextToken(nextToken)
+                    );
+                nextToken = describeVolumesModifications.getNextToken();
+                for (VolumeModification vlmMod : describeVolumesModifications.getVolumesModifications())
                 {
-                    VolumeModification vlmMod = vlmModByEbsId.get(amaVlm.getVolumeId());
-                    Resource rsc = vlmData.getVolume().getAbsResource();
-                    if (!rsc.isDeleted())
-                    {
-                        Peer peer = rsc.getNode().getPeer();
-                        ReadWriteLock satelliteStateLock = peer.getSatelliteStateLock();
-                        satelliteStateLock.writeLock().lock();
-                        try
-                        {
-                            SatelliteState rscStates = peer.getSatelliteState();
-                            ResourceName rscName = rsc.getResourceDefinition().getName();
-                            rscStates.setOnResource(
-                                rscName,
-                                SatelliteResourceState::setInUse,
-                                EbsUtils.EBS_VLM_STATE_IN_USE.equalsIgnoreCase(amaVlm.getState())
-                            );
-                            String diskState = amaVlm.getState();
-                            if (vlmMod != null)
-                            {
-                                String modState = vlmMod.getModificationState();
-                                if (!modState.isEmpty() && !EbsUtils.EBS_VLM_STATE_COMPLETED.equals(modState))
-                                {
-                                    diskState += ", " +
-                                        vlmMod.getModificationState() + ": " +
-                                        vlmMod.getProgress() +
-                                        "%";
-                                }
-                            }
+                    vlmModByEbsIdRef.put(vlmMod.getVolumeId(), vlmMod);
+                }
+            }
+            while (nextToken != null && !nextToken.isEmpty());
+        }
+    }
 
-                            rscStates.setOnVolume(
-                                rscName,
-                                vlmData.getVlmNr(),
-                                SatelliteVolumeState::setDiskState,
-                                diskState
-                            );
-                        }
-                        finally
-                        {
-                            satelliteStateLock.writeLock().unlock();
-                        }
+    /*
+     * https://docs.amazonaws.cn/en_us/AWSEC2/latest/UserGuide/ebs-describing-volumes.html
+     *
+     * describeVolumes.state:
+     * "in-use" / "available" / "creating" / "deleting" / "deleted" / "error"
+     * describeVolumeModifications.modificationState(if exists):
+     * "" / "optimizing"
+     * describeVolumeModifications.progress (if exists):
+     * "0" / ... / "99"
+     */
+    private void updateLinstorRscStatesFromAmazonState(
+        com.amazonaws.services.ec2.model.Volume amaVlm,
+        EbsData<Resource> vlmData,
+        @Nullable VolumeModification vlmMod // vlm might not have been modified
+    )
+    {
+        AbsVolume<Resource> vlm = vlmData.getVolume();
+        if (!vlm.isDeleted()) // vlm might have been deleted since last time we had the read lock
+        {
+            // no need to check rsc for deleted. If the volume was not deleted, rsc cannot be
+            // deleted same is true for node.
+            Resource rsc = vlm.getAbsResource();
+            Peer peer = rsc.getNode().getPeer();
+            ReadWriteLock satelliteStateLock = peer.getSatelliteStateLock();
+            satelliteStateLock.writeLock().lock();
+            try
+            {
+                SatelliteState rscStates = peer.getSatelliteState();
+                ResourceName rscName = rsc.getResourceDefinition().getName();
+                rscStates.setOnResource(
+                    rscName,
+                    SatelliteResourceState::setInUse,
+                    EbsUtils.EBS_VLM_STATE_IN_USE.equalsIgnoreCase(amaVlm.getState())
+                );
+                String diskState = amaVlm.getState();
+                if (vlmMod != null)
+                {
+                    String modState = vlmMod.getModificationState();
+                    if (!modState.isEmpty() && !EbsUtils.EBS_VLM_STATE_COMPLETED.equals(modState))
+                    {
+                        diskState += ", " +
+                            vlmMod.getModificationState() + ": " +
+                            vlmMod.getProgress() +
+                            "%";
                     }
                 }
-            }
-        }
 
-        synchronized (idsByRemote)
-        {
-            for (String key : vlmsMapCopy.keySet())
+                rscStates.setOnVolume(
+                    rscName,
+                    vlmData.getVlmNr(),
+                    SatelliteVolumeState::setDiskState,
+                    diskState
+                );
+            }
+            finally
             {
-                EbsData<Resource> vlmData = vlmsMapRef.get(key);
-                if (vlmData.getVolume().isDeleted())
-                {
-                    vlmsMapRef.remove(key);
-                }
-                Resource rsc = vlmData.getRscLayerObject().getAbsResource();
-                if (rsc.isDeleted())
-                {
-                    knownRscs.remove(rsc);
-                }
+                satelliteStateLock.writeLock().unlock();
             }
         }
     }
 
     private void updateSnapshots(AmazonEC2 client, Map<String, EbsData<Snapshot>> snapMapRef)
-        throws DatabaseException
     {
-        Map<String, EbsData<Snapshot>> snapMapCopy = new HashMap<>(snapMapRef);
-        /*
-         * https://docs.aws.amazon.com/cli/latest/reference/ec2/describe-snapshots.html
-         *
-         * describeSnap.state (Strings from com.amazonaws.services.ec2.model.SnapshotState):
-         * "pending" / "completed" / "recoverable" / "recovering" / "error"
-         * describeSnap.progress:
-         * "0%" / ... / "99%"
-         */
+        if (!snapMapRef.isEmpty())
+        {
+            /*
+             * https://docs.aws.amazon.com/cli/latest/reference/ec2/describe-snapshots.html
+             *
+             * describeSnap.state (Strings from com.amazonaws.services.ec2.model.SnapshotState):
+             * "pending" / "completed" / "recoverable" / "recovering" / "error"
+             * describeSnap.progress:
+             * "0%" / ... / "99%"
+             */
 
-        ArrayList<String> snapIdList = new ArrayList<>(snapMapCopy.keySet());
+            // send requests and gather all results in descrSnapshotResultList
+            List<DescribeSnapshotsResult> descrSnapResultList = gatherPagedSnapshotDescription(
+                client,
+                snapMapRef.keySet()
+            );
+
+            // process the above gathered results
+            try (LockGuard lg = createLock())
+            {
+                for (DescribeSnapshotsResult describeSnapResult : descrSnapResultList)
+                {
+                    for (com.amazonaws.services.ec2.model.Snapshot amaSnap : describeSnapResult.getSnapshots())
+                    {
+                        @Nullable EbsData<Snapshot> snapVlmData = snapMapRef.get(amaSnap.getSnapshotId());
+
+                        // snapVlmData might be null... might be a linstor-external EBS snapshot. noop
+                        if (snapVlmData != null)
+                        {
+                            updateLinstorSnapStateFromAmazonState(amaSnap, snapVlmData);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void updateLinstorSnapStateFromAmazonState(
+        com.amazonaws.services.ec2.model.Snapshot amaSnap,
+        EbsData<Snapshot> snapVlmData
+    )
+    {
+        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
+        if (!snapVlm.isDeleted())
+        {
+            String diskState = amaSnap.getState();
+            if (!EbsUtils.EBS_SNAP_STATE_COMPLETED.equalsIgnoreCase(diskState))
+            {
+                // "%" is already included from .getProgress()
+                diskState += ": " + amaSnap.getProgress();
+            }
+            snapVlm.setState(diskState);
+        }
+    }
+
+    private List<DescribeSnapshotsResult> gatherPagedSnapshotDescription(AmazonEC2 clientRef, Set<String> keySetRef)
+    {
+        List<DescribeSnapshotsResult> ret = new ArrayList<>();
+        ArrayList<String> snapIdList = new ArrayList<>(keySetRef);
         final int snapIdListSize = snapIdList.size();
         final int snapIdListPages = snapIdListSize / MAX_ENTRIES_PER_PAGE;
         for (int page = 0; page <= snapIdListPages; page++)
@@ -538,45 +713,24 @@ public class EbsStatusManagerService implements SystemService
                 Math.min((page + 1) * MAX_ENTRIES_PER_PAGE, snapIdListSize)
             );
 
-            DescribeSnapshotsResult describeSnapResult = client.describeSnapshots(
-                new DescribeSnapshotsRequest().withSnapshotIds(currentSnapIdList)
-            );
-
-            for (com.amazonaws.services.ec2.model.Snapshot amaSnap : describeSnapResult.getSnapshots())
+            Filter awsSnapIdFilter = new Filter("snapshot-id").withValues(currentSnapIdList);
+            @Nullable String nextToken = null;
+            do
             {
-                // remove from map so we can easily track which local vlmData were deleted in the meantime
-                // so we can get rid of them after this loop
-                EbsData<Snapshot> snapVlmData = snapMapCopy.remove(amaSnap.getSnapshotId());
-                // snapVlmData might be null... might be a linstor-external EBS snapshot. noop
-                if (snapVlmData != null)
-                {
-                    SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-                    if (!snapVlm.isDeleted())
-                    {
-                        String diskState = amaSnap.getState();
-                        if (!EbsUtils.EBS_SNAP_STATE_COMPLETED.equalsIgnoreCase(diskState))
-                        {
-                            // "%" is already included from .getProgress()
-                            diskState += ": " + amaSnap.getProgress();
-                        }
-                        snapVlm.setState(diskState);
-                    }
-                }
+                DescribeSnapshotsResult describeSnapshots = clientRef.describeSnapshots(
+                    new DescribeSnapshotsRequest()
+                        // DO NOT use .withSnapshotIds since that will throw NotFound exception if a requested SnapId
+                        // no longer exist. This can easily be the case in an async setup (i.e. if LINSTOR is just
+                        // about to delete the EBS snapshot while this code runs concurrently)
+                        .withFilters(awsSnapIdFilter)
+                        .withNextToken(nextToken)
+                );
+                ret.add(describeSnapshots);
+                nextToken = describeSnapshots.getNextToken();
             }
+            while (nextToken != null && !nextToken.isEmpty());
         }
-
-
-        synchronized (idsByRemote)
-        {
-            for (String key : snapMapCopy.keySet())
-            {
-                EbsData<Snapshot> snapVlmData = snapMapRef.get(key);
-                if (snapVlmData.getVolume().isDeleted())
-                {
-                    snapMapRef.remove(key);
-                }
-            }
-        }
+        return ret;
     }
 
     private @Nullable AmazonEC2 getClient(EbsRemote remoteRef)
@@ -602,17 +756,6 @@ public class EbsStatusManagerService implements SystemService
                 .build();
         }
         return client;
-    }
-
-    private EbsRemoteIds lazyGet(EbsRemote ebsRemote)
-    {
-        EbsRemoteIds ret = idsByRemote.get(ebsRemote);
-        if (ret == null)
-        {
-            ret = new EbsRemoteIds(ebsRemote);
-            idsByRemote.put(ebsRemote, ret);
-        }
-        return ret;
     }
 
     @Override
@@ -646,26 +789,106 @@ public class EbsStatusManagerService implements SystemService
 
     private static class PollStatus
     {
-        boolean answerReceived = false;
+        final CompletableFuture<Void> future = new CompletableFuture<>();
 
-        PollStatus()
+        @Nullable Collection<ResourceName> rscsToPoll;
+        @Nullable Collection<SnapshotDefinition.Key> snapDfnsToPoll;
+
+        PollStatus(
+            @Nullable Collection<ResourceName> rscDfnsToPollRef,
+            @Nullable Collection<SnapshotDefinition.Key> snapDfnKeysToPollRef
+        )
         {
+            // defensive copies, callers might pass immutable or reused collections
+            rscsToPoll = rscDfnsToPollRef == null ? null : new HashSet<>(rscDfnsToPollRef);
+            snapDfnsToPoll = snapDfnKeysToPollRef == null ?
+                null :
+                new HashSet<>(snapDfnKeysToPollRef);
+        }
+
+        void merge(
+            @Nullable Collection<ResourceName> rscDfnsToPollRef,
+            @Nullable Collection<SnapshotDefinition.Key> snapDfnKeysToPollRef
+        )
+        {
+            // if local field is already null we do not need to merge anything. null will be interpreted as "all"
+            if (rscsToPoll != null)
+            {
+                if (rscDfnsToPollRef == null)
+                {
+                    rscsToPoll = null; // all
+                }
+                else
+                {
+                    rscsToPoll.addAll(rscDfnsToPollRef);
+                }
+            }
+
+            if (snapDfnsToPoll != null)
+            {
+                if (snapDfnKeysToPollRef == null)
+                {
+                    snapDfnsToPoll = null; // all
+                }
+                else
+                {
+                    snapDfnsToPoll.addAll(snapDfnKeysToPollRef);
+                }
+            }
+        }
+
+        @Nullable
+        Collection<ResourceName> copyRscsToPoll()
+        {
+            return rscsToPoll == null ? null : new HashSet<>(rscsToPoll);
+        }
+
+        @Nullable
+        Collection<SnapshotDefinition.Key> copySnapDfnsToPoll()
+        {
+            return snapDfnsToPoll == null ? null : new HashSet<>(snapDfnsToPoll);
         }
     }
 
     private static class EbsRemoteIds
     {
-        @SuppressWarnings("unused")
-        private final EbsRemote remote;
-
         private final Map<String, EbsData<Resource>> allVlmIds;
         private final Map<String, EbsData<Snapshot>> allSnapIds;
 
-        EbsRemoteIds(EbsRemote remoteRef)
+        EbsRemoteIds()
         {
-            remote = remoteRef;
             allVlmIds = new HashMap<>();
             allSnapIds = new HashMap<>();
+        }
+
+        /**
+         * Stores the given EbsData iff it was already initialized (i.e. has an EBS ID in the props)
+         */
+        void addVlm(EbsData<Resource> vlmDataRef)
+        {
+            @Nullable String ebsVlmId = EbsUtils.getEbsVlmId(vlmDataRef);
+            if (ebsVlmId != null)
+            {
+                allVlmIds.put(ebsVlmId, vlmDataRef);
+            }
+        }
+
+        /**
+         * Stores the given EbsData iff it was already initialized (i.e. has an EBS ID in the props)
+         */
+        void addSnapVlm(EbsData<Snapshot> snapVlmDataRef)
+        {
+            @Nullable String ebsSnapId = EbsUtils.getEbsSnapId(snapVlmDataRef);
+            if (ebsSnapId != null)
+            {
+                allSnapIds.put(ebsSnapId, snapVlmDataRef);
+            }
+        }
+
+        void mergeWith(EbsRemoteIds otherRef)
+        {
+            allVlmIds.putAll(otherRef.allVlmIds);
+            allSnapIds.putAll(otherRef.allSnapIds);
         }
     }
 }

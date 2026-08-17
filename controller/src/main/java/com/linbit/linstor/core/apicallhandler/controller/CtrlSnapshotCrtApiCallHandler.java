@@ -48,10 +48,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
-import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -60,16 +56,22 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
+import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 
 @Singleton
 public class CtrlSnapshotCrtApiCallHandler
@@ -948,7 +950,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private Flux<ApiCallRc> removeInProgressSnapshotsInTransaction(CreateMultiSnapRequest reqRef)
     {
-        boolean isEbsSnapshot = false;
+        Set<SnapshotDefinition.Key> snapDfnKeysForEbsUpdate = new HashSet<>();
         boolean updatedRequest = false;
         for (SnapshotDefinition snapDfn : reqRef.getCreatedSnapDfns())
         {
@@ -958,7 +960,10 @@ public class CtrlSnapshotCrtApiCallHandler
 
                 for (Snapshot snapshot : getAllSnapshotsPrivileged(snapDfn))
                 {
-                    isEbsSnapshot |= isEbsSnapshot(snapshot);
+                    if (EbsUtils.isEbs(snapshot))
+                    {
+                        snapDfnKeysForEbsUpdate.add(snapDfn.getSnapDfnKey());
+                    }
                     setTakeSnapshotPrivileged(snapshot, false);
                 }
 
@@ -976,33 +981,16 @@ public class CtrlSnapshotCrtApiCallHandler
 
         ctrlTransactionHelper.commit();
 
-        if (isEbsSnapshot)
-        {
-            pollEbs();
-        }
+        Flux<ApiCallRc> ebsUpdateFlux = snapDfnKeysForEbsUpdate.isEmpty() ?
+            Flux.empty() :
+            ebsStatusMgr.pollFlux(EbsStatusManagerService.DFLT_POLL_WAIT, null, snapDfnKeysForEbsUpdate);
 
-        return ctrlSatelliteUpdateCaller.updateSatellites(reqRef, notConnectedError())
-            // ensure that the individual node update fluxes are subscribed to, but ignore responses from cleanup
-            .flatMap(Tuple2::getT2).thenMany(Flux.empty());
-    }
-
-    private void pollEbs()
-    {
-        try
-        {
-            ebsStatusMgr.pollAndWait(EbsStatusManagerService.DFLT_POLL_WAIT);
-        }
-        catch (InterruptedException exc)
-        {
-            errorReporter.reportError(exc);
-        }
-    }
-
-    private boolean isEbsSnapshot(Snapshot snapshotRef)
-    {
-        boolean ret;
-        ret = EbsUtils.isEbs(snapshotRef);
-        return ret;
+        return ebsUpdateFlux.concatWith(
+            ctrlSatelliteUpdateCaller.updateSatellites(reqRef, notConnectedError())
+                // ensure that the individual node update fluxes are subscribed to, but ignore responses from cleanup
+                .flatMap(Tuple2::getT2)
+                .thenMany(Flux.empty())
+        );
     }
 
     private void unsetInCreationPrivileged(SnapshotDefinition snapshotDfn)

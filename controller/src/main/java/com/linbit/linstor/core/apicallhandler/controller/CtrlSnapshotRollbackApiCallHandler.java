@@ -234,6 +234,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         // a shared-SP resource that is not active anywhere has to be activated first: both the
         // safety-snapshot and the rollback itself are only performed by the node using the shared data
         return ctrlSnapshotCrtHandler.activateSharedRscs(rscNameStr, Collections.emptyList())
+            .concatWith(ctrlSnapshotHelper.refreshEbsSnapStateIfNeededFlux(rscNameStr, snapshotNameStr))
             .concatWith(
                 scopeRunner.fluxInTransactionalScope(
                     "prepare rollback",
@@ -915,7 +916,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
     private void ensureNoResourcesInUse(ResourceDefinition rscDfn)
     {
-        Optional<Resource> rscInUse = anyResourceInUse(rscDfn);
+        Optional<Resource> rscInUse = rscDfn.anyResourceInUse();
         if (rscInUse.isPresent())
         {
             NodeName nodeName = rscInUse.get().getNode().getName();
@@ -934,13 +935,6 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private boolean isDiskless(Resource rsc)
     {
         return rsc.isDrbdDiskless() || rsc.isNvmeInitiator() || rsc.isEbsInitiator();
-    }
-
-    private Optional<Resource> anyResourceInUse(ResourceDefinition rscDfn)
-    {
-        Optional<Resource> rscInUse;
-        rscInUse = rscDfn.anyResourceInUse();
-        return rscInUse;
     }
 
     private boolean isDisklessPrivileged(Resource rsc)
