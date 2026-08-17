@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed EBS initiator volumes losing their device path after a satellite restart
 - Fixed EBS initiator throwing ImplementationError when the controller was started without passphrase or EBS target
   was not provisioned yet. Now a more descriptive error message is shown
+- Fixed EBS target still shown as "InUse" after their initiator resource was deleted
 
 ## [1.35.2] - 2026-09-14
 

@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.ebs.EbsStatusManagerService;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
@@ -69,6 +70,7 @@ public class CtrlRscDeleteApiHelper
     private final RetryResourcesTask retryRscTask;
     private final Provider<CtrlRscAutoHelper> rscAutoHelperProvider;
     private final CtrlMinIoSizeHelper minIoSizeHelper;
+    private final EbsStatusManagerService ebsStatusManagerService;
 
     @Inject
     public CtrlRscDeleteApiHelper(
@@ -81,7 +83,8 @@ public class CtrlRscDeleteApiHelper
         ScheduleBackupService scheduleServiceRef,
         RetryResourcesTask retryRscTaskRef,
         Provider<CtrlRscAutoHelper> rscAutoHelperProviderRef,
-        CtrlMinIoSizeHelper ctrlMinIoSizeHelperRef
+        CtrlMinIoSizeHelper ctrlMinIoSizeHelperRef,
+        EbsStatusManagerService ebsStatusManagerServiceRef
     )
     {
         errorReporter = errorReporterRef;
@@ -94,6 +97,7 @@ public class CtrlRscDeleteApiHelper
         retryRscTask = retryRscTaskRef;
         rscAutoHelperProvider = rscAutoHelperProviderRef;
         minIoSizeHelper = ctrlMinIoSizeHelperRef;
+        ebsStatusManagerService = ebsStatusManagerServiceRef;
     }
 
     public void markDeletedWithVolumes(Resource rsc)
@@ -248,11 +252,19 @@ public class CtrlRscDeleteApiHelper
         else
         {
             Set<ResourceDefinition> rscDfnsToCheck = new HashSet<>();
+            boolean updateEbsStatus = false;
             for (Resource rsc : rscList)
             {
                 UUID rscUuid = rsc.getUuid();
                 String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
                 ResourceDefinition rscDfn = rsc.getResourceDefinition();
+
+                if (rsc.isEbsInitiator())
+                {
+                    // we just removed an EBS initiator. We should poll the status again so the EBS target's
+                    // inUse gets updated properly
+                    updateEbsStatus = true;
+                }
 
                 cleanupAndDelete(rsc);
 
@@ -263,6 +275,30 @@ public class CtrlRscDeleteApiHelper
                         .entryBuilder(ApiConsts.DELETED, descriptionFirstLetterCaps + " deletion complete.")
                         .setDetails(descriptionFirstLetterCaps + " UUID was: " + rscUuid)
                         .build()
+                );
+            }
+
+            try
+            {
+                if (updateEbsStatus)
+                {
+                    // TODO: we could use a flux version of this so it can run either in parallel or at least not block
+                    // a
+                    // controller-thread
+                    ebsStatusManagerService.pollAndWait(EbsStatusManagerService.DFLT_POLL_WAIT);
+                }
+            }
+            catch (InterruptedException interruptedExc)
+            {
+                Thread.currentThread().interrupt();
+                errorReporter.reportError(interruptedExc);
+                throw new ApiRcException(
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        "Waiting for EBS status update was interrupted"
+                    ),
+                    interruptedExc,
+                    false
                 );
             }
 
@@ -360,7 +396,7 @@ public class CtrlRscDeleteApiHelper
         ResourceName rscName = rsc.getResourceDefinition().getName();
         NodeName nodeName = rsc.getNode().getName();
 
-        Boolean inUse;
+        @Nullable Boolean inUse;
         Peer peer = getPeerPrivileged(rsc.getNode());
         try (LockGuard ignored = LockGuard.createLocked(peer.getSatelliteStateLock().readLock()))
         {
