@@ -13,6 +13,7 @@ import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -54,6 +55,20 @@ public class EbsUtils
     {
         // for now, we only monitor target resources, and snapshots only exist on target anyways
         return rscOrSnapRef.getNode().getNodeType().equals(Node.Type.EBS_TARGET);
+    }
+
+    public static boolean isAnySnapshotEbs(SnapshotDefinition snapDfnRef)
+    {
+        boolean ret = false;
+        for (Snapshot snap : snapDfnRef.getAllSnapshots())
+        {
+            if (isEbs(snap))
+            {
+                ret = true;
+                break;
+            }
+        }
+        return ret;
     }
 
     public static @Nullable String getEbsVlmId(EbsData<?> vlmDataRef)

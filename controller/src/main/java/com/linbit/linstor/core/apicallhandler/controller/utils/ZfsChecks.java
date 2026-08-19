@@ -23,7 +23,6 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -46,24 +45,22 @@ public class ZfsChecks
 
     /**
      * Determines whether to use the old rollback strategy (i.e. "zfs rollback") or the new (rollback via restore with
-     * safetySnap). <code>false</code> return value represents old rollback strategy, <code>true</code> means new
+     * safetySnap). <code>true</code> return value represents old rollback strategy, <code>false</code> means new
      * strategy.
      *
      * <p>Return scenarios:</p>
      * <ul>
      * <li><code>false</code> if snapshot or resources are at least partially non-ZFS </li>
-     * <li>If all snapshots + resources are ZFS and <code>useZfsRollbackRef</code> is non-null, returns
-     *  <code>useZfsRollbackRef</code></li>
-     * <li>If <code>useZfsRollbackRef</code> is <code>null</code>, check the controller property
-     * {@value ZfsRollbackStrategy#FULL_KEY_USE_ZFS_ROLLBACK_PROP} for the strategy.
-     *  <ul>
-     *   <li>{@value ApiConsts#VAL_STOR_POOL_ZFS_ROLLBACK_STRAT_CLONE} forces new behavior
-     *      (i.e. <code>true</code> return)</li>
-     *   <li>{@value ApiConsts#VAL_STOR_POOL_ZFS_ROLLBACK_STRAT_ROLLBACK} forces old behavior
-     *      (i.e. <code>false</code> return)</li>
-     *   <li>{@value ApiConsts#VAL_STOR_POOL_ZFS_ROLLBACK_STRAT_DYNAMIC} returns whether old behavior
-     *      is applicable or not</li>
-     *  </ul>
+     * <li>Otherwise check the controller property {@value ZfsRollbackStrategy#FULL_KEY_USE_ZFS_ROLLBACK_PROP} for the
+     * strategy.
+     * <ul>
+     * <li>{@value ApiConsts#VAL_STOR_POOL_ZFS_ROLLBACK_STRAT_CLONE} forces new behavior
+     * (i.e. <code>false</code> return)</li>
+     * <li>{@value ApiConsts#VAL_STOR_POOL_ZFS_ROLLBACK_STRAT_ROLLBACK} forces old behavior
+     * (i.e. <code>true</code> return)</li>
+     * <li>{@value ApiConsts#VAL_STOR_POOL_ZFS_ROLLBACK_STRAT_DYNAMIC} returns whether old behavior
+     * is applicable or not</li>
+     * </ul>
      * </li>
      * </ul>
      */

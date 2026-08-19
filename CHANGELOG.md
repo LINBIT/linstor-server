@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of /dev/nvme*n1
 - Controller,Satellite: Uncaught exceptions in background threads are now logged and create an error report instead
   of silently killing a thread
+- Snapshot rollback of EBS resources is forced to use "old rollback" mechanism since we must not wait until the safety
+  snapshot of the "rollback via restore" mechanism reaches "completed" state in AWS (which is required to rollback to
+  it if something goes wrong)
 
 ### Fixed
 

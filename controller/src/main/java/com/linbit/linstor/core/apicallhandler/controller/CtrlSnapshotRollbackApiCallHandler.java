@@ -13,6 +13,7 @@ import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.mgr.SnapshotRollbackManager;
+import com.linbit.linstor.core.apicallhandler.controller.utils.SnapshotRollbackChecks;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ZfsChecks;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ZfsRollbackStrategy;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -48,11 +49,6 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.StringUtils;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
-import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -70,6 +66,11 @@ import java.util.Set;
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
+import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 /**
  * Rolls a resource back to a snapshot state.
@@ -129,6 +130,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private final CtrlRscMakeAvailableApiCallHandler ctrlRscMakeAvailableApiCallHandler;
     private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
     private final ZfsChecks zfsChecks;
+    private final SnapshotRollbackChecks snapshotRollbackChecks;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
     private final SharedResourceManager sharedRscMgr;
 
@@ -154,7 +156,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
         ZfsChecks zfsChecksRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
-        SharedResourceManager sharedRscMgrRef
+        SharedResourceManager sharedRscMgrRef,
+        SnapshotRollbackChecks snapshotRollbackChecksRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -176,6 +179,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         ctrlRscMakeAvailableApiCallHandler = ctrlRscMakeAvailableApiCallHandlerRef;
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
         zfsChecks = zfsChecksRef;
+        snapshotRollbackChecks = snapshotRollbackChecksRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
         sharedRscMgr = sharedRscMgrRef;
     }
@@ -252,7 +256,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameStr, snapshotNameStr);
         ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
-        boolean useOldRollback = zfsChecks.useOldRollback(snapshotDfn, zfsRollbackStrategyRef);
+        boolean useOldRollback = snapshotRollbackChecks.useOldRollback(snapshotDfn, zfsRollbackStrategyRef);
 
         ResourceName rscName = rscDfn.getName();
         ensureNoBackupRestoreRunning(rscDfn);
