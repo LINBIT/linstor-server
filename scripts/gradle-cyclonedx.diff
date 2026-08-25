@@ -5,7 +5,7 @@ index 9df6c840c..2f0654160 100644
 @@ -10,6 +10,14 @@ buildscript {
  
  plugins {
-     id("net.ltgt.errorprone") version "5.1.0" apply false
+     id("net.ltgt.errorprone") version "5.1.1" apply false
 +    id 'org.cyclonedx.bom' version '2.3.1'
 +}
 +
