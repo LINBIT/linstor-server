@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.helpers;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -103,6 +104,17 @@ public class ResourceCreateCheck
                     // no further checks needed in this case
                 }
             }
+        }
+        List<DeviceLayerKind> unsupportedLayers = CtrlRscCrtApiHelper.getUnsupportedLayers(rsc);
+        if (!unsupportedLayers.isEmpty())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_STLT_DOES_NOT_SUPPORT_LAYER,
+                    "Satellite '" + rsc.getNode().getName() + "' does not support the following layers: " +
+                        unsupportedLayers
+                )
+            );
         }
     }
 

@@ -5,15 +5,9 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.BCACHE;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.CACHE;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.NVME;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.WRITECACHE;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -22,6 +16,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.BCACHE;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.CACHE;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.NVME;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.WRITECACHE;
 
 public class LayerUtils
 {
@@ -198,32 +200,59 @@ public class LayerUtils
         return !LayerUtils.getChildLayerDataByKind(rscData, kind).isEmpty();
     }
 
-    public static List<DeviceLayerKind> getUsedDeviceLayerKinds(
-        AbsRscLayerObject<?> rscLayerObject
+    public static <RSC extends AbsResource<RSC>> List<DeviceLayerKind> getUsedDeviceLayerKinds(
+        AbsRscLayerObject<RSC> rscLayerObject
     )
     {
         List<DeviceLayerKind> usedLayers = new ArrayList<>();
 
-        AbsRscLayerObject<?> curLayerObject = rscLayerObject;
+        AbsRscLayerObject<RSC> curLayerObject = rscLayerObject;
 
         while (curLayerObject != null)
         {
             DeviceLayerKind kind = curLayerObject.getLayerKind();
             usedLayers.add(kind);
 
+            boolean skipAboveUs = false;
+            boolean skipBelowUs = false;
+
             if (DeviceLayerKind.NVME.equals(kind))
             {
                 if (((NvmeRscData<?>) curLayerObject).isInitiator())
                 {
-                    // we do not care about layers below us
-                    break;
+                    skipBelowUs = true;
                 }
                 else
                 {
-                    // we do not care about layers above us
-                    usedLayers.clear();
-                    usedLayers.add(kind);
+                    skipAboveUs = true;
                 }
+            }
+            else if (DeviceLayerKind.STORAGE.equals(kind))
+            {
+                // initialize with !vlmMap.isEmpty() since if we do not have any volumes yet, we also have no EBS.
+                boolean allVlmsEbsTarget = !curLayerObject.getVlmLayerObjects().isEmpty();
+                for (VlmProviderObject<?> vlmProviderObject : curLayerObject.getVlmLayerObjects().values())
+                {
+                    if (!vlmProviderObject.getProviderKind().equals(DeviceProviderKind.EBS_TARGET))
+                    {
+                        allVlmsEbsTarget = false;
+                        break;
+                    }
+                    // we can skip checking for EBS_INITIATOR since we are already in the STORAGE layer - the
+                    // bottom-most layer, so there is nothing below us we could skip
+                }
+                skipAboveUs = allVlmsEbsTarget;
+            }
+            if (skipBelowUs)
+            {
+                // we do not care about layers below us
+                break;
+            }
+            if (skipAboveUs)
+            {
+                // we do not care about layers above us
+                usedLayers.clear();
+                usedLayers.add(kind);
             }
             curLayerObject = curLayerObject.getChildBySuffix("");
         }

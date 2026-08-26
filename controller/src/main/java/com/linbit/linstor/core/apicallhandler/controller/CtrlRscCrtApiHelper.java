@@ -80,10 +80,6 @@ import com.linbit.utils.MathUtils;
 import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
-import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
-import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -104,6 +100,10 @@ import org.reactivestreams.Publisher;
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
+import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 
 @Singleton
 public class CtrlRscCrtApiHelper
@@ -1239,17 +1239,6 @@ public class CtrlRscCrtApiHelper
             );
 
             copyForceInitialSyncProp(rsc);
-
-            List<DeviceLayerKind> unsupportedLayers = getUnsupportedLayers(rsc);
-            if (!unsupportedLayers.isEmpty())
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_STLT_DOES_NOT_SUPPORT_LAYER,
-                        "Satellite '" + node.getName() + "' does not support the following layers: " + unsupportedLayers
-                    )
-                );
-            }
         }
         catch (DatabaseException sqlExc)
         {
@@ -1335,7 +1324,7 @@ public class CtrlRscCrtApiHelper
         return rsc;
     }
 
-    static List<DeviceLayerKind> getUnsupportedLayers(Resource rsc)
+    public static List<DeviceLayerKind> getUnsupportedLayers(Resource rsc)
     {
         List<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
             rsc.getLayerData()
