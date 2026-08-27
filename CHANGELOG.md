@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Snapshot restore and rollback of EBS snapshots now refresh (once) the AWS snapshot state for not yet "completed"
   snapshots before reporting an error
 - Fixed bug that made an EBS_TARGET resource also require layers above storage (i.e. DRBD)
+- Fixed special satellites (spawned by controller-process, which runs as DynamicUser) failed to create their config
+  directories in /etc/linstor
 
 ## [1.35.2] - 2026-09-14
 
