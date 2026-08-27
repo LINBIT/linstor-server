@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import org.slf4j.MDC;
 
@@ -42,6 +43,17 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
 
     private static final int RESTART_EVENTS2_STREAM_TIMEOUT = 5_000;
     private static final long RESTART_EVENTS2_STREAM_NOW = 0;
+    /**
+     * <p>Messages on stdErr starting with {@code <digit>} are debug lines / info messages. We do print those as WARN
+     * messages instead of silently dropping them, but do not restart events2 for those.</p>
+     * <p>The reason for this is that we might see messages like
+     * <pre>
+     * <1>tried to set SO_RCVBUF 1048576, got 212992; you may need to adjust sysctl net.core.rmem_max
+     * </pre>
+     * Which can safely be ignored. If anything more severe happens, events2 stream usually exists anyway
+     * which will still trigger a sleep + restart</p>
+     */
+    private static final Pattern IGNORED_STDERR_PATTERN = Pattern.compile("^<[0-9]+>");
 
     private ServiceName instanceName;
     private boolean started = false;
@@ -111,11 +123,25 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                 else
                 if (event instanceof StdErrEvent stdErrEvent)
                 {
-                    errorReporter.logWarning(
-                        "DRBD 'events2' returned error: %n%s",
-                        new String(stdErrEvent.data, StandardCharsets.UTF_8)
-                    );
-                    restartEvents2Stream(RESTART_EVENTS2_STREAM_TIMEOUT);
+                    String stdErr = new String(stdErrEvent.data, StandardCharsets.UTF_8);
+                    if (!stdErr.isBlank())
+                    {
+                        if (IGNORED_STDERR_PATTERN.matcher(stdErr).find())
+                        {
+                            errorReporter.logDebug("DRBD 'events2' info/debug (ignored): %n%s", stdErr);
+                        }
+                        else
+                        {
+                            errorReporter.logWarning("DRBD 'events2' returned error: %n%s", stdErr);
+                            restartEvents2Stream(RESTART_EVENTS2_STREAM_TIMEOUT);
+                        }
+                    }
+                    else
+                    {
+                        // dbg() lines from drbd-utils' libgenl end in "\n" and the macro appends
+                        // another, producing empty stderr lines. No content, nothing to react to.
+                        // See drbd-utils, user/shared/libgenl.h, dbg() macro
+                    }
                 }
                 else
                 if (event instanceof ExceptionEvent exceptionEvent)

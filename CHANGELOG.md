@@ -50,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug that made an EBS_TARGET resource also require layers above storage (i.e. DRBD)
 - Fixed special satellites (spawned by controller-process, which runs as DynamicUser) failed to create their config
   directories in /etc/linstor
+- Fixed the satellite restarting the DRBD events2 stream on harmless informational stderr lines (like
+  "tried to set SO_RCVBUF ...")
 
 ## [1.35.2] - 2026-09-14
 
