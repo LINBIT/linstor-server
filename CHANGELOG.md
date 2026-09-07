@@ -55,6 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed EBS special satellites not being marked as EBS satellites in `linstor n l`
 - Fixed special satellites (EBS target, remote SPDK) trying to manage "loop_device_mapping" file which caused
   permission errors due to the controller running as DynamicUser (GitHub issue #511, supersedes GitHub PR #512)
+- Fixed EBS resources never becoming UpToDate because EBS targets were chosen as the UpToDate winner. Now only
+  resources that have a backing disk for DRBD can be chosen (GitHub issue #515, supersedes GitHub PR #519)
 
 ## [1.35.2] - 2026-09-14
 

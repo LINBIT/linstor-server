@@ -29,6 +29,7 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import jakarta.inject.Provider;
@@ -682,5 +683,55 @@ public class Resource extends AbsResource<Resource>
         {
             return value;
         }
+    }
+
+    /**
+     * <p>Returns {@code true} iff we do have a disk for DRBD and DRBD is actually running on this resource</p>
+     * <p>In other words, this method returns {@code false} for
+     * <ul>
+     * <li>Diskless resources (based on {@link Resource.Flags#DRBD_DISKLESS}</li>
+     * <li>NVME-/EBS-<b>target</b></li>
+     * </ul>
+     * NVME-/EBS-targets actually do have disk but DRBD is not running there. This method is supposed to be used for
+     * calculating {@value InternalApiConsts#KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON} and similar settings.</p>
+     */
+    public boolean isDrbdDiskful()
+    {
+        checkDeleted();
+        return hasDrbd() && isDrbdDiskfulFlagsCheck(LayerRscUtils.getLayerStack(this));
+    }
+
+    /**
+     * <p>Runs flag based checks to determine if we are supposed to be a diskful DRBD resource or not. This method
+     * deliberately does not rely on layer data since this method might also be called during layer-data-creation, in
+     * other words at a time when we have no layer data at all.</p>
+     *
+     * <p>Since the NVMe case requires to check the layer-stack (no way around it), the layer stack can be given as
+     * a parameter. The resource itself is <b>not</b> asked for its layer-stack, so if you want the NVMe check you will
+     * need to pass the layer-stack as parameter
+     */
+    public boolean isDrbdDiskfulFlagsCheck(@Nullable Collection<DeviceLayerKind> layerListRef)
+    {
+        checkDeleted();
+        StateFlags<Resource.Flags> rscFlags = flags;
+        // DO NOT use "isUnset" here, since we still might some kind of DISKLESS (NVME_INITIATOR or EBS_INITIATOR)
+        // set, which also sets the generic "DISKLESS" flag which shares flag bits with DRBD_DISKLESS.
+        // so in this case "!isSet(flag) != isUnset(flag)"
+        boolean ret = !rscFlags.isSet(Resource.Flags.DRBD_DISKLESS);
+        ret = ret && !node.getNodeType().isSpecial(); // exclude *_TARGET satellites
+
+        if (ret)
+        {
+            if (!rscFlags.isSomeSet(Resource.Flags.EBS_INITIATOR, Resource.Flags.NVME_INITIATOR))
+            {
+                if (layerListRef != null && layerListRef.contains(DeviceLayerKind.NVME))
+                {
+                    // we do have NVME in our stack but the resource has no NVME_INITIATOR flag -> we are NVME_TARGET
+                    ret = false;
+                }
+                // do NOT check for storage pools. see comment above
+            }
+        }
+        return ret;
     }
 }

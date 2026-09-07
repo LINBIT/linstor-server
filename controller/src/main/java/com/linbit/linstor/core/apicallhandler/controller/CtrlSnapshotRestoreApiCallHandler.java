@@ -57,6 +57,10 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -71,9 +75,6 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
 import reactor.core.publisher.Flux;
 
 import static com.linbit.utils.StringUtils.firstLetterCaps;
@@ -491,36 +492,37 @@ public class CtrlSnapshotRestoreApiCallHandler
     }
 
     /**
-     * <p>Sets the {@value InternalApiConsts#KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON} property to the nodeName
-     * of the first Snapshot (which has to have a disk) of the given SnapshotDefinition.</p>
+     * <p>Decides the initial DRBD UpToDate race for the restored {@code rscDfnRef}: sets
+     * {@value InternalApiConsts#KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON} on every volume definition to the node
+     * of the first resource with a local DRBD disk (see {@link ResourceDefinition#getDrbdDiskfulResources()}),
+     * and sets or clears {@link VolumeDefinition.Flags#DRBD_INITIALIZED} depending on whether the DRBD
+     * metadata has to be recreated.</p>
      *
-     * <p>If this SnapshotDefinition is a backup, we also unset the {@link VolumeDefinition.Flags#DRBD_INITIALIZED}
-     * flag. Otherwise we ensure the same flag is set.</p>
+     * <p>If no restored resource can run "set-gi" (only diskless or *-target resources exist), nothing is set.
+     * The winner is then chosen when the first suitable resource is created, see RscDrbdLayerHelper.</p>
      *
-     * <p>Backup path: When a snapshot was received as a backup, it is marked to re-create its local metadata.
-     * Before the snapshot was sent the new DRBD_INITIALIZED flag and the VlmDfn property InitialUpToDateOn were
-     * cleared. If DRBD_INITIALZED would be set, no peer would even read the property (on purpose).
-     * Without the property, no peer would think of itself as a winner, thus the DRBD resource would never
-     * become UpToDate.
-     * To avoid this, this method sets the InitialUpToDateOn property to let the first resource win the
-     * race, so it can become UpToDate and therefore also pull the other peers eventually into UpToDate state. </p>
+     * <p>Metadata has to be recreated when {@link DrbdLayerUtils#isForceInitialSyncSet} is true, which every
+     * backup sets on creation (see CtrlBackupCreateApiCallHandler). A shipped snapshot carries neither
+     * DRBD_INITIALIZED nor the winner property (BackupShippingUtils strips both), and without a winner no peer
+     * would ever become UpToDate. So the flag is cleared and the winner is chosen here; the winner's satellite
+     * recreates the metadata, forces itself UpToDate and the controller sets DRBD_INITIALIZED via
+     * notifySetUpToDate.</p>
      *
-     * <p>If the given SnapDfn had also non-backup snapshots, those should be able to keep their metadata.
-     * In that case we do not have to do anything. If however all snapshots are descendants from backups
-     * we must pick one and decide the UpToDate race upfront so that the winner can set its local DRBD
-     * as UpToDate, which also triggers the controller to set the DRBD_INITIALZED flag eventually.</p>
-     *
-     * <p>Non-Backup path: When a regular snapshot (i.e. not from a backup) is restored, we can or even should
-     * assume that the backing snapshot LVs have correct metadata which do not need be be initialized. When
-     * a SnapshotVolumeDefinition is created it unfortunately does not properly store the VolumeDefinition's flags,
-     * therefore the restored VolumeDefinition will also not have the DRBD_INITIALIZED flag set, although it
-     * refers to a device with healthy and UpToDate metadata. To fix this issue we simply set the flag in this case.</p>
+     * <p>Otherwise the snapshot's backing devices carry valid metadata and no initial sync is needed. The
+     * SnapshotVolumeDefinition does not preserve the VolumeDefinition flags, so the restored volume definition
+     * lacks DRBD_INITIALIZED although the device is healthy; the flag is set here. The winner property is set
+     * as well but is never read while DRBD_INITIALIZED is set.</p>
      */
     private void checkDrbdInitializedState(ResourceDefinition rscDfnRef)
     {
-        if (rscDfnRef.getDiskfulCount() > 0)
+        List<Resource> drbdDiskfulResources = rscDfnRef.getDrbdDiskfulResources();
+        // if drbdDiskfulResources is empty, we simply leave the resource-/volume-definition uninitialized
+        // since it usually means that the resource has either no diskful DRBD resource or it has only *-target
+        // resources. None of those can actually run the necessary "set-gi" commands to initialize the DRBD
+        // metadata.
+        if (!drbdDiskfulResources.isEmpty())
         {
-            String winnerNodeName = rscDfnRef.getDiskfulResources().get(0).getNode().getName().value;
+            String winnerNodeName = drbdDiskfulResources.get(0).getNode().getName().value;
             boolean uninitializeDrbd = DrbdLayerUtils.isForceInitialSyncSet(rscDfnRef);
             Iterator<VolumeDefinition> vlmDfnIt = rscDfnRef.iterateVolumeDfn();
             while (vlmDfnIt.hasNext())

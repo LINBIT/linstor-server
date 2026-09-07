@@ -66,8 +66,6 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
@@ -86,6 +84,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
 @Singleton
 public class RscDrbdLayerHelper extends
@@ -565,21 +565,22 @@ public class RscDrbdLayerHelper extends
             drbdVlmDfnData
         );
 
-        if (!vlm.getAbsResource().isDrbdDiskless())
+        Resource rsc = vlm.getAbsResource();
+        if (rsc.isDrbdDiskfulFlagsCheck(layerListRef))
         {
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
             Props vlmDfnProps = vlmDfn.getProps();
             @Nullable String winner = vlmDfnProps.getProp(InternalApiConsts.KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON);
             if (winner == null)
             {
-                Optional<Resource> primaryRsc = vlm.getAbsResource().getResourceDefinition().anyResourceInUse();
+                Optional<Resource> primaryRsc = rsc.getResourceDefinition().anyResourceInUse();
                 if (primaryRsc.isPresent())
                 {
                     winner = primaryRsc.get().getNode().getName().value;
                 }
                 else
                 {
-                    winner = vlm.getAbsResource().getNode().getName().value;
+                    winner = rsc.getNode().getName().value;
                 }
 
                 try

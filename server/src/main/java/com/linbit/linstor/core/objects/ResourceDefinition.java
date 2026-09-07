@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
@@ -297,6 +298,18 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition>
     public int getDiskfulCount()
     {
         return getDiskfulResources().size();
+    }
+
+    /**
+     * <p>Returns all resources that do have a disk for DRBD and DRBD is actually running on this resource</p>
+     * <p>In other words, this method excludes diskless resources (based on {@link Resource.Flags#DRBD_DISKLESS} as well
+     * as NVME-/EBS-<b>target</b> resources. The latter actually do have disk but DRBD is not running there. This method
+     * is supposed to be used for calculating node-ids, {@value InternalApiConsts#KEY_LINSTOR_DRBD_INITIAL_UPTODATE_ON}
+     * and similar settings.</p>
+     */
+    public List<Resource> getDrbdDiskfulResources()
+    {
+        return getFilteredResources(Resource::isDrbdDiskful);
     }
 
     /**
