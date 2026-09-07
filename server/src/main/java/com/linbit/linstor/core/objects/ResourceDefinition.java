@@ -299,22 +299,32 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition>
         return getDiskfulResources().size();
     }
 
+    /**
+     * <p>Returns resources that have a <b>local</b> disk. Excludes {@link Resource.Flags#DRBD_DISKLESS},
+     * {@link Resource.Flags#NVME_INITIATOR} and {@link Resource.Flags#EBS_INITIATOR}</p>
+     */
     public List<Resource> getDiskfulResources()
     {
         return getResourcesFilteredByFlags(
             rscFlags -> rscFlags.isUnset(
                 Resource.Flags.DRBD_DISKLESS,
-                Resource.Flags.NVME_INITIATOR
+                Resource.Flags.NVME_INITIATOR,
+                Resource.Flags.EBS_INITIATOR
             )
         );
     }
 
+    /**
+     * <p>Returns resources that have a <b>no local</b> disk. Includes {@link Resource.Flags#DRBD_DISKLESS},
+     * {@link Resource.Flags#NVME_INITIATOR} and {@link Resource.Flags#EBS_INITIATOR}</p>
+     */
     public List<Resource> getDisklessResources()
     {
         return getResourcesFilteredByFlags(
             rscFlags -> rscFlags.isSomeSet(
                 Resource.Flags.DRBD_DISKLESS,
-                Resource.Flags.NVME_INITIATOR
+                Resource.Flags.NVME_INITIATOR,
+                Resource.Flags.EBS_INITIATOR
             )
         );
     }
@@ -338,14 +348,18 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition>
                 Resource.Flags.DELETE,
                 Resource.Flags.DRBD_DELETE,
                 Resource.Flags.DRBD_DISKLESS,
-                Resource.Flags.NVME_INITIATOR
+                Resource.Flags.NVME_INITIATOR,
+                Resource.Flags.EBS_INITIATOR
             )
         );
     }
 
-    private List<Resource> getResourcesFilteredByFlags(
-        Predicate<StateFlags<Resource.Flags>> flagFilter
-    )
+    private List<Resource> getResourcesFilteredByFlags(Predicate<StateFlags<Resource.Flags>> flagFilter)
+    {
+        return getFilteredResources(rsc -> flagFilter.test(rsc.getStateFlags()));
+    }
+
+    private List<Resource> getFilteredResources(Predicate<Resource> filterRef)
     {
         checkDeleted();
         var resources = new ArrayList<Resource>();
@@ -353,8 +367,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition>
         while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
-            StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
-            if (flagFilter.test(stateFlags))
+            if (filterRef.test(rsc))
             {
                 resources.add(rsc);
             }
