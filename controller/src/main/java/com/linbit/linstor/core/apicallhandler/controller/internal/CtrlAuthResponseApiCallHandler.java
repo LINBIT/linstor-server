@@ -240,6 +240,7 @@ public class CtrlAuthResponseApiCallHandler
                 stltCfg.setLogLevel(stltConfig.getLogLevel());
                 stltCfg.setLogLevelLinstor(stltConfig.getLogLevelLinstor());
                 stltCfg.setStltOverrideNodeName(stltConfig.getStltOverrideNodeName());
+                stltCfg.setEbs(stltConfig.getEbs());
                 stltCfg.setRemoteSpdk(stltConfig.getRemoteSpdk());
                 stltCfg.setNetBindAddress(stltConfig.getNetBindAddress());
                 stltCfg.setNetPort(stltConfig.getNetPort());
