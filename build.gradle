@@ -164,7 +164,7 @@ project(':server') {
         // The remaining model modules are only reachable from typed DSL accessors
         // (client.network()/.rbac()/.policy()/...) that LINSTOR never calls, so exclude
         // the model modules for those API groups.
-        api('io.fabric8:kubernetes-client:7.8.0') {
+        api('io.fabric8:kubernetes-client:7.9.0') {
             [
                 'admissionregistration', 'coordination', 'discovery', 'events',
                 'flowcontrol', 'gatewayapi', 'metrics', 'networking', 'node', 'policy',
