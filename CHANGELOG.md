@@ -53,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the satellite restarting the DRBD events2 stream on harmless informational stderr lines (like
   "tried to set SO_RCVBUF ...")
 - Fixed EBS special satellites not being marked as EBS satellites in `linstor n l`
+- Fixed special satellites (EBS target, remote SPDK) trying to manage "loop_device_mapping" file which caused
+  permission errors due to the controller running as DynamicUser (GitHub issue #511, supersedes GitHub PR #512)
 
 ## [1.35.2] - 2026-09-14
 

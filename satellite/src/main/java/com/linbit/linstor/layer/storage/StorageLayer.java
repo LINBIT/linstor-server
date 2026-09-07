@@ -79,7 +79,7 @@ public class StorageLayer implements DeviceLayer
     @Override
     public void initialize()
     {
-        for (DeviceProvider devProvider : deviceProviderMapper.getDriverList())
+        for (DeviceProvider devProvider : deviceProviderMapper.getDrivers())
         {
             devProvider.initialize();
         }
@@ -90,7 +90,7 @@ public class StorageLayer implements DeviceLayer
         throws StorageException
     {
         LocalPropsChangePojo ret = new LocalPropsChangePojo();
-        for (DeviceProvider devProvider : deviceProviderMapper.getDriverList())
+        for (DeviceProvider devProvider : deviceProviderMapper.getDrivers())
         {
             LocalPropsChangePojo pojo = devProvider.setLocalNodeProps(localNodeProps);
             if (pojo != null)
@@ -141,7 +141,7 @@ public class StorageLayer implements DeviceLayer
     @Override
     public void clearCache() throws StorageException
     {
-        for (DeviceProvider deviceProvider : deviceProviderMapper.getDriverList())
+        for (DeviceProvider deviceProvider : deviceProviderMapper.getDrivers())
         {
             deviceProvider.clearCache();
         }
@@ -151,7 +151,7 @@ public class StorageLayer implements DeviceLayer
     public Set<StorPool> getChangedStorPools()
     {
         Set<StorPool> changedStorPools = new TreeSet<>();
-        for (DeviceProvider deviceProvider : deviceProviderMapper.getDriverList())
+        for (DeviceProvider deviceProvider : deviceProviderMapper.getDrivers())
         {
             changedStorPools.addAll(deviceProvider.getChangedStorPools());
         }
@@ -333,7 +333,7 @@ public class StorageLayer implements DeviceLayer
     {
         Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
         Set<StorPool> changedStorPools = new HashSet<>();
-        for (DeviceProvider deviceProvider : deviceProviderMapper.getDriverList())
+        for (DeviceProvider deviceProvider : deviceProviderMapper.getDrivers())
         {
             changedStorPools.addAll(deviceProvider.getChangedStorPools());
         }

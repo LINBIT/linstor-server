@@ -2,6 +2,7 @@ package com.linbit.linstor.core.cfg;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.core.objects.Node;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -109,6 +110,24 @@ public class StltConfig extends LinstorConfig
     public void setEbs(boolean ebsRef)
     {
         ebs = ebsRef;
+    }
+
+    public Node.Type getLocalNodeType()
+    {
+        Node.Type ret;
+        if (ebs)
+        {
+            ret = Node.Type.EBS_TARGET;
+        }
+        else if (remoteSpdk)
+        {
+            ret = Node.Type.REMOTE_SPDK;
+        }
+        else
+        {
+            ret = Node.Type.SATELLITE;
+        }
+        return ret;
     }
 
     public @Nullable String getNetBindAddress()

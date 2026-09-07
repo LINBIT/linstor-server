@@ -1,97 +1,37 @@
 package com.linbit.linstor.layer.storage;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.core.cfg.StltConfig;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.interfaces.StorPoolInfo;
-import com.linbit.linstor.layer.storage.diskless.DisklessProvider;
-import com.linbit.linstor.layer.storage.ebs.EbsInitiatorProvider;
-import com.linbit.linstor.layer.storage.ebs.EbsTargetProvider;
-import com.linbit.linstor.layer.storage.file.FileProvider;
-import com.linbit.linstor.layer.storage.file.FileThinProvider;
-import com.linbit.linstor.layer.storage.lvm.LvmProvider;
-import com.linbit.linstor.layer.storage.lvm.LvmThinProvider;
-import com.linbit.linstor.layer.storage.spdk.SpdkLocalProvider;
-import com.linbit.linstor.layer.storage.spdk.SpdkRemoteProvider;
-import com.linbit.linstor.layer.storage.storagespaces.StorageSpacesProvider;
-import com.linbit.linstor.layer.storage.storagespaces.StorageSpacesThinProvider;
-import com.linbit.linstor.layer.storage.zfs.ZfsProvider;
-import com.linbit.linstor.layer.storage.zfs.ZfsThinProvider;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 
 @Singleton
 public class DeviceProviderMapper
 {
-    private final LvmProvider lvmProvider;
-    private final LvmThinProvider lvmThinProvider;
-    private final ZfsProvider zfsProvider;
-    private final ZfsThinProvider zfsThinProvider;
-    private final DisklessProvider disklessProvider;
-    private final FileProvider fileProvider;
-    private final FileThinProvider fileThinProvider;
-    private final SpdkLocalProvider spdkLocalProvider;
-    private final SpdkRemoteProvider spdkRemoteProvider;
-    private final EbsInitiatorProvider ebsInitProvider;
-    private final EbsTargetProvider ebsTargetProvider;
-    private final StorageSpacesProvider storageSpacesProvider;
-    private final StorageSpacesThinProvider storageSpacesThinProvider;
-    private final List<DeviceProvider> driverList;
+    private final Map<DeviceProviderKind, DeviceProvider> deviceProviderMap;
+    private final Node.Type localNodeType;
 
     @Inject
     public DeviceProviderMapper(
-        LvmProvider lvmProviderRef,
-        LvmThinProvider lvmThinProviderRef,
-        ZfsProvider zfsProviderRef,
-        ZfsThinProvider zfsThinProviderRef,
-        DisklessProvider disklessProviderRef,
-        FileProvider fileProviderRef,
-        FileThinProvider fileThinProviderRef,
-        SpdkLocalProvider spdkLocalProviderRef,
-        SpdkRemoteProvider spdkRemoteProviderRef,
-        EbsInitiatorProvider ebsInitProviderRef,
-        EbsTargetProvider ebsTargetProviderRef,
-        StorageSpacesProvider storageSpacesProviderRef,
-        StorageSpacesThinProvider storageSpacesThinProviderRef
+        StltConfig stltCfgRef,
+        Map<DeviceProviderKind, DeviceProvider> deviceProviderMapRef
     )
     {
-        lvmProvider = lvmProviderRef;
-        lvmThinProvider = lvmThinProviderRef;
-        zfsProvider = zfsProviderRef;
-        zfsThinProvider = zfsThinProviderRef;
-        disklessProvider = disklessProviderRef;
-        fileProvider = fileProviderRef;
-        fileThinProvider = fileThinProviderRef;
-        spdkLocalProvider = spdkLocalProviderRef;
-        spdkRemoteProvider = spdkRemoteProviderRef;
-        ebsInitProvider = ebsInitProviderRef;
-        ebsTargetProvider = ebsTargetProviderRef;
-        storageSpacesProvider = storageSpacesProviderRef;
-        storageSpacesThinProvider = storageSpacesThinProviderRef;
-
-        driverList = Arrays.asList(
-            lvmProvider,
-            lvmThinProvider,
-            zfsProvider,
-            zfsThinProvider,
-            disklessProvider,
-            fileProvider,
-            fileThinProvider,
-            spdkLocalProvider,
-            spdkRemoteProvider,
-            ebsInitProvider,
-            ebsTargetProvider,
-            storageSpacesProvider,
-            storageSpacesThinProvider
-        );
+        deviceProviderMap = deviceProviderMapRef;
+        localNodeType = stltCfgRef.getLocalNodeType();
     }
 
-    public List<DeviceProvider> getDriverList()
+    public Collection<DeviceProvider> getDrivers()
     {
-        return driverList;
+        return deviceProviderMap.values();
     }
 
     public DeviceProvider getDeviceProviderBy(StorPoolInfo storPool)
@@ -99,26 +39,22 @@ public class DeviceProviderMapper
         return getDeviceProviderByKind(storPool.getDeviceProviderKind());
     }
 
+    public @Nullable DeviceProvider getDeviceProviderByKindOrNull(DeviceProviderKind deviceProviderKind)
+    {
+        return deviceProviderMap.get(deviceProviderKind);
+    }
+
     public DeviceProvider getDeviceProviderByKind(DeviceProviderKind deviceProviderKind)
     {
-        return switch (deviceProviderKind)
+        @Nullable DeviceProvider ret = getDeviceProviderByKindOrNull(deviceProviderKind);
+        if (ret == null)
         {
-            case LVM -> lvmProvider;
-            case LVM_THIN -> lvmThinProvider;
-            case ZFS -> zfsProvider;
-            case ZFS_THIN -> zfsThinProvider;
-            case DISKLESS -> disklessProvider;
-            case FILE -> fileProvider;
-            case FILE_THIN -> fileThinProvider;
-            case SPDK -> spdkLocalProvider;
-            case REMOTE_SPDK -> spdkRemoteProvider;
-            case EBS_INIT -> ebsInitProvider;
-            case EBS_TARGET -> ebsTargetProvider;
-            case STORAGE_SPACES -> storageSpacesProvider;
-            case STORAGE_SPACES_THIN -> storageSpacesThinProvider;
-            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER ->
+            if (deviceProviderKind == DeviceProviderKind.FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER)
+            {
                 throw new ImplementationError("A volume from a layer was asked for its provider type");
-            default -> throw new ImplementationError("Unknown storage provider found: " + deviceProviderKind);
-        };
+            }
+            throw new ImplementationError(deviceProviderKind.name() + " is not allowed on " + localNodeType.name());
+        }
+        return ret;
     }
 }

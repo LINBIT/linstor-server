@@ -41,6 +41,7 @@ import com.linbit.linstor.layer.LayerSizeCalculatorModule;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventService;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateModule;
+import com.linbit.linstor.layer.storage.DeviceProviderModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -409,6 +410,7 @@ public final class Satellite
                     new LinStorModule(),
                     new CoreModule(),
                     new SatelliteCoreModule(),
+                    new DeviceProviderModule(cfg.getLocalNodeType()),
                     new DevMgrModule(),
                     new SatelliteDbModule(),
                     new DrbdStateModule(),
