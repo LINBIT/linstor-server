@@ -46,6 +46,8 @@ image: $LINBIT_DOCKER_REGISTRY/build-helpers:$[[ inputs.build_helpers_version ]]
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  # Source branch glob of MRs whose rebase-only pipelines may skip the e2e tests, see .common_e2e
+  E2E_SKIP_REBASE_BRANCHES: "renovate/*"
   RUNNER_TAG_LIBVIRT: "libvirt"
   LINBIT_CI_MAX_CPUS: 38  # limit memory usage (limit 84GB) on default runners 38 * 2 + 7(vmshed/virter...)
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
@@ -147,6 +149,44 @@ workflow:
 
 .common_e2e:
   script:
+# Rebase-only pipelines: for MRs whose source branch matches E2E_SKIP_REBASE_BRANCHES (currently only renovate MRs),
+# skip the e2e run if the code diff of this MR (CHANGELOG.md excluded) is identical to the one already tested by the
+# last successful pipeline of this MR. The job then exits with 42, which the e2e jobs list as an allowed failure, so
+# it shows up as "passed with warnings". Set FORCE_E2E=1 to run the tests anyway.
+    - |
+      mkdir -p tests-out
+      case "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" in
+        $E2E_SKIP_REBASE_BRANCHES) E2E_SKIP_ALLOWED=1 ;;
+        *) E2E_SKIP_ALLOWED= ;;
+      esac
+      if [ "$CI_PIPELINE_SOURCE" = "merge_request_event" ] && [ -n "$E2E_SKIP_ALLOWED" ] && [ -z "$FORCE_E2E" ] &&
+         git fetch -q --depth=1 origin "$CI_MERGE_REQUEST_DIFF_BASE_SHA"; then
+        PATCH_ID=$(git diff "$CI_MERGE_REQUEST_DIFF_BASE_SHA" HEAD -- . ':(exclude)CHANGELOG.md' | git patch-id --stable | cut -d' ' -f1)
+        printf '%s\n' "$CI_JOB_NAME:${PATCH_ID:-empty}" "$CI_JOB_URL" > tests-out/e2e-patch-id
+        PREV=$(curl -sf -G --header "JOB-TOKEN: $CI_JOB_TOKEN" --data-urlencode "job=$CI_JOB_NAME" \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/jobs/artifacts/refs/merge-requests/$CI_MERGE_REQUEST_IID/head/raw/tests-out/e2e-patch-id" || true)
+        if [ -n "$PREV" ] && [ "$(printf '%s\n' "$PREV" | sed -n 1p)" = "$(sed -n 1p tests-out/e2e-patch-id)" ]; then
+          TESTED_JOB=$(printf '%s\n' "$PREV" | sed -n 2p)
+          echo
+          echo "=================================================================================="
+          echo " E2E TESTS SKIPPED: nothing new to test"
+          echo
+          echo " The code diff of this MR (CHANGELOG.md excluded) is identical to the one that"
+          echo " already passed this job in an earlier pipeline of this MR, i.e. the branch was"
+          echo " only rebased. The tests were NOT run again in this job, which is therefore"
+          echo " marked as 'passed with warnings'."
+          echo
+          echo " Tested by: $TESTED_JOB"
+          echo " Patch-id:  ${PATCH_ID:-empty}"
+          echo
+          echo " To force a full run, start the pipeline with the variable FORCE_E2E=1."
+          echo "=================================================================================="
+          echo
+          printf '%s\n' "$PREV" > tests-out/e2e-patch-id
+          exit 42
+        fi
+        echo "Code diff differs from the last tested one (or none found), running e2e tests"
+      fi
     - IMAGE_NAME=$LINBIT_DOCKER_REGISTRY/linstor-tests:latest
     - |
       SAFE_REF_NAME=${CI_COMMIT_REF_SLUG}
@@ -328,6 +368,8 @@ run-lbbuild:
 test-e2e-all:
   stage: integration-all
   interruptible: true
+  allow_failure:
+    exit_codes: 42  # e2e skipped on rebase-only pipeline, see .common_e2e
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
@@ -352,6 +394,8 @@ test-e2e-all:
 test-e2e:
   stage: integration
   interruptible: true
+  allow_failure:
+    exit_codes: 42  # e2e skipped on rebase-only pipeline, see .common_e2e
   timeout: $[[ inputs.ci_e2e_timeout ]]
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
