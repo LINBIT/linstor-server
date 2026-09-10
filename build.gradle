@@ -115,7 +115,7 @@ project(':server') {
 //      compileOnly "com.google.protobuf:protobuf-javalite:${protobufVersion}"
         api "com.google.protobuf:protobuf-java:4.${protobufVersion}"
 
-        api 'io.sentry:sentry:8.55.0'
+        api 'io.sentry:sentry:8.56.0'
         api 'info.picocli:picocli:4.7.7'
 
         // project-reactor
