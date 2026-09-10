@@ -456,9 +456,7 @@ cve-scan:
     - if: $CI_COMMIT_BRANCH == "jenkins"
     - if: $CI_COMMIT_TAG
   stage: test
-  image:
-    name: docker.io/aquasec/trivy:latest
-    entrypoint: [ "" ]
+  image: "${LINBIT_DOCKER_REGISTRY}/trivy:latest"
   variables:
     # No need to clone the repo, we exclusively work on artifacts.  See
     # https://docs.gitlab.com/ee/ci/runners/README.html#git-strategy
