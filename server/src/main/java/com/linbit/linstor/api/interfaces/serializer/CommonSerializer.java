@@ -14,6 +14,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.logging.ErrorReportResult;
+import com.linbit.linstor.logging.ErrorReportSortBy;
 import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.DrbdReactorCommand;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
@@ -92,7 +93,9 @@ public interface CommonSerializer
             Instant to,
             Set<String> ids,
             Long limit,
-            Long offset
+            Long offset,
+            @Nullable ErrorReportSortBy sortBy,
+            @Nullable Boolean sortAsc
         );
 
         CommonSerializerBuilder deleteErrorReports(

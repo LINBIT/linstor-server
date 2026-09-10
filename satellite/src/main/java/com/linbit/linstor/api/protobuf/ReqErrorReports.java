@@ -4,6 +4,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
+import com.linbit.linstor.logging.ErrorReportSortBy;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 
@@ -56,7 +57,9 @@ public class ReqErrorReports implements ApiCall
                     to,
                     new HashSet<>(reqErrorReport.getIdsList()),
                     reqErrorReport.hasLimit() ? reqErrorReport.getLimit() : null,
-                    reqErrorReport.hasOffset() ? reqErrorReport.getOffset() : null
+                    reqErrorReport.hasOffset() ? reqErrorReport.getOffset() : null,
+                    reqErrorReport.hasSortBy() ? ErrorReportSortBy.parse(reqErrorReport.getSortBy()) : null,
+                    reqErrorReport.hasSortAsc() ? reqErrorReport.getSortAsc() : null
                 ),
             ApiConsts.API_LST_ERROR_REPORTS
         );

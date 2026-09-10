@@ -67,6 +67,7 @@ import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReportResult;
+import com.linbit.linstor.logging.ErrorReportSortBy;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
@@ -698,7 +699,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         @Nullable Instant to,
         Set<String> ids,
         @Nullable final Long limit,
-        @Nullable final Long offset
+        @Nullable final Long offset,
+        @Nullable final ErrorReportSortBy sortBy,
+        @Nullable final Boolean sortAsc
     )
     {
         try
@@ -719,6 +722,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             if (offset != null)
             {
                 bld.setOffset(offset);
+            }
+            if (sortBy != null)
+            {
+                bld.setSortBy(sortBy.getApiValue());
+            }
+            if (sortAsc != null)
+            {
+                bld.setSortAsc(sortAsc);
             }
             bld.addAllNodeNames(nodes).setWithContent(withContent).addAllIds(ids).build().writeDelimitedTo(baos);
         }

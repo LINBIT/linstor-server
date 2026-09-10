@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New paginated error-report list API `GET /v1/view/error-reports`: returns the total count and one page of the
+  globally sorted reports; sortable via `sort_by`/`sort_order`, with working `limit`/`offset`, multiple `node`
+  filters and an optional `module` filter
+
 ### Changed
 
 - Controller: REST stack upgraded to Jersey 4 (Jakarta REST 4.0), HK2 4 and Guice 7; the REST API itself is unchanged
@@ -18,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a race between a resource deletion and a concurrent restore or un-delete of the same resource, which made
   the affected satellites shut down (and restart) with a UUID mismatch
+- Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
+  made `since`/`to` filters of the error-report listing miss recent reports
 
 ## [1.35.2] - 2026-09-14
 

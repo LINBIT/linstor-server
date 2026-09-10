@@ -172,6 +172,20 @@ public interface ErrorReporter
         @Nullable final Long offset
     )
     {
+        return listReports(withText, since, to, ids, limit, offset, null, null);
+    }
+
+    default ErrorReportResult listReports(
+        boolean withText,
+        @Nullable final Instant since,
+        @Nullable final Instant to,
+        final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset,
+        @Nullable final ErrorReportSortBy sortBy,
+        @Nullable final Boolean sortAsc
+    )
+    {
         return new ErrorReportResult(0, Collections.emptyList());
     }
 

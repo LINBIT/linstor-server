@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.29.1";
+    public static final String REST_API_VERSION = "1.30.0";
 
     /**
      * Common api reply structure
@@ -1169,6 +1169,35 @@ public class JsonGenTypes
          * Origin line number
          */
         public @Nullable Integer origin_line;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ErrorReportPage
+    {
+        /**
+         * Total number of matching error reports across all queried nodes, ignoring limit/offset
+         */
+        public long total;
+        /**
+         * Maximum number of error reports per page
+         */
+        public int limit;
+        /**
+         * Number of error reports of the sorted result that were skipped
+         */
+        public long offset;
+        /**
+         * Field the error reports are sorted by
+         */
+        public @Nullable String sort_by;
+        /**
+         * Sort order, either asc or desc
+         */
+        public @Nullable String sort_order;
+        /**
+         * The error reports of the requested page
+         */
+        public List<ErrorReport> items = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

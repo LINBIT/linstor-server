@@ -13,10 +13,13 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReportResult;
+import com.linbit.linstor.logging.ErrorReportSortBy;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass;
+import com.linbit.utils.Pair;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -30,8 +33,11 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -198,6 +204,212 @@ public class CtrlErrorListApiCallHandler
             );
     }
 
+    /**
+     * Lists one page of the globally sorted error reports of the requested nodes.
+     * <p>
+     * Every requested node is asked for its first {@code offset + limit} reports in the requested
+     * sort order (metadata only), the answers are merge-sorted with the same ordering and reduced
+     * to the requested page; the per-node total counts are summed up independently of the paging.
+     * If {@code withContent} is set, the report texts are fetched in a second round-trip for the
+     * reports of the returned page only.
+     *
+     * @param nodes Set of node names to request, empty means all nodes including the controller.
+     * @param withContent true if the reports of the returned page should include their text
+     * @param since only include error-reports since this date
+     * @param to only include error-reports up to this date
+     * @param moduleFilter only include reports of this module (controller/satellite), null for all
+     * @param limit maximum number of reports in the returned page
+     * @param offset number of reports of the globally sorted result to skip
+     * @param sortBy field to sort by
+     * @param sortAsc true for ascending, false for descending sort
+     * @return A single ErrorReportResult holding the requested page and the total count
+     */
+    public Flux<ErrorReportResult> listErrorReportsPage(
+        final Set<String> nodes,
+        boolean withContent,
+        @Nullable final Instant since,
+        @Nullable final Instant to,
+        @Nullable final Node.Type moduleFilter,
+        final long limit,
+        final long offset,
+        final ErrorReportSortBy sortBy,
+        final boolean sortAsc
+    )
+    {
+        return scopeRunner
+            .fluxInTransactionlessScope(
+                "Collect error report page",
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
+                () -> moduleFilter == Node.Type.CONTROLLER ?
+                    Flux.empty() :
+                    assembleRequests(
+                        nodes, false, since, to, Collections.emptySet(), offset + limit, 0L, sortBy, sortAsc)
+            )
+            .collectList()
+            .flatMapMany(errorReportAnswers ->
+                scopeRunner.fluxInTransactionlessScope(
+                    "Assemble error report page",
+                    lockGuardFactory.buildDeferred(LockType.READ), // no lock needed
+                    () -> Flux.just(
+                        assemblePage(nodes, since, to, moduleFilter, limit, offset, sortBy, sortAsc, errorReportAnswers)
+                    )
+                )
+            )
+            .flatMap(page -> withContent ? fetchPageTexts(page, nodes) : Flux.just(page));
+    }
+
+    private ErrorReportResult assemblePage(
+        Set<String> nodesToRequest,
+        @Nullable final Instant since,
+        @Nullable final Instant to,
+        @Nullable final Node.Type moduleFilter,
+        final long limit,
+        final long offset,
+        final ErrorReportSortBy sortBy,
+        final boolean sortAsc,
+        List<Tuple2<NodeName, ByteArrayInputStream>> errorReportsAnswers
+    )
+        throws IOException
+    {
+        final ErrorReportResult result = new ErrorReportResult(0, Collections.emptyList());
+
+        boolean includeController = moduleFilter == null || moduleFilter == Node.Type.CONTROLLER;
+        if (includeController &&
+            (nodesToRequest.isEmpty() || nodesToRequest.stream().anyMatch(LinStor.CONTROLLER_MODULE::equalsIgnoreCase)))
+        {
+            result.addErrorReportResult(
+                nodeNameForErrorReports,
+                Node.Type.CONTROLLER.name(),
+                errorReporter.listReports(
+                    false,
+                    since,
+                    to,
+                    Collections.emptySet(),
+                    offset + limit,
+                    0L,
+                    sortBy,
+                    sortAsc)
+            );
+        }
+
+        for (Tuple2<NodeName, ByteArrayInputStream> errorReportAnswer : errorReportsAnswers)
+        {
+            result.addErrorReportResult(
+                errorReportAnswer.getT1().displayValue,
+                Node.Type.SATELLITE.name(),
+                deserializeErrorReports(errorReportAnswer.getT2()));
+        }
+
+        result.sort(pageComparator(sortBy, sortAsc)).slice(offset, limit);
+        errorReporter.logInfo(
+            "Assembled error report page; %d of %d reports",
+            result.getErrorReports().size(),
+            result.getTotalCount()
+        );
+        return result;
+    }
+
+    /**
+     * Comparator over the requested sort field with stable tiebreakers, matching the ordering the
+     * nodes use for their local statements so that paging neither duplicates nor skips reports.
+     */
+    static Comparator<ErrorReport> pageComparator(final ErrorReportSortBy sortBy, final boolean sortAsc)
+    {
+        Comparator<ErrorReport> cmp = sortBy.getComparator();
+        if (!sortAsc)
+        {
+            cmp = cmp.reversed();
+        }
+        return cmp
+            .thenComparing(Comparator.comparing(ErrorReport::getDateTime).reversed())
+            .thenComparing(ErrorReport::getNodeName)
+            .thenComparing(ErrorReport::getFileName);
+    }
+
+    private Flux<ErrorReportResult> fetchPageTexts(final ErrorReportResult page, final Set<String> nodesToRequest)
+    {
+        Set<String> controllerIds = new HashSet<>();
+        Set<String> satelliteIds = new HashSet<>();
+        for (ErrorReport report : page.getErrorReports())
+        {
+            if (report.getModule() == Node.Type.CONTROLLER)
+            {
+                controllerIds.add(reportIdFromFileName(report.getFileName()));
+            }
+            else
+            {
+                satelliteIds.add(reportIdFromFileName(report.getFileName()));
+            }
+        }
+
+        return scopeRunner
+            .fluxInTransactionlessScope(
+                "Collect error report texts",
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
+                () -> satelliteIds.isEmpty() ?
+                    Flux.empty() :
+                    assembleRequests(nodesToRequest, true, null, null, satelliteIds, null, null)
+            )
+            .collectList()
+            .flatMapMany(textAnswers ->
+                scopeRunner.fluxInTransactionlessScope(
+                    "Apply error report texts",
+                    lockGuardFactory.buildDeferred(LockType.READ), // no lock needed
+                    () -> Flux.just(applyPageTexts(page, controllerIds, textAnswers))
+                )
+            );
+    }
+
+    private ErrorReportResult applyPageTexts(
+        final ErrorReportResult page,
+        final Set<String> controllerIds,
+        List<Tuple2<NodeName, ByteArrayInputStream>> textAnswers
+    )
+        throws IOException
+    {
+        Map<Pair<String, String>, String> texts = new HashMap<>();
+        if (!controllerIds.isEmpty())
+        {
+            putTexts(texts, errorReporter.listReports(true, null, null, controllerIds, null, null).getErrorReports());
+        }
+        for (Tuple2<NodeName, ByteArrayInputStream> textAnswer : textAnswers)
+        {
+            putTexts(texts, deserializeErrorReports(textAnswer.getT2()).getErrorReports());
+        }
+
+        for (ErrorReport report : page.getErrorReports())
+        {
+            @Nullable String text = texts.get(new Pair<>(report.getNodeName(), report.getFileName()));
+            if (text != null)
+            {
+                report.setText(text);
+            }
+        }
+        return page;
+    }
+
+    private static void putTexts(Map<Pair<String, String>, String> texts, List<ErrorReport> reports)
+    {
+        for (ErrorReport report : reports)
+        {
+            report.getText().ifPresent(text -> texts.put(new Pair<>(report.getNodeName(), report.getFileName()), text));
+        }
+    }
+
+    private static String reportIdFromFileName(String fileName)
+    {
+        String id = fileName;
+        if (id.startsWith(StdErrorReporter.RPT_PREFIX))
+        {
+            id = id.substring(StdErrorReporter.RPT_PREFIX.length());
+        }
+        if (id.endsWith(StdErrorReporter.RPT_SUFFIX))
+        {
+            id = id.substring(0, id.length() - StdErrorReporter.RPT_SUFFIX.length());
+        }
+        return id;
+    }
+
     private Flux<Tuple2<NodeName, ByteArrayInputStream>> assembleRequests(
         Set<String> nodesToRequest,
         boolean withContent,
@@ -207,13 +419,29 @@ public class CtrlErrorListApiCallHandler
         @Nullable final Long limit,
         @Nullable final Long offset)
     {
+        return assembleRequests(nodesToRequest, withContent, since, to, ids, limit, offset, null, null);
+    }
+
+    private Flux<Tuple2<NodeName, ByteArrayInputStream>> assembleRequests(
+        Set<String> nodesToRequest,
+        boolean withContent,
+        @Nullable final Instant since,
+        @Nullable final Instant to,
+        final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset,
+        @Nullable final ErrorReportSortBy sortBy,
+        @Nullable final Boolean sortAsc)
+    {
         Stream<Node> nodeStream = nodeRepository.getMapForView().values().stream()
             .filter(node -> nodesToRequest.isEmpty() ||
                 nodesToRequest.stream().anyMatch(node.getName().getDisplayName()::equalsIgnoreCase));
 
         List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> nameAndRequests = nodeStream
             .map(node ->
-                Tuples.of(node.getName(), prepareErrRequestApi(node, withContent, since, to, ids, limit, offset)))
+                Tuples.of(
+                    node.getName(),
+                    prepareErrRequestApi(node, withContent, since, to, ids, limit, offset, sortBy, sortAsc)))
             .collect(Collectors.toList());
 
         return Flux
@@ -229,14 +457,17 @@ public class CtrlErrorListApiCallHandler
         @Nullable final Instant to,
         final Set<String> ids,
         @Nullable final Long limit,
-        @Nullable final Long offset)
+        @Nullable final Long offset,
+        @Nullable final ErrorReportSortBy sortBy,
+        @Nullable final Boolean sortAsc)
     {
         Peer peer = getPeer(node);
         Flux<ByteArrayInputStream> fluxReturn = Flux.empty();
         if (peer != null)
         {
             byte[] msg = stltComSerializer.headerlessBuilder()
-                .requestErrorReports(new HashSet<>(), withContent, since, to, ids, limit, offset).build();
+                .requestErrorReports(new HashSet<>(), withContent, since, to, ids, limit, offset, sortBy, sortAsc)
+                .build();
             fluxReturn = peer.apiCall(ApiConsts.API_REQ_ERROR_REPORTS, msg)
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
         }

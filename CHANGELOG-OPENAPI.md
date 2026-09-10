@@ -2,6 +2,14 @@
 
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
+## [1.30.0]
+
+### Added
+  - Added GET /v1/view/error-reports: one page of the globally sorted error reports as an `ErrorReportPage` envelope
+    (`total`, `limit`, `offset`, `sort_by`, `sort_order`, `items`); `limit`/`offset` apply to the merged result of all
+    queried nodes, `sort_by` supports nine fields with `sort_order` asc/desc, multiple `node` filters and an optional
+    `module` filter
+
 ## [1.29.1]
 
 ### Added

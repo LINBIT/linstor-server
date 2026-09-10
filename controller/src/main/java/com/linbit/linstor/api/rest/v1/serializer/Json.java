@@ -81,6 +81,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
+import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -1088,6 +1089,24 @@ public class Json
         nodeSnapVlm.props.putAll(nodeSnapVlm.snapshot_volume_props);
 
         return nodeSnapVlm;
+    }
+
+    public static JsonGenTypes.ErrorReport errorReportToJson(ErrorReport errorReport)
+    {
+        JsonGenTypes.ErrorReport jsonErrorReport = new JsonGenTypes.ErrorReport();
+        jsonErrorReport.node_name = errorReport.getNodeName();
+        jsonErrorReport.error_time = errorReport.getDateTime().toEpochMilli();
+        jsonErrorReport.filename = errorReport.getFileName();
+        jsonErrorReport.module = errorReport.getModuleString();
+        jsonErrorReport.version = errorReport.getVersion().orElse(null);
+        jsonErrorReport.peer = errorReport.getPeer().orElse(null);
+        jsonErrorReport.exception = errorReport.getException().orElse(null);
+        jsonErrorReport.exception_message = errorReport.getExceptionMessage().orElse(null);
+        jsonErrorReport.origin_file = errorReport.getOriginFile().orElse(null);
+        jsonErrorReport.origin_method = errorReport.getOriginMethod().orElse(null);
+        jsonErrorReport.origin_line = errorReport.getOriginLine().orElse(null);
+        jsonErrorReport.text = errorReport.getText().orElse(null);
+        return jsonErrorReport;
     }
 
     public static JsonGenTypes.Snapshot apiToSnapshot(

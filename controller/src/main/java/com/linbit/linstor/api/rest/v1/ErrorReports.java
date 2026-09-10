@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlErrorListApiCallHandler;
@@ -130,24 +131,8 @@ public class ErrorReports
                     {
                         finalStream = finalStream.limit(limit);
                     }
-                    List<JsonGenTypes.ErrorReport> jsonReports = finalStream.map(errorReport ->
-                        {
-                            JsonGenTypes.ErrorReport jsonErrorReport = new JsonGenTypes.ErrorReport();
-                            jsonErrorReport.node_name = errorReport.getNodeName();
-                            jsonErrorReport.error_time = errorReport.getDateTime().toEpochMilli();
-                            jsonErrorReport.filename = errorReport.getFileName();
-                            jsonErrorReport.module = errorReport.getModuleString();
-                            jsonErrorReport.version = errorReport.getVersion().orElse(null);
-                            jsonErrorReport.peer = errorReport.getPeer().orElse(null);
-                            jsonErrorReport.exception = errorReport.getException().orElse(null);
-                            jsonErrorReport.exception_message = errorReport.getExceptionMessage().orElse(null);
-                            jsonErrorReport.origin_file = errorReport.getOriginFile().orElse(null);
-                            jsonErrorReport.origin_method = errorReport.getOriginMethod().orElse(null);
-                            jsonErrorReport.origin_line = errorReport.getOriginLine().orElse(null);
-                            jsonErrorReport.text = errorReport.getText().orElse(null);
-
-                            return jsonErrorReport;
-                        })
+                    List<JsonGenTypes.ErrorReport> jsonReports = finalStream
+                        .map(Json::errorReportToJson)
                         .collect(Collectors.toList());
 
                     Response resp;

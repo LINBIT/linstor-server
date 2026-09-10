@@ -405,10 +405,12 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         @Nullable final Instant to,
         final Set<String> ids,
         @Nullable final Long limit,
-        @Nullable final Long offset
+        @Nullable final Long offset,
+        @Nullable final ErrorReportSortBy sortBy,
+        @Nullable final Boolean sortAsc
     )
     {
-        return h2ErrorReporter.listReports(withText, since, to, ids, limit, offset);
+        return h2ErrorReporter.listReports(withText, since, to, ids, limit, offset, sortBy, sortAsc);
     }
 
     @Override

@@ -28,6 +28,7 @@ import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -169,7 +170,9 @@ public class H2ErrorReporter
             stmt.setInt(fieldIdx++, (int) (module.equalsIgnoreCase(LinStor.CONTROLLER_MODULE) ?
                 Node.Type.CONTROLLER.getFlagValue() : Node.Type.SATELLITE.getFlagValue()));
             stmt.setString(fieldIdx++, String.format("%s-%06d", errorReporter.getInstanceId(), reportNr));
-            stmt.setTimestamp(fieldIdx++, new Timestamp(TimeUtils.getEpochMillis(errorTime)));
+            // errorTime is the UTC wall-clock of the report header; converting it with the system zone
+            // (TimeUtils.getEpochMillis) shifts the stored instant by the host's UTC offset
+            stmt.setTimestamp(fieldIdx++, new Timestamp(errorTime.toInstant(ZoneOffset.UTC).toEpochMilli()));
             stmt.setString(fieldIdx++, LinStor.VERSION_INFO_PROVIDER.getVersion());
             stmt.setString(fieldIdx++, client != null ? client.toString() : null);
             stmt.setString(fieldIdx++, errorInfo.getClass().getSimpleName());
@@ -203,83 +206,129 @@ public class H2ErrorReporter
         @Nullable final Long offset
     )
     {
+        return listReports(withText, since, to, ids, limit, offset, null, null);
+    }
+
+    public ErrorReportResult listReports(
+        boolean withText,
+        @Nullable final Instant since,
+        @Nullable final Instant to,
+        final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset,
+        @Nullable final ErrorReportSortBy sortBy,
+        @Nullable final Boolean sortAsc
+    )
+    {
         long count = 0;
         ArrayList<ErrorReport> errors = new ArrayList<>();
-        String where = "1=1";
+        StringBuilder where = new StringBuilder("1=1");
+        ArrayList<Object> filterParams = new ArrayList<>();
 
         if (!ids.isEmpty())
         {
-            where += " AND ERROR_ID IN ('" + String.join("','", ids) + "')";
+            where.append(" AND ERROR_ID IN (");
+            for (String id : ids)
+            {
+                where.append("?,");
+                filterParams.add(id);
+            }
+            where.setCharAt(where.length() - 1, ')');
         }
 
         if (since != null)
         {
-            where += " AND DATETIME >= '" + new java.sql.Date(since.toEpochMilli()) + "'";
+            where.append(" AND DATETIME >= ?");
+            filterParams.add(new Timestamp(since.toEpochMilli()));
         }
 
         if (to != null)
         {
-            where += " AND DATETIME <= '" + new java.sql.Date(to.toEpochMilli()) + "'";
+            where.append(" AND DATETIME <= ?");
+            filterParams.add(new Timestamp(to.toEpochMilli()));
         }
+
+        // the sort column is whitelisted through the ErrorReportSortBy enum, only filter values are
+        // bound as statement parameters. DATETIME/ERROR_ID keep the ordering stable so that paging
+        // neither duplicates nor skips reports
+        final ErrorReportSortBy sortField = sortBy != null ? sortBy : ErrorReportSortBy.ERROR_TIME;
+        final boolean ascending = sortAsc != null && sortAsc;
+        final String orderByStr = " ORDER BY " + sortField.getColumnName() +
+            (ascending ? " ASC NULLS FIRST" : " DESC NULLS LAST") +
+            ", DATETIME DESC, ERROR_ID";
 
         final String columnsStr = "INSTANCE_EPOCH, ERROR_NR, NODE, MODULE, ERROR_ID, DATETIME, VERSION, PEER," +
             " EXCEPTION, EXCEPTION_MESSAGE, ORIGIN_FILE, ORIGIN_METHOD, ORIGIN_LINE" + (withText ? ", TEXT" : "");
         final String countStmtStr = "SELECT COUNT(*) FROM ERRORS WHERE " + where;
-        final String selectStmtStr = "SELECT " +
+        String selectStmtStr = "SELECT " +
             columnsStr +
             " FROM ERRORS" +
             " WHERE " + where +
-            " ORDER BY DATETIME DESC";
-        // ignore offset for now
-        final String stmtStr = limit != null ?
-            selectStmtStr + " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY" :
-            selectStmtStr;
+            orderByStr;
+        final long offsetRows = offset != null && offset > 0 ? offset : 0L;
+        if (limit != null)
+        {
+            selectStmtStr += " OFFSET " + offsetRows + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
+        }
+        else if (offsetRows > 0)
+        {
+            selectStmtStr += " OFFSET " + offsetRows + " ROWS";
+        }
         try
         (
             Connection con = dataSource.getConnection();
-            Statement stmt = con.createStatement()
+            PreparedStatement countStmt = con.prepareStatement(countStmtStr);
+            PreparedStatement selectStmt = con.prepareStatement(selectStmtStr)
         )
         {
-            ResultSet countResult = stmt.executeQuery(countStmtStr);
-            countResult.next();
-            count = countResult.getLong(1);
-            countResult.close();
-
-            ResultSet rslt = stmt.executeQuery(stmtStr);
-            while (rslt.next())
+            for (int paramIdx = 0; paramIdx < filterParams.size(); paramIdx++)
             {
-                @Nullable String text = null;
-                if (withText)
-                {
-                    Clob clob = rslt.getClob("TEXT");
-                    // this is how you get the whole string back from a CLOB
-                    text = clob.getSubString(1, (int) clob.length());
-                }
-                @Nullable String nodeName = rslt.getString("NODE");
-                if (nodeName == null)
-                {
-                    throw new ImplementationError("nodeName must not be null");
-                }
-                errors.add(
-                    new ErrorReport(
-                        nodeName,
-                        Node.Type.getByValue(rslt.getInt("MODULE")),
-                        "ErrorReport-" + rslt.getString("ERROR_ID") + ".log",
-                        rslt.getString("VERSION"),
-                        rslt.getString("PEER"),
-                        rslt.getString("EXCEPTION"),
-                        rslt.getString("EXCEPTION_MESSAGE"),
-                        rslt.getString("ORIGIN_FILE"),
-                        rslt.getString("ORIGIN_METHOD"),
-                        rslt.getInt("ORIGIN_LINE"),
-                        Instant.ofEpochMilli(rslt.getTimestamp("DATETIME").getTime()),
-                        text
-                    )
-                );
+                countStmt.setObject(paramIdx + 1, filterParams.get(paramIdx));
+                selectStmt.setObject(paramIdx + 1, filterParams.get(paramIdx));
             }
-            rslt.close();
+
+            try (ResultSet countResult = countStmt.executeQuery())
+            {
+                countResult.next();
+                count = countResult.getLong(1);
+            }
+
+            try (ResultSet rslt = selectStmt.executeQuery())
+            {
+                while (rslt.next())
+                {
+                    @Nullable String text = null;
+                    if (withText)
+                    {
+                        Clob clob = rslt.getClob("TEXT");
+                        // this is how you get the whole string back from a CLOB
+                        text = clob.getSubString(1, (int) clob.length());
+                    }
+                    @Nullable String nodeName = rslt.getString("NODE");
+                    if (nodeName == null)
+                    {
+                        throw new ImplementationError("nodeName must not be null");
+                    }
+                    errors.add(
+                        new ErrorReport(
+                            nodeName,
+                            Node.Type.getByValue(rslt.getInt("MODULE")),
+                            "ErrorReport-" + rslt.getString("ERROR_ID") + ".log",
+                            rslt.getString("VERSION"),
+                            rslt.getString("PEER"),
+                            rslt.getString("EXCEPTION"),
+                            rslt.getString("EXCEPTION_MESSAGE"),
+                            rslt.getString("ORIGIN_FILE"),
+                            rslt.getString("ORIGIN_METHOD"),
+                            rslt.getInt("ORIGIN_LINE"),
+                            Instant.ofEpochMilli(rslt.getTimestamp("DATETIME").getTime()),
+                            text
+                        )
+                    );
+                }
+            }
         }
-        catch(SQLException sqlExc)
+        catch (SQLException sqlExc)
         {
             errorReporter.logError("Unable to operate on error-reports database: " + sqlExc.getMessage());
         }

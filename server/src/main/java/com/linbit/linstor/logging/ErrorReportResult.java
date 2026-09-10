@@ -4,6 +4,7 @@ import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -48,6 +49,36 @@ public class ErrorReportResult
     public ErrorReportResult sort()
     {
         errorReports.sort(LinstorFile::compareTo);
+        return this;
+    }
+
+    /**
+     * Inplace sorts the error reports by the given comparator.
+     * @return This ErrorReportResult instance
+     */
+    public ErrorReportResult sort(Comparator<ErrorReport> comparator)
+    {
+        errorReports.sort(comparator);
+        return this;
+    }
+
+    /**
+     * Inplace reduces the error reports to the given page, keeping {@code totalCount} and the
+     * per-node counts untouched.
+     * @param offset Number of error reports to skip.
+     * @param limit Maximum number of error reports to keep.
+     * @return This ErrorReportResult instance
+     */
+    public ErrorReportResult slice(long offset, long limit)
+    {
+        List<ErrorReport> page = new ArrayList<>();
+        long end = Math.min(errorReports.size(), offset + limit);
+        for (long idx = offset; idx < end; idx++)
+        {
+            page.add(errorReports.get((int) idx));
+        }
+        errorReports.clear();
+        errorReports.addAll(page);
         return this;
     }
 

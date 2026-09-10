@@ -53,6 +53,7 @@ import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.logging.ErrorReportResult;
+import com.linbit.linstor.logging.ErrorReportSortBy;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -901,7 +902,9 @@ public class StltApiCallHandler
         @Nullable final Instant to,
         final Set<String> ids,
         @Nullable final Long limit,
-        @Nullable final Long offset
+        @Nullable final Long offset,
+        @Nullable final ErrorReportSortBy sortBy,
+        @Nullable final Boolean sortAsc
     )
     {
         ErrorReportResult errorReportResult = errorReporter.listReports(
@@ -910,7 +913,9 @@ public class StltApiCallHandler
             to,
             ids,
             limit,
-            offset
+            offset,
+            sortBy,
+            sortAsc
         );
 
         return interComSerializer.answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, apiCallId.get())

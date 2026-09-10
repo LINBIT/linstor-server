@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.backups.BackupNodeQueuesPojo;
 import com.linbit.linstor.api.pojo.backups.BackupSnapQueuesPojo;
@@ -8,7 +9,9 @@ import com.linbit.linstor.api.pojo.backups.ScheduleDetailsPojo;
 import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlErrorListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlScheduleApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
@@ -17,6 +20,8 @@ import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueu
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.logging.ErrorReportSortBy;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import jakarta.inject.Inject;
@@ -32,9 +37,13 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,6 +58,8 @@ import reactor.core.publisher.Mono;
 @Produces(MediaType.APPLICATION_JSON)
 public class View
 {
+    private static final int ERROR_REPORT_PAGE_MAX_LIMIT = 10_000;
+
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlVlmListApiCallHandler ctrlVlmListApiCallHandler;
@@ -56,6 +67,7 @@ public class View
     private final ObjectMapper objectMapper;
     private final CtrlScheduleApiCallHandler ctrlScheduleApiCallHandler;
     private final CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandler;
+    private final CtrlErrorListApiCallHandler ctrlErrorListApiCallHandler;
 
     @Inject
     View(
@@ -64,7 +76,8 @@ public class View
         CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef,
         CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef,
         CtrlScheduleApiCallHandler ctrlScheduleApiCallHandlerRef,
-        CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef
+        CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef,
+        CtrlErrorListApiCallHandler ctrlErrorListApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
@@ -73,6 +86,7 @@ public class View
         ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
         ctrlScheduleApiCallHandler = ctrlScheduleApiCallHandlerRef;
         ctrlBackupQueueHandler = ctrlBackupQueueHandlerRef;
+        ctrlErrorListApiCallHandler = ctrlErrorListApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -250,6 +264,154 @@ public class View
 
             return response;
         }, false);
+    }
+
+    @GET
+    @Path("error-reports")
+    public void viewErrorReports(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        @QueryParam("node") List<String> nodes,
+        @Nullable @QueryParam("since") Long since,
+        @Nullable @QueryParam("to") Long to,
+        @DefaultValue("false") @QueryParam("withContent") boolean withContent,
+        @Nullable @QueryParam("module") String module,
+        @DefaultValue("1000") @QueryParam("limit") int limit,
+        @DefaultValue("0") @QueryParam("offset") long offset,
+        @DefaultValue("error_time") @QueryParam("sort_by") String sortByRef,
+        @DefaultValue("desc") @QueryParam("sort_order") String sortOrderRef
+    )
+    {
+        ApiCallRcImpl paramErrors = new ApiCallRcImpl();
+
+        @Nullable ErrorReportSortBy sortBy = ErrorReportSortBy.parse(sortByRef);
+        if (sortBy == null)
+        {
+            paramErrors.addEntry(ApiCallRcImpl.entryBuilder(
+                ApiConsts.API_CALL_PARSE_ERROR,
+                "Invalid sort_by value: " + sortByRef
+            ).setCorrection(
+                "Use one of: " + Arrays.stream(ErrorReportSortBy.values())
+                    .map(ErrorReportSortBy::getApiValue)
+                    .collect(Collectors.joining(", "))
+            ).build());
+        }
+
+        final boolean sortAsc = "asc".equalsIgnoreCase(sortOrderRef);
+        if (!sortAsc && !"desc".equalsIgnoreCase(sortOrderRef))
+        {
+            paramErrors.addEntry(ApiCallRcImpl.entryBuilder(
+                ApiConsts.API_CALL_PARSE_ERROR,
+                "Invalid sort_order value: " + sortOrderRef
+            ).setCorrection("Use asc or desc").build());
+        }
+
+        @Nullable Node.Type moduleFilter = null;
+        if (module != null && !module.isEmpty())
+        {
+            if (Node.Type.CONTROLLER.name().equalsIgnoreCase(module))
+            {
+                moduleFilter = Node.Type.CONTROLLER;
+            }
+            else if (Node.Type.SATELLITE.name().equalsIgnoreCase(module))
+            {
+                moduleFilter = Node.Type.SATELLITE;
+            }
+            else
+            {
+                paramErrors.addEntry(ApiCallRcImpl.entryBuilder(
+                    ApiConsts.API_CALL_PARSE_ERROR,
+                    "Invalid module value: " + module
+                ).setCorrection(
+                    "Use " + Node.Type.CONTROLLER.name() + " or " + Node.Type.SATELLITE.name()
+                ).build());
+            }
+        }
+
+        if (limit <= 0 || limit > ERROR_REPORT_PAGE_MAX_LIMIT)
+        {
+            paramErrors.addEntry(ApiCallRcImpl.entryBuilder(
+                ApiConsts.API_CALL_PARSE_ERROR,
+                "Invalid limit value: " + limit
+            ).setCorrection("Use a limit between 1 and " + ERROR_REPORT_PAGE_MAX_LIMIT).build());
+        }
+
+        if (offset < 0)
+        {
+            paramErrors.addEntry(ApiCallRcImpl.entryBuilder(
+                ApiConsts.API_CALL_PARSE_ERROR,
+                "Invalid offset value: " + offset
+            ).setCorrection("Use an offset >= 0").build());
+        }
+
+        if (!paramErrors.isEmpty())
+        {
+            // do not use ApiCallRcRestUtils.toResponse here, since that would turn the error
+            // entries into a 500 instead of a 400
+            asyncResponse.resume(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiCallRcRestUtils.toJSONCatch(paramErrors))
+                    .type(MediaType.APPLICATION_JSON_TYPE)
+                    .build()
+            );
+        }
+        else
+        {
+            @Nullable Instant optSince = since != null ? Instant.ofEpochMilli(since) : null;
+            @Nullable Instant optTo = to != null ? Instant.ofEpochMilli(to) : null;
+            Set<String> nodesFilter = nodes != null ? new HashSet<>(nodes) : Collections.emptySet();
+
+            final int pageLimit = limit;
+            final long pageOffset = offset;
+            try (var ignore = MDC.putCloseable(ErrorReporter.LOGID, ErrorReporter.getNewLogId()))
+            {
+                Mono<Response> answer = ctrlErrorListApiCallHandler.listErrorReportsPage(
+                        nodesFilter,
+                        withContent,
+                        optSince,
+                        optTo,
+                        moduleFilter,
+                        pageLimit,
+                        pageOffset,
+                        sortBy,
+                        sortAsc)
+                    .flatMap(pageResult ->
+                    {
+                        JsonGenTypes.ErrorReportPage jsonPage = new JsonGenTypes.ErrorReportPage();
+                        jsonPage.total = pageResult.getTotalCount();
+                        jsonPage.limit = pageLimit;
+                        jsonPage.offset = pageOffset;
+                        jsonPage.sort_by = sortBy.getApiValue();
+                        jsonPage.sort_order = sortAsc ? "asc" : "desc";
+                        jsonPage.items = pageResult.getErrorReports().stream()
+                            .map(Json::errorReportToJson)
+                            .collect(Collectors.toList());
+
+                        Response resp;
+                        try
+                        {
+                            resp = Response.status(Response.Status.OK)
+                                .entity(objectMapper.writeValueAsString(jsonPage))
+                                .type(MediaType.APPLICATION_JSON_TYPE)
+                                .build();
+                        }
+                        catch (JsonProcessingException exc)
+                        {
+                            exc.printStackTrace();
+                            resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                        }
+                        return Mono.just(resp);
+                    })
+                    .next();
+
+                requestHelper.doFlux(
+                    ApiConsts.API_REQ_ERROR_REPORTS,
+                    request,
+                    asyncResponse,
+                    answer
+                );
+            }
+        }
     }
 
     @GET

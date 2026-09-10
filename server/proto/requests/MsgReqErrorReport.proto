@@ -18,4 +18,7 @@ message MsgReqErrorReport
     repeated string ids = 5;
     optional uint64 limit = 6;
     optional uint64 offset = 7;
+    // sort field, one of the com.linbit.linstor.logging.ErrorReportSortBy api values
+    optional string sort_by = 8;
+    optional bool sort_asc = 9;
 }
