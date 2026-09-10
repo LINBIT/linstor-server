@@ -41,6 +41,8 @@ public class WipeHandler
      */
     public void quickWipe(String devicePath) throws StorageException
     {
+        // external users outside of LINSTOR may leave the device flagged read-only, which would make the wipe fail
+        Commands.setReadWrite(extCmdFactory.create(), devicePath);
         Commands.wipeFs(extCmdFactory.create(), Collections.singleton(devicePath));
         try
         {

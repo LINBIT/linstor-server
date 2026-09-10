@@ -215,6 +215,30 @@ public class Commands
         return outputData;
     }
 
+    /**
+     * Clears the read-only flag of a block device ("{@code blockdev --setrw devicePath}").
+     *
+     * Some external users of the device (integrations outside of LINSTOR) set the flag and do not clear it again.
+     * A device that is still flagged read-only cannot be wiped.
+     */
+    public static void setReadWrite(ExtCmd extCmd, String devicePath) throws StorageException
+    {
+        if (Platform.isLinux())
+        {
+            genericExecutor(
+                extCmd,
+                new String[]
+                {
+                    "blockdev",
+                    "--setrw",
+                    devicePath
+                },
+                "Failed to clear read-only flag of " + devicePath,
+                "Failed to clear read-only flag of " + devicePath
+            );
+        }
+    }
+
     public static long getDeviceSizeInSectors(
         ExtCmd extCmd,
         String devicePath
