@@ -7,8 +7,8 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.storagespaces.StorageSpacesData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class StorageSpacesThinProvider extends StorageSpacesProvider

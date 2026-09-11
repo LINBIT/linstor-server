@@ -9,8 +9,8 @@ import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;

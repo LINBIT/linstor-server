@@ -34,9 +34,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.RES
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.SNAPSHOT_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.UUID;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.sql.Timestamp;
 import java.time.Instant;

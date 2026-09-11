@@ -20,7 +20,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinitionControllerFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class StorPoolHelper
 {

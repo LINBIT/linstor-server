@@ -5,8 +5,8 @@ import com.linbit.linstor.event.LinstorTriggerableEvent;
 import com.linbit.linstor.layer.drbd.drbdstate.ReplState;
 import com.linbit.utils.PairNonNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ReplicationStateEvent

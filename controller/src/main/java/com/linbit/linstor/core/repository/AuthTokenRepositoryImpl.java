@@ -4,8 +4,8 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.objects.AuthToken;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * Holds the singleton auth token map instance.

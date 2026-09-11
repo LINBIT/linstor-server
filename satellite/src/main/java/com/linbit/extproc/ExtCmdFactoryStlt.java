@@ -5,8 +5,8 @@ import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import java.util.HashSet;
 import java.util.Set;

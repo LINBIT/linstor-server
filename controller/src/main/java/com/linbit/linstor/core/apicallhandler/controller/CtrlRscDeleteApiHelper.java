@@ -38,9 +38,9 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.HashSet;

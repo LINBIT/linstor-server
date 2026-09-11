@@ -41,7 +41,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.util.Arrays;
 import java.util.Collections;

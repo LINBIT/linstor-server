@@ -21,8 +21,8 @@ import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.utils.Triple;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Collections;
 import java.util.HashMap;

@@ -8,8 +8,8 @@ import com.linbit.linstor.core.apicallhandler.controller.internal.NodeInternalCa
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyNodeSuccessOuterClass.MsgIntApplyNodeSuccess;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;

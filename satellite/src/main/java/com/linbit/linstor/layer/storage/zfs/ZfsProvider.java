@@ -46,8 +46,8 @@ import com.linbit.utils.ShellUtils;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.File;
 import java.util.ArrayList;

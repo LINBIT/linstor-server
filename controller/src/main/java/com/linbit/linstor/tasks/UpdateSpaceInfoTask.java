@@ -21,7 +21,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.util.Collections;
 import java.util.Map;

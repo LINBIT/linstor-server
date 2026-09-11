@@ -16,7 +16,7 @@ import com.linbit.linstor.netcom.TcpConnectorService;
 import com.linbit.linstor.netcom.ssl.SslTcpConnectorService;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.io.IOException;
 import java.net.InetAddress;

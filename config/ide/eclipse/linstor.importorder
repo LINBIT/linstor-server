@@ -2,12 +2,14 @@
 #LINSTOR canonical import order - see docs/import-order.md
 #Import in Eclipse via: Preferences > Java > Code Style > Organize Imports > Import...
 #  0  com.linbit.**  (own code)
-#  1  javax.**
-#  2  java.**
-#  3  all other (3rd-party) imports   -> empty value = catch-all bucket
-#  4  all static imports              -> \# = static catch-all, sorted last
+#  1  jakarta.**  \ Checkstyle treats jakarta.** and javax.** as ONE group; Eclipse cannot merge
+#  2  javax.**    / prefixes, so it inserts a blank line between them (tolerated, see docs)
+#  3  java.**
+#  4  all other (3rd-party) imports   -> empty value = catch-all bucket
+#  5  all static imports              -> \# = static catch-all, sorted last
 0=com.linbit
-1=javax
-2=java
-3=
-4=\#
+1=jakarta
+2=javax
+3=java
+4=
+5=\#

@@ -5,8 +5,8 @@ import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseD
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class SatelliteSnapshotVlmDfnDriver

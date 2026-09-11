@@ -13,7 +13,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.util.Arrays;
 import java.util.Objects;

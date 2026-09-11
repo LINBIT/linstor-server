@@ -3,8 +3,8 @@ package com.linbit.linstor.event.common;
 import com.linbit.linstor.event.GenericEvent;
 import com.linbit.linstor.event.LinstorTriggerableEvent;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class VolumeDiskStateEvent

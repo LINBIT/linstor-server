@@ -3,7 +3,7 @@ package com.linbit.linstor.transaction;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.util.List;
 

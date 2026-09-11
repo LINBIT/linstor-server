@@ -15,8 +15,8 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import static com.linbit.linstor.test.factories.TestFactoryUtils.copyOrNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.List;

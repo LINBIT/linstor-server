@@ -18,9 +18,9 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 public abstract class AbsLayerSizeCalculator<VLM_TYPE extends VlmProviderObject<?>>
 {

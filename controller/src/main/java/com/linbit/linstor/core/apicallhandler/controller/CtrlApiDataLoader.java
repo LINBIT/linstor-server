@@ -45,7 +45,7 @@ import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class CtrlApiDataLoader
 {

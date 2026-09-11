@@ -12,8 +12,8 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.PropsContaine
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.PropsContainers.PROP_KEY;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.PropsContainers.PROP_VALUE;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Collections;
 import java.util.HashMap;

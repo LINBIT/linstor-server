@@ -2,7 +2,7 @@ package com.linbit.linstor.api.rest.v1.events;
 
 import com.linbit.linstor.logging.ErrorReporter;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 
 import java.io.IOException;
 import java.util.ArrayList;

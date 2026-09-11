@@ -13,7 +13,7 @@ import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_PROPS_CONTAINERS;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.io.IOException;
 import java.nio.file.Path;

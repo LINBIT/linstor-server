@@ -30,9 +30,9 @@ import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.tasks.RetryResourcesTask;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

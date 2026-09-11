@@ -5,8 +5,8 @@ import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.Map;

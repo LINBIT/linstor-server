@@ -4,8 +4,8 @@ import com.linbit.linstor.event.GenericEvent;
 import com.linbit.linstor.event.LinstorTriggerableEvent;
 import com.linbit.utils.PairNonNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Optional;
 

@@ -9,7 +9,7 @@ root = true
 ij_java_class_count_to_use_import_on_demand = 999
 ij_java_names_count_to_use_import_on_demand = 999
 # Canonical import group order (| = blank line, * = all other, $* = all other static):
-#   com.linbit.**  ->  javax.**  ->  java.**  ->  all other (3rd-party)  ->  all static (bottom)
+#   com.linbit.**  ->  jakarta.** + javax.**  ->  java.**  ->  all other (3rd-party)  ->  all static (bottom)
 # The blank lines (|) mirror Eclipse, which always inserts one blank line between groups.
-ij_java_imports_layout = com.linbit.**, |, javax.**, |, java.**, |, *, |, $*
+ij_java_imports_layout = com.linbit.**, |, jakarta.**, javax.**, |, java.**, |, *, |, $*
 

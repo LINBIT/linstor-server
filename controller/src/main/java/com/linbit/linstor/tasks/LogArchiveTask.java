@@ -15,7 +15,7 @@ import com.linbit.locks.LockGuardFactory;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class LogArchiveTask implements TaskScheduleService.Task
 {

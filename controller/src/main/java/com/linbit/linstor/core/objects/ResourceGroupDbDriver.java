@@ -43,9 +43,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroup
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.UUID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.X_REPLICAS_ON_DIFFERENT;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.util.List;
 import java.util.Map;

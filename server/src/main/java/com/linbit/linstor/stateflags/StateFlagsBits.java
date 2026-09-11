@@ -6,7 +6,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.AbsTransactionObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.util.HashSet;
 import java.util.Set;

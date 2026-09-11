@@ -4,7 +4,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class SatelliteVolDriver
     extends AbsSatelliteDbDriver<Volume>

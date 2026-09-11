@@ -19,7 +19,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.io.File;
 import java.util.ArrayList;

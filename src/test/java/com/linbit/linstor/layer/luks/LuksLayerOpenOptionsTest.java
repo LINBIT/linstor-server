@@ -35,8 +35,8 @@ import com.linbit.linstor.test.factories.VolumeTestFactory;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import java.util.List;
 import java.util.Set;

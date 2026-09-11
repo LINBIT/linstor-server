@@ -9,8 +9,8 @@ import com.linbit.linstor.core.migration.StltMigrationHandler.StltMigrationResul
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.utils.StringUtils;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.util.Arrays;

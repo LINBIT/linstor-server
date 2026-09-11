@@ -7,9 +7,9 @@ import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
 
 import java.io.PrintStream;
 import java.util.Map;

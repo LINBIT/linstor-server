@@ -2,7 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.annotation.Nullable;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.inject.Singleton;
 

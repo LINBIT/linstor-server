@@ -16,8 +16,8 @@ import com.linbit.linstor.tasks.utils.CronUtils;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.nio.file.Files;

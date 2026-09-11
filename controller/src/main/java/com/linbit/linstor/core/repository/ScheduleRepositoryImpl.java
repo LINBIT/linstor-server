@@ -6,8 +6,8 @@ import com.linbit.linstor.core.CoreModule.ScheduleMap;
 import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.objects.Schedule;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ScheduleRepositoryImpl implements ScheduleRepository

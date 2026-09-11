@@ -62,8 +62,8 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.time.Instant;
 import java.time.LocalDateTime;

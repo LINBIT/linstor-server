@@ -22,8 +22,8 @@ import com.linbit.utils.PairNonNull;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
 import com.linbit.utils.ShellUtils;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

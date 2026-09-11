@@ -10,8 +10,8 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.common.StltConfigOuterClass;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import java.util.Collections;
 import java.util.concurrent.locks.ReentrantReadWriteLock;

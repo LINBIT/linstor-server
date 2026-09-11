@@ -5,7 +5,7 @@ import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class ExtCmdFactory
 {

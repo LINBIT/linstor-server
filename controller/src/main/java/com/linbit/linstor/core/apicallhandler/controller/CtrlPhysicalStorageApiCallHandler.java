@@ -26,8 +26,8 @@ import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Base64;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

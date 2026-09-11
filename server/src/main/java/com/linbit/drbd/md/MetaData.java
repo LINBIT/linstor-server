@@ -1,6 +1,6 @@
 package com.linbit.drbd.md;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import com.linbit.drbd.md.MetaDataApi.SizeSpec;
 
 /**

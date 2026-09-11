@@ -27,8 +27,8 @@ import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.HashSet;
 import java.util.List;

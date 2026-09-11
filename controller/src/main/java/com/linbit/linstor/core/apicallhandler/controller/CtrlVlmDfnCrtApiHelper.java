@@ -20,8 +20,8 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class CtrlVlmDfnCrtApiHelper

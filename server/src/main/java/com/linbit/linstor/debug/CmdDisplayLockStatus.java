@@ -1,6 +1,6 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.linbit.linstor.core.CoreModule;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 public class CmdDisplayLockStatus extends BaseDebugCmd
 {

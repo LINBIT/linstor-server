@@ -32,7 +32,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass.MsgIntAuth;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

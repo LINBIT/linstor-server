@@ -12,8 +12,8 @@ import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.netcom.Peer;
 
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Iterator;
 

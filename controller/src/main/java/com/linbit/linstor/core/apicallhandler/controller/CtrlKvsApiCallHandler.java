@@ -20,8 +20,8 @@ import com.linbit.linstor.propscon.InvalidValueException;
 
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Collections;
 import java.util.HashSet;

@@ -6,8 +6,8 @@ import com.linbit.ValueInUseException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.propscon.Props;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class SatelliteDynamicNumberPool implements DynamicNumberPool

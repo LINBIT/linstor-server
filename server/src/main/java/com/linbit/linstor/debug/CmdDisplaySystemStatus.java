@@ -1,6 +1,6 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import com.linbit.linstor.core.LinStor;
 
 import java.io.PrintStream;

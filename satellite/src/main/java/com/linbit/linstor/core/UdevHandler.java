@@ -10,7 +10,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.utils.ShellUtils;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.nio.charset.StandardCharsets;
 import java.util.TreeSet;

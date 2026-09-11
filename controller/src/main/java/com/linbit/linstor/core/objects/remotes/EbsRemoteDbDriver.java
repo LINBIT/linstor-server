@@ -30,9 +30,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.EbsRemotes.SE
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.EbsRemotes.URL;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.EbsRemotes.UUID;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.net.MalformedURLException;
 import java.net.URL;

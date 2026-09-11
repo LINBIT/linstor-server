@@ -14,7 +14,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.security.GenericDbBase;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

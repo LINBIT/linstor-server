@@ -6,8 +6,8 @@ import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntArchiveLogsOuterClass.MsgIntArchiveLogs;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;

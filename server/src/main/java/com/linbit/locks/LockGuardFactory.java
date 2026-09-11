@@ -3,8 +3,8 @@ package com.linbit.locks;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import java.util.Map.Entry;
 import java.util.TreeMap;

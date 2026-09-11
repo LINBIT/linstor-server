@@ -3,8 +3,8 @@ package com.linbit.linstor.tasks;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlQuerySizeInfoHelper;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class QsiClearCacheTask implements Task

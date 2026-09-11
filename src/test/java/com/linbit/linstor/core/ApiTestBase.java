@@ -27,8 +27,8 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import java.util.Arrays;
 import java.util.List;

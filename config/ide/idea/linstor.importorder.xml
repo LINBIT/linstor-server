@@ -7,6 +7,7 @@
       <value>
         <package name="com.linbit" withSubpackages="true" static="false" />
         <emptyLine />
+        <package name="jakarta" withSubpackages="true" static="false" />
         <package name="javax" withSubpackages="true" static="false" />
         <emptyLine />
         <package name="java" withSubpackages="true" static="false" />

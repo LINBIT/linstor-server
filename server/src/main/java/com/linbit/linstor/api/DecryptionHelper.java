@@ -6,8 +6,8 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.utils.Base64;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.nio.charset.StandardCharsets;
 

@@ -2,8 +2,8 @@ package com.linbit.linstor.event;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Collection;
 import java.util.Collections;

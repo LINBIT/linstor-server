@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * Provides transaction-safe allocation of multiple numbers from a number pool cache

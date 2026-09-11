@@ -21,9 +21,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.KeyValueStore
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.KeyValueStore.KVS_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.KeyValueStore.UUID;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class KeyValueStoreDbDriver

@@ -14,7 +14,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.util.Arrays;
 import java.util.Collection;

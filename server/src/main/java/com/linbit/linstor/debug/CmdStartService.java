@@ -1,6 +1,6 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;

@@ -3,8 +3,8 @@ package com.linbit.linstor.netcom;
 import com.linbit.ServiceName;
 import com.linbit.linstor.annotation.Nullable;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Map;
 import java.util.TreeMap;

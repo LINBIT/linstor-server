@@ -120,7 +120,7 @@ import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import java.util.Map;
 

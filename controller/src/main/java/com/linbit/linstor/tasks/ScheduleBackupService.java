@@ -39,8 +39,8 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.PairNonNull;
 import com.linbit.utils.StringUtils;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.time.Instant;
 import java.time.ZoneId;

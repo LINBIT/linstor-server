@@ -14,8 +14,8 @@ import com.linbit.linstor.proto.eventdata.EventReplicationStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.utils.PairNonNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -6,8 +6,8 @@ import com.linbit.linstor.core.CoreModule.ExternalFileMap;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.objects.ExternalFile;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ExternalFileRepositoryImpl implements ExternalFileRepository

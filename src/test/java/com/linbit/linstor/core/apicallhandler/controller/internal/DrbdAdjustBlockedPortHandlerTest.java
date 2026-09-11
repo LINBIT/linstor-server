@@ -13,7 +13,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.locks.LockGuardFactory;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Before;

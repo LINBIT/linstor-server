@@ -9,8 +9,8 @@ import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @ProtobufEventSerializer(
     eventName = InternalApiConsts.EVENT_RESOURCE_STATE,

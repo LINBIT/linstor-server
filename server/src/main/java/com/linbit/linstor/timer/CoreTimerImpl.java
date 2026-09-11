@@ -3,8 +3,8 @@ package com.linbit.linstor.timer;
 import com.linbit.timer.Action;
 import com.linbit.timer.GenericTimer;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * linstor core timer service

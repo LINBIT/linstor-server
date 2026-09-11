@@ -19,8 +19,8 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.locks.LockGuardFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.text.ParseException;

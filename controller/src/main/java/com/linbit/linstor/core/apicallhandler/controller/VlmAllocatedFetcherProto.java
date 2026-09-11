@@ -28,9 +28,9 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.RegexMatcher;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

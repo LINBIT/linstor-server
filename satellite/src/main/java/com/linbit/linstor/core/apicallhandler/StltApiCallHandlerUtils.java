@@ -42,8 +42,8 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Either;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.HashMap;

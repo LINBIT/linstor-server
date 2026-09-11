@@ -8,8 +8,8 @@ import com.linbit.linstor.core.objects.Node.Type;
 import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;

@@ -8,7 +8,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.io.PrintStream;
 import java.net.InetAddress;

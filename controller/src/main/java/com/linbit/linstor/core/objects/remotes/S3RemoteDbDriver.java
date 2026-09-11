@@ -30,9 +30,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.REG
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.SECRET_KEY;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.UUID;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.util.function.Function;
 

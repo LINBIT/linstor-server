@@ -8,9 +8,9 @@ import com.linbit.linstor.core.apicallhandler.StltSosReportApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.responses.MsgReqSosCleanupOuterClass.MsgReqSosCleanup;
 
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;

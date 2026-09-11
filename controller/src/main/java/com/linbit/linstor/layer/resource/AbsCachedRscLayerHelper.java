@@ -12,7 +12,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.util.List;
 

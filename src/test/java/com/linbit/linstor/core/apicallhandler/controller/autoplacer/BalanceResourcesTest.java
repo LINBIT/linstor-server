@@ -30,7 +30,7 @@ import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Pair;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.time.Instant;
 import java.util.Arrays;

@@ -30,8 +30,8 @@ import com.linbit.linstor.transaction.K8sCrdTransaction;
 import com.linbit.linstor.transaction.manager.TransactionMgrK8sCrd;
 import com.linbit.utils.Pair;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.time.Instant;
 import java.util.ArrayList;

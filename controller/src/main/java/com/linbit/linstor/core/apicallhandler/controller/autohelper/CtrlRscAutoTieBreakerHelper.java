@@ -53,9 +53,9 @@ import static com.linbit.linstor.api.ApiConsts.VAL_FALSE;
 import static com.linbit.linstor.api.ApiConsts.VAL_TRUE;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collection;

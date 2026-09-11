@@ -36,7 +36,7 @@ import com.linbit.utils.MathUtils;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.util.Arrays;
 import java.util.Collection;

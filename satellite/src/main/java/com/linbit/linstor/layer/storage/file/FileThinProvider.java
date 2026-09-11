@@ -13,8 +13,8 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.nio.file.Path;
 import java.util.HashMap;

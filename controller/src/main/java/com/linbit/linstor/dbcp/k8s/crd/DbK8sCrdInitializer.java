@@ -9,8 +9,8 @@ import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class DbK8sCrdInitializer implements DbInitializer

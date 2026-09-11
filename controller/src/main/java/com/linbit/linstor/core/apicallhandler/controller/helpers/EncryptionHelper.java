@@ -42,9 +42,9 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Base64;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

@@ -6,8 +6,8 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class BCacheLayerSizeCalculator extends AbsCacheLayerSizeCalculator<BCacheVlmData<?>>

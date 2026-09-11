@@ -2,7 +2,7 @@ package com.linbit;
 
 import com.linbit.linstor.logging.ErrorReporter;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

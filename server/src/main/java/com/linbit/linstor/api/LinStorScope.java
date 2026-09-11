@@ -8,7 +8,7 @@ package com.linbit.linstor.api;
 
 import com.linbit.linstor.annotation.Nullable;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import java.util.Map;
 

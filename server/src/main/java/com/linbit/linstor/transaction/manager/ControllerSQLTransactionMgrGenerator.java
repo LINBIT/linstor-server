@@ -4,8 +4,8 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerSQLDatabase;
 import com.linbit.linstor.transaction.TransactionException;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.sql.SQLException;
 
 @Singleton

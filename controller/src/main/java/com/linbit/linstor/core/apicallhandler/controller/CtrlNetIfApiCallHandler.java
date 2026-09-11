@@ -32,10 +32,10 @@ import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NET_PORT;
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NODE_TYPE;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.util.Iterator;
 import java.util.Map;

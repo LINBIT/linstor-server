@@ -30,9 +30,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeNetInterf
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_PORT;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeNetInterfaces.UUID;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.util.Map;
 import java.util.Objects;

@@ -16,8 +16,8 @@ import com.linbit.linstor.event.WatchStore;
 import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -36,7 +36,7 @@ import com.linbit.utils.MathUtils;
 import com.linbit.utils.Pair;
 import com.linbit.utils.PairNonNull;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Arrays;

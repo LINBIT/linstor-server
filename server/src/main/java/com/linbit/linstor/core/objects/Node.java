@@ -45,7 +45,7 @@ import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.utils.LocalInetAddresses;
 import com.linbit.utils.StringUtils;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Arrays;

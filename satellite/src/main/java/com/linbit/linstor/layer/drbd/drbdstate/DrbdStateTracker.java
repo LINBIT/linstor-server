@@ -5,8 +5,8 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.core.types.MinorNumber;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collection;

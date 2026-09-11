@@ -5,8 +5,8 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import java.io.PrintStream;
 import java.util.Map;

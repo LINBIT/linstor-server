@@ -32,9 +32,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConne
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.TCP_PORT_SRC;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.UUID;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.util.Map;
 import java.util.Objects;

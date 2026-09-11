@@ -16,8 +16,8 @@ import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.utils.PairNonNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.Map;

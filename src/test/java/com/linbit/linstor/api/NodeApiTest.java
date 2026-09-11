@@ -15,8 +15,8 @@ import com.linbit.linstor.proto.requests.MsgReqDrbdReactorExecOuterClass.DrbdRea
 import com.linbit.linstor.proto.responses.MsgRspDrbdReactorExecOuterClass.MsgRspDrbdReactorExec;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

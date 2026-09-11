@@ -25,7 +25,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.PairNonNull;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.util.List;
 import java.util.Map;

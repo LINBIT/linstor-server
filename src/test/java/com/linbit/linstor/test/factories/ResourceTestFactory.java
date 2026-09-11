@@ -18,8 +18,8 @@ import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.test.factories.TestFactoryUtils.copyOrNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Arrays;
 import java.util.HashMap;

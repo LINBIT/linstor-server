@@ -24,8 +24,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Collections;
 import java.util.HashMap;

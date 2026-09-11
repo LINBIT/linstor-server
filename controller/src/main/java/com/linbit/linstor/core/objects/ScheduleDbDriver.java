@@ -32,9 +32,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.NAM
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.ON_FAILURE;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.UUID;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.util.function.Function;
 

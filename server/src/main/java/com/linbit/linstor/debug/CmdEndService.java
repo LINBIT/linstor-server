@@ -4,7 +4,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.io.PrintStream;
 import java.util.Map;

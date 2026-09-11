@@ -30,9 +30,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinit
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.VLM_NR;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.VLM_SIZE;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.util.Map;
 import java.util.TreeMap;

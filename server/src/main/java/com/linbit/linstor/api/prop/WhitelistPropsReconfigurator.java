@@ -9,8 +9,8 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

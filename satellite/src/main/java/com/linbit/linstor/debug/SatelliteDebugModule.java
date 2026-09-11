@@ -2,7 +2,7 @@ package com.linbit.linstor.debug;
 
 import com.linbit.linstor.core.CoreModule;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import java.util.concurrent.locks.ReadWriteLock;
 

@@ -30,8 +30,8 @@ import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.MathUtils;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

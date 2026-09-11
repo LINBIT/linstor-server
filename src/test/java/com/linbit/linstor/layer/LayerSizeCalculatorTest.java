@@ -18,7 +18,7 @@ import com.linbit.linstor.test.factories.StorPoolTestFactory;
 import com.linbit.linstor.test.factories.VolumeTestFactory;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.util.Arrays;
 import java.util.HashMap;

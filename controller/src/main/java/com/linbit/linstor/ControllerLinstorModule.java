@@ -25,7 +25,7 @@ import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepositoryImpl;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

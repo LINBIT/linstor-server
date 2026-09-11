@@ -15,7 +15,7 @@ blank line between groups** and **alphabetical sorting within each group**:
 | # | Group                                   | Examples                                             |
 |---|-----------------------------------------|------------------------------------------------------|
 | 1 | `com.linbit.**` (own code)              | `com.linbit.linstor.core.objects.Resource`           |
-| 2 | `javax.**`                              | `javax.inject.Inject`                                |
+| 2 | `jakarta.**` and `javax.**` (one group) | `jakarta.inject.Inject`, `javax.net.ssl.SSLContext`  |
 | 3 | `java.**`                               | `java.util.List`                                     |
 | 4 | all other (3rd-party) imports           | `com.fasterxml...`, `org.slf4j...`, `reactor...`, `edu...` |
 | 5 | **all** `static` imports (single block) | `static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP`, `static org.junit.Assert.assertEquals` |
@@ -24,8 +24,10 @@ Notes:
 
 * **Own code first, JDK in the middle, third-party last.** This is the reverse of the
   Google/Android style but is what LINSTOR has always done.
-* **`javax` comes before `java`.** This is deliberate and non-alphabetical; treat the
-  two as separate groups.
+* **`jakarta`/`javax` come before `java`.** This is deliberate and non-alphabetical; treat
+  them as separate groups. `jakarta.**` and `javax.**` form a *single* group (sorted
+  alphabetically, so `jakarta.*` lines end up before `javax.*` lines); the Java EE APIs
+  moved from `javax` to `jakarta` and only a few JDK-shipped `javax.*` packages remain.
 * **Static imports form one block at the very bottom**, sorted alphabetically
   (`com.linbit` statics naturally sort first, then the rest). Do *not* interleave a
   group's static imports with its regular imports.
@@ -40,8 +42,9 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.locks.LockGuardFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import javax.net.ssl.SSLContext;
 
 import java.util.List;
 import java.util.Map;
@@ -64,7 +67,7 @@ The rule is enforced by a `CustomImportOrder` module in
 <module name="CustomImportOrder">
     <property name="customImportOrderRules"
               value="SAME_PACKAGE(2)###SPECIAL_IMPORTS###STANDARD_JAVA_PACKAGE###THIRD_PARTY_PACKAGE###STATIC"/>
-    <property name="specialImportsRegExp" value="^javax\."/>
+    <property name="specialImportsRegExp" value="^(javax|jakarta)\."/>
     <property name="standardPackageRegExp" value="^java\."/>
     <property name="separateLineBetweenGroups" value="true"/>
     <property name="sortImportsInGroupAlphabetically" value="true"/>
@@ -104,6 +107,7 @@ Alternatively please follow the rest of this section:
    ```
    import com.linbit.**
    <blank line>
+   import jakarta.**
    import javax.**
    <blank line>
    import java.**
@@ -120,20 +124,22 @@ Alternatively please follow the rest of this section:
 
 1. Click **Import...** and choose
    [`config/ide/eclipse/linstor.importorder`](../config/ide/eclipse/linstor.importorder).
-   This sets the group order to `com.linbit`, `javax`, `java`, then the third-party
-   bucket, with a trailing static group.
-   Alternatively add the groups by hand with **New...** (for `com.linbit`, `javax`,
-   `java`) and **New Static...** (leave the package empty for the "all other static"
+   This sets the group order to `com.linbit`, `jakarta`, `javax`, `java`, then the
+   third-party bucket, with a trailing static group.
+   Alternatively add the groups by hand with **New...** (for `com.linbit`, `jakarta`,
+   `javax`, `java`) and **New Static...** (leave the package empty for the "all other static"
    bucket, move it to the bottom).
 2. Set **"Number of imports needed for .\*"** and **"Number of static imports needed
    for .\*"** both to a high value, e.g. `999`.
 3. Make sure **"Do not create imports for types starting with a lowercase letter"** is
    left at its default.
 
-> Note: in the `.importorder` file the empty entry (`3=`) is the "all other imports"
+> Note: in the `.importorder` file the empty entry (`4=`) is the "all other imports"
 > catch-all, so third-party imports (`org.*`, `reactor.*`, `com.fasterxml.*`, ...) land
-> in position 3; the `4=\#` entry is the "all other static imports" catch-all placed
-> last. Eclipse's static-import placement is the least flexible of the three IDEs -
+> in position 4; the `5=\#` entry is the "all other static imports" catch-all placed
+> last. Eclipse cannot merge `jakarta` and `javax` into one group and inserts a blank
+> line between them; Checkstyle reports that as an import-order warning in the few files
+> that import both - remove the blank line by hand there. Eclipse's static-import placement is the least flexible of the three IDEs -
 > after configuring, organize imports on a sample file and confirm the static block
 > ends up at the bottom.
 
@@ -145,7 +151,7 @@ Imports**:
 1. Set **"Class Count to Use FQN / Star Import"** and the static equivalent to a high
    value, e.g. `999`, so no `.*` imports are generated.
 2. Under **Group Imports**, define the package groups in this order:
-   `com.linbit`, `javax`, `java`, `*` (everything else).
+   `com.linbit`, `jakarta`, `javax`, `java`, `*` (everything else).
 3. Enable **"Separate Static Imports"** and place the static group **last**, and enable
    sorting within groups.
 

@@ -23,13 +23,13 @@ import com.linbit.locks.LockGuardFactory;
 import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 
-import javax.ws.rs.NotAllowedException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.NotAllowedException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -77,6 +77,7 @@ import org.glassfish.grizzly.ssl.SSLContextConfigurator;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 
 public class GrizzlyHttpService implements SystemService
 {
@@ -141,6 +142,8 @@ public class GrizzlyHttpService implements SystemService
         restAccessLogMode = restAccessLogModeRef;
         webUiDirectory = webUiDirectoryRef;
         restResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest");
+        // no JAXB implementation on the classpath; avoid the "WADL feature is disabled" warning at startup
+        restResourceConfig.property(ServerProperties.WADL_FEATURE_DISABLE, true);
         restResourceConfig.register(new CORSFilter());
         SystemConfRepository sysConfRepo = injector.getInstance(SystemConfRepository.class);
         AuthTokenRepository authTokenRepository = injector.getInstance(AuthTokenRepository.class);
@@ -848,7 +851,7 @@ class LinstorMapper implements ExceptionMapper<Exception>
     private final ErrorReporter errorReporter;
 
     @Context private UriInfo uriInfo;
-    @Context private javax.ws.rs.core.Request request;
+    @Context private jakarta.ws.rs.core.Request request;
 
     // uriInfo and request are @Context variables which are filled automatically, since sb does not realize this we
     // ignore the warning
@@ -861,16 +864,16 @@ class LinstorMapper implements ExceptionMapper<Exception>
     }
 
     @Override
-    public javax.ws.rs.core.Response toResponse(Exception exc)
+    public jakarta.ws.rs.core.Response toResponse(Exception exc)
     {
-        javax.ws.rs.core.Response.Status respStatus;
+        jakarta.ws.rs.core.Response.Status respStatus;
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         if (exc instanceof ApiRcException apiRcException)
         {
             errorReporter.reportError(exc);
             apiCallRc.addEntries(apiRcException.getApiCallRc());
-            respStatus = javax.ws.rs.core.Response.Status.BAD_REQUEST;
+            respStatus = jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
         }
         else
         if (exc instanceof JsonMappingException ||
@@ -886,7 +889,7 @@ class LinstorMapper implements ExceptionMapper<Exception>
                     .addErrorId(errorReport)
                     .build()
             );
-            respStatus = javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+            respStatus = jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
         }
         else
         if (exc instanceof NotFoundException)
@@ -900,7 +903,7 @@ class LinstorMapper implements ExceptionMapper<Exception>
                         .setDetails(exc.getMessage())
                         .setSkipErrorReport(true)
                         .build());
-            respStatus = javax.ws.rs.core.Response.Status.NOT_FOUND;
+            respStatus = jakarta.ws.rs.core.Response.Status.NOT_FOUND;
         }
         else
         if (exc instanceof NotAllowedException)
@@ -915,7 +918,7 @@ class LinstorMapper implements ExceptionMapper<Exception>
                     .setDetails(exc.getMessage())
                     .setSkipErrorReport(true)
                     .build());
-            respStatus = javax.ws.rs.core.Response.Status.METHOD_NOT_ALLOWED;
+            respStatus = jakarta.ws.rs.core.Response.Status.METHOD_NOT_ALLOWED;
         }
         else
         {
@@ -929,10 +932,10 @@ class LinstorMapper implements ExceptionMapper<Exception>
                     .addErrorId(errorReport)
                     .build()
             );
-            respStatus = javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+            respStatus = jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
         }
 
-        return javax.ws.rs.core.Response
+        return jakarta.ws.rs.core.Response
             .status(respStatus)
             .type(MediaType.APPLICATION_JSON)
             .entity(ApiCallRcRestUtils.toJSON(errorReporter, apiCallRc))

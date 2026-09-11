@@ -33,7 +33,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
 import com.linbit.utils.PairNonNull;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.time.Instant;
 import java.util.ArrayList;

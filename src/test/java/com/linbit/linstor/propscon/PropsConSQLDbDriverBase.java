@@ -3,7 +3,7 @@ package com.linbit.linstor.propscon;
 import com.linbit.linstor.dbdrivers.PropsDbDriver;
 import com.linbit.linstor.security.GenericDbBase;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

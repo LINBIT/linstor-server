@@ -24,9 +24,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeGroups.
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeGroups.UUID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeGroups.VLM_NR;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.util.Map;
 

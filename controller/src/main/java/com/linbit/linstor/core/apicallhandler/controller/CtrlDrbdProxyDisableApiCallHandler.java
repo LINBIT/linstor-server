@@ -26,9 +26,9 @@ import com.linbit.locks.LockGuard;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyEnableApiCallHandler.makeDrbdProxyContext;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscConnectionApiCallHandler.getResourceConnectionDescriptionInline;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;

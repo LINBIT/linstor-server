@@ -12,8 +12,8 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.Pair;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

@@ -6,7 +6,7 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class SatelliteExternalFileDriver
     extends AbsSatelliteDbDriver<ExternalFile>

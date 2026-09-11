@@ -29,9 +29,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Files.FLAGS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Files.PATH;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Files.UUID;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

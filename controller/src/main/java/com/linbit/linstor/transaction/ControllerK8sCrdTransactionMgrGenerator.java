@@ -3,7 +3,7 @@ package com.linbit.linstor.transaction;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.inject.Provider;
 

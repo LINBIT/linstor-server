@@ -17,8 +17,8 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntExtFileStatusOuterClass.MsgIntExtFileStatus;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

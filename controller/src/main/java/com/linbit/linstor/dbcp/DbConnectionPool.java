@@ -22,8 +22,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_PROPS_CONTAINERS;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.sql.Connection;
 import java.sql.ResultSet;

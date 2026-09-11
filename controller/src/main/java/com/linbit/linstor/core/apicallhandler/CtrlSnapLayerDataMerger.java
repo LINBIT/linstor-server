@@ -49,7 +49,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class CtrlSnapLayerDataMerger extends AbsLayerRscDataMerger<Snapshot>
 {

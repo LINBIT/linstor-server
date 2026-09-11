@@ -10,8 +10,8 @@ import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
 import com.linbit.linstor.layer.drbd.drbdstate.ReplState;
 import com.linbit.utils.PairNonNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @ProtobufEventSerializer(
     eventName = InternalApiConsts.EVENT_REPLICATION_STATE,

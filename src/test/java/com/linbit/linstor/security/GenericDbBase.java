@@ -87,9 +87,9 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import com.linbit.linstor.utils.NameShortenerModule;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
 
 import java.nio.file.Paths;
 import java.sql.Connection;

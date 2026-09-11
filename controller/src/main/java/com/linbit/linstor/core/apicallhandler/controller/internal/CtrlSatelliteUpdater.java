@@ -13,7 +13,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.util.Collection;
 import java.util.HashSet;

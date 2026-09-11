@@ -3,7 +3,7 @@ package com.linbit.linstor.debug;
 import com.linbit.AutoIndent;
 import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.io.PrintStream;
 import java.util.Map;

@@ -19,7 +19,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.utils.Base64;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;

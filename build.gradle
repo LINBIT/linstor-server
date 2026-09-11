@@ -109,8 +109,8 @@ project(':server') {
     apply plugin: 'java-test-fixtures'
 
     dependencies {
-        api 'com.google.inject:guice:6.0.0' // upgrade to 7.0 would require switch to jakarta namespace
-        api 'com.google.inject.extensions:guice-assistedinject:6.0.0'
+        api 'com.google.inject:guice:7.0.0'
+        api 'com.google.inject.extensions:guice-assistedinject:7.0.0'
 
 //      compileOnly "com.google.protobuf:protobuf-javalite:${protobufVersion}"
         api "com.google.protobuf:protobuf-java:4.${protobufVersion}"
@@ -363,7 +363,7 @@ project(':controller').version = version
 project(':satellite').version = version
 project(':jclcrypto').version = version
 
-def jerseyVersion = '2.48'
+def jerseyVersion = '4.0.2'
 
 project(':controller') {
     apply plugin: 'application'
@@ -390,7 +390,11 @@ project(':controller') {
 
         // rest libs (grizzly http(s), jersey(rest))
         implementation 'org.glassfish.grizzly:grizzly-http-server:5.0.2'
-        implementation 'org.glassfish.hk2:guice-bridge:2.6.1'
+        // jersey 4.0.2 is built against the hk2 4.0.0-M3 milestone; align all hk2 artifacts with guice-bridge
+        implementation 'org.glassfish.hk2:guice-bridge:4.0.2'
+        implementation 'org.glassfish.hk2:hk2-api:4.0.2'
+        implementation 'org.glassfish.hk2:hk2-locator:4.0.2'
+        implementation 'org.glassfish.hk2:hk2-utils:4.0.2'
         implementation "org.glassfish.jersey.inject:jersey-hk2:${jerseyVersion}"
         implementation "org.glassfish.jersey.containers:jersey-container-grizzly2-http:${jerseyVersion}"
         implementation "org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:${jerseyVersion}"
@@ -574,7 +578,7 @@ dependencies {
 
     testImplementation "com.cronutils:cron-utils:${cronVersion}"
 
-    testImplementation 'com.google.inject.extensions:guice-testlib:6.0.0'
+    testImplementation 'com.google.inject.extensions:guice-testlib:7.0.0'
     testImplementation 'io.projectreactor:reactor-test:3.8.+'
 }
 

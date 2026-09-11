@@ -81,10 +81,10 @@ import com.linbit.utils.StringUtils;
 import com.linbit.utils.TripleNonNull;
 import com.linbit.utils.UuidUtils;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

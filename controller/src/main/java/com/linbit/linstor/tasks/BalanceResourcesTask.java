@@ -5,8 +5,8 @@ import com.linbit.linstor.core.apicallhandler.controller.autoplacer.BalanceResou
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class BalanceResourcesTask implements TaskScheduleService.Task

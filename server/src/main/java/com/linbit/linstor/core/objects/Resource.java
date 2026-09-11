@@ -31,7 +31,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.time.Instant;
 import java.util.ArrayList;

@@ -17,9 +17,9 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass.MsgIntAuth
 import com.linbit.linstor.utils.SetUtils;
 import com.linbit.Platform;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

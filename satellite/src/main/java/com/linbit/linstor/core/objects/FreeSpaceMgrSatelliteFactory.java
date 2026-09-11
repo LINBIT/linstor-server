@@ -3,8 +3,8 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import java.util.Map;
 import java.util.TreeMap;

@@ -5,7 +5,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import java.util.Objects;
 

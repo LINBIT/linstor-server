@@ -126,7 +126,7 @@ import com.linbit.linstor.dbdrivers.k8s.crd.K8sCrdEngine;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.HashMap;

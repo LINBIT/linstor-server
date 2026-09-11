@@ -37,8 +37,8 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResource
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.RESOURCE_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.SNAPSHOT_NAME;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.util.Map;
 import java.util.Objects;

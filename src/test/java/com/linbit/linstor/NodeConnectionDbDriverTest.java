@@ -8,7 +8,7 @@ import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

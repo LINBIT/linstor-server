@@ -3,8 +3,8 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class SatelliteSnapshotVlmDriver

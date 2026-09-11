@@ -1,6 +1,6 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 
@@ -9,7 +9,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.VersionInfoProvider;
 import com.linbit.linstor.logging.ErrorReporter;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 /**
  * Displays information about the program module (Controller or Satellite)

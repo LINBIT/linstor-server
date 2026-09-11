@@ -9,7 +9,7 @@ import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.util.Iterator;
 

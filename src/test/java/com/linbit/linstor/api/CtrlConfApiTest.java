@@ -9,8 +9,8 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.ControllerConfigApi;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import java.util.Map;
 import java.util.Set;

@@ -56,8 +56,8 @@ import com.linbit.utils.StringUtils;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotVlmDfnDescriptionInline;
 import static com.linbit.linstor.utils.layer.LayerVlmUtils.getStorPoolMap;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.time.Instant;
 import java.util.ArrayList;

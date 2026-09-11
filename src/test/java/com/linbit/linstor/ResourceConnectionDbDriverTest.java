@@ -17,7 +17,7 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.Transp
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.Pair;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

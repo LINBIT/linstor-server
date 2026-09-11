@@ -4,7 +4,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.netcom.Peer;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.io.PrintStream;
 import java.util.Map;

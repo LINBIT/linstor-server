@@ -5,7 +5,7 @@ import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class SpecStltProcMgrInit implements StartupInitializer
 {

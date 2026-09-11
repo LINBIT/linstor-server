@@ -77,8 +77,8 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.utils.NameShortenerModule;
 import com.linbit.utils.InjectorLoader;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

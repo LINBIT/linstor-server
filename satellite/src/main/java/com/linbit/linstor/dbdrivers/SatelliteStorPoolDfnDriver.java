@@ -4,8 +4,8 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class SatelliteStorPoolDfnDriver

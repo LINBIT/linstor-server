@@ -4,7 +4,7 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class SatelliteLayerCacheRscDbDriver
     extends AbsSatelliteDbDriver<CacheRscData<?>>
