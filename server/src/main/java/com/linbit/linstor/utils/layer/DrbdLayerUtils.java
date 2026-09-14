@@ -111,7 +111,27 @@ public class DrbdLayerUtils
     public static boolean skipInitSync(DrbdVlmData<Resource> drbdVlmDataRef)
     {
         boolean skipInitSync;
-        if (DrbdLayerUtils.isForceInitialSyncSet(drbdVlmDataRef.getRscLayerObject()))
+        boolean allEbs = VolumeUtils.getStorageDevices(
+            drbdVlmDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+        )
+            .stream()
+            .map(VlmProviderObject::getProviderKind)
+            .allMatch(
+                kind -> kind == DeviceProviderKind.EBS_INIT || kind == DeviceProviderKind.EBS_TARGET
+            );
+        if (allEbs)
+        {
+            /*
+             * Like thin volumes, freshly created EBS volumes are guaranteed to read as zeros, so all
+             * replicas start out identical and the initial sync can be skipped. For EBS the skip is
+             * also mandatory, even if an initial sync is forced (e.g. by the mixed-storage-pool
+             * detection): the initial-UpToDate node is an EBS target, which never creates DRBD
+             * meta-data locally, so no sync source can ever exist and an EBS initiator waiting for
+             * one would wait forever.
+             */
+            skipInitSync = true;
+        }
+        else if (DrbdLayerUtils.isForceInitialSyncSet(drbdVlmDataRef.getRscLayerObject()))
         {
             skipInitSync = false;
         }
