@@ -35,9 +35,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -51,6 +48,9 @@ import java.util.UUID;
 
 import org.slf4j.MDC;
 import reactor.core.publisher.Flux;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
 public class CtrlRscDeleteApiHelper
@@ -164,7 +164,7 @@ public class CtrlRscDeleteApiHelper
         for (NodeName nodeName : nodeNames)
         {
             @Nullable Resource rsc = ctrlApiDataLoader.loadRscOrNull(nodeName, rscName);
-            if (rsc != null)
+            if (rsc != null && !rsc.isDeleted())
             {
                 rscDfn = rsc.getResourceDefinition();
                 break;
@@ -219,13 +219,23 @@ public class CtrlRscDeleteApiHelper
         ResourceName rscName
     )
     {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         List<Resource> rscList = new ArrayList<>();
         for (NodeName nodeName : nodeNames)
         {
             @Nullable Resource rsc = ctrlApiDataLoader.loadRscOrNull(nodeName, rscName);
-            if (rsc != null)
+            if (rsc != null && !rsc.isDeleted())
             {
-                rscList.add(rsc);
+                // if we still run into "delete vs undelete" races, we should use UUIDs to find the resources we want
+                // to delete. For now we stay with "only" flag-checking
+                if (rsc.getStateFlags().isSet(Resource.Flags.DELETE))
+                {
+                    rscList.add(rsc);
+                }
+                else
+                {
+                    addDeleteCanceledEntry(apiCallRc, rsc);
+                }
             }
         }
 
@@ -233,11 +243,10 @@ public class CtrlRscDeleteApiHelper
 
         if (rscList.isEmpty())
         {
-            flux = Flux.empty();
+            flux = Flux.just(apiCallRc);
         }
         else
         {
-            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
             Set<ResourceDefinition> rscDfnsToCheck = new HashSet<>();
             for (Resource rsc : rscList)
             {
@@ -324,6 +333,20 @@ public class CtrlRscDeleteApiHelper
         }
 
         return flux;
+    }
+
+    static void addDeleteCanceledEntry(ApiCallRcImpl apiCallRc, Resource rsc)
+    {
+        apiCallRc.addEntries(
+            ApiCallRcImpl.singleApiCallRc(
+                // no explicit ApiConst for this quite rare condition
+                ApiConsts.MASK_RSC | ApiConsts.MASK_DEL | ApiConsts.MASK_WARN,
+                String.format(
+                    "Deletion of %s was canceled by a concurrent operation",
+                    getRscDescription(rsc)
+                )
+            )
+        );
     }
 
     public ApiCallRc ensureNotInUse(Resource rsc)

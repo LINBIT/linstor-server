@@ -40,9 +40,6 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.TimeUtils;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
@@ -59,6 +56,9 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import reactor.core.publisher.Flux;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
 public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListener
@@ -316,6 +316,9 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
         if (LayerUtils.hasLayer(rsc.getLayerData(), DeviceLayerKind.DRBD))
         {
+            // sets the DRBD_DELETE flag, but that flag could be removed again by the auto-tiebreaker, so we must set
+            // the flag before calling the autoHelper.manage method. Another possibility of how the DRBD_DELETE flag
+            // could be removed is by an un-delete operation - even concurrently to this deletion flux.
             ctrlRscDeleteApiHelper.markDrbdDeletedWithVolumes(rsc);
 
             ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -478,7 +481,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
         ApiCallRcImpl responses = new ApiCallRcImpl();
         Flux<ApiCallRc> flux;
-        if (rsc == null)
+        if (rsc == null || rsc.isDeleted())
         {
             responses.addEntries(
                 ApiCallRcImpl.singleApiCallRc(
@@ -489,6 +492,12 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             flux = Flux.just(responses);
             // no updateSatellites are required, since we are called within a flux-chain that will
             // call updateSatellites if necessary
+        }
+        else if (LayerUtils.hasLayer(rsc.getLayerData(), DeviceLayerKind.DRBD) &&
+            !rsc.getStateFlags().isSet(Resource.Flags.DRBD_DELETE))
+        {
+            CtrlRscDeleteApiHelper.addDeleteCanceledEntry(responses, rsc);
+            flux = Flux.just(responses);
         }
         else
         {
