@@ -1,3 +1,14 @@
+linstor-server (1.35.2-1) experimental; urgency=medium
+
+  [ Moritz Tanner ]
+  * WipeHandler: Clear read-only flag before wiping
+  * ci: use trivy image without entrypoint
+
+  [ Rene Peinthor ]
+  * fix: return db connection of self-started transaction in db export
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 14 Sep 2026 11:06:07 +0000
+
 linstor-server (1.35.1-1) experimental; urgency=medium
 
   [ Moritz Tanner ]
