@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.35.2] - 2026-09-14
+
 ### Fixed
 
 - Satellite: Clear the read-only flag of a block device before wiping it, so that deleting a volume no longer
