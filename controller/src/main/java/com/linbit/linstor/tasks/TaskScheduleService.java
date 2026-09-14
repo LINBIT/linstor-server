@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -140,11 +141,13 @@ public class TaskScheduleService implements SystemService, Runnable
     private final Set<Task> runningTasks = new HashSet<>();
     private final Set<Task> canceledWhileRunning = new HashSet<>();
     private final ErrorReporter errorReporter;
+    private final ControllerDatabase controllerDatabase;
 
     @Inject
-    public TaskScheduleService(ErrorReporter errorReporterRef)
+    public TaskScheduleService(ErrorReporter errorReporterRef, ControllerDatabase controllerDatabaseRef)
     {
         errorReporter = errorReporterRef;
+        controllerDatabase = controllerDatabaseRef;
         serviceInstanceName = SERVICE_NAME;
         tasksLock = new ReentrantLock();
         tasksCond = tasksLock.newCondition();
@@ -390,6 +393,37 @@ public class TaskScheduleService implements SystemService, Runnable
         return ret;
     }
 
+    /**
+     * Tasks run on the service thread and are expected to return every database connection they acquired (usually
+     * via {@link com.linbit.linstor.transaction.manager.TransactionMgr#returnConnection()}). A connection that is not
+     * returned stays checked out of the pool forever, since this thread never ends. Just like the {@link
+     * com.linbit.WorkerPool} does for its tasks, close such leaked connections here and report the offending task so
+     * that a single misbehaving task cannot exhaust the connection pool over time.
+     */
+    private void closeLeakedDbConnections(Task task)
+    {
+        try
+        {
+            if (controllerDatabase.closeAllThreadLocalConnections())
+            {
+                errorReporter.reportError(
+                    Level.ERROR,
+                    new ImplementationError(
+                        "Task of class " + task.getClass().getCanonicalName() +
+                            " did not return all database connections",
+                        null
+                    ),
+                    null,
+                    "The leaked connections were closed by the service '" + SERVICE_NAME + "'"
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            errorReporter.reportError(exc);
+        }
+    }
+
     private void execute(Task task, long scheduledAt)
     {
         tasksLock.lock();
@@ -418,6 +452,10 @@ public class TaskScheduleService implements SystemService, Runnable
                 null,
                 "This exception was generated in the service thread of the service '" + SERVICE_NAME + "'"
             );
+        }
+        finally
+        {
+            closeLeakedDbConnections(task);
         }
 
         tasksLock.lock();

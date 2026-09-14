@@ -1,18 +1,46 @@
 package com.linbit.linstor.core.apicallhandler.controller.db;
 
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.cfg.CtrlConfig;
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
+import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
+import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.ResourceDefinitionsSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
+import com.linbit.linstor.testutils.EmptyErrorReporter;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
+import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
+import org.mockito.InOrder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests the reordering of self-referencing tables (currently only RESOURCE_DEFINITIONS, where a
@@ -206,5 +234,98 @@ public class DbExportImportHelperTest
             ret.add((String) spec.getByColumn(GeneratedDatabaseTables.ResourceDefinitions.UUID.getName()));
         }
         return ret;
+    }
+
+    /**
+     * Regression test: when {@link DbExportImportHelper#exportDb()} has to start its own transaction (i.e. the scope
+     * was not seeded with one, as is the case for the AutoDbExportTask), the connection of that transaction must be
+     * returned to the pool afterwards. Otherwise every export leaks one connection, which eventually exhausts the
+     * connection pool and blocks all further database operations.
+     */
+    @Test
+    public void exportDbReturnsSelfStartedTransactionConnection() throws Exception
+    {
+        TransactionMgr txMgr = mock(TransactionMgrSQL.class);
+        DbExportImportHelper helper = createHelper(txMgr, new HashMap<>());
+
+        helper.exportDb();
+
+        InOrder inOrder = inOrder(txMgr);
+        inOrder.verify(txMgr).rollback();
+        inOrder.verify(txMgr).returnConnection();
+    }
+
+    @Test
+    public void exportDbReturnsSelfStartedTransactionConnectionOnError() throws Exception
+    {
+        TransactionMgr txMgr = mock(TransactionMgrSQL.class);
+        @SuppressWarnings("unchecked")
+        AbsDatabaseDriver<?, ?, ?> failingDriver = mock(AbsDatabaseDriver.class);
+        when(failingDriver.export()).thenThrow(new DatabaseException("test"));
+        Map<DatabaseTable, AbsDatabaseDriver<?, ?, ?>> drivers = new HashMap<>();
+        drivers.put(GeneratedDatabaseTables.ALL_TABLES[0], failingDriver);
+        DbExportImportHelper helper = createHelper(txMgr, drivers);
+
+        assertThatThrownBy(helper::exportDb).isInstanceOf(ApiDatabaseException.class);
+
+        InOrder inOrder = inOrder(txMgr);
+        inOrder.verify(txMgr).rollback();
+        inOrder.verify(txMgr).returnConnection();
+    }
+
+    @Test
+    public void exportDbDoesNotTouchForeignTransaction() throws Exception
+    {
+        TransactionMgr txMgr = mock(TransactionMgrSQL.class);
+        LinStorScope scope = mock(LinStorScope.class);
+        when(scope.isSeeded(any())).thenReturn(true); // transaction was started by the caller
+        DbExportImportHelper helper = createHelper(txMgr, new HashMap<>(), scope);
+
+        helper.exportDb();
+
+        verify(txMgr, never()).rollback();
+        verify(txMgr, never()).returnConnection();
+    }
+
+    private DbExportImportHelper createHelper(
+        TransactionMgr txMgr,
+        Map<DatabaseTable, AbsDatabaseDriver<?, ?, ?>> drivers
+    )
+    {
+        LinStorScope scope = mock(LinStorScope.class);
+        when(scope.isSeeded(any())).thenReturn(false);
+        return createHelper(txMgr, drivers, scope);
+    }
+
+    private DbExportImportHelper createHelper(
+        TransactionMgr txMgr,
+        Map<DatabaseTable, AbsDatabaseDriver<?, ?, ?>> drivers,
+        LinStorScope scope
+    )
+    {
+        TransactionMgrGenerator txMgrGenerator = mock(TransactionMgrGenerator.class);
+        when(txMgrGenerator.startTransaction()).thenReturn(txMgr);
+
+        DbEngine dbEngine = mock(DbEngine.class);
+        when(dbEngine.getType()).thenReturn(DatabaseType.SQL);
+
+        CtrlConfig ctrlCfg = mock(CtrlConfig.class);
+        when(ctrlCfg.getDbConnectionUrl()).thenReturn("jdbc:h2:mem:test");
+
+        LockGuardFactory lockGuardFactory = mock(LockGuardFactory.class);
+        when(lockGuardFactory.build(any(LockType.class), any(LockObj[].class))).thenReturn(mock(LockGuard.class));
+
+        return new DbExportImportHelper(
+            new EmptyErrorReporter(),
+            drivers,
+            dbEngine,
+            mock(DbConnectionPool.class),
+            mock(DbK8sCrd.class),
+            () -> txMgrGenerator,
+            () -> txMgr,
+            scope,
+            lockGuardFactory,
+            ctrlCfg
+        );
     }
 }
