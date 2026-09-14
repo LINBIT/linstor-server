@@ -47,8 +47,17 @@
             ]
         },
         {
+            "description": "the h2v1migration dependency must stay on 1.x to migrate old H2 1.x databases",
             "matchPackageNames": [
                 "com.h2database:h2"
+            ],
+            "matchCurrentVersion": "<2.0.0",
+            "enabled": false
+        },
+        {
+            "description": "JDK versions are dictated by distribution support, not tracked by Renovate",
+            "matchDatasources": [
+                "java-version"
             ],
             "enabled": false
         }
