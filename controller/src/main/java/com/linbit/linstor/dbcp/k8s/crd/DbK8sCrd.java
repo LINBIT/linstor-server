@@ -397,7 +397,8 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     @Override
     public boolean closeAllThreadLocalConnections()
     {
-        return true;
+        // the k8s driver does not hand out per-thread connections, so there is never anything left open to close
+        return false;
     }
 
     @Override

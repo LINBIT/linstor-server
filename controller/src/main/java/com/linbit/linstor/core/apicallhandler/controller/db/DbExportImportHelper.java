@@ -231,9 +231,22 @@ public class DbExportImportHelper
                  * That means that we must not rollback here.
                  *
                  * On the other hand, if we did start it (i.e. != null) we should not have done any changes to it, so
-                 * rollback just to be sure
+                 * rollback just to be sure.
+                 *
+                 * Since we also started the transaction, we are responsible for returning its connection to the pool.
+                 * Otherwise the connection stays checked out (and registered in the thread-local connection list of
+                 * the DbConnectionPool) forever, which eventually exhausts the connection pool. This is especially
+                 * relevant for the AutoDbExportTask, which runs this method from the TaskScheduleService thread and
+                 * therefore would have leaked one connection per export.
                  */
-                transMgr.rollback();
+                try
+                {
+                    transMgr.rollback();
+                }
+                finally
+                {
+                    transMgr.returnConnection();
+                }
             }
         }
 

@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Satellite: Clear the read-only flag of a block device before wiping it, so that deleting a volume no longer
   fails with "Failed to wipeFs" if an external user outside of LINSTOR left the device flagged read-only
+- Controller: Fixed a database connection leak in the automatic database export, which exhausted the connection
+  pool after a number of exports
 
 ## [1.35.1] - 2026-09-09
 

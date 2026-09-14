@@ -1,5 +1,6 @@
 package com.linbit.linstor.tasks;
 
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 
@@ -17,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests the scheduling semantics of {@link TaskScheduleService}.
@@ -39,7 +41,7 @@ public class TaskScheduleServiceTest
     @Before
     public void setUp()
     {
-        service = new TaskScheduleService(new EmptyErrorReporter());
+        service = new TaskScheduleService(new EmptyErrorReporter(), mock(ControllerDatabase.class));
     }
 
     @After
