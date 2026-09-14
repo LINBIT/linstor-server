@@ -39,6 +39,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 import com.google.inject.testing.fieldbinder.Bind;
 import org.junit.Before;
@@ -333,6 +336,75 @@ public class RscDeleteApiTest extends ApiTestBase
     }
 
     @Test
+    public void undeleteWhileDrbdDeletePendingCancelsDeletion() throws Exception
+    {
+        Mockito.when(mockPeer.isOnline()).thenReturn(true);
+        setSatelliteOnline(mockSatellite, true);
+
+        createStorPool(testSatelliteNode, testStorPoolName, DeviceProviderKind.LVM);
+        createRscOnNode(TEST_NODE_NAME, 0L, TEST_SP_NAME);
+        UUID rscUuid = testSatelliteNode.getResource(testRscName).getUuid();
+
+        // while the satellite processes the DRBD_DELETE update, a concurrent actor (e.g. BalanceResourcesTask or
+        // a user's "r c" on the same node) re-creates the resource, which un-deletes it instead of failing
+        stubUndeleteOnSatelliteUpdate(
+            rsc -> rsc.getStateFlags().isSet(Resource.Flags.DRBD_DELETE) &&
+                rsc.getStateFlags().isUnset(Resource.Flags.DELETE)
+        );
+
+        evaluateTest(
+            new DeleteRscCall(
+                // resource preparing for deletion (DRBD cleanup step)
+                ApiConsts.DELETED,
+                // "Preparing deletion of resource on ..."
+                ApiConsts.MODIFIED,
+                // "Deleting resource" stage finds the DRBD_DELETE flag gone and cancels
+                ApiConsts.MASK_WARN,
+                // updated resync-after entries (auto helper of the prepare stage)
+                ApiConsts.MASK_INFO
+            )
+        );
+
+        assertUndeletedResourceIntact(rscUuid);
+    }
+
+    @Test
+    public void undeleteWhileDeletePendingKeepsResource() throws Exception
+    {
+        Mockito.when(mockPeer.isOnline()).thenReturn(true);
+        setSatelliteOnline(mockSatellite, true);
+
+        createStorPool(testSatelliteNode, testStorPoolName, DeviceProviderKind.LVM);
+        createRscOnNode(TEST_NODE_NAME, 0L, TEST_SP_NAME);
+        UUID rscUuid = testSatelliteNode.getResource(testRscName).getUuid();
+
+        // the DRBD cleanup went through; while the satellite processes the DELETE update, a concurrent actor
+        // re-creates the resource. The final "delete data" stage must not remove the un-deleted resource
+        // from the database (which would leave the satellites with a resource the controller no longer knows)
+        stubUndeleteOnSatelliteUpdate(rsc -> rsc.getStateFlags().isSet(Resource.Flags.DELETE));
+
+        evaluateTest(
+            new DeleteRscCall(
+                // resource preparing for deletion (DRBD cleanup step)
+                ApiConsts.DELETED,
+                // "Preparing deletion of resource on ..."
+                ApiConsts.MODIFIED,
+                // resource marked for deletion
+                ApiConsts.DELETED,
+                // "Cleaning up ... on ..."
+                ApiConsts.MODIFIED,
+                // "Delete resource data" stage finds the DELETE flag gone and cancels
+                ApiConsts.MASK_WARN,
+                // updated resync-after entries (auto helper / props update runs)
+                ApiConsts.MASK_INFO,
+                ApiConsts.MASK_INFO
+            )
+        );
+
+        assertUndeletedResourceIntact(rscUuid);
+    }
+
+    @Test
     public void deleteLastDiskfulWithDisklessAttachedRejected() throws Exception
     {
         createStorPool(testSatelliteNode, testStorPoolName, DeviceProviderKind.LVM);
@@ -429,6 +501,52 @@ public class RscDeleteApiTest extends ApiTestBase
     /*
      * helpers
      */
+
+    /**
+     * Stubs the satellite so that the first resource update whose in-memory resource matches the given
+     * predicate triggers a concurrent "resource create" on the same node. Since the resource still exists
+     * (flagged for deletion), {@link CtrlRscCrtApiHelper#createResourceDb} re-uses it and clears its
+     * DELETE / DRBD_DELETE flags, i.e. un-deletes it while the delete flux is still running.
+     */
+    private void stubUndeleteOnSatelliteUpdate(Predicate<Resource> triggerRef)
+    {
+        AtomicBoolean undeleted = new AtomicBoolean(false);
+        Mockito.when(mockSatellite.apiCall(Mockito.eq(InternalApiConsts.API_CHANGED_RSC), Mockito.any()))
+            .thenAnswer(invocation ->
+                // some update stages build the peer call while still inside their LinStorScope; defer the
+                // concurrent modification to subscription time, which happens after that scope was left
+                Flux.defer(() ->
+                {
+                    Resource rsc = testSatelliteNode.getResource(testRscName);
+                    if (rsc != null && !undeleted.get() && triggerRef.test(rsc))
+                    {
+                        undeleted.set(true);
+                        try
+                        {
+                            createRscOnNode(TEST_NODE_NAME, 0L, TEST_SP_NAME);
+                        }
+                        catch (Exception exc)
+                        {
+                            return Flux.error(exc);
+                        }
+                    }
+                    return Flux.empty();
+                })
+            );
+    }
+
+    private void assertUndeletedResourceIntact(UUID expectedUuid)
+    {
+        Resource rsc = testSatelliteNode.getResource(testRscName);
+        assertThat(rsc).isNotNull();
+        assertThat(rsc.isDeleted()).isFalse();
+        assertThat(rsc.getUuid()).isEqualTo(expectedUuid);
+        assertThat(rsc.getStateFlags().isUnset(Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE)).isTrue();
+        Iterator<Volume> vlmIt = rsc.iterateVolumes();
+        assertThat(vlmIt.hasNext()).isTrue();
+        assertThat(vlmIt.next().getFlags().isUnset(Volume.Flags.DELETE, Volume.Flags.DRBD_DELETE)).isTrue();
+        assertThat(testRscDfn.getResourceCount()).isEqualTo(1);
+    }
 
     private ResponseContext makeDeleteRscContext()
     {

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a race between a resource deletion and a concurrent restore or un-delete of the same resource, which made
+  the affected satellites shut down (and restart) with a UUID mismatch
+
 ## [1.35.2] - 2026-09-14
 
 ### Fixed
