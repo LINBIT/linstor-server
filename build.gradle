@@ -389,7 +389,7 @@ project(':controller') {
         h2v1migration 'com.h2database:h2:1.4.197'
 
         // rest libs (grizzly http(s), jersey(rest))
-        implementation 'org.glassfish.grizzly:grizzly-http-server:4.0.2'
+        implementation 'org.glassfish.grizzly:grizzly-http-server:5.0.2'
         implementation 'org.glassfish.hk2:guice-bridge:2.6.1'
         implementation "org.glassfish.jersey.inject:jersey-hk2:${jerseyVersion}"
         implementation "org.glassfish.jersey.containers:jersey-container-grizzly2-http:${jerseyVersion}"
