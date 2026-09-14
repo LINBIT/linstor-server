@@ -164,14 +164,27 @@ project(':server') {
         // The remaining model modules are only reachable from typed DSL accessors
         // (client.network()/.rbac()/.policy()/...) that LINSTOR never calls, so exclude
         // the model modules for those API groups.
-        api('io.fabric8:kubernetes-client:7.9.0') {
+        //
+        // The fabric8 HTTP transport is pluggable (ServiceLoader). The default Vert.x
+        // transport drags in vertx-core and the whole netty stack, which we only used to
+        // talk to the k8s API server. Use the JDK (java.net.http) transport instead, which
+        // has no further dependencies.
+        def excludeUnusedK8sModels = { dep ->
             [
                 'admissionregistration', 'coordination', 'discovery', 'events',
                 'flowcontrol', 'gatewayapi', 'metrics', 'networking', 'node', 'policy',
                 'rbac', 'resource', 'scheduling', 'storageclass'
             ].each { apiGroup ->
-                exclude group: 'io.fabric8', module: "kubernetes-model-$apiGroup"
+                dep.exclude group: 'io.fabric8', module: "kubernetes-model-$apiGroup"
             }
+        }
+        api('io.fabric8:kubernetes-client:7.9.0') {
+            excludeUnusedK8sModels(it)
+            exclude group: 'io.fabric8', module: 'kubernetes-httpclient-vertx'
+        }
+        // depends on kubernetes-client-api, so it needs the same model exclusions
+        api('io.fabric8:kubernetes-httpclient-jdk:7.9.0') {
+            excludeUnusedK8sModels(it)
         }
 
         api 'com.github.spotbugs:spotbugs-annotations:4.10.4'
