@@ -3,7 +3,6 @@ package com.linbit.linstor.core.apicallhandler.controller.helpers;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -105,7 +104,7 @@ public class ResourceCreateCheck
                 }
             }
         }
-        List<DeviceLayerKind> unsupportedLayers = CtrlRscCrtApiHelper.getUnsupportedLayers(rsc);
+        List<DeviceLayerKind> unsupportedLayers = LayerUtils.getUnsupportedLayers(rsc);
         if (!unsupportedLayers.isEmpty())
         {
             throw new ApiRcException(

@@ -64,8 +64,6 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.StringUtils;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -85,6 +83,8 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
 
 /**
  * Adds disks to a diskless resource or removes disks to make a resource diskless.
@@ -991,7 +991,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
      */
     private void validateLayerSupport(Resource rsc)
     {
-        List<DeviceLayerKind> unsupportedLayers = CtrlRscCrtApiHelper.getUnsupportedLayers(rsc);
+        List<DeviceLayerKind> unsupportedLayers = LayerUtils.getUnsupportedLayers(rsc);
         if (!unsupportedLayers.isEmpty())
         {
             throw new ApiRcException(

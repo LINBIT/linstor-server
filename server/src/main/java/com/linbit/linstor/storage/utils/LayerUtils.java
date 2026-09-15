@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -269,6 +270,21 @@ public class LayerUtils
             layerData = layerData.getChildBySuffix("");
         }
         return ret;
+    }
+
+    public static List<DeviceLayerKind> getUnsupportedLayers(Resource rsc)
+    {
+        List<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
+            rsc.getLayerData()
+        );
+        usedDeviceLayerKinds.removeAll(
+            rsc.getNode()
+                .getPeer()
+                .getExtToolsManager()
+                .getSupportedLayers()
+        );
+
+        return usedDeviceLayerKinds;
     }
 
     private LayerUtils()

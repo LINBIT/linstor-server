@@ -1324,20 +1324,6 @@ public class CtrlRscCrtApiHelper
         return rsc;
     }
 
-    public static List<DeviceLayerKind> getUnsupportedLayers(Resource rsc)
-    {
-        List<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
-            rsc.getLayerData()
-        );
-        usedDeviceLayerKinds.removeAll(
-            rsc.getNode()
-                .getPeer()
-                .getExtToolsManager().getSupportedLayers()
-        );
-
-        return usedDeviceLayerKinds;
-    }
-
     static void ensureLayerStackIsAllowed(List<DeviceLayerKind> layerStackRef)
     {
         if (!LayerUtils.isLayerKindStackAllowed(layerStackRef))
