@@ -15,9 +15,9 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -96,7 +96,7 @@ public class RscDrbdLayerHelper extends
 {
     private static final short DFLT_RESERVERD_PEER_SLOT_COUNT = (short) 1;
 
-    private final ReadOnlyProps stltConf;
+    private final CtrlPropsHelper ctrlPropsHelper;
     private final ResourceDefinitionRepository rscDfnMap;
     private final ModularCryptoProvider cryptoProvider;
 
@@ -104,12 +104,13 @@ public class RscDrbdLayerHelper extends
     private final RemoteMap remoteMap;
     private final CtrlRscLayerDataMerger ctrlRscLayerDataMerger;
 
+
     @Inject
     RscDrbdLayerHelper(
         ErrorReporter errorReporter,
         ResourceDefinitionRepository rscDfnMapRef,
         LayerDataFactory layerDataFactory,
-        @Named(LinStor.SATELLITE_PROPS) ReadOnlyProps stltConfRef,
+        CtrlPropsHelper ctrlPropsHelperRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPool,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
@@ -130,7 +131,7 @@ public class RscDrbdLayerHelper extends
             rscLayerDataFactory
         );
         rscDfnMap = rscDfnMapRef;
-        stltConf = stltConfRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
         nvmeHelperProvider = nvmeHelperProviderRef;
         cryptoProvider = cryptoProviderRef;
         remoteMap = remoteMapRef;
@@ -360,7 +361,9 @@ public class RscDrbdLayerHelper extends
                 Set<String> availabilityZones = new HashSet<>();
                 for (StorPool sp : allStorPools)
                 {
-                    availabilityZones.add(RscStorageLayerHelper.getAvailabilityZone(remoteMap, sp));
+                    availabilityZones.add(
+                        RscStorageLayerHelper.getAvailabilityZone(remoteMap, sp, ctrlPropsHelper.getCtrlPropsForView())
+                    );
                 }
                 if (availabilityZones.size() != 1)
                 {
@@ -374,7 +377,8 @@ public class RscDrbdLayerHelper extends
                     remoteMap,
                     rscRef.getResourceDefinition(),
                     availabilityZones.iterator().next(),
-                    rscRef.getNode().getName().displayValue
+                    rscRef.getNode().getName().displayValue,
+                    ctrlPropsHelper.getCtrlPropsForView()
                 );
             }
             else
@@ -828,7 +832,7 @@ public class RscDrbdLayerHelper extends
         {
             changed = addIgnoreReason(rscDataRef, LayerIgnoreReason.DRBD_DISKLESS, false, true, true);
         }
-        if (rscDataRef.isSkipDiskEnabled(stltConf))
+        if (rscDataRef.isSkipDiskEnabled(ctrlPropsHelper.getStltPropsForView()))
         {
             changed |= addIgnoreReason(rscDataRef, LayerIgnoreReason.DRBD_SKIP_DISK, false, true, true);
         }
@@ -1058,7 +1062,7 @@ public class RscDrbdLayerHelper extends
                 String peerSlotsNewResourceProp = new PriorityProps(
                     rscDfn.getProps(),
                     rscDfn.getResourceGroup().getProps(),
-                    stltConf
+                    ctrlPropsHelper.getStltPropsForView()
                 ).getProp(ApiConsts.KEY_PEER_SLOTS_NEW_RESOURCE);
                 peerSlots = peerSlotsNewResourceProp == null ?
                     InternalApiConsts.DEFAULT_PEER_SLOTS :

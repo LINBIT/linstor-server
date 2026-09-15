@@ -14,8 +14,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
@@ -25,14 +25,13 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.remotes.AbsRemote;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.AbsLayerHelperUtils;
 import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
+import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -77,6 +76,7 @@ public class RscStorageLayerHelper extends
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
     private final CtrlSecurityObjects secObjs;
     private final RemoteMap remoteMap;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     RscStorageLayerHelper(
@@ -86,7 +86,8 @@ public class RscStorageLayerHelper extends
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
         CtrlSecurityObjects secObjsRef,
-        RemoteMap remoteMapRef
+        RemoteMap remoteMapRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -103,6 +104,7 @@ public class RscStorageLayerHelper extends
         storPoolResolveHelper = storPoolResolveHelperRef;
         secObjs = secObjsRef;
         remoteMap = remoteMapRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     @Override
@@ -302,7 +304,8 @@ public class RscStorageLayerHelper extends
                         remoteMap,
                         rscData,
                         vlm,
-                        storPool
+                        storPool,
+                        ctrlPropsHelper.getCtrlPropsForView()
                     );
 
                     String unusedTargetEbsVlmId = unusedTargetEbsPair.objA;
@@ -381,15 +384,14 @@ public class RscStorageLayerHelper extends
      * in the given availabilityZone and has either the "connectedInitiator" property not set or set to the optional
      * nodeName parameter.
      *
-     *
      * @return A target resource if one exists
-     *
      */
     public static @Nullable Resource findTargetEbsResource(
         RemoteMap remoteMap,
         ResourceDefinition rscDfn,
         String availabilityZone,
-        @Nullable String nodeName
+        @Nullable String nodeName,
+        ReadOnlyProps ctrlPropsRef
     )
     {
         Resource ret = null;
@@ -408,7 +410,7 @@ public class RscStorageLayerHelper extends
                     );
                 }
                 StorPool ebsStorPool = targetNode.iterateStorPools().next();
-                String ebsStorPoolAZ = getAvailabilityZone(remoteMap, ebsStorPool);
+                String ebsStorPoolAZ = getAvailabilityZone(remoteMap, ebsStorPool, ctrlPropsRef);
 
                 if (ebsStorPoolAZ.equals(availabilityZone))
                 {
@@ -429,48 +431,18 @@ public class RscStorageLayerHelper extends
         return ret;
     }
 
-    public static String getAvailabilityZone(RemoteMap remoteMap, StorPool ebsStorPool)
+    public static String getAvailabilityZone(RemoteMap remoteMap, StorPool ebsStorPool, ReadOnlyProps ctrlPropsRef)
         throws ImplementationError
     {
-        return getEbsRemote(remoteMap, ebsStorPool).getAvailabilityZone();
-    }
-
-    public static EbsRemote getEbsRemote(RemoteMap remoteMap, StorPool ebsStorPool)
-        throws ImplementationError
-    {
-        AbsRemote remote;
-        try
-        {
-            remote = remoteMap.get(
-                new RemoteName(
-                    ebsStorPool.getProps().getProp(
-                        ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.NAMESPC_EBS + "/" +
-                            ApiConsts.KEY_REMOTE
-                    ),
-                    true
-                )
-            );
-        }
-        catch (InvalidKeyException | InvalidNameException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        if (!(remote instanceof EbsRemote ebsRemote))
-        {
-            throw new ImplementationError(
-                "Remote was unexpectedly not an EBS remote, but: " + (remote == null ?
-                    "null" :
-                    remote.getClass().getSimpleName())
-            );
-        }
-        return ebsRemote;
+        return EbsUtils.getEbsRemote(remoteMap, ebsStorPool, ctrlPropsRef).getAvailabilityZone();
     }
 
     private static PairNonNull<String, Resource> findUnusedTargetEbsPair(
         RemoteMap remoteMap,
         StorageRscData<Resource> rscDataRef,
         Volume vlmRef,
-        StorPool storPool
+        StorPool storPool,
+        ReadOnlyProps ctrlPropRef
     )
         throws DatabaseException
     {
@@ -486,8 +458,9 @@ public class RscStorageLayerHelper extends
             Resource targetRsc = findTargetEbsResource(
                 remoteMap,
                 vlmRef.getResourceDefinition(),
-                getAvailabilityZone(remoteMap, storPool),
-                vlmRef.getAbsResource().getNode().getName().displayValue
+                getAvailabilityZone(remoteMap, storPool, ctrlPropRef),
+                vlmRef.getAbsResource().getNode().getName().displayValue,
+                ctrlPropRef
             );
 
             if (targetRsc == null)
@@ -517,7 +490,7 @@ public class RscStorageLayerHelper extends
                  * the passphrase is entered. Without them the target satellite cannot talk to AWS at all, so the
                  * volume-id will never show up.
                  */
-                if (getEbsRemote(remoteMap, storPool).getDecryptedAccessKey() == null)
+                if (EbsUtils.getEbsRemote(remoteMap, storPool, ctrlPropRef).getDecryptedAccessKey() == null)
                 {
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(

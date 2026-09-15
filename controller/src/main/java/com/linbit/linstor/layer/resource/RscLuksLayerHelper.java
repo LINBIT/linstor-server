@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SharedResourceManager;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -73,6 +74,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
 
     private final RemoteMap remoteMap;
 
+    private final CtrlPropsHelper ctrlPropsHelper;
+
     @Inject
     RscLuksLayerHelper(
         ErrorReporter errorReporterRef,
@@ -84,7 +87,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
         SharedResourceManager sharedRscMgrRef,
         EncryptionHelper encryptionHelperRef,
-        RemoteMap remoteMapRef
+        RemoteMap remoteMapRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -104,6 +108,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         sharedRscMgr = sharedRscMgrRef;
         encryptionHelper = encryptionHelperRef;
         remoteMap = remoteMapRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     @Override
@@ -220,7 +225,9 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
                 Set<String> availabilityZones = new HashSet<>();
                 for (StorPool sp : allStorPools)
                 {
-                    availabilityZones.add(RscStorageLayerHelper.getAvailabilityZone(remoteMap, sp));
+                    availabilityZones.add(
+                        RscStorageLayerHelper.getAvailabilityZone(remoteMap, sp, ctrlPropsHelper.getCtrlPropsForView())
+                    );
                 }
                 if (availabilityZones.size() != 1)
                 {
@@ -234,7 +241,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
                     remoteMap,
                     rsc.getResourceDefinition(),
                     availabilityZones.iterator().next(),
-                    rsc.getNode().getName().displayValue
+                    rsc.getNode().getName().displayValue,
+                    ctrlPropsHelper.getCtrlPropsForView()
                 );
             }
             else

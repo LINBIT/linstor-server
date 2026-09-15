@@ -90,6 +90,7 @@ public class CtrlRscMakeAvailableApiCallHandler
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
     private final RemoteMap remoteMap;
     private final CtrlRscLiveMigrateHelper liveMigrateHelper;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     public CtrlRscMakeAvailableApiCallHandler(
@@ -108,7 +109,8 @@ public class CtrlRscMakeAvailableApiCallHandler
         CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
         RemoteMap remoteMapRef,
-        CtrlRscLiveMigrateHelper liveMigrateHelperRef
+        CtrlRscLiveMigrateHelper liveMigrateHelperRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -127,6 +129,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
         remoteMap = remoteMapRef;
         liveMigrateHelper = liveMigrateHelperRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     /**
@@ -921,12 +924,17 @@ public class CtrlRscMakeAvailableApiCallHandler
                             StorPool sp = spIt.next();
                             if (sp.getDeviceProviderKind().equals(DeviceProviderKind.EBS_INIT))
                             {
-                                String az = RscStorageLayerHelper.getAvailabilityZone(remoteMap, sp);
+                                String az = RscStorageLayerHelper.getAvailabilityZone(
+                                    remoteMap,
+                                    sp,
+                                    ctrlPropsHelper.getCtrlPropsForView()
+                                );
                                 Resource targetEbsResource = RscStorageLayerHelper.findTargetEbsResource(
                                     remoteMap,
                                     rscDfn,
                                     az,
-                                    nodeName
+                                    nodeName,
+                                    ctrlPropsHelper.getCtrlPropsForView()
                                 );
                                 hasEbsTargetWithoutInit = targetEbsResource != null;
                             }
