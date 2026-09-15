@@ -2,7 +2,7 @@ spec:
   inputs:
     virter_version:
       type: string
-      default: v1.2.1
+      default: v1.4.0
       description: virter version to use
     vmshed_version:
       type: string
