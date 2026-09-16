@@ -868,10 +868,33 @@ public class CtrlRscMakeAvailableApiCallHandler
         AutoSelectFilterPojo autoSelect = null;
         long rscFlags = 0;
         boolean disklessForErrorMsg = false;
+        /*
+         * Only a DRBD diskless resource created by make-available is a DRBD client (a diskless peer without quorum
+         * vote). NVMe and EBS initiators have no local disk either, but they attach the target's disk and are the
+         * diskful DRBD peers of the resource, so they must not be turned into clients (GitHub issue #513).
+         */
+        boolean drbdClient = false;
 
         if (layerStack.contains(DeviceLayerKind.DRBD))
         {
-            if (!diskfulRef && hasDrbdDiskfulPeer(rscDfn))
+            Node node = dataLoader.loadNode(nodeNameRef);
+            if (hasEbsTargetWithoutInitiatorInNodesAz(node, rscDfn))
+            {
+                /*
+                 * EBS: every availability zone gets exactly one initiator, which is the DRBD diskful peer of that
+                 * zone. This rule comes before the "diskful peer already exists" check on purpose: the initiator of a
+                 * second zone must be created although the first zone's initiator already is a diskful peer.
+                 */
+                errorReporter.logTrace("Searching EBS initiator storage pool for DRBD over EBS resource");
+                autoSelect = createAutoSelectConfig(
+                    nodeNameRef,
+                    layerStack,
+                    Resource.Flags.EBS_INITIATOR
+                );
+                rscFlags = Resource.Flags.EBS_INITIATOR.flagValue;
+                disklessForErrorMsg = true;
+            }
+            else if (!diskfulRef && hasDrbdDiskfulPeer(rscDfn))
             {
                 errorReporter.logTrace("Searching diskless storage pool for DRBD resource");
                 // we can create a DRBD diskless resource
@@ -883,86 +906,36 @@ public class CtrlRscMakeAvailableApiCallHandler
 
                 rscFlags = Resource.Flags.DRBD_DISKLESS.flagValue;
                 disklessForErrorMsg = true;
+                drbdClient = true;
             }
-            else
+            else if (layerStack.contains(DeviceLayerKind.NVME))
             {
                 /*
                  * No diskful peer (or forced diskful). "make resource available" is interpreted in this case as
-                 * creating the first diskful resource. However, this might still mean that other layers like NVMe are
-                 * involved
+                 * creating the first diskful resource, which for NVMe means connecting to the target as initiator.
                  */
-                if (layerStack.contains(DeviceLayerKind.NVME))
+                if (hasNvmeTarget(rscDfn))
                 {
-                    if (hasNvmeTarget(rscDfn))
-                    {
-                        errorReporter.logTrace(
-                            "Searching diskless storage pool for DRBD over NVME (initiator) resource"
-                        );
-                        // we want to connect as initiator
-                        autoSelect = createAutoSelectConfig(
-                            nodeNameRef,
-                            layerStack,
-                            Resource.Flags.NVME_INITIATOR
-                        );
-                        rscFlags = Resource.Flags.NVME_INITIATOR.flagValue;
-                        disklessForErrorMsg = true;
-                    }
+                    errorReporter.logTrace(
+                        "Searching diskless storage pool for DRBD over NVME (initiator) resource"
+                    );
+                    // we want to connect as initiator
+                    autoSelect = createAutoSelectConfig(
+                        nodeNameRef,
+                        layerStack,
+                        Resource.Flags.NVME_INITIATOR
+                    );
+                    rscFlags = Resource.Flags.NVME_INITIATOR.flagValue;
+                    disklessForErrorMsg = true;
                 }
-                else
-                {
-                    Node node = dataLoader.loadNode(nodeNameRef);
-                    boolean isEbsInitSupported;
-                    boolean hasEbsTargetWithoutInit = false;
-                    isEbsInitSupported = node.getPeer().getExtToolsManager()
-                        .isProviderSupported(DeviceProviderKind.EBS_INIT);
-                    if (isEbsInitSupported)
-                    {
-                        String nodeName = node.getName().displayValue;
-                        Iterator<StorPool> spIt = node.iterateStorPools();
-                        while (spIt.hasNext() && !hasEbsTargetWithoutInit)
-                        {
-                            StorPool sp = spIt.next();
-                            if (sp.getDeviceProviderKind().equals(DeviceProviderKind.EBS_INIT))
-                            {
-                                String az = RscStorageLayerHelper.getAvailabilityZone(
-                                    remoteMap,
-                                    sp,
-                                    ctrlPropsHelper.getCtrlPropsForView()
-                                );
-                                Resource targetEbsResource = RscStorageLayerHelper.findTargetEbsResource(
-                                    remoteMap,
-                                    rscDfn,
-                                    az,
-                                    nodeName,
-                                    ctrlPropsHelper.getCtrlPropsForView()
-                                );
-                                hasEbsTargetWithoutInit = targetEbsResource != null;
-                            }
-                        }
-                    }
-                    if (hasEbsTargetWithoutInit)
-                    {
-                        errorReporter.logTrace(
-                            "Searching diskless storage pool for DRBD over EBS (initiator) resource"
-                        );
-                        // we want to connect as initiator
-                        autoSelect = createAutoSelectConfig(
-                            nodeNameRef,
-                            layerStack,
-                            Resource.Flags.EBS_INITIATOR
-                        );
-                        rscFlags = Resource.Flags.EBS_INITIATOR.flagValue;
-                        disklessForErrorMsg = true;
-                    }
-                    else
-                    {
-                        errorReporter.logTrace("Searching diskful storage pool for DRBD resource");
-                        // default diskful DRBD setup with the given layers
-                        autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
-                        rscFlags = 0;
-                        disklessForErrorMsg = false;
-                    }
-                }
+            }
+            else
+            {
+                errorReporter.logTrace("Searching diskful storage pool for DRBD resource");
+                // No diskful peer (or forced diskful): default diskful DRBD setup with the given layers
+                autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
+                rscFlags = 0;
+                disklessForErrorMsg = false;
             }
         }
 
@@ -1018,9 +991,7 @@ public class CtrlRscMakeAvailableApiCallHandler
             null,
             autoSelect.getDrbdPortCount(),
             drbdTcpPortsRef,
-            // rscs via make-available are always treated as drbd-clients (unless the given SP is diskful, but that is
-            // handled in the createResource ACH)
-            true
+            drbdClient
         );
         ctrlTransactionHelper.commit();
         return ctrlRscCrtApiCallHandler.createResource(
@@ -1036,6 +1007,42 @@ public class CtrlRscMakeAvailableApiCallHandler
     {
         boolean ret;
         ret = !ResourceUtils.filterResourcesDrbdDiskfulActive(rscDfnRef).isEmpty();
+        return ret;
+    }
+
+    /**
+     * Returns whether the given node has an EBS initiator storage pool whose availability zone still has an EBS
+     * target resource of the given resource definition that no initiator has claimed yet (or that is already
+     * claimed by this very node).
+     */
+    private boolean hasEbsTargetWithoutInitiatorInNodesAz(Node node, ResourceDefinition rscDfnRef)
+    {
+        boolean ret = false;
+        if (node.getPeer().getExtToolsManager().isProviderSupported(DeviceProviderKind.EBS_INIT))
+        {
+            String nodeName = node.getName().displayValue;
+            Iterator<StorPool> spIt = node.iterateStorPools();
+            while (spIt.hasNext() && !ret)
+            {
+                StorPool sp = spIt.next();
+                if (sp.getDeviceProviderKind().equals(DeviceProviderKind.EBS_INIT))
+                {
+                    String az = RscStorageLayerHelper.getAvailabilityZone(
+                        remoteMap,
+                        sp,
+                        ctrlPropsHelper.getCtrlPropsForView()
+                    );
+                    Resource targetEbsResource = RscStorageLayerHelper.findTargetEbsResource(
+                        remoteMap,
+                        rscDfnRef,
+                        az,
+                        nodeName,
+                        ctrlPropsHelper.getCtrlPropsForView()
+                    );
+                    ret = targetEbsResource != null;
+                }
+            }
+        }
         return ret;
     }
 

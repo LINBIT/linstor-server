@@ -57,6 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   permission errors due to the controller running as DynamicUser (GitHub issue #511, supersedes GitHub PR #512)
 - Fixed EBS resources never becoming UpToDate because EBS targets were chosen as the UpToDate winner. Now only
   resources that have a backing disk for DRBD can be chosen (GitHub issue #515, supersedes GitHub PR #519)
+- Fixed mk-avail creating EBS initiator resources as DRBD-client. EBS- and NVMe-initiators are now treated as diskful
+  DRBD peers, even if the resources have no "local" disk (GitHub issue #513, supersedes GitHub PR #514)
 
 ## [1.35.2] - 2026-09-14
 
