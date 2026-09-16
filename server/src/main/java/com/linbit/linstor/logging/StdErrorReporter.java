@@ -13,7 +13,6 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.TimeUtils;
 
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -254,7 +253,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         Level logLevel,
         LinStorException errorInfo,
         @Nullable Peer client,
-        String contextInfo
+        @Nullable String contextInfo
     )
     {
         return reportImpl(logLevel, errorInfo, client, contextInfo, false);

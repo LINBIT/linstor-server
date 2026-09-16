@@ -113,7 +113,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
         Level logLevel,
         LinStorException errorInfo,
         @Nullable Peer client,
-        String contextInfo
+        @Nullable String contextInfo
     )
     {
         return reportImpl(errorInfo, client, contextInfo, false);

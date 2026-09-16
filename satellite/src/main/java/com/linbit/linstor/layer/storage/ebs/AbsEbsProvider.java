@@ -104,6 +104,12 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
 
     protected static final HashSet<String> LINSTOR_TAGS = new HashSet<>();
     protected static final String TAG_KEY_LINSTOR_ID = "LinstorID";
+    /**
+     * UUID of the LINSTOR SnapshotVolume an EBS snapshot was created for. Unlike {@link #TAG_KEY_LINSTOR_ID}, which is
+     * built from names, this value is never reused: a snapshot that is deleted and later re-created under the same
+     * name gets a new UUID, so an orphaned AWS snapshot of the old one can never be mistaken for the new one.
+     */
+    protected static final String TAG_KEY_LINSTOR_SNAP_VLM_UUID = "LinstorSnapVlmUuid";
 
     protected static final int WAIT_AFTER_RESIZE_COUNT = 300;
     protected static final long WAIT_AFTER_RESIZE_TIMEOUT_IN_MS = 100;
@@ -117,6 +123,7 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     static
     {
         LINSTOR_TAGS.add(TAG_KEY_LINSTOR_ID);
+        LINSTOR_TAGS.add(TAG_KEY_LINSTOR_SNAP_VLM_UUID);
     }
 
     private final Map<EbsRemote, AmazonEC2> amazonEc2ClientLUT;

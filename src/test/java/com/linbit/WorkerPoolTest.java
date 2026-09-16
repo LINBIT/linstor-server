@@ -273,8 +273,8 @@ public class WorkerPoolTest
         public String reportProblem(
             Level logLevel,
             LinStorException errorInfo,
-            Peer client,
-            String contextInfo
+            @Nullable Peer client,
+            @Nullable String contextInfo
         )
         {
             unexpected.add(errorInfo);

@@ -36,9 +36,12 @@ import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.CreateSnapshotRequest;
@@ -53,19 +56,29 @@ import com.amazonaws.services.ec2.model.DescribeSnapshotsRequest;
 import com.amazonaws.services.ec2.model.DescribeSnapshotsResult;
 import com.amazonaws.services.ec2.model.DescribeVolumesRequest;
 import com.amazonaws.services.ec2.model.DescribeVolumesResult;
+import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.ModifyVolumeRequest;
 import com.amazonaws.services.ec2.model.ResourceType;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.TagSpecification;
+import org.slf4j.event.Level;
 
 @Singleton
 public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2.model.Volume>
 {
+    /** AWS accepts at most 200 filter values in one Describe* request. */
+    private static final int MAX_FILTER_VALUES_PER_REQUEST = 200;
+
+    private final Set<String> reportedLeftBehindSnapshots;
+    private final Set<String> reportedDeletedSnapshots;
+
     @Inject
     public EbsTargetProvider(AbsEbsProviderIniit superInitRef)
     {
         super(superInitRef, "EBS-Target", DeviceProviderKind.EBS_TARGET);
         isDevPathExpectedToBeNull = true;
+        reportedLeftBehindSnapshots = new HashSet<>();
+        reportedDeletedSnapshots = new HashSet<>();
     }
 
     // @Override
@@ -97,7 +110,8 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     {
         final List<EbsData<?>> combinedList = new ArrayList<>();
         combinedList.addAll(vlmDataListRef);
-        // no snapshots (for now)
+
+        refreshUnknownSnapshots(snapVlmsRef);
 
         for (EbsData<?> vlmData : combinedList)
         {
@@ -350,30 +364,316 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     protected boolean snapshotExists(EbsData<Snapshot> snapVlmRef, boolean ignoredForTakeSnapshorRef)
         throws StorageException, DatabaseException
     {
-        boolean snapshotExists = false;
+        AmazonEC2 client = getClient(getEbsRemote(snapVlmRef.getStorPool()));
+        String linstorSnapId = asSnapLvIdentifier(snapVlmRef);
 
-        EbsRemote remote = getEbsRemote(snapVlmRef.getStorPool());
-        AmazonEC2 client = getClient(remote);
-        String ebsSnapId = getEbsSnapId(snapVlmRef);
+        @Nullable com.amazonaws.services.ec2.model.Snapshot amaSnap;
+        @Nullable String ebsSnapId = getEbsSnapId(snapVlmRef);
         if (ebsSnapId != null)
         {
-            // no need to check if we have no ebsSnapId
-            DescribeSnapshotsResult describeSnapshots = client.describeSnapshots(
-                new DescribeSnapshotsRequest()
-                .withSnapshotIds(ebsSnapId)
+            // a filter instead of withSnapshotIds: the latter throws InvalidSnapshot.NotFound if the snapshot was
+            // deleted in the meantime, the filter simply matches nothing.
+            // The stored id is authoritative, so the UUID tag is not required here (snapshots created before the tag
+            // existed have none)
+            amaSnap = findLinstorSnapshot(
+                client,
+                linstorSnapId,
+                null,
+                new Filter("snapshot-id").withValues(ebsSnapId)
             );
-            String linstorSnapId = asSnapLvIdentifier(snapVlmRef);
-            for (com.amazonaws.services.ec2.model.Snapshot amaSnap : describeSnapshots.getSnapshots())
+        }
+        else
+        {
+            /*
+             * No id stored yet. Besides "not created yet" this is also the state after an attempt that did create
+             * the AWS snapshot but died before the id was stored (timeout while waiting for "pending", satellite
+             * restart, ...). Creating another snapshot in that case leaks the first one and runs into AWS' per-volume
+             * CreateSnapshot rate limit (GitHub issue #507). Every snapshot LINSTOR creates carries its tags from the
+             * very first moment (they are part of the CreateSnapshot request), so look it up by them and adopt it.
+             * The UUID tag is mandatory for adoption: the LinstorID is built from names, and a snapshot deleted and
+             * re-created under the same name must not pick up an orphaned AWS snapshot of its predecessor.
+             */
+            String uuid = snapVlmUuid(snapVlmRef);
+            List<Filter> filters = new ArrayList<>();
+            filters.add(new Filter("tag:" + TAG_KEY_LINSTOR_SNAP_VLM_UUID).withValues(uuid));
+            filters.add(new Filter("tag:" + TAG_KEY_LINSTOR_ID).withValues(linstorSnapId));
+            // the snapshot volume's props are a copy of the source volume's props, including the EBS volume id
+            @Nullable String srcEbsVlmId = getEbsVlmId(snapVlmRef);
+            if (srcEbsVlmId != null)
             {
-                String amaTagLinstorId = getFromTags(amaSnap.getTags(), TAG_KEY_LINSTOR_ID);
-                if (linstorSnapId.equals(amaTagLinstorId))
+                filters.add(new Filter("volume-id").withValues(srcEbsVlmId));
+            }
+            amaSnap = findLinstorSnapshot(client, linstorSnapId, uuid, filters.toArray(new Filter[0]));
+            if (amaSnap != null)
+            {
+                adopt(snapVlmRef, amaSnap, linstorSnapId);
+            }
+        }
+        return amaSnap != null;
+    }
+
+    private static String snapVlmUuid(EbsData<Snapshot> snapVlmRef)
+    {
+        return snapVlmRef.getVolume().getUuid().toString();
+    }
+
+    /**
+     * Refreshes the {@code exists} flag of the given snapshot volumes that are currently marked as not existing.
+     *
+     * <p>Snapshots have no local device to probe and the flag lives in memory only, so after a satellite restart every
+     * snapshot is "unknown" and its deletion would be skipped, leaving the AWS snapshot behind (GitHub issue #507).
+     * Snapshots already known to exist are not re-checked: {@link #createSnapshot} and {@link #deleteSnapshotImpl}
+     * keep the flag up to date, so in steady state this method sends no request at all. The unknown ones are
+     * resolved with at most two paged DescribeSnapshots requests per remote (one by stored id, one by the
+     * snapshot-volume UUID tag), so the cost after a restart does not grow with the number of snapshots.</p>
+     *
+     * <p>Snapshots that have the {@link Snapshot#getTakeSnapshot()} set are skipped by this method since we know that
+     * either we have not yet created that snapshot or have just created it. In both situations the current state of
+     * exists is expected, so we can skip querying AWS for this snapshot</p>
+     */
+    private void refreshUnknownSnapshots(List<EbsData<Snapshot>> snapVlmsRef)
+        throws StorageException, DatabaseException
+    {
+        Map<EbsRemote, List<EbsData<Snapshot>>> unknownByRemote = new HashMap<>();
+        for (EbsData<Snapshot> snapVlm : snapVlmsRef)
+        {
+            // we also exclude snapshots with set "takeSnapshot" boolean since we know that snapshot does not exist on
+            // AWS - we can skip asking AWS for that
+            if (!snapVlm.exists() && !snapVlm.getVolume().getAbsResource().getTakeSnapshot())
+            {
+                unknownByRemote.computeIfAbsent(getEbsRemote(snapVlm.getStorPool()), ignored -> new ArrayList<>())
+                    .add(snapVlm);
+            }
+        }
+
+        for (Map.Entry<EbsRemote, List<EbsData<Snapshot>>> entry : unknownByRemote.entrySet())
+        {
+            AmazonEC2 client = getClient(entry.getKey());
+
+            Map<String, EbsData<Snapshot>> byEbsSnapId = new HashMap<>();
+            Map<String, EbsData<Snapshot>> byUuid = new HashMap<>();
+            for (EbsData<Snapshot> snapVlm : entry.getValue())
+            {
+                @Nullable String ebsSnapId = getEbsSnapId(snapVlm);
+                if (ebsSnapId != null)
                 {
-                    snapshotExists = true;
-                    break;
+                    byEbsSnapId.put(ebsSnapId, snapVlm);
+                }
+                else
+                {
+                    byUuid.put(snapVlmUuid(snapVlm), snapVlm);
+                }
+            }
+
+            for (List<String> ids : chunk(byEbsSnapId.keySet()))
+            {
+                List<com.amazonaws.services.ec2.model.Snapshot> amaSnaps = describeOwnSnapshots(
+                    client,
+                    new Filter("snapshot-id").withValues(ids)
+                );
+                for (String ebsSnapId : ids)
+                {
+                    EbsData<Snapshot> snapVlm = byEbsSnapId.get(ebsSnapId);
+                    snapVlm.setExists(pickLinstorSnapshot(amaSnaps, asSnapLvIdentifier(snapVlm), null) != null);
+                }
+            }
+            for (List<String> uuids : chunk(byUuid.keySet()))
+            {
+                List<com.amazonaws.services.ec2.model.Snapshot> amaSnaps = describeOwnSnapshots(
+                    client,
+                    new Filter("tag:" + TAG_KEY_LINSTOR_SNAP_VLM_UUID).withValues(uuids)
+                );
+                for (String uuid : uuids)
+                {
+                    EbsData<Snapshot> snapVlm = byUuid.get(uuid);
+                    String linstorSnapId = asSnapLvIdentifier(snapVlm);
+                    @Nullable com.amazonaws.services.ec2.model.Snapshot amaSnap = pickLinstorSnapshot(
+                        amaSnaps,
+                        linstorSnapId,
+                        uuid
+                    );
+                    if (amaSnap != null)
+                    {
+                        adopt(snapVlm, amaSnap, linstorSnapId);
+                    }
+                    snapVlm.setExists(amaSnap != null);
                 }
             }
         }
-        return snapshotExists;
+    }
+
+    private void adopt(
+        EbsData<Snapshot> snapVlmRef,
+        com.amazonaws.services.ec2.model.Snapshot amaSnapRef,
+        String linstorSnapId
+    )
+        throws DatabaseException
+    {
+        errorReporter.logInfo(
+            "Adopting EBS snapshot %s for %s, which was created by an earlier attempt",
+            amaSnapRef.getSnapshotId(),
+            linstorSnapId
+        );
+        setEbsSnapId(snapVlmRef, amaSnapRef.getSnapshotId());
+    }
+
+    /**
+     * Splits the given values into lists of at most {@link #MAX_FILTER_VALUES_PER_REQUEST} entries, the maximum
+     * number of filter values AWS accepts in one Describe* request.
+     */
+    private static List<List<String>> chunk(Collection<String> valuesRef)
+    {
+        List<List<String>> ret = new ArrayList<>();
+        List<String> current = new ArrayList<>();
+        for (String value : valuesRef)
+        {
+            if (current.size() == MAX_FILTER_VALUES_PER_REQUEST)
+            {
+                ret.add(current);
+                current = new ArrayList<>();
+            }
+            current.add(value);
+        }
+        if (!current.isEmpty())
+        {
+            ret.add(current);
+        }
+        return ret;
+    }
+
+    /**
+     * Describes the snapshots matching the given filters and picks ours, see {@link #pickLinstorSnapshot}.
+     */
+    private @Nullable com.amazonaws.services.ec2.model.Snapshot findLinstorSnapshot(
+        AmazonEC2 client,
+        String linstorSnapId,
+        @Nullable String requiredSnapVlmUuid,
+        Filter... filters
+    )
+    {
+        return pickLinstorSnapshot(describeOwnSnapshots(client, filters), linstorSnapId, requiredSnapVlmUuid);
+    }
+
+    /**
+     * Returns the snapshot that carries the given LinstorID tag (and, if {@code requiredSnapVlmUuid} is given, also
+     * the matching snapshot-volume UUID tag) and is not in "error" state, or {@code null} if there is none among the
+     * given snapshots. Further matches are left untouched but reported: with equal tags they are duplicates from
+     * earlier attempts, with a different or missing UUID they belong to a deleted predecessor of the same name.
+     *
+     * @param requiredSnapVlmUuid {@code null} when the caller already identified the snapshot by its stored id;
+     *     required whenever a snapshot is looked up by name (adoption)
+     */
+    private @Nullable com.amazonaws.services.ec2.model.Snapshot pickLinstorSnapshot(
+        List<com.amazonaws.services.ec2.model.Snapshot> amaSnapsRef,
+        String linstorSnapId,
+        @Nullable String requiredSnapVlmUuid
+    )
+    {
+        @Nullable com.amazonaws.services.ec2.model.Snapshot ret = null;
+        List<String> duplicates = new ArrayList<>();
+        List<String> predecessors = new ArrayList<>();
+        for (com.amazonaws.services.ec2.model.Snapshot amaSnap : amaSnapsRef)
+        {
+            if (linstorSnapId.equals(getFromTags(amaSnap.getTags(), TAG_KEY_LINSTOR_ID)))
+            {
+                String description = amaSnap.getSnapshotId() + " (" + amaSnap.getState() + ")";
+                @Nullable String amaUuid = getFromTags(amaSnap.getTags(), TAG_KEY_LINSTOR_SNAP_VLM_UUID);
+                if (requiredSnapVlmUuid != null && !requiredSnapVlmUuid.equals(amaUuid))
+                {
+                    predecessors.add(description);
+                }
+                else
+                {
+                    boolean errorState = EbsUtils.EBS_SNAP_STATE_ERROR.equalsIgnoreCase(amaSnap.getState());
+                    if (ret == null && !errorState)
+                    {
+                        ret = amaSnap;
+                    }
+                    else
+                    {
+                        duplicates.add(description);
+                    }
+                }
+            }
+        }
+        if (!duplicates.isEmpty())
+        {
+            if (reportedLeftBehindSnapshots.add(linstorSnapId))
+            {
+                // report the problem once per stlt restart. visible via "err list"
+                errorReporter.reportProblem(
+                    Level.WARN,
+                    new StorageException(
+                        String.format(
+                            "Ignoring EBS snapshot(s) %s tagged %s=%s.",
+                            duplicates,
+                            TAG_KEY_LINSTOR_ID,
+                            linstorSnapId
+                        ),
+                        null,
+                        "The EBS snapshot(s) were left behind by earlier attempts.",
+                        "Since LINSTOR tracks a different EBS snapshot, the above mentioned EBS snapshots can/should " +
+                            "be deleted manually.",
+                        null
+                    ),
+                    null,
+                    null
+                );
+            }
+        }
+        if (!predecessors.isEmpty())
+        {
+            if (reportedDeletedSnapshots.add(linstorSnapId))
+            {
+                // report the problem once per stlt restart. visible via "err list"
+                errorReporter.reportProblem(
+                    Level.WARN,
+                    new StorageException(
+                        String.format(
+                            "Ignoring EBS snapshot(s) %s tagged %s=%s.",
+                            predecessors,
+                            TAG_KEY_LINSTOR_ID,
+                            linstorSnapId
+                        ),
+                        null,
+                        String.format(
+                            "The ignored snapshot belong to a different (deleted) LINSTOR snapshot of the " +
+                                "same name (tag %s does not match %s)",
+                            TAG_KEY_LINSTOR_SNAP_VLM_UUID,
+                            requiredSnapVlmUuid
+                        ),
+                        "Since this LINSTOR snapshot has no corresponding EBS snapshot, the LINSTOR " +
+                            "snapshot can be deleted safely.",
+                        null
+                    ),
+                    null,
+                    null
+                );
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Describes all snapshots owned by this account that match the given filters, following the pagination.
+     */
+    private List<com.amazonaws.services.ec2.model.Snapshot> describeOwnSnapshots(AmazonEC2 client, Filter... filters)
+    {
+        List<com.amazonaws.services.ec2.model.Snapshot> ret = new ArrayList<>();
+        @Nullable String nextToken = null;
+        do
+        {
+            DescribeSnapshotsResult describeSnapshots = client.describeSnapshots(
+                new DescribeSnapshotsRequest()
+                    .withOwnerIds("self")
+                    .withFilters(filters)
+                    .withNextToken(nextToken)
+            );
+            nextToken = describeSnapshots.getNextToken();
+            ret.addAll(describeSnapshots.getSnapshots());
+        }
+        while (nextToken != null && !nextToken.isEmpty());
+        return ret;
     }
 
     @Override
@@ -387,6 +687,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
 
         ArrayList<Tag> tags = asAmazonTagList(getEbsTags(vlmDataRef));
         tags.add(new Tag(TAG_KEY_LINSTOR_ID, snapLvIdentifier));
+        tags.add(new Tag(TAG_KEY_LINSTOR_SNAP_VLM_UUID, snapVlmUuid(snapVlmRef)));
 
         CreateSnapshotResult createSnapshotResult = client.createSnapshot(
             new CreateSnapshotRequest()
@@ -399,11 +700,13 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
                 )
         );
         String snapshotId = createSnapshotResult.getSnapshot().getSnapshotId();
+        // store the id before waiting: should the wait fail or the satellite die, the next attempt has to find this
+        // snapshot (see snapshotExists) instead of creating a second one
+        setEbsSnapId(snapVlmRef, snapshotId);
 
         EbsProviderUtils.waitUntilSnapshotCreatedOrPending(errorReporter, client, snapshotId);
 
         errorReporter.logTrace("EBS Snapshot created. EBS Snapshot ID: %s", snapshotId);
-        setEbsSnapId(snapVlmRef, snapshotId);
         snapVlmRef.setExists(true);
     }
 
@@ -437,9 +740,20 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         EbsRemote remote = getEbsRemote(snapVlmRef.getStorPool());
         AmazonEC2 client = getClient(remote);
 
-        String ebsSnapId = getEbsSnapId(snapVlmRef);
-        errorReporter.logTrace("Deleting EBS snapshot. EBS Snapshot ID: %s", ebsSnapId);
-        client.deleteSnapshot(new DeleteSnapshotRequest(ebsSnapId));
+        @Nullable String ebsSnapId = getEbsSnapId(snapVlmRef);
+        if (ebsSnapId == null)
+        {
+            // snapshotExists() adopts snapshots by their LinstorID tag, so without an id AWS has no such snapshot
+            errorReporter.logTrace(
+                "No EBS snapshot id stored for %s, nothing to delete in AWS",
+                asSnapLvIdentifier(snapVlmRef)
+            );
+        }
+        else
+        {
+            errorReporter.logTrace("Deleting EBS snapshot. EBS Snapshot ID: %s", ebsSnapId);
+            client.deleteSnapshot(new DeleteSnapshotRequest(ebsSnapId));
+        }
         snapVlmRef.setExists(false);
     }
 

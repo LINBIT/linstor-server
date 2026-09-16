@@ -158,7 +158,7 @@ public interface ErrorReporter
         LinStorException errorInfo,
         @Nullable Peer client,
         // Information about the context in which the problem occurred, e.g., the API call being performed
-        String contextInfo
+        @Nullable String contextInfo
     );
 
     Path getLogDirectory();

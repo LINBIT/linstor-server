@@ -92,8 +92,8 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     public String reportProblem(
         Level logLevel,
         LinStorException errorInfo,
-        Peer client,
-        String contextInfo
+        @Nullable Peer client,
+        @Nullable String contextInfo
     )
     {
         System.err.println("Peer id: " + client);

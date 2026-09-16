@@ -107,8 +107,8 @@ public class EmptyErrorReporter implements ErrorReporter
     public String reportProblem(
         Level logLevel,
         LinStorException errorInfo,
-        Peer client,
-        String contextInfo
+        @Nullable Peer client,
+        @Nullable String contextInfo
     )
     {
         if (printStacktraces)
