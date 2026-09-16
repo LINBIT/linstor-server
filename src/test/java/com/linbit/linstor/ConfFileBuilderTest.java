@@ -103,6 +103,9 @@ public class ConfFileBuilderTest
     private static final LayerStorageRscDatabaseDriver LAYER_STORAGE_RSC_NO_OP_DRIVER;
     private static final LayerStorageVlmDatabaseDriver LAYER_STORAGE_VLM_NO_OP_DRIVER;
 
+    private static final String NAMESPC_PEER_DEVICE = ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS;
+    private static final String KEY_C_MAX_RATE = "c-max-rate";
+
     static
     {
         LAYER_DRBD_RSC_DFN_NO_OP_DRIVER = new SatelliteLayerDrbdRscDfnDbDriver();
@@ -704,6 +707,124 @@ public class ConfFileBuilderTest
 
             assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(2);
         }
+    }
+
+    /*
+     * Peer-device options ("disk" section inside a "connection" block) resolve with the precedence
+     * resource-connection > resource-definition > node-connection > resource-group > controller,
+     * the same chain the "net" section of a connection uses.
+     */
+
+    @Test
+    public void testCtrlPeerDeviceOptionRenderedWithoutRscConn() throws Exception
+    {
+        mockNoRscConn();
+        mockNoNodeConn();
+        stltProps.setProp(KEY_C_MAX_RATE, "614400", NAMESPC_PEER_DEVICE);
+
+        String confFile = buildConfFile();
+
+        assertThat(connectionSection(confFile)).contains("c-max-rate 614400;");
+        assertThat(resourceSection(confFile)).doesNotContain("c-max-rate");
+    }
+
+    /**
+     * Regression test: a resource-connection object without any peer-device option (e.g. left behind by a
+     * live migration) must not hide the controller-level peer-device options.
+     */
+    @Test
+    public void testCtrlPeerDeviceOptionRenderedWithEmptyRscConn() throws Exception
+    {
+        stltProps.setProp(KEY_C_MAX_RATE, "614400", NAMESPC_PEER_DEVICE);
+
+        String confFile = buildConfFile();
+
+        assertThat(connectionSection(confFile)).contains("c-max-rate 614400;");
+        assertThat(resourceSection(confFile)).doesNotContain("c-max-rate");
+    }
+
+    @Test
+    public void testNodeConnPeerDeviceOptionOverridesCtrl() throws Exception
+    {
+        mockNoRscConn();
+        nodeConnProps.setProp(KEY_C_MAX_RATE, "2000", NAMESPC_PEER_DEVICE);
+        stltProps.setProp(KEY_C_MAX_RATE, "614400", NAMESPC_PEER_DEVICE);
+
+        String connSection = connectionSection(buildConfFile());
+
+        assertThat(countOccurrences(connSection, "^ *c-max-rate ")).isEqualTo(1);
+        assertThat(connSection).contains("c-max-rate 2000;");
+        assertThat(connSection).contains("overrides value '614400' from C");
+    }
+
+    @Test
+    public void testRscConnPeerDeviceOptionOverridesNodeConnAndCtrl() throws Exception
+    {
+        rscConnProps.setProp(KEY_C_MAX_RATE, "1000", NAMESPC_PEER_DEVICE);
+        nodeConnProps.setProp(KEY_C_MAX_RATE, "2000", NAMESPC_PEER_DEVICE);
+        stltProps.setProp(KEY_C_MAX_RATE, "614400", NAMESPC_PEER_DEVICE);
+
+        String connSection = connectionSection(buildConfFile());
+
+        assertThat(countOccurrences(connSection, "^ *c-max-rate ")).isEqualTo(1);
+        assertThat(connSection).contains("c-max-rate 1000;");
+        assertThat(connSection).contains("overrides value '2000' from Node connection");
+        assertThat(connSection).contains("overrides value '614400' from C");
+    }
+
+    @Test
+    public void testNoPeerDeviceDiskSectionWithoutPeerDeviceOptions() throws Exception
+    {
+        String connSection = connectionSection(buildConfFile());
+
+        assertThat(countOccurrences(connSection, "^ *disk$")).isEqualTo(0);
+    }
+
+    private String buildConfFile() throws Exception
+    {
+        return new ConfFileBuilder(
+            errorReporter,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps,
+            drbdVersion
+        ).build();
+    }
+
+    private void mockNoRscConn()
+    {
+        when(localRscData.getAbsResource().getAbsResourceConnection(peerRscData.getAbsResource()))
+            .thenReturn(null);
+        when(peerRscData.getAbsResource().getAbsResourceConnection(localRscData.getAbsResource()))
+            .thenReturn(null);
+    }
+
+    private void mockNoNodeConn()
+    {
+        when(localRscData.getAbsResource().getNode().getNodeConnection(peerRscData.getAbsResource().getNode()))
+            .thenReturn(null);
+        when(peerRscData.getAbsResource().getNode().getNodeConnection(localRscData.getAbsResource().getNode()))
+            .thenReturn(null);
+    }
+
+    /** Everything up to the first "connection" block, i.e. the resource-level sections. */
+    private String resourceSection(String confFile)
+    {
+        return confFile.substring(0, connectionSectionStart(confFile));
+    }
+
+    /** The first "connection" block and everything after it. */
+    private String connectionSection(String confFile)
+    {
+        return confFile.substring(connectionSectionStart(confFile));
+    }
+
+    private int connectionSectionStart(String confFile)
+    {
+        int idx = confFile.indexOf("\n    connection\n");
+        assertThat(idx).as("conf file has a connection section:\n%s", confFile).isNotNegative();
+        return idx;
     }
 
     private int countOccurrences(final String str, final String regex)

@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a race between a resource deletion and a concurrent restore or un-delete of the same resource, which made
   the affected satellites shut down (and restart) with a UUID mismatch
+- Satellite: Fixed .res file's 'disk' (drbd-peer-options) section not including controller properties when a
+  resource-connection exists. Now node-connection and controller properties are also included.
 
 ## [1.35.2] - 2026-09-14
 

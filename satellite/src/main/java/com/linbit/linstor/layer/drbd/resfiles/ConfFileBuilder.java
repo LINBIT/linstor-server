@@ -369,68 +369,19 @@ public class ConfFileBuilder
                             }
                         }
 
-                        if (rscConn != null)
+                        if (prioPropsConn.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS))
                         {
-                            ReadOnlyProps rscConnProps = rscConn.getProps();
-
-                            PriorityProps prioRscConnProps = new PriorityProps()
-                                .addProps(
-                                    rscConnProps,
-                                    String.format(
-                                        "Resource connection(%s <-> %s)",
-                                        rscConn.getSourceResource(),
-                                        rscConn.getTargetResource()
-                                    )
-                                )
-                                .addProps(
-                                    rscDfnProps,
-                                    String.format(
-                                        "Resource definition (%s)",
-                                        rscDfn.getName()
-                                    )
-                                )
-                                .addProps(
-                                    rscGrpProps,
-                                    String.format(
-                                        "Resource group (%s)",
-                                        rscGrp.getName()
-                                    )
+                            appendLine("");
+                            appendLine("disk");
+                            try (Section ignore = new Section())
+                            {
+                                appendConflictingDrbdOptions(
+                                    LinStorObject.CTRL,
+                                    ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
+                                    prioPropsConn,
+                                    peerRscAutoRules,
+                                    true
                                 );
-
-                            if (prioRscConnProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS))
-                            {
-                                appendLine("");
-                                appendLine("disk");
-                                try (Section ignore = new Section())
-                                {
-                                    appendConflictingDrbdOptions(
-                                        LinStorObject.CTRL,
-                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
-                                        prioRscConnProps,
-                                        peerRscAutoRules,
-                                        true
-                                    );
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // TODO recheck: we are iterating over peerRscData but are still accessing
-                            // localRscPrioProps?
-                            if (localRscPrioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS))
-                            {
-                                appendLine("");
-                                appendLine("disk");
-                                try (Section ignore = new Section())
-                                {
-                                    appendConflictingDrbdOptions(
-                                        LinStorObject.CTRL,
-                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
-                                        localRscPrioProps,
-                                        peerRscAutoRules,
-                                        false
-                                    );
-                                }
                             }
                         }
 
