@@ -55,6 +55,43 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
      */
     private static final Pattern IGNORED_STDERR_PATTERN = Pattern.compile("^<[0-9]+>");
 
+    /**
+     * What a line that drbdsetup events2 wrote to stderr means for this service.
+     */
+    enum StdErrKind
+    {
+        /** Nothing but whitespace, see {@link #classifyStdErr}. Not even worth a log line. */
+        EMPTY,
+        /** A dbg() line of drbd-utils' libgenl, see {@link #IGNORED_STDERR_PATTERN}. Logged, no restart. */
+        INFO,
+        /** Anything else. Logged as warning and the events2 stream is restarted. */
+        ERROR
+    }
+
+    /**
+     * Classifies a stderr line of drbdsetup events2. Package-private for tests.
+     *
+     * <p>dbg() lines from drbd-utils' libgenl end in "\n" and the macro appends another, producing empty stderr lines
+     * (see drbd-utils, user/shared/libgenl.h, dbg() macro), hence {@link StdErrKind#EMPTY}.</p>
+     */
+    static StdErrKind classifyStdErr(String stdErr)
+    {
+        StdErrKind ret;
+        if (stdErr.isBlank())
+        {
+            ret = StdErrKind.EMPTY;
+        }
+        else if (IGNORED_STDERR_PATTERN.matcher(stdErr).find())
+        {
+            ret = StdErrKind.INFO;
+        }
+        else
+        {
+            ret = StdErrKind.ERROR;
+        }
+        return ret;
+    }
+
     private ServiceName instanceName;
     private boolean started = false;
 
@@ -124,23 +161,19 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                 if (event instanceof StdErrEvent stdErrEvent)
                 {
                     String stdErr = new String(stdErrEvent.data, StandardCharsets.UTF_8);
-                    if (!stdErr.isBlank())
+                    switch (classifyStdErr(stdErr))
                     {
-                        if (IGNORED_STDERR_PATTERN.matcher(stdErr).find())
+                        case EMPTY ->
                         {
-                            errorReporter.logDebug("DRBD 'events2' info/debug (ignored): %n%s", stdErr);
+                            // no content, nothing to react to
                         }
-                        else
+                        case INFO -> errorReporter.logDebug("DRBD 'events2' info/debug (ignored): %n%s", stdErr);
+                        case ERROR ->
                         {
                             errorReporter.logWarning("DRBD 'events2' returned error: %n%s", stdErr);
                             restartEvents2Stream(RESTART_EVENTS2_STREAM_TIMEOUT);
                         }
-                    }
-                    else
-                    {
-                        // dbg() lines from drbd-utils' libgenl end in "\n" and the macro appends
-                        // another, producing empty stderr lines. No content, nothing to react to.
-                        // See drbd-utils, user/shared/libgenl.h, dbg() macro
+                        default -> throw new ImplementationError("Unhandled stderr kind: " + classifyStdErr(stdErr));
                     }
                 }
                 else
