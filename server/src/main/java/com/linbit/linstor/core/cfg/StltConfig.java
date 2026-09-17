@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.cfg;
 
+import com.linbit.Platform;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 
@@ -14,6 +15,9 @@ import com.moandjiezana.toml.Toml;
 
 public class StltConfig extends LinstorConfig
 {
+    public static final String CLIENT_CONF_FILE_NAME = "linstor-client.conf";
+    public static final String DFLT_CLIENT_CONF_FILE = "/run/linstor/" + CLIENT_CONF_FILE_NAME;
+
     private @Nullable String stltOverrideNodeName;
     private boolean remoteSpdk;
     private boolean ebs;
@@ -34,6 +38,11 @@ public class StltConfig extends LinstorConfig
      * External files
      */
     private @Nullable Set<Path> whitelistedExternalFilePaths;
+
+    /*
+     * Where to publish the address of the connected controller for the LINSTOR client. Empty disables the feature.
+     */
+    private @Nullable String clientConfFile;
 
     public StltConfig(String[] argsRef)
     {
@@ -57,6 +66,9 @@ public class StltConfig extends LinstorConfig
         setNetSecureSslProtocol("TLSv1.2");
 
         setExternalFilesWhitelist(Collections.emptySet()); // just to prevent NPE when checking the set with .contains
+
+        // /run is a linux-ism, there is no sensible default on windows
+        setClientConfFile(Platform.isWindows() ? "" : DFLT_CLIENT_CONF_FILE);
     }
 
     @Override
@@ -251,6 +263,19 @@ public class StltConfig extends LinstorConfig
         if (netTypeRef != null)
         {
             netType = netTypeRef;
+        }
+    }
+
+    public @Nullable String getClientConfFile()
+    {
+        return clientConfFile;
+    }
+
+    public void setClientConfFile(@Nullable String clientConfFileRef)
+    {
+        if (clientConfFileRef != null)
+        {
+            clientConfFile = clientConfFileRef;
         }
     }
 

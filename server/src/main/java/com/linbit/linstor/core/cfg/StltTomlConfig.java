@@ -57,14 +57,26 @@ public class StltTomlConfig
         }
     }
 
+    static class Client
+    {
+        private @Nullable String conf_file;
+
+        public void applyTo(StltConfig cfg)
+        {
+            cfg.setClientConfFile(conf_file);
+        }
+    }
+
     private NETCOM netcom = new NETCOM();
     private Logging logging = new Logging();
     private Files files = new Files();
+    private Client client = new Client();
 
     public void applyTo(StltConfig cfg)
     {
         netcom.applyTo(cfg);
         logging.applyTo(cfg);
         files.applyTo(cfg);
+        client.applyTo(cfg);
     }
 }

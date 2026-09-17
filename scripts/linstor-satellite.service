@@ -19,6 +19,10 @@ SuccessExitStatus=0 143 129
 RestartForceExitStatus=70
 User=root
 PrivateTmp=yes
+# /run/linstor holds the controller address published for the linstor client
+RuntimeDirectory=linstor
+# keep the published address around while the satellite restarts
+RuntimeDirectoryPreserve=restart
 
 [Install]
 WantedBy=multi-user.target

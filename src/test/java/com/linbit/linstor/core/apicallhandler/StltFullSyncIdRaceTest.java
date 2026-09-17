@@ -16,6 +16,7 @@ import com.linbit.linstor.core.ApplicationLifecycleManager;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.core.StltClientConfWriter;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitorImpl;
 import com.linbit.linstor.core.cfg.StltConfig;
@@ -171,7 +172,8 @@ public class StltFullSyncIdRaceTest
             mock(BackupShippingMgr.class),
             mock(StltApiCallHandlerUtils.class),
             mock(PlatformStlt.class),
-            mock(StltMigrationHandler.class)
+            mock(StltMigrationHandler.class),
+            mock(StltClientConfWriter.class)
         );
 
         CommonSerializerBuilder serializerBuilder = mock(

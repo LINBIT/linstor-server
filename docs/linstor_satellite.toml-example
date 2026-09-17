@@ -18,3 +18,8 @@
 
 [files]
 #  allowExtFiles = ["/tmp"]  paths that are allow by linstor to create/edit files
+
+[client]
+#  conf_file = "/run/linstor/linstor-client.conf"  where to publish the address of the connected controller
+#                                                  for the linstor client. Defaults to linstor-client.conf in
+#                                                  the runtime directory systemd provides. Set to "" to disable.

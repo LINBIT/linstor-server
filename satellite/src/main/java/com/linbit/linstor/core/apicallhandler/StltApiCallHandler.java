@@ -28,6 +28,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.StltClientConfWriter;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.StltStorPoolApiCallHandler.ChangedData;
@@ -146,6 +147,8 @@ public class StltApiCallHandler
 
     private final PlatformStlt platformStlt;
 
+    private final StltClientConfWriter clientConfWriter;
+
     @Inject
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
@@ -184,7 +187,8 @@ public class StltApiCallHandler
         BackupShippingMgr backupShippingMgrRef,
         StltApiCallHandlerUtils stltApiCallHandlerUtilsRef,
         PlatformStlt platformStltRef,
-        StltMigrationHandler stltMigrationHandlerRef
+        StltMigrationHandler stltMigrationHandlerRef,
+        StltClientConfWriter clientConfWriterRef
     )
     {
         errorReporter = errorReporterRef;
@@ -224,6 +228,7 @@ public class StltApiCallHandler
         stltApiCallHandlerUtils = stltApiCallHandlerUtilsRef;
         platformStlt = platformStltRef;
         stltMigrationHandler = stltMigrationHandlerRef;
+        clientConfWriter = clientConfWriterRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -278,6 +283,7 @@ public class StltApiCallHandler
             throw new ImplementationError(exc);
         }
         errorReporter.logInfo("Controller connected and authenticated (" + controllerPeer.getId() + ")");
+        clientConfWriter.update(controllerPeer);
 
         return authResult;
     }
