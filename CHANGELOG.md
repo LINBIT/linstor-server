@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Satellite: The ErrorReport of a `drbdadm adjust` that fails after a .res file was regenerated now includes the
+  regenerated content, which is otherwise lost when the previous file is restored from its backup
 - Controller: REST stack upgraded to Jersey 4 (Jakarta REST 4.0), HK2 4 and Guice 7; the REST API itself is unchanged
 - Controller: The Kubernetes CRD database backend now uses the JDK HTTP client instead of Vert.x/Netty, removing
   ~6 MB of dependencies (and their CVE exposure) from the distribution

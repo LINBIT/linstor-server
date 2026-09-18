@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.drbd.resfiles;
 import com.linbit.ImplementationError;
 import com.linbit.PlatformStlt;
 import com.linbit.drbd.DrbdVersion;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -32,6 +33,7 @@ public class DrbdResourceFileUtils
 {
     private static final String DRBD_CONFIG_SUFFIX = ".res";
     private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
+    private static final String RESOURCE_SECTION_START = "resource \"";
 
     private final ErrorReporter errorReporter;
     private final WhitelistProps whitelistProps;
@@ -210,6 +212,42 @@ public class DrbdResourceFileUtils
         }
     }
 
+    /**
+     * Returns the content of the current on-disk resource file of the given resource if it differs from the last
+     * known good version in the backup directory (or if no backup exists yet), otherwise {@code null}. Used after a
+     * failed {@code drbdadm adjust} to preserve a freshly regenerated file before it is replaced by its backup.
+     */
+    public @Nullable String readChangedResFileContent(DrbdRscData<Resource> drbdRscDataRef)
+    {
+        Path resFile = asResourceFile(drbdRscDataRef, false, false);
+        Path backupFile = asBackupResourceFile(drbdRscDataRef);
+        @Nullable String content = null;
+        try
+        {
+            String current = readResFile(resFile);
+            // isResFileEqual rejects content without a resource section; a truncated file is worth reporting as is
+            boolean unchanged = Files.exists(backupFile) && current.contains(RESOURCE_SECTION_START) &&
+                isResFileEqual(readResFile(backupFile), current);
+            if (!unchanged)
+            {
+                content = current;
+            }
+        }
+        catch (IOException exc)
+        {
+            errorReporter.logWarning("Could not read the resource file %s: %s", resFile, exc.getMessage());
+        }
+        return content;
+    }
+
+    /**
+     * Returns the path of the on-disk resource file of the given resource.
+     */
+    public Path getResFilePath(DrbdRscData<Resource> drbdRscDataRef)
+    {
+        return asResourceFile(drbdRscDataRef, false, false);
+    }
+
     public boolean doesResFileExist(DrbdRscData<Resource> drbdRscDataRef)
     {
         return Files.exists(asResourceFile(drbdRscDataRef, false, false));
@@ -272,14 +310,14 @@ public class DrbdResourceFileUtils
     static boolean isResFileEqual(String onDiskContent, String newContent)
     {
         boolean equal;
-        int beginNew = newContent.indexOf("resource \"");
+        int beginNew = newContent.indexOf(RESOURCE_SECTION_START);
         if (beginNew < 0)
         {
             // The freshly generated content must always contain a resource section
             throw new ImplementationError("isResFileEqual should only be used for DRBD res files.");
         }
 
-        int beginOnDisk = onDiskContent.indexOf("resource \"");
+        int beginOnDisk = onDiskContent.indexOf(RESOURCE_SECTION_START);
         if (beginOnDisk < 0)
         {
             // The on-disk file is empty, truncated or otherwise corrupt (no resource section).

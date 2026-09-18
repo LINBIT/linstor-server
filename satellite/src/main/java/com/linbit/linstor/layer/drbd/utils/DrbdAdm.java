@@ -38,7 +38,6 @@ import jakarta.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -632,31 +631,6 @@ public class DrbdAdm
     public void waitSyncResource(DrbdRscData<Resource> drbdRscData, int timeout) throws ExtCmdFailedException
     {
         waitForFamily(drbdRscData, timeout, "wait-sync-resource");
-    }
-
-    public void checkResFile(
-        Path tmpResPath,
-        Path resPath
-    )
-        throws ExtCmdFailedException
-    {
-        String tmpResPathStr = tmpResPath.toString();
-        String resPathStr = resPath.toString();
-
-        /* On Windows this is a cygwin path which requires forward slashes. */
-        if (Platform.isWindows())
-        {
-            resPathStr = resPathStr.replace('\\', '/');
-        }
-        execute(
-            DRBDADM_UTIL, "--config-to-test", tmpResPathStr,
-            "--config-to-exclude", resPathStr,
-            "sh-nop"
-        );
-
-        // Using -c disables /etc/drbd.d/global_common.conf
-        // execute(DRBDADM_UTIL, "-c", tmpResPathStr, "-d", "up", resourceName.value);
-        // execute(DRBDADM_UTIL, "-d", "up", resourceName.value);
     }
 
     /**
