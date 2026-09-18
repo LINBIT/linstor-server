@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Satellite: The ErrorReport of a `drbdadm adjust` that fails after a .res file was regenerated now includes the
+  regenerated content, which is otherwise lost when the previous file is restored from its backup
+
 ### Fixed
 
 - Fixed a race between a resource deletion and a concurrent restore or un-delete of the same resource, which made

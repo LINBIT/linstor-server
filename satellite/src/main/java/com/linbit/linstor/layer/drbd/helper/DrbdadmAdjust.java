@@ -76,6 +76,7 @@ public class DrbdadmAdjust
                 {
                     if (restoreResFileOnFailure)
                     {
+                        attachRejectedResFile(exc);
                         drbdResFileUtils.restoreBackupResFile(drbdRscData);
                     }
                     throw exc;
@@ -83,6 +84,31 @@ public class DrbdadmAdjust
             }
         }
         while (retry);
+    }
+
+    /**
+     * Adds the content of a freshly regenerated resource file that {@code drbdadm adjust} just failed on to the given
+     * exception, so that it is part of the ErrorReport. Has to run before the backup is restored, since that
+     * overwrites the file. Nothing is added if the file equals its backup, i.e. was not regenerated for this adjust.
+     */
+    private void attachRejectedResFile(ExtCmdFailedException excRef)
+    {
+        @Nullable String content = drbdResFileUtils.readChangedResFileContent(drbdRscData);
+        if (content != null)
+        {
+            String rscName = drbdRscData.getSuffixedResourceName();
+            excRef.addSuppressed(
+                new StorageException(
+                    "drbdadm adjust failed with a regenerated resource file of resource '" + rscName + "'",
+                    "The DRBD resource file of resource '" + rscName + "' had been regenerated before the failed " +
+                        "drbdadm adjust and was replaced by its last known good version afterwards",
+                    null,
+                    null,
+                    "Content of " + drbdResFileUtils.getResFilePath(drbdRscData) + " at the time of the failure:\n" +
+                        content
+                )
+            );
+        }
     }
 
     private boolean checkRetryOnResizeNotAllowedDuringResync(@Nullable OutputData outputDataRef, int attemptRef)
