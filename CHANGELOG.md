@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Satellite: The ErrorReport of a `drbdadm adjust` that fails after a .res file was regenerated now includes the
   regenerated content, which is otherwise lost when the previous file is restored from its backup
+- SOS report now includes the LVM devices file `/etc/lvm/devices/system.devices`
 
 ### Fixed
 
