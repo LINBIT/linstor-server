@@ -352,7 +352,8 @@ public class StltSosReportApiCallHandler
      * <tr><td>drbd-events2</td><td>'drbdsetup events2 all --now --statistics'</td></tr>
      * <tr><td>modinfo</td><td>'modinfo drbd'</td></tr>
      * <tr><td>proc-drbd</td><td>'cat /proc/drbd'</td></tr>
-     * <tr><td>lvm.conf</td><td>'cat /etc/lvm/lvm.conf'</td></tr>
+     * <tr><td>lvm.conf</td><td>'lvmconfig --type full'</td></tr>
+     * <tr><td>lvm-system.devices</td><td>'cat /etc/lvm/devices/system.devices'</td></tr>
      * <tr><td>linstor_satellite.toml</td><td>'cat $configDir/lisntor_satellite.toml'</td></tr>
      * <tr><td>journalctl</td><td>'journalctl -u linstor-satellite --since $since'</td></tr>
      * <tr><td>ip-a</td><td>'ip a'</td></tr>
@@ -393,6 +394,7 @@ public class StltSosReportApiCallHandler
         reportTypes.add(new SosCommandType("proc-drbd", now, "cat", "/proc/drbd"));
         reportTypes.add(new SosCommandType("proc-sys-kernel-tainted", now, "cat", "/proc/sys/kernel/tainted"));
         reportTypes.add(new SosCommandType("lvm.conf",  now, "lvmconfig", "--type", "full"));
+        reportTypes.add(new SosCommandType("lvm-system.devices", now, "cat", "/etc/lvm/devices/system.devices"));
         reportTypes.add(
             new SosCommandType(
                 LinstorConfig.LINSTOR_STLT_CONFIG,
