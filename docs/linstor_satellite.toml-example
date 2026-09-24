@@ -1,3 +1,8 @@
+## read all *.toml files of this directory after this file, sorted by file name.
+## values of a later file override the ones set before, allowExtFiles is added to.
+## a relative path is resolved against the directory of this file.
+# includeDir = "satellite.d"
+
 [netcom]
   type = "plain"
   bind_address = "0.0.0.0"

@@ -5,10 +5,14 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlTomlConfig;
+import com.linbit.linstor.core.cfg.LinstorConfig;
+import com.linbit.linstor.core.cfg.LinstorEnvParser;
+import com.linbit.linstor.core.cfg.TomlConfigLoader;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
@@ -113,6 +117,10 @@ public class LinstorConfigTool
             DatabaseDriverInfo dbInfo = DatabaseDriverInfo.createDriverInfo(dbtype);
 
             String ctrlToml = """
+                ## read all *.toml files of this directory after this file, sorted by file name.
+                ## values of a later file override the ones set before.
+                # includeDir = "controller.d"
+
                 [db]
                 user = "linstor"
                 password = "linstor"
@@ -550,21 +558,38 @@ public class LinstorConfigTool
     private static PoolingDataSource<PoolableConnection> initConnectionProviderFromCfg(final File tomlFile)
     {
         PoolingDataSource<PoolableConnection> dataSource = null;
+        if (!tomlFile.exists())
+        {
+            // the file is given explicitly, so a path that does not exist is a typo and not an empty configuration
+            System.err.println(String.format("Configuration file '%s' does not exist", tomlFile));
+            System.exit(EXIT_CODE_CONFIG_PARSE_ERROR);
+        }
         try
         {
-            CtrlTomlConfig linstorToml = new Toml().read(tomlFile).to(CtrlTomlConfig.class);
+            // unmodified connection-url. H2 will shutdown automatically
+            @Nullable String connectionUrl = null;
+            @Nullable String user = null;
+            @Nullable String password = null;
+            for (CtrlTomlConfig linstorToml :
+                TomlConfigLoader.loadAll(
+                    tomlFile.toPath(),
+                    CtrlTomlConfig.class,
+                    null,
+                    System.getenv(LinstorEnvParser.LS_INCLUDE_DIRECTORY),
+                    LinstorConfig.LINSTOR_CTRL_INCLUDE_DIR
+                ).configs())
+            {
+                CtrlTomlConfig.DB db = linstorToml.getDB();
+                connectionUrl = db.getConnectionUrl() != null ? db.getConnectionUrl() : connectionUrl;
+                user = db.getUser() != null ? db.getUser() : user;
+                password = db.getPassword() != null ? db.getPassword() : password;
+            }
 
-            dataSource = initConnectionProvider(
-                linstorToml.getDB().getConnectionUrl(), // unmodified connection-url. H2 will shutdown automatically
-                linstorToml.getDB().getUser(),
-                linstorToml.getDB().getPassword()
-            );
+            dataSource = initConnectionProvider(connectionUrl, user, password);
         }
-        catch (IllegalStateException exc)
+        catch (LinStorRuntimeException exc)
         {
-            System.err.println(
-                String.format("Unable to parse configuration file: '%s': %s", tomlFile, exc.getMessage())
-            );
+            System.err.println(String.format("Unable to parse configuration file: %s", exc.getMessage()));
             System.exit(EXIT_CODE_CONFIG_PARSE_ERROR);
         }
         return dataSource;

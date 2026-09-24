@@ -1,17 +1,13 @@
 package com.linbit.linstor.core.cfg;
 
 import com.linbit.Platform;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.moandjiezana.toml.Toml;
 
 public class StltConfig extends LinstorConfig
 {
@@ -65,7 +61,8 @@ public class StltConfig extends LinstorConfig
 
         setNetSecureSslProtocol("TLSv1.2");
 
-        setExternalFilesWhitelist(Collections.emptySet()); // just to prevent NPE when checking the set with .contains
+        // the set is created here because LinstorConfig's constructor runs before this class' field initializers
+        addToExternalFilesWhitelist(Collections.emptySet());
 
         // /run is a linux-ism, there is no sensible default on windows
         setClientConfFile(Platform.isWindows() ? "" : DFLT_CLIENT_CONF_FILE);
@@ -86,20 +83,10 @@ public class StltConfig extends LinstorConfig
     @Override
     protected void applyTomlArgs()
     {
-        Path linstorConfigPath = Paths.get(configDir, LINSTOR_STLT_CONFIG).normalize();
-        if (Files.exists(linstorConfigPath))
+        for (StltTomlConfig linstorToml :
+            loadTomlConfigs(LINSTOR_STLT_CONFIG, LINSTOR_STLT_INCLUDE_DIR, StltTomlConfig.class))
         {
-            System.out.println("Loading configuration file \"" + linstorConfigPath.toString() + "\"");
-            try
-            {
-                StltTomlConfig linstorToml = new Toml().read(linstorConfigPath.toFile()).to(StltTomlConfig.class);
-                linstorToml.applyTo(this);
-            }
-            catch (RuntimeException tomlExc)
-            {
-                System.err.printf("Error parsing '%s': %s%n", linstorConfigPath.toString(), tomlExc.getMessage());
-                System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
-            }
+            linstorToml.applyTo(this);
         }
     }
 
@@ -284,17 +271,22 @@ public class StltConfig extends LinstorConfig
         return whitelistedExternalFilePaths;
     }
 
-    public void setExternalFilesWhitelist(@Nullable Set<String> whitelistedExternalFilePathsRef)
+    /**
+     * Adds to the whitelist instead of replacing it, so that every configuration source can contribute paths.
+     *
+     * <p>
+     * This lets a component such as linstor-gateway grant itself a path with a drop-in file without having to know,
+     * or repeat, what the main configuration file already allows. There is deliberately no way to take a path away
+     * again: a whitelist entry is a permission, and a later file must not be able to revoke one silently.
+     * </p>
+     */
+    public void addToExternalFilesWhitelist(@Nullable Set<String> whitelistedExternalFilePathsRef)
     {
         if (whitelistedExternalFilePathsRef != null)
         {
             if (whitelistedExternalFilePaths == null)
             {
                 whitelistedExternalFilePaths = new HashSet<>();
-            }
-            else
-            {
-                whitelistedExternalFilePaths.clear();
             }
 
             for (String pathStr : whitelistedExternalFilePathsRef)

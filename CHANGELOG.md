@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Satellite: The address of the connected controller is published in `/run/linstor/linstor-client.conf`, which the
   LINSTOR client falls back to instead of localhost if no `linstor-client.conf` was configured
+- Controller and satellite now also read all `*.toml` files of `controller.d` / `satellite.d` next to their main
+  configuration file, sorted by name, each overriding the values set before; `allowExtFiles` is added to instead
 - New paginated error-report list API `GET /v1/view/error-reports`: returns the total count and one page of the
   globally sorted reports; sortable via `sort_by`/`sort_order`, with working `limit`/`offset`, multiple `node`
   filters and an optional `module` filter

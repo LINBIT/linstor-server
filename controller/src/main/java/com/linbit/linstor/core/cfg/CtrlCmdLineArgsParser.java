@@ -21,6 +21,13 @@ class CtrlCmdLineArgsParser
         description = "Configuration directory for the controller"
     )
     private @Nullable String configurationDirectory;
+
+    @CommandLine.Option(names = {"--include-directory"},
+        description = "Directory with additional *.toml configuration files, read after the main configuration " +
+            "file. Defaults to 'controller.d' next to the main configuration file."
+    )
+    private @Nullable String includeDirectory;
+
     @CommandLine.Option(names = {"-d", "--debug-console"}, description = "")
     private @Nullable Boolean debugConsole;
     @CommandLine.Option(
@@ -115,6 +122,8 @@ class CtrlCmdLineArgsParser
                 System.exit(InternalApiConsts.EXIT_CODE_CMDLINE_ERROR);
             }
         }
+
+        linstorCfgRef.setIncludeDir(linArgParser.includeDirectory);
 
         linstorCfgRef.setLogDirectory(linArgParser.logDirectory);
 

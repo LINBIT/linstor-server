@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig;
+import com.linbit.linstor.core.cfg.TomlConfigLoader;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -32,8 +33,11 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -223,18 +227,29 @@ public class SpecialSatelliteProcessManager
             }
         }
 
-        ProcessBuilder pb = new ProcessBuilder(
-            getSatellitePath().toString(),
-            "-s",
-            "--port", Integer.toString(port),
-            "--bind-address", LOCALHOST,
-            "-d",
-            "--override-node-name", nodeNameStr,
-            "--logs",
-            specialErrLogDir.toAbsolutePath().toString(),
-            "-c", confPath.toString(),
-            option
+        List<String> cmd = new ArrayList<>(
+            Arrays.asList(
+                getSatellitePath().toString(),
+                "-s",
+                "--port", Integer.toString(port),
+                "--bind-address", LOCALHOST,
+                "-d",
+                "--override-node-name", nodeNameStr,
+                "--logs",
+                specialErrLogDir.toAbsolutePath().toString(),
+                "-c", confPath.toString(),
+                option
+            )
         );
+        Path stltIncludeDir = getStltIncludeDir();
+        if (stltIncludeDir != null)
+        {
+            // the copied config file is read from confPath, where a relative includeDir would not resolve
+            cmd.add("--include-directory");
+            cmd.add(stltIncludeDir.toString());
+        }
+
+        ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.redirectErrorStream(true);
         File stltLog = errorReporter.getLogDirectory().resolve(
             String.format(SATELLITE_LOG_DIRECTORY + "/satellite-%d.log", port)
@@ -253,6 +268,42 @@ public class SpecialSatelliteProcessManager
 
         childSatellites.put(nodeNameStr.toUpperCase(), proc);
         childPorts.put(nodeNameStr.toUpperCase(), port);
+    }
+
+    /**
+     * The include directory of the default satellite configuration, so that a special satellite picks up the same
+     * drop-in files as a regular satellite on this node. Null if there are none.
+     *
+     * <p>
+     * Only what the satellite configuration file itself declares can be found this way. An --include-directory or
+     * LS_INCLUDE_DIRECTORY on the regular satellite's unit is invisible here, so a node configured that way gets a
+     * special satellite without those drop-ins.
+     * </p>
+     */
+    private @Nullable Path getStltIncludeDir()
+    {
+        Path dfltStltConfPath = Paths.get(ctrlConf.getConfigDir(), LinstorConfig.LINSTOR_STLT_CONFIG);
+        Path includeDir = null;
+        try
+        {
+            Path effectiveIncludeDir = TomlConfigLoader.effectiveIncludeDir(
+                dfltStltConfPath,
+                LinstorConfig.LINSTOR_STLT_INCLUDE_DIR
+            );
+            if (Files.isDirectory(effectiveIncludeDir))
+            {
+                includeDir = effectiveIncludeDir;
+            }
+        }
+        catch (LinStorRuntimeException exc)
+        {
+            errorReporter.logWarning(
+                "Could not determine the include directory of '%s': %s",
+                dfltStltConfPath.toString(),
+                exc.getMessage()
+            );
+        }
+        return includeDir;
     }
 
     private Path getSpecStltConfPath(@Nullable Integer port)

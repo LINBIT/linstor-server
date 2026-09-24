@@ -46,7 +46,7 @@ public class StltEnvParser
         String extFilesWhitelist = getEnv(LS_EXT_FILES);
         if (extFilesWhitelist != null)
         {
-            cfg.setExternalFilesWhitelist(Arrays.stream(extFilesWhitelist.split(",")).collect(Collectors.toSet()));
+            cfg.addToExternalFilesWhitelist(Arrays.stream(extFilesWhitelist.split(",")).collect(Collectors.toSet()));
         }
     }
 

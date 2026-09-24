@@ -244,7 +244,7 @@ public class CtrlAuthResponseApiCallHandler
                 stltCfg.setNetBindAddress(stltConfig.getNetBindAddress());
                 stltCfg.setNetPort(stltConfig.getNetPort());
                 stltCfg.setNetType(stltConfig.getNetType());
-                stltCfg.setExternalFilesWhitelist(new HashSet<>(stltConfig.getWhitelistedExtFilePathsList()));
+                stltCfg.addToExternalFilesWhitelist(new HashSet<>(stltConfig.getWhitelistedExtFilePathsList()));
                 peer.setStltConfig(stltCfg);
 
                 logExternaltools(peer, nodeUname);

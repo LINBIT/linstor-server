@@ -56,6 +56,7 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.CommandExec;
 import com.linbit.utils.FileCollector;
 import com.linbit.utils.ShellUtils;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
 import jakarta.inject.Inject;
@@ -79,6 +80,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -812,6 +814,7 @@ public class CtrlSosReportApiCallHandler
      * <style>table tr td { padding-right: 10px; }</style>
      * <tr><th>Filename</th><th>Content</th></tr>
      * <tr><td>linstor.toml</td><td>'cp -p $actual_linstor.toml $sosDir'</td></tr>
+     * <tr><td>controller.d/*.toml</td><td>Every drop-in configuration file that was loaded</td></tr>
      * <tr><td>journalctl</td><td>'journal -u linstor-controller --since $since'</td></tr>
      * <tr><td>ip-a</td><td>'ip a'</td></tr>
      * <tr><td>log-syslog</td><td>'cp -p /var/log/syslog $sosDir/log-syslog'</td></tr>
@@ -827,23 +830,33 @@ public class CtrlSosReportApiCallHandler
         LocalDateTime now = TimeUtils.millisToDate(nowMillis);
 
         Path sosCtrlDir = getCtrlSosDir(tmpDir, sosReportName);
-        String infoContent = LinStor.linstorInfo() + "\n\nuname -a:           " + LinStor.getUname("-a");
+        String infoContent = LinStor.linstorInfo() + "\n\nuname -a:           " + LinStor.getUname("-a") +
+            // the drop-ins are collected under a fixed name, so record where they actually came from
+            "\n\nconfig files:       " + StringUtils.join(ctrlCfg.getLoadedConfigFiles(), ", ");
         append(sosCtrlDir.resolve("linstorInfo"), infoContent.getBytes(StandardCharsets.UTF_8), nowMillis);
         String timeContent = "Local Time: " + TimeUtils.DTF_NO_SPACE.format(now) + "\nUTC Time:   " +
             TimeUtils.DTF_NO_SPACE
             .format(ZonedDateTime.of(now, ZoneOffset.UTC));
         append(sosCtrlDir.resolve("timeInfo"), timeContent.getBytes(StandardCharsets.UTF_8), nowMillis);
 
-        String tomlPath = ctrlCfg.getConfigDir() + LinstorConfig.LINSTOR_CTRL_CONFIG;
-        CommandHelper[] commands = new CommandHelper[]
+        Path mainCfgFile = Paths.get(ctrlCfg.getConfigDir(), LinstorConfig.LINSTOR_CTRL_CONFIG)
+            .toAbsolutePath()
+            .normalize();
+        List<CommandHelper> commands = new ArrayList<>();
+        for (Path cfgFile : ctrlCfg.getLoadedConfigFiles())
         {
-            new CommandHelper(
-                sosCtrlDir.resolve(LinstorConfig.LINSTOR_CTRL_CONFIG),
-                new String[]
-                {
-                    "cp", "-p", tomlPath, sosCtrlDir.toString()
-                }
-            ),
+            Path targetFile = sosConfigTarget(sosCtrlDir, cfgFile, mainCfgFile);
+            commands.add(
+                new CommandHelper(
+                    targetFile,
+                    new String[]
+                    {
+                        "cp", "-p", cfgFile.toString(), targetFile.toString()
+                    }
+                )
+            );
+        }
+        commands.addAll(Arrays.asList(
             new CommandHelper(
                 sosCtrlDir.resolve("journalctl"),
                 new String[]
@@ -892,8 +905,8 @@ public class CtrlSosReportApiCallHandler
                 {
                     "cat", "/etc/redhat-release", "/etc/lsb-release", "/etc/os-release"
                 }
-            ),
-        };
+            )
+        ));
         for (CommandHelper cmd : commands)
         {
             try
@@ -939,6 +952,21 @@ public class CtrlSosReportApiCallHandler
     private Path getCtrlSosDir(Path tmpDir, String sosReportName)
     {
         return tmpDir.resolve(sosReportName).resolve("_" + LinStor.CONTROLLER_MODULE);
+    }
+
+    /**
+     * Drop-in configuration files are put into a sub directory with a fixed name, so that one named like the main
+     * configuration file - or like any other file of the report - does not overwrite it.
+     */
+    private Path sosConfigTarget(Path sosCtrlDirRef, Path cfgFileRef, Path mainCfgFileRef) throws IOException
+    {
+        Path targetDir = sosCtrlDirRef;
+        if (!cfgFileRef.toAbsolutePath().normalize().equals(mainCfgFileRef))
+        {
+            targetDir = sosCtrlDirRef.resolve(LinstorConfig.LINSTOR_CTRL_INCLUDE_DIR);
+            makeDir(targetDir);
+        }
+        return targetDir.resolve(cfgFileRef.getFileName().toString());
     }
 
     private void makeDir(Path dirPath) throws IOException

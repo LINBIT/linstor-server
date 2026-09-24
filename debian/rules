@@ -36,7 +36,7 @@ override_dh_install:
 	install -m755 $(CURDIR)/scripts/linstor-controller-ha-setup.py $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/bin/linstor-controller-ha-setup
 	cp $(CURDIR)/controller/build/libs/* $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib
 	if [ -f "$(CURDIR)/libs/controller-st.jar" ]; then cp "$(CURDIR)/libs/controller-st.jar" $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib; fi
-	mkdir -p $(CURDIR)/debian/linstor-controller/etc/linstor
+	mkdir -p $(CURDIR)/debian/linstor-controller/etc/linstor/controller.d
 	for d in /var/lib/linstor /var/log/linstor-controller; do install -d -m750 $(CURDIR)/debian/linstor-controller/$$d; done
 	# diff and copy additional controller jars
 	rm $(CURDIR)/controller/build/install/controller/lib/jclcrypto*.jar $(CURDIR)/controller/build/install/controller/lib/server-*.jar # comes already in linstor-common
@@ -51,7 +51,7 @@ override_dh_install:
 	cp $(CURDIR)/scripts/linstor-satellite.service $(CURDIR)/debian/
 	install -d $(CURDIR)/debian/linstor-satellite/etc/drbd.d/
 	install -m644 $(CURDIR)/scripts/linstor-resources.res $(CURDIR)/debian/linstor-satellite/etc/drbd.d/
-	install -d $(CURDIR)/debian/linstor-satellite/etc/linstor
+	install -d $(CURDIR)/debian/linstor-satellite/etc/linstor/satellite.d
 	install -m644 $(CURDIR)/scripts/linstor_satellite-example.toml $(CURDIR)/debian/linstor-satellite/etc/linstor/
 	mkdir -p $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/bin
 	mkdir -p $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib

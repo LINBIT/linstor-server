@@ -63,6 +63,9 @@ cp %{_builddir}/%{NAME_VERS}/scripts/linstor-resources.res %{buildroot}/%{_sysco
 touch %{buildroot}/%{LS_PREFIX}/{.server,.satellite,.controller}
 mkdir -p %{buildroot}/%{_sysconfdir}/linstor
 cp %{_builddir}/%{NAME_VERS}/scripts/linstor_satellite-example.toml %{buildroot}/%{_sysconfdir}/linstor/
+# drop-in configuration directories, read after the main configuration file
+mkdir -p %{buildroot}/%{_sysconfdir}/linstor/controller.d
+mkdir -p %{buildroot}/%{_sysconfdir}/linstor/satellite.d
 # dirs we expect (controller)
 for d in /var/lib/linstor /var/log/linstor-controller; do install -d -m750 %{buildroot}/$d; done
 
@@ -111,6 +114,7 @@ Linstor controller manages linstor satellites and persistant data storage.
 %{LS_PREFIX}/bin/controller.postinst.sh
 %{_unitdir}/linstor-controller.service
 %{FIREWALLD_SERVICES}/linstor-controller.xml
+%dir %{_sysconfdir}/linstor/controller.d
 %dir /var/lib/linstor
 %dir /var/log/linstor-controller
 
@@ -155,6 +159,7 @@ and creates drbd resource files.
 %{FIREWALLD_SERVICES}/linstor-satellite.xml
 %{FIREWALLD_SERVICES}/drbd.xml
 %config(noreplace) %{_sysconfdir}/drbd.d/linstor-resources.res
+%dir %{_sysconfdir}/linstor/satellite.d
 %{_sysconfdir}/linstor/linstor_satellite-example.toml
 
 %post satellite

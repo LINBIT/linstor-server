@@ -17,6 +17,12 @@ class StltCmdLineArgsParser
     )
     private @Nullable String configurationDirectory;
 
+    @CommandLine.Option(names = {"--include-directory"},
+        description = "Directory with additional *.toml configuration files, read after the main configuration " +
+            "file. Defaults to 'satellite.d' next to the main configuration file."
+    )
+    private @Nullable String includeDirectory;
+
     @CommandLine.Option(names = {"-d", "--debug-console"}, description = "")
     private @Nullable Boolean debugConsole;
 
@@ -127,6 +133,8 @@ class StltCmdLineArgsParser
             }
         }
 
+        stltCfg.setIncludeDir(linArgParser.includeDirectory);
+
         stltCfg.setRemoteSpdk(linArgParser.remoteSpdk);
         stltCfg.setEbs(linArgParser.ebs);
 
@@ -143,7 +151,7 @@ class StltCmdLineArgsParser
 
         if (linArgParser.extFilesWhitelist != null)
         {
-            stltCfg.setExternalFilesWhitelist(
+            stltCfg.addToExternalFilesWhitelist(
                 Arrays.stream(linArgParser.extFilesWhitelist).collect(Collectors.toSet())
             );
         }

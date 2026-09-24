@@ -16,6 +16,7 @@ import com.linbit.linstor.utils.FileUtils;
 import com.linbit.utils.CommandExec;
 import com.linbit.utils.FileCollector;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.TimeUtils;
 
 import jakarta.inject.Inject;
@@ -334,6 +335,20 @@ public class StltSosReportApiCallHandler
         return filesToRespond;
     }
 
+    /**
+     * Drop-in configuration files are reported in a sub directory with a fixed name, so that one named like the main
+     * configuration file - or like any other file of the report - neither overwrites nor displaces it.
+     */
+    private String sosConfigName(Path cfgFileRef, Path mainCfgFileRef)
+    {
+        String name = cfgFileRef.getFileName().toString();
+        if (!cfgFileRef.toAbsolutePath().normalize().equals(mainCfgFileRef))
+        {
+            name = LinstorConfig.LINSTOR_STLT_INCLUDE_DIR + "/" + name;
+        }
+        return name;
+    }
+
     private Path getSosReportDir(String sosReportName)
     {
         return LinStor.SOS_REPORTS_DIR.resolve(sosReportName);
@@ -355,6 +370,7 @@ public class StltSosReportApiCallHandler
      * <tr><td>lvm.conf</td><td>'lvmconfig --type full'</td></tr>
      * <tr><td>lvm-system.devices</td><td>'cat /etc/lvm/devices/system.devices'</td></tr>
      * <tr><td>linstor_satellite.toml</td><td>'cat $configDir/lisntor_satellite.toml'</td></tr>
+     * <tr><td>satellite.d/*.toml</td><td>'cat' of every drop-in configuration file that was loaded</td></tr>
      * <tr><td>journalctl</td><td>'journalctl -u linstor-satellite --since $since'</td></tr>
      * <tr><td>ip-a</td><td>'ip a'</td></tr>
      * <tr><td>drbdadm-version</td><td>'drbdadm --version'</td></tr>
@@ -381,7 +397,9 @@ public class StltSosReportApiCallHandler
             new SosInfoType(
                 "linstorInfo",
                 now,
-                LinStor.linstorInfo() + "\n\nuname -a:           " + LinStor.getUname("-a")
+                LinStor.linstorInfo() + "\n\nuname -a:           " + LinStor.getUname("-a") +
+                    // the drop-ins are collected under a fixed name, so record where they actually came from
+                    "\n\nconfig files:       " + StringUtils.join(stltCfg.getLoadedConfigFiles(), ", ")
             )
         );
 
@@ -395,14 +413,13 @@ public class StltSosReportApiCallHandler
         reportTypes.add(new SosCommandType("proc-sys-kernel-tainted", now, "cat", "/proc/sys/kernel/tainted"));
         reportTypes.add(new SosCommandType("lvm.conf",  now, "lvmconfig", "--type", "full"));
         reportTypes.add(new SosCommandType("lvm-system.devices", now, "cat", "/etc/lvm/devices/system.devices"));
-        reportTypes.add(
-            new SosCommandType(
-                LinstorConfig.LINSTOR_STLT_CONFIG,
-                now,
-                "cat",
-                stltCfg.getConfigDir() + LinstorConfig.LINSTOR_STLT_CONFIG
-            )
-        );
+        Path mainCfgFile = Paths.get(stltCfg.getConfigDir(), LinstorConfig.LINSTOR_STLT_CONFIG)
+            .toAbsolutePath()
+            .normalize();
+        for (Path cfgFile : stltCfg.getLoadedConfigFiles())
+        {
+            reportTypes.add(new SosCommandType(sosConfigName(cfgFile, mainCfgFile), now, "cat", cfgFile.toString()));
+        }
         reportTypes.add(new SosCommandType("dmesg", now, "dmesg", "-T", "-d"));
         reportTypes.add(
             new SosCommandType(

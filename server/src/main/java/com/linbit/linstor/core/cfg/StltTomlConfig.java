@@ -53,7 +53,7 @@ public class StltTomlConfig
 
         public void applyTo(StltConfig cfg)
         {
-            cfg.setExternalFilesWhitelist(allowExtFiles);
+            cfg.addToExternalFilesWhitelist(allowExtFiles);
         }
     }
 

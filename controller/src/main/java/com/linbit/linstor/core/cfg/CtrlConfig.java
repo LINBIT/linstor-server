@@ -1,13 +1,6 @@
 package com.linbit.linstor.core.cfg;
 
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import com.moandjiezana.toml.Toml;
 
 public class CtrlConfig extends LinstorConfig
 {
@@ -126,20 +119,10 @@ public class CtrlConfig extends LinstorConfig
     @Override
     protected void applyTomlArgs()
     {
-        Path linstorConfigPath = Paths.get(configDir, LINSTOR_CTRL_CONFIG).normalize();
-        if (Files.exists(linstorConfigPath))
+        for (CtrlTomlConfig linstorToml :
+            loadTomlConfigs(LINSTOR_CTRL_CONFIG, LINSTOR_CTRL_INCLUDE_DIR, CtrlTomlConfig.class))
         {
-            System.out.println("Loading configuration file \"" + linstorConfigPath.toString() + "\"");
-            try
-            {
-                CtrlTomlConfig linstorToml = new Toml().read(linstorConfigPath.toFile()).to(CtrlTomlConfig.class);
-                linstorToml.applyTo(this);
-            }
-            catch (RuntimeException tomlExc)
-            {
-                System.err.printf("Error parsing '%s': %s%n", linstorConfigPath, tomlExc.getMessage());
-                System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
-            }
+            linstorToml.applyTo(this);
         }
     }
 

@@ -7,6 +7,7 @@ import java.util.function.Function;
 public class LinstorEnvParser
 {
     public static final String LS_CONFIG_DIRECTORY = "LS_CONFIG_DIRECTORY";
+    public static final String LS_INCLUDE_DIRECTORY = "LS_INCLUDE_DIRECTORY";
     public static final String LS_LOG_DIRECTORY = "LS_LOG_DIRECTORY";
     public static final String LS_LOG_LEVEL = "LS_LOG_LEVEL";
     public static final String LS_LOG_LEVEL_LINSTOR = "LS_LOG_LEVEL_LINSTOR";
@@ -18,6 +19,7 @@ public class LinstorEnvParser
     public static void applyTo(LinstorConfig cfg)
     {
         cfg.setConfigDir(getEnv(LS_CONFIG_DIRECTORY));
+        cfg.setEnvIncludeDir(getEnv(LS_INCLUDE_DIRECTORY));
         cfg.setLogDirectory(getEnv(LS_LOG_DIRECTORY));
         cfg.setLogLevel(getEnv(LS_LOG_LEVEL));
         cfg.setLogLevelLinstor(getEnv(LS_LOG_LEVEL_LINSTOR));
