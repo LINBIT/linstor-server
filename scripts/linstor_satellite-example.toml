@@ -3,27 +3,35 @@
 ## a relative path is resolved against the directory of this file.
 # includeDir = "satellite.d"
 
-[logging]
-  # possible logging levels are: ERROR, WARN, INFO, DEBUG, TRACE
-  # external library logging
-  level = "INFO"
-  # linstor logging
-  linstor_level = "INFO"
-
 [netcom]
   type = "plain"
   bind_address = "::0"
+  # 3366 is the default for plain connections, 3367 is commonly used for SSL
   port = 3366
 
-  # fields for SSL secured satellite connections
-  # https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-linstor-secure-connections
-  server_certificate = ""
-  key_password = ""
-  keystore_password = ""
-  truststore_password = ""
-  trusted_certificates = ""
-  ssl_protocol = "TLSv1.2"
+  ## the following entries are required for an SSL secured connection, see
+  ## https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-linstor-secure-connections
+  # server_certificate = "ssl/keystore.jks"
+  # trusted_certificates = "ssl/certificates.jks"
+  # key_password = "linstor"
+  # keystore_password = "linstor"
+  # truststore_password = "linstor"
+  # ssl_protocol = "TLSv1.2"
+
+[logging]
+  ## possible levels are ERROR, WARN, INFO, DEBUG and TRACE
+  ## level applies to third party libraries, linstor_level to linstor itself
+  # level = "INFO"
+  # linstor_level = "INFO"
 
 [files]
-  # directories and files allowed to be altered by external files API
-  allowExtFiles = []
+  ## directories the external files API may create or edit files in. a path is matched as the
+  ## exact parent directory of the file, it does not cover sub directories.
+  ## every configuration file adds to this list, none of them can take a path away again.
+  # allowExtFiles = ["/etc/drbd-reactor.d"]
+
+[client]
+  ## where to publish the address of the connected controller for the linstor client.
+  ## defaults to linstor-client.conf in the runtime directory systemd provides,
+  ## set to "" to disable.
+  # conf_file = "/run/linstor/linstor-client.conf"
