@@ -286,6 +286,40 @@ public class RscGrpApiTest extends ApiTestBase
     }
 
     @Test
+    public void crtInvalidLayerStack() throws Exception
+    {
+        enterScope();
+        evaluateTest(
+            new CreateRscGrpCall(MASK_RSC_GRP_CRT | ApiConsts.FAIL_INVLD_LAYER_STACK)
+                .setAutoSelectFilter(
+                    new AutoSelectFilterBuilder()
+                        .setLayerStackList(
+                            Arrays.asList(DeviceLayerKind.LUKS, DeviceLayerKind.STORAGE, DeviceLayerKind.DRBD)
+                        )
+                        .build()
+                )
+        );
+        assertThat(rscGrpMap.get(new ResourceGroupName("NewRscGrp"))).isNull();
+    }
+
+    @Test
+    public void crtLayerStackWithoutStorage() throws Exception
+    {
+        enterScope();
+        // the missing STORAGE layer is only appended when a resource definition is spawned
+        evaluateTest(
+            new CreateRscGrpCall(RC_RSC_GRP_CREATED)
+                .setAutoSelectFilter(
+                    new AutoSelectFilterBuilder()
+                        .setLayerStackList(Collections.singletonList(DeviceLayerKind.DRBD))
+                        .build()
+                )
+        );
+        assertThat(rscGrpMap.get(new ResourceGroupName("NewRscGrp")).getAutoPlaceConfig().getLayerStackList())
+            .containsExactly(DeviceLayerKind.DRBD);
+    }
+
+    @Test
     public void crtPlaceCountAboveDrbdLimitStorageOnly() throws Exception
     {
         enterScope();
@@ -410,6 +444,22 @@ public class RscGrpApiTest extends ApiTestBase
         );
         // the rejected modify must not have changed the stored place count
         assertThat(testRscGrp.getAutoPlaceConfig().getReplicaCount()).isEqualTo(placeCountBefore);
+    }
+
+    @Test
+    public void modInvalidLayerStack() throws Exception
+    {
+        evaluateTest(
+            new ModifyRscGrpCall(MASK_RSC_GRP_CRT | ApiConsts.FAIL_INVLD_LAYER_STACK)
+                .autoSelectFilter(
+                    new AutoSelectFilterBuilder()
+                        .setLayerStackList(
+                            Arrays.asList(DeviceLayerKind.NVME, DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
+                        )
+                        .build()
+                )
+        );
+        assertThat(testRscGrp.getAutoPlaceConfig().getLayerStackList()).isEmpty();
     }
 
     @Test

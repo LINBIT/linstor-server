@@ -562,7 +562,14 @@ public class CtrlRscDfnApiCallHandler
 
             if (!layerStackStrList.isEmpty())
             {
-                List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrList);
+                List<DeviceLayerKind> givenLayerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrList);
+                CtrlRscCrtApiHelper.ensureLayerStackWithImplicitStorageIsAllowed(givenLayerStack);
+                // same as on create: the stored stack has to end with STORAGE
+                List<DeviceLayerKind> layerStack = CtrlRscCrtApiHelper.withStorageLayer(givenLayerStack);
+                if (layerStack.size() != givenLayerStack.size())
+                {
+                    warnAddedStorageLayer(apiCallRcs);
+                }
 
                 if (!layerStack.equals(rscDfn.getLayerStack()) && rscDfn.getResourceCount() > 0)
                 {

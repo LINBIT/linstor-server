@@ -277,6 +277,27 @@ public class RscDfnApiTest extends ApiTestBase
     }
 
     @Test
+    public void modInvalidLayerStack() throws Exception
+    {
+        evaluateTest(
+            new ModifyRscDfnCall(ApiConsts.FAIL_INVLD_LAYER_STACK)
+                .layerStack("LUKS", "STORAGE", "DRBD")
+        );
+        assertThat(testRscDfn.getLayerStack()).containsExactly(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE);
+    }
+
+    @Test
+    public void modLayerStackAddsStorage() throws Exception
+    {
+        evaluateTest(
+            new ModifyRscDfnCall(ApiConsts.WARN_STORAGE_KIND_ADDED, ApiConsts.MODIFIED)
+                .layerStack("DRBD", "LUKS")
+        );
+        assertThat(testRscDfn.getLayerStack())
+            .containsExactly(DeviceLayerKind.DRBD, DeviceLayerKind.LUKS, DeviceLayerKind.STORAGE);
+    }
+
+    @Test
     public void modPort() throws Exception
     {
         evaluateTest(

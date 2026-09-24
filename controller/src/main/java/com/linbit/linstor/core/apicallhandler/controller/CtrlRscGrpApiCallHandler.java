@@ -248,6 +248,7 @@ public class CtrlRscGrpApiCallHandler
                 );
             }
             checkPlaceCountSupportedByDrbd(rscGrpPojoRef.getAutoSelectFilter(), null, rscGrpNameStr);
+            checkLayerStack(rscGrpPojoRef.getAutoSelectFilter());
 
             ResourceGroup rscGrp = createResourceGroup(rscGrpPojoRef);
 
@@ -310,6 +311,19 @@ public class CtrlRscGrpApiCallHandler
         }
 
         return responses;
+    }
+
+    /**
+     * Rejects an invalid layer stack right away instead of only when a resource definition is spawned from the
+     * group. An empty or missing stack leaves the group's stack unset resp. unchanged.
+     */
+    private static void checkLayerStack(@Nullable AutoSelectFilterApi filterRef)
+    {
+        @Nullable List<DeviceLayerKind> layerStack = filterRef == null ? null : filterRef.getLayerStackList();
+        if (layerStack != null && !layerStack.isEmpty())
+        {
+            CtrlRscCrtApiHelper.ensureLayerStackWithImplicitStorageIsAllowed(layerStack);
+        }
     }
 
     /**
@@ -577,6 +591,7 @@ public class CtrlRscGrpApiCallHandler
             if (autoApiRef != null)
             {
                 checkPlaceCountSupportedByDrbd(autoApiRef, rscGrpData.getAutoPlaceConfig(), rscGrpNameStrRef);
+                checkLayerStack(autoApiRef);
             }
 
             if (descriptionRef != null)
