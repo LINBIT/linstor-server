@@ -1351,12 +1351,42 @@ public class CtrlRscCrtApiHelper
 
     static void ensureLayerStackIsAllowed(List<DeviceLayerKind> layerStackRef)
     {
-        if (!LayerUtils.isLayerKindStackAllowed(layerStackRef))
+        ensureLayerStackIsAllowed(layerStackRef, layerStackRef);
+    }
+
+    /**
+     * Checks a layer stack that may lack its lowest STORAGE layer, as it is appended when a resource definition is
+     * created from the stack. Resource groups store the stack as given, so their stack is checked this way.
+     */
+    static void ensureLayerStackWithImplicitStorageIsAllowed(List<DeviceLayerKind> layerStackRef)
+    {
+        ensureLayerStackIsAllowed(withStorageLayer(layerStackRef), layerStackRef);
+    }
+
+    /**
+     * Returns a copy of the given layer stack that ends with a STORAGE layer.
+     */
+    static List<DeviceLayerKind> withStorageLayer(List<DeviceLayerKind> layerStackRef)
+    {
+        List<DeviceLayerKind> ret = new ArrayList<>(layerStackRef);
+        if (ret.isEmpty() || !ret.get(ret.size() - 1).equals(DeviceLayerKind.STORAGE))
+        {
+            ret.add(DeviceLayerKind.STORAGE);
+        }
+        return ret;
+    }
+
+    private static void ensureLayerStackIsAllowed(
+        List<DeviceLayerKind> checkedLayerStackRef,
+        List<DeviceLayerKind> givenLayerStackRef
+    )
+    {
+        if (!LayerUtils.isLayerKindStackAllowed(checkedLayerStackRef))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_LAYER_STACK,
-                    "The layer stack " + layerStackRef + " is invalid"
+                    "The layer stack " + new ArrayList<>(givenLayerStackRef) + " is invalid"
                 )
             );
         }
