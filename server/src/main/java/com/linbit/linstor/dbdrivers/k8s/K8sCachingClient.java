@@ -2,6 +2,7 @@ package com.linbit.linstor.dbdrivers.k8s;
 
 import com.linbit.linstor.annotation.Nullable;
 
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.StatusDetails;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
@@ -47,7 +49,29 @@ public class K8sCachingClient<T extends HasMetadata, L extends KubernetesResourc
     @Override
     public T create(T item)
     {
-        T updated = client.create(item);
+        T updated;
+        try
+        {
+            updated = client.create(item);
+        }
+        catch (KubernetesClientException exc)
+        {
+            /*
+             * The HTTP client retries a POST after a 5xx or a dropped connection, so a create that the apiserver
+             * already persisted comes back as 409. Since we are the only writer, the existing object is ours.
+             */
+            if (exc.getCode() != HttpURLConnection.HTTP_CONFLICT)
+            {
+                throw exc;
+            }
+            T live = client.withName(item.getMetadata().getName()).get();
+            if (live == null)
+            {
+                throw exc;
+            }
+            item.getMetadata().setResourceVersion(live.getMetadata().getResourceVersion());
+            updated = client.replace(item);
+        }
         cache.put(updated.getMetadata().getName(), updated);
         return updated;
     }
