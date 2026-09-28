@@ -453,6 +453,11 @@ public class JsonGenTypes
     public static class ResourceState
     {
         public @Nullable Boolean in_use;
+        /**
+         * Whether any DRBD device of the resource is open, also if it is only opened read-only while Secondary.
+         * Not set if unknown (not a DRBD resource, or DRBD does not report it).
+         */
+        public @Nullable Boolean open;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

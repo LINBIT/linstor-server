@@ -24,6 +24,7 @@ public class DrbdVolume
     public static final String PROP_KEY_CLIENT       = "client";
     public static final String PROP_KEY_PEER_CLIENT  = "peer-client";
     public static final String PROP_KEY_DONE         = "done";
+    public static final String PROP_KEY_OPEN         = "open";
 
     protected final VolumeNumber volId;
     protected @Nullable MinorNumber volMinorNr;
@@ -33,6 +34,7 @@ public class DrbdVolume
     protected @Nullable DrbdConnection connRef;
     protected @Nullable Boolean client;
     protected @Nullable Float donePercentage;
+    protected @Nullable Boolean open;
 
     protected DrbdVolume(DrbdResource resource, @Nullable DrbdConnection peerConn, VolumeNumber volNr)
         throws ValueOutOfRangeException
@@ -46,6 +48,7 @@ public class DrbdVolume
         connRef = peerConn;
         client = null;
         donePercentage = null;
+        open = null;
     }
 
     public VolumeNumber getVolNr()
@@ -66,6 +69,16 @@ public class DrbdVolume
     public Boolean getClient()
     {
         return client;
+    }
+
+    /**
+     * Whether the local DRBD device is open, also by read-only openers while Secondary.
+     *
+     * @return null if DRBD does not report it (older drbd-utils or kernel module) or for peer volumes
+     */
+    public @Nullable Boolean getOpen()
+    {
+        return open;
     }
 
     public DiskState getDiskState()
@@ -146,6 +159,7 @@ public class DrbdVolume
         String doneLabel = props.get(PROP_KEY_DONE);
         String diskLabel = props.get(PROP_KEY_DISK);
         String clientLabel = props.get(PROP_KEY_CLIENT);
+        String openLabel = props.get(PROP_KEY_OPEN);
         if (clientLabel == null)
         {
             clientLabel = props.get(PROP_KEY_PEER_CLIENT);
@@ -167,6 +181,22 @@ public class DrbdVolume
             if (clientLabel.equals("no"))
             {
                 client = false;
+            }
+        }
+
+        // "open" is only reported for local volumes; "unknown" means DRBD cannot tell
+        if (openLabel != null && connRef == null)
+        {
+            Boolean prevOpen = open;
+            open = switch (openLabel)
+            {
+                case "yes" -> true;
+                case "no" -> false;
+                default -> null;
+            };
+            if (!Objects.equals(prevOpen, open))
+            {
+                obs.openChanged(resRef, this, prevOpen, open);
             }
         }
 

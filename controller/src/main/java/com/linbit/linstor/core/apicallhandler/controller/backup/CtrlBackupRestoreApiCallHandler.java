@@ -2056,7 +2056,7 @@ public class CtrlBackupRestoreApiCallHandler
                                         ApiConsts.VAL_TRUE
                                     )
                                 );
-                                boolean inUse = rscDfn.anyResourceInUse().isPresent();
+                                boolean inUse = rscDfn.anyResourceInUseOrOpen().isPresent();
                                 if (forceRestoreAllowed && !inUse && diskfulRscCt == 1)
                                 {
                                     disklessRscs = rscDfn.getDisklessResources();

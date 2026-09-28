@@ -648,6 +648,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setMayPromote(mayPromote);
             }
+            @Nullable Boolean open = resourceState.getOpen();
+            if (open != null)
+            {
+                builder.setOpen(open);
+            }
 
             builder.build().writeDelimitedTo(baos);
         }

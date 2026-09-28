@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   filters and an optional `module` filter
 - Prometheus: New metric `linstor_node_flag` exports the node flags `DELETE`, `EVICTED` and `EVACUATE` as 0/1 per node
 - STORAGE_SPACES: set discard-zeroes-if-aligned to "no" thereby skipping initial resync
+- REST: The resource state reports `open` if a DRBD device of the resource is open, also read-only on a Secondary
+- Prometheus: New metric `linstor_resource_open` reports whether a DRBD device of the resource is open
 
 ### Changed
 
@@ -28,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Controller: REST stack upgraded to Jersey 4 (Jakarta REST 4.0), HK2 4 and Guice 7; the REST API itself is unchanged
 - Controller: The Kubernetes CRD database backend now uses the JDK HTTP client instead of Vert.x/Netty, removing
   ~6 MB of dependencies (and their CVE exposure) from the distribution
+- DRBD: Operations that take a resource down (e.g. delete, deactivate, rollback) are also rejected while its
+  device is open on a Secondary, if DRBD reports it
 
 ### Fixed
 

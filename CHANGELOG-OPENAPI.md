@@ -9,6 +9,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
     (`total`, `limit`, `offset`, `sort_by`, `sort_order`, `items`); `limit`/`offset` apply to the merged result of all
     queried nodes, `sort_by` supports nine fields with `sort_order` asc/desc, multiple `node` filters and an optional
     `module` filter
+  - Added `open` to ResourceState
 
 ## [1.29.1]
 

@@ -216,30 +216,22 @@ public class CtrlRscDfnTruncateApiCallHandler
 
     public static void ensureNoRscInUsePriviledged(ResourceDefinition rscDfn)
     {
-        Optional<Resource> rscInUse = rscDfn.anyResourceInUse();
+        Optional<Resource> rscInUse = rscDfn.anyResourceInUseOrOpen();
         if (rscInUse.isPresent())
         {
             NodeName nodeName = rscInUse.get().getNode().getName();
             throw new ApiRcException(
-                ApiCallRcImpl
-                    .entryBuilder(
+                CtrlRscInUseHelper.addInUseDetails(
+                    ApiCallRcImpl.entryBuilder(
                         ApiConsts.FAIL_IN_USE,
                         String.format(
                             "Resource '%s' on node '%s' is still in use.",
                             rscDfn.getName().displayValue,
                             nodeName.displayValue
                         )
-                    )
-                    .setCause("Resource is mounted/in use.")
-                    .setCorrection(
-                        String.format(
-                            "Un-mount resource '%s' on the node '%s'.",
-                            rscDfn.getName().displayValue,
-                            nodeName.displayValue
-                        )
-                    )
-                    .setSkipErrorReport(true)
-                    .build()
+                    ),
+                    nodeName
+                ).build()
             );
         }
     }

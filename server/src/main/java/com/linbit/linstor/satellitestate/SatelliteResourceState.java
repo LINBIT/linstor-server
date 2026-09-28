@@ -15,6 +15,7 @@ import java.util.function.Function;
 public class SatelliteResourceState
 {
     private @Nullable Boolean inUse;
+    private @Nullable Boolean open;
     private boolean isReady;
 
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
@@ -28,6 +29,7 @@ public class SatelliteResourceState
     public SatelliteResourceState(SatelliteResourceState other)
     {
         inUse = other.inUse;
+        open = other.open;
         isReady = other.isReady;
         for (Map.Entry<VolumeNumber, SatelliteVolumeState> volumeStateEntry : other.volumeStates.entrySet())
         {
@@ -60,6 +62,32 @@ public class SatelliteResourceState
     public void setInUse(Boolean value)
     {
         inUse = value;
+    }
+
+    /**
+     * Whether any DRBD device of the resource is open, also by read-only openers while Secondary.
+     *
+     * @return null if unknown (satellite or DRBD too old to report it)
+     */
+    public @Nullable Boolean isOpen()
+    {
+        return open;
+    }
+
+    public void setOpen(@Nullable Boolean value)
+    {
+        open = value;
+    }
+
+    /**
+     * Whether the resource cannot be taken down: it is Primary or any of its DRBD devices is open.
+     * Falls back to {@link #isInUse()} if the open state is unknown.
+     *
+     * @return null if neither state is known
+     */
+    public @Nullable Boolean isInUseOrOpen()
+    {
+        return Boolean.TRUE.equals(open) ? Boolean.TRUE : inUse;
     }
 
     /**

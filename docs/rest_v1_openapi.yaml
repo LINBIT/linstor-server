@@ -7315,6 +7315,11 @@ components:
       properties:
         in_use:
           type: boolean
+        open:
+          type: boolean
+          description: |
+            Whether any DRBD device of the resource is open, also if it is only opened read-only while Secondary.
+            Not set if unknown (not a DRBD resource, or DRBD does not report it).
     DrbdConnection:
       type: object
       properties:

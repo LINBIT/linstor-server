@@ -514,6 +514,11 @@ public class CtrlRscLiveMigrateHelper
         return inUseRscs;
     }
 
+    /**
+     * Whether the resource is Primary on its node. Deliberately not {@link SatelliteResourceState#isInUseOrOpen()}:
+     * a live migration is defined by which nodes are Primary, a device that is merely opened (e.g. read-only)
+     * on a Secondary is neither a migration source nor a target.
+     */
     private boolean isInUse(Resource rsc)
     {
         @Nullable Boolean inUse = null;

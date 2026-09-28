@@ -178,6 +178,25 @@ public interface ResourceObserver
     }
 
     /**
+     * Called when a local DRBD volume is opened or closed, e.g. by a mount or a read-only opener
+     *
+     * @param resource Representation of the DRBD resource that owns
+     *     the volume affected by the event
+     * @param volume Representation of the volume affected by the event
+     * @param previous Whether the volume was open before the change, null if unknown
+     * @param current Whether the volume is open now, null if unknown (DRBD does not report it)
+     */
+    default void openChanged(
+        DrbdResource resource,
+        DrbdVolume volume,
+        @Nullable Boolean previous,
+        @Nullable Boolean current
+    )
+    {
+        // Do nothing
+    }
+
+    /**
      * Called when a DRBD resource's volume or peer volume has been destroyed
      * and is no longer known to the DRBD kernel module
      *  @param resource Representation of the DRBD resource that owned the volume

@@ -50,6 +50,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -685,6 +686,22 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition>
      */
     public Optional<Resource> anyResourceInUse()
     {
+        return anyResource(SatelliteResourceState::isInUse);
+    }
+
+    /**
+     * Like {@link #anyResourceInUse()}, but also finds resources whose DRBD device is open while Secondary
+     * (e.g. by a read-only opener), which prevent the resource from being taken down just as well.
+     *
+     * @return The first found primary or open resource, empty optional if there is none.
+     */
+    public Optional<Resource> anyResourceInUseOrOpen()
+    {
+        return anyResource(SatelliteResourceState::isInUseOrOpen);
+    }
+
+    private Optional<Resource> anyResource(Function<SatelliteResourceState, @Nullable Boolean> stateGetter)
+    {
         checkDeleted();
         Resource rscInUse = null;
         Iterator<Resource> rscInUseIterator = iterateResource();
@@ -699,7 +716,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition>
                 @Nullable SatelliteState satelliteState = nodePeer.getSatelliteState();
                 if (satelliteState != null)
                 {
-                    inUse = satelliteState.getFromResource(resourceName, SatelliteResourceState::isInUse);
+                    inUse = satelliteState.getFromResource(resourceName, stateGetter);
                 }
             }
             if (inUse != null && inUse)

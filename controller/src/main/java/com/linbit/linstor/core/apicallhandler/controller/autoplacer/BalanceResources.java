@@ -187,7 +187,7 @@ public class BalanceResources
                         .getResourceStates()
                         .get(rsc.getResourceDefinition().getName());
 
-                    if (stltRscState == null || Boolean.TRUE.equals(stltRscState.isInUse()))
+                    if (stltRscState == null || Boolean.TRUE.equals(stltRscState.isInUseOrOpen()))
                     {
                         fixed.add(rsc);
                     }

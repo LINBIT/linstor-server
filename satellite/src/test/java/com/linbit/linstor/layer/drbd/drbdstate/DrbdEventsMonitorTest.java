@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.drbd.drbdstate;
 
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -299,6 +300,69 @@ public class DrbdEventsMonitorTest
         receive("change device name:" + RSC + " volume:0 minor:1001 disk:UpToDate");
 
         assertThat(vlm().getMinorNr()).isEqualTo(new MinorNumber(1001));
+    }
+
+    @Test
+    public void openStateChange() throws Exception
+    {
+        receive(INITIAL_STATE);
+
+        // INITIAL_STATE has no "open" field, like the output of drbd-utils without it
+        assertThat(vlm().getOpen()).isNull();
+
+        List<String> openChanges = new ArrayList<>();
+        tracker.addObserver(
+            new ResourceObserver()
+            {
+                @Override
+                public void openChanged(
+                    DrbdResource resource,
+                    DrbdVolume volume,
+                    @Nullable Boolean previous,
+                    @Nullable Boolean current
+                )
+                {
+                    openChanges.add(previous + "->" + current);
+                }
+            },
+            DrbdStateTracker.OBS_OPEN
+        );
+
+        receive(
+            "change device name:" + RSC + " volume:0 minor:1000 disk:UpToDate client:no open:yes quorum:yes",
+            "change device name:" + RSC + " volume:0 minor:1000 disk:UpToDate client:no open:yes quorum:yes"
+        );
+        assertThat(vlm().getOpen()).isTrue();
+
+        receive("change device name:" + RSC + " volume:0 minor:1000 disk:UpToDate client:no open:no quorum:yes");
+        assertThat(vlm().getOpen()).isFalse();
+
+        receive("change device name:" + RSC + " volume:0 minor:1000 disk:UpToDate client:no open:unknown quorum:yes");
+        assertThat(vlm().getOpen()).isNull();
+
+        assertThat(openChanges).containsExactly("null->true", "true->false", "false->null");
+        assertThat(peerVlm().getOpen()).isNull();
+    }
+
+    @Test
+    public void resourceIsOpenIfAnyVolumeIsOpen() throws Exception
+    {
+        receive(INITIAL_STATE);
+        receive("create device name:" + RSC + " volume:1 minor:1001 disk:UpToDate client:no open:no quorum:yes");
+
+        // volume 0 does not report "open": unknown as long as no volume is open
+        assertThat(DrbdEventPublisher.isAnyVolumeOpen(rsc().getVolumesMap())).isNull();
+
+        receive("change device name:" + RSC + " volume:0 minor:1000 disk:UpToDate client:no open:no quorum:yes");
+        assertThat(DrbdEventPublisher.isAnyVolumeOpen(rsc().getVolumesMap())).isFalse();
+
+        receive("change device name:" + RSC + " volume:1 minor:1001 disk:UpToDate client:no open:yes quorum:yes");
+        assertThat(DrbdEventPublisher.isAnyVolumeOpen(rsc().getVolumesMap())).isTrue();
+
+        receive("change device name:" + RSC + " volume:0 minor:1000 disk:UpToDate client:no open:unknown quorum:yes");
+        assertThat(DrbdEventPublisher.isAnyVolumeOpen(rsc().getVolumesMap())).isTrue();
+
+        assertThat(DrbdEventPublisher.isAnyVolumeOpen(new TreeMap<>())).isNull();
     }
 
     @Test

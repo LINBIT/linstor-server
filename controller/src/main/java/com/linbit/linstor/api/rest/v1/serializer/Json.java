@@ -641,6 +641,7 @@ public class Json
                     .get(linNodeName).getResourceStates().get(rscNameRes);
                 rsc.state = new JsonGenTypes.ResourceState();
                 rsc.state.in_use = satResState.isInUse();
+                rsc.state.open = satResState.isOpen();
 
                 if (rscApi.getLayerData().getLayerKind() == DeviceLayerKind.DRBD)
                 {

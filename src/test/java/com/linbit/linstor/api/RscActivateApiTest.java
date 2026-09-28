@@ -28,6 +28,7 @@ import jakarta.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -158,6 +159,12 @@ public class RscActivateApiTest extends ApiTestBase
 
     private void createResourceOnNode(String nodeName, String storPoolName) throws Exception
     {
+        createResourceOnNode(nodeName, storPoolName, Collections.emptyList());
+    }
+
+    private void createResourceOnNode(String nodeName, String storPoolName, List<String> layerStack)
+        throws Exception
+    {
         enterScope();
 
         Map<String, String> rscProps = new TreeMap<>();
@@ -172,7 +179,7 @@ public class RscActivateApiTest extends ApiTestBase
             null,
             null,
             null,
-            Collections.emptyList(),
+            layerStack,
             Resource.DiskfulBy.USER,
             false
         );
@@ -261,6 +268,38 @@ public class RscActivateApiTest extends ApiTestBase
         );
 
         assertThat(getRscOnNodeA().getStateFlags().isSet(Resource.Flags.INACTIVE)).isFalse();
+    }
+
+    @Test
+    public void deactivateOpenWhileSecondary() throws Exception
+    {
+        createResourceOnNode(TEST_NODE_A, TEST_SP_NAME);
+
+        // DRBD device opened (e.g. read-only) without being Primary
+        satelliteStateA.setOnResource(testRscName, SatelliteResourceState::setInUse, Boolean.FALSE);
+        satelliteStateA.setOnResource(testRscName, SatelliteResourceState::setOpen, Boolean.TRUE);
+
+        CapturingDeactivateRscCall call = new CapturingDeactivateRscCall(ApiConsts.FAIL_IN_USE);
+        evaluateTest(call);
+
+        assertThat(getRscOnNodeA().getStateFlags().isSet(Resource.Flags.INACTIVE)).isFalse();
+        assertThat(call.rc.get(0).getCorrection()).contains("node '" + TEST_NODE_A + "'");
+    }
+
+    @Test
+    public void deactivateNvmeTargetWithInitiator() throws Exception
+    {
+        createResourceOnNode(TEST_NODE_A, TEST_SP_NAME, Arrays.asList("NVME", "STORAGE"));
+        createResourceOnNode(TEST_NODE_B, TEST_SP_NAME, Arrays.asList("NVME", "STORAGE"));
+        setRscFlags(testNodeB.getResource(testRscName), Resource.Flags.NVME_INITIATOR);
+
+        CapturingDeactivateRscCall call = new CapturingDeactivateRscCall(ApiConsts.FAIL_IN_USE);
+        evaluateTest(call);
+
+        assertThat(getRscOnNodeA().getStateFlags().isSet(Resource.Flags.INACTIVE)).isFalse();
+        // the blocker is the initiator on the other node, not something on the target node
+        assertThat(call.rc.get(0).getCause()).contains("node '" + TEST_NODE_B + "'").contains("initiator");
+        assertThat(call.rc.get(0).getCorrection()).contains("node '" + TEST_NODE_B + "'");
     }
 
     @Test
@@ -401,6 +440,23 @@ public class RscActivateApiTest extends ApiTestBase
         public ApiCallRc executeApiCall()
         {
             return collect(rscActivateApiCallHandlerProvider.get().activateRsc(nodeName, rscName));
+        }
+    }
+
+    private class CapturingDeactivateRscCall extends DeactivateRscCall
+    {
+        private ApiCallRc rc;
+
+        CapturingDeactivateRscCall(long... expectedRcs)
+        {
+            super(expectedRcs);
+        }
+
+        @Override
+        public ApiCallRc executeApiCall()
+        {
+            rc = super.executeApiCall();
+            return rc;
         }
     }
 

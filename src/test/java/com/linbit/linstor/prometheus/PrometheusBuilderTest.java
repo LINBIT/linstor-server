@@ -7,9 +7,14 @@ import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.NodeApi;
+import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.StderrErrorReporter;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
+import com.linbit.linstor.satellitestate.SatelliteState;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,6 +23,7 @@ import java.util.UUID;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class PrometheusBuilderTest
 {
@@ -180,5 +186,60 @@ public class PrometheusBuilderTest
         Assert.assertEquals("0.0", nodeFlagValue(promText, "evicted", Node.Flags.DELETE));
         Assert.assertEquals("1.0", nodeFlagValue(promText, "deleting", Node.Flags.DELETE));
         Assert.assertEquals("0.0", nodeFlagValue(promText, "deleting", Node.Flags.EVICTED));
+    }
+
+    private static ResourceApi rscApi(String rscName, String nodeName)
+    {
+        ResourceApi rsc = Mockito.mock(ResourceApi.class);
+        Mockito.when(rsc.getName()).thenReturn(rscName);
+        Mockito.when(rsc.getNodeName()).thenReturn(nodeName);
+        Mockito.when(rsc.getVlmList()).thenReturn(Collections.emptyList());
+        return rsc;
+    }
+
+    private static @Nullable String resourceOpenValue(String promText, String rscName, String nodeName)
+    {
+        String value = null;
+        for (String line : promText.split("\n"))
+        {
+            if (line.startsWith("linstor_resource_open{") && line.contains("name=\"" + rscName + "\"") &&
+                line.contains("node=\"" + nodeName + "\""))
+            {
+                value = line.substring(line.lastIndexOf(' ') + 1);
+            }
+        }
+        return value;
+    }
+
+    @Test
+    public void testResourceOpen() throws Exception
+    {
+        PrometheusBuilder pmb = new PrometheusBuilder(new StderrErrorReporter("Test"));
+
+        ResourceList rl = new ResourceList();
+        rl.addResource(rscApi("r1", "n1"));
+        rl.addResource(rscApi("r1", "n2"));
+        rl.addResource(rscApi("r1", "n3"));
+
+        SatelliteState n1 = new SatelliteState();
+        n1.setOnResource(new ResourceName("r1"), SatelliteResourceState::setInUse, Boolean.FALSE);
+        n1.setOnResource(new ResourceName("r1"), SatelliteResourceState::setOpen, Boolean.TRUE);
+        SatelliteState n2 = new SatelliteState();
+        n2.setOnResource(new ResourceName("r1"), SatelliteResourceState::setInUse, Boolean.FALSE);
+        n2.setOnResource(new ResourceName("r1"), SatelliteResourceState::setOpen, Boolean.FALSE);
+        SatelliteState n3 = new SatelliteState();
+        // satellite or DRBD too old to report the open state
+        n3.setOnResource(new ResourceName("r1"), SatelliteResourceState::setInUse, Boolean.FALSE);
+        rl.putSatelliteState(new NodeName("n1"), n1);
+        rl.putSatelliteState(new NodeName("n2"), n2);
+        rl.putSatelliteState(new NodeName("n3"), n3);
+
+        final String promText = pmb.build(null, null, rl, null, null, 1, System.currentTimeMillis());
+
+        Assert.assertEquals("1.0", resourceOpenValue(promText, "r1", "n1"));
+        Assert.assertEquals("0.0", resourceOpenValue(promText, "r1", "n2"));
+        Assert.assertEquals("-1.0", resourceOpenValue(promText, "r1", "n3"));
+        // open on a Secondary does not change the meaning of linstor_resource_state
+        Assert.assertTrue(promText.contains("linstor_resource_state{"));
     }
 }

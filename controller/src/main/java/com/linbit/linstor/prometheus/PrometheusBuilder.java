@@ -54,6 +54,8 @@ public class PrometheusBuilder
         Node.Flags.DELETE, Node.Flags.EVICTED, Node.Flags.EVACUATE
     };
 
+    private static final String RSC_OPEN_HELP =
+        "-1=\"unknown\", 0=\"not open\", 1=\"a DRBD device is open (also read-only on a Secondary)\"";
     private static final int RSC_STATE_UNKNOWN = -1;
     private static final int RSC_STATE_UN_USED = 0;
     private static final int RSC_STATE_IN_USE = 1;
@@ -213,6 +215,30 @@ public class PrometheusBuilder
             state = Boolean.TRUE.equals(resState.isInUse()) ? RSC_STATE_IN_USE : RSC_STATE_UN_USED;
         }
         return state;
+    }
+
+    /**
+     * Writes whether a DRBD device of each resource is open, also if it is only opened read-only on a Secondary.
+     * A separate gauge instead of a new value of linstor_resource_state, so that the meaning of that metric stays
+     * the same for existing dashboards.
+     */
+    private void writeResourceOpen(TextFormat tf, ResourceList rl)
+    {
+        tf.startGauge("linstor_resource_open", RSC_OPEN_HELP);
+        for (ResourceApi resApi : rl.getResources())
+        {
+            tf.writeSample(resourceExport(resApi), resourceOpen(getResourceState(rl.getSatelliteStates(), resApi)));
+        }
+    }
+
+    private static int resourceOpen(@Nullable SatelliteResourceState resState)
+    {
+        int open = RSC_STATE_UNKNOWN;
+        if (resState != null && resState.isOpen() != null)
+        {
+            open = Boolean.TRUE.equals(resState.isOpen()) ? 1 : 0;
+        }
+        return open;
     }
 
     private static Map<String, String> volumeExport(
@@ -386,6 +412,7 @@ public class PrometheusBuilder
                     .map(vlmApi -> new PairNonNull<ResourceApi, VolumeApi>(resApi, vlmApi))
                     .collect(Collectors.toList()));
             }
+            writeResourceOpen(tf, rl);
 
             tf.startGauge("linstor_volume_state", VOLUME_STATE_HELP);
             for (PairNonNull<ResourceApi, VolumeApi> pair : volumeApis)

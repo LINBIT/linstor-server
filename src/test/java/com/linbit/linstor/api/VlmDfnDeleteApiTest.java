@@ -269,6 +269,27 @@ public class VlmDfnDeleteApiTest extends ApiTestBase
     }
 
     @Test
+    public void delRscOpenWhileSecondary() throws Exception
+    {
+        createResourceOnNode(TEST_NODE_A);
+        createResourceOnNode(TEST_NODE_B);
+
+        // DRBD device opened (e.g. read-only) without being Primary
+        satelliteStateA.setOnResource(testRscName, SatelliteResourceState::setInUse, Boolean.FALSE);
+        satelliteStateA.setOnResource(testRscName, SatelliteResourceState::setOpen, Boolean.TRUE);
+
+        evaluateTest(
+            new DeleteVlmDfnCall(
+                ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL | ApiConsts.FAIL_IN_USE
+            )
+        );
+
+        VolumeDefinition vlmDfn = getVlmDfn();
+        assertThat(vlmDfn).isNotNull();
+        assertThat(vlmDfn.getFlags().isSet(VolumeDefinition.Flags.DELETE)).isFalse();
+    }
+
+    @Test
     public void delUnknownRscDfn() throws Exception
     {
         evaluateTest(

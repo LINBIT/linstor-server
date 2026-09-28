@@ -113,13 +113,22 @@ public class ResourceStateEventHandler implements EventHandler
                 default -> throw new ImplementationError("Unexpected proto InUse enum: " + eventRscState.getInUse());
             };
 
+            final @Nullable Boolean open = eventRscState.hasOpen() ? eventRscState.getOpen() : null;
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
-                satelliteState -> satelliteState.setOnResource(
-                    eventIdentifier.getResourceName(),
-                    SatelliteResourceState::setInUse,
-                    inUse
-                )
+                satelliteState ->
+                {
+                    satelliteState.setOnResource(
+                        eventIdentifier.getResourceName(),
+                        SatelliteResourceState::setInUse,
+                        inUse
+                    );
+                    satelliteState.setOnResource(
+                        eventIdentifier.getResourceName(),
+                        SatelliteResourceState::setOpen,
+                        open
+                    );
+                }
             );
 
             satelliteStateHelper.onSatelliteState(
@@ -166,7 +175,8 @@ public class ResourceStateEventHandler implements EventHandler
                 inUse,
                 eventRscState.getUpToDate(),
                 promotionScore,
-                mayPromote
+                mayPromote,
+                open
             );
 
             processEvent(eventIdentifier, inUse);
@@ -177,10 +187,17 @@ public class ResourceStateEventHandler implements EventHandler
         {
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
-                satelliteState -> satelliteState.unsetOnResource(
-                    eventIdentifier.getResourceName(),
-                    SatelliteResourceState::setInUse
-                )
+                satelliteState ->
+                {
+                    satelliteState.unsetOnResource(
+                        eventIdentifier.getResourceName(),
+                        SatelliteResourceState::setInUse
+                    );
+                    satelliteState.unsetOnResource(
+                        eventIdentifier.getResourceName(),
+                        SatelliteResourceState::setOpen
+                    );
+                }
             );
 
             processEventUpdateVolatile(eventIdentifier, null, null);

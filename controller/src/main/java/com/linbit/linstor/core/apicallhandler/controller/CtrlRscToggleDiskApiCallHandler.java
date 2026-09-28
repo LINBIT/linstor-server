@@ -1515,7 +1515,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     resourceStateEvent.get(),
                     ObjectIdentifier.resource(migrateFromNodeName, rscName)
                 )
-                .skipUntil(usageState -> usageState.getInUse() != null && !usageState.getInUse())
+                .skipUntil(
+                    usageState -> Boolean.FALSE.equals(usageState.getInUse()) &&
+                        !Boolean.TRUE.equals(usageState.getOpen())
+                )
                 .next()
         );
 

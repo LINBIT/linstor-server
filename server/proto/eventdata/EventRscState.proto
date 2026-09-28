@@ -23,6 +23,9 @@ message EventRscState
 
     // key is the volume number
     map<int32, PeerState> peers_connected = 6;
+
+    // whether any DRBD device of the resource is open (also read-only while Secondary); unset if unknown
+    optional bool open = 7;
 }
 
 message PeerState

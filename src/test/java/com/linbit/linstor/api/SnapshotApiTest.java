@@ -647,6 +647,21 @@ public class SnapshotApiTest extends ApiTestBase
         );
     }
 
+    @Test
+    public void rollbackResourceOpenWhileSecondaryRejected() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        createSnapDfn(TEST_RSC_NAME, TEST_SNAP_NAME, SnapshotDefinition.Flags.SUCCESSFUL);
+        satelliteOnline();
+        // DRBD device opened (e.g. read-only) without being Primary
+        satelliteState.setOnResource(testRscName, SatelliteResourceState::setInUse, Boolean.FALSE);
+        satelliteState.setOnResource(testRscName, SatelliteResourceState::setOpen, Boolean.TRUE);
+
+        evaluateTest(
+            new RollbackSnapshotCall(ApiConsts.FAIL_IN_USE)
+        );
+    }
+
     private void satelliteOnline()
     {
         setSatelliteOnline(mockSatellite, true);

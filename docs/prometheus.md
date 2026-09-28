@@ -10,6 +10,8 @@ LINSTOR controller.
 - `linstor_node_state`: Node type and state for each node in LINSTOR.
 - `linstor_resource_definition_count`: Number of resources currently managed by LINSTOR.
 - `linstor_resource_state`: State of each resource managed by LINSTOR.
+- `linstor_resource_open`: Whether a DRBD device of each resource is open, also if it is only opened read-only on a
+  Secondary (`-1` unknown, `0` not open, `1` open). Resources that are open cannot be taken down.
 - `linstor_volume_state`: State of each volume managed by LINSTOR.
 - `linstor_volume_allocated_size_bytes`: Total storage in bytes currently allocated for given volume.
 - `linstor_storage_pool_capacity_free_bytes`: Total free storage in bytes available in given LINSTOR storage-pool.

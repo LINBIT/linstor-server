@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -175,13 +176,41 @@ public class CtrlRscActivateApiCallHandler
             }
             else
             {
-                if (isResourceInUse(rsc))
+                @Nullable Resource initiator = getInitiatorOfTarget(rsc);
+                if (initiator != null)
                 {
+                    String initiatorNode = initiator.getNode().getName().displayValue;
                     throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
+                        ApiCallRcImpl.entryBuilder(
                             ApiConsts.FAIL_IN_USE,
                             "Cannot deactivate a resource while being in use!"
                         )
+                            .setCause(
+                                String.format(
+                                    "The resource on node '%s' is an initiator of this target.",
+                                    initiatorNode
+                                )
+                            )
+                            .setCorrection(
+                                String.format(
+                                    "Deactivate or delete the resource on node '%s' first.",
+                                    initiatorNode
+                                )
+                            )
+                            .setSkipErrorReport(true)
+                            .build()
+                    );
+                }
+                if (isInUseOrOpen(rsc))
+                {
+                    throw new ApiRcException(
+                        CtrlRscInUseHelper.addInUseDetails(
+                            ApiCallRcImpl.entryBuilder(
+                                ApiConsts.FAIL_IN_USE,
+                                "Cannot deactivate a resource while being in use!"
+                            ),
+                            rsc.getNode().getName()
+                        ).build()
                     );
                 }
                 setFlag(rsc, Resource.Flags.INACTIVE, Resource.Flags.INACTIVATING);
@@ -338,28 +367,27 @@ public class CtrlRscActivateApiCallHandler
         }
     }
 
-    private boolean isResourceInUse(Resource rscRef)
+    /**
+     * Returns an NVMe or EBS initiator of the given resource, if the given resource is the matching target.
+     *
+     * @return null if the resource is no NVMe / EBS target or if no initiator exists
+     */
+    private @Nullable Resource getInitiatorOfTarget(Resource rscRef)
     {
-        boolean ret = false;
-        // check if rscRef is an nvme- or ebs-target. if so, check if there is already an initiator -> inUse = true
-        boolean isNvmeTarget = false;
-        boolean isEbsTarget = false;
+        boolean isTarget = LayerRscUtils.getLayerStack(rscRef).contains(DeviceLayerKind.NVME);
+        for (StorPool storPool : LayerVlmUtils.getStorPools(rscRef))
         {
-            List<DeviceLayerKind> layerStack = LayerRscUtils.getLayerStack(rscRef);
-            isNvmeTarget = layerStack.contains(DeviceLayerKind.NVME);
-
-            for (StorPool storPool : LayerVlmUtils.getStorPools(rscRef))
+            if (storPool.getDeviceProviderKind().equals(DeviceProviderKind.EBS_TARGET))
             {
-                if (storPool.getDeviceProviderKind().equals(DeviceProviderKind.EBS_TARGET))
-                {
-                    isEbsTarget = true;
-                }
+                isTarget = true;
             }
         }
-        if (isNvmeTarget || isEbsTarget)
+
+        @Nullable Resource initiator = null;
+        if (isTarget)
         {
             Iterator<Resource> rscIt = rscRef.getResourceDefinition().iterateResource();
-            while (rscIt.hasNext())
+            while (initiator == null && rscIt.hasNext())
             {
                 Resource otherRsc = rscIt.next();
                 if (otherRsc.getStateFlags().isSomeSet(
@@ -367,23 +395,24 @@ public class CtrlRscActivateApiCallHandler
                     Resource.Flags.EBS_INITIATOR
                 ))
                 {
-                    ret = true;
-                    break;
+                    initiator = otherRsc;
                 }
             }
         }
+        return initiator;
+    }
 
-        if (!ret)
+    private boolean isInUseOrOpen(Resource rscRef)
+    {
+        boolean ret = false;
+        // this is much more complicated than it should be ....
+        SatelliteResourceState stltRscState = rscRef.getNode().getPeer()
+            .getSatelliteState()
+            .getResourceStates()
+            .get(rscRef.getResourceDefinition().getName());
+        if (stltRscState != null && stltRscState.isInUseOrOpen() != null)
         {
-            // this is much more complicated than it should be ....
-            SatelliteResourceState stltRscState = rscRef.getNode().getPeer()
-                .getSatelliteState()
-                .getResourceStates()
-                .get(rscRef.getResourceDefinition().getName());
-            if (stltRscState != null && stltRscState.isInUse() != null)
-            {
-                ret = stltRscState.isInUse();
-            }
+            ret = stltRscState.isInUseOrOpen();
         }
         return ret;
     }

@@ -161,20 +161,18 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             );
         }
 
-        Optional<Resource> rscInUse = anyResourceInUsePrivileged(rscDfn);
+        Optional<Resource> rscInUse = rscDfn.anyResourceInUseOrOpen();
         if (rscInUse.isPresent())
         {
             NodeName nodeName = rscInUse.get().getNode().getName();
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL | ApiConsts.FAIL_IN_USE,
-                    String.format("Resource '%s' on node '%s' is still in use.", rscNameStr, nodeName.displayValue)
-                )
-                .setCause("Resource is mounted/in use.")
-                .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.",
-                    rscNameStr,
-                    nodeName.displayValue))
-                .build()
+            throw new ApiRcException(
+                CtrlRscInUseHelper.addInUseDetails(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL | ApiConsts.FAIL_IN_USE,
+                        String.format("Resource '%s' on node '%s' is still in use.", rscNameStr, nodeName.displayValue)
+                    ),
+                    nodeName
+                ).build()
             );
         }
 
@@ -309,13 +307,6 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
 
         return flux;
-    }
-
-    private Optional<Resource> anyResourceInUsePrivileged(ResourceDefinition rscDfn)
-    {
-        Optional<Resource> rscInUse;
-        rscInUse = rscDfn.anyResourceInUse();
-        return rscInUse;
     }
 
     @SuppressWarnings("UnusedMethod") // https://gitlab.at.linbit.com/linstor/linstor-server/-/issues/1317

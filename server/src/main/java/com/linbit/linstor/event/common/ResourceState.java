@@ -15,6 +15,7 @@ public class ResourceState
     private final Boolean upToDate;
     private final @Nullable Integer promotionScore;
     private final @Nullable Boolean mayPromote;
+    private final @Nullable Boolean open;
 
     public ResourceState(
         Boolean accessToUpToDateDataRef,
@@ -24,12 +25,33 @@ public class ResourceState
         @Nullable Integer promotionScoreRef,
         @Nullable Boolean mayPromoteRef)
     {
+        this(
+            accessToUpToDateDataRef,
+            peersConnectedRef,
+            inUseRef,
+            upToDateRef,
+            promotionScoreRef,
+            mayPromoteRef,
+            null
+        );
+    }
+
+    public ResourceState(
+        Boolean accessToUpToDateDataRef,
+        Map<VolumeNumber, Map<Integer /* peer-node-id */, Boolean /* peer connected */>> peersConnectedRef,
+        @Nullable Boolean inUseRef,
+        Boolean upToDateRef,
+        @Nullable Integer promotionScoreRef,
+        @Nullable Boolean mayPromoteRef,
+        @Nullable Boolean openRef)
+    {
         accessToUpToDateData = accessToUpToDateDataRef;
         peersConnected = Collections.unmodifiableMap(peersConnectedRef);
         inUse = inUseRef;
         upToDate = upToDateRef;
         promotionScore = promotionScoreRef;
         mayPromote = mayPromoteRef;
+        open = openRef;
     }
 
     public boolean isReady(Collection<Integer> collectionRef)
@@ -88,5 +110,15 @@ public class ResourceState
     public @Nullable Boolean mayPromote()
     {
         return mayPromote;
+    }
+
+    /**
+     * Whether any DRBD device of the resource is open, regardless of its role.
+     *
+     * @return null if unknown (non-DRBD resource, or DRBD does not report it)
+     */
+    public @Nullable Boolean getOpen()
+    {
+        return open;
     }
 }

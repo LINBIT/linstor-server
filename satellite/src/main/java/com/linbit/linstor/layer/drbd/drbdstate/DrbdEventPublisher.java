@@ -162,6 +162,20 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     }
 
     @Override
+    public void openChanged(
+        DrbdResource resource,
+        DrbdVolume volume,
+        @Nullable Boolean previous,
+        @Nullable Boolean current
+    )
+    {
+        if (resource.isKnownByLinstor())
+        {
+            triggerResourceStateEvent(resource);
+        }
+    }
+
+    @Override
     public void resourceDestroyed(DrbdResource resource)
     {
         if (resource.isKnownByLinstor() && !resource.isDestroyEventSuppressed())
@@ -326,8 +340,33 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
             volumesMap.values().stream().map(DrbdVolume::getDiskState)
                 .allMatch(DiskState.UP_TO_DATE::equals),
             drbdResource.getPromotionScore(),
-            drbdResource.mayPromote()
+            drbdResource.mayPromote(),
+            isAnyVolumeOpen(volumesMap)
         );
+    }
+
+    /**
+     * Combines the open state of the local volumes into the open state of the resource.
+     *
+     * @return true if any volume is open, false if none is, null if DRBD does not report it for all volumes
+     */
+    static @Nullable Boolean isAnyVolumeOpen(Map<VolumeNumber, DrbdVolume> volumesMap)
+    {
+        @Nullable Boolean open = volumesMap.isEmpty() ? null : false;
+        for (DrbdVolume volume : volumesMap.values())
+        {
+            @Nullable Boolean vlmOpen = volume.getOpen();
+            if (Boolean.TRUE.equals(vlmOpen))
+            {
+                open = true;
+                break;
+            }
+            if (vlmOpen == null)
+            {
+                open = null;
+            }
+        }
+        return open;
     }
 
     private boolean allVolumesAccessToUpToDateData(DrbdVolume volume)

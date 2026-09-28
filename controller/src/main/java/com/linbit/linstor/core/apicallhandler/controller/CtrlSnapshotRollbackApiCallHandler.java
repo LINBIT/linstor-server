@@ -911,18 +911,18 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
     private void ensureNoResourcesInUse(ResourceDefinition rscDfn)
     {
-        Optional<Resource> rscInUse = anyResourceInUse(rscDfn);
+        Optional<Resource> rscInUse = rscDfn.anyResourceInUseOrOpen();
         if (rscInUse.isPresent())
         {
             NodeName nodeName = rscInUse.get().getNode().getName();
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.FAIL_IN_USE,
-                    String.format("Resource '%s' on node '%s' is still in use.", rscDfn.getName(), nodeName)
-                )
-                .setCause("Resource is mounted/in use.")
-                .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.", rscDfn.getName(), nodeName))
-                .build()
+            throw new ApiRcException(
+                CtrlRscInUseHelper.addInUseDetails(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_IN_USE,
+                        String.format("Resource '%s' on node '%s' is still in use.", rscDfn.getName(), nodeName)
+                    ),
+                    nodeName
+                ).build()
             );
         }
     }
@@ -930,13 +930,6 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private boolean isDiskless(Resource rsc)
     {
         return rsc.isDrbdDiskless() || rsc.isNvmeInitiator() || rsc.isEbsInitiator();
-    }
-
-    private Optional<Resource> anyResourceInUse(ResourceDefinition rscDfn)
-    {
-        Optional<Resource> rscInUse;
-        rscInUse = rscDfn.anyResourceInUse();
-        return rscInUse;
     }
 
     private boolean isDisklessPrivileged(Resource rsc)

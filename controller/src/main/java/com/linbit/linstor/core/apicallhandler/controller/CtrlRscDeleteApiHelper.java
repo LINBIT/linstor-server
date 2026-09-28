@@ -365,20 +365,18 @@ public class CtrlRscDeleteApiHelper
         try (LockGuard ignored = LockGuard.createLocked(peer.getSatelliteStateLock().readLock()))
         {
             inUse = peer.getSatelliteState().getFromResource(
-                rscName, SatelliteResourceState::isInUse);
+                rscName, SatelliteResourceState::isInUseOrOpen);
         }
 
         if (inUse != null && inUse)
         {
-            ApiCallRcImpl.ApiCallRcEntry err = ApiCallRcImpl
-                .entryBuilder(
+            ApiCallRcImpl.ApiCallRcEntry err = CtrlRscInUseHelper.addInUseDetails(
+                ApiCallRcImpl.entryBuilder(
                     ApiConsts.FAIL_IN_USE,
                     String.format("Resource '%s' is still in use.", rscName)
-                )
-                .setCause("Resource is mounted/in use.")
-                .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.", rscName, nodeName))
-                .setSkipErrorReport(true)
-                .build();
+                ),
+                nodeName
+            ).build();
             resp.addEntry(err);
             if (throwApiExc)
             {
