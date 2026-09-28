@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SharedStorPoolManager;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
@@ -27,7 +26,6 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
@@ -42,7 +40,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
 
 import com.google.common.base.Objects;
 
@@ -54,7 +51,6 @@ public class NodeInternalCallHandler
     private final ErrorReporter errorReporter;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final Provider<Peer> peerProvider;
-    private final ReadWriteLock nodesMapLock;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final SharedStorPoolManager sharedStorPoolManager;
     private final CtrlSatelliteUpdater stltUpdater;
@@ -66,7 +62,6 @@ public class NodeInternalCallHandler
         ErrorReporter errorReporterRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         Provider<Peer> peerRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         SharedStorPoolManager sharedStorPoolManagerRef,
         CtrlSatelliteUpdater stltUpdaterRef,
@@ -77,7 +72,6 @@ public class NodeInternalCallHandler
         errorReporter = errorReporterRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         peerProvider = peerRef;
-        nodesMapLock = nodesMapLockRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         sharedStorPoolManager = sharedStorPoolManagerRef;
         stltUpdater = stltUpdaterRef;
@@ -87,10 +81,10 @@ public class NodeInternalCallHandler
 
     public void handleNodeRequest(UUID nodeUuid, String nodeNameStr)
     {
-        try (LockGuard ls = LockGuard.createLocked(
-            nodesMapLock.readLock(),
-            peerProvider.get().getSerializerLock().readLock()
-        ))
+        try (LockGuard lg = lockGuardFactory.create()
+            .read(LockObj.NODES_MAP)
+            .postLinstorLocks(peerProvider.get().getSerializerLock().readLock())
+            .build())
         {
             Peer currentPeer = peerProvider.get();
             NodeName nodeName = new NodeName(nodeNameStr);
@@ -280,11 +274,10 @@ public class NodeInternalCallHandler
         if (node != null && !node.isDeleted())
         {
             try (
-                LockGuard ls = LockGuard.createLocked(
-                    nodesMapLock.writeLock(),
-                    peer.getSerializerLock().readLock()
-                )
-            )
+                LockGuard lg = lockGuardFactory.create()
+                    .write(LockObj.NODES_MAP)
+                    .postLinstorLocks(peer.getSerializerLock().readLock())
+                    .build())
             {
                 // check again now that we have the lock
                 if (!node.isDeleted())
