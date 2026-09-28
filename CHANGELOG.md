@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Prometheus: New metric `linstor_node_flag` exports the node flags `DELETE`, `EVICTED` and `EVACUATE` as 0/1 per node
+
 ### Changed
 
 - Satellite: The ErrorReport of a `drbdadm adjust` that fails after a .res file was regenerated now includes the
