@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New paginated error-report list API `GET /v1/view/error-reports`: returns the total count and one page of the
   globally sorted reports; sortable via `sort_by`/`sort_order`, with working `limit`/`offset`, multiple `node`
   filters and an optional `module` filter
+- Prometheus: New metric `linstor_node_flag` exports the node flags `DELETE`, `EVICTED` and `EVACUATE` as 0/1 per node
 
 ### Changed
 

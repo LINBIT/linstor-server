@@ -18,6 +18,7 @@ import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -48,6 +49,10 @@ public class PrometheusBuilder
     private static final String VOLUME_STATE_HELP;
     private static final String NODE_STATE_HELP;
     private static final String NODE_RECONNECT_ATTEMPT_COUNT_HELP = "Number of node reconnection attempts";
+    private static final String NODE_FLAG_HELP = "1 if the node flag is set, 0 otherwise";
+    private static final Node.Flags[] EXPORTED_NODE_FLAGS = {
+        Node.Flags.DELETE, Node.Flags.EVICTED, Node.Flags.EVACUATE
+    };
 
     private static final int RSC_STATE_UNKNOWN = -1;
     private static final int RSC_STATE_UN_USED = 0;
@@ -262,6 +267,33 @@ public class PrometheusBuilder
     }
 
     /**
+     * Writes the user-visible node flags of every node as 0/1, so that an alert on "== 1" also sees the flag being
+     * cleared. QIGNORE is internal and not exported. EVICTED includes the DELETE bit, but an evicted node is not
+     * being deleted, so DELETE is only reported for nodes that are not evicted.
+     */
+    private static void writeNodeFlags(TextFormat tf, List<NodeApi> nodeApiList)
+    {
+        tf.startGauge("linstor_node_flag", NODE_FLAG_HELP);
+        for (NodeApi node : nodeApiList)
+        {
+            final long flags = node.getFlags();
+            final boolean evicted = isFlagSet(flags, Node.Flags.EVICTED);
+            for (Node.Flags flag : EXPORTED_NODE_FLAGS)
+            {
+                boolean set = isFlagSet(flags, flag) && !(flag == Node.Flags.DELETE && evicted);
+                Map<String, String> labels = nodeExport(node);
+                labels.put("flag", flag.name());
+                tf.writeSample(labels, set ? 1 : 0);
+            }
+        }
+    }
+
+    private static boolean isFlagSet(long flags, Node.Flags flag)
+    {
+        return (flags & flag.flagValue) == flag.flagValue;
+    }
+
+    /**
      * Builds the prometheus metrics format in a TextWriter and jvm statistics in a StringWriter and finally
      * converts them to a String.
      *
@@ -312,6 +344,8 @@ public class PrometheusBuilder
                     (double) node.getReconnectAttemptCount()
                 );
             }
+
+            writeNodeFlags(tf, nodeApiList);
         }
 
         if (rscDfns != null)
