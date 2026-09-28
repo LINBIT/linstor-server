@@ -1,6 +1,8 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -37,9 +39,9 @@ public class SharedStorPoolManager
      * CAUTION: when synchroizing on the following maps, make sure to keep the
      * order of the variable declarations to prevent deadlocks
      */
-    private final TreeMap<SharedStorPoolName, LinkedHashSet<Node>> queueByLock;
-    private final TreeMap<SharedStorPoolName, Node> activeLocksByLock;
-    private final TreeMap<Node, ArrayList<SharedStorPoolName>> activeLocksByNode;
+    private final TreeMap<SharedStorPoolName, LinkedHashSet<NodeName>> queueByLock;
+    private final TreeMap<SharedStorPoolName, NodeName> activeLocksByLock;
+    private final TreeMap<NodeName, ArrayList<SharedStorPoolName>> activeLocksByNode;
 
     @Inject
     public SharedStorPoolManager(
@@ -62,12 +64,12 @@ public class SharedStorPoolManager
         }
         else
         {
-            Node activeNode;
+            @Nullable NodeName activeNodeName;
             synchronized (activeLocksByLock)
             {
-                activeNode = activeLocksByLock.get(sp.getSharedStorPoolName());
+                activeNodeName = activeLocksByLock.get(sp.getSharedStorPoolName());
             }
-            ret = Objects.equals(activeNode, sp.getNode()); // activeNode might be null
+            ret = Objects.equals(activeNodeName, sp.getNode().getName()); // activeNodeName might be null
         }
         return ret;
     }
@@ -116,9 +118,10 @@ public class SharedStorPoolManager
         boolean granted = true;
         synchronized (queueByLock)
         {
+            NodeName nodeName = node.getKey();
             synchronized (activeLocksByLock)
             {
-                errorReporter.logTrace("%s requesting shared lock(s): %s ", node, locks);
+                errorReporter.logTrace("%s requesting shared lock(s): %s ", nodeName, locks);
                 for (SharedStorPoolName spSharedName : locks)
                 {
                     if (activeLocksByLock.containsKey(spSharedName))
@@ -132,7 +135,7 @@ public class SharedStorPoolManager
                 {
                     for (SharedStorPoolName spSharedName : locks)
                     {
-                        LinkedHashSet<Node> spsharedSpQueue = queueByLock.get(spSharedName);
+                        @Nullable LinkedHashSet<NodeName> spsharedSpQueue = queueByLock.get(spSharedName);
                         if (spsharedSpQueue != null && !spsharedSpQueue.isEmpty())
                         {
                             /*
@@ -150,28 +153,22 @@ public class SharedStorPoolManager
             }
             if (granted)
             {
-                lock(node, locks);
+                lock(nodeName, locks);
             }
             else
             {
                 errorReporter.logTrace("at least some locks already taken. Adding to queue");
                 for (SharedStorPoolName spSharedName : locks)
                 {
-                    LinkedHashSet<Node> sharedSpQueue = queueByLock.get(spSharedName);
-                    if (sharedSpQueue == null)
-                    {
-                        sharedSpQueue = new LinkedHashSet<>();
-                        queueByLock.put(spSharedName, sharedSpQueue);
-                    }
-
-                    sharedSpQueue.add(node);
+                    queueByLock.computeIfAbsent(spSharedName, ignored -> new LinkedHashSet<>())
+                        .add(nodeName);
                 }
             }
         }
         return granted;
     }
 
-    private void lock(Node node, Collection<SharedStorPoolName> locksRef)
+    private void lock(NodeName nodeName, Collection<SharedStorPoolName> locksRef)
     {
         synchronized (activeLocksByLock)
         {
@@ -179,45 +176,42 @@ public class SharedStorPoolManager
             {
                 for (SharedStorPoolName spSharedName : locksRef)
                 {
-                    activeLocksByLock.put(spSharedName, node);
+                    activeLocksByLock.put(spSharedName, nodeName);
                 }
-                activeLocksByNode.put(
-                    node,
-                    new ArrayList<>(locksRef)
-                );
+                activeLocksByNode.put(nodeName, new ArrayList<>(locksRef));
             }
         }
-        errorReporter.logTrace("Lock(s) %s granted for %s", locksRef, node);
+        errorReporter.logTrace("Lock(s) %s granted for %s", locksRef, nodeName);
     }
 
-    public void forgetRequests(Node node)
+    public void forgetRequests(NodeName nodeName)
     {
         synchronized (queueByLock)
         {
-            for (LinkedHashSet<Node> queueValues : queueByLock.values())
+            for (LinkedHashSet<NodeName> queueValues : queueByLock.values())
             {
-                queueValues.remove(node);
+                queueValues.remove(nodeName);
             }
         }
     }
 
     /**
-     * Releases the given locks and (if requests are still queued) processes the next request.
+     * <p>Releases the given locks and (if requests are still queued) processes the next request.</p>
      *
-     * If no locks are given, this method looks up all currently active locks of the given node.
+     * <p>Note: The returned map of {@link NodeName}s may refer to nodes that no longer exist / were deleted.
+     * The caller has to load the {@link Node} from the returned {@code NodeName} and check the {@code Node} for
+     * {@code null} as well as for {@code .isDeleted()}!</p>
      *
-     *
-     *
-     * @return A Map of {@link Node}s that were waiting for the now acquired lock(s), and are now ready to be
+     * @return A Map of {@link NodeName}s that were waiting for the now acquired lock(s), and are now ready to be
      *         sent to the satellite for processing. The value of each entry is the Set of granted locks.
      *         A node is only part of this map, if all of the previously requested locks could be acquired.<br />
      *
      *         An empty map means either that no lock-requests were queued, or that all items waiting for the lock
      *         also require at least one additional lock and still have to wait.
      */
-    public Map<Node, Set<SharedStorPoolName>> releaseLocks(Node nodeReleasingLocks)
+    public Map<NodeName, Set<SharedStorPoolName>> releaseLocks(NodeName nodeNameReleasingLocks)
     {
-        Map<Node, Set<SharedStorPoolName>> ret = new TreeMap<>();
+        Map<NodeName, Set<SharedStorPoolName>> ret = new TreeMap<>();
         List<SharedStorPoolName> locksToRelease = new ArrayList<>();
         synchronized (queueByLock)
         {
@@ -225,7 +219,7 @@ public class SharedStorPoolManager
             {
                 synchronized (activeLocksByNode)
                 {
-                    ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(nodeReleasingLocks);
+                    @Nullable ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(nodeNameReleasingLocks);
                     if (activeLocks != null)
                     {
                         locksToRelease.addAll(activeLocks);
@@ -234,39 +228,39 @@ public class SharedStorPoolManager
                     if (!locksToRelease.isEmpty())
                     {
                         // preserve order of next objects
-                        Set<Node> nextNodesToCheck = new LinkedHashSet<>();
+                        Set<NodeName> nextNodeNamesToCheck = new LinkedHashSet<>();
                         errorReporter.logTrace("Releasing shared storPool locks %s", locksToRelease);
                         for (SharedStorPoolName lock : locksToRelease)
                         {
                             // release the lock
-                            Node releasedLockFromNode = activeLocksByLock.remove(lock);
-                            if (releasedLockFromNode == null)
+                            @Nullable NodeName releasedLockFromNodeName = activeLocksByLock.remove(lock);
+                            if (releasedLockFromNodeName == null)
                             {
                                 throw new ImplementationError(
                                     "Cannot release shared lock before lock was acquired"
                                 );
                             }
-                            if (!Objects.equals(nodeReleasingLocks, releasedLockFromNode))
+                            if (!Objects.equals(nodeNameReleasingLocks, releasedLockFromNodeName))
                             {
                                 throw new ImplementationError(
                                     "The shared lock can only be released by the original requester."
                                 );
                             }
 
-                            LinkedHashSet<Node> sharedSpQueue = queueByLock.get(lock);
+                            @Nullable LinkedHashSet<NodeName> sharedSpQueue = queueByLock.get(lock);
                             if (sharedSpQueue != null)
                             {
                                 // see if any of these waiting objects can now acquire all the required locks
-                                nextNodesToCheck.addAll(sharedSpQueue);
+                                nextNodeNamesToCheck.addAll(sharedSpQueue);
                             }
                         }
-                        activeLocksByNode.remove(nodeReleasingLocks); // all locks released
+                        activeLocksByNode.remove(nodeNameReleasingLocks); // all locks released
 
-                        Map<SharedStorPoolName, Node> currentlyAcquiredLockBy = new HashMap<>();
+                        Map<SharedStorPoolName, NodeName> currentlyAcquiredLockBy = new HashMap<>();
 
-                        for (Node currentNode : nextNodesToCheck)
+                        for (NodeName currentNodeName : nextNodeNamesToCheck)
                         {
-                            Set<SharedStorPoolName> requiredLocks = getRequestedLocks(currentNode);
+                            Set<SharedStorPoolName> requiredLocks = getRequestedLocks(currentNodeName);
 
                             boolean granted = true;
                             for (SharedStorPoolName lock : requiredLocks)
@@ -276,7 +270,7 @@ public class SharedStorPoolManager
                                 {
                                     // Objects.equals would return true if we took this lock just now
                                     // (i.e. in a previous iteration of this for loop)
-                                    if (!Objects.equals(currentlyAcquiredLockBy.get(lock), currentNode))
+                                    if (!Objects.equals(currentlyAcquiredLockBy.get(lock), currentNodeName))
                                     {
                                         granted = false;
                                         break;
@@ -284,11 +278,11 @@ public class SharedStorPoolManager
                                 }
                                 else
                                 {
-                                    LinkedHashSet<Node> queue = queueByLock.get(lock);
+                                    @Nullable LinkedHashSet<NodeName> queue = queueByLock.get(lock);
                                     if (queue != null)
                                     {
-                                        Iterator<Node> queueIt = queue.iterator();
-                                        if (queueIt.hasNext() && !Objects.equals(getNode(queueIt.next()), currentNode))
+                                        Iterator<NodeName> queueIt = queue.iterator();
+                                        if (queueIt.hasNext() && !Objects.equals(queueIt.next(), currentNodeName))
                                         {
                                             granted = false;
                                             break;
@@ -298,17 +292,17 @@ public class SharedStorPoolManager
                             }
                             if (granted)
                             {
-                                lock(currentNode, requiredLocks);
+                                lock(currentNodeName, requiredLocks);
                                 for (SharedStorPoolName lock : requiredLocks)
                                 {
-                                    LinkedHashSet<Node> queue = queueByLock.get(lock);
+                                    @Nullable LinkedHashSet<NodeName> queue = queueByLock.get(lock);
                                     if (queue != null)
                                     {
-                                        queue.remove(currentNode);
+                                        queue.remove(currentNodeName);
                                     }
-                                    currentlyAcquiredLockBy.put(lock, currentNode);
+                                    currentlyAcquiredLockBy.put(lock, currentNodeName);
                                 }
-                                ret.put(currentNode, requiredLocks);
+                                ret.put(currentNodeName, requiredLocks);
                             }
                         }
                     }
@@ -318,14 +312,14 @@ public class SharedStorPoolManager
         return ret;
     }
 
-    private Set<SharedStorPoolName> getRequestedLocks(Node currentNodeRef)
+    private Set<SharedStorPoolName> getRequestedLocks(NodeName currentNodeNameRef)
     {
         Set<SharedStorPoolName> ret = new HashSet<>();
         synchronized (queueByLock)
         {
-            for (Entry<SharedStorPoolName, LinkedHashSet<Node>> entry : queueByLock.entrySet())
+            for (Entry<SharedStorPoolName, LinkedHashSet<NodeName>> entry : queueByLock.entrySet())
             {
-                if (entry.getValue().contains(currentNodeRef))
+                if (entry.getValue().contains(currentNodeNameRef))
                 {
                     ret.add(entry.getKey());
                 }
@@ -339,7 +333,7 @@ public class SharedStorPoolManager
         boolean hasLocks;
         synchronized (activeLocksByNode)
         {
-            ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(node);
+            @Nullable ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(node.getKey());
             hasLocks = activeLocks != null && !activeLocks.isEmpty();
         }
         return hasLocks;
