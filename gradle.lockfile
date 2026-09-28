@@ -2,8 +2,8 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath
-ch.qos.logback:logback-classic:1.6.3=compileClasspath,runtimeClasspath
-ch.qos.logback:logback-core:1.6.3=compileClasspath,runtimeClasspath
+ch.qos.logback:logback-classic:1.6.4=compileClasspath,runtimeClasspath
+ch.qos.logback:logback-core:1.6.4=compileClasspath,runtimeClasspath
 com.amazonaws:aws-java-sdk-bom:1.12.797=compileClasspath,runtimeClasspath
 com.amazonaws:aws-java-sdk-core:1.12.797=compileClasspath,runtimeClasspath
 com.amazonaws:aws-java-sdk-ebs:1.12.797=compileClasspath,runtimeClasspath
@@ -100,7 +100,7 @@ org.jspecify:jspecify:1.0.0=compileClasspath,runtimeClasspath
 org.mariadb.jdbc:mariadb-java-client:3.5.10=runtimeClasspath
 org.postgresql:postgresql:42.7.13=runtimeClasspath
 org.reactivestreams:reactive-streams:1.0.4=compileClasspath,runtimeClasspath
-org.slf4j:slf4j-api:2.0.18=compileClasspath,runtimeClasspath
+org.slf4j:slf4j-api:2.0.19=compileClasspath,runtimeClasspath
 org.snakeyaml:snakeyaml-engine:3.0.1=compileClasspath,runtimeClasspath
 org.yaml:snakeyaml:2.5=compileClasspath,runtimeClasspath
 empty=annotationProcessor
