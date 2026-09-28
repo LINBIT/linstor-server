@@ -217,7 +217,16 @@ public class GrizzlyHttpService implements SystemService
     {
         CompressionConfig compressionConfig = httpServerRef.getListener("grizzly").getCompressionConfig();
         compressionConfig.setCompressionMode(CompressionConfig.CompressionMode.ON);
-        compressionConfig.setCompressibleMimeTypes("text/plain", "text/html", "application/json");
+        compressionConfig.setCompressibleMimeTypes(
+            "text/plain",
+            "text/html",
+            "application/json",
+            // web UI assets served from /ui
+            "text/javascript",
+            "application/javascript",
+            "text/css",
+            "image/svg+xml"
+        );
         compressionConfig.setCompressionMinSize(COMPRESSION_MIN_SIZE);
     }
 
