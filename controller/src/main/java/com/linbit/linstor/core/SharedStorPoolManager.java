@@ -4,9 +4,9 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.transaction.TransactionObject;
@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 @Singleton
 public class SharedStorPoolManager
@@ -73,11 +72,6 @@ public class SharedStorPoolManager
         }
         return ret;
     }
-
-    // public Set<StorPool> getAcitveStorPools(Node node)
-    // {
-    // throw new ImplementationError("not implemented yet");
-    // }
 
     public boolean isActive(Resource rsc)
     {
@@ -341,65 +335,24 @@ public class SharedStorPoolManager
 
     private Node getNode(TransactionObject txObj)
     {
-        Node ret;
-        if (txObj instanceof Resource rsc)
+        return switch (txObj)
         {
-            ret = rsc.getNode();
-        }
-        else
-        if (txObj instanceof Snapshot snap)
-        {
-            ret = snap.getNode();
-        }
-        else
-        if (txObj instanceof Node node)
-        {
-            ret = node;
-        }
-        else
-        if (txObj instanceof StorPool storPool)
-        {
-            ret = storPool.getNode();
-        }
-        else
-        {
-            throw new ImplementationError("Unknown TransactionObject type - cannot map to Node");
-        }
-        return ret;
+            case Node node -> node;
+            case AbsResource<?> absRsc -> absRsc.getNode(); // Resource or Snapshot
+            case StorPool storPool -> storPool.getNode();
+            default -> throw new ImplementationError("Unknown TransactionObject type - cannot map to Node");
+        };
     }
 
     private Set<SharedStorPoolName> getSharedSpNames(TransactionObject txObj)
     {
-        Set<SharedStorPoolName> ret;
-        if (txObj instanceof Resource rsc)
+        return switch (txObj)
         {
-            ret = getSharedSpNames(LayerVlmUtils.getStorPools(rsc));
-        }
-        else
-        if (txObj instanceof Snapshot snap)
-        {
-            ret = getSharedSpNames(LayerVlmUtils.getStorPools(snap));
-        }
-        else
-        if (txObj instanceof Node node)
-        {
-            ret = getSharedSpNames(
-                node.streamStorPools()
-                    .collect(Collectors.toList())
-            );
-        }
-        else
-        if (txObj instanceof StorPool storPool)
-        {
-            ret = getSharedSpNames(Collections.singleton(storPool));
-        }
-        else
-        {
-            throw new ImplementationError(
-                "Unknown TransactionObject type - cannot map to Storage Pool"
-            );
-        }
-        return ret;
+            case Node node -> getSharedSpNames(node.streamStorPools().toList());
+            case AbsResource<?> absRsc -> getSharedSpNames(LayerVlmUtils.getStorPools(absRsc)); // Resource or Snapshot
+            case StorPool storPool -> getSharedSpNames(Collections.singleton(storPool));
+            default -> throw new ImplementationError("Unknown TransactionObject type - cannot map to Storage Pool");
+        };
     }
 
     /**

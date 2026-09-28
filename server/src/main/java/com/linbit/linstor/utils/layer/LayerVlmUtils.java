@@ -52,13 +52,13 @@ public class LayerVlmUtils
         return devicePaths;
     }
 
-    public static <RSC extends AbsResource<RSC>> Set<StorPool> getStorPools(RSC absRscRef)
+    public static <RSC extends AbsResource<RSC>> Set<StorPool> getStorPools(AbsResource<RSC> absRscRef)
     {
         return getStorPools(absRscRef, true);
     }
 
     public static <RSC extends AbsResource<RSC>> Set<StorPool> getStorPools(
-        RSC absRscRef,
+        AbsResource<RSC> absRscRef,
         boolean withMetaStoragePools
     )
     {
