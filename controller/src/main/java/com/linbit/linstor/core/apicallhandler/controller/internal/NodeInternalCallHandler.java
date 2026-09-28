@@ -22,13 +22,18 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -54,6 +59,7 @@ public class NodeInternalCallHandler
     private final SharedStorPoolManager sharedStorPoolManager;
     private final CtrlSatelliteUpdater stltUpdater;
     private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public NodeInternalCallHandler(
@@ -64,7 +70,8 @@ public class NodeInternalCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         SharedStorPoolManager sharedStorPoolManagerRef,
         CtrlSatelliteUpdater stltUpdaterRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -75,6 +82,7 @@ public class NodeInternalCallHandler
         sharedStorPoolManager = sharedStorPoolManagerRef;
         stltUpdater = stltUpdaterRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
     public void handleNodeRequest(UUID nodeUuid, String nodeNameStr)
@@ -160,19 +168,26 @@ public class NodeInternalCallHandler
         Node node = currentPeer.getNode();
 
         // node is null if the peer calling this API was not a satellite...
-        if (node != null)
+        if (node != null && !node.isDeleted())
         {
-            try
+            try (
+                LockGuard lg = lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .postLinstorLocks(currentPeer.getSerializerLock().readLock())
+                    .build())
             {
-                Set<SharedStorPoolName> locks = new TreeSet<>();
-                for (String sharedLockStr : sharedStorPoolLocksListRef)
+                if (!node.isDeleted())
                 {
-                    locks.add(new SharedStorPoolName(sharedLockStr));
-                }
-                boolean acquired = sharedStorPoolManager.requestSharedLocks(node, locks);
-                if (acquired)
-                {
-                    updateStlt(node, locks);
+                    Set<SharedStorPoolName> locks = new TreeSet<>();
+                    for (String sharedLockStr : sharedStorPoolLocksListRef)
+                    {
+                        locks.add(new SharedStorPoolName(sharedLockStr));
+                    }
+                    boolean acquired = sharedStorPoolManager.requestSharedLocks(node, locks);
+                    if (acquired)
+                    {
+                        updateStlt(node, locks);
+                    }
                 }
             }
             catch (InvalidNameException exc)
@@ -199,19 +214,56 @@ public class NodeInternalCallHandler
         // node is null if the peer calling this API was not a satellite...
         if (node != null)
         {
-            errorReporter.logTrace("%s finished with devMgr. Releasing locks", node);
+            // it is possible that after the updateSatellites that included the DELETE flag of the satellite itself
+            // we also sent another updateSatellite asynchronously. In that case the satellite will happily process
+            // the DELETE request, the controller deletes the node from the database and sets the node's internal
+            // delete boolean and yet the satellite still sends us another response (to the later async request) that
+            // also lands here, but at a time the node is fully deleted already. The Peer object might still refer
+            // to it though.
+            // Therefore we are using .getKey() instead of .getName() here since it does not perform a checkDeleted.
+            // We must release the locks even if the node got deleted in the meantime.
+            NodeName nodeName = node.getKey();
+            errorReporter.logTrace("%s finished with devMgr. Releasing locks", nodeName);
 
-            releaseLocks(node);
+            releaseLocks(nodeName);
         }
     }
 
-    public void releaseLocks(Node node)
+    public void releaseLocks(NodeName nodeNameRef)
     {
-        Map<Node, Set<SharedStorPoolName>> nodesToUpdate = sharedStorPoolManager.releaseLocks(node);
+        Map<NodeName, Set<SharedStorPoolName>> nodesToUpdate = sharedStorPoolManager.releaseLocks(nodeNameRef);
 
-        for (Entry<Node, Set<SharedStorPoolName>> entry : nodesToUpdate.entrySet())
+        if (!nodesToUpdate.isEmpty())
         {
-            updateStlt(entry.getKey(), entry.getValue());
+            try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.NODES_MAP))
+            {
+                Deque<Map<NodeName, Set<SharedStorPoolName>>> todoList = new ArrayDeque<>();
+                todoList.add(nodesToUpdate);
+                while (!todoList.isEmpty())
+                {
+                    Map<NodeName, Set<SharedStorPoolName>> map = todoList.removeFirst();
+                    for (Entry<NodeName, Set<SharedStorPoolName>> entry : map.entrySet())
+                    {
+                        NodeName nextNodeName = entry.getKey();
+                        @Nullable Node node = ctrlApiDataLoader.loadNodeOrNull(nextNodeName, false);
+                        if (node != null && !node.isDeleted())
+                        {
+                            updateStlt(node, entry.getValue());
+                        }
+                        else
+                        {
+                            // imagine the following case:
+                            // * nodeNameRef refers to node "a", which was holding a lock
+                            // * node "b" was also waiting for that lock, so it was queued
+                            // * before node "a" released the lock, node "b" got deleted
+                            // * this else case is exactly this case, with entry.getKey() == "b"
+                            // this means that we need pretend node "b" has now also released the lock to continue
+                            // with a possibly next waiting node
+                            todoList.add(sharedStorPoolManager.releaseLocks(nextNodeName));
+                        }
+                    }
+                }
+            }
         }
     }
 

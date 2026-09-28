@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   made `since`/`to` filters of the error-report listing miss recent reports
 - Satellite: Fixed .res file's 'disk' (drbd-peer-options) section not including controller properties when a
   resource-connection exists. Now node-connection and controller properties are also included.
+- Fixed rare race condition where after deleting a node the same node could cause "Access to deleted Node"
 
 ## [1.35.2] - 2026-09-14
 
