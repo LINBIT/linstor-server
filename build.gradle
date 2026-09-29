@@ -404,10 +404,10 @@ project(':controller') {
         // rest libs (grizzly http(s), jersey(rest))
         implementation 'org.glassfish.grizzly:grizzly-http-server:5.0.2'
         // jersey 4.0.2 is built against the hk2 4.0.0-M3 milestone; align all hk2 artifacts with guice-bridge
-        implementation 'org.glassfish.hk2:guice-bridge:4.0.2'
-        implementation 'org.glassfish.hk2:hk2-api:4.0.2'
-        implementation 'org.glassfish.hk2:hk2-locator:4.0.2'
-        implementation 'org.glassfish.hk2:hk2-utils:4.0.2'
+        implementation 'org.glassfish.hk2:guice-bridge:4.0.3'
+        implementation 'org.glassfish.hk2:hk2-api:4.0.3'
+        implementation 'org.glassfish.hk2:hk2-locator:4.0.3'
+        implementation 'org.glassfish.hk2:hk2-utils:4.0.3'
         implementation "org.glassfish.jersey.inject:jersey-hk2:${jerseyVersion}"
         implementation "org.glassfish.jersey.containers:jersey-container-grizzly2-http:${jerseyVersion}"
         implementation "org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:${jerseyVersion}"
