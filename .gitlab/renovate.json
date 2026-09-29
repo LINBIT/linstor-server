@@ -47,6 +47,18 @@
             ]
         },
         {
+            "groupName": "hk2 monorepo",
+            "matchSourceUrls": [
+                "https://github.com/eclipse-ee4j/glassfish-hk2"
+            ],
+            "matchUpdateTypes": [
+                "digest",
+                "patch",
+                "minor",
+                "major"
+            ]
+        },
+        {
             "description": "the h2v1migration dependency must stay on 1.x to migrate old H2 1.x databases",
             "matchPackageNames": [
                 "com.h2database:h2"
