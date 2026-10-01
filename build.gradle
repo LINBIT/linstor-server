@@ -123,7 +123,7 @@ project(':server') {
         // add dependencies without a version number
         api 'io.projectreactor:reactor-core'
 
-        compileOnly 'org.slf4j:slf4j-api:2.0.19'
+        compileOnly 'org.slf4j:slf4j-api:2.0.20'
         api 'ch.qos.logback:logback-classic:1.6.5'
         api 'org.apache.httpcomponents.client5:httpclient5:5.6.4'
         api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.22.3'
@@ -585,7 +585,7 @@ dependencies {
 
     testImplementation 'org.mockito:mockito-core:5.23.0'
 
-    testCompileOnly 'org.slf4j:slf4j-api:2.0.19'
+    testCompileOnly 'org.slf4j:slf4j-api:2.0.20'
     testImplementation 'org.assertj:assertj-core:3.27.+'
     testImplementation 'pl.pragmatists:JUnitParams:1.1.1'
 
