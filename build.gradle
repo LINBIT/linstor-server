@@ -376,7 +376,7 @@ project(':controller').version = version
 project(':satellite').version = version
 project(':jclcrypto').version = version
 
-def jerseyVersion = '4.0.2'
+def jerseyVersion = '4.0.3'
 
 project(':controller') {
     apply plugin: 'application'
