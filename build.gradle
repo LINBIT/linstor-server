@@ -304,7 +304,7 @@ project(':satellite') {
         testImplementation testFixtures(project(':server'))
         testImplementation 'junit:junit:4.13.2'
         testImplementation "org.assertj:assertj-core:3.27.+"
-        testImplementation "org.mockito:mockito-core:5.23.0"
+        testImplementation "org.mockito:mockito-core:5.24.0"
     }
 
     sourceSets {
@@ -397,7 +397,7 @@ project(':controller') {
 
         testImplementation 'junit:junit:4.13.2'
         testImplementation "org.assertj:assertj-core:3.27.+"
-        testImplementation "org.mockito:mockito-core:5.23.0"
+        testImplementation "org.mockito:mockito-core:5.24.0"
 
         h2v1migration 'com.h2database:h2:1.4.197'
 
@@ -583,7 +583,7 @@ dependencies {
 
     testImplementation "com.google.protobuf:protobuf-java:4.${protobufVersion}"
 
-    testImplementation 'org.mockito:mockito-core:5.23.0'
+    testImplementation 'org.mockito:mockito-core:5.24.0'
 
     testCompileOnly 'org.slf4j:slf4j-api:2.0.20'
     testImplementation 'org.assertj:assertj-core:3.27.+'
