@@ -29,8 +29,11 @@ public class SatelliteVolumeState
     public SatelliteVolumeState(SatelliteVolumeState other)
     {
         diskState = other.diskState;
-        replicationStateMap = other.replicationStateMap;
-        donePercentageMap = other.donePercentageMap;
+        // readers (like JSON serializers) might want to iterate over these maps, so we need to create
+        // a copy instead of just take the reference to avoid ConcurrentModificationException
+        // if the original map is modified later
+        replicationStateMap.putAll(other.replicationStateMap);
+        donePercentageMap.putAll(other.donePercentageMap);
     }
 
     public @Nullable String getDiskState()
