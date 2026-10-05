@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Prometheus: New metric `linstor_node_flag` exports the node flags `DELETE`, `EVICTED` and `EVACUATE` as 0/1 per node
+- Controller: A controller-only node now reports the platform and OS variant of the host the controller runs on
 
 ### Changed
 
