@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - STORAGE_SPACES: set discard-zeroes-if-aligned to "no" thereby skipping initial resync
 - REST: The resource state reports `open` if a DRBD device of the resource is open, also read-only on a Secondary
 - Prometheus: New metric `linstor_resource_open` reports whether a DRBD device of the resource is open
+- Controller: A controller-only node now reports the platform and OS variant of the host the controller runs on
 
 ### Changed
 

@@ -1,7 +1,16 @@
 package com.linbit;
 
+import com.linbit.linstor.api.ApiConsts;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 public class Platform
 {
+    private static final String UNKNOWN_OS_VARIANT = "Unknown";
+
     private static boolean isPlatform(String platform)
     {
         String osName = System.getProperties().getProperty("os.name");
@@ -17,6 +26,46 @@ public class Platform
     public static boolean isLinux()
     {
         return isPlatform("Linux");
+    }
+
+    public static ApiConsts.Platform apiPlatform()
+    {
+        return isWindows() ? ApiConsts.Platform.WINDOWS : ApiConsts.Platform.LINUX;
+    }
+
+    public static String osVariant()
+    {
+        String variant = UNKNOWN_OS_VARIANT;
+
+        if (isWindows())
+        {
+            variant = System.getProperties().getProperty("os.name", UNKNOWN_OS_VARIANT);
+        }
+        else
+        {
+            try (BufferedReader br = new BufferedReader(
+                new FileReader("/etc/os-release", StandardCharsets.UTF_8)))
+            {
+                String line;
+                while ((line = br.readLine()) != null)
+                {
+                    if (line.startsWith("PRETTY_NAME="))
+                    {
+                        int first = line.indexOf('"');
+                        int last = line.lastIndexOf('"');
+                        if (first > 0 && last > 0 && last > first)
+                        {
+                            variant = line.substring(first + 1, last);
+                        }
+                    }
+                }
+            }
+            catch (IOException exp)     /* no such file, ... */
+            {
+                variant = UNKNOWN_OS_VARIANT + " (cannot open /etc/os-release)";
+            }
+        }
+        return variant;
     }
 
     static
