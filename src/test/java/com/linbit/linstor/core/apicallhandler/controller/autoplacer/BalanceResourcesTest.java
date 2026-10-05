@@ -332,13 +332,18 @@ public class BalanceResourcesTest extends GenericDbBase
     }
 
     @Test
-    public void rscInDeleteNotCountedAsDiskfulTest() throws Exception
+    public void rscInDeleteCausesRscDfnToBeIgnoredTest() throws Exception
     {
+        // too many diskfuls also get ignored if one of them is currently in a deleting state
         cluster().replicaCount(2)
             .rsc("node1")
-            .rsc("node2").flags(Resource.Flags.DELETE);
+            .rsc("node2")
+            .rsc("node3")
+            .rsc("node4")
+            .rsc("node5")
+            .rsc("node6").flags(Resource.Flags.DELETE);
 
-        expectBalance(1);
+        expectBalance(0);
     }
 
     /**

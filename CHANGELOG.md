@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   or volumes
 - Fixed "Storage pool '...' on node '...' not found" error when satellite tries to update props right after a storage
   pool was deleted. Instead of an ErrorReport only a warning is logged now
+- Fixed rare race condition between BalanceResourcesTask and a user deleting a resource. The result was that a resource
+  deleted by the user might have been recreated by the BalanceResourcesTask.
 
 ## [1.35.2] - 2026-09-14
 

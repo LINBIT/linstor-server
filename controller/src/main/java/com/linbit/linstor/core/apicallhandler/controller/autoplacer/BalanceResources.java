@@ -27,14 +27,12 @@ import com.linbit.linstor.netcom.PeerTask;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
-
-import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
-import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -50,6 +48,9 @@ import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
 import reactor.util.context.Context;
+
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 @Singleton
 public class BalanceResources
@@ -138,6 +139,12 @@ public class BalanceResources
         return gracePeriod;
     }
 
+    /**
+     * <p>Checks the <b>creation</b> date of the resource against the {@link #getGracePeriod()}.</p>
+     *
+     * <p>NOTE: A resource that was just toggled, or restored from an evicted state or got its DRBD metadata just
+     * recreated is still considered old, since these operations do not reset the creation date.</p>
+     */
     private boolean isResourceInGracePeriod(Resource rsc)
     {
         long gracePeriodSecs = getGracePeriod();
@@ -227,20 +234,11 @@ public class BalanceResources
     @SuppressWarnings("checkstyle:returncount")
     private boolean shouldIgnoreRscDfn(ResourceDefinition rscDfn)
     {
-        boolean someRscIgnored = false;
-        List<Resource> resources = rscDfn.streamResource().toList();
-        for (var rsc : resources)
-        {
-            if (isResourceInGracePeriod(rsc))
-            {
-                someRscIgnored = true;
-                break;
-            }
-        }
+        @Nullable String rscIgnoreReason = findRscIgnoreReason(rscDfn);
 
-        if (someRscIgnored)
+        if (rscIgnoreReason != null)
         {
-            log.logDebug("BalanceResourcesTask/%s: Ignore because of grace period", rscDfn.getName());
+            log.logDebug("BalanceResourcesTask/%s: %s", rscDfn.getName(), rscIgnoreReason);
             return true;
         }
 
@@ -308,7 +306,7 @@ public class BalanceResources
                 );
                 skipDiskLimit = DFLT_SKIP_DISK_LIMIT;
             }
-            List<Resource> skipDiskResources = getResourcesWithSkipDisk(resources);
+            List<Resource> skipDiskResources = getResourcesWithSkipDisk(rscDfn.streamResource().toList());
             if (skipDiskResources.size() > skipDiskLimit)
             {
                 log.logDebug(
@@ -323,6 +321,51 @@ public class BalanceResources
         }
 
         return false;
+    }
+
+    private @Nullable String findRscIgnoreReason(ResourceDefinition rscDfnRef)
+    {
+        @Nullable String ret = null;
+        for (Resource rsc : rscDfnRef.streamResource().toList())
+        {
+            if (isResourceInGracePeriod(rsc))
+            {
+                ret = "Ignore because of grace period";
+            }
+            else
+            {
+                // TODO we do not want to touch a resource definition where at least one resource is currently
+                // in a transition-state. this check should eventually be replaced with a "has the RD been
+                // modified/touched by the user in the last 1h", once we implement the necessary tracking
+                // for that.
+                boolean isInTransitionalState = rsc.getStateFlags()
+                    .isSomeSet(
+                        Resource.Flags.DELETE,
+                        Resource.Flags.DRBD_DELETE,
+                        Resource.Flags.DISK_ADD_REQUESTED,
+                        Resource.Flags.DISK_ADDING,
+                        Resource.Flags.DISK_REMOVE_REQUESTED,
+                        Resource.Flags.DISK_REMOVING,
+                        Resource.Flags.EVACUATE,
+                        Resource.Flags.INACTIVATING,
+                        Resource.Flags.REACTIVATE,
+                        Resource.Flags.RESTORE_FROM_SNAPSHOT
+                    );
+                if (isInTransitionalState)
+                {
+                    ret = String.format(
+                        "Ignore because resource on node %s has transitional flags set: %s",
+                        rsc.getNode().getName().displayValue,
+                        FlagsHelper.toStringList(Resource.Flags.class, rsc.getStateFlags().getFlagsBits())
+                    );
+                }
+            }
+            if (ret != null)
+            {
+                break;
+            }
+        }
+        return ret;
     }
 
     /**
