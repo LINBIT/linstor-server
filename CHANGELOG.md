@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed rare race condition where after deleting a node the same node could cause "Access to deleted Node"
 - Fixed ConcurrentModificationException when serializing SatelliteVolumeState for /metrics and listing resources
   or volumes
+- Fixed "Storage pool '...' on node '...' not found" error when satellite tries to update props right after a storage
+  pool was deleted. Instead of an ErrorReport only a warning is logged now
 
 ## [1.35.2] - 2026-09-14
 

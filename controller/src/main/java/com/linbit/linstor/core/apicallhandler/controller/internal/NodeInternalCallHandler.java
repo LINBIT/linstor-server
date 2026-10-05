@@ -288,24 +288,41 @@ public class NodeInternalCallHandler
                     changedNode |= update(props, changedPropsRef);
 
                     Set<StorPool> changedStorPoolSet = new HashSet<>();
-                    for (Entry<String, List<String>> entry : deletedStorPoolPropsRef.entrySet())
+
+                    Set<String> storPoolsToCheck = new HashSet<>();
+                    storPoolsToCheck.addAll(deletedStorPoolPropsRef.keySet());
+                    storPoolsToCheck.addAll(changedStorPoolPropsRef.keySet());
+
+                    for (String spNameStr : storPoolsToCheck)
                     {
-                        StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node);
-                        Props spProps = storPool.getProps();
-                        boolean changedSp = delete(spProps, entry.getValue());
-                        if (changedSp)
+                        @Nullable StorPool storPool = ctrlApiDataLoader.loadStorPoolOrNull(spNameStr, node);
+                        if (storPool == null)
                         {
-                            changedStorPoolSet.add(storPool);
+                            errorReporter.logWarning(
+                                "Dropping properties update of unknown storage pool: %s on node %s",
+                                spNameStr,
+                                node.getName().displayValue
+                            );
                         }
-                    }
-                    for (Entry<String, Map<String, String>> entry : changedStorPoolPropsRef.entrySet())
-                    {
-                        StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node);
-                        Props spProps = storPool.getProps();
-                        boolean changedSp = update(spProps, entry.getValue());
-                        if (changedSp)
+                        else
                         {
-                            changedStorPoolSet.add(storPool);
+                            Props spProps = storPool.getProps();
+                            boolean changed = false;
+                            @Nullable List<String> propsToDelete = deletedStorPoolPropsRef.get(spNameStr);
+                            if (propsToDelete != null)
+                            {
+                                changed |= delete(spProps, propsToDelete);
+                            }
+                            @Nullable Map<String, String> propsToUpdate = changedStorPoolPropsRef.get(spNameStr);
+                            if (propsToUpdate != null)
+                            {
+                                changed |= update(spProps, propsToUpdate);
+                            }
+
+                            if (changed)
+                            {
+                                changedStorPoolSet.add(storPool);
+                            }
                         }
                     }
 
