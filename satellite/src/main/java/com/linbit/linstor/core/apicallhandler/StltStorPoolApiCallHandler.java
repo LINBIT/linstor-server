@@ -287,7 +287,13 @@ class StltStorPoolApiCallHandler
                     storPool.getProps().map().putAll(storPoolRaw.getStorPoolProps());
                 }
 
-                updateMinimumIoSize(storPool);
+                final boolean isLocalStorPool = storPool.getNode().equals(controllerPeerConnector.getLocalNode());
+                // peers' storage pools have no local devices to probe (AbsStorageProvider.updateBlockDeviceInfo
+                // skips them as well)
+                if (isLocalStorPool)
+                {
+                    updateMinimumIoSize(storPool);
+                }
 
                 changedData = new ChangedData(storPoolDfnToRegister);
 
@@ -307,7 +313,7 @@ class StltStorPoolApiCallHandler
                     action
                 );
 
-                if (storPool.getNode().equals(controllerPeerConnector.getLocalNode()))
+                if (isLocalStorPool)
                 {
                     SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool, true);
                     DeviceProviderKind kind = storPool.getDeviceProviderKind();
