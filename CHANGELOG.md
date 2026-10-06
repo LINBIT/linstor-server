@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- RPM: Start scripts now use the distribution's JVM directory, fixing startup on SLES/openSUSE 16
 - Resource group create/modify and resource definition modify now reject invalid layer stacks instead of failing
   later when a resource definition is spawned or a resource is created
 - Fixed a race between a resource deletion and a concurrent restore or un-delete of the same resource, which made

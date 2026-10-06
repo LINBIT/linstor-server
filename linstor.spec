@@ -19,7 +19,7 @@ URL: https://github.com/LINBIT/linstor-server
 Source0: http://pkg.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.tar.gz
 
 BuildRequires: java-21-openjdk-headless java-21-openjdk-devel python3
-%define GRADLE_JAVA_HOME -PjavaHome=/usr/lib/jvm/jre-21
+%define GRADLE_JAVA_HOME -PjavaHome=%{_jvmdir}/jre-21-openjdk
 
 %description
 TODO.
