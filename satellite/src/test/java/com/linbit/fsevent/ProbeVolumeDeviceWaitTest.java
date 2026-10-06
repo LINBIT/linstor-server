@@ -3,7 +3,9 @@ package com.linbit.fsevent;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.Platform;
+import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
@@ -95,8 +97,12 @@ public class ProbeVolumeDeviceWaitTest
         when(pool.getName()).thenReturn(MOCKED_SP_NAME);
         when(pool.getVolumes()).thenReturn(Collections.emptyList());
         when(pool.getProps()).thenReturn(mock(Props.class));
+        Node localNode = mock(Node.class);
+        when(pool.getNode()).thenReturn(localNode);
+        ControllerPeerConnector ctrlPeerConnector = mock(ControllerPeerConnector.class);
+        when(ctrlPeerConnector.getLocalNode()).thenReturn(localNode);
         provider = new ProbeProvider(new AbsStorageProviderInit(
-            reporter, null, null, null, null, null, null, null, null, watch, null, null, null
+            reporter, null, null, null, null, null, null, null, null, watch, null, null, null, ctrlPeerConnector
         ));
         blockSizes = mockStatic(BlockSizeInfo.class);
         blockSizes.when(() -> BlockSizeInfo.getPhysicalBlockSize(device)).thenAnswer(invocation ->

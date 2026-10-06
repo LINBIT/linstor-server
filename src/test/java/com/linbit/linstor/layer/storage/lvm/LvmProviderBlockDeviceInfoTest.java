@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
+import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Resource;
@@ -42,6 +43,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * without the shared-space lock - concurrent probes of multiple satellites sharing the VG corrupted
  * its metadata area. Thin pools keep the LV based probe, since a thin volume's queue limits come
  * from the thin pool and not from the PV.
+ *
+ * Storage pools of peer nodes must not be probed at all: the probe would read the local VG and the
+ * controller would apply the result to the local storage pool of the same name (GitHub issue #538).
  */
 public class LvmProviderBlockDeviceInfoTest extends GenericDbBase
 {
@@ -49,6 +53,7 @@ public class LvmProviderBlockDeviceInfoTest extends GenericDbBase
         "devices { ignore_suspended_devices=1 filter=[\"r|^/dev/drbd.*|\"] }";
 
     private static final String NODE_NAME_STR = "node";
+    private static final String PEER_NODE_NAME_STR = "peer";
     private static final String RSC_NAME_STR = "rsc";
     private static final String SP_NAME_STR = "lvmSp";
     private static final String THIN_POOL_NAME = "thinpool";
@@ -80,6 +85,8 @@ public class LvmProviderBlockDeviceInfoTest extends GenericDbBase
         Mockito.when(stltCfgAccessor.getReadonlyProps()).thenReturn(ReadOnlyPropsImpl.emptyRoProps());
 
         NotificationListener notificationListener = Mockito.mock(NotificationListener.class);
+        ControllerPeerConnector ctrlPeerConnector = Mockito.mock(ControllerPeerConnector.class);
+        Mockito.when(ctrlPeerConnector.getLocalNode()).thenAnswer(ignored -> nodeTestFactory.get(NODE_NAME_STR, true));
         providerInit = new AbsStorageProviderInit(
             errorReporter,
             extCmdFactoryStlt,
@@ -93,7 +100,8 @@ public class LvmProviderBlockDeviceInfoTest extends GenericDbBase
             Mockito.mock(FileSystemWatch.class),
             rscDfnMap,
             Mockito.mock(DrbdInvalidateUtils.class),
-            remoteMap
+            remoteMap,
+            ctrlPeerConnector
         );
 
         vg = "vg_" + testMethodName.getMethodName();
@@ -158,9 +166,47 @@ public class LvmProviderBlockDeviceInfoTest extends GenericDbBase
         assertThat(extCmd.getUncalledCommands()).isEmpty();
     }
 
+    @Test
+    public void thickPeerPoolIsNotProbed() throws Exception
+    {
+        assertPeerPoolIsNotProbed(new LvmProvider(providerInit), DeviceProviderKind.LVM);
+    }
+
+    @Test
+    public void thinPeerPoolIsNotProbed() throws Exception
+    {
+        assertPeerPoolIsNotProbed(new LvmThinProvider(providerInit), DeviceProviderKind.LVM_THIN);
+    }
+
+    private void assertPeerPoolIsNotProbed(LvmProvider lvmProvider, DeviceProviderKind kind) throws Exception
+    {
+        // the local node with its own storage pool of the same name, which must not receive the peer's probe result
+        createStorPool(NODE_NAME_STR, kind);
+        StorPool peerStorPool = createStorPool(PEER_NODE_NAME_STR, kind);
+        // a peer volume never has a local device path, which would make the probe fall back to the local PV
+        resourceTestFactory.builder(PEER_NODE_NAME_STR, RSC_NAME_STR)
+            .setLayerStack(Collections.singletonList(DeviceLayerKind.STORAGE))
+            .build();
+        volumeTestFactory.builder(PEER_NODE_NAME_STR, RSC_NAME_STR, 0)
+            .setSize(VLM_SIZE_IN_KIB)
+            .setStorPoolData(peerStorPool)
+            .build();
+        LocalPropsChangePojo propsChange = new LocalPropsChangePojo();
+
+        // no expected commands: TestExtCmd fails on any "pvdisplay" or "lvcreate"
+        lvmProvider.updateBlockDeviceInfo(peerStorPool, propsChange);
+
+        assertThat(propsChange.changedStorPoolProps).isEmpty();
+    }
+
     private StorPool createStorPool(DeviceProviderKind kind) throws Exception
     {
-        StorPool storPool = storPoolTestFactory.builder(NODE_NAME_STR, SP_NAME_STR)
+        return createStorPool(NODE_NAME_STR, kind);
+    }
+
+    private StorPool createStorPool(String nodeName, DeviceProviderKind kind) throws Exception
+    {
+        StorPool storPool = storPoolTestFactory.builder(nodeName, SP_NAME_STR)
             .setDriverKind(kind)
             .build();
         storPool.getProps().setProp(

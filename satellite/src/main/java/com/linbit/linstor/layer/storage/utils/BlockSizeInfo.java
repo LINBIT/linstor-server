@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer.storage.utils;
 
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.utils.MathUtils;
 import com.linbit.utils.SymbolicLinkResolver;
 
@@ -16,14 +17,18 @@ import static com.linbit.linstor.layer.storage.BlockSizeConsts.MIN_PHY_IO_SIZE;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class BlockSizeInfo
 {
     private static final int DFLT_BUF_SIZE_FOR_NUMBERS = 32;
-    private static final String QUEUE_PHY_BLK_SIZE = "queue/physical_block_size";
-    private static final String QUEUE_OPT_IO_SIZE = "queue/optimal_io_size";
-    private static final String QUEUE_DISC_GRAN = "queue/discard_granularity";
+    private static final Path SYS_CLASS_BLOCK = Path.of("/sys/class/block");
+    private static final String QUEUE_DIR = "queue";
+    private static final String PARTITION_FILE = "partition";
+    private static final String QUEUE_PHY_BLK_SIZE = "physical_block_size";
+    private static final String QUEUE_OPT_IO_SIZE = "optimal_io_size";
+    private static final String QUEUE_DISC_GRAN = "discard_granularity";
 
     /**
      * Determines the blocksize, aka minimum I/O size, for the specified backing storage path.
@@ -44,7 +49,8 @@ public class BlockSizeInfo
      *
      * <p>If the specified path is a symbolic link, then an attempt is made to resolve symbolic links
      * until the actual block device special file is found. The file name of this file is them used
-     * to find the <code>/sys/block/.../queue/physical_block_size</code> file in the Linux kernel pseudo-filesystem.
+     * to find the <code>/sys/class/block/.../queue/physical_block_size</code> file in the Linux kernel
+     * pseudo-filesystem (of the containing disk, if the block device is a partition).
      * We deliberately do <b>not</b> use <code>minimum_io_size</code> since (by documentation, see
      * https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/Documentation/ABI/stable/sysfs-block
      * for more information) that is the "preferred minimum I/O size".</p>
@@ -60,7 +66,7 @@ public class BlockSizeInfo
     }
 
     /**
-     * Returns <code>/sys/block/.../queue/optimal_io_size</code> of the given device.
+     * Returns <code>/sys/class/block/.../queue/optimal_io_size</code> of the given device.
      *
      */
     public static long getOptimalIoSize(final Path storageObjRef)
@@ -69,7 +75,7 @@ public class BlockSizeInfo
     }
 
     /**
-     * Returns <code>/sys/block/.../queue/discard_granularity</code> of the given device.
+     * Returns <code>/sys/class/block/.../queue/discard_granularity</code> of the given device.
      * A value of 0 means the device does not support discard operations.
      */
     public static long getDiscardGranularity(final Path storageObjRef)
@@ -85,12 +91,24 @@ public class BlockSizeInfo
         final long maxValRef
     )
     {
+        return getSize(SYS_CLASS_BLOCK, storageObjRef, queueIdRef, dfltValRef, minValRef, maxValRef);
+    }
+
+    static long getSize(
+        final Path sysClassBlockRef,
+        final Path storageObjRef,
+        final String queueIdRef,
+        final long dfltValRef,
+        final long minValRef,
+        final long maxValRef
+    )
+    {
         long ret = dfltValRef;
         try
         {
             final Path blockDevice = SymbolicLinkResolver.resolveSymLink(storageObjRef);
             final Path infoSourceName = blockDevice.getFileName();
-            final Path infoSource = Path.of("/sys/block", infoSourceName.toString(), queueIdRef);
+            final Path infoSource = getQueueDir(sysClassBlockRef, infoSourceName.toString()).resolve(queueIdRef);
 
             final byte[] data = new byte[DFLT_BUF_SIZE_FOR_NUMBERS];
             try (FileInputStream fileIn = new FileInputStream(infoSource.toString()))
@@ -115,5 +133,25 @@ public class BlockSizeInfo
         {
         }
         return ret;
+    }
+
+    /**
+     * Only whole disks have a <code>queue</code> directory in sysfs. A partition shares the request queue of
+     * the disk containing it, which is the parent directory of the partition's sysfs directory.
+     */
+    private static Path getQueueDir(final Path sysClassBlockRef, final String devName) throws IOException
+    {
+        // /sys/class/block/<dev> is a symlink into /sys/devices/..., resolve it so that getParent() is the disk
+        final Path sysDevDir = sysClassBlockRef.resolve(devName).toRealPath();
+        Path queueDir = sysDevDir.resolve(QUEUE_DIR);
+        if (!Files.isDirectory(queueDir) && Files.exists(sysDevDir.resolve(PARTITION_FILE)))
+        {
+            final @Nullable Path diskDir = sysDevDir.getParent();
+            if (diskDir != null)
+            {
+                queueDir = diskDir.resolve(QUEUE_DIR);
+            }
+        }
+        return queueDir;
     }
 }

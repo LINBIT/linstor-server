@@ -8,6 +8,7 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
+import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -103,7 +104,8 @@ public class LvmProviderSnapshotPrepareTest extends GenericDbBase
                 Mockito.mock(FileSystemWatch.class),
                 rscDfnMap,
                 Mockito.mock(DrbdInvalidateUtils.class),
-                remoteMap
+                remoteMap,
+                Mockito.mock(ControllerPeerConnector.class)
             )
         );
 

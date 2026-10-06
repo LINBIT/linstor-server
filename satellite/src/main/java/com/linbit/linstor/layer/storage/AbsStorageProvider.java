@@ -16,6 +16,7 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.backupshipping.BackupShippingS3Service;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.clone.CloneService;
+import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -118,6 +119,7 @@ public abstract class AbsStorageProvider<
         private final CoreModule.ResourceDefinitionMap rscDfnMap;
         private final DrbdInvalidateUtils drbdInvalidateUtils;
         private final RemoteMap remoteMap;
+        private final ControllerPeerConnector controllerPeerConnector;
 
         @Inject
         public AbsStorageProviderInit(
@@ -133,7 +135,8 @@ public abstract class AbsStorageProvider<
             FileSystemWatch fileSystemWatchRef,
             CoreModule.ResourceDefinitionMap rscDfnMapRef,
             DrbdInvalidateUtils drbdInvalidateUtilsRef,
-            RemoteMap remoteMapRef
+            RemoteMap remoteMapRef,
+            ControllerPeerConnector controllerPeerConnectorRef
         )
         {
             errorReporter = errorReporterRef;
@@ -149,6 +152,7 @@ public abstract class AbsStorageProvider<
             rscDfnMap = rscDfnMapRef;
             drbdInvalidateUtils = drbdInvalidateUtilsRef;
             remoteMap = remoteMapRef;
+            controllerPeerConnector = controllerPeerConnectorRef;
         }
     }
 
@@ -185,6 +189,7 @@ public abstract class AbsStorageProvider<
     private boolean prepared;
     protected boolean isDevPathExpectedToBeNull = false;
     private final RemoteMap remoteMap;
+    private final ControllerPeerConnector controllerPeerConnector;
 
     protected AbsStorageProvider(
         AbsStorageProviderInit initRef,
@@ -205,6 +210,7 @@ public abstract class AbsStorageProvider<
         fsWatch = initRef.fileSystemWatch;
         drbdInvalidateUtils = initRef.drbdInvalidateUtils;
         remoteMap = initRef.remoteMap;
+        controllerPeerConnector = initRef.controllerPeerConnector;
 
         typeDescr = typeDescrRef;
         kind = kindRef;
@@ -1866,10 +1872,30 @@ public abstract class AbsStorageProvider<
      * If no usable device exists, a temporary probe volume is created where supported. The determined values are stored
      * as storage pool properties and sent to the controller.
      *
+     * Storage pools of peer nodes are skipped: they have no local devices to probe, so a probe would yield the values
+     * of our own storage pool (via the local VG's PV) and the controller would apply them to our own storage pool of
+     * the same name, as it maps the reported props to the sending node.
+     *
      * @param storPoolObj The storage pool to operate on
      * @param propsChange A LocalPropsChangePojo object to use for sending the property update to the controller
      */
     public void updateBlockDeviceInfo(final StorPool storPoolObj, final LocalPropsChangePojo propsChange)
+    {
+        if (storPoolObj.getNode().equals(controllerPeerConnector.getLocalNode()))
+        {
+            updateLocalBlockDeviceInfo(storPoolObj, propsChange);
+        }
+        else
+        {
+            errorReporter.logDebug(
+                "updateBlockDeviceInfo: Skipping storage pool \"%s\" of peer node \"%s\"",
+                storPoolObj.getName().displayValue,
+                storPoolObj.getNode().getName().displayValue
+            );
+        }
+    }
+
+    private void updateLocalBlockDeviceInfo(final StorPool storPoolObj, final LocalPropsChangePojo propsChange)
     {
         final StorPoolName storPoolObjName = storPoolObj.getName();
         errorReporter.logDebug("ENTER updateBlockDeviceInfo method: Storage pool \"%s\"", storPoolObjName.displayValue);
