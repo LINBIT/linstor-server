@@ -417,7 +417,7 @@ project(':controller') {
         implementation 'io.prometheus:simpleclient_hotspot:0.16.0'
 
         runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.10'
-        runtimeOnly 'org.postgresql:postgresql:42.7.13'
+        runtimeOnly 'org.postgresql:postgresql:42.7.14'
     }
 
     sourceSets {
