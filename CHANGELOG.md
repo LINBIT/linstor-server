@@ -54,6 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pool was deleted. Instead of an ErrorReport only a warning is logged now
 - Token authentication: A token's IP filter now matches IPv6 clients in any notation; before, satellite tokens were
   always rejected on IPv6 clusters
+- REST: Resource groups now also list their diskless storage pools and node list (`storage_pool_diskless_list`,
+  `node_name_list`), which could be set but were never returned
 - Fixed rare race condition between BalanceResourcesTask and a user deleting a resource. The result was that a resource
   deleted by the user might have been recreated by the BalanceResourcesTask.
 

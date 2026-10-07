@@ -1202,7 +1202,12 @@ public class Json
             {
                 auto_select_filter.storage_pool = autoSelectApi.getStorPoolNameList().get(0);
             }
+            if (autoSelectApi.getNodeNameList() != null)
+            {
+                auto_select_filter.node_name_list = autoSelectApi.getNodeNameList();
+            }
             auto_select_filter.storage_pool_list = autoSelectApi.getStorPoolNameList();
+            auto_select_filter.storage_pool_diskless_list = autoSelectApi.getStorPoolDisklessNameList();
             auto_select_filter.not_place_with_rsc = autoSelectApi.getDoNotPlaceWithRscList();
             auto_select_filter.not_place_with_rsc_regex = autoSelectApi.getDoNotPlaceWithRscRegex();
             auto_select_filter.replicas_on_same = autoSelectApi.getReplicasOnSameList();
