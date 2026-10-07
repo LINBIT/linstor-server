@@ -4,6 +4,8 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.LinStor;
@@ -186,6 +188,34 @@ public class RscGrpApiTest extends ApiTestBase
         ResourceGroup created = rscGrpMap.get(new ResourceGroupName("NewRscGrp"));
         assertThat(created.getAutoPlaceConfig().getReplicaCount()).isEqualTo(2);
         assertThat(created.getAutoPlaceConfig().getStorPoolNameList()).containsExactly("unknownPool");
+    }
+
+    @Test
+    public void crtSelectFilterListedByRest() throws Exception
+    {
+        enterScope();
+        // the referenced storage pools do not exist on any node, so the create API warns about them
+        evaluateTest(
+            new CreateRscGrpCall(
+                ApiConsts.WARN_NOT_FOUND,
+                RC_RSC_GRP_CREATED
+            )
+                .setAutoSelectFilter(
+                    new AutoSelectFilterBuilder()
+                        .setPlaceCount(2)
+                        .setNodeNameList(new ArrayList<>(Arrays.asList("node1", "node2")))
+                        .setStorPoolNameList(new ArrayList<>(Arrays.asList("unknownPool")))
+                        .setStorPoolDisklessNameList(new ArrayList<>(Arrays.asList("unknownDisklessPool")))
+                        .build()
+                )
+        );
+
+        JsonGenTypes.AutoSelectFilter listed = Json.apiToResourceGroup(
+            rscGrpMap.get(new ResourceGroupName("NewRscGrp")).getApiData()
+        ).select_filter;
+        assertThat(listed.node_name_list).containsExactly("node1", "node2");
+        assertThat(listed.storage_pool_list).containsExactly("unknownPool");
+        assertThat(listed.storage_pool_diskless_list).containsExactly("unknownDisklessPool");
     }
 
     @Test
@@ -523,6 +553,26 @@ public class RscGrpApiTest extends ApiTestBase
         );
         assertThat(testRscGrp.getAutoPlaceConfig().getReplicaCount()).isEqualTo(2);
         assertThat(testRscGrp.getAutoPlaceConfig().getStorPoolNameList()).containsExactly("unknownPool");
+    }
+
+    @Test
+    public void modDisklessStorPoolListedByRest() throws Exception
+    {
+        // the referenced storage pool does not exist on any node, hence the additional warning
+        evaluateTest(
+            new ModifyRscGrpCall(
+                MASK_RSC_GRP_CRT | ApiConsts.WARN_NOT_FOUND,
+                RC_RSC_GRP_MODIFIED
+            )
+                .autoSelectFilter(
+                    new AutoSelectFilterBuilder()
+                        .setStorPoolDisklessNameList(new ArrayList<>(Arrays.asList("unknownDisklessPool")))
+                        .build()
+                )
+        );
+
+        assertThat(Json.apiToResourceGroup(testRscGrp.getApiData()).select_filter.storage_pool_diskless_list)
+            .containsExactly("unknownDisklessPool");
     }
 
     @Test
