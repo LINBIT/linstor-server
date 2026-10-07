@@ -24,6 +24,8 @@ import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.time.Instant;
 
+import com.google.common.net.InetAddresses;
+
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter
@@ -171,10 +173,27 @@ public class AuthenticationFilter implements ContainerRequestFilter
 
         @Nullable String ipFilter = authToken.getIPFilter();
         // if the remoteAddr is null, we should fail as then we can't be sure the ip is matching the filter
-        if (ipFilter != null && !ipFilter.isEmpty() && !ipFilter.equals(remoteAddr))
+        if (ipFilter != null && !ipFilter.isEmpty() && !ipFilterMatches(ipFilter, remoteAddr))
         {
             throw new LinStorRuntimeException("Token IP filter mismatch.");
         }
+    }
+
+    /**
+     * Compares the IP filter of a token with the address of the client as IP addresses, not as strings, so that
+     * every notation of an IPv6 address matches (the client address is reported expanded and lowercase, stored node
+     * addresses are compressed and uppercase).
+     *
+     * @return false if the client address is unknown or not an IP address
+     */
+    static boolean ipFilterMatches(String ipFilter, @Nullable String remoteAddr)
+    {
+        boolean matches = false;
+        if (remoteAddr != null && InetAddresses.isInetAddress(remoteAddr) && InetAddresses.isInetAddress(ipFilter))
+        {
+            matches = InetAddresses.forString(ipFilter).equals(InetAddresses.forString(remoteAddr));
+        }
+        return matches;
     }
 
     /**
