@@ -4,6 +4,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.LinStor;
@@ -24,6 +25,7 @@ import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 import com.linbit.utils.PairNonNull;
@@ -52,6 +54,11 @@ public class PrometheusBuilder
     private static final String NODE_FLAG_HELP = "1 if the node flag is set, 0 otherwise";
     private static final Node.Flags[] EXPORTED_NODE_FLAGS = {
         Node.Flags.DELETE, Node.Flags.EVICTED, Node.Flags.EVACUATE
+    };
+
+    private static final String RSC_FLAG_HELP = "1 if the resource flag is set, 0 otherwise";
+    private static final Resource.Flags[] EXPORTED_RSC_FLAGS = {
+        Resource.Flags.INACTIVE, Resource.Flags.EVICTED
     };
 
     private static final int RSC_STATE_UNKNOWN = -1;
@@ -178,6 +185,8 @@ public class PrometheusBuilder
     {
         final HashMap<String, String> map = new HashMap<>();
         map.put("name", resourceApi.getName());
+        // same value as "name", allows joining the linstor_resource_* metrics with the linstor_volume_* metrics
+        map.put("resource", resourceApi.getName());
         map.put("node", resourceApi.getNodeName());
         return map;
     }
@@ -215,6 +224,25 @@ public class PrometheusBuilder
         return state;
     }
 
+    /**
+     * Writes the INACTIVE and EVICTED flag of every resource as 0/1, so that dashboards can leave out resources that
+     * are deliberately down. EVICTED includes the INACTIVE bit, so an evicted resource is also reported as inactive.
+     */
+    private static void writeResourceFlags(TextFormat tf, ResourceList rl)
+    {
+        tf.startGauge("linstor_resource_flag", RSC_FLAG_HELP);
+        for (ResourceApi rscApi : rl.getResources())
+        {
+            final long flags = rscApi.getFlags();
+            for (Resource.Flags flag : EXPORTED_RSC_FLAGS)
+            {
+                Map<String, String> labels = resourceExport(rscApi);
+                labels.put("flag", flag.name());
+                tf.writeSample(labels, (flags & flag.flagValue) == flag.flagValue ? 1 : 0);
+            }
+        }
+    }
+
     private static Map<String, String> volumeExport(
         final ResourceApi resourceApi,
         final VolumeApi vlmApi
@@ -229,21 +257,42 @@ public class PrometheusBuilder
         return map;
     }
 
-    private static double volumeState(ResourceApi rscApi, JsonGenTypes.Volume vlm)
+    /**
+     * Only volumes with DRBD as top layer get a disk state. All others are reported as "Created", the same as the
+     * client does, so that DUnknown keeps meaning "a disk state is expected but missing".
+     */
+    private static boolean expectsDiskState(VolumeApi vlmApi)
     {
-        if (vlm.state == null)
-        {
-            return VolumeStates.DUNKNOWN.getValue();
-        }
+        List<PairNonNull<String, VlmLayerDataApi>> layerData = vlmApi.getVlmLayerData();
+        return !layerData.isEmpty() && layerData.get(0).objB.getLayerKind() == DeviceLayerKind.DRBD;
+    }
 
-        String diskState = vlm.state.disk_state;
-        if (diskState != null && diskState.equals("Diskless") &&
-            (rscApi.getFlags() & Resource.Flags.DRBD_DISKLESS.flagValue) != Resource.Flags.DRBD_DISKLESS.flagValue)
+    private static double volumeState(
+        ResourceApi rscApi,
+        VolumeApi vlmApi,
+        @Nullable JsonGenTypes.VolumeState vlmState
+    )
+    {
+        final VolumeStates state;
+        if (!expectsDiskState(vlmApi))
         {
-            diskState = "Diskless(Detached)";
+            state = VolumeStates.CREATED;
         }
-
-        return VolumeStates.getByName(diskState).getValue();
+        else if (vlmState == null)
+        {
+            state = VolumeStates.DUNKNOWN;
+        }
+        else
+        {
+            String diskState = vlmState.disk_state;
+            if (diskState != null && diskState.equals("Diskless") &&
+                (rscApi.getFlags() & Resource.Flags.DRBD_DISKLESS.flagValue) != Resource.Flags.DRBD_DISKLESS.flagValue)
+            {
+                diskState = "Diskless(Detached)";
+            }
+            state = VolumeStates.getByName(diskState);
+        }
+        return state.getValue();
     }
 
     private static Map<String, String> storagePoolExport(final StorPoolApi storPoolApi)
@@ -386,15 +435,15 @@ public class PrometheusBuilder
                     .map(vlmApi -> new PairNonNull<ResourceApi, VolumeApi>(resApi, vlmApi))
                     .collect(Collectors.toList()));
             }
+            writeResourceFlags(tf, rl);
 
             tf.startGauge("linstor_volume_state", VOLUME_STATE_HELP);
             for (PairNonNull<ResourceApi, VolumeApi> pair : volumeApis)
             {
-                JsonGenTypes.Volume vlm = Json.apiToVolume(pair.objB);
-                vlm.state = Json.apiToVolumeState(
-                    rl.getSatelliteStates(), pair.objA.getNodeName(), pair.objA.getName(), vlm.volume_number
+                JsonGenTypes.VolumeState vlmState = Json.apiToVolumeState(
+                    rl.getSatelliteStates(), pair.objA.getNodeName(), pair.objA.getName(), pair.objB.getVlmNr()
                 );
-                tf.writeSample(volumeExport(pair.objA, pair.objB), volumeState(pair.objA, vlm));
+                tf.writeSample(volumeExport(pair.objA, pair.objB), volumeState(pair.objA, pair.objB, vlmState));
             }
 
             tf.startGauge("linstor_volume_allocated_size_bytes");

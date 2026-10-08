@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Prometheus: New metric `linstor_node_flag` exports the node flags `DELETE`, `EVICTED` and `EVACUATE` as 0/1 per node
+- Prometheus: New metric `linstor_resource_flag` exports the resource flags `INACTIVE` and `EVICTED` as 0/1
 - Controller: A controller-only node now reports the platform and OS variant of the host the controller runs on
 
 ### Changed
@@ -18,10 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Satellite: The ErrorReport of a `drbdadm adjust` that fails after a .res file was regenerated now includes the
   regenerated content, which is otherwise lost when the previous file is restored from its backup
 - SOS report now includes the LVM devices file `/etc/lvm/devices/system.devices`
+- Prometheus: `linstor_resource_state` also carries the resource name as `resource` label, allowing joins with the
+  `linstor_volume_*` metrics
 
 ### Fixed
 
 - Web UI: Requests no longer hang for about 30 seconds after the controller served a large web UI file again
+- Prometheus: `linstor_volume_state` reports volumes without DRBD as `Created` (2) instead of `DUnknown` (-1)
+  (GitHub #420)
 - RPM: Start scripts now use the distribution's JVM directory, fixing startup on SLES/openSUSE 16
 - Satellite: Fixed a never-ending storage pool update loop (high CPU, constant DeviceManager cycles) when LVM PVs
   are partitions; block size and discard granularity of partition PVs are now read from their disk
