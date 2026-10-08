@@ -11,6 +11,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
@@ -124,6 +125,13 @@ public class CtrlFullSyncApiCallHandler
         Set<AbsRemote> remotes = new LinkedHashSet<>();
 
         nodes.add(satelliteNode); // always add the localNode
+
+        // node connections are only serialized between nodes of the FullSync. Without this, the satellite would lose
+        // all node connections to nodes it does not (yet) share a resource with
+        for (NodeConnection nodeConn : satelliteNode.getNodeConnections())
+        {
+            nodes.add(nodeConn.getOtherNode(satelliteNode));
+        }
 
         // some storPools might have been created on the satellite, but are not used by resources / volumes
         // however, when a rsc / vlm is created, they already assume the referenced storPool already exists
