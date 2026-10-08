@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - STORAGE_SPACES: set discard-zeroes-if-aligned to "no" thereby skipping initial resync
 - REST: The resource state reports `open` if a DRBD device of the resource is open, also read-only on a Secondary
 - Prometheus: New metric `linstor_resource_open` reports whether a DRBD device of the resource is open
+- Prometheus: New metric `linstor_resource_flag` exports the resource flags `INACTIVE` and `EVICTED` as 0/1
 - Controller: A controller-only node now reports the platform and OS variant of the host the controller runs on
 
 ### Changed
@@ -33,10 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ~6 MB of dependencies (and their CVE exposure) from the distribution
 - DRBD: Operations that take a resource down (e.g. delete, deactivate, rollback) are also rejected while its
   device is open on a Secondary, if DRBD reports it
+- Prometheus: `linstor_resource_state` and `linstor_resource_open` also carry the resource name as `resource` label,
+  allowing joins with the `linstor_volume_*` metrics
 
 ### Fixed
 
 - Web UI: Requests no longer hang for about 30 seconds after the controller served a large web UI file again
+- Prometheus: `linstor_volume_state` reports volumes without DRBD as `Created` (2) instead of `DUnknown` (-1)
+  (GitHub #420)
 - RPM: Start scripts now use the distribution's JVM directory, fixing startup on SLES/openSUSE 16
 - Satellite: Fixed a never-ending storage pool update loop (high CPU, constant DeviceManager cycles) when LVM PVs
   are partitions; block size and discard granularity of partition PVs are now read from their disk

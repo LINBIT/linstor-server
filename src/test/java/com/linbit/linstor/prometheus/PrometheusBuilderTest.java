@@ -2,6 +2,7 @@ package com.linbit.linstor.prometheus;
 
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
@@ -9,16 +10,23 @@ import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.StderrErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.satellitestate.SatelliteVolumeState;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.utils.PairNonNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.Assert;
@@ -190,25 +198,89 @@ public class PrometheusBuilderTest
 
     private static ResourceApi rscApi(String rscName, String nodeName)
     {
+        return rscApi(rscName, nodeName, 0, Collections.emptyList());
+    }
+
+    private static ResourceApi rscApi(String rscName, String nodeName, long flags, List<VolumeApi> vlms)
+    {
         ResourceApi rsc = Mockito.mock(ResourceApi.class);
         Mockito.when(rsc.getName()).thenReturn(rscName);
         Mockito.when(rsc.getNodeName()).thenReturn(nodeName);
-        Mockito.when(rsc.getVlmList()).thenReturn(Collections.emptyList());
+        Mockito.when(rsc.getFlags()).thenReturn(flags);
+        Mockito.doReturn(vlms).when(rsc).getVlmList();
         return rsc;
     }
 
-    private static @Nullable String resourceOpenValue(String promText, String rscName, String nodeName)
+    /**
+     * @param layers the layer stack of the volume, top layer first
+     */
+    private static VolumeApi vlmApi(String devicePath, DeviceLayerKind... layers)
+    {
+        List<PairNonNull<String, VlmLayerDataApi>> layerData = new ArrayList<>();
+        for (DeviceLayerKind kind : layers)
+        {
+            VlmLayerDataApi vlmLayerData = Mockito.mock(VlmLayerDataApi.class);
+            Mockito.when(vlmLayerData.getLayerKind()).thenReturn(kind);
+            layerData.add(new PairNonNull<>(kind.name(), vlmLayerData));
+        }
+        VolumeApi vlm = Mockito.mock(VolumeApi.class);
+        Mockito.when(vlm.getVlmNr()).thenReturn(0);
+        Mockito.when(vlm.getDevicePath()).thenReturn(devicePath);
+        Mockito.when(vlm.getVlmLayerData()).thenReturn(layerData);
+        return vlm;
+    }
+
+    private static @Nullable String sampleValue(String promText, String metric, String... labels)
     {
         String value = null;
         for (String line : promText.split("\n"))
         {
-            if (line.startsWith("linstor_resource_open{") && line.contains("name=\"" + rscName + "\"") &&
-                line.contains("node=\"" + nodeName + "\""))
+            boolean match = line.startsWith(metric + "{");
+            for (String label : labels)
+            {
+                match &= line.contains(label);
+            }
+            if (match)
             {
                 value = line.substring(line.lastIndexOf(' ') + 1);
             }
         }
         return value;
+    }
+
+    private static @Nullable String resourceOpenValue(String promText, String rscName, String nodeName)
+    {
+        return sampleValue(
+            promText,
+            "linstor_resource_open",
+            "name=\"" + rscName + "\"",
+            "resource=\"" + rscName + "\"",
+            "node=\"" + nodeName + "\""
+        );
+    }
+
+    private static @Nullable String volumeStateValue(String promText, String rscName, String nodeName)
+    {
+        return sampleValue(
+            promText, "linstor_volume_state", "resource=\"" + rscName + "\"", "node=\"" + nodeName + "\""
+        );
+    }
+
+    private static @Nullable String resourceFlagValue(
+        String promText,
+        String rscName,
+        String nodeName,
+        Resource.Flags flag
+    )
+    {
+        return sampleValue(
+            promText,
+            "linstor_resource_flag",
+            "name=\"" + rscName + "\"",
+            "resource=\"" + rscName + "\"",
+            "node=\"" + nodeName + "\"",
+            "flag=\"" + flag.name() + "\""
+        );
     }
 
     @Test
@@ -241,5 +313,66 @@ public class PrometheusBuilderTest
         Assert.assertEquals("-1.0", resourceOpenValue(promText, "r1", "n3"));
         // open on a Secondary does not change the meaning of linstor_resource_state
         Assert.assertTrue(promText.contains("linstor_resource_state{"));
+    }
+
+    @Test
+    public void testVolumeState() throws Exception
+    {
+        PrometheusBuilder pmb = new PrometheusBuilder(new StderrErrorReporter("Test"));
+
+        ResourceList rl = new ResourceList();
+        rl.addResource(rscApi("drbd", "n1", 0, List.of(vlmApi("/dev/drbd1000", DeviceLayerKind.DRBD,
+            DeviceLayerKind.STORAGE))));
+        rl.addResource(rscApi("drbdnostate", "n1", 0, List.of(vlmApi("/dev/drbd1001", DeviceLayerKind.DRBD,
+            DeviceLayerKind.STORAGE))));
+        rl.addResource(rscApi("storage", "n1", 0, List.of(vlmApi("/dev/vg/storage_00000",
+            DeviceLayerKind.STORAGE))));
+        rl.addResource(rscApi("luks", "n1", 0, List.of(vlmApi("/dev/mapper/luks_00000", DeviceLayerKind.LUKS,
+            DeviceLayerKind.STORAGE))));
+        // DRBD below another layer does not report a disk state for the volume
+        rl.addResource(rscApi("drbdbelow", "n1", 0, List.of(vlmApi("/dev/mapper/drbdbelow", DeviceLayerKind.LUKS,
+            DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE))));
+
+        SatelliteState n1 = new SatelliteState();
+        n1.setOnVolume(new ResourceName("drbd"), new VolumeNumber(0), SatelliteVolumeState::setDiskState, "UpToDate");
+        rl.putSatelliteState(new NodeName("n1"), n1);
+
+        final String promText = pmb.build(null, null, rl, null, null, 1, System.currentTimeMillis());
+
+        Assert.assertEquals("1.0", volumeStateValue(promText, "drbd", "n1"));
+        // a disk state is expected but missing
+        Assert.assertEquals("-1.0", volumeStateValue(promText, "drbdnostate", "n1"));
+        // volumes without DRBD on top are reported as "Created", as the client does
+        Assert.assertEquals("2.0", volumeStateValue(promText, "storage", "n1"));
+        Assert.assertEquals("2.0", volumeStateValue(promText, "luks", "n1"));
+        Assert.assertEquals("2.0", volumeStateValue(promText, "drbdbelow", "n1"));
+    }
+
+    @Test
+    public void testResourceFlags() throws Exception
+    {
+        PrometheusBuilder pmb = new PrometheusBuilder(new StderrErrorReporter("Test"));
+
+        ResourceList rl = new ResourceList();
+        rl.addResource(rscApi("r1", "plain", Resource.Flags.DRBD_DISKLESS.flagValue, Collections.emptyList()));
+        rl.addResource(rscApi("r1", "inactive", Resource.Flags.INACTIVE.flagValue, Collections.emptyList()));
+        rl.addResource(
+            rscApi("r1", "permanently", Resource.Flags.INACTIVE_PERMANENTLY.flagValue, Collections.emptyList())
+        );
+        rl.addResource(rscApi("r1", "evicted", Resource.Flags.EVICTED.flagValue, Collections.emptyList()));
+
+        final String promText = pmb.build(null, null, rl, null, null, 1, System.currentTimeMillis());
+
+        Assert.assertEquals("0.0", resourceFlagValue(promText, "r1", "plain", Resource.Flags.INACTIVE));
+        Assert.assertEquals("0.0", resourceFlagValue(promText, "r1", "plain", Resource.Flags.EVICTED));
+        Assert.assertEquals("1.0", resourceFlagValue(promText, "r1", "inactive", Resource.Flags.INACTIVE));
+        Assert.assertEquals("0.0", resourceFlagValue(promText, "r1", "inactive", Resource.Flags.EVICTED));
+        Assert.assertEquals("1.0", resourceFlagValue(promText, "r1", "permanently", Resource.Flags.INACTIVE));
+        Assert.assertEquals("0.0", resourceFlagValue(promText, "r1", "permanently", Resource.Flags.EVICTED));
+        // EVICTED includes the INACTIVE bit
+        Assert.assertEquals("1.0", resourceFlagValue(promText, "r1", "evicted", Resource.Flags.INACTIVE));
+        Assert.assertEquals("1.0", resourceFlagValue(promText, "r1", "evicted", Resource.Flags.EVICTED));
+        // only the exported flags
+        Assert.assertNull(resourceFlagValue(promText, "r1", "plain", Resource.Flags.DRBD_DISKLESS));
     }
 }
