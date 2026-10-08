@@ -49,7 +49,6 @@ variables:
   # Source branch glob of MRs whose rebase-only pipelines may skip the e2e tests, see .common_e2e
   E2E_SKIP_REBASE_BRANCHES: "renovate/*"
   RUNNER_TAG_LIBVIRT: "libvirt"
-  LINBIT_CI_MAX_CPUS: 38  # limit memory usage (limit 84GB) on default runners 38 * 2 + 7(vmshed/virter...)
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
 
 # Opt-in Gradle cache: only reference this from jobs that actually run Gradle,
@@ -78,11 +77,9 @@ workflow:
     - if: $CI_COMMIT_BRANCH == 'jenkins'
       variables:
         RUNNER_TAG_LIBVIRT: "libvirt-xl"
-        LINBIT_CI_MAX_CPUS: 64  # enough memory on xl runners
     - if: $CI_COMMIT_BRANCH == 'master'
       variables:
         RUNNER_TAG_LIBVIRT: "libvirt-xl"
-        LINBIT_CI_MAX_CPUS: 64  # enough memory on xl runners
     - when: always  # Other pipelines can run, but use the default variables
 
 .run_lbbuild:
