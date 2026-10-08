@@ -6,7 +6,7 @@ spec:
       description: virter version to use
     vmshed_version:
       type: string
-      default: v0.29.0
+      default: v0.32.0
       description: vmshed version to use
     build_helpers_version:
       type: string
