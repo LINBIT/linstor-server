@@ -472,6 +472,8 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
             notificationListener.notifyResourceDispatchResponse(rscName, apiCallRc);
         }
+        // once for all drbd-reactor snippets the external files of these resources wrote or deleted
+        extFileHandler.reloadDrbdReactorIfSnippetsChanged();
     }
 
     /**

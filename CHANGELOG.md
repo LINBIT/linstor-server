@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Satellite: drbd-reactor is reloaded after one of its snippets is written, changed or deleted as an external file,
+  so the drbd-reactor-reload.path unit is no longer needed for that
 - Satellite: The ErrorReport of a `drbdadm adjust` that fails after a .res file was regenerated now includes the
   regenerated content, which is otherwise lost when the previous file is restored from its backup
 - SOS report now includes the LVM devices file `/etc/lvm/devices/system.devices`

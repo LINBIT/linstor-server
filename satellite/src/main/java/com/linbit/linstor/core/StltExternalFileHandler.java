@@ -49,19 +49,22 @@ public class StltExternalFileHandler
     private final ExternalFileMap extFileMap;
     private final ResourceDefinitionMap rscDfnMap;
     private final StltConfig stltCfg;
+    private final DrbdReactorSnippetReloader drbdReactorSnippetReloader;
 
     @Inject
     public StltExternalFileHandler(
         ErrorReporter errorReporterRef,
         CoreModule.ExternalFileMap extFileMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        StltConfig stltCfgRef
+        StltConfig stltCfgRef,
+        DrbdReactorSnippetReloader drbdReactorSnippetReloaderRef
     )
     {
         errorReporter = errorReporterRef;
         extFileMap = extFileMapRef;
         rscDfnMap = rscDfnMapRef;
         stltCfg = stltCfgRef;
+        drbdReactorSnippetReloader = drbdReactorSnippetReloaderRef;
         extFileRequestedByRscDfnsMap = new HashMap<>();
         rscDfnToExtFilesMap = new HashMap<>();
     }
@@ -294,6 +297,8 @@ public class StltExternalFileHandler
     private void rewrite(ExternalFile externalFile) throws StorageException, DatabaseException
     {
         Path path = resolveActualPath(externalFile);
+        boolean changedDrbdReactorSnippet = drbdReactorSnippetReloader.isSnippet(path) &&
+            !hasContent(path, externalFile.getContent());
         Path tmpFile;
         try
         {
@@ -334,6 +339,31 @@ public class StltExternalFileHandler
         }
         errorReporter.logInfo("External file %s written successfully", path.toString());
         externalFile.setAlreadyWritten(true);
+        if (changedDrbdReactorSnippet)
+        {
+            drbdReactorSnippetReloader.snippetChanged(path);
+        }
+    }
+
+    private boolean hasContent(Path path, byte[] content) throws StorageException
+    {
+        try
+        {
+            return Files.exists(path) && Arrays.equals(Files.readAllBytes(path), content);
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException("Failed to read external file: " + path, exc);
+        }
+    }
+
+    /**
+     * Reloads drbd-reactor once if external files written or deleted since the last call include some of its
+     * snippets.
+     */
+    public void reloadDrbdReactorIfSnippetsChanged()
+    {
+        drbdReactorSnippetReloader.reloadIfSnippetsChanged();
     }
 
     public ExtFileStatusPojo getStatus(ExternalFileName extFileNameRef) throws StorageException
@@ -375,7 +405,11 @@ public class StltExternalFileHandler
             String canonical = extFileNameRef.extFileName;
 
             errorReporter.logTrace("Deleting external file: %s", canonical);
-            Files.deleteIfExists(Paths.get(canonical));
+            Path canonicalPath = Paths.get(canonical);
+            if (Files.deleteIfExists(canonicalPath) && drbdReactorSnippetReloader.isSnippet(canonicalPath))
+            {
+                drbdReactorSnippetReloader.snippetChanged(canonicalPath);
+            }
 
             // also delete all alternative-suffix variants
             for (String suffix : extFile.getAltSuffixes())
