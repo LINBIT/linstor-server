@@ -15,6 +15,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.event.EventWaiter;
+import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.drbd.drbdstate.DiskState;
 import com.linbit.linstor.layer.drbd.drbdstate.ReplState;
@@ -41,10 +42,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * Tests for {@link BalanceResources}.
@@ -93,6 +96,7 @@ public class BalanceResourcesTest extends GenericDbBase
     private LockGuardFactory lockGuardFactory;
 
     private BalanceResources balanceResources;
+    private EventWaiter eventWaiterMock;
 
     /** One satellite state per node, shared by all resources of that node. */
     private final Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
@@ -107,7 +111,7 @@ public class BalanceResourcesTest extends GenericDbBase
 
         ResourceStateEvent rscStateEventMock = Mockito.mock(ResourceStateEvent.class);
 
-        EventWaiter eventWaiterMock = Mockito.mock(EventWaiter.class);
+        eventWaiterMock = Mockito.mock(EventWaiter.class);
         Mockito.when(eventWaiterMock.waitForStream(Mockito.any(), Mockito.any()))
             .thenReturn(Flux.empty());
 
@@ -406,6 +410,92 @@ public class BalanceResourcesTest extends GenericDbBase
     }
 
     @Test
+    public void inactiveNotCountedAsDiskfulTest() throws Exception
+    {
+        cluster().replicaCount(2)
+            .rsc("node1")
+            .rsc("node2")
+            .rsc("node3").flags(Resource.Flags.INACTIVE);
+
+        expectBalance(0);
+    }
+
+    @Test
+    public void inactivePermanentlyNotCountedAsDiskfulTest() throws Exception
+    {
+        cluster().replicaCount(2)
+            .rsc("node1")
+            .rsc("node2")
+            .rsc("node3").flags(Resource.Flags.INACTIVE_PERMANENTLY);
+
+        expectBalance(0);
+    }
+
+    /**
+     * An inactive copy on the second node of a shared space reports no DRBD state, since DRBD is down there
+     */
+    @Test
+    public void inactiveSharedCopyNotCountedTest() throws Exception
+    {
+        cluster().replicaCount(2).sharedStorPool("san1", "node1", "node2")
+            .rsc("node1")
+            .rsc("node2").flags(Resource.Flags.INACTIVE).withoutStltRscState()
+            .rsc("node3");
+
+        expectBalance(0);
+    }
+
+    @Test
+    public void inactiveSharedCopyNotCountedForSinglePlaceCountTest() throws Exception
+    {
+        cluster().replicaCount(1).sharedStorPool("san1", "node1", "node2")
+            .rsc("node1")
+            .rsc("node2").flags(Resource.Flags.INACTIVE).withoutStltRscState();
+
+        expectBalance(0);
+    }
+
+    /**
+     * Eviction leaves an EVICTED copy, which carries the INACTIVE bit, and its offline node reports no DRBD state
+     */
+    @Test
+    public void evictedNotCountedAsDiskfulTest() throws Exception
+    {
+        cluster().replicaCount(2)
+            .rsc("node1")
+            .rsc("node2")
+            .rsc("node3").flags(Resource.Flags.EVICTED).withoutStltRscState();
+
+        expectBalance(0);
+    }
+
+    @Test
+    public void inactiveNotCountedForAdjustTest() throws Exception
+    {
+        cluster().replicaCount(2)
+            .rsc("node1")
+            .rsc("node2").flags(Resource.Flags.INACTIVE);
+
+        expectBalance(1);
+    }
+
+    /**
+     * The not UpToDate inactive resource would be the preferred victim of the AutoUnplacer, it must not be deleted
+     * nor block the deletion of an excess active resource.
+     */
+    @Test
+    public void inactiveNotDeletedTest() throws Exception
+    {
+        cluster().replicaCount(1)
+            .rsc("node1")
+            .rsc("node2")
+            .rsc("node3").flags(Resource.Flags.INACTIVE).diskState(DiskState.OUTDATED.toString());
+
+        expectBalance(-1);
+        expectNotDeleted("node3");
+    }
+
+    @Test
     public void inUseResourcesNotDeletedTest() throws Exception
     {
         cluster().replicaCount(2)
@@ -474,6 +564,17 @@ public class BalanceResourcesTest extends GenericDbBase
         assertEquals("unexpected number of resources to delete", expectedDeleteRef, (int) result.objB);
     }
 
+    private void expectNotDeleted(String nodeNameRef) throws Exception
+    {
+        ArgumentCaptor<ObjectIdentifier> deletedCaptor = ArgumentCaptor.forClass(ObjectIdentifier.class);
+        Mockito.verify(eventWaiterMock, Mockito.atLeastOnce()).waitForStream(Mockito.any(), deletedCaptor.capture());
+        NodeName nodeName = new NodeName(nodeNameRef);
+        for (ObjectIdentifier deleted : deletedCaptor.getAllValues())
+        {
+            assertNotEquals("resource was deleted on " + nodeNameRef, nodeName, deleted.getNodeName());
+        }
+    }
+
     /**
      * Returns (and lazily creates) the {@link SatelliteState} of the given node. On first call a mocked
      * {@link Peer} returning that satellite state is attached to the node.
@@ -535,6 +636,19 @@ public class BalanceResourcesTest extends GenericDbBase
         ClusterBuilder rscDfnFlags(ResourceDefinition.Flags... flagsRef) throws Exception
         {
             resourceDefinitionTestFactory.get(RSC_NAME_STR, true).getFlags().enableFlags(flagsRef);
+            return this;
+        }
+
+        /**
+         * Creates the default storage pool on the given nodes as one shared space, before any resource
+         * is created on them.
+         */
+        ClusterBuilder sharedStorPool(String sharedSpaceRef, String... nodeNamesRef) throws Exception
+        {
+            for (String nodeName : nodeNamesRef)
+            {
+                storPoolTestFactory.builder(nodeName, DFLT_STOR_POOL).setFreeSpaceMgrName(sharedSpaceRef).build();
+            }
             return this;
         }
 

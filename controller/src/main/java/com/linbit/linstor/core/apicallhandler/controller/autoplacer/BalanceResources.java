@@ -171,9 +171,10 @@ public class BalanceResources
         {
             // do not delete:
             // * diskless resources
+            // * inactive resources, as they are not counted as diskful
             // * resource created within the grace period
             // * resources that don't have a creation date yet (or very old resources before creation date was added)
-            if (rsc.isDiskless() || isResourceInGracePeriod(rsc))
+            if (rsc.isDiskless() || isInactive(rsc) || isResourceInGracePeriod(rsc))
             {
                 fixed.add(rsc);
             }
@@ -437,7 +438,7 @@ public class BalanceResources
     {
         boolean ret = false;
         List<Resource> diskful = rscDfn.getNotDeletedDiskful(); // flag-diskful, excludes DRBD_DISKLESS
-        diskful.removeAll(getResourcesWithSkipDisk(diskful)); // do not test SkipDisk rscs
+        filterDiskfull(diskful); // do not test SkipDisk or inactive rscs
         for (Resource rsc : diskful)
         {
             Peer peer = rsc.getNode().getPeer();
@@ -465,6 +466,13 @@ public class BalanceResources
     {
         List<Resource> skipDiskResources = getResourcesWithSkipDisk(resources);
         resources.removeAll(skipDiskResources);
+        resources.removeIf(BalanceResources::isInactive);
+    }
+
+    // also true for INACTIVE_PERMANENTLY and EVICTED, as both include the INACTIVE bit
+    private static boolean isInactive(Resource rsc)
+    {
+        return rsc.getStateFlags().isSet(Resource.Flags.INACTIVE);
     }
 
     private List<Resource> getResourcesWithSkipDisk(List<Resource> resources)
