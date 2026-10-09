@@ -664,6 +664,8 @@ public class RscMakeAvailableApiTest extends ApiTestBase
         assertThat(newRsc).isNotNull();
         assertThat(newRsc.getStateFlags().isSet(Resource.Flags.INACTIVE)).isFalse();
         assertThat(rsc.getStateFlags().isSet(Resource.Flags.INACTIVE)).isTrue();
+        // no live migration: the new leg locks the LV exclusively
+        assertThat(getSharedTargetMarker()).isNull();
     }
 
     @Test
@@ -688,6 +690,29 @@ public class RscMakeAvailableApiTest extends ApiTestBase
         assertThat(rsc.getStateFlags().isSet(Resource.Flags.INACTIVE)).isFalse();
         // the dual-active window is not managed via DRBD net options
         assertThat(getLiveMigrateMarker(InternalApiConsts.KEY_LIVE_MIGRATE_SOURCE_NODE)).isNull();
+        // but the source has to share its LV locks with the new leg
+        assertThat(getSharedTargetMarker()).isEqualTo(testNode2Name.displayValue);
+    }
+
+    @Test
+    public void makeAvailableDualPrimaryExternalLockingActivatesInactiveCopy() throws Exception
+    {
+        // like above, but the target already has an INACTIVE copy: it is marked as migration target (so the
+        // source downgrades to shared LV locks) before it is activated
+        Resource rsc = createSharedStorPoolRsc(DeviceProviderKind.LVM, true, false);
+        Resource rsc2 = createSharedStorPoolRscOnNode(testNode2Name, true);
+
+        evaluateTest(
+            new MakeAvailableCall()
+                .setRscName(SHARED_RSC_NAME)
+                .setNodeName(testNode2Name.displayValue)
+                .setAutoManageDualPrimary(true),
+            false
+        );
+
+        assertThat(rsc2.getStateFlags().isSet(Resource.Flags.INACTIVE)).isFalse();
+        assertThat(rsc.getStateFlags().isSet(Resource.Flags.INACTIVE)).isFalse();
+        assertThat(getSharedTargetMarker()).isEqualTo(testNode2Name.displayValue);
     }
 
     @Test
@@ -1140,6 +1165,14 @@ public class RscMakeAvailableApiTest extends ApiTestBase
     private void setInUse(SatelliteState stltStateRef, @Nullable Boolean inUse)
     {
         stltStateRef.setOnResource(testRscName, SatelliteResourceState::setInUse, inUse);
+    }
+
+    private @Nullable String getSharedTargetMarker() throws Exception
+    {
+        return rscDfnMap.get(new ResourceName(SHARED_RSC_NAME)).getProps().getProp(
+            InternalApiConsts.KEY_LIVE_MIGRATE_SHARED_TARGET_NODE,
+            InternalApiConsts.NAMESPC_LIVE_MIGRATE
+        );
     }
 
     private @Nullable String getLiveMigrateMarker(String key) throws Exception

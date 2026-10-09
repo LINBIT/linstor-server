@@ -348,9 +348,10 @@ public class LvmProvider
     /**
      * The lvmlockd lock mode the LV of the given volume has to be activated with. In storage pools
      * with external locking the LV lock is held exclusively as long as this resource is the only one
-     * using the shared LV. As soon as another resource (leg) of the rsc-dfn shares the LV - e.g. the
-     * target of a live migration - the lock is downgraded to a shared lock so both legs can be active
-     * at once, and upgraded back to an exclusive lock after the second leg is removed.
+     * using the shared LV. As soon as another resource (leg) of the rsc-dfn is active as well - or is
+     * the still INACTIVE target of a live migration - the lock is downgraded to a shared lock so both
+     * legs can be active at once, and upgraded back to an exclusive lock once the other leg's
+     * deactivation is confirmed. INACTIVE leftovers of earlier moves do not share the lock.
      *
      * Snapshots take precedence over sharing: lvmlockd requires the origin LV's lock in exclusive
      * mode both to create a snapshot and for as long as any snapshot of the LV exists. The lock is
@@ -368,7 +369,7 @@ public class LvmProvider
         if (storPool.isExternalLocking() && storPool.getDeviceProviderKind().isSharedVolumeSupported())
         {
             boolean exclusive = requiresExclusiveLvLock(vlmDataRef, infoRef) ||
-                !SharedStorageUtils.isNeededBySharedResource(vlmDataRef);
+                !SharedStorageUtils.isLockedBySharedResource(vlmDataRef);
             lockMode = exclusive ? LvmLockMode.EXCLUSIVE : LvmLockMode.SHARED;
         }
         return lockMode;

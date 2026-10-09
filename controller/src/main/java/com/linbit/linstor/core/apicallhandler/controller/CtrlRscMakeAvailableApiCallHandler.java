@@ -277,6 +277,12 @@ public class CtrlRscMakeAvailableApiCallHandler
                         rsc.getNode().getName().displayValue,
                         rsc.getResourceDefinition().getName().displayValue
                     );
+                    if (activeRsc != null && hasExternalLocking(activeRsc))
+                    {
+                        // the source has to downgrade to shared LV locks before this resource can acquire one
+                        liveMigrateHelper.setSharedTargetMarker(rscDfn, node);
+                        flux = updateSatellitesForSharedTarget(rscDfn).concatWith(flux);
+                    }
                 }
                 else
                 {
@@ -368,10 +374,11 @@ public class CtrlRscMakeAvailableApiCallHandler
                         /*
                          * The active resource holds an exclusive lock on the shared volumes (e.g.
                          * lvmlockd). Its satellite only downgrades to shared locks once it sees the
-                         * second leg, so create the new resource INACTIVE first (resource creation
+                         * marked second leg, so create the new resource INACTIVE first (resource creation
                          * waits for all satellites of the rsc-dfn) and activate it afterwards, when
                          * the shared lock can be acquired.
                          */
+                        liveMigrateHelper.setSharedTargetMarker(rscDfn, node);
                         flux = createSharedRsc(
                             node,
                             withAdditionalInitFlags(createRscPojo, Resource.Flags.INACTIVE),
@@ -664,6 +671,19 @@ public class CtrlRscMakeAvailableApiCallHandler
                             "Updated DRBD net options for the live migration on {0}"
                         )
                     )
+            );
+    }
+
+    private Flux<ApiCallRc> updateSatellitesForSharedTarget(ResourceDefinition rscDfn)
+    {
+        return stltUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+            .transform(
+                updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
+                    updateResponses,
+                    rscDfn.getName(),
+                    "Prepared shared LV locks for the live migration on {0}"
+                )
             );
     }
 
