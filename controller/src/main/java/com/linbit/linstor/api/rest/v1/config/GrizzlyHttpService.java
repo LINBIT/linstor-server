@@ -210,7 +210,11 @@ public class GrizzlyHttpService implements SystemService
 
     private void addUiStaticHandler(HttpServer httpSrv)
     {
-        httpSrv.getServerConfiguration().addHttpHandler(new StaticHttpHandler(webUiDirectory), "/ui");
+        StaticHttpHandler uiHandler = new StaticHttpHandler(webUiDirectory);
+        // once a large file (e.g. a GUI bundle) is in Grizzly's file cache, serving it again to a remote client
+        // leaves the connection hanging, so the next request on it gets no response
+        uiHandler.setFileCacheEnabled(false);
+        httpSrv.getServerConfiguration().addHttpHandler(uiHandler, "/ui");
     }
 
     private void enableCompression(HttpServer httpServerRef)

@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Web UI: Requests no longer hang for about 30 seconds after the controller served a large web UI file again
 - RPM: Start scripts now use the distribution's JVM directory, fixing startup on SLES/openSUSE 16
 - Satellite: Fixed a never-ending storage pool update loop (high CPU, constant DeviceManager cycles) when LVM PVs
   are partitions; block size and discard granularity of partition PVs are now read from their disk
