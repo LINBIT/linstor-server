@@ -377,6 +377,22 @@ public class CtrlRscLiveMigrateHelper
     }
 
     /**
+     * Marks the INACTIVE resource on the given node as the target of a live migration in a shared storage pool
+     * with external locking. The source's satellite only shares its LV locks with active legs and this marked
+     * target, so the marker has to reach the satellites before the target is activated. Removed by
+     * {@link #cleanupDualPrimaryProps}. Caller must commit and update the satellites of the rsc-dfn afterwards.
+     */
+    public void setSharedTargetMarker(ResourceDefinition rscDfn, Node tgtNode)
+    {
+        setProp(
+            rscDfn.getProps(),
+            InternalApiConsts.KEY_LIVE_MIGRATE_SHARED_TARGET_NODE,
+            tgtNode.getName().displayValue,
+            InternalApiConsts.NAMESPC_LIVE_MIGRATE
+        );
+    }
+
+    /**
      * Unconditionally removes allow-two-primaries (from the rsc-dfn, from all resource-connections of the
      * given resource and from the marker-recorded source/target connection), restores the protocol
      * recorded by make-available and removes the internal live-migrate marker props.

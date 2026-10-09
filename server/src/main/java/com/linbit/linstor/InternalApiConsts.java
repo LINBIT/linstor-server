@@ -305,6 +305,11 @@ public class InternalApiConsts
     public static final String KEY_LIVE_MIGRATE_PROTOCOL_SET_ON = "ProtocolSetOn";
     /** the explicit protocol value that was overridden by make-available, absent if there was none */
     public static final String KEY_LIVE_MIGRATE_PREV_PROTOCOL = "PrevProtocol";
+    /**
+     * node of the still INACTIVE target of a live migration in a shared storage pool: the source already needs to
+     * share its LV locks with it
+     */
+    public static final String KEY_LIVE_MIGRATE_SHARED_TARGET_NODE = "SharedTargetNode";
     public static final String SET_ON_RSC_DFN = "RSC_DFN";
     public static final String SET_ON_RSC_CONN = "RSC_CONN";
 

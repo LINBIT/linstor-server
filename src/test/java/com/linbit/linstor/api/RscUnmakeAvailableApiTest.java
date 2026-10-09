@@ -330,6 +330,13 @@ public class RscUnmakeAvailableApiTest extends ApiTestBase
 
         assertThat(testSatelliteNode.getResource(new ResourceName(SHARED_RSC_NAME))).isNull();
         assertThat(node2.getResource(new ResourceName(SHARED_RSC_NAME))).isNotNull();
+        // the remaining leg no longer has to share its LV locks with the migration target
+        assertThat(
+            rscDfnMap.get(new ResourceName(SHARED_RSC_NAME)).getProps().getProp(
+                InternalApiConsts.KEY_LIVE_MIGRATE_SHARED_TARGET_NODE,
+                InternalApiConsts.NAMESPC_LIVE_MIGRATE
+            )
+        ).isNull();
     }
 
     /*
@@ -356,6 +363,12 @@ public class RscUnmakeAvailableApiTest extends ApiTestBase
         volumeDefinitionTestFactory.builder(SHARED_RSC_NAME, 0)
             .setSize(100 * 1024L)
             .build();
+        // set by make-available for the target of the live migration
+        sharedRscDfn.getProps().setProp(
+            InternalApiConsts.KEY_LIVE_MIGRATE_SHARED_TARGET_NODE,
+            TEST_NODE_2_NAME,
+            InternalApiConsts.NAMESPC_LIVE_MIGRATE
+        );
         commitAndCleanUp(true);
 
         createRscOnNode(TEST_NODE_NAME, SHARED_RSC_NAME, 0L, sharedSpName.displayValue);
