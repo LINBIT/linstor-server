@@ -24,6 +24,7 @@ import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.H2FormatUtils;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugModule;
@@ -71,6 +72,8 @@ import picocli.CommandLine;
 
 public class LinstorDatabaseTool
 {
+    private static final int EXIT_CODE_MIGRATION_PENDING = 1;
+
     private static CommandLine commandLine;
 
     @CommandLine.Command(
@@ -121,7 +124,7 @@ public class LinstorDatabaseTool
         @Override
         public Object call() throws Exception
         {
-            runDbExportImport(configurationDirectory, logDirectory, migrateBeforeExport, injector ->
+            runDbExportImport(configurationDirectory, logDirectory, migrateBeforeExport, true, injector ->
             {
                 DbExportImportHelper dbExportImporter = injector.getInstance(DbExportImportHelper.class);
                 ErrorReporter errorLog = injector.getInstance(ErrorReporter.class);
@@ -158,7 +161,7 @@ public class LinstorDatabaseTool
         @Override
         public Object call() throws Exception
         {
-            runDbExportImport(configurationDirectory, logDirectory, false, injector ->
+            runDbExportImport(configurationDirectory, logDirectory, false, false, injector ->
             {
                 DbExportImportHelper dbExportImporter = injector.getInstance(DbExportImportHelper.class);
                 ErrorReporter errorLog = injector.getInstance(ErrorReporter.class);
@@ -274,10 +277,11 @@ public class LinstorDatabaseTool
         String cfgPath,
         @Nullable String logDirectory,
         boolean enableMigrationOnInit,
+        boolean requireAllMigrationsApplied,
         Consumer<Injector> injectorConsumer
     )
         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException,
-        SystemServiceStartException, InitializationException
+        SystemServiceStartException, InitializationException, DatabaseException
     {
         List<String> cfgArgs = new ArrayList<>(Arrays.asList("-c", cfgPath));
         if (logDirectory != null)
@@ -365,6 +369,18 @@ public class LinstorDatabaseTool
         {
             dbInit.setEnableMigrationOnInit(enableMigrationOnInit);
             dbInit.initialize();
+
+            // the export only knows the current schema and would label old data as current
+            if (requireAllMigrationsApplied && dbInit.needsMigration())
+            {
+                dbInit.shutdown(true);
+                System.err.println(
+                    "The database has pending migrations and cannot be exported by this LINSTOR version. " +
+                        "Either export it with the LINSTOR version that last ran on this database, or pass " +
+                        "--migrate-before-export."
+                );
+                System.exit(EXIT_CODE_MIGRATION_PENDING);
+            }
 
             injectorConsumer.accept(injector);
             dbInit.shutdown(true); // make sure that databases like H2 get a chance to properly shutdown...
