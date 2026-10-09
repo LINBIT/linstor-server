@@ -60,6 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `node_name_list`), which could be set but were never returned
 - Fixed rare race condition between BalanceResourcesTask and a user deleting a resource. The result was that a resource
   deleted by the user might have been recreated by the BalanceResourcesTask.
+- Controller: Snapshots and clones only flag the topmost layer and WRITECACHE/CACHE layers below it for suspend-IO.
+  Since 1.34.0 a LUKS layer below DRBD was suspended too, which with DRBD 9.3 or later stalled snapshots and clones
+  until DRBD's ko-count when the Primary replicates to a diskful LUKS replica on another node
 
 ## [1.35.2] - 2026-09-14
 
