@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SOS report now includes the LVM devices file `/etc/lvm/devices/system.devices`
 - Prometheus: `linstor_resource_state` also carries the resource name as `resource` label, allowing joins with the
   `linstor_volume_*` metrics
+- `linstor-database export-db` refuses to export a database with pending migrations unless
+  `--migrate-before-export` is given, instead of producing a mislabeled or failing export
 
 ### Fixed
 
