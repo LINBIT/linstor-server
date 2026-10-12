@@ -397,7 +397,12 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             }
 
             txMgrTo.commit();
-            if (txMgrFrom.isDirty() || result.forceFromTxCommit)
+            /*
+             * isDirty() only considers registered TransactionObjects, which migrations do not use. Changes a migration
+             * made directly on the transaction (i.e. txFrom.delete(...) of migrated entries) are only visible through
+             * hasPendingChanges() and were silently dropped before that check existed.
+             */
+            if (txMgrFrom.isDirty() || txFrom.hasPendingChanges() || result.forceFromTxCommit)
             {
                 txMgrFrom.commit();
             }

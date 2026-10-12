@@ -47,7 +47,7 @@ public class Migration_20_v1_25_1_FixSpaceHistoryDates extends BaseK8sCrdMigrati
         // this order, since there should be no naming conflicts since we actively change the primary key - at least if
         // the date did not already had a correct midnight time)
 
-        HashMap<String, GenCrdV1_25_1.SpaceHistorySpec> specMap = txFrom.getSpec(
+        HashMap<String, SpaceHistory> crdMap = txFrom.<SpaceHistory, GenCrdV1_25_1.SpaceHistorySpec>getCrd(
             GenCrdV1_25_1.GeneratedDatabaseTables.SPACE_HISTORY
         );
 
@@ -65,10 +65,11 @@ public class Migration_20_v1_25_1_FixSpaceHistoryDates extends BaseK8sCrdMigrati
          * Cutting off the time will create the same entry, which causes an issue (i.e.
          * "cannot create the same entry multiple times" or a similar sounding error message)
          */
-        HashSet<String> knownK8sKeys = new HashSet<>(specMap.keySet());
+        HashSet<String> knownK8sKeys = new HashSet<>(crdMap.keySet());
 
-        for (GenCrdV1_25_1.SpaceHistorySpec spec : specMap.values())
+        for (SpaceHistory crd : crdMap.values())
         {
+            GenCrdV1_25_1.SpaceHistorySpec spec = crd.getSpec();
             Date entryDate = spec.entryDate;
             fromCal.setTime(entryDate);
             toCal.set(fromCal.get(Calendar.YEAR), fromCal.get(Calendar.MONTH), fromCal.get(Calendar.DAY_OF_MONTH));
@@ -85,10 +86,10 @@ public class Migration_20_v1_25_1_FixSpaceHistoryDates extends BaseK8sCrdMigrati
                         updatedCrd
                     );
                 }
-                txFrom.delete(
-                    GenCrdV1_25_1.GeneratedDatabaseTables.SPACE_HISTORY,
-                    GenCrdV1_25_1.specToCrd(spec)
-                );
+                // delete the loaded CRD (not one rebuilt from its spec), so that the key always matches the stored
+                // object. Note: these deletes were silently dropped until BaseK8sCrdMigration also committed txFrom
+                // for pending changes.
+                txFrom.delete(GenCrdV1_25_1.GeneratedDatabaseTables.SPACE_HISTORY, crd);
             }
             knownK8sKeys.add(newK8sKey);
         }
