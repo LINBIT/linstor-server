@@ -685,7 +685,12 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             sb.append(entry.getKey()).append(":").append(entry.getValue()).append("\n");
         }
 
-        tmpName = platformStlt.sysRoot() + LODEV_FILE_TMP;
+        // Multiple satellite processes may share this directory, e.g. the special satellites
+        // that the controller spawns within its own container. A per-process unique temporary
+        // file name prevents concurrent device manager cycles of such satellites from moving
+        // each other's temporary file away, which fails the whole device manager cycle with a
+        // NoSuchFileException.
+        tmpName = platformStlt.sysRoot() + LODEV_FILE_TMP + "." + ProcessHandle.current().pid();
         lodevName = platformStlt.sysRoot() + LODEV_FILE;
 
         File tmp = new File(tmpName);
