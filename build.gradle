@@ -187,7 +187,7 @@ project(':server') {
             excludeUnusedK8sModels(it)
         }
 
-        api 'com.github.spotbugs:spotbugs-annotations:4.10.4'
+        api 'com.github.spotbugs:spotbugs-annotations:4.10.5'
 
         api 'info.faljse:SDNotify:1.6'
 
