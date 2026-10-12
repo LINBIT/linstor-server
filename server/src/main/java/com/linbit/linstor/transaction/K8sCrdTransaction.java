@@ -197,6 +197,29 @@ public class K8sCrdTransaction
         }
     }
 
+    /**
+     * Returns true if this transaction contains resources to create, replace or delete that have not been committed
+     * yet.
+     */
+    public boolean hasPendingChanges()
+    {
+        return hasEntries(rscsToCreate) || hasEntries(rscsToReplace) || hasEntries(rscsToDelete);
+    }
+
+    private static boolean hasEntries(HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> map)
+    {
+        boolean ret = false;
+        for (HashMap<String, LinstorCrd<?>> table : map.values())
+        {
+            if (!table.isEmpty())
+            {
+                ret = true;
+                break;
+            }
+        }
+        return ret;
+    }
+
     private HashMap<String, LinstorCrd<?>> lazyGet(
         HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> map,
         DatabaseTable dbTableRef
