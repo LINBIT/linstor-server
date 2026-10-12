@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `node_name_list`), which could be set but were never returned
 - Fixed rare race condition between BalanceResourcesTask and a user deleting a resource. The result was that a resource
   deleted by the user might have been recreated by the BalanceResourcesTask.
+- Controller (K8s CRD): Fixed the SpaceTracking service dying with "Resource SpaceHistory/... not found" and the
+  controller crash-looping after an upgrade from 1.33.x or older; a migration removes the stale entries
 
 ## [1.35.2] - 2026-09-14
 
