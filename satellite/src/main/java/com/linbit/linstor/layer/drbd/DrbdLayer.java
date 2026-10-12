@@ -62,6 +62,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -953,7 +954,13 @@ public class DrbdLayer implements DeviceLayer
         List<Integer> initializedVlmNrList = new ArrayList<>();
         for (DrbdVlmData<Resource> drbdVlmData : drbdRscDataRef.getVlmLayerObjects().values())
         {
-            if (hasLocalStltWonUpToDateRace(drbdVlmData))
+            /*
+             * The mkfs (and the controller notification) run for the volume that becomes UpToDate
+             * first. For EBS that node is an EBS target, which never attaches the volume locally and
+             * therefore cannot create the filesystem; the EBS initiator is the only node that
+             * attaches the EBS volume, so run the post-initialization there instead.
+             */
+            if (hasLocalStltWonUpToDateRace(drbdVlmData) || isEbsInitiator(drbdVlmData))
             {
                 initializedVlmNrList.add(drbdVlmData.getVlmNr().value);
             }
@@ -1624,6 +1631,23 @@ public class DrbdLayer implements DeviceLayer
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private boolean isEbsInitiator(DrbdVlmData<Resource> drbdVlmDataRef)
+    {
+        VolumeDefinition vlmDfn = drbdVlmDataRef.getVolume().getVolumeDefinition();
+        boolean ret = false;
+        if (!vlmDfn.getFlags().isSet(VolumeDefinition.Flags.DRBD_INITIALIZED))
+        {
+            var storageDevices = VolumeUtils.getStorageDevices(
+                drbdVlmDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+            );
+            ret = !storageDevices.isEmpty() &&
+                storageDevices.stream()
+                    .map(VlmProviderObject::getProviderKind)
+                    .allMatch(kind -> kind == DeviceProviderKind.EBS_INIT);
+        }
+        return ret;
     }
 
     private boolean hasLocalStltWonUpToDateRace(DrbdVlmData<Resource> drbdVlmDataRef)
