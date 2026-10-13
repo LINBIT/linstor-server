@@ -52,7 +52,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class LvmProviderSnapshotPrepareTest extends GenericDbBase
 {
     private static final String LVS_COLUMNS =
-        "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr,metadata_percent,chunk_size,stripes,origin";
+        "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr,metadata_percent,chunk_size,stripes,origin," +
+            "kernel_discards";
     private static final String VGS_THICK_COLUMNS = "vg_name,vg_extent_size,vg_size,vg_free";
     private static final String IGNORE_DRBD_CONFIG =
         "devices { ignore_suspended_devices=1 filter=[\"r|^/dev/drbd.*|\"] }";
@@ -231,9 +232,9 @@ public class LvmProviderSnapshotPrepareTest extends GenericDbBase
         expect(
             lvsCommand(Collections.singleton(vg)),
             "  " + RSC_LV_ID + ";/dev/" + vg + "/" + RSC_LV_ID + ";" + VLM_SIZE_IN_KIB + ".00;" + vg +
-                ";;;-wi-------;;0;1;\n" +
+                ";;;-wi-------;;0;1;;\n" +
                 "  " + SNAP_LV_ID + ";/dev/" + vg + "/" + SNAP_LV_ID + ";" + VLM_SIZE_IN_KIB + ".00;" + vg +
-                ";;;swi---s--k;;0;1;" + RSC_LV_ID + "\n"
+                ";;;swi---s--k;;0;1;" + RSC_LV_ID + ";\n"
         );
         expect(
             vgsCommand(Collections.singleton(vg)),

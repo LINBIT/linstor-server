@@ -50,8 +50,9 @@ public class LvmCommands
     public static final int LVS_COL_CHUNK_SIZE = 8;
     public static final int LVS_COL_STRIPES = 9;
     public static final int LVS_COL_ORIGIN = 10;
+    public static final int LVS_COL_KERNEL_DISCARDS = 11;
 
-    public static final int LVS_COLUMN_COUNT = 11;
+    public static final int LVS_COLUMN_COUNT = 12;
 
     public static final int VGS_COL_VG_NAME = 0;
     public static final int VGS_COL_VG_EXTENT_SIZE = 1;
@@ -111,7 +112,7 @@ public class LvmCommands
                 lvmConfig,
                 volumeGroups,
                 "-o", "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr,metadata_percent,chunk_size," +
-                    "stripes,origin",
+                    "stripes,origin,kernel_discards",
                 "--separator", LvmUtils.DELIMITER,
                 "--noheadings",
                 "--units", "k",

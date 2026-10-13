@@ -16,6 +16,7 @@ import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_ATT
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_CHUNK_SIZE;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_DATA_PERCENT;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_IDENTIFIER;
+import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_KERNEL_DISCARDS;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_METADATA_PERCENT;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_ORIGIN;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_PATH;
@@ -99,6 +100,8 @@ public class LvmUtils
         public final long chunkSizeInKib;
         public final int stripes;
         public final @Nullable String origin;
+        // only set for active thin pools
+        public final @Nullable String kernelDiscards;
 
         LvsInfo(
             String volumeGroupRef,
@@ -111,7 +114,8 @@ public class LvmUtils
             String metaDataPercentStrRef,
             long chunkSizeInKibRef,
             int stripesRef,
-            @Nullable String originRef
+            @Nullable String originRef,
+            @Nullable String kernelDiscardsRef
         )
         {
             volumeGroup = volumeGroupRef;
@@ -125,6 +129,7 @@ public class LvmUtils
             chunkSizeInKib = chunkSizeInKibRef;
             stripes = stripesRef;
             origin = originRef;
+            kernelDiscards = kernelDiscardsRef;
         }
     }
 
@@ -470,6 +475,7 @@ public class LvmUtils
                 }
 
                 final String originStr = data[LVS_COL_ORIGIN].trim();
+                final String kernelDiscardsStr = data[LVS_COL_KERNEL_DISCARDS].trim();
 
                 final LvsInfo state = new LvsInfo(
                     vgStr,
@@ -482,7 +488,8 @@ public class LvmUtils
                     metaDataPercentStr,
                     chunkSizeInKib,
                     stripes,
-                    originStr.isEmpty() ? null : originStr
+                    originStr.isEmpty() ? null : originStr,
+                    kernelDiscardsStr.isEmpty() ? null : kernelDiscardsStr
                 );
                 ret.computeIfAbsent(vgStr, ignored -> new HashMap<>())
                     .put(identifier, state);

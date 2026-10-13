@@ -32,7 +32,8 @@ import static org.junit.Assert.fail;
 public class LvmUtilsExtCmdTest
 {
     private static final String LVS_COLUMNS =
-        "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr,metadata_percent,chunk_size,stripes,origin";
+        "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr,metadata_percent,chunk_size,stripes,origin," +
+            "kernel_discards";
     private static final String VGS_THICK_COLUMNS = "vg_name,vg_extent_size,vg_size,vg_free";
     private static final String VGS_THIN_COLUMNS =
         "vg_name,vg_extent_size,vg_size,vg_free,lv_name,lv_size,data_percent";
@@ -75,9 +76,9 @@ public class LvmUtilsExtCmdTest
         String lvmConfig = LvmUtils.getLvmFilterByPhysicalVolumes("/dev/sdz1");
         expect(
             lvsCommand(lvmConfig, vgSet),
-            "  thick_00000;/dev/scratch/thick_00000;4194304.00;scratch;;;-wi-ao----;;0;1;\n" +
-                "  thinpool;/dev/scratch/thinpool;8388608.00;scratch;;20.51;twi-aotz--;10.42;64.00;1;\n" +
-                "  thin_00000;/dev/scratch/thin_00000;1048576.00;scratch;thinpool;15,29;Vwi-aotz--;;0;2;snap1\n" +
+            "  thick_00000;/dev/scratch/thick_00000;4194304.00;scratch;;;-wi-ao----;;0;1;;\n" +
+                "  thinpool;/dev/scratch/thinpool;8388608.00;scratch;;20.51;twi-aotz--;10.42;64.00;1;;nopassdown\n" +
+                "  thin_00000;/dev/scratch/thin_00000;1048576.00;scratch;thinpool;15,29;Vwi-aotz--;;0;2;snap1;\n" +
                 "  WARNING: some lvm warning that does not use the delimiter\n" +
                 "\n"
         );
@@ -102,6 +103,7 @@ public class LvmUtilsExtCmdTest
         assertThat(thick.stripes).isEqualTo(1);
         // empty origin column has to be mapped to null
         assertThat(thick.origin).isNull();
+        assertThat(thick.kernelDiscards).isNull();
 
         LvmUtils.LvsInfo thinPool = byLvName.get("thinpool");
         assertThat(thinPool.thinPool).isNull();
@@ -110,6 +112,7 @@ public class LvmUtilsExtCmdTest
         assertThat(thinPool.attributes).isEqualTo("twi-aotz--");
         assertThat(thinPool.metaDataPercentStr).isEqualTo("10.42");
         assertThat(thinPool.chunkSizeInKib).isEqualTo(64L);
+        assertThat(thinPool.kernelDiscards).isEqualTo("nopassdown");
 
         LvmUtils.LvsInfo thinVlm = byLvName.get("thin_00000");
         assertThat(thinVlm.thinPool).isEqualTo("thinpool");
@@ -130,8 +133,8 @@ public class LvmUtilsExtCmdTest
         String lvmConfig = LvmUtils.getLvmFilterByPhysicalVolumes("/dev/sda2");
         expect(
             lvsCommand(lvmConfig, vgSet),
-            "  lv_one;/dev/vg_a/lv_one;2097152.00;vg_a;;;-wi-a-----;;0;1;\n" +
-                "  lv_two;/dev/vg_b/lv_two;307200.00;vg_b;thin1;0.00;Vwi-a-tz--;;0;1;\n"
+            "  lv_one;/dev/vg_a/lv_one;2097152.00;vg_a;;;-wi-a-----;;0;1;;\n" +
+                "  lv_two;/dev/vg_b/lv_two;307200.00;vg_b;thin1;0.00;Vwi-a-tz--;;0;1;;\n"
         );
 
         Map<String, Map<String, LvmUtils.LvsInfo>> lvsInfo = LvmUtils.getLvsInfo(extCmdFactory, vgSet);
@@ -162,7 +165,7 @@ public class LvmUtilsExtCmdTest
     {
         expect(
             lvsCommand("", Collections.emptySet()),
-            "  lv0;/dev/vg/lv0;not-a-number;vg;;;-wi-ao----;;0;1;\n"
+            "  lv0;/dev/vg/lv0;not-a-number;vg;;;-wi-ao----;;0;1;;\n"
         );
 
         assertThatThrownBy(() -> LvmUtils.getLvsInfo(extCmdFactory, Collections.emptySet()))
@@ -175,7 +178,7 @@ public class LvmUtilsExtCmdTest
     {
         expect(
             lvsCommand("", Collections.emptySet()),
-            "  lv0;/dev/vg/lv0;1024.00;vg;pool;abc;Vwi-aotz--;;0;1;\n"
+            "  lv0;/dev/vg/lv0;1024.00;vg;pool;abc;Vwi-aotz--;;0;1;;\n"
         );
 
         assertThatThrownBy(() -> LvmUtils.getLvsInfo(extCmdFactory, Collections.emptySet()))
@@ -188,7 +191,7 @@ public class LvmUtilsExtCmdTest
     {
         expect(
             lvsCommand("", Collections.emptySet()),
-            "  lv0;/dev/vg/lv0;1024.00;vg;;;-wi-ao----;;bad;1;\n"
+            "  lv0;/dev/vg/lv0;1024.00;vg;;;-wi-ao----;;bad;1;;\n"
         );
 
         assertThatThrownBy(() -> LvmUtils.getLvsInfo(extCmdFactory, Collections.emptySet()))
@@ -201,7 +204,7 @@ public class LvmUtilsExtCmdTest
     {
         expect(
             lvsCommand("", Collections.emptySet()),
-            "  lv0;/dev/vg/lv0;1024.00;vg;;;-wi-ao----;;0;x;\n"
+            "  lv0;/dev/vg/lv0;1024.00;vg;;;-wi-ao----;;0;x;;\n"
         );
 
         assertThatThrownBy(() -> LvmUtils.getLvsInfo(extCmdFactory, Collections.emptySet()))

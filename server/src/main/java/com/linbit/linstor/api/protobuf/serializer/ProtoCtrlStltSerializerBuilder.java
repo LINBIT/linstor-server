@@ -1232,6 +1232,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setStorPoolName(storPool.getName().displayValue)
                         .setFreeCapacity(spaceInfo.freeCapacity)
                         .setTotalCapacity(spaceInfo.totalCapacity)
+                        .addAllErrors(serializeApiCallRc(spaceInfo.reports))
                         .build()
                 );
             }
@@ -1265,6 +1266,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setStorPoolName(storPool.getName().displayValue)
                         .setFreeCapacity(spaceInfo.freeCapacity)
                         .setTotalCapacity(spaceInfo.totalCapacity)
+                        .addAllErrors(serializeApiCallRc(spaceInfo.reports))
                         .build()
                 )
                 .setSupportsSnapshots(supportsSnapshotsRef)
@@ -1804,7 +1806,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         entry.getValue().consume(
             spaceInfo -> freeSpaceBuilder
                 .setFreeCapacity(spaceInfo.freeCapacity)
-                .setTotalCapacity(spaceInfo.totalCapacity),
+                .setTotalCapacity(spaceInfo.totalCapacity)
+                .addAllErrors(serializeApiCallRc(spaceInfo.reports)),
             apiRcException -> freeSpaceBuilder
                 // required field
                 .setFreeCapacity(0L)

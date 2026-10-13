@@ -8,6 +8,8 @@ public class SpaceInfo
 {
     public Long totalCapacity;
     public Long freeCapacity;
+    // warnings about the storage pool, shown as its reports
+    public final ApiCallRcImpl reports = new ApiCallRcImpl();
 
     public SpaceInfo(Long totalCapacityRef, Long freeSpaceRef)
     {

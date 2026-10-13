@@ -49,7 +49,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class LvmProviderActiveStateTest extends GenericDbBase
 {
     private static final String LVS_COLUMNS =
-        "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr,metadata_percent,chunk_size,stripes,origin";
+        "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr,metadata_percent,chunk_size,stripes,origin," +
+            "kernel_discards";
     private static final String VGS_THICK_COLUMNS = "vg_name,vg_extent_size,vg_size,vg_free";
     private static final String IGNORE_DRBD_CONFIG =
         "devices { ignore_suspended_devices=1 filter=[\"r|^/dev/drbd.*|\"] }";
@@ -215,7 +216,7 @@ public class LvmProviderActiveStateTest extends GenericDbBase
     private String lvsRow(String lvId, String attributes)
     {
         return "  " + lvId + ";/dev/" + vg + "/" + lvId + ";" + VLM_SIZE_IN_KIB + ".00;" + vg +
-            ";;;" + attributes + ";;0;1;\n";
+            ";;;" + attributes + ";;0;1;;\n";
     }
 
     private void expectPrepareCommands(String lvsOutput)

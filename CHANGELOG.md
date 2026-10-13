@@ -24,7 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prometheus: New metric `linstor_resource_flag` exports the resource flags `INACTIVE` and `EVICTED` as 0/1
 - Controller: A controller-only node now reports the platform and OS variant of the host the controller runs on
 - LVM-Thin: New property `StorDriver/DiscardOnDelete` discards thin volumes and snapshots before deleting them,
-  releasing the space on the storage below the thin pool (e.g. VDO)
+  releasing the space on the storage below the thin pool (e.g. VDO). The storage pool shows a warning if the thin
+  pool does not pass discards down
 
 ### Changed
 

@@ -2,7 +2,9 @@ package com.linbit.linstor.layer.storage.lvm;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
@@ -50,6 +52,7 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
     public static final String PROBE_VLM_NAME_THIN = ".probeVolumeThinProv";
     // the 5th lv_attr character is the LV's state, 'a' for active
     private static final int LV_ATTR_STATE_IDX = 4;
+    private static final String KERNEL_DISCARDS_PASSDOWN = "passdown";
 
     @Inject
     public LvmThinProvider(AbsStorageProviderInit superInitRef)
@@ -450,7 +453,56 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
         {
             throw new StorageException("Thin pool \'" + vgWithThinPool + "\' does not exist.");
         }
-        return SpaceInfo.buildOrThrowOnError(lvsInfo.size, freeSpace, storPool);
+        SpaceInfo spaceInfo = SpaceInfo.buildOrThrowOnError(lvsInfo.size, freeSpace, storPool);
+        addDiscardPassdownWarningIfNeeded(storPool, lvsInfo, spaceInfo);
+        return spaceInfo;
+    }
+
+    /**
+     * Without discard passdown, DiscardOnDelete only frees the space within the thin pool, not on the storage below
+     * it (e.g. VDO, whose default max_discard is too small for dm-thin to pass discards down).
+     */
+    private void addDiscardPassdownWarningIfNeeded(StorPoolInfo storPool, LvsInfo thinPoolInfo, SpaceInfo spaceInfo)
+    {
+        @Nullable String kernelDiscards = thinPoolInfo.kernelDiscards;
+        // null if the thin pool is not active
+        if (kernelDiscards != null &&
+            !kernelDiscards.equals(KERNEL_DISCARDS_PASSDOWN) &&
+            isDiscardOnDeleteEnabled(storPool))
+        {
+            spaceInfo.reports.addEntry(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.MASK_WARN | ApiConsts.MASK_STOR_POOL,
+                    String.format(
+                        "%s/%s is enabled, but thin pool '%s/%s' does not pass discards down (kernel discards: " +
+                            "'%s'). Deleting volumes does not free space below the thin pool.",
+                        ApiConsts.NAMESPC_STORAGE_DRIVER,
+                        ApiConsts.KEY_STOR_POOL_DISCARD_ON_DELETE,
+                        thinPoolInfo.volumeGroup,
+                        thinPoolInfo.identifier,
+                        kernelDiscards
+                    )
+                )
+            );
+        }
+    }
+
+    private boolean isDiscardOnDeleteEnabled(StorPoolInfo storPool)
+    {
+        try
+        {
+            return Boolean.parseBoolean(
+                new PriorityProps(
+                    storPool.getReadOnlyProps(),
+                    storPool.getReadOnlyNode().getReadOnlyProps(),
+                    stltConfigAccessor.getReadonlyProps()
+                ).getProp(ApiConsts.KEY_STOR_POOL_DISCARD_ON_DELETE, ApiConsts.NAMESPC_STORAGE_DRIVER, "false")
+            );
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override
