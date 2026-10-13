@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Externally locked shared storage pools: after moving a resource, its LV is locked exclusively again instead of
   shared, as inactive copies no longer count as users of the LV
+- physical-storage: VDO-backed LVM-thin pools now pass discards down to VDO, so space freed in the thin pool is
+  also freed in VDO
 - Web UI: Requests no longer hang for about 30 seconds after the controller served a large web UI file again
 - Prometheus: `linstor_volume_state` reports volumes without DRBD as `Created` (2) instead of `DUnknown` (-1)
   (GitHub #420)

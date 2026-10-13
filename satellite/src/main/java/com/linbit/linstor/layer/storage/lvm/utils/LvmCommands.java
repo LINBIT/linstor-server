@@ -537,6 +537,58 @@ public class LvmCommands
         );
     }
 
+    public static synchronized OutputData getLvField(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String lvName,
+        String field,
+        String lvmConfig
+    )
+        throws StorageException
+    {
+        String failMsg = "Failed to query " + field + " of " + volumeGroup + File.separator + lvName;
+        return genericExecutor(
+            extCmd.setSaveWithoutSharedLocks(true),
+            buildCmd(
+                "lvs",
+                lvmConfig,
+                (Collection<String>) null,
+                "-o", field,
+                "--noheadings",
+                "--units", "b",
+                "--nosuffix",
+                volumeGroup + File.separator + lvName
+            ),
+            failMsg,
+            failMsg
+        );
+    }
+
+    public static synchronized OutputData setVdoSettings(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String vdoPoolName,
+        String vdoSettings,
+        String lvmConfig
+    )
+        throws StorageException
+    {
+        String failMsg = "Failed to set VDO settings '" + vdoSettings + "' of " + volumeGroup + File.separator +
+            vdoPoolName;
+        return genericExecutor(
+            extCmd.setSaveWithoutSharedLocks(false),
+            buildCmd(
+                "lvchange",
+                lvmConfig,
+                (Collection<String>) null,
+                "--vdosettings", vdoSettings,
+                volumeGroup + File.separator + vdoPoolName
+            ),
+            failMsg,
+            failMsg
+        );
+    }
+
     public static synchronized OutputData deactivateVolume(
         ExtCmd extCmd,
         String volumeGroup,

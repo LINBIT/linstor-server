@@ -29,6 +29,9 @@ import java.util.List;
 @Singleton
 public class DevicePoolHandler
 {
+    private static final String VDO_POOL_LV_NAME = "vdopool0";
+    private static final long VDO_BLOCK_SIZE_BYTES = 4096;
+
     private final ErrorReporter errorReporter;
     private final ExtCmdFactory extCmdFactory;
 
@@ -72,7 +75,7 @@ public class DevicePoolHandler
                 cmd.add("--vdosettings=slab_size_mb=" + (slabSizeKib / 1024));
             }
             cmd.addAll(lvCreateArguments);
-            cmd.add(vgName + "/vdopool0");
+            cmd.add(vgName + "/" + VDO_POOL_LV_NAME);
 
             {
                 final String failMsg = "Unable to create VDO device: " + vgName + "/" + poolName;
@@ -97,6 +100,8 @@ public class DevicePoolHandler
                     failMsg,
                     failMsg
                 );
+
+                enableThinDiscardPassdown(apiCallRc, vgName, poolName);
             }
 
             vdoPool = vgName + "/" + poolName;
@@ -107,6 +112,89 @@ public class DevicePoolHandler
             apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_UNKNOWN_ERROR, storExc));
         }
         return vdoPool;
+    }
+
+    /**
+     * dm-thin disables discard passdown if the data device cannot take a discard of a whole thin pool chunk,
+     * but VDO by default only accepts discards of a single block. The chunk size is only known after the
+     * conversion to a thin pool, and VDO's max_discard only applies on the next activation.
+     * Failures only cause a warning, the thin pool itself is usable either way.
+     */
+    private void enableThinDiscardPassdown(ApiCallRcImpl apiCallRc, String vgName, String thinPoolName)
+    {
+        String thinPool = vgName + "/" + thinPoolName;
+        @Nullable String problem;
+        try
+        {
+            long chunkSizeBlocks = Long.parseLong(lvField(vgName, thinPoolName, "chunk_size")) / VDO_BLOCK_SIZE_BYTES;
+            long maxDiscardBlocks = Long.parseLong(lvField(vgName, VDO_POOL_LV_NAME, "vdo_max_discard"));
+            if (maxDiscardBlocks < chunkSizeBlocks)
+            {
+                LvmUtils.execWithRetry(
+                    extCmdFactory,
+                    Collections.singleton(vgName),
+                    config -> LvmCommands.deactivateVolume(extCmdFactory.create(), vgName, thinPoolName, config)
+                );
+                try
+                {
+                    LvmUtils.execWithRetry(
+                        extCmdFactory,
+                        Collections.singleton(vgName),
+                        config -> LvmCommands.setVdoSettings(
+                            extCmdFactory.create(),
+                            vgName,
+                            VDO_POOL_LV_NAME,
+                            "max_discard=" + chunkSizeBlocks,
+                            config
+                        )
+                    );
+                }
+                finally
+                {
+                    // also if changing the setting failed, the thin pool must not stay inactive
+                    LvmUtils.execWithRetry(
+                        extCmdFactory,
+                        Collections.singleton(vgName),
+                        config -> LvmCommands.activateVolume(extCmdFactory.create(), vgName, thinPoolName, config)
+                    );
+                }
+            }
+
+            String kernelDiscards = lvField(vgName, thinPoolName, "kernel_discards");
+            problem = kernelDiscards.equals("passdown") ? null : "kernel discards: '" + kernelDiscards + "'";
+        }
+        catch (StorageException | NumberFormatException exc)
+        {
+            errorReporter.reportError(exc);
+            problem = exc.getMessage();
+        }
+
+        if (problem != null)
+        {
+            apiCallRc.addEntry(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.MASK_WARN | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format(
+                        "Thin pool '%s' does not pass discards down to VDO (%s). Space freed in the thin pool " +
+                            "will not be freed in VDO.",
+                        thinPool,
+                        problem
+                    )
+                )
+            );
+        }
+    }
+
+    private String lvField(String vgName, String lvName, String field) throws StorageException
+    {
+        return new String(
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(vgName),
+                config -> LvmCommands.getLvField(extCmdFactory.create(), vgName, lvName, field, config)
+            ).stdoutData,
+            StandardCharsets.UTF_8
+        ).trim();
     }
 
     public ApiCallRc createDevicePool(
