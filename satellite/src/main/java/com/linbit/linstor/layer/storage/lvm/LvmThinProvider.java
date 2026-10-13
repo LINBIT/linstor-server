@@ -50,6 +50,8 @@ import java.util.Set;
 public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvider
 {
     public static final String PROBE_VLM_NAME_THIN = ".probeVolumeThinProv";
+    // the 2nd lv_attr character is the LV's permissions, 'r' for read-only
+    private static final int LV_ATTR_PERMISSIONS_IDX = 1;
     // the 5th lv_attr character is the LV's state, 'a' for active
     private static final int LV_ATTR_STATE_IDX = 4;
     private static final String KERNEL_DISCARDS_PASSDOWN = "passdown";
@@ -186,39 +188,43 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
 
     /**
      * lvremove does not discard the thin pool's freed chunks, so the layer below (e.g. VDO) would never learn about
-     * the freed space. Inactive LVs (including thin snapshots, which skip activation by default) are activated
-     * for the discard; the following lvremove does not care about the LV being active.
+     * the freed space. Inactive LVs (including thin snapshots, which skip activation by default) are activated and
+     * read-only LVs (i.e. snapshots) made writable for the discard; the following lvremove does not care.
      */
     private void discardBeforeDeleteIfEnabled(LvmData<?> lvmData, String volumeGroup, String lvId)
     {
         @Nullable LvsInfo info = infoListCache.get(volumeGroup + File.separator + lvId);
         if (info != null && isDiscardOnDeleteEnabled(lvmData))
         {
-            boolean active = isLvActive(info);
-            if (!active)
+            try
             {
-                try
+                if (!isLvActive(info))
                 {
                     LvmUtils.execWithRetry(
                         extCmdFactory,
                         Collections.singleton(volumeGroup),
                         config -> LvmCommands.activateVolume(extCmdFactory.create(), volumeGroup, lvId, config)
                     );
-                    active = true;
                 }
-                catch (StorageException exc)
+                // a read-only LV (i.e. a snapshot) rejects discards
+                if (isLvReadOnly(info))
                 {
-                    errorReporter.logWarning(
-                        "Failed to activate %s/%s for discard, deleting without discard: %s",
-                        volumeGroup,
-                        lvId,
-                        exc.getMessage()
+                    LvmUtils.execWithRetry(
+                        extCmdFactory,
+                        Collections.singleton(volumeGroup),
+                        config -> LvmCommands.setWritable(extCmdFactory.create(), volumeGroup, lvId, config)
                     );
                 }
-            }
-            if (active)
-            {
                 wipeHandler.discardIgnoringFailure(getDevicePath(volumeGroup, lvId));
+            }
+            catch (StorageException exc)
+            {
+                errorReporter.logWarning(
+                    "Failed to prepare %s/%s for discard, deleting without discard: %s",
+                    volumeGroup,
+                    lvId,
+                    exc.getMessage()
+                );
             }
         }
     }
@@ -226,6 +232,12 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
     private static boolean isLvActive(LvsInfo info)
     {
         return info.attributes.length() > LV_ATTR_STATE_IDX && info.attributes.charAt(LV_ATTR_STATE_IDX) == 'a';
+    }
+
+    private static boolean isLvReadOnly(LvsInfo info)
+    {
+        return info.attributes.length() > LV_ATTR_PERMISSIONS_IDX &&
+            info.attributes.charAt(LV_ATTR_PERMISSIONS_IDX) == 'r';
     }
 
     private boolean isDiscardOnDeleteEnabled(LvmData<?> lvmVlmData)

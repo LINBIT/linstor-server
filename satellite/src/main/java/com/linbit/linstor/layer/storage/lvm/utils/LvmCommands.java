@@ -590,6 +590,29 @@ public class LvmCommands
         );
     }
 
+    public static synchronized OutputData setWritable(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String targetId,
+        String lvmConfig
+    )
+        throws StorageException
+    {
+        String failMsg = "Failed to make volume " + volumeGroup + File.separator + targetId + " writable";
+        return genericExecutor(
+            extCmd.setSaveWithoutSharedLocks(false),
+            buildCmd(
+                "lvchange",
+                lvmConfig,
+                (Collection<String>) null,
+                "-p", "rw",
+                volumeGroup + File.separator + targetId
+            ),
+            failMsg,
+            failMsg
+        );
+    }
+
     public static synchronized OutputData deactivateVolume(
         ExtCmd extCmd,
         String volumeGroup,
