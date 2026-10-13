@@ -48,6 +48,8 @@ import java.util.Set;
 public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvider
 {
     public static final String PROBE_VLM_NAME_THIN = ".probeVolumeThinProv";
+    // the 5th lv_attr character is the LV's state, 'a' for active
+    private static final int LV_ATTR_STATE_IDX = 4;
 
     @Inject
     public LvmThinProvider(AbsStorageProviderInit superInitRef)
@@ -151,13 +153,7 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
     protected void deleteLvImpl(LvmData<Resource> lvmVlmData, String oldLvmId)
         throws StorageException, DatabaseException
     {
-        // lvremove does not discard the thin pool's freed chunks, so the layer below (e.g. VDO) would never learn
-        // about the freed space
-        @Nullable String devicePath = lvmVlmData.getDevicePath();
-        if (devicePath != null && isDiscardOnDeleteEnabled(lvmVlmData))
-        {
-            wipeHandler.discardIgnoringFailure(devicePath);
-        }
+        discardBeforeDeleteIfEnabled(lvmVlmData, lvmVlmData.getVolumeGroup(), oldLvmId);
         LvmUtils.execWithRetry(
             extCmdFactory,
             Collections.singleton(lvmVlmData.getVolumeGroup()),
@@ -171,6 +167,62 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
         );
         lvmVlmData.setExists(false);
         LvmUtils.recacheNextLvs();
+    }
+
+    @Override
+    protected void deleteSnapshotImpl(LvmData<Snapshot> snapVlm)
+        throws StorageException, DatabaseException
+    {
+        @Nullable String volumeGroup = getVolumeGroup(snapVlm.getStorPool());
+        if (volumeGroup != null)
+        {
+            discardBeforeDeleteIfEnabled(snapVlm, volumeGroup, asSnapLvIdentifier(snapVlm));
+        }
+        super.deleteSnapshotImpl(snapVlm);
+    }
+
+    /**
+     * lvremove does not discard the thin pool's freed chunks, so the layer below (e.g. VDO) would never learn about
+     * the freed space. Inactive LVs (including thin snapshots, which skip activation by default) are activated
+     * for the discard; the following lvremove does not care about the LV being active.
+     */
+    private void discardBeforeDeleteIfEnabled(LvmData<?> lvmData, String volumeGroup, String lvId)
+    {
+        @Nullable LvsInfo info = infoListCache.get(volumeGroup + File.separator + lvId);
+        if (info != null && isDiscardOnDeleteEnabled(lvmData))
+        {
+            boolean active = isLvActive(info);
+            if (!active)
+            {
+                try
+                {
+                    LvmUtils.execWithRetry(
+                        extCmdFactory,
+                        Collections.singleton(volumeGroup),
+                        config -> LvmCommands.activateVolume(extCmdFactory.create(), volumeGroup, lvId, config)
+                    );
+                    active = true;
+                }
+                catch (StorageException exc)
+                {
+                    errorReporter.logWarning(
+                        "Failed to activate %s/%s for discard, deleting without discard: %s",
+                        volumeGroup,
+                        lvId,
+                        exc.getMessage()
+                    );
+                }
+            }
+            if (active)
+            {
+                wipeHandler.discardIgnoringFailure(getDevicePath(volumeGroup, lvId));
+            }
+        }
+    }
+
+    private static boolean isLvActive(LvsInfo info)
+    {
+        return info.attributes.length() > LV_ATTR_STATE_IDX && info.attributes.charAt(LV_ATTR_STATE_IDX) == 'a';
     }
 
     private boolean isDiscardOnDeleteEnabled(LvmData<?> lvmVlmData)
