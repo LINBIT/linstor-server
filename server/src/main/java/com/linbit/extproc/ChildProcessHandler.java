@@ -44,6 +44,11 @@ public class ChildProcessHandler
     /** Default: Wait for 2 seconds between polling /proc/&lt;pid>/io*/
     private static volatile long dfltIoAwarePollInterval = 2_000;
 
+    // field indices of /sys/block/<dev>/stat, see Documentation/block/stat.rst
+    private static final int STAT_IDX_SECTORS_READ = 2;
+    private static final int STAT_IDX_SECTORS_WRITTEN = 6;
+    private static final int STAT_IDX_SECTORS_DISCARDED = 13;
+
     public enum TimeoutType
     {
         WAIT,
@@ -403,10 +408,10 @@ public class ChildProcessHandler
 
     /**
      * Assumes the set of Strings all being {@code /sys/dev/block/<something>/stat} or
-     * {@code /sys/block/<something>/stat} where reading the file and splitting by whitespace [2] and [6] gives
-     * the read/write values.
+     * {@code /sys/block/<something>/stat} where reading the file and splitting by whitespace [2], [6] and [13]
+     * gives the read/write/discard values.
      *
-     * <p>Sums 'sectors read' + 'sectors written' across the given sysfs 'stat' files. Unlike
+     * <p>Sums 'sectors read' + 'sectors written' + 'sectors discarded' across the given sysfs 'stat' files. Unlike
      * {@code /proc/<pid>/io} {@code write_bytes}, these device-level counters keep advancing during
      * buffered writeback, which is what lets I/O progress mode survive a long mkfs / create-md flush.</p>
      *
@@ -427,12 +432,17 @@ public class ChildProcessHandler
                     List<String> lines = Files.readAllLines(Paths.get(statFile));
                     if (!lines.isEmpty())
                     {
-                        // single whitespace-separated line; field index 2 = sectors read,
-                        // index 6 = sectors written (see Documentation/block/stat.rst)
+                        // single whitespace-separated line; field index 2 = sectors read, index 6 = sectors
+                        // written, index 13 = sectors discarded (kernel 4.18+, see Documentation/block/stat.rst)
                         String[] fields = StringUtils.split(lines.get(0).trim(), "\\s+");
-                        if (fields.length > 6)
+                        if (fields.length > STAT_IDX_SECTORS_WRITTEN)
                         {
-                            total += Long.parseLong(fields[2]) + Long.parseLong(fields[6]);
+                            total += Long.parseLong(fields[STAT_IDX_SECTORS_READ]) +
+                                Long.parseLong(fields[STAT_IDX_SECTORS_WRITTEN]);
+                            if (fields.length > STAT_IDX_SECTORS_DISCARDED)
+                            {
+                                total += Long.parseLong(fields[STAT_IDX_SECTORS_DISCARDED]);
+                            }
                             anyReadable = true;
                         }
                     }

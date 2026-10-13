@@ -55,6 +55,24 @@ public class WipeHandler
         }
     }
 
+    /**
+     * Discards the whole device. Failures are only logged, as discard is not supported by every device (or
+     * might be ignored, e.g. by thin pools with "discards=ignore") and must not prevent the device's deletion.
+     */
+    public void discardIgnoringFailure(String devicePath)
+    {
+        try
+        {
+            // external users outside of LINSTOR may leave the device flagged read-only, making the discard fail
+            Commands.setReadWrite(extCmdFactory.create(), devicePath);
+            Commands.discard(extCmdFactory, devicePath);
+        }
+        catch (StorageException exc)
+        {
+            errorReporter.logWarning("Failed to discard %s: %s", devicePath, exc.getMessage());
+        }
+    }
+
     public void asyncWipe(String devicePath, ExceptionThrowingConsumer<String, StorageException> wipeFinishedNotifier)
         throws StorageException
     {

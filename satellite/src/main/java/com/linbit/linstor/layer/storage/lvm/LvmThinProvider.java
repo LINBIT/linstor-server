@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.lvm;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
@@ -150,6 +151,13 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
     protected void deleteLvImpl(LvmData<Resource> lvmVlmData, String oldLvmId)
         throws StorageException, DatabaseException
     {
+        // lvremove does not discard the thin pool's freed chunks, so the layer below (e.g. VDO) would never learn
+        // about the freed space
+        @Nullable String devicePath = lvmVlmData.getDevicePath();
+        if (devicePath != null && isDiscardOnDeleteEnabled(lvmVlmData))
+        {
+            wipeHandler.discardIgnoringFailure(devicePath);
+        }
         LvmUtils.execWithRetry(
             extCmdFactory,
             Collections.singleton(lvmVlmData.getVolumeGroup()),
@@ -163,6 +171,18 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
         );
         lvmVlmData.setExists(false);
         LvmUtils.recacheNextLvs();
+    }
+
+    private boolean isDiscardOnDeleteEnabled(LvmData<?> lvmVlmData)
+    {
+        return Boolean.parseBoolean(
+            getProp(
+                lvmVlmData,
+                ApiConsts.NAMESPC_STORAGE_DRIVER,
+                ApiConsts.KEY_STOR_POOL_DISCARD_ON_DELETE,
+                "false"
+            )
+        );
     }
 
     @Override

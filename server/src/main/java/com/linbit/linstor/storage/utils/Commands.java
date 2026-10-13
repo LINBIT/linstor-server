@@ -7,6 +7,7 @@ import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.storage.StorageException;
@@ -235,6 +236,34 @@ public class Commands
                 },
                 "Failed to clear read-only flag of " + devicePath,
                 "Failed to clear read-only flag of " + devicePath
+            );
+        }
+    }
+
+    /**
+     * Discards the whole block device ("{@code blkdiscard --force devicePath}").
+     *
+     * "--force" is required as newer versions of blkdiscard refuse to discard devices that still contain a signature.
+     *
+     * A discard can take a while on large devices, so it only times out if the device stops making progress.
+     */
+    public static void discard(ExtCmdFactory extCmdFactory, String devicePath) throws StorageException
+    {
+        if (Platform.isLinux())
+        {
+            genericExecutor(
+                extCmdFactory.create().setIoProgressMode(
+                    true,
+                    DeviceStatUtils.resolveSysStatFiles(extCmdFactory, Collections.singleton(devicePath))
+                ),
+                new String[]
+                {
+                    "blkdiscard",
+                    "--force",
+                    devicePath
+                },
+                "Failed to discard " + devicePath,
+                "Failed to discard " + devicePath
             );
         }
     }
