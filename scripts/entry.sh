@@ -40,9 +40,15 @@ run_migration() {
     mkdir -p /run/migration
     cd /run/migration
     kubectl api-resources --api-group=internal.linstor.linbit.com -oname | xargs --no-run-if-empty kubectl get crds -oyaml > crds.yaml
-    for CRD in $(kubectl api-resources --api-group=internal.linstor.linbit.com -oname); do
-      kubectl get "${CRD}" -oyaml > "${CRD}.yaml"
-    done
+    # The preferred version kubectl picks by default is not necessarily the one LINSTOR currently uses.
+    kubectl get crds -o jsonpath='{range .items[?(@.spec.group=="internal.linstor.linbit.com")]}{.metadata.name}{" "}{.spec.names.plural}{" "}{.spec.group}{" "}{.spec.versions[?(@.storage==true)].name}{"\n"}{end}' > crd-versions.txt
+    while read -r CRD PLURAL GROUP STORAGE_VERSION; do
+      if [ -z "${STORAGE_VERSION}" ]; then
+        echo "No storage version found for ${CRD}" >&2
+        return 1
+      fi
+      kubectl get "${PLURAL}.${STORAGE_VERSION}.${GROUP}" -oyaml > "${CRD}.yaml"
+    done < crd-versions.txt
     tar -czvf backup.tar.gz -- *.yaml
 
     if ! create_backup_secret "${BACKUP_NAME}" backup.tar.gz "${VERSION}"; then
