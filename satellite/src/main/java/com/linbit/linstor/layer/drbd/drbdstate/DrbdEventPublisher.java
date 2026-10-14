@@ -350,7 +350,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
      *
      * @return true if any volume is open, false if none is, null if DRBD does not report it for all volumes
      */
-    static @Nullable Boolean isAnyVolumeOpen(Map<VolumeNumber, DrbdVolume> volumesMap)
+    public static @Nullable Boolean isAnyVolumeOpen(Map<VolumeNumber, DrbdVolume> volumesMap)
     {
         @Nullable Boolean open = volumesMap.isEmpty() ? null : false;
         for (DrbdVolume volume : volumesMap.values())

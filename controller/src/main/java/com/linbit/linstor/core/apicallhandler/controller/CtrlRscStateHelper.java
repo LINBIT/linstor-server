@@ -65,7 +65,13 @@ public class CtrlRscStateHelper
         }
     }
 
-    public static boolean hasPrimary(final @Nullable Map<NodeName, SatelliteResourceState> stateMap)
+    /**
+     * Checks whether the resource is Primary on any node or any of its DRBD devices is open on any node, even
+     * read-only on a Secondary. Either prevents taking the resource down.
+     *
+     * @return true if any of the given states is Primary or open
+     */
+    public static boolean hasPrimaryOrOpen(final @Nullable Map<NodeName, SatelliteResourceState> stateMap)
     {
         boolean resultFlag = false;
         if (stateMap != null)
@@ -75,15 +81,10 @@ public class CtrlRscStateHelper
             while (!resultFlag && rscStateIter.hasNext())
             {
                 final @Nullable SatelliteResourceState rscState = rscStateIter.next();
-                if (rscState != null)
+                if (rscState != null && Boolean.TRUE.equals(rscState.isInUseOrOpen()))
                 {
-                    final @Nullable Boolean inUseInfo = rscState.isInUse();
-                    final boolean inUse = inUseInfo != null && inUseInfo.booleanValue();
-                    if (inUse)
-                    {
-                        resultFlag = true;
-                    }
-                } // end if (rscState != null)
+                    resultFlag = true;
+                }
             }
         } // end if (stateMap != null)
         return resultFlag;
@@ -104,8 +105,8 @@ public class CtrlRscStateHelper
                     getResourceState(rsc, rscStateMap);
                 }
                 // Can change the minimum I/O size by restarting resources after changing the configuration
-                // if there is no primary peer
-                ret = !CtrlRscStateHelper.hasPrimary(rscStateMap);
+                // if there is no primary peer and no peer has the device open
+                ret = !CtrlRscStateHelper.hasPrimaryOrOpen(rscStateMap);
 
                 if (ret)
                 {

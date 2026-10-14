@@ -329,11 +329,17 @@ public class DrbdLayer implements DeviceLayer
                     if (rscState != null)
                     {
                         final boolean hasPrimary = isSomePeerPrimary(rscState);
-                        performRestart = !hasPrimary;
+                        // "down" fails while the device is open, also read-only on a Secondary. DRBD only reports
+                        // this for the local devices, a peer that has the device open skips the restart itself
+                        final boolean isOpen = Boolean.TRUE.equals(
+                            DrbdEventPublisher.isAnyVolumeOpen(rscState.getVolumesMap())
+                        );
+                        performRestart = !hasPrimary && !isOpen;
                         errorReporter.logDebug(
-                            "DrbdLayer processResource: DRBD resource \"%s\", have primary peer = %b",
+                            "DrbdLayer processResource: DRBD resource \"%s\", have primary peer = %b, open = %b",
                             rscName,
-                            hasPrimary
+                            hasPrimary,
+                            isOpen
                         );
                     }
                 }
