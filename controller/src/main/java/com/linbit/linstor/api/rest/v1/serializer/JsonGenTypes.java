@@ -1077,6 +1077,10 @@ public class JsonGenTypes
         public @Nullable String git_hash;
         public @Nullable String build_time;
         public @Nullable String rest_api_version;
+        /**
+         * The host name of the machine the controller runs on
+         */
+        public @Nullable String host_name;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

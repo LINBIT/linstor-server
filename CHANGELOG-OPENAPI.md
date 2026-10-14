@@ -10,6 +10,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
     queried nodes, `sort_by` supports nine fields with `sort_order` asc/desc, multiple `node` filters and an optional
     `module` filter
   - Added `open` to ResourceState
+  - Added `host_name` to ControllerVersion
 
 ## [1.29.1]
 

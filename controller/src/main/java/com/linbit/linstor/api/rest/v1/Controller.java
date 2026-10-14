@@ -205,6 +205,8 @@ public class Controller
         controllerVersion.git_hash = LinStor.VERSION_INFO_PROVIDER.getGitCommitId();
         controllerVersion.build_time = LinStor.VERSION_INFO_PROVIDER.getBuildTime();
         controllerVersion.rest_api_version = JsonGenTypes.REST_API_VERSION;
+        String hostName = LinStor.getHostName();
+        controllerVersion.host_name = hostName == null || hostName.isEmpty() ? null : hostName;
 
         Response resp;
         try

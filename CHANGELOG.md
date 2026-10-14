@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LVM-Thin: New property `StorDriver/DiscardOnDelete` discards thin volumes and snapshots before deleting them,
   releasing the space on the storage below the thin pool (e.g. VDO). The storage pool shows a warning if the thin
   pool does not pass discards down
+- REST: `GET /v1/controller/version` reports the `host_name` of the controller machine
 
 ### Changed
 

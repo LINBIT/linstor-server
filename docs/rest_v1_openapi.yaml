@@ -8217,6 +8217,9 @@ components:
           type: string
         rest_api_version:
           type: string
+        host_name:
+          type: string
+          description: The host name of the machine the controller runs on
     DatabaseBackupRequest:
       type: object
       properties:
