@@ -68,20 +68,31 @@ public class SuspendLayerUtils
     }
 
     private static <RSC extends AbsResource<RSC>> void setShouldSuspendStateRec(
+        AbsRscLayerObject<RSC> rootRscLayerObjRef,
+        boolean suspendStateRef,
+        Set<DeviceLayerKind> layersToApply
+    )
+        throws DatabaseException
+    {
+        // the topmost layer always receives the flag, lower layers only if they are in layersToApply
+        rootRscLayerObjRef.setShouldSuspendIo(suspendStateRef);
+        setShouldSuspendStateOfChildrenRec(rootRscLayerObjRef, suspendStateRef, layersToApply);
+    }
+
+    private static <RSC extends AbsResource<RSC>> void setShouldSuspendStateOfChildrenRec(
         AbsRscLayerObject<RSC> absRscLayerObjRef,
         boolean suspendStateRef,
         Set<DeviceLayerKind> layersToApply
     )
         throws DatabaseException
     {
-        absRscLayerObjRef.setShouldSuspendIo(suspendStateRef);
         for (AbsRscLayerObject<RSC> child : absRscLayerObjRef.getChildren())
         {
             if (layersToApply.contains(child.getLayerKind()))
             {
                 child.setShouldSuspendIo(suspendStateRef);
             }
-            setShouldSuspendStateRec(child, suspendStateRef, layersToApply);
+            setShouldSuspendStateOfChildrenRec(child, suspendStateRef, layersToApply);
         }
     }
 

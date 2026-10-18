@@ -74,6 +74,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deleted by the user might have been recreated by the BalanceResourcesTask.
 - Controller (K8s CRD): Fixed the SpaceTracking service dying with "Resource SpaceHistory/... not found" and the
   controller crash-looping after an upgrade from 1.33.x or older; a migration removes the stale entries
+- Controller: Snapshots and clones only flag the topmost layer and WRITECACHE/CACHE layers below it for suspend-IO.
+  Since 1.34.0 a LUKS layer below DRBD was suspended too, which with DRBD 9.3 or later stalled snapshots and clones
+  until DRBD's ko-count when the Primary replicates to a diskful LUKS replica on another node
 
 ## [1.35.2] - 2026-09-14
 
