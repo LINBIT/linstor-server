@@ -34,6 +34,7 @@ import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.locks.LockGuardFactory;
 
@@ -78,6 +79,7 @@ public class CtrlRscApiCallHandler
     private final StltConfigAccessor stltCfgAccessor;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProvider;
     private final Provider<CtrlRscAutoHelper> ctrlRscAutoHelperProvider;
+    private final Provider<AutoDiskfulTask> autoDiskfulTaskProvider;
 
     @Inject
     public CtrlRscApiCallHandler(
@@ -93,7 +95,8 @@ public class CtrlRscApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         StltConfigAccessor stltCfgAccessorRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderProviderRef,
-        Provider<CtrlRscAutoHelper> ctrlRscAutoHelperProviderRef
+        Provider<CtrlRscAutoHelper> ctrlRscAutoHelperProviderRef,
+        Provider<AutoDiskfulTask> autoDiskfulTaskProviderRef
     )
     {
         ctrlTransactionHelper = ctrlTransactionHelperRef;
@@ -109,6 +112,7 @@ public class CtrlRscApiCallHandler
         stltCfgAccessor = stltCfgAccessorRef;
         propsChangeListenerBuilderProvider = propsChangeListenerBuilderProviderRef;
         ctrlRscAutoHelperProvider = ctrlRscAutoHelperProviderRef;
+        autoDiskfulTaskProvider = autoDiskfulTaskProviderRef;
     }
 
     public Flux<ApiCallRc> modify(
@@ -222,6 +226,15 @@ public class CtrlRscApiCallHandler
                 Collections.emptyList(),
                 propsChangedListeners
             ) || notifyStlts;
+
+            String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;
+            if (
+                overrideProps.containsKey(autoDiskfulKey) || deletePropKeys.contains(autoDiskfulKey) ||
+                    deletePropNamespacesRef.contains(ApiConsts.NAMESPC_DRBD_OPTIONS)
+            )
+            {
+                autoDiskfulTaskProvider.get().update(rsc);
+            }
 
             boolean flagsChanged = false;
             if (tiebreakerFlagRef != null && tiebreakerFlagRef && drbdClientFlagRef != null && drbdClientFlagRef)

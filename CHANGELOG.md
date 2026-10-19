@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `DrbdOptions/auto-diskful` can also be set on nodes and resources, and `-1` disables it
 - Satellite: drbd-reactor is reloaded after one of its snippets is written, changed or deleted as an external file,
   so the drbd-reactor-reload.path unit is no longer needed for that
 - Satellite: The ErrorReport of a `drbdadm adjust` that fails after a .res file was regenerated now includes the
