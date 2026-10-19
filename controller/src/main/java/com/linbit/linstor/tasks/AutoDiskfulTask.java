@@ -62,6 +62,8 @@ import reactor.util.context.Context;
 public class AutoDiskfulTask implements TaskScheduleService.Task
 {
     private static final long MINUTES_TO_MS = 1000 * 60L;
+    /** Value of {@link ApiConsts#KEY_DRBD_AUTO_DISKFUL} that disables auto-diskful regardless of higher levels */
+    static final long AUTO_DISKFUL_DISABLED = -1;
 
     private static final long TASK_TIMEOUT = 10_000;
 
@@ -131,7 +133,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
      * {@link ApiConsts#NAMESPC_DRBD_OPTIONS}/{@link ApiConsts#KEY_DRBD_AUTO_DISKFUL} is set.
      *
      * If the property is set, a new autoDiskfull entry is created or the existing updated.
-     * If the property is not set, the existing entry will be deleted.
+     * If the property is not set or set to {@value #AUTO_DISKFUL_DISABLED} on the first level that has it, the existing
+     * entry will be deleted.
      *
      */
     public void update(Resource rsc)
@@ -146,11 +149,13 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                         .getSatelliteState().getResourceStates().get(rsc.getResourceDefinition().getName());
                 @Nullable Boolean isPrimary = rscStates != null ? rscStates.isInUse() : null;
 
-                boolean enableAutoDiskful = autoDiskful != null && isPrimary != null && isPrimary;
+                @Nullable Long toggleDiskAfter = isPrimary != null && isPrimary ?
+                    getToggleDiskAfterMs(autoDiskful) :
+                    null;
                 synchronized (configSet)
                 {
                     AutoDiskfulConfig cfg = configSetByRsc.get(rsc);
-                    if (!enableAutoDiskful)
+                    if (toggleDiskAfter == null)
                     {
                         if (cfg != null)
                         {
@@ -164,8 +169,6 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                     }
                     else
                     {
-                        // property is in minutes
-                        long toggleDiskAfter = Long.parseLong(autoDiskful) * MINUTES_TO_MS;
                         if (cfg != null)
                         {
                             /*
@@ -216,6 +219,26 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                 CtrlRscApiCallHandler.getRscDescription(rsc)
             );
         }
+    }
+
+    /**
+     * Converts the value of {@link ApiConsts#KEY_DRBD_AUTO_DISKFUL} (in minutes) to milliseconds.
+     *
+     * @return the time in ms after which a diskless primary is made diskful, or null if the property is not set or
+     *     auto-diskful is disabled
+     */
+    static @Nullable Long getToggleDiskAfterMs(@Nullable String autoDiskfulMinutes)
+    {
+        @Nullable Long ret = null;
+        if (autoDiskfulMinutes != null)
+        {
+            long minutes = Long.parseLong(autoDiskfulMinutes);
+            if (minutes != AUTO_DISKFUL_DISABLED)
+            {
+                ret = minutes * MINUTES_TO_MS;
+            }
+        }
+        return ret;
     }
 
     private PriorityProps getPrioProps(Resource rsc)
