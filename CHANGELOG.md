@@ -17,15 +17,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New paginated error-report list API `GET /v1/view/error-reports`: returns the total count and one page of the
   globally sorted reports; sortable via `sort_by`/`sort_order`, with working `limit`/`offset`, multiple `node`
   filters and an optional `module` filter
-- Prometheus: New metric `linstor_node_flag` exports the node flags `DELETE`, `EVICTED` and `EVACUATE` as 0/1 per node
 - STORAGE_SPACES: set discard-zeroes-if-aligned to "no" thereby skipping initial resync
 - REST: The resource state reports `open` if a DRBD device of the resource is open, also read-only on a Secondary
 - Prometheus: New metric `linstor_resource_open` reports whether a DRBD device of the resource is open
-- Prometheus: New metric `linstor_resource_flag` exports the resource flags `INACTIVE` and `EVICTED` as 0/1
-- Controller: A controller-only node now reports the platform and OS variant of the host the controller runs on
 - LVM-Thin: New property `StorDriver/DiscardOnDelete` discards thin volumes and snapshots before deleting them,
   releasing the space on the storage below the thin pool (e.g. VDO). The storage pool shows a warning if the thin
   pool does not pass discards down
+
+### Changed
+
+- Controller: REST stack upgraded to Jersey 4 (Jakarta REST 4.0), HK2 4 and Guice 7; the REST API itself is unchanged
+- Controller: The Kubernetes CRD database backend now uses the JDK HTTP client instead of Vert.x/Netty, removing
+  ~6 MB of dependencies (and their CVE exposure) from the distribution
+- DRBD: Operations that take a resource down (e.g. delete, deactivate, rollback) are also rejected while its
+  device is open on a Secondary, if DRBD reports it
+
+### Fixed
+
+- physical-storage: VDO-backed LVM-thin pools now pass discards down to VDO, so space freed in the thin pool is
+  also freed in VDO
+- Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
+  made `since`/`to` filters of the error-report listing miss recent reports
+
+## [1.35.3] - 2026-10-21
+
+### Added
+
+- Prometheus: New metric `linstor_node_flag` exports the node flags `DELETE`, `EVICTED` and `EVACUATE` as 0/1 per node
+- Prometheus: New metric `linstor_resource_flag` exports the resource flags `INACTIVE` and `EVICTED` as 0/1
+- Controller: A controller-only node now reports the platform and OS variant of the host the controller runs on
 
 ### Changed
 
@@ -35,22 +55,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Satellite: The ErrorReport of a `drbdadm adjust` that fails after a .res file was regenerated now includes the
   regenerated content, which is otherwise lost when the previous file is restored from its backup
 - SOS report now includes the LVM devices file `/etc/lvm/devices/system.devices`
+- Prometheus: `linstor_resource_state` also carries the resource name as `resource` label, allowing joins with the
+  `linstor_volume_*` metrics
 - `linstor-database export-db` refuses to export a database with pending migrations unless
   `--migrate-before-export` is given, instead of producing a mislabeled or failing export
-- Controller: REST stack upgraded to Jersey 4 (Jakarta REST 4.0), HK2 4 and Guice 7; the REST API itself is unchanged
-- Controller: The Kubernetes CRD database backend now uses the JDK HTTP client instead of Vert.x/Netty, removing
-  ~6 MB of dependencies (and their CVE exposure) from the distribution
-- DRBD: Operations that take a resource down (e.g. delete, deactivate, rollback) are also rejected while its
-  device is open on a Secondary, if DRBD reports it
-- Prometheus: `linstor_resource_state` and `linstor_resource_open` also carry the resource name as `resource` label,
-  allowing joins with the `linstor_volume_*` metrics
 
 ### Fixed
 
 - Externally locked shared storage pools: after moving a resource, its LV is locked exclusively again instead of
   shared, as inactive copies no longer count as users of the LV
-- physical-storage: VDO-backed LVM-thin pools now pass discards down to VDO, so space freed in the thin pool is
-  also freed in VDO
 - Web UI: Requests no longer hang for about 30 seconds after the controller served a large web UI file again
 - Prometheus: `linstor_volume_state` reports volumes without DRBD as `Created` (2) instead of `DUnknown` (-1)
   (GitHub #420)
@@ -61,8 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   later when a resource definition is spawned or a resource is created
 - Fixed a race between a resource deletion and a concurrent restore or un-delete of the same resource, which made
   the affected satellites shut down (and restart) with a UUID mismatch
-- Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
-  made `since`/`to` filters of the error-report listing miss recent reports
 - Satellite: Fixed .res file's 'disk' (drbd-peer-options) section not including controller properties when a
   resource-connection exists. Now node-connection and controller properties are also included.
 - Fixed rare race condition where after deleting a node the same node could cause "Access to deleted Node"
