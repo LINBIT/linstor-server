@@ -1,3 +1,50 @@
+linstor-server (1.35.3-1) experimental; urgency=medium
+
+  [ Moritz Tanner ]
+  * ci: bump virter to 1.4.0
+  * linstor.spec: Use %{_jvmdir} for start script JRE
+  * gitlab: use vmshed v0.32.0
+  * gitlab: drop the LINBIT_CI_MAX_CPUS overrides
+  * Lock moved shared LV exclusively again
+  * Refuse export-db with pending migrations
+  * docker: back up CRDs at storage version
+
+  [ Gabor Hernadi ]
+  * Rsc: Check flags in each delete-stage
+  * Drbd,ConfFileBuilder: Properly render nc and ctrl peer-device options
+  * SharedStorPoolMgr: Reworked to be NodeName based
+  * SharedSPMgr: Small refactoring
+  * SatelliteVolumeState: Fix ConcurrentModificationException
+  * NodeIntCallHandler: Drop storage pool props update after storPool was  [...]
+  * BalanceRscTask: Ignore if any resource is in transitional state
+
+  [ Liang Li ]
+  * Add the regenerated .res file to the ErrorReport of a failed drbdadm adjust
+  * Collect the LVM devices file in SOS reports
+  * Reject invalid layer stacks on rg create/modify and rd modify
+  * Compress the web UI's JavaScript, CSS and SVG responses
+  * Export node flags in the Prometheus metrics
+  * Compare a token's IP filter with the client address as IP addresses
+  * Return the diskless storage pools and node list of resource groups
+  * Serve the web UI without Grizzly's file cache
+  * Reload drbd-reactor after the satellite writes or deletes one of its s [...]
+  * Allow auto-diskful on nodes and resources and disable it with -1
+
+  [ Ryan Ronnander ]
+  * PeerController: Report platform and OS variant of the local controller
+
+  [ Rene Peinthor ]
+  * Satellite: Fix storage pool update loop with partition PVs
+  * Controller: Keep node connections in FullSync without shared resources
+  * DB,K8s: Commit the deletes migrations issue on the from-transaction
+  * DB,K8s: Remove stale SpaceTracking entries left by migrations 31 and 32
+  * Prometheus: Report volumes without DRBD as Created, export resource flags
+
+  [ Bernard Gütermann ]
+  * SuspendLayerUtils: only suspend listed sub-root layers
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 21 Oct 2026 10:34:22 +0000
+
 linstor-server (1.35.2-1) experimental; urgency=medium
 
   [ Moritz Tanner ]
