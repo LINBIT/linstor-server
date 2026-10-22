@@ -157,7 +157,7 @@ public class StorPoolDefinition extends AbsCoreObj<StorPoolDefinition>
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(name);
+        return Objects.hashCode(name);
     }
 
     @Override

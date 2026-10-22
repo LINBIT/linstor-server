@@ -91,7 +91,7 @@ public class S3Remote extends AbsRemote
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(remoteName);
+        return Objects.hashCode(remoteName);
     }
 
     @Override

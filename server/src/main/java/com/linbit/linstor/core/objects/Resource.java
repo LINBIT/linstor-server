@@ -462,7 +462,7 @@ public class Resource extends AbsResource<Resource>
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(rscKey);
+        return Objects.hashCode(rscKey);
     }
     @Override
     public boolean equals(Object obj)

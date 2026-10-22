@@ -267,7 +267,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup>
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(name);
+        return Objects.hashCode(name);
     }
 
     @Override

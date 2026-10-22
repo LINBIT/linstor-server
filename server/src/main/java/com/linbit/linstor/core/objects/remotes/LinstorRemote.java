@@ -86,7 +86,7 @@ public class LinstorRemote extends AbsRemote
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(remoteName);
+        return Objects.hashCode(remoteName);
     }
 
     @Override

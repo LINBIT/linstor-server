@@ -65,6 +65,6 @@ public class Watch
     @Override
     public int hashCode()
     {
-        return Objects.hash(uuid);
+        return Objects.hashCode(uuid);
     }
 }

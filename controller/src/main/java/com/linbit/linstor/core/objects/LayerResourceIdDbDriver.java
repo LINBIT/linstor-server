@@ -41,7 +41,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -267,7 +266,7 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
         @Override
         public int hashCode()
         {
-            return Objects.hash(rscLayerId);
+            return Integer.hashCode(rscLayerId);
         }
 
         @Override

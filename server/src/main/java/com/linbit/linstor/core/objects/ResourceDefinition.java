@@ -743,7 +743,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition>
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(resourceName);
+        return Objects.hashCode(resourceName);
     }
 
     @Override

@@ -257,7 +257,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         @Override
         public int hashCode()
         {
-            return Objects.hash(uuid);
+            return Objects.hashCode(uuid);
         }
 
         @Override

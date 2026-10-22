@@ -197,7 +197,7 @@ public class CreateMultiSnapRequest
     @Override
     public int hashCode()
     {
-        return Objects.hash(snapshots);
+        return Objects.hashCode(snapshots);
     }
 
     @SuppressWarnings("UndefinedEquals")

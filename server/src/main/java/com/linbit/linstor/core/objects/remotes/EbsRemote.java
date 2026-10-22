@@ -262,7 +262,7 @@ public class EbsRemote extends AbsRemote
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(remoteName);
+        return Objects.hashCode(remoteName);
     }
 
     @Override

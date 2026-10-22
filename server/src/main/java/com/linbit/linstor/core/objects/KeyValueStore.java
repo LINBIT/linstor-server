@@ -66,7 +66,7 @@ public class KeyValueStore extends AbsCoreObj<KeyValueStore>
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(kvsName);
+        return Objects.hashCode(kvsName);
     }
 
     @Override

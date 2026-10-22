@@ -96,7 +96,7 @@ public class Schedule extends AbsCoreObj<Schedule>
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(scheduleName);
+        return Objects.hashCode(scheduleName);
     }
 
     @Override

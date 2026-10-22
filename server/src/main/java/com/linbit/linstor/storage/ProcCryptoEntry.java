@@ -98,7 +98,7 @@ public class ProcCryptoEntry
     @Override
     public int hashCode()
     {
-        return Objects.hash(driver);
+        return Objects.hashCode(driver);
     }
 
     @Override

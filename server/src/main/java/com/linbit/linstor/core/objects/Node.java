@@ -268,7 +268,7 @@ public class Node extends AbsCoreObj<Node> implements NodeInfo
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(nodeName);
+        return Objects.hashCode(nodeName);
     }
 
     @Override

@@ -343,7 +343,7 @@ public class Volume extends AbsVolume<Resource>
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(vlmKey);
+        return Objects.hashCode(vlmKey);
     }
 
     @Override

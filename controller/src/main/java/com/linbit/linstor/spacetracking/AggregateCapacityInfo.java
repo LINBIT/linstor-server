@@ -53,7 +53,7 @@ public class AggregateCapacityInfo implements Comparable<AggregateCapacityInfo>
     @Override
     public int hashCode()
     {
-        return Objects.hash(nodeName);
+        return Objects.hashCode(nodeName);
     }
 
     @Override

@@ -95,7 +95,7 @@ public class ExternalFile extends AbsCoreObj<ExternalFile>
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(fileName);
+        return Objects.hashCode(fileName);
     }
 
     @Override

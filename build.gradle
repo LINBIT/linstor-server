@@ -67,7 +67,7 @@ subprojects {
         apply plugin: 'net.ltgt.errorprone'
 
         dependencies {
-            errorprone("com.google.errorprone:error_prone_core:2.50.0")
+            errorprone("com.google.errorprone:error_prone_core:2.51.0")
         }
     }
 
@@ -89,6 +89,8 @@ subprojects {
                 disable("StringCaseLocaleUsage")
                 disable("AnnotateFormatMethod")
                 disable("DeprecatedVariable")
+                disable("IfChainToSwitch")
+                disable("LoopToTestParameter")
             }
         }
     }

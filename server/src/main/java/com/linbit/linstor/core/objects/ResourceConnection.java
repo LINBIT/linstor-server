@@ -397,7 +397,7 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
     public int hashCode()
     {
         checkDeleted();
-        return Objects.hash(connectionKey);
+        return Objects.hashCode(connectionKey);
     }
 
     @Override

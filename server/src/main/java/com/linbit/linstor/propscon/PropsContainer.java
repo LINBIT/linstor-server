@@ -2387,7 +2387,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     @Override
     public int hashCode()
     {
-        return Objects.hash(instanceName);
+        return Objects.hashCode(instanceName);
     }
 
     @Override

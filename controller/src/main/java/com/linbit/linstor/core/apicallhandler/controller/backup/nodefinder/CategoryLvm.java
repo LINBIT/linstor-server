@@ -24,7 +24,7 @@ class CategoryLvm implements Category
     @Override
     public int hashCode()
     {
-        return Objects.hash(metadata);
+        return Objects.hashCode(metadata);
     }
 
     @Override
