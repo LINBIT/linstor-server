@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Clone: LVM-thin clones are taken from the snapshot made while the source was suspended, instead of from the
+  source volume after it was resumed, which could contain later writes and differ between volumes
 - physical-storage: VDO-backed LVM-thin pools now pass discards down to VDO, so space freed in the thin pool is
   also freed in VDO
 - Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also

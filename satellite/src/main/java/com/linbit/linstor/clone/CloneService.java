@@ -434,8 +434,19 @@ public class CloneService implements SystemService
                         {
                             LvmThinData<Resource> srcLvmData = (LvmThinData<Resource>) srcVlmData;
                             LvmThinData<Resource> dstLvmData = (LvmThinData<Resource>) dstVlmData;
+                            /*
+                             * Clone from the clone snapshot that was taken while the source was suspended, not from
+                             * the source volume itself: the target is only created after the source was resumed, so
+                             * a snapshot of the source volume would contain later writes, and each volume of the
+                             * resource would be taken at a different point in time.
+                             */
+                            final String srcFullSnapshotName = AbsStorageProvider.getLVMCloneSnapshotNameFull(
+                                srcLvmData.getIdentifier(),
+                                cloneInfo.getResourceName().displayValue,
+                                srcLvmData.getVlmNr().value
+                            );
                             cmd = doLvmThinClone(
-                                dstLvmData.getVolumeGroup(), srcLvmData.getIdentifier(), dstLvmData.getIdentifier());
+                                dstLvmData.getVolumeGroup(), srcFullSnapshotName, dstLvmData.getIdentifier());
                         }
                         break;
                         case ZFS_CLONE:
