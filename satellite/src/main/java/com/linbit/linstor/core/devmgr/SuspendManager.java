@@ -50,8 +50,8 @@ public class SuspendManager
          * transitions.
          *
          * After the root layer's are suspended we also want to give the non-root layers a chance (opt-in) to
-         * also perform some suspend commands (needed for setups like DRBD,WRITECACHE,STORAGE such that writecache
-         * can flush its cache before a snapshot is taken)
+         * also perform some suspend commands. Sub-root cache layers (WRITECACHE, CACHE) do not use this anymore:
+         * they flush their cache directly before the storage snapshot is taken, see CacheFlushUtils.
          *
          * Resumes have to run in the opposite order, non-root layers before their root layer. Resuming the root
          * layer while a lower layer is still suspended can block in the kernel forever, for example DRBD's

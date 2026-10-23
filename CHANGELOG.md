@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ~6 MB of dependencies (and their CVE exposure) from the distribution
 - DRBD: Operations that take a resource down (e.g. delete, deactivate, rollback) are also rejected while its
   device is open on a Secondary, if DRBD reports it
+- Snapshot, clone: CACHE and WRITECACHE layers below the top layer are flushed directly before the storage snapshot
+  instead of while I/O is suspended, so a suspended dm-cache can no longer stall the suspend of the other nodes
 
 ### Fixed
 

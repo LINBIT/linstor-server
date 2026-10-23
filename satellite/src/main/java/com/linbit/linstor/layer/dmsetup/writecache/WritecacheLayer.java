@@ -22,6 +22,7 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.dmsetup.CacheFlushUtils;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -245,6 +246,11 @@ public class WritecacheLayer implements DeviceLayer
             }
         }
 
+        if (CacheFlushUtils.isCloneSnapshotPending(rscData))
+        {
+            // the clone snapshot is taken while processing the data child
+            flushBeforeSnapshot(rscData);
+        }
         resourceProcessorProvider.get().processResource(
             rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
             apiCallRcRef
@@ -401,6 +407,33 @@ public class WritecacheLayer implements DeviceLayer
                 }
             }
         }
+    }
+
+    /**
+     * A sub-root writecache flushes to its origin directly before the storage snapshot below it is taken, see
+     * {@link CacheFlushUtils}. The children are left to the device handler, which takes the storage snapshot.
+     */
+    @Override
+    public boolean processSnapshot(AbsRscLayerObject<Snapshot> snapLayerDataRef, ApiCallRcImpl apiCallRcRef)
+        throws StorageException
+    {
+        @Nullable AbsRscLayerObject<Resource> rscDataToFlush = CacheFlushUtils.getRscDataToFlushForSnapshot(
+            snapLayerDataRef
+        );
+        if (rscDataToFlush != null)
+        {
+            flushBeforeSnapshot(rscDataToFlush);
+        }
+        return false;
+    }
+
+    private void flushBeforeSnapshot(AbsRscLayerObject<Resource> rscDataRef) throws StorageException
+    {
+        errorReporter.logDebug(
+            "Writecache: flushing %s before taking a snapshot",
+            rscDataRef.getSuffixedResourceName()
+        );
+        DmSetupUtils.flush(extCmdFactory, rscDataRef);
     }
 
     @Override

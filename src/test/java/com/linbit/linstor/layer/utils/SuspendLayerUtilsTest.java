@@ -61,8 +61,13 @@ public class SuspendLayerUtilsTest
         verify(storage, never()).setShouldSuspendIo(anyBoolean());
     }
 
+    /*
+     * Cache layers below the topmost layer are not suspended in round trip 1: the satellite flushes them directly
+     * around the storage snapshot in round trip 2 (CacheFlushUtils). A suspended dm-cache below DRBD would block
+     * DRBD's own writes and can stall the suspend-io of the peers.
+     */
     @Test
-    public void suspendDrbdWritecacheStorageSuspendsDrbdAndWritecache() throws DatabaseException
+    public void suspendDrbdWritecacheStorageSuspendsOnlyDrbd() throws DatabaseException
     {
         AbsRscLayerObject dataStorage = layer(DeviceLayerKind.STORAGE);
         AbsRscLayerObject cacheStorage = layer(DeviceLayerKind.STORAGE);
@@ -72,13 +77,13 @@ public class SuspendLayerUtilsTest
         SuspendLayerUtils.suspendIo(rsc(drbd));
 
         verify(drbd, times(1)).setShouldSuspendIo(true);
-        verify(writecache, times(1)).setShouldSuspendIo(true);
+        verify(writecache, never()).setShouldSuspendIo(anyBoolean());
         verify(dataStorage, never()).setShouldSuspendIo(anyBoolean());
         verify(cacheStorage, never()).setShouldSuspendIo(anyBoolean());
     }
 
     @Test
-    public void suspendDrbdCacheStorageSuspendsDrbdAndCache() throws DatabaseException
+    public void suspendDrbdCacheStorageSuspendsOnlyDrbd() throws DatabaseException
     {
         AbsRscLayerObject storage = layer(DeviceLayerKind.STORAGE);
         AbsRscLayerObject cache = layer(DeviceLayerKind.CACHE, storage);
@@ -87,6 +92,19 @@ public class SuspendLayerUtilsTest
         SuspendLayerUtils.suspendIo(rsc(drbd));
 
         verify(drbd, times(1)).setShouldSuspendIo(true);
+        verify(cache, never()).setShouldSuspendIo(anyBoolean());
+        verify(storage, never()).setShouldSuspendIo(anyBoolean());
+    }
+
+    @Test
+    public void suspendCacheAsTopmostLayerSuspendsCache() throws DatabaseException
+    {
+        // without a layer above, the cache is suspended (including its flush) in round trip 1
+        AbsRscLayerObject storage = layer(DeviceLayerKind.STORAGE);
+        AbsRscLayerObject cache = layer(DeviceLayerKind.CACHE, storage);
+
+        SuspendLayerUtils.suspendIo(rsc(cache));
+
         verify(cache, times(1)).setShouldSuspendIo(true);
         verify(storage, never()).setShouldSuspendIo(anyBoolean());
     }
@@ -95,20 +113,22 @@ public class SuspendLayerUtilsTest
     public void suspendKeepsDescendingThroughUnlistedLayers() throws DatabaseException
     {
         AbsRscLayerObject dataStorage = layer(DeviceLayerKind.STORAGE);
+        AbsRscLayerObject subRootDrbd = layer(DeviceLayerKind.DRBD, dataStorage);
         AbsRscLayerObject writecacheCacheStorage = layer(DeviceLayerKind.STORAGE);
-        AbsRscLayerObject writecache = layer(DeviceLayerKind.WRITECACHE, dataStorage, writecacheCacheStorage);
+        AbsRscLayerObject writecache = layer(DeviceLayerKind.WRITECACHE, subRootDrbd, writecacheCacheStorage);
         AbsRscLayerObject bcacheCacheStorage = layer(DeviceLayerKind.STORAGE);
         AbsRscLayerObject bcache = layer(DeviceLayerKind.BCACHE, writecache, bcacheCacheStorage);
-        AbsRscLayerObject drbd = layer(DeviceLayerKind.DRBD, bcache);
+        AbsRscLayerObject nvme = layer(DeviceLayerKind.NVME, bcache);
 
-        SuspendLayerUtils.suspendIo(rsc(drbd));
+        SuspendLayerUtils.suspendIo(rsc(nvme));
 
-        verify(drbd, times(1)).setShouldSuspendIo(true);
+        verify(nvme, times(1)).setShouldSuspendIo(true);
         verify(bcache, never()).setShouldSuspendIo(anyBoolean());
         verify(bcacheCacheStorage, never()).setShouldSuspendIo(anyBoolean());
-        verify(writecache, times(1)).setShouldSuspendIo(true);
-        verify(dataStorage, never()).setShouldSuspendIo(anyBoolean());
+        verify(writecache, never()).setShouldSuspendIo(anyBoolean());
         verify(writecacheCacheStorage, never()).setShouldSuspendIo(anyBoolean());
+        verify(subRootDrbd, times(1)).setShouldSuspendIo(true);
+        verify(dataStorage, never()).setShouldSuspendIo(anyBoolean());
     }
 
     @Test

@@ -27,6 +27,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.cache.CacheLayerSizeCalculator;
+import com.linbit.linstor.layer.dmsetup.CacheFlushUtils;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -409,10 +410,19 @@ public class CacheLayer implements DeviceLayer
             }
         }
 
-        resourceProcessorProvider.get().processResource(
-            rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
-            apiCallRcRef
-        );
+        AbsRscLayerObject<Resource> dataRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+        if (CacheFlushUtils.isCloneSnapshotPending(rscData))
+        {
+            // the clone snapshot is taken while processing the data child
+            runWithFlushedCache(
+                rscData,
+                () -> resourceProcessorProvider.get().processResource(dataRscChild, apiCallRcRef)
+            );
+        }
+        else
+        {
+            resourceProcessorProvider.get().processResource(dataRscChild, apiCallRcRef);
+        }
         AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
         AbsRscLayerObject<Resource> metaRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_META);
         if (cacheRscChild == null || metaRscChild == null)
@@ -465,6 +475,97 @@ public class CacheLayer implements DeviceLayer
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * A sub-root dm-cache is flushed to its origin and suspended directly around the storage snapshot below it, see
+     * {@link CacheFlushUtils}.
+     */
+    @Override
+    public boolean processSnapshot(AbsRscLayerObject<Snapshot> snapLayerDataRef, ApiCallRcImpl apiCallRcRef)
+        throws StorageException, ResourceException, VolumeException, DatabaseException
+    {
+        boolean processedChildren = false;
+        @Nullable AbsRscLayerObject<Resource> rscDataToFlush = CacheFlushUtils.getRscDataToFlushForSnapshot(
+            snapLayerDataRef
+        );
+        if (rscDataToFlush != null)
+        {
+            runWithFlushedCache(
+                rscDataToFlush,
+                () -> {
+                    for (AbsRscLayerObject<Snapshot> child : snapLayerDataRef.getChildren())
+                    {
+                        resourceProcessorProvider.get().processSnapshot(child, apiCallRcRef);
+                    }
+                }
+            );
+            processedChildren = true;
+        }
+        return processedChildren;
+    }
+
+    /**
+     * Flushes the dm-cache devices of the given sub-root layer data to their origin and suspends them (see
+     * {@link #suspendIo}), runs the given processing, which takes the storage snapshot below, and afterwards restores
+     * the cache policy and resumes the devices. The restore also runs if the flush or the processing failed, so that
+     * the cache is not left suspended or in the cleaner policy.
+     */
+    private void runWithFlushedCache(
+        AbsRscLayerObject<Resource> rscDataRef,
+        CacheFlushUtils.ChildProcessing processingRef
+    )
+        throws StorageException, ResourceException, VolumeException, DatabaseException
+    {
+        boolean success = false;
+        try
+        {
+            errorReporter.logDebug(
+                "Cache: flushing and suspending %s before taking a snapshot",
+                rscDataRef.getSuffixedResourceName()
+            );
+            suspendIo(rscDataRef, false);
+            processingRef.process();
+            success = true;
+        }
+        catch (ExtCmdFailedException | ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to flush cache of resource " + rscDataRef.getSuffixedResourceName() +
+                    " before taking a snapshot",
+                exc
+            );
+        }
+        finally
+        {
+            resumeAfterFlush(rscDataRef, success);
+        }
+    }
+
+    /**
+     * Restores the cache policy and resumes the dm-cache devices after {@link #runWithFlushedCache}. A failure is only
+     * thrown if nothing failed before, otherwise it is reported and the original exception is kept.
+     */
+    private void resumeAfterFlush(AbsRscLayerObject<Resource> rscDataRef, boolean throwOnFailureRef)
+        throws StorageException
+    {
+        try
+        {
+            resumeIo(rscDataRef, false);
+        }
+        catch (ExtCmdFailedException | StorageException exc)
+        {
+            StorageException resumeExc = new StorageException(
+                "Failed to resume cache of resource " + rscDataRef.getSuffixedResourceName() +
+                    " after taking a snapshot",
+                exc
+            );
+            if (throwOnFailureRef)
+            {
+                throw resumeExc;
+            }
+            errorReporter.reportError(resumeExc);
         }
     }
 
