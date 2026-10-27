@@ -40,6 +40,11 @@ public class ZfsUtils
     private static final int ZFS_DESTROY_RETRY_DELAY_IN_MS = 1_000;
 
     private static final String DELIMITER = "\t"; // default for all "zfs -H ..." commands
+    private static final String VOLBLOCKSIZE_PROP_PREFIX = "volblocksize=";
+    private static final int SHIFT_KIB = 10;
+    private static final int SHIFT_MIB = 20;
+    private static final int SHIFT_GIB = 30;
+    private static final Pattern ZFS_SIZE_PATTERN = Pattern.compile("(\\d+)([kKmMgG])?(?:[iI]?[bB])?");
 
     private static final int ZFS_LIST_COL_IDENTIFIER        = 0; // -o "name"
     private static final int ZFS_LIST_COL_REFER_SIZE        = 1; // -o "refer"
@@ -556,6 +561,75 @@ public class ZfsUtils
             devices.add(subColumns[0]);
         }
         return devices;
+    }
+
+    /**
+     * Returns the volblocksize in bytes that the given "zfs create" options explicitly request ("-b SIZE", "-bSIZE",
+     * "-o volblocksize=SIZE"), or null if none is requested or the size cannot be parsed. A size without suffix is in
+     * bytes; K, M and G are powers of 1024, as for zfs.
+     */
+    public static @Nullable Long getRequestedVolBlockSize(String[] zfsCreateOptionsRef)
+    {
+        @Nullable String sizeStr = null;
+        @Nullable String pendingOpt = null;
+        for (String opt : zfsCreateOptionsRef)
+        {
+            @Nullable String val = null;
+            if (pendingOpt != null)
+            {
+                // the value following a separate "-b" or "-o"
+                val = pendingOpt.equals("-b") ? opt : getVolBlockSizeFromProp(opt);
+                pendingOpt = null;
+            }
+            else if (opt.equals("-b") || opt.equals("-o"))
+            {
+                pendingOpt = opt;
+            }
+            else if (opt.startsWith("-o"))
+            {
+                val = getVolBlockSizeFromProp(opt.substring(2));
+            }
+            else if (opt.startsWith("-b"))
+            {
+                val = opt.substring(2);
+            }
+            if (val != null)
+            {
+                sizeStr = val;
+            }
+        }
+        return sizeStr == null ? null : parseZfsSize(sizeStr);
+    }
+
+    private static @Nullable String getVolBlockSizeFromProp(String propRef)
+    {
+        return propRef.startsWith(VOLBLOCKSIZE_PROP_PREFIX) ?
+            propRef.substring(VOLBLOCKSIZE_PROP_PREFIX.length()) :
+            null;
+    }
+
+    private static @Nullable Long parseZfsSize(String sizeStrRef)
+    {
+        @Nullable Long ret = null;
+        Matcher matcher = ZFS_SIZE_PATTERN.matcher(sizeStrRef.trim());
+        if (matcher.matches())
+        {
+            long value = Long.parseLong(matcher.group(1));
+            @Nullable String unit = matcher.group(2);
+            int shift = 0;
+            if (unit != null)
+            {
+                shift = switch (Character.toUpperCase(unit.charAt(0)))
+                {
+                    case 'K' -> SHIFT_KIB;
+                    case 'M' -> SHIFT_MIB;
+                    case 'G' -> SHIFT_GIB;
+                    default -> 0;
+                };
+            }
+            ret = value << shift;
+        }
+        return ret;
     }
 
     /**

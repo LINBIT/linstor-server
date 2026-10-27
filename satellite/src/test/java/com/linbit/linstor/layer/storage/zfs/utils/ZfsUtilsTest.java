@@ -52,4 +52,27 @@ public class ZfsUtilsTest
         assertThat(ZfsVolumeType.SNAPSHOT.getDescr()).isEqualTo("snapshot");
         assertThat(ZfsVolumeType.FILESYSTEM.getDescr()).isEqualTo("filesystem");
     }
+
+    @Test
+    public void requestedVolBlockSize()
+    {
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[] {"-b", "16K"})).isEqualTo(16_384L);
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[] {"-b16k"})).isEqualTo(16_384L);
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[] {"-o", "volblocksize=8K"})).isEqualTo(8_192L);
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[] {"-ovolblocksize=1M"})).isEqualTo(1_048_576L);
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[] {"-b", "4096"})).isEqualTo(4_096L);
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[] {"-b", "16KiB"})).isEqualTo(16_384L);
+        assertThat(
+            ZfsUtils.getRequestedVolBlockSize(new String[] {"-o", "compression=lz4", "-s", "-b", "64K"})
+        ).isEqualTo(65_536L);
+    }
+
+    @Test
+    public void noRequestedVolBlockSize()
+    {
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[0])).isNull();
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[] {"-o", "compression=lz4"})).isNull();
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[] {"-b"})).isNull();
+        assertThat(ZfsUtils.getRequestedVolBlockSize(new String[] {"-b", "big"})).isNull();
+    }
 }

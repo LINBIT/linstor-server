@@ -853,6 +853,8 @@ public class ZfsProvider
          */
         for (ZfsData<Resource> vlmData : vlmDataList)
         {
+            // only recorded here; an adopted zvol is checked against it before DRBD creates its metadata
+            vlmData.setRequestedVolBlockSize(ZfsUtils.getRequestedVolBlockSize(getZfscreateOptions(vlmData)));
             updateState(vlmData, ZfsVolumeType.VOLUME);
         }
         for (ZfsData<Snapshot> snapVlmData : snapVlms)

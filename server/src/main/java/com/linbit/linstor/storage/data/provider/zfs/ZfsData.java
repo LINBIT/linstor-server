@@ -37,6 +37,8 @@ public class ZfsData<RSC extends AbsResource<RSC>>
 
     // not persisted, not serialized, stlt only
     private transient @Nullable String zpool = null;
+    // volblocksize in bytes explicitly requested by StorDriver/ZfscreateOptions, null if none
+    private transient @Nullable Long requestedVolBlockSize = null;
     private boolean markedForDeletion = false;
 
     public ZfsData(
@@ -113,6 +115,16 @@ public class ZfsData<RSC extends AbsResource<RSC>>
     public @Nullable Long getExtentSize()
     {
         return extentSize;
+    }
+
+    public void setRequestedVolBlockSize(@Nullable Long requestedVolBlockSizeRef)
+    {
+        requestedVolBlockSize = requestedVolBlockSizeRef;
+    }
+
+    public @Nullable Long getRequestedVolBlockSize()
+    {
+        return requestedVolBlockSize;
     }
 
     public void setMarkedForDeletion(boolean markedForDeletionRef)

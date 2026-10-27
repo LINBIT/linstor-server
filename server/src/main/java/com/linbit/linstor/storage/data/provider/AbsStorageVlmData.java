@@ -45,6 +45,18 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     protected transient boolean active;
     protected transient @Nullable Long snapshotAllocatedSize = null;
     protected transient @Nullable Long snapshotUsableSize = null;
+    /*
+     * true once this satellite created (or restored / cloned) the backing device. A device that already existed
+     * under this name (e.g. a leftover of a failed delete) is adopted without being created, so its content is
+     * unknown and DRBD must not skip the initial sync on it.
+     */
+    protected transient boolean createdByStlt = false;
+    /*
+     * true if this satellite refused to adopt the already existing backing device (e.g. a zvol with a different
+     * volblocksize than requested). Such a device was never ours: deleting the volume must forget it, not destroy it.
+     * Not persisted: after a satellite restart the device is treated as adopted again.
+     */
+    protected transient boolean adoptionRefused = false;
 
     public AbsStorageVlmData(
         AbsVolume<RSC> vlmRef,
@@ -194,6 +206,26 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     public boolean isActive()
     {
         return active;
+    }
+
+    public void setCreatedByStlt(boolean createdByStltRef)
+    {
+        createdByStlt = createdByStltRef;
+    }
+
+    public boolean isCreatedByStlt()
+    {
+        return createdByStlt;
+    }
+
+    public void setAdoptionRefused(boolean adoptionRefusedRef)
+    {
+        adoptionRefused = adoptionRefusedRef;
+    }
+
+    public boolean isAdoptionRefused()
+    {
+        return adoptionRefused;
     }
 
 

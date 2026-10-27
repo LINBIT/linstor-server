@@ -2,6 +2,8 @@ package com.linbit.linstor.layer.drbd;
 
 import com.linbit.ImplementationError;
 import com.linbit.Platform;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.drbd.md.GidGenerator;
@@ -27,6 +29,7 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -64,6 +67,8 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
@@ -86,6 +91,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -278,6 +284,16 @@ public class DrbdLayer implements DeviceLayer
 
                 // this should not be executed if deleting the drbd resource fails
                 drbdResFileUtils.deleteBackupResFile(drbdRscData);
+            }
+            else if (isAdoptionStillRefused(drbdRscData))
+            {
+                /*
+                 * The adoption was refused (and reported) in an earlier run. Failing again on every run would also
+                 * fail unrelated operations on this resource definition, e.g. the staged resource-definition delete,
+                 * which updates this satellite before marking this resource for deletion. Leave the DRBD resource
+                 * unconfigured until the dataset or the options are fixed.
+                 */
+                addNotAdjustedMsg(drbdRscData, apiCallRc);
             }
             else
             {
@@ -1490,6 +1506,7 @@ public class DrbdLayer implements DeviceLayer
     private void createMetaData(DrbdVlmData<Resource> drbdVlmData)
         throws StorageException, ImplementationError, VolumeException
     {
+        checkAdoptedZfsDevices(drbdVlmData);
         try
         {
             int bitmapBlockSizeKiB = MetaData.DRBD_DEFAULT_BM_BIT_COVER_kiB;
@@ -1549,9 +1566,21 @@ public class DrbdLayer implements DeviceLayer
             boolean runSetGi = false;
             DrbdGiStringBuilder localNodeIdGiBuilder = new DrbdGiStringBuilder();
             DrbdGiStringBuilder otherNodeIdGiBuilder = new DrbdGiStringBuilder();
+            final boolean backingDeviceCreatedByStlt = isCreatedByStlt(
+                VolumeUtils.getStorageDevices(drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA))
+            );
             if (hasLocalStltWonUpToDateRace(drbdVlmData))
             {
                 // same logic for both, thick and thin winner
+                if (!backingDeviceCreatedByStlt)
+                {
+                    errorReporter.logWarning(
+                        "DRBD volume %s/%d: the backing device already existed and was not created by this " +
+                            "satellite; its current content becomes the initial UpToDate data",
+                        drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                        drbdVlmData.getVlmNr().value
+                    );
+                }
 
                 // random yes, but make sure to use the same random for all peerslots
                 final String randomGid = GidGenerator.generateRandomGid();
@@ -1566,7 +1595,8 @@ public class DrbdLayer implements DeviceLayer
             }
             else
             {
-                if (DrbdLayerUtils.skipInitSync(drbdVlmData))
+                final boolean skipInitSync = DrbdLayerUtils.skipInitSync(drbdVlmData);
+                if (skipInitSync && backingDeviceCreatedByStlt)
                 {
                     final String day0 = getCurrentGiFromVlmDfnProp(drbdVlmData);
                     localNodeIdGiBuilder.withCurrentUUID(day0)
@@ -1577,6 +1607,16 @@ public class DrbdLayer implements DeviceLayer
                 else
                 {
                     // noop. thick loser just leaves metadata in NEW_UUID / just_created state.
+                    // so does a thin loser whose backing device was not created by us (content unknown)
+                    if (skipInitSync)
+                    {
+                        errorReporter.logWarning(
+                            "DRBD volume %s/%d: the backing device already existed and was not created by this " +
+                                "satellite; not skipping the initial sync",
+                            drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                            drbdVlmData.getVlmNr().value
+                        );
+                    }
                     runSetGi = false;
                 }
             }
@@ -1624,6 +1664,162 @@ public class DrbdLayer implements DeviceLayer
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    /**
+     * A zvol that already existed under the expected name (not created by this satellite) keeps its volblocksize.
+     * Refuses it if StorDriver/ZfscreateOptions explicitly requests a different one, and warns on a size mismatch.
+     * Only called for new DRBD metadata, i.e. for a new replica, so existing volumes are never refused.
+     */
+    private void checkAdoptedZfsDevices(DrbdVlmData<Resource> drbdVlmData) throws StorageException
+    {
+        for (VlmProviderObject<?> storageDevice : VolumeUtils.getStorageDevices(
+            drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+        ))
+        {
+            if (storageDevice instanceof ZfsData<?> zfsData && !zfsData.isCreatedByStlt())
+            {
+                final String dataset = zfsData.getFullQualifiedLvIdentifier();
+                final @Nullable Long requestedVolBlockSize = zfsData.getRequestedVolBlockSize();
+                final @Nullable Long actualVolBlockSizeKiB = zfsData.getExtentSize();
+                if (isVolBlockSizeMismatch(requestedVolBlockSize, actualVolBlockSizeKiB))
+                {
+                    zfsData.setAdoptionRefused(true);
+                    throw new StorageException(
+                        "Meta data creation for resource '" +
+                            drbdVlmData.getRscLayerObject().getSuffixedResourceName() + "' volume " +
+                            drbdVlmData.getVlmNr().value + " refused",
+                        getAbortMsg(drbdVlmData),
+                        "The ZFS dataset '" + dataset + "' already existed and was not created by LINSTOR. Its " +
+                            "volblocksize is " + actualVolBlockSizeKiB + " KiB, but StorDriver/ZfscreateOptions " +
+                            "requests " + requestedVolBlockSize + " bytes",
+                        "Remove or rename the existing dataset so that LINSTOR creates a new one, or adjust " +
+                            "StorDriver/ZfscreateOptions",
+                        null,
+                        null
+                    );
+                }
+                if (zfsData.getUsableSize() != zfsData.getExpectedSize())
+                {
+                    errorReporter.logWarning(
+                        "DRBD volume %s/%d: the ZFS dataset '%s' already existed and was not created by LINSTOR; " +
+                            "its size is %d KiB, expected %d KiB",
+                        drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                        drbdVlmData.getVlmNr().value,
+                        dataset,
+                        zfsData.getUsableSize(),
+                        zfsData.getExpectedSize()
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns true if a volume of the resource has a ZFS device whose adoption was refused in an earlier run and
+     * still mismatches. A device that no longer mismatches (dataset or options fixed) gets its marker cleared and is
+     * checked again in {@link #createMetaData}.
+     */
+    private boolean isAdoptionStillRefused(DrbdRscData<Resource> drbdRscDataRef)
+    {
+        // while the resource definition is being deleted, the controller updates this satellite before it marks this
+        // resource for deletion. A never configured resource must not fail that update (e.g. after a restart lost the
+        // marker), and DRBD metadata must not be written onto the foreign device either.
+        Resource rsc = drbdRscDataRef.getAbsResource();
+        final boolean refuseNewWhileDeleting =
+            rsc.getResourceDefinition().getFlags().isSet(ResourceDefinition.Flags.DELETE) &&
+                !isDrbdRscUp(drbdRscDataRef);
+        boolean stillRefused = false;
+        for (DrbdVlmData<Resource> drbdVlmData : drbdRscDataRef.getVlmLayerObjects().values())
+        {
+            for (ZfsData<?> zfsData : refreshAdoptionRefusals(
+                VolumeUtils.getStorageDevices(drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)),
+                refuseNewWhileDeleting
+            ))
+            {
+                errorReporter.logWarning(
+                    "DRBD volume %s/%d: still refusing to adopt the ZFS dataset '%s' (volblocksize %d KiB, " +
+                        "requested %d bytes); the DRBD resource stays unconfigured",
+                    drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                    drbdVlmData.getVlmNr().value,
+                    zfsData.getFullQualifiedLvIdentifier(),
+                    zfsData.getExtentSize(),
+                    zfsData.getRequestedVolBlockSize()
+                );
+                stillRefused = true;
+            }
+        }
+        return stillRefused;
+    }
+
+    /**
+     * Returns the ZFS devices whose adoption was refused and that still mismatch. Clears the marker of refused
+     * devices that no longer mismatch. If {@code refuseNewRef} is set, an adopted (not created by this satellite)
+     * mismatching device is refused here as well, without an error.
+     */
+    static List<ZfsData<?>> refreshAdoptionRefusals(
+        Collection<VlmProviderObject<?>> storageDevicesRef,
+        boolean refuseNewRef
+    )
+    {
+        List<ZfsData<?>> stillRefused = new ArrayList<>();
+        for (VlmProviderObject<?> storageDevice : storageDevicesRef)
+        {
+            if (storageDevice instanceof ZfsData<?> zfsData)
+            {
+                boolean mismatch = isVolBlockSizeMismatch(
+                    zfsData.getRequestedVolBlockSize(),
+                    zfsData.getExtentSize()
+                );
+                if (zfsData.isAdoptionRefused())
+                {
+                    if (mismatch)
+                    {
+                        stillRefused.add(zfsData);
+                    }
+                    else
+                    {
+                        zfsData.setAdoptionRefused(false);
+                    }
+                }
+                else if (refuseNewRef && mismatch && !zfsData.isCreatedByStlt())
+                {
+                    zfsData.setAdoptionRefused(true);
+                    stillRefused.add(zfsData);
+                }
+            }
+        }
+        return stillRefused;
+    }
+
+    /**
+     * Returns true if a volblocksize is explicitly requested (in bytes) and the dataset's actual one (in KiB, as
+     * reported by "zfs list") is known and differs.
+     */
+    static boolean isVolBlockSizeMismatch(@Nullable Long requestedBytesRef, @Nullable Long actualKiBRef)
+    {
+        return requestedBytesRef != null && actualKiBRef != null &&
+            SizeConv.convert(actualKiBRef, SizeUnit.UNIT_KiB, SizeUnit.UNIT_B) != requestedBytesRef;
+    }
+
+    /**
+     * Returns true if every given storage device was created (or restored / cloned) by this satellite. A device
+     * that already existed under the expected name was adopted and has unknown content.
+     * Devices of other providers are not tracked and count as created.
+     */
+    static boolean isCreatedByStlt(Collection<VlmProviderObject<?>> storageDevicesRef)
+    {
+        boolean ret = true;
+        for (VlmProviderObject<?> storageDevice : storageDevicesRef)
+        {
+            if (storageDevice instanceof AbsStorageVlmData &&
+                !((AbsStorageVlmData<?>) storageDevice).isCreatedByStlt())
+            {
+                ret = false;
+                break;
+            }
+        }
+        return ret;
     }
 
     private boolean hasLocalStltWonUpToDateRace(DrbdVlmData<Resource> drbdVlmDataRef)

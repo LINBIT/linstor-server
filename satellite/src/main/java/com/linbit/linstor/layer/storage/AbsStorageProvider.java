@@ -360,6 +360,16 @@ public abstract class AbsStorageProvider<
                             // we still mark ourselves as "successfully deleted".
                             vlmData.setExists(false);
                         }
+                        else if (vlmData.isAdoptionRefused())
+                        {
+                            // the device already existed and we refused to adopt it, so it was never ours
+                            errorReporter.logInfo(
+                                "Lv %s will not be deleted as it was not created by LINSTOR and its adoption was " +
+                                    "refused; only forgetting it",
+                                lvId
+                            );
+                            vlmData.setExists(false);
+                        }
                         else
                         {
                             errorReporter.logTrace("Lv %s will be deleted", lvId);
@@ -432,7 +442,20 @@ public abstract class AbsStorageProvider<
             }
             else
             {
-                if (vlmShouldExist)
+                @Nullable String deletingParentType = vlmShouldExist && vlmData.isAdoptionRefused() ?
+                    getParentTypeNameInDeletingState(vlmData) :
+                    null;
+                if (deletingParentType != null)
+                {
+                    // e.g. the refused device was removed while the resource definition is being deleted:
+                    // creating a new device only to delete it again is pointless
+                    errorReporter.logInfo(
+                        "Lv %s will not be created: its adoption was refused and its %s is being deleted",
+                        lvId,
+                        deletingParentType
+                    );
+                }
+                else if (vlmShouldExist)
                 {
                     if (!cloneService.isRunning(
                             vlmData.getRscLayerObject().getResourceName(),
@@ -760,6 +783,8 @@ public abstract class AbsStorageProvider<
                 }
             }
             vlmData.setExists(true);
+            vlmData.setCreatedByStlt(true);
+            vlmData.setAdoptionRefused(false);
 
             String storageName = getStorageName(vlmData);
             String lvId = asLvIdentifier(vlmData);
