@@ -72,7 +72,7 @@ for d in /var/lib/linstor /var/log/linstor-controller; do install -d -m750 %{bui
 ### common
 %package common
 Summary: Common files shared between controller and satellite
-Requires: java-21-openjdk-headless
+Requires: jre-21-headless
 ## This should really be included in the jre-headless dependencies, but it isn't.
 Requires: tzdata-java
 
@@ -93,7 +93,7 @@ Linstor shared components between linstor-controller and linstor-satellite
 Summary: Linstor controller specific files
 Requires: linstor-common = %{version}
 Requires: tar
-Requires(post): java-21-openjdk-headless
+Requires(post): jre-21-headless
 
 %description controller
 Linstor controller manages linstor satellites and persistant data storage.
