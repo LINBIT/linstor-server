@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
-import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.dbcp.migration.Migration_2026_02_16_RenameExtCmdWaitTo;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
@@ -16,17 +15,11 @@ import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.StatusDetails;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,17 +34,17 @@ public class Migration_36_v1_34_0_RemoveStaleSpaceTrackingEntriesTest
     private static final String NEW_KEY = Migration_2026_02_16_RenameExtCmdWaitTo.PROP_KEY_NEW_EXT_CMD_WAIT_TIMEOUT;
     private static final long HOUR_MS = 60 * 60 * 1000L;
 
-    private FakeClient<SpaceHistory> spaceHistoryClient;
-    private FakeClient<TrackingDate> trackingDateClient;
-    private FakeClient<PropsContainers> propsClient;
+    private FakeK8sResourceClient<SpaceHistory> spaceHistoryClient;
+    private FakeK8sResourceClient<TrackingDate> trackingDateClient;
+    private FakeK8sResourceClient<PropsContainers> propsClient;
     private K8sCrdTransaction tx;
 
     @Before
     public void setUp()
     {
-        spaceHistoryClient = new FakeClient<>();
-        trackingDateClient = new FakeClient<>();
-        propsClient = new FakeClient<>();
+        spaceHistoryClient = new FakeK8sResourceClient<>();
+        trackingDateClient = new FakeK8sResourceClient<>();
+        propsClient = new FakeK8sResourceClient<>();
         Map<DatabaseTable, Supplier<K8sResourceClient<?>>> clients = new HashMap<>();
         clients.put(SPACE_HISTORY, () -> spaceHistoryClient);
         clients.put(TRACKING_DATE, () -> trackingDateClient);
@@ -231,69 +224,5 @@ public class Migration_36_v1_34_0_RemoveStaleSpaceTrackingEntriesTest
     {
         crd.setMetadata(new ObjectMetaBuilder().withName(name).build());
         return crd;
-    }
-
-    /**
-     * In-memory replacement for the K8s API, keyed by the resource name like the real caching client.
-     */
-    private static class FakeClient<T extends HasMetadata> implements K8sResourceClient<T>
-    {
-        private final LinkedHashMap<String, T> items = new LinkedHashMap<>();
-
-        void add(T item)
-        {
-            items.put(item.getMetadata().getName(), item);
-        }
-
-        @Override
-        public List<T> list()
-        {
-            return new ArrayList<>(items.values());
-        }
-
-        @Override
-        public T create(T item)
-        {
-            items.put(item.getMetadata().getName(), item);
-            return item;
-        }
-
-        @Override
-        public T replace(T item)
-        {
-            return create(item);
-        }
-
-        @Override
-        public List<StatusDetails> delete()
-        {
-            items.clear();
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<StatusDetails> delete(T item)
-        {
-            return delete(item.getMetadata().getName());
-        }
-
-        @Override
-        public List<StatusDetails> delete(String name)
-        {
-            items.remove(name);
-            return Collections.emptyList();
-        }
-
-        @Override
-        public T createOrReplace(T item)
-        {
-            return create(item);
-        }
-
-        @Override
-        public @Nullable T get(String name)
-        {
-            return items.get(name);
-        }
     }
 }

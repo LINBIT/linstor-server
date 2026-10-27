@@ -177,8 +177,27 @@ public class CtrlSnapshotCrtApiCallHandler
         Map<String, String> props
     )
     {
+        return singleSnapReq(
+            nodeNameStrsRef,
+            rscNameStrRef,
+            snapshotNameStrRef,
+            props,
+            new SnapshotDefinition.Flags[0]
+        );
+    }
+
+    private CreateMultiSnapRequest singleSnapReq(
+        List<String> nodeNameStrsRef,
+        String rscNameStrRef,
+        String snapshotNameStrRef,
+        Map<String, String> props,
+        SnapshotDefinition.Flags[] snapDfnFlagsRef
+    )
+    {
         return new CreateMultiSnapRequest(
-            Collections.singleton(new SnapReq(nodeNameStrsRef, rscNameStrRef, snapshotNameStrRef, props))
+            Collections.singleton(
+                new SnapReq(nodeNameStrsRef, rscNameStrRef, snapshotNameStrRef, props, snapDfnFlagsRef)
+            )
         );
     }
 
@@ -187,6 +206,43 @@ public class CtrlSnapshotCrtApiCallHandler
     }
 
     public Flux<ApiCallRc> createSnapshot(CreateMultiSnapRequest req, boolean handleErrors)
+    {
+        return createSnapshot(req, handleErrors, false, false);
+    }
+
+    /**
+     * Creates a snapshot from within a flux that already runs synchronized with the {@link BackgroundRunner} on the
+     * nodes of the snapshot (e.g. a clone, which takes its source snapshot this way). Synchronizing again would wait
+     * for the calling flux and never finish.
+     * Unlike {@link #createSnapshot(CreateMultiSnapRequest, boolean)}, a failed (and aborted) snapshot ends the
+     * returned flux with an error (also with a {@link CtrlResponseUtils.DelayedApiRcException}), so that the caller
+     * does not continue as if the snapshot had been taken.
+     *
+     * @param snapDfnFlags additional flags of the created snapshot definition, e.g.
+     *     {@link SnapshotDefinition.Flags#FOR_CLONE}
+     */
+    public Flux<ApiCallRc> createSnapshotInBackground(
+        List<String> nodeNameStrs,
+        String rscNameStr,
+        String snapshotNameStr,
+        Map<String, String> props,
+        SnapshotDefinition.Flags... snapDfnFlags
+    )
+    {
+        return createSnapshot(
+            singleSnapReq(nodeNameStrs, rscNameStr, snapshotNameStr, props, snapDfnFlags),
+            false,
+            true,
+            true
+        );
+    }
+
+    private Flux<ApiCallRc> createSnapshot(
+        CreateMultiSnapRequest req,
+        boolean handleErrors,
+        boolean alreadyInBackgroundRef,
+        boolean propagateFailuresRef
+    )
     {
         Flux<ApiCallRc> fluxInTransactionalScope = scopeRunner
             .fluxInTransactionalScope(
@@ -203,7 +259,7 @@ public class CtrlSnapshotCrtApiCallHandler
                         .read(LockObj.NODES_MAP)
                         .write(LockObj.RSC_DFN_MAP)
                         .buildDeferred(),
-                    () -> createSnapshotInTransaction(req)
+                    () -> createSnapshotInTransaction(req, alreadyInBackgroundRef, propagateFailuresRef)
                 )
             );
         if (handleErrors)
@@ -265,7 +321,12 @@ public class CtrlSnapshotCrtApiCallHandler
         return flux;
     }
 
-    private Flux<ApiCallRc> createSnapshotInTransaction(CreateMultiSnapRequest req)
+    @SuppressWarnings("unchecked")
+    private Flux<ApiCallRc> createSnapshotInTransaction(
+        CreateMultiSnapRequest req,
+        boolean alreadyInBackgroundRef,
+        boolean propagateFailuresRef
+    )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
@@ -282,6 +343,10 @@ public class CtrlSnapshotCrtApiCallHandler
                 snapReq.getProps(),
                 responses
             );
+            for (SnapshotDefinition.Flags flag : snapReq.getSnapDfnFlags())
+            {
+                enableFlagPrivileged(snapDfn, flag);
+            }
             snapDfnList.add(snapDfn);
             responses.addEntry(
                 ApiSuccessUtils.defaultRegisteredEntry(
@@ -299,7 +364,11 @@ public class CtrlSnapshotCrtApiCallHandler
         ctrlTransactionHelper.commit();
 
         return Flux.<ApiCallRc>just(responses)
-            .concatWith(postCreateSnapshot(req, false));
+            .concatWith(
+                propagateFailuresRef ?
+                    postCreateSnapshotSuppressingErrorClasses(req, alreadyInBackgroundRef) :
+                    postCreateSnapshot(req, alreadyInBackgroundRef)
+            );
     }
 
     /**

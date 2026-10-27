@@ -80,7 +80,7 @@ public interface DeviceHandler
 
         /**
          * Whether the clone source and target have to be opened before the clone ({@link #openSnapshotReadOnly} with
-         * a {@link ReadOnlyOpener.ForClone} and {@link #openCloneTarget}), unlike for the strategies that clone
+         * a {@link ReadOnlyOpener.ForSnapshot} and {@link #openCloneTarget}), unlike for the strategies that clone
          * within the storage pool.
          */
         public boolean needsOpenDevices()
@@ -102,8 +102,7 @@ public interface DeviceHandler
     /**
      * Creates (if needed) and opens the target volume of a clone for writing, including all layers below the given
      * volume data, and sets the writable device as {@link VlmProviderObject#getCloneDevicePath()} of the given volume
-     * data. The source of a clone is opened with {@link #openSnapshotReadOnly} and a
-     * {@link ReadOnlyOpener.ForClone}.
+     * data. The source of a clone is a LINSTOR snapshot, opened with {@link #openSnapshotReadOnly}.
      */
     void openCloneTarget(VlmProviderObject<Resource> tgtVlmData) throws StorageException, DatabaseException;
 
@@ -114,12 +113,7 @@ public interface DeviceHandler
 
     /**
      * Opens a snapshot read-only, including all layers below the opener's volume data, and sets the readable device as
-     * {@link VlmProviderObject#getCloneDevicePath()} of that volume data. What gets opened depends on the opener:
-     * <ul>
-     *  <li>{@link ReadOnlyOpener.ForSnapshot}: the LINSTOR snapshot itself.</li>
-     *  <li>{@link ReadOnlyOpener.ForClone}: the clone snapshot that was taken of the clone source for
-     *      {@link ReadOnlyOpener.ForClone#cloneTargetName()}.</li>
-     * </ul>
+     * {@link VlmProviderObject#getCloneDevicePath()} of that volume data.
      * Not every layer supports this (e.g. DRBD does not): callers start below such layers.
      * <p>
      * Several openers can have the same snapshot (or snapshots sharing device state, like ZFS snapshots of the same
@@ -139,6 +133,10 @@ public interface DeviceHandler
     /**
      * Recursively calls all child layers processAfterClone method that should make any post clone processing needed.
      */
-    void processAfterClone(VlmProviderObject<?> vlmSrcDataRef, VlmProviderObject<?> vlmTgtDataRef, String clonedPath)
+    void processAfterClone(
+        VlmProviderObject<Snapshot> vlmSrcDataRef,
+        VlmProviderObject<Resource> vlmTgtDataRef,
+        String clonedPath
+    )
         throws StorageException;
 }

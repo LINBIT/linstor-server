@@ -21,6 +21,9 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -683,14 +686,14 @@ public class LuksLayer implements DeviceLayer
     }
 
     /**
-     * A resource volume uses its decrypted key. The key of snapshot volume data is not decrypted when the master key
-     * arrives (only resources are), and it can differ from the current key of the resource: it is decrypted here.
+     * The key of snapshot volume data is not decrypted when the master key arrives (only resources are), and it can
+     * differ from the current key of the resource: it is decrypted here.
      */
     private byte[] getKeyForReadOnlyOpen(LuksVlmData<?> luksVlmData, ReadOnlyOpener<?> opener)
         throws StorageException
     {
         @Nullable byte[] key = luksVlmData.getDecryptedPassword();
-        if (key == null && opener instanceof ReadOnlyOpener.ForSnapshot)
+        if (key == null)
         {
             @Nullable byte[] masterKey = secObjs.getCryptKey();
             if (masterKey == null)
@@ -718,16 +721,12 @@ public class LuksLayer implements DeviceLayer
         return key;
     }
 
-    /**
-     * The open options of a resource volume apply to the clone source as well. A snapshot has no volume properties of
-     * its own: it is opened with cryptsetup's defaults (discards do not matter for a read-only mapping).
-     */
     private List<String> getOpenOptionsForReadOnlyOpen(ReadOnlyOpener<?> opener)
     {
         return switch (opener)
         {
-            case ReadOnlyOpener.ForClone forClone -> getOpenOptions((LuksVlmData<Resource>) forClone.vlmData());
-            case ReadOnlyOpener.ForSnapshot forSnapshot -> new ArrayList<>();
+            case ReadOnlyOpener.ForSnapshot forSnapshot ->
+                getSnapshotOpenOptions((LuksVlmData<Snapshot>) forSnapshot.vlmData());
         };
     }
 
@@ -743,8 +742,22 @@ public class LuksLayer implements DeviceLayer
 
     public List<String> getOpenOptions(final LuksVlmData<Resource> vlmData)
     {
-        List<String> opts = getOptions(vlmData, ApiConsts.KEY_STOR_DRIVER_LUKS_OPEN_OPTIONS);
-        if (isAllowDiscardsEnabled(vlmData) && !opts.contains("--allow-discards"))
+        return getOpenOptions(buildPriorityProps(vlmData));
+    }
+
+    /**
+     * The open options of snapshot volume data: those of the resource the snapshot was taken of, from the copies of its
+     * properties the snapshot keeps.
+     */
+    public List<String> getSnapshotOpenOptions(final LuksVlmData<Snapshot> vlmData)
+    {
+        return getOpenOptions(buildPriorityPropsSnap(vlmData));
+    }
+
+    private List<String> getOpenOptions(final PriorityProps prioProps)
+    {
+        List<String> opts = getOptions(prioProps, ApiConsts.KEY_STOR_DRIVER_LUKS_OPEN_OPTIONS);
+        if (isAllowDiscardsEnabled(prioProps) && !opts.contains("--allow-discards"))
         {
             opts.add("--allow-discards");
         }
@@ -753,9 +766,13 @@ public class LuksLayer implements DeviceLayer
 
     public List<String> getOptions(final LuksVlmData<Resource> vlmData, final String optionsKey)
     {
+        return getOptions(buildPriorityProps(vlmData), optionsKey);
+    }
+
+    private List<String> getOptions(final PriorityProps prioProps, final String optionsKey)
+    {
         try
         {
-            PriorityProps prioProps = buildPriorityProps(vlmData);
             final @Nullable String userOptProp = prioProps.getProp(optionsKey, STOR_DRIVER_NAMESPACE);
             return userOptProp != null ? ShellUtils.shellSplit(userOptProp) : new ArrayList<>();
         }
@@ -767,9 +784,13 @@ public class LuksLayer implements DeviceLayer
 
     public boolean isAllowDiscardsEnabled(final LuksVlmData<Resource> vlmData)
     {
+        return isAllowDiscardsEnabled(buildPriorityProps(vlmData));
+    }
+
+    private boolean isAllowDiscardsEnabled(final PriorityProps prioProps)
+    {
         try
         {
-            PriorityProps prioProps = buildPriorityProps(vlmData);
             final @Nullable String val = prioProps.getProp(
                 ApiConsts.KEY_LUKS_ALLOW_DISCARDS,
                 ApiConsts.NAMESPC_LUKS
@@ -803,6 +824,45 @@ public class LuksLayer implements DeviceLayer
             vlmDfn.getProps(),
             rscDfn.getProps(),
             rscGrp.getVolumeGroupProps(vlmDfn.getVolumeNumber()),
+            rscGrp.getProps(),
+            stltConfigAccessor.getReadonlyProps()
+        );
+        return prioProps;
+    }
+
+    /**
+     * As {@link #buildPriorityProps}, with the snapshot's own properties and the copies of the volume and resource
+     * (definition) properties taken with the snapshot (as in LvmProvider#getPrioPropsSnap).
+     */
+    private PriorityProps buildPriorityPropsSnap(final LuksVlmData<Snapshot> vlmData)
+    {
+        SnapshotVolume snapVlm = (SnapshotVolume) vlmData.getVolume();
+        Snapshot snap = snapVlm.getAbsResource();
+        ResourceDefinition rscDfn = snapVlm.getResourceDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+        SnapshotVolumeDefinition snapVlmDfn = snapVlm.getSnapshotVolumeDefinition();
+        SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
+
+        PriorityProps prioProps = new PriorityProps(
+            snapVlm.getSnapVlmProps(),
+            snapVlm.getVlmProps(),
+            snap.getSnapProps(),
+            snap.getRscProps()
+        );
+        for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlmData))
+        {
+            prioProps.addProps(storPool.getProps());
+        }
+        prioProps.addProps(
+            snap.getNode().getProps(),
+            snapVlmDfn.getSnapVlmDfnProps(),
+            snapVlmDfn.getVlmDfnProps(),
+            snapDfn.getSnapDfnProps(),
+            snapDfn.getRscDfnProps(),
+            // not the volume definition, which might have been deleted since. The resource definition cannot be deleted
+            // while it has snapshots
+            rscDfn.getProps(),
+            rscGrp.getVolumeGroupProps(snapVlmDfn.getVolumeNumber()),
             rscGrp.getProps(),
             stltConfigAccessor.getReadonlyProps()
         );

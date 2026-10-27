@@ -23,7 +23,6 @@ import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.ReadOnlyOpener;
 import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.layer.drbd.DrbdInvalidateUtils;
-import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.AbsStorageProvider.AbsStorageProviderInit;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.utils.DeviceUtils;
@@ -33,7 +32,6 @@ import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -52,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests {@link ZfsProvider#openSnapshotReadOnly}: the snapshot becomes a block device via {@code snapdev=visible} on its
- * zvol, for LINSTOR snapshots (including snapshots of renamed zvols of deleted resources) and clone snapshots.
+ * zvol, also for snapshots of renamed zvols of deleted resources.
  */
 public class ZfsProviderOpenSnapshotTest extends GenericDbBase
 {
@@ -68,8 +66,9 @@ public class ZfsProviderOpenSnapshotTest extends GenericDbBase
     private ZfsProvider zfsProvider;
     private MockedStatic<DeviceUtils> deviceUtils;
 
+    private Resource rsc;
+    private Volume vlm;
     private Snapshot snap;
-    private VlmProviderObject<Resource> rscVlmData;
     private VlmProviderObject<Snapshot> snapVlmData;
 
     @Before
@@ -118,7 +117,7 @@ public class ZfsProviderOpenSnapshotTest extends GenericDbBase
 
     private void createScenario() throws Exception
     {
-        Resource rsc = resourceTestFactory.builder(NODE_NAME_STR, RSC_NAME_STR)
+        rsc = resourceTestFactory.builder(NODE_NAME_STR, RSC_NAME_STR)
             .setLayerStack(Collections.singletonList(DeviceLayerKind.STORAGE))
             .build();
         StorPool storPool = storPoolTestFactory
@@ -130,17 +129,20 @@ public class ZfsProviderOpenSnapshotTest extends GenericDbBase
             ZPOOL,
             ApiConsts.NAMESPC_STORAGE_DRIVER
         );
-        Volume vlm = volumeTestFactory.builder(NODE_NAME_STR, RSC_NAME_STR, 0)
+        vlm = volumeTestFactory.builder(NODE_NAME_STR, RSC_NAME_STR, 0)
             .setSize(VLM_SIZE_IN_KIB)
             .setStorPoolData(storPool)
             .build();
-        rscVlmData = rsc.getLayerData().getVlmProviderObject(new VolumeNumber(0));
-        // set by prepare() on a real satellite
-        ((ZfsData<Resource>) rscVlmData).setIdentifier(RSC_ZVOL_ID);
 
+        snap = createSnapshot(SNAP_NAME_STR);
+        snapVlmData = snap.getLayerData().getVlmProviderObject(new VolumeNumber(0));
+    }
+
+    private Snapshot createSnapshot(String snapName) throws Exception
+    {
         SnapshotDefinition snapDfn = snapshotDefinitionFactory.create(
             rsc.getResourceDefinition(),
-            new SnapshotName(SNAP_NAME_STR),
+            new SnapshotName(snapName),
             new SnapshotDefinition.Flags[0]
         );
         SnapshotVolumeDefinition snapVlmDfn = snapshotVolumeDefinitionFactory.create(
@@ -149,10 +151,9 @@ public class ZfsProviderOpenSnapshotTest extends GenericDbBase
             VLM_SIZE_IN_KIB,
             new SnapshotVolumeDefinition.Flags[0]
         );
-        snap = snapshotFactory.create(rsc, snapDfn, new Snapshot.Flags[0]);
-        snapshotVolumeFactory.create(rsc, snap, snapVlmDfn);
-
-        snapVlmData = snap.getLayerData().getVlmProviderObject(new VolumeNumber(0));
+        Snapshot ret = snapshotFactory.create(rsc, snapDfn, new Snapshot.Flags[0]);
+        snapshotVolumeFactory.create(rsc, ret, snapVlmDfn);
+        return ret;
     }
 
     @Test
@@ -194,22 +195,27 @@ public class ZfsProviderOpenSnapshotTest extends GenericDbBase
     @Test
     public void snapshotsOfSameZvolAreHiddenOnlyByLastClose() throws Exception
     {
-        // snapdev is a property of the zvol: the LINSTOR snapshot and the clone snapshot share it
+        // snapdev is a property of the zvol: all snapshots of the zvol share it
+        VlmProviderObject<Snapshot> otherSnapVlmData = createSnapshot("other").getLayerData()
+            .getVlmProviderObject(new VolumeNumber(0));
         expect(snapdevCommand(RSC_ZVOL_ID, "visible"));
         ReadOnlySnapshotHandle snapHandle = zfsProvider.openSnapshotReadOnly(
             ReadOnlyOpener.forSnapshot(snapVlmData, "_test")
         );
-        ReadOnlySnapshotHandle cloneHandle = zfsProvider.openSnapshotReadOnly(
-            ReadOnlyOpener.forClone(rscVlmData, "target")
+        ReadOnlySnapshotHandle otherHandle = zfsProvider.openSnapshotReadOnly(
+            ReadOnlyOpener.forSnapshot(otherSnapVlmData, "_test")
         );
         assertThat(extCmd.getUncalledCommands()).isEmpty();
+        assertThat(otherSnapVlmData.getCloneDevicePath()).isEqualTo(
+            "/dev/zvol/" + ZPOOL + "/" + RSC_ZVOL_ID + "@other"
+        );
 
         // TestExtCmd fails on any unexpected command, i.e. also on a premature "snapdev=hidden"
         snapHandle.close();
-        assertThat(rscVlmData.getCloneDevicePath()).isNotNull();
+        assertThat(otherSnapVlmData.getCloneDevicePath()).isNotNull();
 
         expect(snapdevCommand(RSC_ZVOL_ID, "hidden"));
-        cloneHandle.close();
+        otherHandle.close();
         assertThat(extCmd.getUncalledCommands()).isEmpty();
     }
 
@@ -247,19 +253,6 @@ public class ZfsProviderOpenSnapshotTest extends GenericDbBase
         assertThat(extCmd.getUncalledCommands()).isEmpty();
         assertThat(snapVlmData.getCloneDevicePath()).isEqualTo(
             "/dev/zvol/" + ZPOOL + "/" + renamedZvol + "@" + SNAP_NAME_STR
-        );
-    }
-
-    @Test
-    public void openCloneSnapshot() throws Exception
-    {
-        expect(snapdevCommand(RSC_ZVOL_ID, "visible"));
-
-        zfsProvider.openSnapshotReadOnly(ReadOnlyOpener.forClone(rscVlmData, "target"));
-
-        assertThat(extCmd.getUncalledCommands()).isEmpty();
-        assertThat(rscVlmData.getCloneDevicePath()).isEqualTo(
-            "/dev/zvol/" + ZPOOL + "/" + RSC_ZVOL_ID + "@" + AbsStorageProvider.getCloneSnapshotName("target", 0)
         );
     }
 

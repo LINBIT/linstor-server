@@ -285,16 +285,6 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     }
 
     @Override
-    public void cleanupAfterCloneFinished()
-    {
-        clonePassthroughModeMap.clear();
-        for (VLM_TYPE vlmData : vlmMap.values())
-        {
-            vlmData.setCloneDevicePath(null);
-        }
-    }
-
-    @Override
     public int hashCode()
     {
         final int prime = 31;

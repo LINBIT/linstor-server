@@ -23,7 +23,6 @@ import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.ReadOnlyOpener;
 import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.layer.drbd.DrbdInvalidateUtils;
-import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.AbsStorageProvider.AbsStorageProviderInit;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
@@ -32,7 +31,6 @@ import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -51,10 +49,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Tests {@link LvmProvider#openSnapshotReadOnly} for LINSTOR snapshots (opened by their snapshot volume data) and
- * for clone snapshots (opened by the resource volume data plus the clone target), including restoring the activation
- * state of a LINSTOR snapshot when its last opener closes, and refusing to activate a LINSTOR snapshot that must not
- * be activated.
+ * Tests {@link LvmProvider#openSnapshotReadOnly} for LINSTOR snapshots (opened by their snapshot volume data),
+ * including restoring the activation state of a LINSTOR snapshot when its last opener closes, and refusing to activate
+ * a LINSTOR snapshot that must not be activated.
  */
 public class LvmProviderOpenSnapshotTest extends GenericDbBase
 {
@@ -81,7 +78,6 @@ public class LvmProviderOpenSnapshotTest extends GenericDbBase
 
     private Resource rsc;
     private Snapshot snap;
-    private VlmProviderObject<Resource> rscVlmData;
     private VlmProviderObject<Snapshot> snapVlmData;
     /** Unique per test method since LvmUtils caches the lvm filter config statically per volume group set */
     private String vg;
@@ -158,9 +154,6 @@ public class LvmProviderOpenSnapshotTest extends GenericDbBase
             .setSize(VLM_SIZE_IN_KIB)
             .setStorPoolData(storPool)
             .build();
-        rscVlmData = rsc.getLayerData().getVlmProviderObject(new VolumeNumber(0));
-        // set by prepare() on a real satellite
-        ((LvmData<Resource>) rscVlmData).setVolumeGroup(vg);
 
         SnapshotDefinition snapDfn = snapshotDefinitionFactory.create(
             rsc.getResourceDefinition(),
@@ -244,18 +237,6 @@ public class LvmProviderOpenSnapshotTest extends GenericDbBase
         expect(lvchangeDeactivateCommand(lvmConfig, SNAP_LV_ID), "");
         second.close();
         assertThat(extCmd.getUncalledCommands()).isEmpty();
-    }
-
-    @Test
-    public void openCloneSnapshotUsesCloneSnapshotName() throws Exception
-    {
-        createScenario(false);
-        // the clone snapshot was created active right before, no command is needed
-        lvmProvider.openSnapshotReadOnly(ReadOnlyOpener.forClone(rscVlmData, "target"));
-
-        assertThat(rscVlmData.getCloneDevicePath()).isEqualTo(
-            "/dev/" + vg + "/" + RSC_LV_ID + "_" + AbsStorageProvider.getCloneSnapshotName("target", 0)
-        );
     }
 
     @Test

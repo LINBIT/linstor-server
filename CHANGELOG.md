@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Clone: the source of a clone is now a regular snapshot `CF_<hash>` of the source resource. It cannot be deleted
+  manually while the clone runs and is removed when the clone finished or failed
+- Clone: the upgrade removes LVM snapshots (tag `linstor_clone_snapshot`) left over by interrupted or failed clones
 - Controller: REST stack upgraded to Jersey 4 (Jakarta REST 4.0), HK2 4 and Guice 7; the REST API itself is unchanged
 - Controller: The Kubernetes CRD database backend now uses the JDK HTTP client instead of Vert.x/Netty, removing
   ~6 MB of dependencies (and their CVE exposure) from the distribution

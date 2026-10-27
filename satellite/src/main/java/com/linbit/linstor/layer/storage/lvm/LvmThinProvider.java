@@ -556,61 +556,6 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
         return thinPool;
     }
 
-    /**
-     * Create a thin snapshot instead of supers thick snapshot
-     */
-    @Override
-    protected void createSnapshotForCloneImpl(
-        LvmData<Resource> lvmVlmData,
-        String cloneRscName)
-        throws StorageException
-    {
-        final LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
-
-        final String srcId = asLvIdentifier(vlmData);
-        final String srcFullSnapshotName = getCloneSnapshotNameFull(vlmData, cloneRscName, "_");
-
-        List<String> additionalOptions = ShellUtils.shellSplit(getLvcreateSnapshotOptions(lvmVlmData));
-        String[] additionalOptionsArr = new String[additionalOptions.size()];
-        additionalOptions.toArray(additionalOptionsArr);
-
-        if (!infoListCache.containsKey(vlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
-        {
-            LvmUtils.execWithRetry(
-                extCmdFactory,
-                Collections.singleton(vlmData.getVolumeGroup()),
-                config -> LvmCommands.createSnapshotThin(
-                    extCmdFactory.create(),
-                    true,
-                    vlmData.getVolumeGroup(),
-                    vlmData.getThinPool(),
-                    srcId,
-                    srcFullSnapshotName,
-                    config,
-                    additionalOptionsArr
-                )
-            );
-
-            LvmUtils.execWithRetry(
-                extCmdFactory,
-                Collections.singleton(vlmData.getVolumeGroup()),
-                config -> LvmCommands.addTag(
-                    extCmdFactory.create(),
-                    vlmData.getVolumeGroup(),
-                    srcFullSnapshotName,
-                    LvmCommands.LVM_TAG_CLONE_SNAPSHOT,
-                    config
-                )
-            );
-
-            LvmUtils.recacheNextLvs();
-        }
-        else
-        {
-            errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
-        }
-    }
-
     @Override
     public LocalPropsChangePojo checkConfig(StorPoolInfo storPool) throws StorageException
     {

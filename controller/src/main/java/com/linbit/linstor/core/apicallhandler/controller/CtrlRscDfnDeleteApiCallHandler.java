@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -16,6 +17,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
@@ -24,6 +26,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import java.util.Collection;
@@ -42,6 +45,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscDfnTruncateApiCallHandler ctrlRscDfnTruncateApiCallHandler;
+    private final Provider<CtrlSnapshotDeleteApiCallHandler> ctrlSnapDeleteHandlerProvider;
 
     @Inject
     public CtrlRscDfnDeleteApiCallHandler(
@@ -51,7 +55,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlRscDfnTruncateApiCallHandler ctrlRscDfnTruncateApiCallHandlerRef
+        CtrlRscDfnTruncateApiCallHandler ctrlRscDfnTruncateApiCallHandlerRef,
+        Provider<CtrlSnapshotDeleteApiCallHandler> ctrlSnapDeleteHandlerProviderRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -61,6 +66,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlRscDfnTruncateApiCallHandler = ctrlRscDfnTruncateApiCallHandlerRef;
+        ctrlSnapDeleteHandlerProvider = ctrlSnapDeleteHandlerProviderRef;
     }
 
     @Override
@@ -203,13 +209,36 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         // fail fast
         ensureNoSnapDfns(rscDfn);
         ctrlRscDfnTruncateApiCallHandler.ensureNoRscInUse(rscDfn);
+        /*
+         * a clone target deleted while cloning: its source snapshot is deleted after the target's resources (a
+         * "zfs clone" depends on it). The target keeps referencing the snapshot until it is deleted itself, so that
+         * the snapshot is still deleted if this deletion fails before and is retried.
+         */
+        Flux<ApiCallRc> deleteCloneSrcSnapFlux = deleteCloneSourceSnapshot(rscDfn);
         markDeleted(rscDfn);
 
         ctrlTransactionHelper.commit();
 
         return ctrlRscDfnTruncateApiCallHandler.truncateRscDfnInTransaction(rscDfn.getName(), false)
             .concatWith(deleteData(rscDfn.getName()))
+            .concatWith(deleteCloneSrcSnapFlux)
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
+    }
+
+    private Flux<ApiCallRc> deleteCloneSourceSnapshot(ResourceDefinition rscDfn)
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        Props props = rscDfn.getProps();
+        @Nullable String srcRscName = props.getProp(InternalApiConsts.KEY_CLONED_FROM);
+        @Nullable String snapName = props.getProp(
+            InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+            InternalApiConsts.NAMESPC_INTERNAL_CLONE
+        );
+        if (srcRscName != null && snapName != null)
+        {
+            flux = ctrlSnapDeleteHandlerProvider.get().deleteSourceSnapshotOfDeletedCloneTarget(srcRscName, snapName);
+        }
+        return flux;
     }
 
     private void ensureNoSnapDfns(ResourceDefinition rscDfn)

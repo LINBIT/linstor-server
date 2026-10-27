@@ -9,7 +9,8 @@ import java.util.List;
 
 public enum SatelliteMigrations
 {
-    MIG_MARK_ZFS_CF_SNAPS_FOR_DELETION(1, "2024_11_21_MarkZfsCF_SnapshotsForDeletion");
+    MIG_MARK_ZFS_CF_SNAPS_FOR_DELETION(1, "2024_11_21_MarkZfsCF_SnapshotsForDeletion"),
+    MIG_REMOVE_LVM_CLONE_SNAPS(2, "2026_11_03_RemoveLvmCloneSnapshots");
 
     private static final SatelliteMigrations[] VALUES_BY_LINSTOR_ORDER;
     /**

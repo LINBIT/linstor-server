@@ -17,19 +17,19 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
-import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -46,6 +46,7 @@ import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -175,53 +176,6 @@ public class CloneService implements SystemService
         cleanupActiveClones();
     }
 
-    private void doLVMCloneSourceCleanup(LvmData<Resource> srcData, String cloneName) throws StorageException
-    {
-        final String srcFullSnapshotName = AbsStorageProvider.getLVMCloneSnapshotNameFull(
-            srcData.getIdentifier(), cloneName, srcData.getVlmNr().value
-        );
-
-        final @Nullable String vlmGroup = srcData.getVolumeGroup();
-        if (vlmGroup != null)
-        {
-            LvmUtils.execWithRetry(
-                extCmdFactory,
-                Collections.singleton(vlmGroup),
-                config -> LvmCommands.delete(
-                    extCmdFactory.create(),
-                    vlmGroup,
-                    srcFullSnapshotName,
-                    config,
-                    LvmCommands.LvmVolumeType.SNAPSHOT
-                )
-            );
-            LvmUtils.recacheNext();
-        }
-    }
-
-    public void doZFSCloneSourceCleanup(ZfsData<Resource> srcData, String cloneName, boolean zfsClone)
-        throws StorageException
-    {
-        // we cannot delete the snapshot if we have a dependent clone from it
-        // so only delete if it was a send/recv clone
-        // the snapshot will be tried to delete if the cloned resource gets removed
-        if (!zfsClone)
-        {
-            final String srcFullSnapshotName = AbsStorageProvider.getZFSCloneSnapshotNameFull(
-                srcData.getIdentifier(),
-                cloneName,
-                srcData.getVlmNr().value
-            );
-
-            ZfsUtils.deleteIfExists(
-                extCmdFactory.create(),
-                srcData.getZPool(),
-                srcFullSnapshotName,
-                ZfsCommands.ZfsVolumeType.SNAPSHOT
-            );
-        }
-    }
-
     public void doZFSCloneTargetCleanup(ZfsData<Resource> tgtData, boolean zfsClone)
         throws StorageException
     {
@@ -239,97 +193,26 @@ public class CloneService implements SystemService
         }
     }
 
-    public void cleanupSrcCloneSnapshots(
-        VlmProviderObject<Resource> srcVlmData, ResourceName rscName, boolean isZfsCloneStrategy)
-        throws StorageException
-    {
-        AbsRscLayerObject<Resource> srcRscData = srcVlmData.getRscLayerObject();
-        Set<AbsRscLayerObject<Resource>> srcStorRscDataSet = LayerRscUtils.getRscDataByLayer(
-            srcRscData,
-            DeviceLayerKind.STORAGE
-        );
-
-        for (var srcStorRscData : srcStorRscDataSet)
-        {
-            VlmProviderObject<Resource> vlmObj = srcStorRscData.getVlmLayerObjects().get(srcVlmData.getVlmNr());
-            DeviceProviderKind storPoolKind = vlmObj.getProviderKind();
-            switch (storPoolKind)
-            {
-                case LVM:
-                case LVM_THIN:
-                    doLVMCloneSourceCleanup((LvmData<Resource>) vlmObj, rscName.displayValue);
-                    break;
-                case ZFS:
-                case ZFS_THIN:
-                    doZFSCloneSourceCleanup((ZfsData<Resource>) vlmObj, rscName.displayValue, isZfsCloneStrategy);
-                    break;
-                case DISKLESS:
-                case FILE:
-                case SPDK:
-                case EBS_INIT:
-                case FILE_THIN:
-                case EBS_TARGET:
-                case REMOTE_SPDK:
-                case STORAGE_SPACES:
-                case STORAGE_SPACES_THIN:
-                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
-                default:
-                    // no cleanup
-                    break;
-
-            }
-        }
-    }
-
     private void cleanupDevices(CloneInfo cloneInfo)
     {
         Lock writeLock = reconfigurationLock.writeLock();
         writeLock.lock();
         try
         {
-            VlmProviderObject<Resource> srcVlmData = cloneInfo.srcVlmData;
             VlmProviderObject<Resource> tgtVlmData = cloneInfo.dstVlmData;
-            AbsRscLayerObject<Resource> srcRscData = srcVlmData.getRscLayerObject();
             AbsRscLayerObject<Resource> tgtRscData = tgtVlmData.getRscLayerObject();
 
             try
             {
-                resourceProcessorProvider.get().processAfterClone(
-                    srcVlmData,
-                    // use root vlm data to traverse all rsc layers
-                    tgtVlmData.getRscLayerObject()
-                        .getAbsResource()
-                        .getLayerData()
-                        .getVlmProviderObject(tgtVlmData.getVlmNr()),
-                    tgtVlmData.getCloneDevicePath()
-                );
+                processAfterCloneAndCloseDevices(cloneInfo);
             }
-            catch (StorageException | RuntimeException exc)
+            finally
             {
-                // the clone is over either way, so the devices opened for it have to be closed nevertheless
-                try
-                {
-                    closeCloneDevices(cloneInfo);
-                }
-                catch (StorageException | RuntimeException closeExc)
-                {
-                    exc.addSuppressed(closeExc);
-                }
-                throw exc;
+                // the clone is over, also if that failed
+                removeClonePassthroughMode(cloneInfo);
             }
-            closeCloneDevices(cloneInfo);
 
-            // reset passThroughMode
-            // "clone passthrough mode" is based on targetRscData for both, srcRscData and targetRscData
-            srcRscData.removeClonePassthroughMode(tgtRscData);
-            tgtRscData.removeClonePassthroughMode(tgtRscData);
-
-            // cleanup all clone snapshots
-            cleanupSrcCloneSnapshots(
-                srcVlmData,
-                cloneInfo.getResourceName(),
-                cloneInfo.cloneStrategy == DeviceHandler.CloneStrategy.ZFS_CLONE
-            );
+            // the source snapshot is a LINSTOR snapshot, deleted by the controller when the clone is done
 
             Set<AbsRscLayerObject<Resource>> tgtStorRscDataSet = LayerRscUtils.getRscDataByLayer(
                 tgtRscData,
@@ -379,6 +262,88 @@ public class CloneService implements SystemService
         }
     }
 
+    private void processAfterCloneAndCloseDevices(CloneInfo cloneInfo) throws StorageException
+    {
+        VlmProviderObject<Resource> tgtVlmData = cloneInfo.dstVlmData;
+        try
+        {
+            resourceProcessorProvider.get().processAfterClone(
+                cloneInfo.srcVlmData,
+                // use root vlm data to traverse all rsc layers
+                tgtVlmData.getRscLayerObject()
+                    .getAbsResource()
+                    .getLayerData()
+                    .getVlmProviderObject(tgtVlmData.getVlmNr()),
+                tgtVlmData.getCloneDevicePath()
+            );
+        }
+        catch (StorageException | RuntimeException exc)
+        {
+            // the clone is over either way, so the devices opened for it have to be closed nevertheless
+            try
+            {
+                closeCloneDevices(cloneInfo);
+            }
+            catch (StorageException | RuntimeException closeExc)
+            {
+                exc.addSuppressed(closeExc);
+            }
+            throw exc;
+        }
+        closeCloneDevices(cloneInfo);
+    }
+
+    /**
+     * Resets the clone passthrough mode, which the clone set on each layer of the source snapshot and of the target,
+     * keyed by the layer data of the target (see {@link AbsRscLayerObject#setClonePassthroughMode}). This does not
+     * disturb a running clone of another volume of the target, which shares the layer data: it was opened when it
+     * started and is closed on the layer it is done on, which does not pass through.
+     */
+    private static void removeClonePassthroughMode(CloneInfo cloneInfo)
+    {
+        List<AbsRscLayerObject<Resource>> tgtRscDataList = getRscDataTree(cloneInfo.dstVlmData.getRscLayerObject());
+        for (AbsRscLayerObject<Snapshot> srcRscData : getRscDataTree(cloneInfo.srcVlmData.getRscLayerObject()))
+        {
+            for (AbsRscLayerObject<Resource> tgtRscData : tgtRscDataList)
+            {
+                srcRscData.removeClonePassthroughMode(tgtRscData);
+            }
+        }
+        for (AbsRscLayerObject<Resource> tgtRscData : tgtRscDataList)
+        {
+            tgtRscData.removeClonePassthroughMode(tgtRscData);
+        }
+    }
+
+    /**
+     * All layer data of the resource or snapshot the given layer data belongs to. Found through the layer data itself,
+     * as the resource or snapshot might have been deleted since.
+     */
+    private static <RSC extends AbsResource<RSC>> List<AbsRscLayerObject<RSC>> getRscDataTree(
+        AbsRscLayerObject<RSC> rscData
+    )
+    {
+        AbsRscLayerObject<RSC> rootRscData = rscData;
+        for (
+            @Nullable AbsRscLayerObject<RSC> parent = rscData.getParent();
+            parent != null;
+            parent = parent.getParent()
+        )
+        {
+            rootRscData = parent;
+        }
+        List<AbsRscLayerObject<RSC>> ret = new ArrayList<>();
+        List<AbsRscLayerObject<RSC>> rscDataToExpand = new ArrayList<>();
+        rscDataToExpand.add(rootRscData);
+        while (!rscDataToExpand.isEmpty())
+        {
+            AbsRscLayerObject<RSC> curRscData = rscDataToExpand.remove(rscDataToExpand.size() - 1);
+            ret.add(curRscData);
+            rscDataToExpand.addAll(curRscData.getChildren());
+        }
+        return ret;
+    }
+
     /**
      * Closes the source snapshot and the target that were opened for the clone.
      */
@@ -426,13 +391,13 @@ public class CloneService implements SystemService
      * Starts cloning the given source volume into the given target volume in the background, unless a clone of the
      * target volume is already running.
      *
-     * @param srcVlmData the volume data of the clone source on the layer the clone is done on
+     * @param srcVlmData the volume data of the clone source snapshot on the layer the clone is done on
      * @param dstVlmData the volume data of the clone target on the same layer
      * @param strat how to clone. The volume data has to match it, e.g. {@link DeviceHandler.CloneStrategy#DD} copies
      *     between their {@link VlmProviderObject#getCloneDevicePath()}s, while the ZFS and LVM strategies expect
      *     storage layer data of the respective provider.
-     * @param srcSnapshotHandle the clone snapshot of the source, opened with
-     *     {@link DeviceHandler#openSnapshotReadOnly} and a {@link com.linbit.linstor.layer.ReadOnlyOpener.ForClone}.
+     * @param srcSnapshotHandle the source snapshot, opened with {@link DeviceHandler#openSnapshotReadOnly} and a
+     *     {@link com.linbit.linstor.layer.ReadOnlyOpener.ForSnapshot}.
      *     Required if the strategy {@link DeviceHandler.CloneStrategy#needsOpenDevices() needs open devices},
      *     {@code null} otherwise. This service takes over closing it: when the clone is done, or right away if a clone
      *     of the target volume is already running. If this method throws, the caller has to close it (closing it
@@ -444,7 +409,7 @@ public class CloneService implements SystemService
         }
     )
     public void startClone(
-        VlmProviderObject<Resource> srcVlmData,
+        VlmProviderObject<Snapshot> srcVlmData,
         VlmProviderObject<Resource> dstVlmData,
         DeviceHandler.CloneStrategy strat,
         @Nullable ReadOnlySnapshotHandle srcSnapshotHandle
@@ -480,52 +445,15 @@ public class CloneService implements SystemService
                     switch (strat)
                     {
                         case LVM_THIN_CLONE:
-                        {
-                            LvmThinData<Resource> srcLvmData = (LvmThinData<Resource>) srcVlmData;
-                            LvmThinData<Resource> dstLvmData = (LvmThinData<Resource>) dstVlmData;
-                            /*
-                             * Clone from the clone snapshot that was taken while the source was suspended, not from
-                             * the source volume itself: the target is only created after the source was resumed, so
-                             * a snapshot of the source volume would contain later writes, and each volume of the
-                             * resource would be taken at a different point in time.
-                             */
-                            final String srcFullSnapshotName = AbsStorageProvider.getLVMCloneSnapshotNameFull(
-                                srcLvmData.getIdentifier(),
-                                cloneInfo.getResourceName().displayValue,
-                                srcLvmData.getVlmNr().value
-                            );
-                            cmd = doLvmThinClone(
-                                dstLvmData.getVolumeGroup(), srcFullSnapshotName, dstLvmData.getIdentifier());
-                        }
-                        break;
+                            // thin snapshot of the source snapshot (<lv>_<snapshot>), as for a snapshot restore
+                            cmd = doLvmThinClone(srcVlmData, (LvmThinData<Resource>) dstVlmData);
+                            break;
                         case ZFS_CLONE:
-                        {
-                            ZfsData<Resource> srcZfsData = (ZfsData<Resource>) srcVlmData;
-                            ZfsData<Resource> dstZfsData = (ZfsData<Resource>) dstVlmData;
-                            final String srcFullSnapshotName = AbsStorageProvider.getZFSCloneSnapshotNameFull(
-                                srcZfsData.getIdentifier(),
-                                cloneInfo.getResourceName().displayValue,
-                                srcZfsData.getVlmNr().value);
-                            cmd = doZFSClone(
-                                dstZfsData.getZPool(),
-                                srcFullSnapshotName,
-                                dstZfsData.getIdentifier());
-                        }
+                            // "zfs clone" of the source snapshot (<zvol>@<snapshot>)
+                            cmd = doZFSClone(srcVlmData, (ZfsData<Resource>) dstVlmData);
                             break;
                         case ZFS_COPY:
-                        {
-                            ZfsData<Resource> srcZfsData = (ZfsData<Resource>) srcVlmData;
-                            ZfsData<Resource> dstZfsData = (ZfsData<Resource>) dstVlmData;
-                            final String srcFullSnapshotName = AbsStorageProvider.getZFSCloneSnapshotNameFull(
-                                srcZfsData.getIdentifier(),
-                                cloneInfo.getResourceName().displayValue,
-                                srcZfsData.getVlmNr().value);
-                            cmd = doZFSCopy(
-                                srcZfsData.getZPool(),
-                                srcFullSnapshotName,
-                                dstZfsData.getZPool(),
-                                dstZfsData.getIdentifier());
-                        }
+                            cmd = doZFSCopy((ZfsData<Snapshot>) srcVlmData, (ZfsData<Resource>) dstVlmData);
                             break;
                         case DD:
                         default:
@@ -633,9 +561,30 @@ public class CloneService implements SystemService
         }
     }
 
-    private @Nullable String[] doLvmThinClone(String vlmGroup, String srcSnapshotName, String dstLVName)
+    /**
+     * The storage identifier of the source snapshot (LVM: {@code <lv>_<snapshot>}, ZFS: {@code <zvol>@<snapshot>}), as
+     * set by the storage provider when it prepared the snapshot.
+     */
+    private static String getSnapshotIdentifier(VlmProviderObject<Snapshot> srcVlmData) throws StorageException
+    {
+        @Nullable String identifier = srcVlmData.getIdentifier();
+        if (identifier == null)
+        {
+            throw new StorageException("The storage identifier of the clone source snapshot is unknown: " + srcVlmData);
+        }
+        return identifier;
+    }
+
+    private @Nullable String[] doLvmThinClone(
+        VlmProviderObject<Snapshot> srcVlmData,
+        LvmThinData<Resource> dstVlmData
+    )
         throws StorageException
     {
+        String vlmGroup = dstVlmData.getVolumeGroup();
+        String srcSnapshotName = getSnapshotIdentifier(srcVlmData);
+        String dstLVName = dstVlmData.getIdentifier();
+
         // restore
         LvmUtils.execWithRetry(
             extCmdFactory,
@@ -665,20 +614,25 @@ public class CloneService implements SystemService
         return null;
     }
 
-    private @Nullable String[] doZFSClone(String zpoolName, String srcIdentifier, String dstIdentifier)
+    private @Nullable String[] doZFSClone(VlmProviderObject<Snapshot> srcVlmData, ZfsData<Resource> dstVlmData)
         throws StorageException
     {
         ZfsCommands.restoreSnapshot(
             extCmdFactory.create(),
-            zpoolName,
-            srcIdentifier,
-            dstIdentifier
+            dstVlmData.getZPool(),
+            getSnapshotIdentifier(srcVlmData),
+            dstVlmData.getIdentifier()
         );
         return null;
     }
 
-    private String[] doZFSCopy(String srcZPoolName, String srcIdentifier, String dstZPoolName, String dstIdentifier)
+    private String[] doZFSCopy(ZfsData<Snapshot> srcVlmData, ZfsData<Resource> dstVlmData) throws StorageException
     {
+        String srcZPoolName = srcVlmData.getZPool();
+        String srcIdentifier = getSnapshotIdentifier(srcVlmData);
+        String dstZPoolName = dstVlmData.getZPool();
+        String dstIdentifier = dstVlmData.getIdentifier();
+
         return new String[]
             {
                 "timeout",
@@ -756,10 +710,10 @@ public class CloneService implements SystemService
     {
         private final ResourceName rscName;
         private final String suffix;
-        private final VlmProviderObject<Resource> srcVlmData;
+        private final VlmProviderObject<Snapshot> srcVlmData;
         private final VlmProviderObject<Resource> dstVlmData;
         private final DeviceHandler.CloneStrategy cloneStrategy;
-        /** The opened clone snapshot of the source, if the clone strategy needs open devices */
+        /** The opened source snapshot, if the clone strategy needs open devices */
         private final @Nullable ReadOnlySnapshotHandle srcSnapshotHandle;
 
         private @Nullable CloneDaemon cloneDaemon;
@@ -773,7 +727,7 @@ public class CloneService implements SystemService
         }
 
         CloneInfo(
-            VlmProviderObject<Resource> srcVlmDataRef,
+            VlmProviderObject<Snapshot> srcVlmDataRef,
             VlmProviderObject<Resource> dstVlmDataRef,
             DeviceHandler.CloneStrategy cloneStrategyRef,
             @Nullable ReadOnlySnapshotHandle srcSnapshotHandleRef
@@ -788,7 +742,7 @@ public class CloneService implements SystemService
             status = CloneStatus.PROGRESS;
         }
 
-        public VlmProviderObject<Resource> getSrcVlmData()
+        public VlmProviderObject<Snapshot> getSrcVlmData()
         {
             return srcVlmData;
         }

@@ -435,12 +435,6 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
         }
 
         @Override
-        public void cleanupAfterCloneFinished()
-        {
-            throw new ImplementationError(IMPL_ERR_TEXT);
-        }
-
-        @Override
         public Boolean isClonePassthroughMode()
         {
             throw new ImplementationError(IMPL_ERR_TEXT);

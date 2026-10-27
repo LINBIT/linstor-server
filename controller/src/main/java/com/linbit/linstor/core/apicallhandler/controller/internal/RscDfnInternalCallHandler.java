@@ -11,6 +11,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoBalanceHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
@@ -56,6 +57,7 @@ public class RscDfnInternalCallHandler
     private final CtrlVlmDfnModifyApiCallHandler ctrlVlmDfnModifyApiCallHandler;
 
     private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
+    private final Provider<CtrlSnapshotDeleteApiCallHandler> ctrlSnapDeleteHandlerProvider;
 
     @Inject
     public RscDfnInternalCallHandler(
@@ -69,7 +71,8 @@ public class RscDfnInternalCallHandler
         LockGuardFactory lockGuardFactoryRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlVlmDfnModifyApiCallHandler ctrlVlmDfnModifyApiCallHandlerRef,
-        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
+        Provider<CtrlSnapshotDeleteApiCallHandler> ctrlSnapDeleteHandlerProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -83,6 +86,7 @@ public class RscDfnInternalCallHandler
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         ctrlVlmDfnModifyApiCallHandler = ctrlVlmDfnModifyApiCallHandlerRef;
         ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
+        ctrlSnapDeleteHandlerProvider = ctrlSnapDeleteHandlerProviderRef;
     }
 
     private Flux<ApiCallRc> markRscDfnFailed(String rscName)
@@ -180,6 +184,19 @@ public class RscDfnInternalCallHandler
             // if failed never finish
             boolean allCloned = !rscDfn.getFlags().isSet(ResourceDefinition.Flags.FAILED);
             final Collection<Resource> resources = rscDfn.streamResource().collect(Collectors.toList());
+
+            // the source snapshot is not read anymore once every volume finished or failed cloning
+            Flux<ApiCallRc> deleteSrcSnapFlux = Flux.empty();
+            if (isNoVolumeCloningAnymore(resources))
+            {
+                deleteSrcSnapFlux = ctrlSnapDeleteHandlerProvider.get()
+                    .deleteCloneSourceSnapshotInTransaction(rscDfn)
+                    .onErrorResume(exc ->
+                    {
+                        errorReporter.reportError(exc);
+                        return Flux.empty();
+                    });
+            }
             if (allCloned)
             {
                 for (Resource rsc : resources)
@@ -244,6 +261,7 @@ public class RscDfnInternalCallHandler
             {
                 ctrlTransactionHelper.commit();
             }
+            flux = deleteSrcSnapFlux.concatWith(flux);
         }
         catch (ValueOutOfRangeException | DatabaseException | InvalidNameException exc)
         {
@@ -251,6 +269,17 @@ public class RscDfnInternalCallHandler
         }
 
         return flux;
+    }
+
+    /**
+     * Whether no volume reads from the clone source anymore: each one finished cloning or failed (failed volumes are
+     * marked for deletion).
+     */
+    private static boolean isNoVolumeCloningAnymore(Collection<Resource> resources)
+    {
+        return resources.stream()
+            .flatMap(Resource::streamVolumes)
+            .allMatch(vlm -> vlm.getFlags().isSomeSet(Volume.Flags.CLONING_FINISHED, Volume.Flags.DELETE));
     }
 
     /**

@@ -249,11 +249,6 @@ public class WritecacheLayer implements DeviceLayer
             }
         }
 
-        if (CacheFlushUtils.isCloneSnapshotPending(rscData))
-        {
-            // the clone snapshot is taken while processing the data child
-            flushBeforeSnapshot(rscData);
-        }
         resourceProcessorProvider.get().processResource(
             rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
             apiCallRcRef

@@ -1002,40 +1002,6 @@ public class ZfsProvider
     }
 
     @Override
-    protected void createSnapshotForCloneImpl(
-        ZfsData<Resource> vlmData,
-        String cloneRscName)
-        throws StorageException
-    {
-        final String srcFullSnapshotName = getCloneSnapshotNameFull(vlmData, cloneRscName, "@");
-
-
-        if (!infoListCache.containsKey(vlmData.getZPool() + "/" + srcFullSnapshotName))
-        {
-            ZfsCommands.createSnapshotFullName(
-                extCmdFactory.create(),
-                vlmData.getZPool(),
-                srcFullSnapshotName
-            );
-            // mark snapshot as temporary clone
-            ZfsCommands.setUserProperty(
-                extCmdFactory.create(),
-                vlmData.getZPool(),
-                srcFullSnapshotName,
-                "clone_for",
-                cloneRscName
-            );
-
-            // mark to be deleted
-            markForDeletion(vlmData.getZPool(), srcFullSnapshotName);
-        }
-        else
-        {
-            errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
-        }
-    }
-
-    @Override
     public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
         throws StorageException
     {
@@ -1156,15 +1122,6 @@ public class ZfsProvider
                     getZPoolOrFail(snapData.getStorPool()),
                     getBaseLvIdentifier(fullSnapshotName),
                     fullSnapshotName
-                );
-            }
-            case ReadOnlyOpener.ForClone forClone -> {
-                ZfsData<Resource> srcData = (ZfsData<Resource>) forClone.vlmData();
-                yield new ZfsSnapshotDevice(
-                    srcData.getStorPool(),
-                    getZPoolOrFail(srcData.getStorPool()),
-                    srcData.getIdentifier(),
-                    getCloneSnapshotNameFull(srcData, forClone.cloneTargetName(), "@")
                 );
             }
         };

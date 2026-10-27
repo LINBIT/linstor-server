@@ -393,8 +393,7 @@ public class LvmProvider
     private boolean requiresExclusiveLvLock(LvmData<Resource> vlmDataRef, @Nullable LvsInfo infoRef)
     {
         Resource rsc = vlmDataRef.getRscLayerObject().getAbsResource();
-        return !getCloneForKeyProps(rsc).isEmpty() ||
-            hasLocalSnapshots(rsc) ||
+        return hasLocalSnapshots(rsc) ||
             hasCachedSnapshotLvs(extractVolumeGroup(vlmDataRef), asLvIdentifier(vlmDataRef)) ||
             isResizePending(vlmDataRef, infoRef);
     }
@@ -1362,50 +1361,6 @@ public class LvmProvider
     }
 
     @Override
-    protected void createSnapshotForCloneImpl(
-        LvmData<Resource> vlmData,
-        String cloneRscName)
-        throws StorageException, DatabaseException
-    {
-        final String srcId = asLvIdentifier(vlmData);
-        final String srcFullSnapshotName = getCloneSnapshotNameFull(vlmData, cloneRscName, "_");
-
-        if (!infoListCache.containsKey(vlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
-        {
-            LvmUtils.execWithRetry(
-                extCmdFactory,
-                Collections.singleton(vlmData.getVolumeGroup()),
-                config -> LvmCommands.createSnapshot(
-                    extCmdFactory.create(),
-                    true, // the clone only reads from it
-                    vlmData.getVolumeGroup(),
-                    srcId,
-                    srcFullSnapshotName,
-                    config,
-                    vlmData.getAllocatedSize()
-                )
-            );
-
-            LvmUtils.execWithRetry(
-                extCmdFactory,
-                Collections.singleton(vlmData.getVolumeGroup()),
-                config -> LvmCommands.addTag(
-                    extCmdFactory.create(),
-                    vlmData.getVolumeGroup(),
-                    srcFullSnapshotName,
-                    LvmCommands.LVM_TAG_CLONE_SNAPSHOT,
-                    config
-                )
-            );
-            LvmUtils.recacheNextLvs();
-        }
-        else
-        {
-            errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
-        }
-    }
-
-    @Override
     protected void setAllocatedSize(LvmData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setAllocatedSize(size);
@@ -1533,8 +1488,7 @@ public class LvmProvider
     /**
      * A LINSTOR snapshot is activated if it is inactive: it is created active, but might have been deactivated since
      * (e.g. after a reboot, snapshots skip activation by default). When its last opener closes, it is deactivated
-     * again if it was inactive before its first opener opened it. A clone snapshot was created (active) right before
-     * and is removed after the clone, it is neither activated nor deactivated.
+     * again if it was inactive before its first opener opened it.
      */
     @Override
     public <RSC extends AbsResource<RSC>> ReadOnlySnapshotHandle openSnapshotReadOnly(ReadOnlyOpener<RSC> opener)
@@ -1545,16 +1499,6 @@ public class LvmProvider
             case ReadOnlyOpener.ForSnapshot forSnapshot -> openLinstorSnapshot(
                 (LvmData<Snapshot>) forSnapshot.vlmData()
             );
-            case ReadOnlyOpener.ForClone forClone -> {
-                LvmData<Resource> srcData = (LvmData<Resource>) forClone.vlmData();
-                srcData.setCloneDevicePath(
-                    getDevicePath(
-                        srcData.getVolumeGroup(),
-                        getCloneSnapshotNameFull(srcData, forClone.cloneTargetName(), "_")
-                    )
-                );
-                yield () -> srcData.setCloneDevicePath(null);
-            }
         };
     }
 

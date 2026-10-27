@@ -299,7 +299,11 @@ public interface DeviceLayer extends Comparable<DeviceLayer>
     /**
      * Default post clone processing.
      */
-    default void processAfterClone(VlmProviderObject<?> vlmSrc, VlmProviderObject<?> vlmTgt, String clonedPath)
+    default void processAfterClone(
+        VlmProviderObject<Snapshot> vlmSrc,
+        VlmProviderObject<Resource> vlmTgt,
+        String clonedPath
+    )
         throws StorageException
     {
     }

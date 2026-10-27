@@ -271,9 +271,13 @@ public class InternalApiConsts
     public static final String API_NOTIFY_CLONE_UPDATE  = "NotifyCloneUpdate";
     public static final String CLONE_NS = "Clone";
     public static final String CLONE_FOR_PREFIX = "CF_";
-    public static final String CLONE_PROP_PREFIX = CLONE_NS + "/" + CLONE_FOR_PREFIX;
     public static final String NAMESPC_INTERNAL_CLONE = NAMESPC_INTERNAL + "/" + CLONE_NS;
     public static final String KEY_CLONE_PENDING_RESIZE = "PendingResize";
+    /**
+     * Set (in {@link #NAMESPC_INTERNAL_CLONE}) on the resource definition of a clone target while the clone runs: the
+     * name of the snapshot of the clone source ({@link #KEY_CLONED_FROM}) the target is cloned from.
+     */
+    public static final String KEY_CLONE_SOURCE_SNAPSHOT = "SourceSnapshot";
 
     // ebs
     public static final String EBS_REMOTE_NAME = "EbsRemoteName";

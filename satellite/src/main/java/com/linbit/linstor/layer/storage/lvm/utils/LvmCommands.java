@@ -65,7 +65,6 @@ public class LvmCommands
     public static final int VGS_THICK_COLUMN_COUNT = 4;
     public static final int VGS_THIN_COLUMN_COUNT = 7;
 
-    public static final String LVM_TAG_CLONE_SNAPSHOT = "linstor_clone_snapshot";
 
 
     private static String[] buildCmd(
@@ -121,6 +120,33 @@ public class LvmCommands
             "Failed to list lvm volumes",
             "Failed to query 'lvs' info",
             Commands.SKIP_EXIT_CODE_CHECK
+        );
+    }
+
+    /**
+     * Lists the names of the LVs of the given volume group that have the given tag, one per line.
+     */
+    public static synchronized OutputData lvsWithTag(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String tag,
+        String lvmConfig
+    )
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd.setSaveWithoutSharedLocks(true),
+            buildCmd(
+                "lvs",
+                lvmConfig,
+                Collections.singleton(volumeGroup),
+                "-o", "lv_name",
+                // short for "the tags contain this tag"
+                "-S", "lv_tags=" + tag,
+                "--noheadings"
+            ),
+            "Failed to list the lvm volumes with tag '" + tag + "' of volume group '" + volumeGroup + "'",
+            "Failed to query 'lvs' info"
         );
     }
 

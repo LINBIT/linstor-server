@@ -27,8 +27,11 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -73,6 +76,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     // CtrlRscDfnDeleteApiCallHandler -> CtrlRscDfnTruncateApiCallHandler -> AutoSnapshotTask ->
     // CtrlSnapshotCrtApiCallHandler -> CtrlSnapshotDeleteApiCallHandler -> (here)
     private final Provider<CtrlRscDfnDeleteApiCallHandler> ctrlRscDfnDeleteApiCallHandlerProvider;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
 
     @Inject
     public CtrlSnapshotDeleteApiCallHandler(
@@ -86,7 +90,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         ErrorReporter errorReporterRef,
         BackupInfoManager backupInfoMgrRef,
         SharedResourceManager sharedRscMgrRef,
-        Provider<CtrlRscDfnDeleteApiCallHandler> ctrlRscDfnDeleteApiCallHandlerProviderRef
+        Provider<CtrlRscDfnDeleteApiCallHandler> ctrlRscDfnDeleteApiCallHandlerProviderRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -100,6 +105,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         backupInfoMgr = backupInfoMgrRef;
         sharedRscMgr = sharedRscMgrRef;
         ctrlRscDfnDeleteApiCallHandlerProvider = ctrlRscDfnDeleteApiCallHandlerProviderRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
     }
 
     @Override
@@ -235,6 +241,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             );
         }
         ensureSnapshotNotQueued(snapshotDfn);
+        ensureNotCloneSource(snapshotDfn);
 
         Flux<ApiCallRc> phase2Flux = Flux.empty();
         if (nodeNamesStrListRef == null || nodeNamesStrListRef.isEmpty())
@@ -448,6 +455,130 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             }
         }
         return flux;
+    }
+
+    /**
+     * A running clone reads from its source snapshot, see {@link InternalApiConsts#KEY_CLONE_SOURCE_SNAPSHOT}. The
+     * snapshot is deleted (by {@link #deleteCloneSourceSnapshotInTransaction}) when the clone is finished or failed, or
+     * (by {@link #deleteSourceSnapshotOfDeletedCloneTarget}) when its target was deleted.
+     * <p>
+     * A failed source snapshot is not read by any clone. A source snapshot that no clone target references anymore is
+     * left over from such a deletion that was interrupted (e.g. by a restart of the controller).
+     */
+    private void ensureNotCloneSource(SnapshotDefinition snapDfn)
+    {
+        if (snapDfn.getFlags().isSet(SnapshotDefinition.Flags.FOR_CLONE) &&
+            !snapDfn.getFlags().isSomeSet(
+                SnapshotDefinition.Flags.FAILED_DEPLOYMENT,
+                SnapshotDefinition.Flags.FAILED_DISCONNECT
+            ))
+        {
+            @Nullable ResourceDefinition cloneTarget = findCloneTarget(snapDfn);
+            if (cloneTarget != null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        getSnapshotDfnDescription(snapDfn.getResourceName(), snapDfn.getName()) +
+                            " is the source of the running clone to '" + cloneTarget.getName().displayValue + "'. " +
+                            "It is deleted when the clone is finished or the clone target is deleted."
+                    )
+                );
+            }
+        }
+    }
+
+    private @Nullable ResourceDefinition findCloneTarget(SnapshotDefinition snapDfn)
+    {
+        @Nullable ResourceDefinition ret = null;
+        String srcRscName = snapDfn.getResourceName().displayValue;
+        String snapName = snapDfn.getName().displayValue;
+        for (ResourceDefinition rscDfn : resourceDefinitionRepository.getMapForView().values())
+        {
+            ReadOnlyProps props = rscDfn.getProps();
+            if (srcRscName.equals(props.getProp(InternalApiConsts.KEY_CLONED_FROM)) &&
+                snapName.equals(
+                    props.getProp(InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT, InternalApiConsts.NAMESPC_INTERNAL_CLONE)
+                ))
+            {
+                ret = rscDfn;
+                break;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Removes the reference to the source snapshot from the given clone target (the caller commits) and returns the
+     * flux deleting that snapshot, if it still exists.
+     */
+    public Flux<ApiCallRc> deleteCloneSourceSnapshotInTransaction(ResourceDefinition cloneTargetRscDfn)
+        throws DatabaseException
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        Props props = cloneTargetRscDfn.getProps();
+        @Nullable String srcRscName = props.getProp(InternalApiConsts.KEY_CLONED_FROM);
+        @Nullable String snapName = props.removeProp(
+            InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+            InternalApiConsts.NAMESPC_INTERNAL_CLONE
+        );
+        if (srcRscName != null && snapName != null)
+        {
+            @Nullable SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfnOrNull(
+                LinstorParsingUtils.asRscName(srcRscName),
+                LinstorParsingUtils.asSnapshotName(snapName)
+            );
+            if (isCloneSourceSnapshotToDelete(snapDfn))
+            {
+                flux = deleteSnapshot(snapDfn.getResourceName(), snapDfn.getName(), null);
+            }
+        }
+        return flux;
+    }
+
+    /**
+     * Deletes the source snapshot of a clone target that was deleted, if the snapshot still exists. Unlike
+     * {@link #deleteCloneSourceSnapshotInTransaction}, the clone target keeps referencing the snapshot until the target
+     * itself is deleted, so that a retried deletion of the target still deletes the snapshot.
+     */
+    public Flux<ApiCallRc> deleteSourceSnapshotOfDeletedCloneTarget(String srcRscNameRef, String snapNameRef)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Delete clone source snapshot",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> deleteSourceSnapshotOfDeletedCloneTargetInTransaction(srcRscNameRef, snapNameRef)
+            );
+    }
+
+    private Flux<ApiCallRc> deleteSourceSnapshotOfDeletedCloneTargetInTransaction(
+        String srcRscNameRef,
+        String snapNameRef
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        ResourceName srcRscName = LinstorParsingUtils.asRscName(srcRscNameRef);
+        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(snapNameRef);
+        @Nullable SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfnOrNull(srcRscName, snapName);
+        if (isCloneSourceSnapshotToDelete(snapDfn))
+        {
+            flux = deleteSnapshotInTransaction(srcRscName, snapName, null);
+        }
+        return flux;
+    }
+
+    /**
+     * Only the snapshot the clone took itself is deleted, not a snapshot of the same name that was created by someone
+     * else (e.g. before the clone took its snapshot, which then failed).
+     */
+    private static boolean isCloneSourceSnapshotToDelete(@Nullable SnapshotDefinition snapDfn)
+    {
+        return snapDfn != null &&
+            snapDfn.getFlags().isSet(SnapshotDefinition.Flags.FOR_CLONE) &&
+            !snapDfn.getFlags().isSet(SnapshotDefinition.Flags.DELETE);
     }
 
     private void ensureSnapshotNotQueued(SnapshotDefinition snapDfn)

@@ -2066,18 +2066,32 @@ public class DrbdLayer implements DeviceLayer
      * file to the new resource and afterward call drbdmeta check-resize (which will move the metadata to the end).
      */
     @Override
-    public void processAfterClone(VlmProviderObject<?> vlmSrc, VlmProviderObject<?> vlmTgt, String clonedPath)
+    public void processAfterClone(
+        VlmProviderObject<Snapshot> vlmSrc,
+        VlmProviderObject<Resource> vlmTgt,
+        String clonedPath
+    )
         throws StorageException
     {
         DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmTgt;
         try
         {
-            AbsRscLayerObject<?> srcLayerData = vlmSrc.getRscLayerObject().getAbsResource().getLayerData();
-            var optSrcDrbdLayer = LayerRscUtils.getRscDataByLayer(srcLayerData, DeviceLayerKind.DRBD)
-                .stream().findFirst();
-            if (optSrcDrbdLayer.isPresent())
+            /*
+             * The clone source is a snapshot, which has no DRBD minor: the last known block device file belongs to the
+             * DRBD device of the source resource the snapshot was taken from (on this node).
+             */
+            Snapshot srcSnap = vlmSrc.getRscLayerObject().getAbsResource();
+            @Nullable Resource srcRsc = srcSnap.getResourceDefinition().getResource(srcSnap.getNodeName());
+            @Nullable AbsRscLayerObject<Resource> srcDrbdLayer = null;
+            if (srcRsc != null)
             {
-                var srcDrbdLayer = optSrcDrbdLayer.get();
+                srcDrbdLayer = LayerRscUtils.getRscDataByLayer(srcRsc.getLayerData(), DeviceLayerKind.DRBD)
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+            }
+            if (srcDrbdLayer != null)
+            {
                 DrbdVlmData<Resource> drbdSrcVlmData = (DrbdVlmData<Resource>) srcDrbdLayer.getVlmProviderObject(
                     drbdVlmData.getVlmNr());
                 if (!hasExternalMd(drbdSrcVlmData))

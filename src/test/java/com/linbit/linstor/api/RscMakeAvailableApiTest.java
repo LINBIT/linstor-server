@@ -619,29 +619,6 @@ public class RscMakeAvailableApiTest extends ApiTestBase
         assertThat(rsc2.getStateFlags().isSet(Resource.Flags.INACTIVE)).isFalse();
     }
 
-    @Test
-    public void makeAvailableDualPrimarySharedRefusedWhileCloning() throws Exception
-    {
-        // an in-progress clone reads from a snapshot of the shared data, so the source satellite must
-        // keep its copy exclusively locked: the dual-active window must not open until the clone is
-        // finished
-        Resource rsc = createInactiveSharedStorPoolRsc();
-
-        enterScope();
-        rsc.getStateFlags().disableFlags(Resource.Flags.INACTIVE);
-        rsc.getProps().setProp(InternalApiConsts.CLONE_PROP_PREFIX + "clonedRsc", "clonedRsc");
-        commitAndCleanUp(true);
-
-        evaluateTest(
-            new MakeAvailableCall(ApiConsts.FAIL_IN_USE)
-                .setRscName(SHARED_RSC_NAME)
-                .setNodeName(testNode2Name.displayValue)
-                .setAutoManageDualPrimary(true)
-        );
-
-        assertThat(nodesMap.get(testNode2Name).getResource(new ResourceName(SHARED_RSC_NAME))).isNull();
-    }
-
     /*
      * shared storage pool with external locking (e.g. lvmlockd) tests
      */

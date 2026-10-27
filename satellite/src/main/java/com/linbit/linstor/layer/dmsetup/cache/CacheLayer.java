@@ -413,19 +413,10 @@ public class CacheLayer implements DeviceLayer
             }
         }
 
-        AbsRscLayerObject<Resource> dataRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-        if (CacheFlushUtils.isCloneSnapshotPending(rscData))
-        {
-            // the clone snapshot is taken while processing the data child
-            runWithFlushedCache(
-                rscData,
-                () -> resourceProcessorProvider.get().processResource(dataRscChild, apiCallRcRef)
-            );
-        }
-        else
-        {
-            resourceProcessorProvider.get().processResource(dataRscChild, apiCallRcRef);
-        }
+        resourceProcessorProvider.get().processResource(
+            rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
+            apiCallRcRef
+        );
         AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
         AbsRscLayerObject<Resource> metaRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_META);
         if (cacheRscChild == null || metaRscChild == null)

@@ -544,20 +544,6 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     }
 
     @Override
-    protected void createSnapshotForCloneImpl(
-        StorageSpacesData<Resource> vlmData,
-        String cloneRscName)
-        throws StorageException
-    {
-        throw new StorageException("createLvWithCopyImpl not implemented",
-            "createLvWithCopyImpl not implemented",
-            null,
-            null,
-            "cmd",
-            null);
-    }
-
-    @Override
     protected void setAllocatedSize(StorageSpacesData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setAllocatedSize(size);

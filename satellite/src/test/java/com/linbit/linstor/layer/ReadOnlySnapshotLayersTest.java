@@ -1,7 +1,6 @@
 package com.linbit.linstor.layer;
 
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
@@ -91,6 +90,8 @@ public class ReadOnlySnapshotLayersTest
         // real default methods (closeAfterFailure), the abstract close() does nothing
         childHandle = mock(ReadOnlySnapshotHandle.class, Answers.CALLS_REAL_METHODS);
         when(deviceHandler.openSnapshotReadOnly(any())).thenReturn(childHandle);
+        // the properties of the mocked volume data are not set up
+        doReturn(List.of()).when(luksLayer).getSnapshotOpenOptions(any());
     }
 
     /** The storage child as seen below snapshot volume data */
@@ -145,12 +146,19 @@ public class ReadOnlySnapshotLayersTest
         LuksVlmData<Snapshot> vlm = luksSnapshotVlm();
         when(secObjs.getCryptKey()).thenReturn(MASTER_KEY);
         when(decryptionHelper.decrypt(MASTER_KEY, ENCRYPTED_KEY)).thenReturn(SNAPSHOT_KEY);
+        doReturn(List.of("--perf-no_read_workqueue")).when(luksLayer).getSnapshotOpenOptions(vlm);
         luksLayer.openSnapshotReadOnly(ReadOnlyOpener.forSnapshot(vlm, "_ro"));
 
         // the layer below gets the same opener with its own volume data
         verify(deviceHandler).openSnapshotReadOnly(ReadOnlyOpener.forSnapshot(snapStorageChild(), "_ro"));
-        // no open options: a snapshot has no volume properties of its own
-        verify(cryptSetup).openLuksDevice(STORAGE_SNAP_DEV, SNAP_MAPPING, SNAPSHOT_KEY, true, List.of());
+        // with the open options of the snapshot (see LuksLayerOpenOptionsTest)
+        verify(cryptSetup).openLuksDevice(
+            STORAGE_SNAP_DEV,
+            SNAP_MAPPING,
+            SNAPSHOT_KEY,
+            true,
+            List.of("--perf-no_read_workqueue")
+        );
         verify(vlm).setDecryptedPassword(SNAPSHOT_KEY);
         verify(vlm).setCloneDevicePath("/dev/mapper/Linstor-Crypt-" + SNAP_MAPPING);
         // the name of the resource's mapping is not stored as the snapshot's own mapping
@@ -173,14 +181,15 @@ public class ReadOnlySnapshotLayersTest
     @Test
     public void luksFailedMappingClosesSnapshotBelow() throws Exception
     {
-        LuksVlmData<Resource> vlm = luksResourceVlm();
-        doReturn(List.of()).when(luksLayer).getOpenOptions(vlm);
+        LuksVlmData<Snapshot> vlm = luksSnapshotVlm();
+        when(secObjs.getCryptKey()).thenReturn(MASTER_KEY);
+        when(decryptionHelper.decrypt(MASTER_KEY, ENCRYPTED_KEY)).thenReturn(SNAPSHOT_KEY);
         StorageException openFailure = new StorageException("cryptsetup open failed");
         doThrow(openFailure).when(cryptSetup).openLuksDevice(any(), any(), any(), anyBoolean(), any());
         StorageException closeFailure = new StorageException("close failed");
         doThrow(closeFailure).when(childHandle).close();
 
-        assertThatThrownBy(() -> luksLayer.openSnapshotReadOnly(ReadOnlyOpener.forClone(vlm, "target")))
+        assertThatThrownBy(() -> luksLayer.openSnapshotReadOnly(ReadOnlyOpener.forSnapshot(vlm, "_ro")))
             .isSameAs(openFailure);
         verify(childHandle).close();
         assertThat(openFailure.getSuppressed()).containsExactly(closeFailure);
@@ -197,25 +206,6 @@ public class ReadOnlySnapshotLayersTest
         assertThatThrownBy(() -> luksLayer.openCloneTarget(vlm)).isSameAs(createFailure);
         verify(deviceHandler).openCloneTarget(rscStorageChild());
         verify(deviceHandler).closeCloneTarget(rscStorageChild());
-    }
-
-    @Test
-    public void luksCloneSourceKeepsCloneMappingNameAndResourceKey() throws Exception
-    {
-        LuksVlmData<Resource> vlm = luksResourceVlm();
-        doReturn(List.of("--perf-no_read_workqueue")).when(luksLayer).getOpenOptions(vlm);
-        luksLayer.openSnapshotReadOnly(ReadOnlyOpener.forClone(vlm, "target"));
-
-        String mapping = LUKS_ID + InternalApiConsts.CLONE_FOR_PREFIX + "target";
-        verify(deviceHandler).openSnapshotReadOnly(ReadOnlyOpener.forClone(rscStorageChild(), "target"));
-        verify(cryptSetup).openLuksDevice(
-            STORAGE_SNAP_DEV,
-            mapping,
-            RESOURCE_KEY,
-            true,
-            List.of("--perf-no_read_workqueue")
-        );
-        verify(decryptionHelper, never()).decrypt(any(), any());
     }
 
     @Test

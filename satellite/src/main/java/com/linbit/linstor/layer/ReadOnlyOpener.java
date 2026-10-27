@@ -1,22 +1,19 @@
 package com.linbit.linstor.layer;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.core.objects.AbsResource;
-import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 /**
  * What {@link com.linbit.linstor.core.devmgr.DeviceHandler#openSnapshotReadOnly} opens, and for whom:
  * <ul>
- *  <li>{@link ForSnapshot}: the LINSTOR snapshot of snapshot volume data</li>
- *  <li>{@link ForClone}: the clone snapshot of resource volume data (the clone source)</li>
+ *  <li>{@link ForSnapshot}: the LINSTOR snapshot of snapshot volume data (this includes the source of a clone)</li>
  * </ul>
- * The volume data is part of the opener and typed accordingly, so that snapshot volume data cannot be combined with
- * a clone and vice versa. Layers pass the opener on to the layer below with {@link #withVlmData}.
+ * The volume data is part of the opener and typed accordingly. Layers pass the opener on to the layer below with
+ * {@link #withVlmData}.
  *
- * @param <RSC> {@link Snapshot} or {@link Resource}, depending on the opener
+ * @param <RSC> the type of the opened volume data, {@link Snapshot} for all current openers
  */
 public sealed interface ReadOnlyOpener<RSC extends AbsResource<RSC>>
 {
@@ -38,41 +35,12 @@ public sealed interface ReadOnlyOpener<RSC extends AbsResource<RSC>>
     String mappingSuffix();
 
     /**
-     * Opens the clone snapshot that was taken of the given source resource volume for the given clone target.
-     */
-    static ForClone forClone(VlmProviderObject<Resource> srcVlmDataRef, String cloneTargetNameRef)
-    {
-        return new ForClone(srcVlmDataRef, cloneTargetNameRef);
-    }
-
-    /**
      * Opens the given LINSTOR snapshot volume. The suffix has to be unique among the openers of the same snapshot
      * volume, see {@link ForSnapshot}.
      */
     static ForSnapshot forSnapshot(VlmProviderObject<Snapshot> snapVlmDataRef, String openerSuffixRef)
     {
         return new ForSnapshot(snapVlmDataRef, openerSuffixRef);
-    }
-
-    /**
-     * Opens the clone snapshot of a resource volume (the clone source).
-     *
-     * @param cloneTargetName the name of the clone target, from which the storage layer derives the name of the
-     *     clone snapshot
-     */
-    record ForClone(VlmProviderObject<Resource> vlmData, String cloneTargetName) implements ReadOnlyOpener<Resource>
-    {
-        @Override
-        public ForClone withVlmData(VlmProviderObject<Resource> childVlmData)
-        {
-            return new ForClone(childVlmData, cloneTargetName);
-        }
-
-        @Override
-        public String mappingSuffix()
-        {
-            return InternalApiConsts.CLONE_FOR_PREFIX + cloneTargetName;
-        }
     }
 
     /**

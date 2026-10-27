@@ -89,7 +89,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public abstract class AbsStorageProvider<
     INFO,
@@ -295,7 +294,6 @@ public abstract class AbsStorageProvider<
         Object intentionalTypeErasure = rawVlmDataList;
         List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) intentionalTypeErasure;
 
-        List<LAYER_DATA> vlmsToSnapshotClone = new ArrayList<>();
         List<LAYER_DATA> vlmsToCreate = new ArrayList<>();
         List<LAYER_DATA> vlmsToDelete = new ArrayList<>();
         List<LAYER_DATA> vlmsToDeactivate = new ArrayList<>();
@@ -320,12 +318,6 @@ public abstract class AbsStorageProvider<
             String lvId = vlmData.getIdentifier();
             if (vlmData.exists())
             {
-                final Resource rsc = vlmData.getRscLayerObject().getAbsResource();
-                var toCloneEntries = getCloneForKeyProps(rsc);
-                if (!toCloneEntries.isEmpty())
-                {
-                    vlmsToSnapshotClone.add(vlmData);
-                }
                 if (!cloneService.isRunning(
                         vlmData.getRscLayerObject().getResourceName(),
                         vlmData.getVlmNr(),
@@ -454,7 +446,6 @@ public abstract class AbsStorageProvider<
             }
         }
 
-        createCloneSnapshots(vlmsToSnapshotClone);
         createVolumes(vlmsToCreate, apiCallRc);
         resizeVolumes(vlmsToResize, apiCallRc);
         deleteVolumes(vlmsToDelete, apiCallRc);
@@ -584,71 +575,6 @@ public abstract class AbsStorageProvider<
     {
         final Resource rsc = vlmData.getRscLayerObject().getAbsResource();
         return rsc.getVolume(vlmData.getVlmNr()).getFlags().isSet(Volume.Flags.CLONING);
-    }
-
-    /**
-     * Create a short clone snapshot name from the identifier + vlmNr.
-     * @param cloneIdentifier resource name + suffix
-     * @param vlmNr vlmnr of the clone
-     * @return a short prefixed name and hashcode of the input parameters
-     */
-    public static String getCloneSnapshotName(String cloneIdentifier, int vlmNr)
-    {
-        final String target = String.format("%s_%d", cloneIdentifier, vlmNr);
-        return String.format("%s%x", InternalApiConsts.CLONE_FOR_PREFIX, target.hashCode());
-    }
-
-    public static String getLVMCloneSnapshotNameFull(String identifier, String cloneRscName, int vlmNr)
-    {
-        return identifier + "_" + getCloneSnapshotName(cloneRscName, vlmNr);
-    }
-
-    public static String getZFSCloneSnapshotNameFull(String identifier, String cloneRscName, int vlmNr)
-    {
-        return identifier + "@" + getCloneSnapshotName(cloneRscName, vlmNr);
-    }
-
-    protected String getCloneSnapshotNameFull(LAYER_DATA srcVlmData, String cloneRscname, String separator)
-    {
-        final String cloneSnapshotName = getCloneSnapshotName(cloneRscname, srcVlmData.getVlmNr().value);
-        final String srcId = asLvIdentifier(srcVlmData);
-        return srcId + separator + cloneSnapshotName;
-    }
-
-    private void createSnapshotForClone(LAYER_DATA vlmData, String cloneRscName)
-        throws StorageException, DatabaseException
-    {
-        createSnapshotForCloneImpl(vlmData, cloneRscName);
-        errorReporter.logInfo("Lv snapshot created %s/%s", vlmData.getIdentifier(), cloneRscName);
-    }
-
-    protected Set<Map.Entry<String, String>> getCloneForKeyProps(Resource rsc)
-    {
-        final ReadOnlyProps props = rsc.getProps();
-        return props.map().entrySet().stream()
-            .filter(e -> e.getKey().startsWith(InternalApiConsts.CLONE_PROP_PREFIX))
-            .collect(Collectors.toSet());
-    }
-
-    private void createCloneSnapshots(
-        List<LAYER_DATA> vlmsToSnapshot
-    )
-        throws StorageException, DatabaseException
-    {
-        for (LAYER_DATA vlmData : vlmsToSnapshot)
-        {
-            final Resource rsc = vlmData.getRscLayerObject().getAbsResource();
-            final var toCloneEntries = getCloneForKeyProps(rsc);
-            for (var entry : toCloneEntries)
-            {
-                // do not create snapshots for suffixes that don't support cloning
-                if (RscLayerSuffixes.shouldSuffixBeCloned(vlmData.getRscLayerObject().getResourceNameSuffix()))
-                {
-                    String cloneRscName = entry.getValue();
-                    createSnapshotForClone(vlmData, cloneRscName);
-                }
-            }
-        }
     }
 
     private void createVolumes(
@@ -2269,12 +2195,6 @@ public abstract class AbsStorageProvider<
 
     protected abstract void deactivateLvImpl(LAYER_DATA vlmData, String lvId)
         throws StorageException, DatabaseException;
-
-    protected void createSnapshotForCloneImpl(LAYER_DATA vlmData, String cloneRscName)
-        throws StorageException, DatabaseException
-    {
-        throw new StorageException("Clone volume is not supported by " + getClass().getSimpleName());
-    }
 
     protected String asLvIdentifier(LAYER_DATA vlmData)
     {

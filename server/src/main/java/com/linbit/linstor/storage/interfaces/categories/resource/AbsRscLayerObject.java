@@ -107,8 +107,6 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
     @Nullable
     Boolean isClonePassthroughMode();
 
-    void cleanupAfterCloneFinished();
-
     default AbsRscLayerObject<RSC> getSingleChild()
     {
         Set<AbsRscLayerObject<RSC>> children = getChildren();

@@ -9,11 +9,16 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.layer.LayerPayload;
@@ -59,6 +64,7 @@ public class LuksLayerOpenOptionsTest extends GenericDbBase
     private static final String NODE_NAME = "node";
     private static final String RSC_NAME = "rsc";
     private static final String SP_NAME = "mysp";
+    private static final String SNAP_NAME = "snap";
     private static final int VLM_NR = 0;
 
     @Inject ResourceTestFactory rscFactory;
@@ -167,6 +173,58 @@ public class LuksLayerOpenOptionsTest extends GenericDbBase
         assertTrue(opts.contains("--allow-discards"));
         assertTrue(opts.contains("--header-backup-file"));
         assertTrue(opts.contains("/tmp/x"));
+    }
+
+    @Test
+    public void snapshotUsesOpenOptionsOfItsVolumePropsCopy() throws Exception
+    {
+        LuksVlmData<Resource> vlmData = buildLuksVlm();
+        Volume vlm = (Volume) vlmData.getVolume();
+        LuksVlmData<Snapshot> snapVlmData = buildLuksSnapshotVlm(vlm);
+        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
+
+        // the copy taken with the snapshot counts, not the current property of the volume
+        snapVlm.getVlmPropsForChange().setProp(PROP_LUKS_OPEN_OPTIONS, "--perf-no_read_workqueue");
+        vlm.getProps().setProp(PROP_LUKS_OPEN_OPTIONS, "--perf-same_cpu_crypt");
+
+        assertEquals(List.of("--perf-no_read_workqueue"), luksLayer.getSnapshotOpenOptions(snapVlmData));
+    }
+
+    @Test
+    public void snapshotUsesAllowDiscardsOfResourceGroup() throws Exception
+    {
+        LuksVlmData<Resource> vlmData = buildLuksVlm();
+        Volume vlm = (Volume) vlmData.getVolume();
+        LuksVlmData<Snapshot> snapVlmData = buildLuksSnapshotVlm(vlm);
+        vlm.getResourceDefinition().getResourceGroup().getProps().setProp(PROP_LUKS_ALLOW_DISCARDS, ApiConsts.VAL_TRUE);
+
+        assertTrue(luksLayer.getSnapshotOpenOptions(snapVlmData).contains("--allow-discards"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private LuksVlmData<Snapshot> buildLuksSnapshotVlm(Volume vlm) throws Exception
+    {
+        Resource rsc = vlm.getAbsResource();
+        SnapshotDefinition snapDfn = snapshotDefinitionFactory.create(
+            rsc.getResourceDefinition(),
+            new SnapshotName(SNAP_NAME),
+            new SnapshotDefinition.Flags[0]
+        );
+        SnapshotVolumeDefinition snapVlmDfn = snapshotVolumeDefinitionFactory.create(
+            snapDfn,
+            vlm.getVolumeDefinition(),
+            vlm.getVolumeDefinition().getVolumeSize(),
+            new SnapshotVolumeDefinition.Flags[0]
+        );
+        Snapshot snap = snapshotFactory.create(rsc, snapDfn, new Snapshot.Flags[0]);
+        snapshotVolumeFactory.create(rsc, snap, snapVlmDfn);
+
+        Set<AbsRscLayerObject<Snapshot>> luksData = LayerRscUtils.getRscDataByLayer(
+            snap.getLayerData(),
+            DeviceLayerKind.LUKS
+        );
+        LuksRscData<Snapshot> luksRscData = (LuksRscData<Snapshot>) luksData.iterator().next();
+        return luksRscData.getVlmProviderObject(new VolumeNumber(VLM_NR));
     }
 
     @SuppressWarnings("unchecked")

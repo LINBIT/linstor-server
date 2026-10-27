@@ -23,6 +23,7 @@ import com.linbit.linstor.core.UdevHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
@@ -94,6 +95,11 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private static final int LSBLK_DISC_GRAN_RETRY_COUNT = 10;
     private static final long LSBLK_DISC_GRAN_RETRY_TIMEOUT_IN_MS = 100;
+    /**
+     * Opener suffix of the clone source snapshot. Each clone has its own source snapshot, so a constant suffix is
+     * unique among its openers.
+     */
+    private static final String CLONE_OPENER_SUFFIX = "_clone";
 
     private final ErrorReporter errorReporter;
     private final Provider<NotificationListener> notificationListenerProvider;
@@ -911,15 +917,14 @@ public class DeviceHandlerImpl implements DeviceHandler
                     rscDfn.getFlags().isSet(ResourceDefinition.Flags.DELETE);
                 if (!isRscDeleting && srcRscName != null && anyVlmInCloningState(rsc))
                 {
-                    final Resource srcRsc = getResource(rsc, srcRscName);
-                    final AbsRscLayerObject<Resource> srcRootLayerObj = srcRsc.getLayerData();
+                    final @Nullable Snapshot srcSnap = getCloneSourceSnapshot(rsc, srcRscName);
+                    if (srcSnap != null)
+                    {
+                        Map<VlmProviderObject<Snapshot>, VlmProviderObject<Resource>> devicesToClone =
+                            getDevicesToClone(srcSnap.getLayerData(), rsc.getLayerData());
 
-                    Map<VlmProviderObject<Resource>, VlmProviderObject<Resource>> devicesToClone = getDevicesToClone(
-                        srcRootLayerObj,
-                        rsc.getLayerData()
-                    );
-
-                    startClone(devicesToClone);
+                        startClone(devicesToClone);
+                    }
                 }
 
                 final Iterator<Volume> vlmsIt = rsc.iterateVolumes();
@@ -941,11 +946,69 @@ public class DeviceHandlerImpl implements DeviceHandler
             {
                 handleException(rsc, exc);
             }
-            catch (DatabaseException exc)
+            catch (DatabaseException | InvalidKeyException exc)
             {
                 throw new ImplementationError(exc);
             }
         }
+    }
+
+    /**
+     * The snapshot of the clone source the given clone target is cloned from, or {@code null} if it was not taken
+     * (yet) on this node. The controller deploys the target only after the snapshot was taken.
+     * Also {@code null} if the target does not reference a source snapshot (anymore): the controller removes the
+     * reference once no volume clones from the snapshot, while a failed volume still looks like it is cloning.
+     */
+    private @Nullable Snapshot getCloneSourceSnapshot(Resource cloneTargetRsc, String srcRscName)
+        throws StorageException, InvalidKeyException
+    {
+        @Nullable Snapshot ret = null;
+        final @Nullable String srcSnapName = cloneTargetRsc.getResourceDefinition().getProps().getProp(
+            InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+            InternalApiConsts.NAMESPC_INTERNAL_CLONE
+        );
+        if (srcSnapName == null)
+        {
+            errorReporter.logDebug(
+                "Clone %s: no source snapshot referenced, nothing to clone",
+                cloneTargetRsc.getResourceDefinition().getName()
+            );
+        }
+        else
+        {
+            final Resource srcRsc = getResource(cloneTargetRsc, srcRscName);
+            try
+            {
+                final @Nullable SnapshotDefinition srcSnapDfn = srcRsc.getResourceDefinition()
+                    .getSnapshotDfn(new SnapshotName(srcSnapName));
+                // only a successfully taken snapshot: during suspend-io the snapshot is not taken yet, and an aborted
+                // snapshot is not taken (on all nodes), although neither of them has the takeSnapshot flag set
+                if (srcSnapDfn != null &&
+                    srcSnapDfn.getFlags().isSet(SnapshotDefinition.Flags.SUCCESSFUL) &&
+                    srcSnapDfn.getFlags().isUnset(SnapshotDefinition.Flags.DELETE))
+                {
+                    final @Nullable Snapshot snap = srcSnapDfn.getSnapshot(srcRsc.getNode().getName());
+                    if (snap != null && !snap.getTakeSnapshot() && snap.getFlags().isUnset(Snapshot.Flags.DELETE))
+                    {
+                        ret = snap;
+                    }
+                }
+            }
+            catch (InvalidNameException exc)
+            {
+                throw new ImplementationError("Invalid clone source snapshot name: " + srcSnapName, exc);
+            }
+            if (ret == null)
+            {
+                errorReporter.logDebug(
+                    "Clone %s: source snapshot %s/%s not (yet) available on this node",
+                    cloneTargetRsc.getResourceDefinition().getName(),
+                    srcRscName,
+                    srcSnapName
+                );
+            }
+        }
+        return ret;
     }
 
     private boolean anyVlmInCloningState(Resource rscRef)
@@ -1087,7 +1150,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     private Set<CloneStrategy> fixupCloneStrategyQuirks(
-            VlmProviderObject<Resource> sourceVlmData,
+            VlmProviderObject<Snapshot> sourceVlmData,
             VlmProviderObject<Resource> targetVlmData,
             Set<CloneStrategy> srcStrat,
             Set<CloneStrategy> tgtStrat
@@ -1127,12 +1190,12 @@ public class DeviceHandlerImpl implements DeviceHandler
         return resultStrat;
     }
 
-    private void startClone(Map<VlmProviderObject<Resource>, VlmProviderObject<Resource>> devicesToCloneRef)
+    private void startClone(Map<VlmProviderObject<Snapshot>, VlmProviderObject<Resource>> devicesToCloneRef)
         throws DatabaseException
     {
         for (var cloneEntry : devicesToCloneRef.entrySet())
         {
-            final VlmProviderObject<Resource> sourceVlmData = cloneEntry.getKey();
+            final VlmProviderObject<Snapshot> sourceVlmData = cloneEntry.getKey();
             final VlmProviderObject<Resource> targetVlmData = cloneEntry.getValue();
             final Volume targetVlm = (Volume) targetVlmData.getVolume();
             final AbsRscLayerObject<Resource> targetRscData = targetVlmData.getRscLayerObject();
@@ -1174,7 +1237,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     if (cloneStrategy.needsOpenDevices())
                     {
                         srcSnapshotHandle = openSnapshotReadOnly(
-                            ReadOnlyOpener.forClone(sourceVlmData, resName.displayValue)
+                            ReadOnlyOpener.forSnapshot(sourceVlmData, CLONE_OPENER_SUFFIX)
                         );
                         openCloneTarget(targetVlmData);
                         openedTargetVlmData = targetVlmData;
@@ -1187,15 +1250,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             catch (StorageException exc)
             {
                 closeAfterFailedCloneStart(srcSnapshotHandle, openedTargetVlmData, exc);
-                try
-                {
-                    cloneService.cleanupSrcCloneSnapshots(sourceVlmData, resName, false);
-                }
-                catch (StorageException storExc)
-                {
-                    errorReporter.logError("Unable to cleanup source clone snapshots for: ", resName);
-                    errorReporter.reportError(storExc);
-                }
+                // the controller deletes the source snapshot once no target volume clones from it anymore
                 cloneService.setFailed(
                     resName,
                     targetVlmData.getVlmNr(),
@@ -1852,7 +1907,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     /**
      * Returns the child volume data a running clone passes through to (the clone copies the device below this layer,
      * see {@link AbsRscLayerObject#isClonePassthroughMode()}), or {@code null} if this layer handles the clone itself.
-     * Snapshot volume data is never in clone passthrough mode.
+     * Volume data is only in clone passthrough mode while a clone runs.
      */
     private <RSC extends AbsResource<RSC>> @Nullable VlmProviderObject<RSC> getClonePassthroughChild(
         VlmProviderObject<RSC> vlmData
@@ -1879,19 +1934,23 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void processAfterClone(VlmProviderObject<?> vlmSrcData, VlmProviderObject<?> vlmTgtData, String clonedDevPath)
+    public void processAfterClone(
+        VlmProviderObject<Snapshot> vlmSrcData,
+        VlmProviderObject<Resource> vlmTgtData,
+        String clonedDevPath
+    )
         throws StorageException
     {
-        final AbsRscLayerObject<?> rscData = vlmTgtData.getRscLayerObject();
+        final AbsRscLayerObject<Resource> rscData = vlmTgtData.getRscLayerObject();
         final DeviceLayer curLayer = layerFactory.getDeviceLayer(rscData.getLayerKind());
 
         curLayer.processAfterClone(vlmSrcData, vlmTgtData, clonedDevPath);
 
         final String rscNameSuffix = rscData.getResourceNameSuffix();
-        @Nullable AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
+        @Nullable AbsRscLayerObject<Resource> childRscData = rscData.getChildBySuffix(rscNameSuffix);
         if (childRscData != null)
         {
-            VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmTgtData.getVlmNr());
+            VlmProviderObject<Resource> childVlmData = childRscData.getVlmProviderObject(vlmTgtData.getVlmNr());
             processAfterClone(vlmSrcData, childVlmData, clonedDevPath);
         }
     }

@@ -33,7 +33,6 @@ import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Shared logic of "make-available --auto-manage-dual-primary" and "unmake-available": determining the
@@ -221,7 +220,8 @@ public class CtrlRscLiveMigrateHelper
         for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns())
         {
             // the snapshot data lives once on the shared pool, so snapshots forbid the dual-active
-            // window even if the migration source is missing the per-node snapshot objects
+            // window even if the migration source is missing the per-node snapshot objects. This includes the
+            // source snapshot of a running clone (CF_<hash of the target name>).
             if (snapDfn.getSnapshot(srcRsc.getNode().getName()) != null ||
                 sharedRscMgr.findSnapshotOnSharedSp(snapDfn, srcRsc) != null)
             {
@@ -236,27 +236,6 @@ public class CtrlRscLiveMigrateHelper
                                 "snapshots of the resource or its shared data exist."
                         )
                         .setCorrection("Delete the snapshots first.")
-                        .setSkipErrorReport(true)
-                        .build()
-                );
-            }
-        }
-        for (Map.Entry<String, String> cloneProp : srcRsc.getProps().map().entrySet())
-        {
-            if (cloneProp.getKey().startsWith(InternalApiConsts.CLONE_PROP_PREFIX))
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.entryBuilder(
-                        ApiConsts.FAIL_IN_USE,
-                        "Resource '" + rscDfn.getName().displayValue + "' is currently being cloned to '" +
-                            cloneProp.getValue() + "'"
-                    )
-                        .setCause(
-                            "Activating a shared resource on two nodes is not supported while a clone " +
-                                "of the resource is in progress: the clone reads from a snapshot of the " +
-                                "shared data."
-                        )
-                        .setCorrection("Wait for the clone to finish.")
                         .setSkipErrorReport(true)
                         .build()
                 );

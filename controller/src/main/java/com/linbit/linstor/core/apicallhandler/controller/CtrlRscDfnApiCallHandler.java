@@ -50,6 +50,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.ExternalFile;
@@ -72,7 +73,6 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.debug.HexViewer;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
-import com.linbit.linstor.layer.utils.SuspendLayerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -126,6 +126,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -170,6 +171,7 @@ public class CtrlRscDfnApiCallHandler
     private final Autoplacer autoplacer;
     private final BackgroundRunner backgroundRunner;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
+    private final Provider<CtrlSnapshotCrtApiCallHandler> ctrlSnapCrtHandlerProvider;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -206,7 +208,8 @@ public class CtrlRscDfnApiCallHandler
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
         Autoplacer autoplacerRef,
         BackgroundRunner backgroundRunnerRef,
-        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
+        Provider<CtrlSnapshotCrtApiCallHandler> ctrlSnapCrtHandlerProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -243,6 +246,7 @@ public class CtrlRscDfnApiCallHandler
         autoplacer = autoplacerRef;
         backgroundRunner = backgroundRunnerRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
+        ctrlSnapCrtHandlerProvider = ctrlSnapCrtHandlerProviderRef;
     }
 
     public @Nullable ResourceDefinition createResourceDefinition(
@@ -837,7 +841,8 @@ public class CtrlRscDfnApiCallHandler
                                                 intoRscGrpName,
                                                 overrideProps,
                                                 deletePropKeys,
-                                                deleteNamespaces
+                                                deleteNamespaces,
+                                                nodeNameList
                                             )
                                         )
                                         .transform(
@@ -1010,141 +1015,136 @@ public class CtrlRscDfnApiCallHandler
         return Flux.just(ret);
     }
 
-    private Flux<ApiCallRc> setCloneSnapshotProperty(ResourceDefinition rscDfn, String cloneRscName)
+    /**
+     * The nodes the source snapshot is taken on: those of the diskful resources the clone targets are created for.
+     * The snapshot is taken without synchronizing with the background runner again, so these nodes have to be among
+     * the nodes the clone synchronized on (see {@link #getNodeNamesForClone(String)}). Those were looked up before the
+     * clone's transaction, so a resource activated or created in between is refused.
+     */
+    private List<String> getCloneSourceSnapshotNodeNames(
+        ResourceDefinition srcRscDfn,
+        List<Resource> srcResources,
+        Set<NodeName> syncedNodeNames
+    )
+    {
+        List<String> ret = new ArrayList<>();
+        for (Resource rsc : srcResources)
+        {
+            if (!rsc.isDiskless())
+            {
+                NodeName nodeName = rsc.getNode().getName();
+                if (!syncedNodeNames.contains(nodeName))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_RSC_STATE,
+                            String.format(
+                                "The diskful resource of '%s' on node '%s' was activated or created while the clone " +
+                                    "was prepared. Please retry the clone.",
+                                srcRscDfn.getName().displayValue,
+                                nodeName.displayValue
+                            ),
+                            true
+                        )
+                    );
+                }
+                ret.add(nodeName.displayValue);
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Name of the snapshot of the clone source a clone target is cloned from, see
+     * {@link #getCloneSourceSnapshotName(String, Predicate)}. A name is taken if the source has a snapshot of that name
+     * (also one that is being deleted), or if another clone of the source already reserved it for its source snapshot
+     * but did not take that snapshot yet.
+     */
+    private SnapshotName getCloneSourceSnapshotName(ResourceDefinition srcRscDfn, String clonedRscNameRef)
+    {
+        return getCloneSourceSnapshotName(
+            clonedRscNameRef,
+            snapName -> srcRscDfn.getSnapshotDfn(snapName) != null ||
+                isReservedCloneSourceSnapshotName(srcRscDfn, snapName)
+        );
+    }
+
+    private boolean isReservedCloneSourceSnapshotName(ResourceDefinition srcRscDfn, SnapshotName snapName)
+    {
+        boolean reserved = false;
+        String srcRscName = srcRscDfn.getName().displayValue;
+        for (ResourceDefinition rscDfn : resourceDefinitionRepository.getMapForView().values())
+        {
+            ReadOnlyProps props = rscDfn.getProps();
+            if (srcRscName.equals(props.getProp(InternalApiConsts.KEY_CLONED_FROM)) &&
+                snapName.displayValue.equalsIgnoreCase(
+                    props.getProp(InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT, InternalApiConsts.NAMESPC_INTERNAL_CLONE)
+                ))
+            {
+                reserved = true;
+                break;
+            }
+        }
+        return reserved;
+    }
+
+    /**
+     * {@code CF_<hash of the target name>}, or if that name is taken, the first of {@code CF_<hash>_1},
+     * {@code CF_<hash>_2}, ... that is not taken.
+     */
+    public static SnapshotName getCloneSourceSnapshotName(
+        String clonedRscNameRef,
+        Predicate<SnapshotName> isTakenRef
+    )
+    {
+        final String baseName = InternalApiConsts.CLONE_FOR_PREFIX +
+            String.format("%08x", clonedRscNameRef.hashCode());
+        SnapshotName snapName = asCloneSourceSnapshotName(baseName);
+        for (int suffix = 1; isTakenRef.test(snapName); suffix++)
+        {
+            snapName = asCloneSourceSnapshotName(baseName + "_" + suffix);
+        }
+        return snapName;
+    }
+
+    private static SnapshotName asCloneSourceSnapshotName(String snapNameStr)
+    {
+        try
+        {
+            return new SnapshotName(snapNameStr);
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError("Invalid clone source snapshot name: " + snapNameStr, exc);
+        }
+    }
+
+    /**
+     * The source snapshot could not be taken: the target is marked as failed, as for a failed clone, and a source
+     * snapshot that was already (partially) created is removed again.
+     */
+    private Flux<ApiCallRc> failCloneBeforeDeployment(ResourceName clonedRscNameRef)
     {
         return scopeRunner
             .fluxInTransactionalScope(
-                "Set clone snapshot property",
-                lockGuardFactory.create()
-                    .read(LockObj.NODES_MAP)
-                    .write(LockObj.RSC_DFN_MAP)
-                    .buildDeferred(),
-                () -> setCloneSnapshotPropertyInTrans(rscDfn, cloneRscName)
+                "Mark failed clone",
+                lockGuardFactory.create().write(LockObj.RSC_DFN_MAP).buildDeferred(),
+                () -> failCloneBeforeDeploymentInTransaction(clonedRscNameRef)
             );
     }
 
-    private Flux<ApiCallRc> setCloneSnapshotPropertyInTrans(ResourceDefinition rscDfn, String cloneRscName)
+    private Flux<ApiCallRc> failCloneBeforeDeploymentInTransaction(ResourceName clonedRscNameRef)
+        throws DatabaseException
     {
-        var diskfulRscs = rscDfn.getDiskfulResources();
-        removeInactiveResources(diskfulRscs);
-        for (var diskRsc : diskfulRscs)
+        Flux<ApiCallRc> flux = Flux.empty();
+        @Nullable ResourceDefinition clonedRscDfn = ctrlApiDataLoader.loadRscDfnOrNull(clonedRscNameRef);
+        if (clonedRscDfn != null)
         {
-            setCloneSnapshotPropPrivileged(diskRsc, cloneRscName);
+            clonedRscDfn.getFlags().enableFlags(ResourceDefinition.Flags.FAILED);
+            flux = ctrlSnapDeleteHandler.deleteCloneSourceSnapshotInTransaction(clonedRscDfn);
+            ctrlTransactionHelper.commit();
         }
-        ctrlTransactionHelper.commit();
-
-        return ctrlSatelliteUpdateCaller
-            .updateSatellites(rscDfn, notConnectedError(), Flux.empty())
-            .transform(
-                responses -> CtrlResponseUtils.combineResponses(
-                    errorReporter,
-                    responses,
-                    rscDfn.getName(),
-                    "Set snapshot for clone property of {1} on {0}"
-                )
-            );
-    }
-
-    private void setCloneSnapshotPropPrivileged(Resource rsc, String cloneRscName)
-    {
-        try
-        {
-            Props props = rsc.getProps();
-            props.setProp(InternalApiConsts.CLONE_PROP_PREFIX + cloneRscName, cloneRscName);
-        }
-        catch (InvalidKeyException|InvalidValueException invKey)
-        {
-            errorReporter.reportError(invKey);
-            throw new RuntimeException("Invalid key or value for clone snapshot property:" + cloneRscName);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-    }
-
-    private void removeCloneSnapshotPropPrivileged(ResourceDefinition rscDfn, String cloneRscName)
-    {
-        try
-        {
-            Iterator<Resource> itRsc = rscDfn.iterateResource();
-            while (itRsc.hasNext())
-            {
-                Resource rsc = itRsc.next();
-                Props props = rsc.getProps();
-                props.removeProp(InternalApiConsts.CLONE_PROP_PREFIX + cloneRscName);
-            }
-        }
-        catch (InvalidKeyException invKey)
-        {
-            errorReporter.reportError(invKey);
-            throw new RuntimeException("Invalid key or value for clone snapshot property:" + cloneRscName);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-    }
-
-    private Flux<ApiCallRc> resumeIOAndClearCloneProp(ResourceDefinition rscDfn, String cloneName)
-    {
-        return scopeRunner
-            .fluxInTransactionalScope(
-                "Resume resource",
-                lockGuardFactory.create()
-                    .read(LockObj.NODES_MAP)
-                    .write(LockObj.RSC_DFN_MAP)
-                    .buildDeferred(),
-                () -> resumeIOAndClearClonePropInTransaction(rscDfn, cloneName)
-            );
-    }
-
-    private Flux<ApiCallRc> resumeIOAndClearClonePropInTransaction(ResourceDefinition rscDfn, String cloneName)
-    {
-        resumeIOPrivileged(rscDfn);
-        removeCloneSnapshotPropPrivileged(rscDfn, cloneName);
-
-        ctrlTransactionHelper.commit();
-
-        return ctrlSatelliteUpdateCaller
-            .updateSatellites(rscDfn, notConnectedError(), Flux.empty())
-            .transform(
-                responses -> CtrlResponseUtils.combineResponses(
-                    errorReporter,
-                    responses,
-                    rscDfn.getName(),
-                    "Resumed IO of {1} on {0} after clone"
-                )
-            );
-    }
-
-    private void setSuspendIO(Resource rsc)
-    {
-        try
-        {
-            SuspendLayerUtils.suspendIo(rsc);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-    }
-
-    private void resumeIOPrivileged(ResourceDefinition rscDfn)
-    {
-        try
-        {
-            Iterator<Resource> rscIt = rscDfn.iterateResource();
-            while (rscIt.hasNext())
-            {
-                Resource rsc = rscIt.next();
-                SuspendLayerUtils.resumeIo(rsc);
-            }
-        }
-        catch (DatabaseException dbExc)
-        {
-            throw new ApiDatabaseException(dbExc);
-        }
+        return flux;
     }
 
     private Flux<ApiCallRc> removeStartCloning(ResourceDefinition rscDfn) {
@@ -1480,7 +1480,8 @@ public class CtrlRscDfnApiCallHandler
         @Nullable String intoRscGrpName,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deleteNamespaces)
+        Set<String> deleteNamespaces,
+        Set<NodeName> syncedNodeNamesRef)
     {
         Flux<ApiCallRc> flux;
 
@@ -1516,6 +1517,17 @@ public class CtrlRscDfnApiCallHandler
             Map<String, String> clonedRscDfnPropsMap = clonedRscDfnProps.map();
             clonedRscDfnPropsMap.putAll(srcRscDfn.getProps().map());
             clonedRscDfnPropsMap.put(InternalApiConsts.KEY_CLONED_FROM, srcRscDfn.getName().displayValue);
+            // the target is cloned from a regular snapshot of the source, taken before the target is deployed
+            // clonedRscName is empty if the target is only given by its external name
+            final SnapshotName srcSnapName = getCloneSourceSnapshotName(
+                srcRscDfn,
+                clonedRscDfn.getName().displayValue
+            );
+            clonedRscDfnProps.setProp(
+                InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+                srcSnapName.displayValue,
+                InternalApiConsts.NAMESPC_INTERNAL_CLONE
+            );
 
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty() || !deleteNamespaces.isEmpty())
             {
@@ -1587,13 +1599,16 @@ public class CtrlRscDfnApiCallHandler
                 srcResources.add(srcRscIt.next());
             }
             removeInactiveResources(srcResources);
+            final List<String> srcSnapNodeNames = getCloneSourceSnapshotNodeNames(
+                srcRscDfn,
+                srcResources,
+                syncedNodeNamesRef
+            );
             Map<NodeName, StorPool> possibleStorPools = findCloneStoragePools(srcRscDfn, clonedRscDfn);
             for (Resource rsc : srcResources)
             {
                 failIfWrongRscState(rsc);
                 checkFreeSpace(rsc, pendingResizes, thinFreeCapacities);
-
-                setSuspendIO(rsc);
 
                 overrideRscLayerData(rsc, payload);
                 Resource newRsc = resourceControllerFactory.create(
@@ -1694,21 +1709,30 @@ public class CtrlRscDfnApiCallHandler
             Flux<ApiCallRc> deploymentResponses = ctrlRscCrtApiHelper
                 .deployResources(context, deployedResources, false);
 
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(srcRscDfn, Flux.empty())
-                .transform(
-                    updateResponses -> CtrlResponseUtils.combineResponses(
-                        errorReporter,
-                        updateResponses,
-                        srcRscDfn.getName(),
-                        "Suspend IO on clone source " + srcRscName
+            ResourceName clonedRscDfnName = clonedRscDfn.getName();
+            flux = Flux.<ApiCallRc>just(responses)
+                .concatWith(
+                    // the diskful resources of the source, with the usual suspend / snapshot / resume round trips.
+                    // The clone already runs synchronized with the background runner on these nodes.
+                    ctrlSnapCrtHandlerProvider.get().createSnapshotInBackground(
+                        srcSnapNodeNames,
+                        srcRscDfn.getName().displayValue,
+                        srcSnapName.displayValue,
+                        Collections.emptyMap(),
+                        SnapshotDefinition.Flags.FOR_CLONE
                     )
+                        .onErrorResume(
+                            exc -> failCloneBeforeDeployment(clonedRscDfnName).concatWith(Flux.error(exc))
+                        )
                 )
-                .concatWith(Flux.just(responses))
-                .concatWith(setCloneSnapshotProperty(srcRscDfn, clonedRscName))
-                .concatWith(resumeIOAndClearCloneProp(srcRscDfn, clonedRscName))
                 .concatWith(deploymentResponses)
                 .concatWith(removeStartCloning(clonedRscDfn))
-                .onErrorResume(exception -> resumeIOAndClearCloneProp(srcRscDfn, clonedRscName));
+                /*
+                 * As before the clone used a regular snapshot: errors that were already converted to responses (e.g. a
+                 * failed deployment on one node) end the flux. The source snapshot is kept: other nodes might still
+                 * clone from it. It is deleted when all volumes are done or the clone target is deleted.
+                 */
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
         catch (ApiRcException exc)
         {

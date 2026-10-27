@@ -2,7 +2,6 @@ package com.linbit.linstor.layer.dmsetup;
 
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
@@ -14,7 +13,6 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.layer.dmsetup.cache.CacheLayer;
 import com.linbit.linstor.layer.dmsetup.writecache.WritecacheLayer;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
@@ -25,8 +23,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import org.junit.Before;
@@ -58,7 +54,6 @@ public class CacheFlushTest
 {
     private Resource rsc;
     private StateFlags<Resource.Flags> rscFlags;
-    private Map<String, String> rscPropsMap;
     private AbsRscLayerObject<Resource> rscRoot;
 
     private ResourceDefinition rscDfn;
@@ -77,11 +72,7 @@ public class CacheFlushTest
     {
         rsc = mock(Resource.class);
         rscFlags = mock(StateFlags.class);
-        rscPropsMap = new HashMap<>();
-        Props rscProps = mock(Props.class);
-        when(rscProps.map()).thenReturn(rscPropsMap);
         when(rsc.getStateFlags()).thenReturn(rscFlags);
-        when(rsc.getProps()).thenReturn(rscProps);
 
         rscRoot = layerData(DeviceLayerKind.DRBD, null, rsc);
         when(rscRoot.getShouldSuspendIo()).thenReturn(true);
@@ -223,43 +214,6 @@ public class CacheFlushTest
         assertThat(CacheFlushUtils.getRscDataToFlushForSnapshot(snapCache)).isNull();
     }
 
-    // --- CacheFlushUtils: clone ---
-
-    @Test
-    public void cloneFlushNeededInRoundTrip2()
-    {
-        AbsRscLayerObject<Resource> rscCache = layerData(DeviceLayerKind.CACHE, rscRoot, rsc);
-        rscPropsMap.put(InternalApiConsts.CLONE_PROP_PREFIX + "target", "target");
-
-        assertThat(CacheFlushUtils.isCloneSnapshotPending(rscCache)).isTrue();
-    }
-
-    @Test
-    public void cloneNoFlushWithoutCloneProp()
-    {
-        AbsRscLayerObject<Resource> rscCache = layerData(DeviceLayerKind.CACHE, rscRoot, rsc);
-
-        assertThat(CacheFlushUtils.isCloneSnapshotPending(rscCache)).isFalse();
-    }
-
-    @Test
-    public void cloneNoFlushWhenNotSuspended()
-    {
-        AbsRscLayerObject<Resource> rscCache = layerData(DeviceLayerKind.CACHE, rscRoot, rsc);
-        rscPropsMap.put(InternalApiConsts.CLONE_PROP_PREFIX + "target", "target");
-        when(rscRoot.getShouldSuspendIo()).thenReturn(false);
-
-        assertThat(CacheFlushUtils.isCloneSnapshotPending(rscCache)).isFalse();
-    }
-
-    @Test
-    public void cloneNoFlushForRootLayer()
-    {
-        rscPropsMap.put(InternalApiConsts.CLONE_PROP_PREFIX + "target", "target");
-
-        assertThat(CacheFlushUtils.isCloneSnapshotPending(rscRoot)).isFalse();
-    }
-
     // --- CacheLayer (dm-cache) ---
 
     private CacheLayer cacheLayerSpy() throws Exception
@@ -360,25 +314,7 @@ public class CacheFlushTest
     }
 
     @Test
-    public void cacheCloneFlushesAroundDataChild() throws Exception
-    {
-        CacheRscData<Resource> rscCache = mock(CacheRscData.class);
-        initLayerData(rscCache, DeviceLayerKind.CACHE, rscRoot, rsc);
-        AbsRscLayerObject<Resource> dataChild = layerData(DeviceLayerKind.STORAGE, rscCache, rsc);
-        when(rscCache.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)).thenReturn(dataChild);
-        rscPropsMap.put(InternalApiConsts.CLONE_PROP_PREFIX + "target", "target");
-        CacheLayer layer = cacheLayerSpy();
-
-        layer.processResource(rscCache, apiCallRc);
-
-        InOrder order = inOrder(layer, deviceHandler);
-        order.verify(layer).suspendIo(rscCache, false);
-        order.verify(deviceHandler).processResource(dataChild, apiCallRc);
-        order.verify(layer).resumeIo(rscCache, false);
-    }
-
-    @Test
-    public void cacheWithoutCloneDoesNotFlush() throws Exception
+    public void cacheResourceDoesNotFlush() throws Exception
     {
         CacheRscData<Resource> rscCache = mock(CacheRscData.class);
         initLayerData(rscCache, DeviceLayerKind.CACHE, rscRoot, rsc);
@@ -433,33 +369,6 @@ public class CacheFlushTest
         {
             assertThat(writecacheLayer().processSnapshot(snapWc, apiCallRc)).isFalse();
             dmSetup.verify(() -> DmSetupUtils.flush(any(), any(AbsRscLayerObject.class)), never());
-        }
-    }
-
-    @Test
-    public void writecacheCloneFlushesBeforeDataChild() throws Exception
-    {
-        WritecacheRscData<Resource> rscWc = mock(WritecacheRscData.class);
-        initLayerData(rscWc, DeviceLayerKind.WRITECACHE, rscRoot, rsc);
-        AbsRscLayerObject<Resource> dataChild = layerData(DeviceLayerKind.STORAGE, rscWc, rsc);
-        when(rscWc.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)).thenReturn(dataChild);
-        rscPropsMap.put(InternalApiConsts.CLONE_PROP_PREFIX + "target", "target");
-
-        try (MockedStatic<DmSetupUtils> dmSetup = mockStatic(DmSetupUtils.class))
-        {
-            dmSetup.when(() -> DmSetupUtils.flush(extCmdFactory, rscWc)).then(
-                invocation ->
-                {
-                    // the data child (and with it the clone snapshot) must not have been processed yet
-                    verify(deviceHandler, never()).processResource(any(), any());
-                    return null;
-                }
-            );
-
-            writecacheLayer().processResource(rscWc, apiCallRc);
-
-            dmSetup.verify(() -> DmSetupUtils.flush(extCmdFactory, rscWc));
-            verify(deviceHandler).processResource(dataChild, apiCallRc);
         }
     }
 }

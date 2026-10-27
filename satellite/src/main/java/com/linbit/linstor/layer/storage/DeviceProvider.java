@@ -117,9 +117,8 @@ public interface DeviceProvider
     }
 
     /**
-     * Makes a storage snapshot readable and sets its device as {@link VlmProviderObject#getCloneDevicePath()} of the
-     * opener's volume data: the LINSTOR snapshot for a {@link ReadOnlyOpener.ForSnapshot}, or the clone snapshot of
-     * the clone source for a {@link ReadOnlyOpener.ForClone}.
+     * Makes the storage snapshot of the opener's LINSTOR snapshot volume data readable and sets its device as
+     * {@link VlmProviderObject#getCloneDevicePath()} of that volume data.
      *
      * @return the handle that makes the snapshot unreadable again (if no other opener needs it) and resets the
      *     clone device path

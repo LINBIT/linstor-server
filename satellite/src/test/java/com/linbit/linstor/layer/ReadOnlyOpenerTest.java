@@ -1,9 +1,7 @@
 package com.linbit.linstor.layer;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.core.identifier.SnapshotName;
-import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -28,24 +26,12 @@ public class ReadOnlyOpenerTest
     }
 
     @Test
-    public void cloneMappingSuffixContainsCloneTarget()
-    {
-        assertThat(ReadOnlyOpener.forClone(mock(VlmProviderObject.class), "target").mappingSuffix())
-            .isEqualTo(InternalApiConsts.CLONE_FOR_PREFIX + "target");
-    }
-
-    @Test
     public void withVlmDataKeepsEverythingButTheVolumeData()
     {
         VlmProviderObject<Snapshot> snapVlm = mock(VlmProviderObject.class);
         VlmProviderObject<Snapshot> snapChildVlm = mock(VlmProviderObject.class);
         assertThat(ReadOnlyOpener.forSnapshot(snapVlm, "_ro").withVlmData(snapChildVlm))
             .isEqualTo(ReadOnlyOpener.forSnapshot(snapChildVlm, "_ro"));
-
-        VlmProviderObject<Resource> rscVlm = mock(VlmProviderObject.class);
-        VlmProviderObject<Resource> rscChildVlm = mock(VlmProviderObject.class);
-        assertThat(ReadOnlyOpener.forClone(rscVlm, "target").withVlmData(rscChildVlm))
-            .isEqualTo(ReadOnlyOpener.forClone(rscChildVlm, "target"));
     }
 
     @Test

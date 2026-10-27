@@ -1,17 +1,24 @@
 package com.linbit.linstor.api;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
+import com.linbit.linstor.core.apicallhandler.controller.internal.RscDfnInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
@@ -19,6 +26,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
@@ -30,6 +38,8 @@ import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
@@ -50,9 +60,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -80,6 +93,18 @@ public class RscDfnCloneApiTest extends ApiTestBase
     private Provider<CtrlRscDfnApiCallHandler> rscDfnApiCallHandlerProvider;
     @Inject
     private CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
+    @Inject
+    private Provider<CtrlSnapshotDeleteApiCallHandler> snapDeleteHandlerProvider;
+    @Inject
+    private Provider<RscDfnInternalCallHandler> rscDfnInternalCallHandlerProvider;
+    @Inject
+    private Provider<CtrlRscDfnDeleteApiCallHandler> rscDfnDeleteHandlerProvider;
+    @Inject
+    private ScopeRunner scopeRunner;
+    @Inject
+    private LockGuardFactory lockGuardFactory;
+    @Inject
+    private CtrlTransactionHelper ctrlTransactionHelper;
 
     @Bind
     @Mock
@@ -299,19 +324,20 @@ public class RscDfnCloneApiTest extends ApiTestBase
     {
         return new long[]
         {
-            // suspended IO of the clone source on both satellites
-            ApiConsts.MODIFIED,
-            ApiConsts.MODIFIED,
             // cloned resource registered on node A, volume registered on node A,
             // cloned resource registered on node B, volume registered on node B
             ApiConsts.CREATED,
             ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED,
             ApiConsts.CREATED,
             ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED,
-            // set snapshot-for-clone property on both satellites
+            // the source snapshot (CF_<hash of the target name>): registered, suspended IO, took the snapshot and
+            // resumed IO
+            // on both satellites
+            ApiConsts.CREATED,
             ApiConsts.MODIFIED,
             ApiConsts.MODIFIED,
-            // resumed IO of the clone source on both satellites
+            ApiConsts.MODIFIED,
+            ApiConsts.MODIFIED,
             ApiConsts.MODIFIED,
             ApiConsts.MODIFIED,
             // deployed the cloned resources on both satellites
@@ -475,6 +501,68 @@ public class RscDfnCloneApiTest extends ApiTestBase
     }
 
     @Test
+    public void cloneSourceOnEvacuatingNodeRejected() throws Exception
+    {
+        /*
+         * the source snapshot would not be taken on node B, so a clone target there would never be cloned: the
+         * autoplacer finds no storage pool on an evacuating (or offline) node for the clone target
+         */
+        enterScope();
+        testNodeB.getFlags().enableFlags(Node.Flags.EVACUATE);
+        leaveScope();
+
+        evaluateTest(
+            new CloneRscDfnCall(ApiConsts.FAIL_NOT_ENOUGH_NODES)
+        );
+        assertThat(rscDfnMap.get(cloneRscName)).isNull();
+    }
+
+    @Test
+    public void cloneSourceOnOfflineNodeRejected() throws Exception
+    {
+        // see cloneSourceOnEvacuatingNodeRejected
+        setSatelliteOnline(mockSatelliteB, false);
+
+        evaluateTest(
+            new CloneRscDfnCall(ApiConsts.FAIL_NOT_ENOUGH_NODES)
+        );
+        assertThat(rscDfnMap.get(cloneRscName)).isNull();
+    }
+
+    @Test
+    public void cloneSourceRscActivatedWhilePreparingRejected() throws Exception
+    {
+        /*
+         * the clone synchronizes with the background runner on the nodes of the diskful resources it looked up before
+         * its transaction, and takes the source snapshot on them without synchronizing again: a resource activated in
+         * between would be snapshotted unsynchronized
+         */
+        enterScope();
+        testNodeB.getResource(testRscName).getStateFlags().enableFlags(Resource.Flags.INACTIVE);
+        leaveScope();
+        Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any()))
+            .thenAnswer(
+                ignored -> scopeRunner.fluxInTransactionalScope(
+                    "Activate the source resource on node B",
+                    lockGuardFactory.create().write(LockObj.RSC_DFN_MAP).buildDeferred(),
+                    () ->
+                    {
+                        testNodeB.getResource(testRscName).getStateFlags().disableFlags(Resource.Flags.INACTIVE);
+                        ctrlTransactionHelper.commit();
+                        return Flux.empty();
+                    }
+                )
+                    .then(Mono.just(Collections.emptyMap()))
+            );
+
+        evaluateTest(
+            new CloneRscDfnCall(ApiConsts.FAIL_INVLD_RSC_STATE)
+        );
+        assertThat(rscDfnMap.get(cloneRscName)).isNull();
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(cloneSrcSnapName())).isNull();
+    }
+
+    @Test
     public void cloneNoSuitableStorPool() throws Exception
     {
         // the target resource group restricts the autoplacer to a storage pool that does not exist
@@ -573,14 +661,290 @@ public class RscDfnCloneApiTest extends ApiTestBase
             assertThat(clonedVlm.getFlags().isSet(Volume.Flags.CLONING_START)).isFalse();
         }
 
-        // IO of the source was resumed and the clone property removed again
+        // the target is cloned from a regular snapshot of the source, taken on both diskful nodes
+        String srcSnapName = cloneSrcSnapName().displayValue;
+        assertThat(srcSnapName).matches(InternalApiConsts.CLONE_FOR_PREFIX + "[0-9a-f]{8}");
+        assertThat(
+            clonedRscDfn.getProps().getProp(
+                InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+                InternalApiConsts.NAMESPC_INTERNAL_CLONE
+            )
+        ).isEqualTo(srcSnapName);
+        SnapshotDefinition srcSnapDfn = rscDfnMap.get(testRscName).getSnapshotDfn(new SnapshotName(srcSnapName));
+        assertThat(srcSnapDfn).isNotNull();
+        assertThat(srcSnapDfn.getFlags().isSet(SnapshotDefinition.Flags.FOR_CLONE)).isTrue();
         for (Node node : Arrays.asList(testNodeA, testNodeB))
         {
+            assertThat(srcSnapDfn.getSnapshot(node.getName())).isNotNull();
+            // IO of the source was resumed by the snapshot creation
             Resource srcRsc = node.getResource(testRscName);
-            assertThat(srcRsc.getProps().getProp(InternalApiConsts.CLONE_PROP_PREFIX + CLONE_RSC_NAME))
-                .isNull();
             assertThat(srcRsc.getLayerData().getShouldSuspendIo()).isFalse();
         }
+    }
+
+    /*
+     * the source snapshot (CF_<hash of the target name>) of a running clone
+     */
+
+    /** the name of the source snapshot of a clone to {@link #CLONE_RSC_NAME} if no name is taken */
+    private SnapshotName cloneSrcSnapName()
+    {
+        return CtrlRscDfnApiCallHandler.getCloneSourceSnapshotName(CLONE_RSC_NAME, ignored -> false);
+    }
+
+    private @Nullable String getCloneSrcSnapNameProp()
+    {
+        return rscDfnMap.get(cloneRscName).getProps().getProp(
+            InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+            InternalApiConsts.NAMESPC_INTERNAL_CLONE
+        );
+    }
+
+    private boolean cloneSrcSnapshotDeleted() throws Exception
+    {
+        @Nullable SnapshotDefinition snapDfn = rscDfnMap.get(testRscName).getSnapshotDfn(cloneSrcSnapName());
+        return snapDfn == null || snapDfn.getFlags().isSet(SnapshotDefinition.Flags.DELETE);
+    }
+
+    /** reports the clone result of volume 0 of the clone target as the given satellite */
+    private void reportCloneUpdate(Peer satellite, boolean success)
+    {
+        rscDfnInternalCallHandlerProvider.get().handleCloneUpdate(CLONE_RSC_NAME, 0, success)
+            .contextWrite(
+                Context.of(
+                    ApiModule.API_CALL_NAME, "TestApiCallName",
+                    Peer.class, satellite,
+                    ApiModule.API_CALL_ID, 1L
+                )
+            )
+            .blockLast();
+    }
+
+    @Test
+    public void cloneSourceSnapshotCannotBeDeletedWhileCloning() throws Exception
+    {
+        evaluateTest(new CloneRscDfnCall(cloneSuccessRcs()));
+
+        assertThatThrownBy(
+            () -> collect(snapDeleteHandlerProvider.get().deleteSnapshot(testRscName, cloneSrcSnapName(), null))
+        )
+            .isInstanceOf(ApiRcException.class)
+            .hasMessageContaining("is the source of the running clone to '" + CLONE_RSC_NAME + "'");
+        assertThat(cloneSrcSnapshotDeleted()).isFalse();
+    }
+
+    @Test
+    public void failedCloneSourceSnapshotCanBeDeleted() throws Exception
+    {
+        evaluateTest(new CloneRscDfnCall(cloneSuccessRcs()));
+        enterScope();
+        rscDfnMap.get(testRscName).getSnapshotDfn(cloneSrcSnapName()).getFlags()
+            .enableFlags(SnapshotDefinition.Flags.FAILED_DEPLOYMENT);
+        leaveScope();
+
+        collect(snapDeleteHandlerProvider.get().deleteSnapshot(testRscName, cloneSrcSnapName(), null));
+
+        assertThat(cloneSrcSnapshotDeleted()).isTrue();
+    }
+
+    @Test
+    public void unreferencedCloneSourceSnapshotCanBeDeleted() throws Exception
+    {
+        evaluateTest(new CloneRscDfnCall(cloneSuccessRcs()));
+        // the clone no longer referenced it, but deleting it was interrupted (e.g. by a restart of the controller)
+        enterScope();
+        rscDfnMap.get(cloneRscName).getProps().removeProp(
+            InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+            InternalApiConsts.NAMESPC_INTERNAL_CLONE
+        );
+        leaveScope();
+
+        collect(snapDeleteHandlerProvider.get().deleteSnapshot(testRscName, cloneSrcSnapName(), null));
+
+        assertThat(cloneSrcSnapshotDeleted()).isTrue();
+    }
+
+    /**
+     * A snapshot that was not taken by a clone, but has the name a clone target of the source reserved for its source
+     * snapshot (e.g. it was created before the clone took its snapshot).
+     */
+    private SnapshotDefinition createSnapshotWithNameReservedByOtherClone() throws Exception
+    {
+        enterScope();
+        ResourceDefinition otherCloneRscDfn = resourceDefinitionTestFactory.builder(CLONE_RSC_NAME).build();
+        rscDfnMap.put(otherCloneRscDfn.getName(), otherCloneRscDfn);
+        otherCloneRscDfn.getProps().setProp(InternalApiConsts.KEY_CLONED_FROM, TEST_RSC_NAME);
+        otherCloneRscDfn.getProps().setProp(
+            InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+            cloneSrcSnapName().displayValue,
+            InternalApiConsts.NAMESPC_INTERNAL_CLONE
+        );
+        SnapshotDefinition snapDfn = snapshotDefinitionFactory.create(
+            rscDfnMap.get(testRscName),
+            cloneSrcSnapName(),
+            new SnapshotDefinition.Flags[0]
+        );
+        leaveScope();
+        return snapDfn;
+    }
+
+    @Test
+    public void snapshotWithReservedNameCanBeDeleted() throws Exception
+    {
+        createSnapshotWithNameReservedByOtherClone();
+
+        collect(snapDeleteHandlerProvider.get().deleteSnapshot(testRscName, cloneSrcSnapName(), null));
+
+        assertThat(cloneSrcSnapshotDeleted()).isTrue();
+    }
+
+    @Test
+    public void snapshotWithReservedNameNotDeletedWithCloneTarget() throws Exception
+    {
+        SnapshotDefinition snapDfn = createSnapshotWithNameReservedByOtherClone();
+
+        collect(rscDfnDeleteHandlerProvider.get().deleteResourceDefinition(CLONE_RSC_NAME));
+
+        assertThat(rscDfnMap.get(cloneRscName)).isNull();
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(cloneSrcSnapName())).isSameAs(snapDfn);
+        assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.DELETE)).isFalse();
+    }
+
+    @Test
+    public void cloneSourceSnapshotDeletedWhenAllVolumesCloned() throws Exception
+    {
+        evaluateTest(new CloneRscDfnCall(cloneSuccessRcs()));
+        Mockito.when(mockSatelliteA.getNode()).thenReturn(testNodeA);
+        Mockito.when(mockSatelliteB.getNode()).thenReturn(testNodeB);
+
+        // node B still clones from the snapshot
+        reportCloneUpdate(mockSatelliteA, true);
+        assertThat(cloneSrcSnapshotDeleted()).isFalse();
+
+        reportCloneUpdate(mockSatelliteB, true);
+        assertThat(cloneSrcSnapshotDeleted()).isTrue();
+        assertThat(
+            rscDfnMap.get(cloneRscName).getProps().getProp(
+                InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+                InternalApiConsts.NAMESPC_INTERNAL_CLONE
+            )
+        ).isNull();
+    }
+
+    @Test
+    public void cloneSourceSnapshotDeletedWhenAllVolumesFinishedOrFailed() throws Exception
+    {
+        evaluateTest(new CloneRscDfnCall(cloneSuccessRcs()));
+        Mockito.when(mockSatelliteA.getNode()).thenReturn(testNodeA);
+        Mockito.when(mockSatelliteB.getNode()).thenReturn(testNodeB);
+
+        reportCloneUpdate(mockSatelliteA, false);
+        // the clone failed, but node B is still reading from the snapshot
+        assertThat(rscDfnMap.get(cloneRscName).getFlags().isSet(ResourceDefinition.Flags.FAILED)).isTrue();
+        assertThat(cloneSrcSnapshotDeleted()).isFalse();
+
+        reportCloneUpdate(mockSatelliteB, true);
+        assertThat(cloneSrcSnapshotDeleted()).isTrue();
+    }
+
+    @Test
+    public void cloneSourceSnapshotDeletedWithCloneTarget() throws Exception
+    {
+        evaluateTest(new CloneRscDfnCall(cloneSuccessRcs()));
+
+        collect(rscDfnDeleteHandlerProvider.get().deleteResourceDefinition(CLONE_RSC_NAME));
+
+        assertThat(cloneSrcSnapshotDeleted()).isTrue();
+    }
+
+    @Test
+    public void cloneSourceSnapshotDeletedWithRetriedCloneTargetDeletion() throws Exception
+    {
+        evaluateTest(new CloneRscDfnCall(cloneSuccessRcs()));
+
+        // satellite B fails to delete the target's resource: the deletion stops before the target is deleted
+        Mockito.when(mockSatelliteB.apiCall(Mockito.anyString(), any()))
+            .thenReturn(
+                Flux.error(
+                    new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, "delete failed"))
+                )
+            );
+        collect(rscDfnDeleteHandlerProvider.get().deleteResourceDefinition(CLONE_RSC_NAME));
+        assertThat(rscDfnMap.get(cloneRscName)).isNotNull();
+        assertThat(cloneSrcSnapshotDeleted()).isFalse();
+
+        // the deletion is retried (as on reconnect of the satellite)
+        Mockito.when(mockSatelliteB.apiCall(Mockito.anyString(), any())).thenReturn(Flux.empty());
+        collect(rscDfnDeleteHandlerProvider.get().deleteResourceDefinition(CLONE_RSC_NAME));
+        assertThat(rscDfnMap.get(cloneRscName)).isNull();
+        assertThat(cloneSrcSnapshotDeleted()).isTrue();
+    }
+
+    @Test
+    public void cloneSourceSnapshotNameIsHashOfTargetName()
+    {
+        String shortName = CtrlRscDfnApiCallHandler.getCloneSourceSnapshotName("short", ignored -> false)
+            .displayValue;
+        String longName = CtrlRscDfnApiCallHandler.getCloneSourceSnapshotName("a".repeat(48), ignored -> false)
+            .displayValue;
+        assertThat(shortName).isEqualTo(InternalApiConsts.CLONE_FOR_PREFIX + String.format("%08x", "short".hashCode()));
+        assertThat(longName).matches(InternalApiConsts.CLONE_FOR_PREFIX + "[0-9a-f]{8}");
+        assertThat(longName).isNotEqualTo(shortName);
+    }
+
+    @Test
+    public void cloneSourceSnapshotNameSuffixedWhileTaken() throws Exception
+    {
+        String baseName = cloneSrcSnapName().displayValue;
+        Set<SnapshotName> takenNames = Set.of(new SnapshotName(baseName), new SnapshotName(baseName + "_1"));
+
+        assertThat(
+            CtrlRscDfnApiCallHandler.getCloneSourceSnapshotName(CLONE_RSC_NAME, takenNames::contains).displayValue
+        )
+            .isEqualTo(baseName + "_2");
+    }
+
+    @Test
+    public void cloneSourceSnapshotNameAvoidsExistingSnapshot() throws Exception
+    {
+        String baseName = cloneSrcSnapName().displayValue;
+        enterScope();
+        SnapshotDefinition existingSnapDfn = snapshotDefinitionFactory.create(
+            rscDfnMap.get(testRscName),
+            new SnapshotName(baseName),
+            new SnapshotDefinition.Flags[0]
+        );
+        leaveScope();
+
+        evaluateTest(new CloneRscDfnCall(cloneSuccessRcs()));
+
+        String srcSnapName = baseName + "_1";
+        assertThat(getCloneSrcSnapNameProp()).isEqualTo(srcSnapName);
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(new SnapshotName(srcSnapName))).isNotNull();
+        // the snapshot that already had the name is left alone
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(new SnapshotName(baseName))).isSameAs(existingSnapDfn);
+        assertThat(existingSnapDfn.getFlags().isSet(SnapshotDefinition.Flags.DELETE)).isFalse();
+    }
+
+    @Test
+    public void cloneSourceSnapshotNameAvoidsNameReservedByOtherClone() throws Exception
+    {
+        // another clone of the source that did not take its source snapshot yet
+        String baseName = cloneSrcSnapName().displayValue;
+        enterScope();
+        ResourceDefinition otherCloneRscDfn = resourceDefinitionTestFactory.builder("OtherClone").build();
+        rscDfnMap.put(otherCloneRscDfn.getName(), otherCloneRscDfn);
+        otherCloneRscDfn.getProps().setProp(InternalApiConsts.KEY_CLONED_FROM, TEST_RSC_NAME);
+        otherCloneRscDfn.getProps().setProp(
+            InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+            baseName,
+            InternalApiConsts.NAMESPC_INTERNAL_CLONE
+        );
+        leaveScope();
+
+        evaluateTest(new CloneRscDfnCall(cloneSuccessRcs()));
+
+        assertThat(getCloneSrcSnapNameProp()).isEqualTo(baseName + "_1");
     }
 
     @Test
@@ -615,6 +979,47 @@ public class RscDfnCloneApiTest extends ApiTestBase
         assertThat(clonedRscDfn).isNotNull();
         assertThat(clonedRscDfn.getName().displayValue).isEqualTo("ExternalNameOfClone");
         assertThat(clonedRscDfn.getExternalName()).isEqualTo(extName);
+
+        // the source snapshot is named after the generated target name, not after the (empty) given name
+        String srcSnapName = CtrlRscDfnApiCallHandler.getCloneSourceSnapshotName(
+            "ExternalNameOfClone",
+            ignored -> false
+        ).displayValue;
+        assertThat(
+            clonedRscDfn.getProps().getProp(
+                InternalApiConsts.KEY_CLONE_SOURCE_SNAPSHOT,
+                InternalApiConsts.NAMESPC_INTERNAL_CLONE
+            )
+        ).isEqualTo(srcSnapName);
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(new SnapshotName(srcSnapName))).isNotNull();
+    }
+
+    @Test
+    public void cloneFailsIfSourceSnapshotFails() throws Exception
+    {
+        // satellite B fails to suspend IO for the source snapshot
+        Mockito.when(
+            mockSatelliteB.apiCall(Mockito.eq(InternalApiConsts.API_CHANGED_DATA), any())
+        )
+            .thenReturn(
+                Flux.error(
+                    new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, "snapshot failed"))
+                )
+            );
+
+        ApiCallRc rc = new CloneRscDfnCall().executeApiCall();
+
+        assertThat(rc.stream().anyMatch(entry -> entry.isError() && entry.getMessage().equals("snapshot failed")))
+            .isTrue();
+        ResourceDefinition clonedRscDfn = rscDfnMap.get(cloneRscName);
+        assertThat(clonedRscDfn.getFlags().isSet(ResourceDefinition.Flags.FAILED)).isTrue();
+        assertThat(cloneSrcSnapshotDeleted()).isTrue();
+        // the target was not deployed: the start-cloning flag was not removed
+        for (Node node : Arrays.asList(testNodeA, testNodeB))
+        {
+            Volume clonedVlm = node.getResource(cloneRscName).getVolume(new VolumeNumber(0));
+            assertThat(clonedVlm.getFlags().isSet(Volume.Flags.CLONING_START)).isTrue();
+        }
     }
 
     @Test
@@ -644,13 +1049,13 @@ public class RscDfnCloneApiTest extends ApiTestBase
         CloneRscDfnCall call = new CloneRscDfnCall(cloneSuccessRcs())
             .overrideProps(auxKey, "value")
             .deleteProps(copiedKey);
-        // the property changes are reported before the resource registration entries
+        // the property changes are reported first, before the resource registration entries
         call.retCodes.add(
-            2,
+            0,
             ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_CRT | ApiConsts.CREATED // props set
         );
         call.retCodes.add(
-            3,
+            1,
             ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL | ApiConsts.DELETED // props deleted
         );
         evaluateTest(call);

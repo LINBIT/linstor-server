@@ -623,6 +623,8 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition>
         @Deprecated
         PREPARE_SHIPPING_ABORT(1L << 12),
         SAFETY_SNAPSHOT(1L << 13),
+        /** the snapshot of a clone source the clone target is cloned from */
+        FOR_CLONE(1L << 14),
         ;
 
         public final long flagValue;

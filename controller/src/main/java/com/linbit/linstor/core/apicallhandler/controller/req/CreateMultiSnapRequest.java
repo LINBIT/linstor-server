@@ -226,19 +226,34 @@ public class CreateMultiSnapRequest
         private final String rscName;
         private final String snapName;
         private final Map<String, String> props;
+        /** additional flags of the created snapshot definition */
+        private final SnapshotDefinition.Flags[] snapDfnFlags;
 
         public SnapReq(List<String> nodeNamesRef, String rscNameRef, String snapNameRef, Map<String, String> propsRef)
+        {
+            this(nodeNamesRef, rscNameRef, snapNameRef, propsRef, new SnapshotDefinition.Flags[0]);
+        }
+
+        public SnapReq(
+            List<String> nodeNamesRef,
+            String rscNameRef,
+            String snapNameRef,
+            Map<String, String> propsRef,
+            SnapshotDefinition.Flags[] snapDfnFlagsRef
+        )
         {
             nodeNames = nodeNamesRef;
             rscName = rscNameRef;
             snapName = snapNameRef;
             props = propsRef;
+            snapDfnFlags = snapDfnFlagsRef;
         }
 
         public SnapReq(SnapshotDefinition snapDfnRef)
         {
             nodeNames = new ArrayList<>();
             props = Collections.emptyMap();
+            snapDfnFlags = new SnapshotDefinition.Flags[0];
             if (!snapDfnRef.isDeleted())
             {
                 for (Snapshot snap : snapDfnRef.getAllSnapshots())
@@ -291,6 +306,11 @@ public class CreateMultiSnapRequest
         public Map<String, String> getProps()
         {
             return props;
+        }
+
+        public SnapshotDefinition.Flags[] getSnapDfnFlags()
+        {
+            return snapDfnFlags;
         }
 
         @Override
