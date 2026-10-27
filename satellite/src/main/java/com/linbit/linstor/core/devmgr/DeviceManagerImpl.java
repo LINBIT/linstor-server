@@ -217,6 +217,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
     private HashSet<ExtCmdFactoryStlt> sharedExtCmdFactories;
     private final StltExternalFileHandler extFileHandler;
+    private final StltUnameChecker unameChecker;
 
     /**
      * A read-only copy of the storage pools that is required for various API call (like fetch-free-spaces) that are
@@ -258,7 +259,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         DeviceHandler deviceHandlerRef,
         DrbdVersion drbdVersionRef,
         BackupShippingMgr backupServiceMgrRef,
-        StltExternalFileHandler extFileHandlerRef
+        StltExternalFileHandler extFileHandlerRef,
+        StltUnameChecker unameCheckerRef
     )
     {
         errLog = errorReporterRef;
@@ -286,6 +288,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         drbdVersion = drbdVersionRef;
         backupServiceMgr = backupServiceMgrRef;
         extFileHandler = extFileHandlerRef;
+        unameChecker = unameCheckerRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -963,6 +966,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
             Node localNode = controllerPeerConnector.getLocalNode();
             copyReadOnlyData(localNode);
+            unameChecker.check(localNode);
 
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
 

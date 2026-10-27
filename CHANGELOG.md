@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   also freed in VDO
 - Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
   made `since`/`to` filters of the error-report listing miss recent reports
+- Satellite: logs a warning if the hostname no longer matches the uname stored by the controller, which makes `drbdadm
+  adjust` fail with "not defined in your config (for this host)" until the satellite reconnects
 
 ## [1.35.3] - 2026-10-21
 
