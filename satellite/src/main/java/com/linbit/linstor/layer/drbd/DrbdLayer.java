@@ -64,6 +64,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
@@ -86,6 +87,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -1549,9 +1551,21 @@ public class DrbdLayer implements DeviceLayer
             boolean runSetGi = false;
             DrbdGiStringBuilder localNodeIdGiBuilder = new DrbdGiStringBuilder();
             DrbdGiStringBuilder otherNodeIdGiBuilder = new DrbdGiStringBuilder();
+            final boolean backingDeviceCreatedByStlt = isCreatedByStlt(
+                VolumeUtils.getStorageDevices(drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA))
+            );
             if (hasLocalStltWonUpToDateRace(drbdVlmData))
             {
                 // same logic for both, thick and thin winner
+                if (!backingDeviceCreatedByStlt)
+                {
+                    errorReporter.logWarning(
+                        "DRBD volume %s/%d: the backing device already existed and was not created by this " +
+                            "satellite; its current content becomes the initial UpToDate data",
+                        drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                        drbdVlmData.getVlmNr().value
+                    );
+                }
 
                 // random yes, but make sure to use the same random for all peerslots
                 final String randomGid = GidGenerator.generateRandomGid();
@@ -1566,7 +1580,8 @@ public class DrbdLayer implements DeviceLayer
             }
             else
             {
-                if (DrbdLayerUtils.skipInitSync(drbdVlmData))
+                final boolean skipInitSync = DrbdLayerUtils.skipInitSync(drbdVlmData);
+                if (skipInitSync && backingDeviceCreatedByStlt)
                 {
                     final String day0 = getCurrentGiFromVlmDfnProp(drbdVlmData);
                     localNodeIdGiBuilder.withCurrentUUID(day0)
@@ -1577,6 +1592,16 @@ public class DrbdLayer implements DeviceLayer
                 else
                 {
                     // noop. thick loser just leaves metadata in NEW_UUID / just_created state.
+                    // so does a thin loser whose backing device was not created by us (content unknown)
+                    if (skipInitSync)
+                    {
+                        errorReporter.logWarning(
+                            "DRBD volume %s/%d: the backing device already existed and was not created by this " +
+                                "satellite; not skipping the initial sync",
+                            drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                            drbdVlmData.getVlmNr().value
+                        );
+                    }
                     runSetGi = false;
                 }
             }
@@ -1624,6 +1649,26 @@ public class DrbdLayer implements DeviceLayer
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    /**
+     * Returns true if every given storage device was created (or restored / cloned) by this satellite. A device
+     * that already existed under the expected name was adopted and has unknown content.
+     * Devices of other providers are not tracked and count as created.
+     */
+    static boolean isCreatedByStlt(Collection<VlmProviderObject<?>> storageDevicesRef)
+    {
+        boolean ret = true;
+        for (VlmProviderObject<?> storageDevice : storageDevicesRef)
+        {
+            if (storageDevice instanceof AbsStorageVlmData &&
+                !((AbsStorageVlmData<?>) storageDevice).isCreatedByStlt())
+            {
+                ret = false;
+                break;
+            }
+        }
+        return ret;
     }
 
     private boolean hasLocalStltWonUpToDateRace(DrbdVlmData<Resource> drbdVlmDataRef)

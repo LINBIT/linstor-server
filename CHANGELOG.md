@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   also freed in VDO
 - Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
   made `since`/`to` filters of the error-report listing miss recent reports
+- DRBD: a thin replica whose backing device already existed and was not created by the satellite (e.g. a zvol left
+  behind by a failed delete) no longer skips the initial sync
 
 ## [1.35.3] - 2026-10-21
 

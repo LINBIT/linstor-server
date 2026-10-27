@@ -760,6 +760,7 @@ public abstract class AbsStorageProvider<
                 }
             }
             vlmData.setExists(true);
+            vlmData.setCreatedByStlt(true);
 
             String storageName = getStorageName(vlmData);
             String lvId = asLvIdentifier(vlmData);
