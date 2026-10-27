@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   also freed in VDO
 - Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
   made `since`/`to` filters of the error-report listing miss recent reports
+- DRBD: a thin replica added after the volume definition was initialized, when the volume definition has no day0 GI,
+  now does a full sync from its peers right away instead of failing once with an error report
 
 ## [1.35.3] - 2026-10-21
 

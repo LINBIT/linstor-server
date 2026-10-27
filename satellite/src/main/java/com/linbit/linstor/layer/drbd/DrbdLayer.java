@@ -1566,7 +1566,11 @@ public class DrbdLayer implements DeviceLayer
             }
             else
             {
-                if (DrbdLayerUtils.skipInitSync(drbdVlmData))
+                final boolean skipInitSync = DrbdLayerUtils.skipInitSync(drbdVlmData);
+                if (
+                    skipInitSync &&
+                        useDay0GiAsLoser(isDrbdInitialized(drbdVlmData), hasCurrentGiOnVlmDfn(drbdVlmData))
+                )
                 {
                     final String day0 = getCurrentGiFromVlmDfnProp(drbdVlmData);
                     localNodeIdGiBuilder.withCurrentUUID(day0)
@@ -1577,6 +1581,16 @@ public class DrbdLayer implements DeviceLayer
                 else
                 {
                     // noop. thick loser just leaves metadata in NEW_UUID / just_created state.
+                    // so does a thin loser added after initialization without day0 GI: it syncs from its peers.
+                    if (skipInitSync)
+                    {
+                        errorReporter.logInfo(
+                            "DRBD volume %s/%d: no initial DRBD current generation set on the initialized volume " +
+                                "definition, full sync from the UpToDate peers",
+                            drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                            drbdVlmData.getVlmNr().value
+                        );
+                    }
                     runSetGi = false;
                 }
             }
@@ -1624,6 +1638,33 @@ public class DrbdLayer implements DeviceLayer
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    /**
+     * Decides whether a thin volume that did not win the UpToDate race injects the day0 current GI of its volume
+     * definition.
+     * <p>
+     * A replica added after the volume definition was initialized (e.g. a node rejoining) has UpToDate peers to sync
+     * from. If its volume definition has no day0 GI, the metadata stays in its just created state, so the replica
+     * does a full sync from these peers instead of failing the metadata creation. During the initial creation the GI
+     * is still required.
+     * </p>
+     */
+    static boolean useDay0GiAsLoser(boolean vlmDfnDrbdInitializedRef, boolean hasCurrentGiRef)
+    {
+        return hasCurrentGiRef || !vlmDfnDrbdInitializedRef;
+    }
+
+    private boolean isDrbdInitialized(DrbdVlmData<Resource> drbdVlmDataRef)
+    {
+        return drbdVlmDataRef.getVolume().getVolumeDefinition().getFlags()
+            .isSet(VolumeDefinition.Flags.DRBD_INITIALIZED);
+    }
+
+    private boolean hasCurrentGiOnVlmDfn(DrbdVlmData<Resource> drbdVlmDataRef)
+    {
+        return drbdVlmDataRef.getVlmDfnLayerObject().getVolumeDefinition()
+            .getProps().getProp(ApiConsts.KEY_DRBD_CURRENT_GI) != null;
     }
 
     private boolean hasLocalStltWonUpToDateRace(DrbdVlmData<Resource> drbdVlmDataRef)
