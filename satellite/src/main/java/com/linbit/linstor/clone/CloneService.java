@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
+import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
@@ -291,21 +292,32 @@ public class CloneService implements SystemService
             AbsRscLayerObject<Resource> srcRscData = srcVlmData.getRscLayerObject();
             AbsRscLayerObject<Resource> tgtRscData = tgtVlmData.getRscLayerObject();
 
-            resourceProcessorProvider.get().processAfterClone(
-                srcVlmData,
-                // use root vlm data to traverse all rsc layers
-                tgtVlmData.getRscLayerObject()
-                    .getAbsResource()
-                    .getLayerData()
-                    .getVlmProviderObject(tgtVlmData.getVlmNr()),
-                tgtVlmData.getCloneDevicePath()
-            );
-
-            resourceProcessorProvider.get().closeAfterClone(
-                srcVlmData,
-                cloneInfo.getResourceName().displayValue
-            );
-            resourceProcessorProvider.get().closeAfterClone(tgtVlmData, null);
+            try
+            {
+                resourceProcessorProvider.get().processAfterClone(
+                    srcVlmData,
+                    // use root vlm data to traverse all rsc layers
+                    tgtVlmData.getRscLayerObject()
+                        .getAbsResource()
+                        .getLayerData()
+                        .getVlmProviderObject(tgtVlmData.getVlmNr()),
+                    tgtVlmData.getCloneDevicePath()
+                );
+            }
+            catch (StorageException | RuntimeException exc)
+            {
+                // the clone is over either way, so the devices opened for it have to be closed nevertheless
+                try
+                {
+                    closeCloneDevices(cloneInfo);
+                }
+                catch (StorageException | RuntimeException closeExc)
+                {
+                    exc.addSuppressed(closeExc);
+                }
+                throw exc;
+            }
+            closeCloneDevices(cloneInfo);
 
             // reset passThroughMode
             // "clone passthrough mode" is based on targetRscData for both, srcRscData and targetRscData
@@ -367,6 +379,18 @@ public class CloneService implements SystemService
         }
     }
 
+    /**
+     * Closes the source snapshot and the target that were opened for the clone.
+     */
+    private void closeCloneDevices(CloneInfo cloneInfo) throws StorageException
+    {
+        if (cloneInfo.srcSnapshotHandle != null)
+        {
+            cloneInfo.srcSnapshotHandle.close();
+        }
+        resourceProcessorProvider.get().closeCloneTarget(cloneInfo.dstVlmData);
+    }
+
     @Override
     public ServiceName getServiceName()
     {
@@ -398,6 +422,22 @@ public class CloneService implements SystemService
                 cloneInfo.getSuffix().equals(suffix));
     }
 
+    /**
+     * Starts cloning the given source volume into the given target volume in the background, unless a clone of the
+     * target volume is already running.
+     *
+     * @param srcVlmData the volume data of the clone source on the layer the clone is done on
+     * @param dstVlmData the volume data of the clone target on the same layer
+     * @param strat how to clone. The volume data has to match it, e.g. {@link DeviceHandler.CloneStrategy#DD} copies
+     *     between their {@link VlmProviderObject#getCloneDevicePath()}s, while the ZFS and LVM strategies expect
+     *     storage layer data of the respective provider.
+     * @param srcSnapshotHandle the clone snapshot of the source, opened with
+     *     {@link DeviceHandler#openSnapshotReadOnly} and a {@link com.linbit.linstor.layer.ReadOnlyOpener.ForClone}.
+     *     Required if the strategy {@link DeviceHandler.CloneStrategy#needsOpenDevices() needs open devices},
+     *     {@code null} otherwise. This service takes over closing it: when the clone is done, or right away if a clone
+     *     of the target volume is already running. If this method throws, the caller has to close it (closing it
+     *     again is harmless).
+     */
     @SuppressFBWarnings(
         {
             "JLM_JSR166_UTILCONCURRENT_MONITORENTER", "BC_UNCONFIRMED_CAST"
@@ -406,13 +446,22 @@ public class CloneService implements SystemService
     public void startClone(
         VlmProviderObject<Resource> srcVlmData,
         VlmProviderObject<Resource> dstVlmData,
-        DeviceHandler.CloneStrategy strat
+        DeviceHandler.CloneStrategy strat,
+        @Nullable ReadOnlySnapshotHandle srcSnapshotHandle
     ) throws StorageException
     {
+        if (strat.needsOpenDevices() != (srcSnapshotHandle != null))
+        {
+            throw new ImplementationError(
+                "Clone strategy " + strat + (strat.needsOpenDevices() ? " requires" : " does not use") +
+                    " an opened source snapshot, but " + (srcSnapshotHandle == null ? "none" : "one") + " was given"
+            );
+        }
         final CloneInfo cloneInfo = new CloneInfo(
             srcVlmData,
             dstVlmData,
-            strat
+            strat,
+            srcSnapshotHandle
         );
         if (isStarted())
         {
@@ -539,6 +588,11 @@ public class CloneService implements SystemService
                     );
                     cloneInfo.setCloneDaemon(cloneDaemon);
                     cloneDaemon.start();
+                }
+                else if (srcSnapshotHandle != null)
+                {
+                    // the already running clone has its own handle
+                    srcSnapshotHandle.close();
                 }
             }
         }
@@ -705,6 +759,8 @@ public class CloneService implements SystemService
         private final VlmProviderObject<Resource> srcVlmData;
         private final VlmProviderObject<Resource> dstVlmData;
         private final DeviceHandler.CloneStrategy cloneStrategy;
+        /** The opened clone snapshot of the source, if the clone strategy needs open devices */
+        private final @Nullable ReadOnlySnapshotHandle srcSnapshotHandle;
 
         private @Nullable CloneDaemon cloneDaemon;
         private CloneStatus status;
@@ -719,7 +775,8 @@ public class CloneService implements SystemService
         CloneInfo(
             VlmProviderObject<Resource> srcVlmDataRef,
             VlmProviderObject<Resource> dstVlmDataRef,
-            DeviceHandler.CloneStrategy cloneStrategyRef
+            DeviceHandler.CloneStrategy cloneStrategyRef,
+            @Nullable ReadOnlySnapshotHandle srcSnapshotHandleRef
             )
         {
             rscName = dstVlmDataRef.getRscLayerObject().getResourceName();
@@ -727,6 +784,7 @@ public class CloneService implements SystemService
             srcVlmData = srcVlmDataRef;
             dstVlmData = dstVlmDataRef;
             cloneStrategy = cloneStrategyRef;
+            srcSnapshotHandle = srcSnapshotHandleRef;
             status = CloneStatus.PROGRESS;
         }
 

@@ -46,6 +46,8 @@ import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.LayerFactory;
 import com.linbit.linstor.layer.LayerIgnoreReason;
 import com.linbit.linstor.layer.LayerSizeHelper;
+import com.linbit.linstor.layer.ReadOnlyOpener;
+import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.layer.storage.StorageLayer;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -1135,6 +1137,8 @@ public class DeviceHandlerImpl implements DeviceHandler
             final Volume targetVlm = (Volume) targetVlmData.getVolume();
             final AbsRscLayerObject<Resource> targetRscData = targetVlmData.getRscLayerObject();
             final ResourceName resName = targetVlmData.getRscLayerObject().getResourceName();
+            @Nullable ReadOnlySnapshotHandle srcSnapshotHandle = null;
+            @Nullable VlmProviderObject<Resource> openedTargetVlmData = null;
             try
             {
                 final VolumeNumber vlmNr = targetVlm.getVolumeNumber();
@@ -1169,15 +1173,20 @@ public class DeviceHandlerImpl implements DeviceHandler
 
                     if (cloneStrategy.needsOpenDevices())
                     {
-                        openForClone(sourceVlmData, resName.displayValue);
-                        openForClone(targetVlmData, null);
+                        srcSnapshotHandle = openSnapshotReadOnly(
+                            ReadOnlyOpener.forClone(sourceVlmData, resName.displayValue)
+                        );
+                        openCloneTarget(targetVlmData);
+                        openedTargetVlmData = targetVlmData;
                     }
 
-                    cloneService.startClone(sourceVlmData, targetVlmData, cloneStrategy);
+                    // from here on the clone service closes the source snapshot and the target when the clone is done
+                    cloneService.startClone(sourceVlmData, targetVlmData, cloneStrategy, srcSnapshotHandle);
                 }
             }
             catch (StorageException exc)
             {
+                closeAfterFailedCloneStart(srcSnapshotHandle, openedTargetVlmData, exc);
                 try
                 {
                     cloneService.cleanupSrcCloneSnapshots(sourceVlmData, resName, false);
@@ -1194,6 +1203,39 @@ public class DeviceHandlerImpl implements DeviceHandler
                 cloneService.notifyCloneStatus(resName, targetVlmData.getVlmNr(), true);
                 handleException(targetVlmData.getRscLayerObject().getAbsResource(), exc);
             }
+            catch (DatabaseException | RuntimeException exc)
+            {
+                closeAfterFailedCloneStart(srcSnapshotHandle, openedTargetVlmData, exc);
+                throw exc;
+            }
+        }
+    }
+
+    /**
+     * Closes the clone target and the source snapshot, if they were opened for a clone that failed to start. A
+     * failure to close is added as suppressed exception to the given failure.
+     */
+    private void closeAfterFailedCloneStart(
+        @Nullable ReadOnlySnapshotHandle srcSnapshotHandle,
+        @Nullable VlmProviderObject<Resource> openedTargetVlmData,
+        Exception failure
+    )
+    {
+        if (openedTargetVlmData != null)
+        {
+            try
+            {
+                closeCloneTarget(openedTargetVlmData);
+            }
+            catch (StorageException | RuntimeException closeExc)
+            {
+                failure.addSuppressed(closeExc);
+            }
+        }
+        if (srcSnapshotHandle != null)
+        {
+            // the handle closes only once, also if the clone service already closed it
+            srcSnapshotHandle.closeAfterFailure(failure);
         }
     }
 
@@ -1748,48 +1790,92 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void openForClone(
-        VlmProviderObject<?> vlmData,
-        @Nullable String targetRscNameRef
-    )
-        throws StorageException, DatabaseException
+    public void openCloneTarget(VlmProviderObject<Resource> tgtVlmData) throws StorageException, DatabaseException
     {
-        final AbsRscLayerObject<?> rscData = vlmData.getRscLayerObject();
-        final DeviceLayer curLayer = layerFactory.getDeviceLayer(rscData.getLayerKind());
-
-        @Nullable Boolean isPassthrough = rscData.isClonePassthroughMode();
-        if (isPassthrough != null && isPassthrough)
+        @Nullable VlmProviderObject<Resource> passthroughChild = getClonePassthroughChild(tgtVlmData);
+        if (passthroughChild != null)
         {
-            final String rscNameSuffix = rscData.getResourceNameSuffix();
-            final @Nullable AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
-            final VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmData.getVlmNr());
-            openForClone(childVlmData, targetRscNameRef);
-            vlmData.setCloneDevicePath(childVlmData.getCloneDevicePath());
+            openCloneTarget(passthroughChild);
+            tgtVlmData.setCloneDevicePath(passthroughChild.getCloneDevicePath());
         }
         else
         {
-            curLayer.openDeviceForClone(vlmData, targetRscNameRef);
+            layerFactory.getDeviceLayer(tgtVlmData.getLayerKind()).openCloneTarget(tgtVlmData);
         }
     }
 
     @Override
-    public void closeAfterClone(VlmProviderObject<?> vlmData, @Nullable String targetRscNameRef) throws StorageException
+    public void closeCloneTarget(VlmProviderObject<Resource> tgtVlmData) throws StorageException
     {
-        final AbsRscLayerObject<?> rscData = vlmData.getRscLayerObject();
-        final String rscNameSuffix = rscData.getResourceNameSuffix();
-
-        DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
-        @Nullable Boolean isPassthrough = rscData.isClonePassthroughMode();
-        if (isPassthrough != null && isPassthrough)
+        @Nullable VlmProviderObject<Resource> passthroughChild = getClonePassthroughChild(tgtVlmData);
+        if (passthroughChild != null)
         {
-            @Nullable AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
-            VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmData.getVlmNr());
-            closeAfterClone(childVlmData, targetRscNameRef);
+            closeCloneTarget(passthroughChild);
+            tgtVlmData.setCloneDevicePath(null);
         }
         else
         {
-            nextLayer.closeDeviceForClone(vlmData, targetRscNameRef);
+            layerFactory.getDeviceLayer(tgtVlmData.getLayerKind()).closeCloneTarget(tgtVlmData);
         }
+    }
+
+    @Override
+    public <RSC extends AbsResource<RSC>> ReadOnlySnapshotHandle openSnapshotReadOnly(ReadOnlyOpener<RSC> opener)
+        throws StorageException, DatabaseException
+    {
+        final VlmProviderObject<RSC> vlmData = opener.vlmData();
+        final ReadOnlySnapshotHandle handle;
+        @Nullable VlmProviderObject<RSC> passthroughChild = getClonePassthroughChild(vlmData);
+        if (passthroughChild != null)
+        {
+            ReadOnlySnapshotHandle childHandle = openSnapshotReadOnly(opener.withVlmData(passthroughChild));
+            vlmData.setCloneDevicePath(passthroughChild.getCloneDevicePath());
+            handle = () ->
+            {
+                try
+                {
+                    childHandle.close();
+                }
+                finally
+                {
+                    vlmData.setCloneDevicePath(null);
+                }
+            };
+        }
+        else
+        {
+            handle = layerFactory.getDeviceLayer(vlmData.getLayerKind()).openSnapshotReadOnly(opener);
+        }
+        return ReadOnlySnapshotHandle.closeOnce(handle);
+    }
+
+    /**
+     * Returns the child volume data a running clone passes through to (the clone copies the device below this layer,
+     * see {@link AbsRscLayerObject#isClonePassthroughMode()}), or {@code null} if this layer handles the clone itself.
+     * Snapshot volume data is never in clone passthrough mode.
+     */
+    private <RSC extends AbsResource<RSC>> @Nullable VlmProviderObject<RSC> getClonePassthroughChild(
+        VlmProviderObject<RSC> vlmData
+    )
+    {
+        @Nullable VlmProviderObject<RSC> ret = null;
+        final AbsRscLayerObject<RSC> rscData = vlmData.getRscLayerObject();
+        @Nullable Boolean isPassthrough = rscData.isClonePassthroughMode();
+        if (isPassthrough != null && isPassthrough)
+        {
+            final @Nullable AbsRscLayerObject<RSC> childRscData = rscData.getChildBySuffix(
+                rscData.getResourceNameSuffix()
+            );
+            if (childRscData == null)
+            {
+                throw new ImplementationError(
+                    "Layer data " + rscData + " is in clone passthrough mode, but has no child with suffix '" +
+                        rscData.getResourceNameSuffix() + "'"
+                );
+            }
+            ret = childRscData.getVlmProviderObject(vlmData.getVlmNr());
+        }
+        return ret;
     }
 
     @Override

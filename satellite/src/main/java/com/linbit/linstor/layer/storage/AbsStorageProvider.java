@@ -1746,7 +1746,16 @@ public abstract class AbsStorageProvider<
     protected void waitUntilDeviceCreated(LAYER_DATA vlmData, String devicePath)
         throws StorageException
     {
-        StorPool storPool = vlmData.getStorPool();
+        waitUntilDeviceCreated(vlmData.getStorPool(), devicePath);
+    }
+
+    /**
+     * Waits until the given device exists, at most as long as configured for the given storage pool. For devices that
+     * do not belong to a resource volume, e.g. snapshot devices.
+     */
+    protected void waitUntilDeviceCreated(StorPool storPool, String devicePath)
+        throws StorageException
+    {
         long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
         waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
     }

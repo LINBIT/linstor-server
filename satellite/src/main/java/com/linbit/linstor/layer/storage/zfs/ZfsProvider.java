@@ -12,6 +12,7 @@ import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -23,9 +24,12 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayerUtils;
+import com.linbit.linstor.layer.ReadOnlyOpener;
+import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.ProbeVlmStorageProvider;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
+import com.linbit.linstor.layer.storage.utils.SharedOpenCounter;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands.ZfsVolumeType;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
@@ -106,6 +110,8 @@ public class ZfsProvider
     }
 
     private Map<StorPool, Long> extentSizes = new TreeMap<>();
+    /** Zvols whose snapshots {@link #openSnapshotReadOnly} made visible ({@code snapdev=visible}) */
+    private final SharedOpenCounter<Zvol, Zvol> openSnapdevZvols = new SharedOpenCounter<>();
 
     protected ZfsProvider(
         AbsStorageProviderInit superInitRef,
@@ -1074,36 +1080,116 @@ public class ZfsProvider
     }
 
     @Override
-    public void openForClone(VlmProviderObject<?> vlm, @Nullable String cloneName, boolean readOnly)
+    public void openCloneTarget(VlmProviderObject<Resource> vlm)
         throws StorageException
     {
-        ZfsData<Resource> srcData = (ZfsData<Resource>) vlm;
-        String zPool = getZPool(srcData.getStorPool());
-        if (cloneName != null)
-        {
-            final String fullSnapshotName = getCloneSnapshotNameFull(srcData, cloneName, "@");
-            ZfsCommands.hideUnhideSnapshotDevice(
-                extCmdFactory.create(), zPool, srcData.getIdentifier(), false);
-            vlm.setCloneDevicePath(getDevicePath(zPool, fullSnapshotName));
-        }
-        else
-        {
-            createLvImpl(srcData);
-            final String devicePath = getDevicePath(zPool, asLvIdentifier(srcData));
-            waitUntilDeviceCreated(srcData, devicePath);
-            vlm.setCloneDevicePath(devicePath);
-        }
+        ZfsData<Resource> tgtData = (ZfsData<Resource>) vlm;
+        createLvImpl(tgtData);
+        final String devicePath = getDevicePath(getZPool(tgtData.getStorPool()), asLvIdentifier(tgtData));
+        waitUntilDeviceCreated(tgtData, devicePath);
+        vlm.setCloneDevicePath(devicePath);
     }
 
     @Override
-    public void closeForClone(VlmProviderObject<?> vlm, @Nullable String cloneName) throws StorageException
+    public void closeCloneTarget(VlmProviderObject<Resource> vlm)
     {
-        ZfsData<Resource> srcData = (ZfsData<Resource>) vlm;
-        // This hide doesn't make problems for other concurernt clones of the same base resource
-        // It was tested and worked without any problems.
-        ZfsCommands.hideUnhideSnapshotDevice(
-            extCmdFactory.create(), getZPool(srcData.getStorPool()), srcData.getIdentifier(), true);
         vlm.setCloneDevicePath(null);
+    }
+
+    /**
+     * Makes the snapshot visible as block device ({@code snapdev=visible}). This is a property of the zvol, so it
+     * affects all snapshots of the volume: it is only hidden again when the last opener of any of its snapshots
+     * closes.
+     */
+    @Override
+    public <RSC extends AbsResource<RSC>> ReadOnlySnapshotHandle openSnapshotReadOnly(ReadOnlyOpener<RSC> opener)
+        throws StorageException
+    {
+        VlmProviderObject<RSC> vlm = opener.vlmData();
+        ZfsSnapshotDevice snapDev = getZfsSnapshotDevice(opener);
+        Zvol zvol = new Zvol(snapDev.zPool, snapDev.zvolId);
+        openSnapdevZvols.open(zvol, () -> setSnapdev(zvol, false));
+        final String devicePath = getDevicePath(snapDev.zPool, snapDev.fullSnapshotName);
+        try
+        {
+            // udev creates the device only after snapdev became visible
+            waitUntilDeviceCreated(snapDev.storPool, devicePath);
+        }
+        catch (StorageException | RuntimeException exc)
+        {
+            try
+            {
+                openSnapdevZvols.close(zvol, visibleZvol -> setSnapdev(visibleZvol, true));
+            }
+            catch (StorageException | RuntimeException closeExc)
+            {
+                exc.addSuppressed(closeExc);
+            }
+            throw exc;
+        }
+        vlm.setCloneDevicePath(devicePath);
+        return () ->
+        {
+            openSnapdevZvols.close(zvol, visibleZvol -> setSnapdev(visibleZvol, true));
+            vlm.setCloneDevicePath(null);
+        };
+    }
+
+    /**
+     * @return the given zvol, which is the state {@link #openSnapdevZvols} hands to the last close
+     */
+    private Zvol setSnapdev(Zvol zvol, boolean hide) throws StorageException
+    {
+        ZfsCommands.hideUnhideSnapshotDevice(extCmdFactory.create(), zvol.zPool, zvol.zvolId, hide);
+        return zvol;
+    }
+
+    private ZfsSnapshotDevice getZfsSnapshotDevice(ReadOnlyOpener<?> opener) throws StorageException
+    {
+        return switch (opener)
+        {
+            case ReadOnlyOpener.ForSnapshot forSnapshot -> {
+                ZfsData<Snapshot> snapData = (ZfsData<Snapshot>) forSnapshot.vlmData();
+                String fullSnapshotName = asSnapLvIdentifier(snapData);
+                yield new ZfsSnapshotDevice(
+                    snapData.getStorPool(),
+                    getZPoolOrFail(snapData.getStorPool()),
+                    getBaseLvIdentifier(fullSnapshotName),
+                    fullSnapshotName
+                );
+            }
+            case ReadOnlyOpener.ForClone forClone -> {
+                ZfsData<Resource> srcData = (ZfsData<Resource>) forClone.vlmData();
+                yield new ZfsSnapshotDevice(
+                    srcData.getStorPool(),
+                    getZPoolOrFail(srcData.getStorPool()),
+                    srcData.getIdentifier(),
+                    getCloneSnapshotNameFull(srcData, forClone.cloneTargetName(), "@")
+                );
+            }
+        };
+    }
+
+    private String getZPoolOrFail(StorPool storPoolRef) throws StorageException
+    {
+        @Nullable String zPool = getZPool(storPoolRef);
+        if (zPool == null)
+        {
+            throw new StorageException("No zpool found for storage pool " + storPoolRef.getName());
+        }
+        return zPool;
+    }
+
+    /**
+     * @param zvolId the zvol whose {@code snapdev} property makes the snapshot visible
+     * @param fullSnapshotName {@code <zvol>@<snapshot>}
+     */
+    private record ZfsSnapshotDevice(StorPool storPool, String zPool, String zvolId, String fullSnapshotName)
+    {
+    }
+
+    private record Zvol(String zPool, String zvolId)
+    {
     }
 
     @Override

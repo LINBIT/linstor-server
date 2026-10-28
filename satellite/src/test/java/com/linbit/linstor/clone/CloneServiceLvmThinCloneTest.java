@@ -93,7 +93,7 @@ public class CloneServiceLvmThinCloneTest
                 inv -> ((ExceptionThrowingFunction<String, ?, ?>) inv.getArgument(2)).accept("cfg")
             );
 
-            cloneService.startClone(srcData, tgtData, CloneStrategy.LVM_THIN_CLONE);
+            cloneService.startClone(srcData, tgtData, CloneStrategy.LVM_THIN_CLONE, null);
 
             String cloneSnapshot = AbsStorageProvider.getLVMCloneSnapshotNameFull(SRC_LV, TGT_RSC_NAME, 0);
             lvmCommands.verify(

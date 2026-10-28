@@ -52,8 +52,6 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
     public static final String PROBE_VLM_NAME_THIN = ".probeVolumeThinProv";
     // the 2nd lv_attr character is the LV's permissions, 'r' for read-only
     private static final int LV_ATTR_PERMISSIONS_IDX = 1;
-    // the 5th lv_attr character is the LV's state, 'a' for active
-    private static final int LV_ATTR_STATE_IDX = 4;
     private static final String KERNEL_DISCARDS_PASSDOWN = "passdown";
 
     @Inject
@@ -227,11 +225,6 @@ public class LvmThinProvider extends LvmProvider implements ProbeVlmStorageProvi
                 );
             }
         }
-    }
-
-    private static boolean isLvActive(LvsInfo info)
-    {
-        return info.attributes.length() > LV_ATTR_STATE_IDX && info.attributes.charAt(LV_ATTR_STATE_IDX) == 'a';
     }
 
     private static boolean isLvReadOnly(LvsInfo info)

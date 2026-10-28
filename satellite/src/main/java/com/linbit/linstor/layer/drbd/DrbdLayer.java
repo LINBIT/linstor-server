@@ -2051,12 +2051,6 @@ public class DrbdLayer implements DeviceLayer
         return ret;
     }
 
-    @Override
-    public void openDeviceForClone(VlmProviderObject<?> vlmRef, String targetRscNameRef) throws StorageException
-    {
-        throw new ImplementationError("not implemented yet");
-    }
-
     private void cloneLastKnownBlockDeviceFile(int srcMinorNr, int tgtMinorNr) throws IOException
     {
         String srcPath = String.format("/var/lib/drbd/drbd-minor-%d.lkbd", srcMinorNr);

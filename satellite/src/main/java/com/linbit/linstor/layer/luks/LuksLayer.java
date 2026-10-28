@@ -3,7 +3,6 @@ package com.linbit.linstor.layer.luks;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
@@ -16,6 +15,7 @@ import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.DeviceHandler.CloneStrategy;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -28,6 +28,8 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.ReadOnlyOpener;
+import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -460,21 +462,47 @@ public class LuksLayer implements DeviceLayer
         return false; // no layer specific DELETE flag
     }
 
+    /**
+     * Returns the name of the dm-crypt mapping of the given resource volume.
+     */
     private String getIdentifier(LuksVlmData<Resource> vlmData)
     {
-        String identifier = vlmData.getIdentifier();
+        return getIdentifier(vlmData, null);
+    }
 
-        if (identifier == null)
+    /**
+     * Returns the name of the dm-crypt mapping of the given volume data. Without an opener, this is the mapping of the
+     * resource volume, which is also stored in the volume data. With an opener, it is the read-only mapping of the
+     * snapshot the opener opens: the name of the resource volume's mapping plus {@link ReadOnlyOpener#mappingSuffix}.
+     * That one is not stored in the volume data, since it differs per opener and snapshot volume data has no mapping
+     * of its own.
+     */
+    private String getIdentifier(LuksVlmData<?> vlmData, @Nullable ReadOnlyOpener<?> opener)
+    {
+        String identifier;
+        if (opener == null)
         {
-            identifier = String.format(
-                "%s_%05d",
-                vlmData.getRscLayerObject().getSuffixedResourceName(),
-                vlmData.getVlmNr().value
-            );
-            vlmData.setIdentifier(identifier);
+            identifier = vlmData.getIdentifier();
+            if (identifier == null)
+            {
+                identifier = getRscMappingName(vlmData);
+                vlmData.setIdentifier(identifier);
+            }
         }
-
+        else
+        {
+            identifier = getRscMappingName(vlmData) + opener.mappingSuffix();
+        }
         return identifier;
+    }
+
+    private String getRscMappingName(LuksVlmData<?> vlmData)
+    {
+        return String.format(
+            "%s_%05d",
+            vlmData.getRscLayerObject().getSuffixedResourceName(),
+            vlmData.getVlmNr().value
+        );
     }
 
     private void warnOnAllowDiscardsMismatch(
@@ -521,63 +549,186 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef)
+    public void openCloneTarget(VlmProviderObject<Resource> vlm)
         throws StorageException, DatabaseException
     {
         LuksVlmData<Resource> luksVlmData = (LuksVlmData<Resource>) vlm;
-        String vlmIdentifier = getIdentifier(luksVlmData);
-        String identifier = targetRscNameRef ==  null ?
-            vlmIdentifier : vlmIdentifier + InternalApiConsts.CLONE_FOR_PREFIX + targetRscNameRef;
-        boolean isOpen = cryptSetup.isOpen(identifier);
-        if (!isOpen)
+        String identifier = getIdentifier(luksVlmData);
+        if (!cryptSetup.isOpen(identifier))
         {
-            VlmProviderObject<?> storageChild = ((LuksVlmData<?>) vlm).getSingleChild();
-            resourceProcessorProvider.get().openForClone(storageChild, targetRscNameRef);
-
-            if (targetRscNameRef == null)
+            VlmProviderObject<Resource> childVlm = luksVlmData.getSingleChild();
+            resourceProcessorProvider.get().openCloneTarget(childVlm);
+            try
             {
-                List<String> createOptions = getCreateOptions(luksVlmData);
-
                 // initialize luks device
                 cryptSetup.createLuksDevice(
-                    storageChild.getCloneDevicePath(),
+                    childVlm.getCloneDevicePath(),
                     luksVlmData.getDecryptedPassword(),
                     identifier,
-                    createOptions
+                    getCreateOptions(luksVlmData)
+                );
+                cryptSetup.openLuksDevice(
+                    childVlm.getCloneDevicePath(),
+                    identifier,
+                    luksVlmData.getDecryptedPassword(),
+                    false,
+                    getOpenOptions(luksVlmData)
                 );
             }
-
-            cryptSetup.openLuksDevice(
-                storageChild.getCloneDevicePath(),
-                identifier,
-                luksVlmData.getDecryptedPassword(),
-                targetRscNameRef != null,
-                getOpenOptions(luksVlmData)
-            );
+            catch (StorageException | RuntimeException exc)
+            {
+                try
+                {
+                    resourceProcessorProvider.get().closeCloneTarget(childVlm);
+                }
+                catch (StorageException | RuntimeException closeExc)
+                {
+                    exc.addSuppressed(closeExc);
+                }
+                throw exc;
+            }
         }
         else
         {
-            // target should not have existed and source should be a snapshot
-            errorReporter.logWarning("LuksLayer:openDeviceForClone: already open %s",
-                cryptSetup.getLuksVolumePath(identifier));
+            // A clone of this volume is only started if none is running, so this is not a concurrent opener but a
+            // mapping left over from an earlier clone attempt that was never closed (e.g. the satellite restarted
+            // during the clone). It is reused and closed by closeCloneTarget when this clone is done.
+            errorReporter.logWarning(
+                "LuksLayer:openCloneTarget: reusing leftover mapping %s",
+                cryptSetup.getLuksVolumePath(identifier)
+            );
         }
         vlm.setCloneDevicePath(cryptSetup.getLuksVolumePath(identifier));
     }
 
     @Override
-    public void closeDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
+    public void closeCloneTarget(VlmProviderObject<Resource> vlm) throws StorageException
     {
         LuksVlmData<Resource> luksVlmData = (LuksVlmData<Resource>) vlm;
-        String vlmIdentifier = getIdentifier(luksVlmData);
-        String identifier = targetRscNameRef ==  null ?
-            vlmIdentifier : vlmIdentifier + InternalApiConsts.CLONE_FOR_PREFIX + targetRscNameRef;
-        boolean isOpen = cryptSetup.isOpen(identifier);
-        if (isOpen)
+        String identifier = getIdentifier(luksVlmData);
+        if (cryptSetup.isOpen(identifier))
         {
             cryptSetup.closeLuksDevice(identifier);
         }
-        resourceProcessorProvider.get().closeAfterClone(((LuksVlmData<?>) vlm).getSingleChild(), targetRscNameRef);
+        resourceProcessorProvider.get().closeCloneTarget(luksVlmData.getSingleChild());
         vlm.setCloneDevicePath(null);
+    }
+
+    /**
+     * Opens the snapshot below read-only and maps it with {@code cryptsetup open --readonly} under the identifier of
+     * this volume plus {@link ReadOnlyOpener#mappingSuffix}. The snapshot below is opened even if the mapping
+     * already exists, so that the returned handle can always close it.
+     */
+    @Override
+    public <RSC extends AbsResource<RSC>> ReadOnlySnapshotHandle openSnapshotReadOnly(ReadOnlyOpener<RSC> opener)
+        throws StorageException, DatabaseException
+    {
+        LuksVlmData<RSC> luksVlmData = (LuksVlmData<RSC>) opener.vlmData();
+        String identifier = getIdentifier(luksVlmData, opener);
+        VlmProviderObject<RSC> childVlm = luksVlmData.getSingleChild();
+        ReadOnlySnapshotHandle childHandle = resourceProcessorProvider.get().openSnapshotReadOnly(
+            opener.withVlmData(childVlm)
+        );
+        try
+        {
+            if (!cryptSetup.isOpen(identifier))
+            {
+                cryptSetup.openLuksDevice(
+                    childVlm.getCloneDevicePath(),
+                    identifier,
+                    getKeyForReadOnlyOpen(luksVlmData, opener),
+                    true,
+                    getOpenOptionsForReadOnlyOpen(opener)
+                );
+            }
+            else
+            {
+                // The mapping name is unique per opener (the opener suffix must be unique among the openers of a
+                // snapshot, and a clone of a volume is only started if none is running), so this is not a concurrent
+                // opener but a mapping left over from an earlier opener that was never closed (e.g. the satellite
+                // restarted in between). It is reused and closed by the returned handle.
+                errorReporter.logWarning(
+                    "LuksLayer:openSnapshotReadOnly: reusing leftover mapping %s",
+                    cryptSetup.getLuksVolumePath(identifier)
+                );
+            }
+        }
+        catch (StorageException | RuntimeException exc)
+        {
+            childHandle.closeAfterFailure(exc);
+            throw exc;
+        }
+        luksVlmData.setCloneDevicePath(cryptSetup.getLuksVolumePath(identifier));
+        return () ->
+        {
+            try
+            {
+                if (cryptSetup.isOpen(identifier))
+                {
+                    cryptSetup.closeLuksDevice(identifier);
+                }
+            }
+            catch (StorageException | RuntimeException exc)
+            {
+                // the handle is closed only once, so the snapshot below would otherwise never be closed
+                childHandle.closeAfterFailure(exc);
+                throw exc;
+            }
+            finally
+            {
+                luksVlmData.setCloneDevicePath(null);
+            }
+            childHandle.close();
+        };
+    }
+
+    /**
+     * A resource volume uses its decrypted key. The key of snapshot volume data is not decrypted when the master key
+     * arrives (only resources are), and it can differ from the current key of the resource: it is decrypted here.
+     */
+    private byte[] getKeyForReadOnlyOpen(LuksVlmData<?> luksVlmData, ReadOnlyOpener<?> opener)
+        throws StorageException
+    {
+        @Nullable byte[] key = luksVlmData.getDecryptedPassword();
+        if (key == null && opener instanceof ReadOnlyOpener.ForSnapshot)
+        {
+            @Nullable byte[] masterKey = secObjs.getCryptKey();
+            if (masterKey == null)
+            {
+                throw new StorageException(
+                    "Cannot open the LUKS snapshot " + getIdentifier(luksVlmData, opener) + " without the master key"
+                );
+            }
+            try
+            {
+                key = LuksKeyUtils.decryptKey(decryptionHelper, masterKey, luksVlmData);
+            }
+            catch (LinStorException exc)
+            {
+                throw new StorageException(
+                    "Failed to decrypt the key of the LUKS snapshot " + getIdentifier(luksVlmData, opener),
+                    exc
+                );
+            }
+        }
+        if (key == null)
+        {
+            throw new StorageException("No decrypted key for LUKS volume " + getIdentifier(luksVlmData, opener));
+        }
+        return key;
+    }
+
+    /**
+     * The open options of a resource volume apply to the clone source as well. A snapshot has no volume properties of
+     * its own: it is opened with cryptsetup's defaults (discards do not matter for a read-only mapping).
+     */
+    private List<String> getOpenOptionsForReadOnlyOpen(ReadOnlyOpener<?> opener)
+    {
+        return switch (opener)
+        {
+            case ReadOnlyOpener.ForClone forClone -> getOpenOptions((LuksVlmData<Resource>) forClone.vlmData());
+            case ReadOnlyOpener.ForSnapshot forSnapshot -> new ArrayList<>();
+        };
     }
 
     @Override

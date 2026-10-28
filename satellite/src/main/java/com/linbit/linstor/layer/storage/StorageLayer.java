@@ -13,6 +13,7 @@ import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -23,6 +24,8 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.ReadOnlyOpener;
+import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.layer.storage.utils.SEDUtils;
 import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
@@ -520,8 +523,30 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef)
+    public void openCloneTarget(VlmProviderObject<Resource> vlm)
         throws StorageException, DatabaseException
+    {
+        getSnapshotOpenCapableProvider(vlm).openCloneTarget(vlm);
+    }
+
+    @Override
+    public void closeCloneTarget(VlmProviderObject<Resource> vlm) throws StorageException
+    {
+        getSnapshotOpenCapableProvider(vlm).closeCloneTarget(vlm);
+        vlm.setCloneDevicePath(null);
+    }
+
+    @Override
+    public <RSC extends AbsResource<RSC>> ReadOnlySnapshotHandle openSnapshotReadOnly(ReadOnlyOpener<RSC> opener)
+        throws StorageException, DatabaseException
+    {
+        return getSnapshotOpenCapableProvider(opener.vlmData()).openSnapshotReadOnly(opener);
+    }
+
+    /**
+     * Only these providers can open a (clone) snapshot read-only or create a clone target.
+     */
+    private DeviceProvider getSnapshotOpenCapableProvider(VlmProviderObject<?> vlm) throws StorageException
     {
         switch (vlm.getProviderKind())
         {
@@ -529,8 +554,6 @@ public class StorageLayer implements DeviceLayer
             case LVM_THIN:// fall-through
             case ZFS:// fall-through
             case ZFS_THIN:
-                DeviceProvider devProvider = getDevProviderByVlmObj(vlm);
-                devProvider.openForClone(vlm, targetRscNameRef, targetRscNameRef != null);
                 break;
             case DISKLESS: // fail through
             case FILE: // fail through
@@ -545,14 +568,7 @@ public class StorageLayer implements DeviceLayer
             default:
                 throw new StorageException(vlm.getProviderKind() + " not supported.");
         }
-    }
-
-    @Override
-    public void closeDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
-    {
-        DeviceProvider devProvider = getDevProviderByVlmObj(vlm);
-        devProvider.closeForClone(vlm, targetRscNameRef);
-        vlm.setCloneDevicePath(null);
+        return getDevProviderByVlmObj(vlm);
     }
 
     @Override

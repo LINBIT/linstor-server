@@ -14,6 +14,7 @@ import com.linbit.linstor.core.devmgr.SuspendManager;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -263,21 +264,36 @@ public interface DeviceLayer extends Comparable<DeviceLayer>
     }
 
     /**
-     * Opens a device for cloning operations.
-     *
-     * @param targetRscNameRef If non-null, <code>vlm</code> is the source volume. If <code>targetRscNameRef</code> is
-     *     null, <code>vlm</code> is the target volume.
+     * Creates (if needed) and opens the target volume of a clone for writing and sets its
+     * {@link VlmProviderObject#getCloneDevicePath()}, see
+     * {@link com.linbit.linstor.core.devmgr.DeviceHandler#openCloneTarget}. Layers below are opened through the device
+     * handler.
      */
-    default void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef)
+    default void openCloneTarget(VlmProviderObject<Resource> vlm)
         throws StorageException, DatabaseException
     {
-        throw new StorageException("Not supported");
+        throw new StorageException("Layer " + getKind() + " does not support opening a clone target");
     }
 
-    default void closeDeviceForClone(
-        VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
+    /**
+     * Closes what {@link #openCloneTarget} opened, including the layers below, and resets the
+     * {@link VlmProviderObject#getCloneDevicePath()}. The target volume itself is kept.
+     */
+    default void closeCloneTarget(VlmProviderObject<Resource> vlm) throws StorageException
     {
-        throw new StorageException("Not supported");
+        throw new StorageException("Layer " + getKind() + " does not support closing a clone target");
+    }
+
+    /**
+     * Opens a snapshot read-only and sets the readable device as {@link VlmProviderObject#getCloneDevicePath()} of the
+     * opener's volume data, see {@link com.linbit.linstor.core.devmgr.DeviceHandler#openSnapshotReadOnly}. Layers
+     * below are opened through the device handler with {@link ReadOnlyOpener#withVlmData}, and the returned handle
+     * closes them as well.
+     */
+    default <RSC extends AbsResource<RSC>> ReadOnlySnapshotHandle openSnapshotReadOnly(ReadOnlyOpener<RSC> opener)
+        throws StorageException, DatabaseException
+    {
+        throw new StorageException("Layer " + getKind() + " does not support opening a snapshot read-only");
     }
 
     /**

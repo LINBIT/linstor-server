@@ -10,6 +10,7 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -22,6 +23,8 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.ReadOnlyOpener;
+import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.layer.dmsetup.CacheFlushUtils;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -434,6 +437,40 @@ public class WritecacheLayer implements DeviceLayer
             rscDataRef.getSuffixedResourceName()
         );
         DmSetupUtils.flush(extCmdFactory, rscDataRef);
+    }
+
+    /**
+     * The storage snapshot of the data child holds the plain data: the dm-writecache is flushed to its origin before a
+     * snapshot is taken. The cache device is not needed for reading the snapshot.
+     */
+    @Override
+    public <RSC extends AbsResource<RSC>> ReadOnlySnapshotHandle openSnapshotReadOnly(ReadOnlyOpener<RSC> opener)
+        throws StorageException, DatabaseException
+    {
+        VlmProviderObject<RSC> vlm = opener.vlmData();
+        VlmProviderObject<RSC> dataChild = getDataChild(vlm);
+        ReadOnlySnapshotHandle childHandle = resourceProcessorProvider.get().openSnapshotReadOnly(
+            opener.withVlmData(dataChild)
+        );
+        vlm.setCloneDevicePath(dataChild.getCloneDevicePath());
+        return () ->
+        {
+            try
+            {
+                childHandle.close();
+            }
+            finally
+            {
+                vlm.setCloneDevicePath(null);
+            }
+        };
+    }
+
+    private static <RSC extends AbsResource<RSC>> VlmProviderObject<RSC> getDataChild(VlmProviderObject<RSC> vlm)
+    {
+        return vlm.getRscLayerObject()
+            .getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+            .getVlmProviderObject(vlm.getVlmNr());
     }
 
     @Override

@@ -17,6 +17,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.layer.luks.LuksKeyUtils;
 import com.linbit.linstor.layer.storage.utils.SEDUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -173,10 +174,7 @@ public class StltCryptApiCallHelper
                 {
                     if (reactivate || cryptVlmData.getDecryptedPassword() == null)
                     {
-                        byte[] encryptedKey = cryptVlmData.getEncryptedKey();
-                        byte[] decryptedKey = decryptionHelper.decrypt(masterKey, encryptedKey);
-
-                        cryptVlmData.setDecryptedPassword(decryptedKey);
+                        LuksKeyUtils.decryptKey(decryptionHelper, masterKey, cryptVlmData);
                     }
                 }
                 catch (LinStorException exc)

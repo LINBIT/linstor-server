@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
@@ -13,6 +14,8 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.ReadOnlyOpener;
+import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -95,15 +98,35 @@ public interface DeviceProvider
         return ret;
     }
 
-    default void openForClone(VlmProviderObject<?> vlm, @Nullable String clonename, boolean readOnly)
+    /**
+     * Creates the target volume of a clone and sets its {@link VlmProviderObject#getCloneDevicePath()}.
+     */
+    default void openCloneTarget(VlmProviderObject<Resource> vlm)
         throws StorageException, DatabaseException
     {
-        throw new StorageException("openForClone not suppported.");
+        throw new StorageException("openCloneTarget not supported.");
     }
 
-    // TODO probably need a way to decide if snapshot path needs to be closed
-    default void closeForClone(VlmProviderObject<?> vlm, @Nullable String cloneName) throws StorageException
+    /**
+     * Closes what {@link #openCloneTarget} opened and resets the {@link VlmProviderObject#getCloneDevicePath()}. The
+     * target volume itself is kept.
+     */
+    default void closeCloneTarget(VlmProviderObject<Resource> vlm) throws StorageException
     {
-        throw new StorageException("closeForClone not supported.");
+        throw new StorageException("closeCloneTarget not supported.");
+    }
+
+    /**
+     * Makes a storage snapshot readable and sets its device as {@link VlmProviderObject#getCloneDevicePath()} of the
+     * opener's volume data: the LINSTOR snapshot for a {@link ReadOnlyOpener.ForSnapshot}, or the clone snapshot of
+     * the clone source for a {@link ReadOnlyOpener.ForClone}.
+     *
+     * @return the handle that makes the snapshot unreadable again (if no other opener needs it) and resets the
+     *     clone device path
+     */
+    default <RSC extends AbsResource<RSC>> ReadOnlySnapshotHandle openSnapshotReadOnly(ReadOnlyOpener<RSC> opener)
+        throws StorageException, DatabaseException
+    {
+        throw new StorageException("openSnapshotReadOnly not supported.");
     }
 }

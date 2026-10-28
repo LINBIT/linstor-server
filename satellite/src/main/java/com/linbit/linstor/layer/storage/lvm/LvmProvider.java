@@ -9,6 +9,7 @@ import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -23,6 +24,8 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayerUtils;
+import com.linbit.linstor.layer.ReadOnlyOpener;
+import com.linbit.linstor.layer.ReadOnlySnapshotHandle;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.StorageLayerSizeCalculator;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
@@ -32,6 +35,7 @@ import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.VgsInfo;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
+import com.linbit.linstor.layer.storage.utils.SharedOpenCounter;
 import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
 import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -88,6 +92,8 @@ public class LvmProvider
     );
 
     private static final String DFLT_RESTORE_DD_BLOCKSIZE = "64k";
+    // the 5th lv_attr character is the LV's state, 'a' for active
+    protected static final int LV_ATTR_STATE_IDX = 4;
 
     /**
      * The lvmlockd lock mode each LV was last activated with, keyed "&lt;vg&gt;/&lt;lv&gt;". Only
@@ -98,6 +104,11 @@ public class LvmProvider
      * or renamed.
      */
     private final Map<String, LvmLockMode> appliedLockModes = new HashMap<>();
+    /**
+     * Snapshot LVs ("vg/lv") opened by {@link #openSnapshotReadOnly}, remembering whether the first opener had to
+     * activate the LV.
+     */
+    private final SharedOpenCounter<String, Boolean> openSnapshotLvs = new SharedOpenCounter<>();
 
     protected LvmProvider(
         AbsStorageProviderInit superInitRef,
@@ -1503,29 +1514,161 @@ public class LvmProvider
     }
 
     @Override
-    public void openForClone(VlmProviderObject<?> vlm, @Nullable String cloneName, boolean readOnly)
+    public void openCloneTarget(VlmProviderObject<Resource> vlm)
         throws StorageException, DatabaseException
     {
-        LvmData<Resource> srcData = (LvmData<Resource>) vlm;
-        if (cloneName != null)
-        {
-            // use snapshot path
-            vlm.setCloneDevicePath(getDevicePath(
-                srcData.getVolumeGroup(), getCloneSnapshotNameFull(srcData, cloneName, "_")));
-        }
-        else
-        {
-            createLvImpl(srcData);
-            String devicePath = getDevicePath(srcData.getVolumeGroup(), asLvIdentifier(srcData));
-            waitUntilDeviceCreated(srcData, devicePath);
-            vlm.setCloneDevicePath(devicePath);
-        }
+        LvmData<Resource> tgtData = (LvmData<Resource>) vlm;
+        createLvImpl(tgtData);
+        String devicePath = getDevicePath(tgtData.getVolumeGroup(), asLvIdentifier(tgtData));
+        waitUntilDeviceCreated(tgtData, devicePath);
+        vlm.setCloneDevicePath(devicePath);
     }
 
     @Override
-    public void closeForClone(VlmProviderObject<?> vlm, @Nullable String cloneName) throws StorageException
+    public void closeCloneTarget(VlmProviderObject<Resource> vlm)
     {
         vlm.setCloneDevicePath(null);
+    }
+
+    /**
+     * A LINSTOR snapshot is activated if it is inactive: it is created active, but might have been deactivated since
+     * (e.g. after a reboot, snapshots skip activation by default). When its last opener closes, it is deactivated
+     * again if it was inactive before its first opener opened it. A clone snapshot was created (active) right before
+     * and is removed after the clone, it is neither activated nor deactivated.
+     */
+    @Override
+    public <RSC extends AbsResource<RSC>> ReadOnlySnapshotHandle openSnapshotReadOnly(ReadOnlyOpener<RSC> opener)
+        throws StorageException
+    {
+        return switch (opener)
+        {
+            case ReadOnlyOpener.ForSnapshot forSnapshot -> openLinstorSnapshot(
+                (LvmData<Snapshot>) forSnapshot.vlmData()
+            );
+            case ReadOnlyOpener.ForClone forClone -> {
+                LvmData<Resource> srcData = (LvmData<Resource>) forClone.vlmData();
+                srcData.setCloneDevicePath(
+                    getDevicePath(
+                        srcData.getVolumeGroup(),
+                        getCloneSnapshotNameFull(srcData, forClone.cloneTargetName(), "_")
+                    )
+                );
+                yield () -> srcData.setCloneDevicePath(null);
+            }
+        };
+    }
+
+    /**
+     * Like {@link #updateInfo}, this refuses to activate a snapshot that is flagged for deletion or whose LV must not
+     * be active on this node (see {@link #isSnapshotLvBarredFromActivation}).
+     */
+    private ReadOnlySnapshotHandle openLinstorSnapshot(LvmData<Snapshot> snapData) throws StorageException
+    {
+        Snapshot snap = snapData.getRscLayerObject().getAbsResource();
+        if (snap.getFlags().isSet(Snapshot.Flags.DELETE))
+        {
+            throw new StorageException("Cannot open snapshot " + snapData + ", it is being deleted");
+        }
+        if (isSnapshotLvBarredFromActivation(snapData))
+        {
+            throw new StorageException(
+                "Cannot open snapshot " + snapData + ", its LV must not be activated on this node, since the " +
+                    "resource is not active here and the storage pool is shared"
+            );
+        }
+        @Nullable String volumeGroup = getVolumeGroup(snapData.getStorPool());
+        if (volumeGroup == null)
+        {
+            throw new StorageException("No volume group found for snapshot " + snapData);
+        }
+        String snapLvId = asSnapLvIdentifier(snapData);
+        String snapLvKey = volumeGroup + "/" + snapLvId;
+        SharedOpenCounter.LastClose<Boolean> deactivateIfWasInactive = wasInactive ->
+        {
+            if (wasInactive)
+            {
+                deactivateSnapshot(volumeGroup, snapLvId);
+            }
+        };
+
+        openSnapshotLvs.open(snapLvKey, () -> activateSnapshotIfInactive(volumeGroup, snapLvId));
+        String devicePath = getDevicePath(volumeGroup, snapLvId);
+        try
+        {
+            waitUntilDeviceCreated(snapData.getStorPool(), devicePath);
+        }
+        catch (StorageException | RuntimeException exc)
+        {
+            try
+            {
+                openSnapshotLvs.close(snapLvKey, deactivateIfWasInactive);
+            }
+            catch (StorageException | RuntimeException closeExc)
+            {
+                exc.addSuppressed(closeExc);
+            }
+            throw exc;
+        }
+        snapData.setCloneDevicePath(devicePath);
+        return () ->
+        {
+            openSnapshotLvs.close(snapLvKey, deactivateIfWasInactive);
+            snapData.setCloneDevicePath(null);
+        };
+    }
+
+    /**
+     * Activates the given snapshot LV if it is not active.
+     *
+     * @return whether the LV was inactive (and got activated)
+     */
+    private boolean activateSnapshotIfInactive(String volumeGroup, String snapLvId) throws StorageException
+    {
+        // the activation state might have changed since the cached lvs call (e.g. by a reboot)
+        LvmUtils.recacheNextLvs();
+        @Nullable Map<String, LvsInfo> vgLvsInfo = LvmUtils.getLvsInfo(
+            extCmdFactory,
+            Collections.singleton(volumeGroup)
+        ).get(volumeGroup);
+        @Nullable LvsInfo info = vgLvsInfo == null ? null : vgLvsInfo.get(snapLvId);
+        if (info == null)
+        {
+            throw new StorageException("Snapshot LV " + volumeGroup + "/" + snapLvId + " not found");
+        }
+        boolean wasInactive = !isLvActive(info);
+        if (wasInactive)
+        {
+            // for a thick snapshot this also activates its origin
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(volumeGroup),
+                config -> LvmCommands.activateVolume(extCmdFactory.create(), volumeGroup, snapLvId, config)
+            );
+            LvmUtils.recacheNextLvs();
+        }
+        return wasInactive;
+    }
+
+    /**
+     * Deactivates the given snapshot LV. For a thick snapshot this also deactivates its origin, which was inactive
+     * too when the snapshot got activated.
+     */
+    private void deactivateSnapshot(String volumeGroup, String snapLvId) throws StorageException
+    {
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(volumeGroup),
+            config -> LvmCommands.deactivateVolume(extCmdFactory.create(), volumeGroup, snapLvId, config)
+        );
+        LvmUtils.recacheNextLvs();
+    }
+
+    /**
+     * Whether the LV is active according to the state character of its {@code lv_attr}.
+     */
+    protected static boolean isLvActive(LvsInfo info)
+    {
+        return info.attributes.length() > LV_ATTR_STATE_IDX && info.attributes.charAt(LV_ATTR_STATE_IDX) == 'a';
     }
 
     @Override
