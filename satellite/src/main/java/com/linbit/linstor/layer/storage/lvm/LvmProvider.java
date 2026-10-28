@@ -1377,7 +1377,7 @@ public class LvmProvider
                 Collections.singleton(vlmData.getVolumeGroup()),
                 config -> LvmCommands.createSnapshot(
                     extCmdFactory.create(),
-                    false,
+                    true, // the clone only reads from it
                     vlmData.getVolumeGroup(),
                     srcId,
                     srcFullSnapshotName,
