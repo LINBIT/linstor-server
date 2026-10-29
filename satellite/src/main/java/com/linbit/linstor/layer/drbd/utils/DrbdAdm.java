@@ -47,6 +47,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Singleton
 public class DrbdAdm
 {
@@ -730,6 +734,45 @@ public class DrbdAdm
         }
     }
 
+    /**
+     * Writes the changed block tracking bitmap of the volume to its metadata. Only allowed while the resource's I/O
+     * is suspended.
+     */
+    public void cbtFlush(DrbdVlmData<Resource> drbdVlmDataRef) throws ExtCmdFailedException
+    {
+        execute(DRBDSETUP_UTIL, "cbt-flush", getMinorNrStr(drbdVlmDataRef));
+    }
+
+    /**
+     * Starts a new changed block tracking interval of the volume at the given bookmark id. Only allowed after a
+     * {@link #cbtFlush} within the same I/O suspension.
+     *
+     * @param bookmarkIdRef up to 16 hex digits
+     */
+    public void cbtStart(DrbdVlmData<Resource> drbdVlmDataRef, String bookmarkIdRef) throws ExtCmdFailedException
+    {
+        execute(DRBDSETUP_UTIL, "cbt-start", getMinorNrStr(drbdVlmDataRef), bookmarkIdRef);
+    }
+
+    /**
+     * Stops the changed block tracking of the volume and frees its bitmap slot.
+     */
+    public void cbtStop(DrbdVlmData<Resource> drbdVlmDataRef) throws ExtCmdFailedException
+    {
+        execute(DRBDSETUP_UTIL, "cbt-stop", getMinorNrStr(drbdVlmDataRef));
+    }
+
+    public CbtStatus cbtStatus(DrbdVlmData<Resource> drbdVlmDataRef) throws ExtCmdFailedException, StorageException
+    {
+        OutputData outputData = execute(DRBDSETUP_UTIL, "cbt-status", getMinorNrStr(drbdVlmDataRef));
+        return CbtStatus.parse(new String(outputData.stdoutData, StandardCharsets.UTF_8));
+    }
+
+    private static String getMinorNrStr(DrbdVlmData<Resource> drbdVlmDataRef)
+    {
+        return Integer.toString(drbdVlmDataRef.getVlmDfnLayerObject().getMinorNr().value);
+    }
+
     public void invalidate(DrbdRscData<Resource> drbdRscDataRef) throws ExtCmdFailedException
     {
         execute(DRBDADM_UTIL, "invalidate", drbdRscDataRef.getSuffixedResourceName());
@@ -839,14 +882,14 @@ public class DrbdAdm
         );
     }
 
-    private void execute(String... command) throws ExtCmdFailedException
+    private OutputData execute(String... command) throws ExtCmdFailedException
     {
-        execute(Arrays.asList(command));
+        return execute(Arrays.asList(command));
     }
 
-    private void execute(List<String> commandList) throws ExtCmdFailedException
+    private OutputData execute(List<String> commandList) throws ExtCmdFailedException
     {
-        execute(commandList, false, Collections.emptySet());
+        return execute(commandList, false, Collections.emptySet());
     }
 
     private void execute(List<String> commandList, Set<String> ioProgressDeviceStatFiles)
@@ -855,7 +898,7 @@ public class DrbdAdm
         execute(commandList, true, ioProgressDeviceStatFiles);
     }
 
-    private void execute(
+    private OutputData execute(
         List<String> commandList,
         boolean setIoProgressmodeRef,
         Set<String> ioProgressDeviceStatFiles
@@ -881,6 +924,7 @@ public class DrbdAdm
             {
                 throw new ExtCmdFailedException(command, outputData);
             }
+            return outputData;
         }
         catch (ChildProcessTimeoutException timeoutExc)
         {
@@ -953,6 +997,44 @@ public class DrbdAdm
             ret = stderr.contains(DEVICE_HELD_OPEN_ERR_MSG);
         }
         return ret;
+    }
+
+    /**
+     * The changed block tracking state of a volume, as reported by {@code drbdsetup cbt-status}.
+     *
+     * @param bookmarkId the id the current interval was started with (16 upper case hex digits), {@code null} if no
+     *     tracking is active
+     * @param state {@code valid}, {@code invalid} or {@code stopped}
+     */
+    public record CbtStatus(@Nullable String bookmarkId, String state)
+    {
+        private static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
+
+        public static final String STATE_STOPPED = "stopped";
+
+        public boolean isActive()
+        {
+            return !STATE_STOPPED.equals(state);
+        }
+
+        static CbtStatus parse(String jsonRef) throws StorageException
+        {
+            try
+            {
+                JsonNode root = OBJ_MAPPER.readTree(jsonRef);
+                JsonNode stateNode = root == null ? null : root.get("state");
+                if (stateNode == null)
+                {
+                    throw new StorageException("Unexpected output of drbdsetup cbt-status: " + jsonRef);
+                }
+                JsonNode idNode = root.get("id");
+                return new CbtStatus(idNode == null ? null : idNode.asText(), stateNode.asText());
+            }
+            catch (JsonProcessingException exc)
+            {
+                throw new StorageException("Unable to parse the output of drbdsetup cbt-status: " + jsonRef, exc);
+            }
+        }
     }
 
     public static class DrbdPrimary implements AutoCloseable

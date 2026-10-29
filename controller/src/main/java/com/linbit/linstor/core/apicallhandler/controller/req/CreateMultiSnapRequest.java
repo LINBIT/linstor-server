@@ -228,6 +228,10 @@ public class CreateMultiSnapRequest
         private final Map<String, String> props;
         /** additional flags of the created snapshot definition */
         private final SnapshotDefinition.Flags[] snapDfnFlags;
+        /**
+         * Flags requested by the user, see {@link SnapshotDefinition.Flags#CBT}. {@code null} if the request has none.
+         */
+        private final @Nullable List<String> flags;
 
         public SnapReq(List<String> nodeNamesRef, String rscNameRef, String snapNameRef, Map<String, String> propsRef)
         {
@@ -242,11 +246,35 @@ public class CreateMultiSnapRequest
             SnapshotDefinition.Flags[] snapDfnFlagsRef
         )
         {
+            this(nodeNamesRef, rscNameRef, snapNameRef, propsRef, snapDfnFlagsRef, Collections.emptyList());
+        }
+
+        public SnapReq(
+            List<String> nodeNamesRef,
+            String rscNameRef,
+            String snapNameRef,
+            Map<String, String> propsRef,
+            @Nullable List<String> flagsRef
+        )
+        {
+            this(nodeNamesRef, rscNameRef, snapNameRef, propsRef, new SnapshotDefinition.Flags[0], flagsRef);
+        }
+
+        private SnapReq(
+            List<String> nodeNamesRef,
+            String rscNameRef,
+            String snapNameRef,
+            Map<String, String> propsRef,
+            SnapshotDefinition.Flags[] snapDfnFlagsRef,
+            @Nullable List<String> flagsRef
+        )
+        {
             nodeNames = nodeNamesRef;
             rscName = rscNameRef;
             snapName = snapNameRef;
             props = propsRef;
             snapDfnFlags = snapDfnFlagsRef;
+            flags = flagsRef;
         }
 
         public SnapReq(SnapshotDefinition snapDfnRef)
@@ -254,6 +282,7 @@ public class CreateMultiSnapRequest
             nodeNames = new ArrayList<>();
             props = Collections.emptyMap();
             snapDfnFlags = new SnapshotDefinition.Flags[0];
+            flags = Collections.emptyList();
             if (!snapDfnRef.isDeleted())
             {
                 for (Snapshot snap : snapDfnRef.getAllSnapshots())
@@ -311,6 +340,11 @@ public class CreateMultiSnapRequest
         public SnapshotDefinition.Flags[] getSnapDfnFlags()
         {
             return snapDfnFlags;
+        }
+
+        public @Nullable List<String> getFlags()
+        {
+            return flags;
         }
 
         @Override

@@ -271,6 +271,7 @@ public class CtrlBackupCreateApiCallHandler
                         rscDfn.getName(),
                         LinstorParsingUtils.asSnapshotName(snapName),
                         Collections.emptyMap(),
+                        false,
                         responses
                     );
             }

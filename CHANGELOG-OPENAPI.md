@@ -12,6 +12,8 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Added `open` to ResourceState
   - Added `host_name` to ControllerVersion
   - Documented the `RESTORE_FROM_SNAPSHOT` Resource flag, set until a snapshot restore has finished on the satellite
+  - Added the `CBT` flag (changed block tracking) to snapshot creation (`flags` of POST
+    /v1/resource-definitions/{resource}/snapshots and /v1/actions/snapshot/multi)
 
 ## [1.29.1]
 

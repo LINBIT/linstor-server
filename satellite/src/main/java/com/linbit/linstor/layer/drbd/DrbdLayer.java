@@ -27,7 +27,9 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
@@ -263,6 +265,20 @@ public class DrbdLayer implements DeviceLayer
             if (processChild(drbdRscData, apiCallRc))
             {
                 adjustDrbd(drbdRscData, apiCallRc, true, null);
+                try
+                {
+                    stopCopiedCbt(drbdRscData);
+                }
+                catch (ExtCmdFailedException exc)
+                {
+                    throw new ResourceException(
+                        String.format(
+                            "Failed to stop the changed block tracking of DRBD resource %s after the rollback",
+                            drbdRscData.getSuffixedResourceName()
+                        ),
+                        exc
+                    );
+                }
 
                 // this should not be executed if adjusting the drbd resource fails
                 drbdResFileUtils.copyResFileToBackup(drbdRscData);
@@ -926,6 +942,19 @@ public class DrbdLayer implements DeviceLayer
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
                     forgetPeersCleanup(drbdRscData, ids);
+                    stopCopiedCbt(drbdRscData);
+                }
+                if (drbdRscData.getAbsResource()
+                    .getResourceDefinition()
+                    .getFlags()
+                    .isSet(ResourceDefinition.Flags.CLONING))
+                {
+                    /*
+                     * The volumes finished cloning (DRBD is down while they clone), the controller clears the
+                     * resource definition's flag only after the post-clone resize and balancing. A DRBD passthrough
+                     * clone copied the source snapshot's metadata, including its changed block tracking.
+                     */
+                    stopCopiedCbt(drbdRscData);
                 }
 
                 recoverAfterSkipdisk(drbdRscData);
@@ -1401,6 +1430,202 @@ public class DrbdLayer implements DeviceLayer
         {
             throw new StorageException("Need initial DRBD state", exc);
         }
+    }
+
+    /**
+     * A changed block tracking snapshot ({@link SnapshotDefinition.Flags#CBT}) writes DRBD's tracking bitmap to the
+     * metadata before the snapshot below is taken ({@code cbt-flush}), so that the snapshot contains it, and starts
+     * the next tracking interval with the snapshot's bookmark id afterwards ({@code cbt-start}). Both have to happen
+     * within the I/O suspension of the snapshot. Other snapshots are left to the device handler.
+     */
+    @Override
+    public boolean processSnapshot(AbsRscLayerObject<Snapshot> snapLayerDataRef, ApiCallRcImpl apiCallRcRef)
+        throws StorageException, ResourceException, VolumeException, DatabaseException
+    {
+        boolean processedChildren = false;
+        @Nullable DrbdRscData<Resource> drbdRscData = getRscDataForCbtSnapshot(snapLayerDataRef);
+        if (drbdRscData != null)
+        {
+            String bookmarkId = getCbtBookmarkId(snapLayerDataRef.getAbsResource().getSnapshotDefinition());
+            List<DrbdVlmData<Resource>> vlmsToStart = new ArrayList<>();
+            for (VolumeNumber vlmNr : snapLayerDataRef.getVlmLayerObjects().keySet())
+            {
+                @Nullable DrbdVlmData<Resource> drbdVlmData = drbdRscData.getVlmLayerObjects().get(vlmNr);
+                // the snapshot stays to be taken until its last round trip: a volume whose interval already started
+                // with this bookmark id is done
+                if (drbdVlmData != null && !bookmarkId.equalsIgnoreCase(getCbtStatus(drbdVlmData).bookmarkId()))
+                {
+                    vlmsToStart.add(drbdVlmData);
+                }
+            }
+
+            for (DrbdVlmData<Resource> drbdVlmData : vlmsToStart)
+            {
+                try
+                {
+                    drbdUtils.cbtFlush(drbdVlmData);
+                }
+                catch (ExtCmdFailedException exc)
+                {
+                    throw cbtFailed(drbdVlmData, "cbt-flush", ApiConsts.FAIL_CBT_START, exc);
+                }
+            }
+            for (AbsRscLayerObject<Snapshot> child : snapLayerDataRef.getChildren())
+            {
+                resourceProcessorProvider.get().processSnapshot(child, apiCallRcRef);
+            }
+            processedChildren = true;
+            for (DrbdVlmData<Resource> drbdVlmData : vlmsToStart)
+            {
+                try
+                {
+                    drbdUtils.cbtStart(drbdVlmData, bookmarkId);
+                }
+                catch (ExtCmdFailedException exc)
+                {
+                    throw cbtFailed(drbdVlmData, "cbt-start", ApiConsts.FAIL_CBT_START, exc);
+                }
+            }
+        }
+        return processedChildren;
+    }
+
+    /**
+     * Returns the DRBD layer data of the live resource if the given snapshot is a CBT snapshot that is to be taken
+     * now, i.e. while the resource is suspended. Otherwise {@code null}.
+     */
+    private @Nullable DrbdRscData<Resource> getRscDataForCbtSnapshot(AbsRscLayerObject<Snapshot> snapLayerDataRef)
+    {
+        @Nullable DrbdRscData<Resource> ret = null;
+        Snapshot snap = snapLayerDataRef.getAbsResource();
+        boolean cbtSnapshotToBeTaken = snap.getSnapshotDefinition().getFlags().isSet(SnapshotDefinition.Flags.CBT) &&
+            snap.getTakeSnapshot() &&
+            snap.getFlags().isUnset(Snapshot.Flags.DELETE);
+        if (cbtSnapshotToBeTaken)
+        {
+            @Nullable Resource rsc = snap.getResourceDefinition().getResource(snap.getNodeName());
+            if (rsc != null &&
+                !rsc.getStateFlags().isSomeSet(Flags.INACTIVE, Flags.INACTIVE_PERMANENTLY, Flags.INACTIVATING))
+            {
+                Set<AbsRscLayerObject<Resource>> candidates = LayerRscUtils.getRscDataByLayer(
+                    rsc.getLayerData(),
+                    DeviceLayerKind.DRBD,
+                    snapLayerDataRef.getResourceNameSuffix()::equals
+                );
+                if (candidates.size() == 1)
+                {
+                    AbsRscLayerObject<Resource> rscData = candidates.iterator().next();
+                    // suspended in the first round trip, resumed in the third
+                    if (rscData.exists() && rscData.getShouldSuspendIo())
+                    {
+                        ret = (DrbdRscData<Resource>) rscData;
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
+    private static String getCbtBookmarkId(SnapshotDefinition snapDfnRef) throws StorageException
+    {
+        @Nullable String bookmarkId;
+        try
+        {
+            bookmarkId = snapDfnRef.getSnapDfnProps().getProp(ApiConsts.KEY_CBT_ID, ApiConsts.NAMESPC_CBT);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        if (bookmarkId == null)
+        {
+            throw new StorageException(
+                "The CBT snapshot " + snapDfnRef.getName().displayValue + " of resource " +
+                    snapDfnRef.getResourceName().displayValue + " has no bookmark id"
+            );
+        }
+        return bookmarkId;
+    }
+
+    /**
+     * A resource restored, rolled back or cloned (passthrough) from a snapshot inherits the changed block tracking
+     * record of the snapshot's metadata, which means nothing for this resource and occupies one of its bitmap slots:
+     * stop it, so the tracking only runs after a CBT snapshot of this resource. Idempotent, as restore and clone run
+     * this on every adjust until the controller clears their flag.
+     */
+    private void stopCopiedCbt(DrbdRscData<Resource> drbdRscDataRef) throws ExtCmdFailedException
+    {
+        /*
+         * Not by the volumes' hasDisk(): that is the state before the adjust that attached the disks. DRBD is down
+         * before a restore or clone, so hasDisk() is still false in the first run afterwards, and the controller can
+         * clear the flag before a second run.
+         */
+        if (!drbdRscDataRef.getAbsResource().isDrbdDiskless() &&
+            !drbdRscDataRef.isSkipDiskEnabled(stltCfgAccessor.getReadonlyProps()))
+        {
+            for (DrbdVlmData<Resource> drbdVlmData : drbdRscDataRef.getVlmLayerObjects().values())
+            {
+                @Nullable DrbdAdm.CbtStatus cbtStatus;
+                try
+                {
+                    cbtStatus = drbdUtils.cbtStatus(drbdVlmData);
+                }
+                catch (ExtCmdFailedException | StorageException exc)
+                {
+                    // a DRBD without changed block tracking, or a volume without disk, has no record to stop
+                    errorReporter.logDebug(
+                        "Changed block tracking status of %s not available: %s",
+                        drbdVlmData.getIdentifier(),
+                        exc.getMessage()
+                    );
+                    cbtStatus = null;
+                }
+                if (cbtStatus != null && cbtStatus.isActive())
+                {
+                    errorReporter.logInfo(
+                        "Stopping the changed block tracking %s copied from the snapshot to %s",
+                        cbtStatus.bookmarkId(),
+                        drbdVlmData.getIdentifier()
+                    );
+                    drbdUtils.cbtStop(drbdVlmData);
+                }
+            }
+        }
+    }
+
+    private DrbdAdm.CbtStatus getCbtStatus(DrbdVlmData<Resource> drbdVlmDataRef) throws StorageException
+    {
+        try
+        {
+            return drbdUtils.cbtStatus(drbdVlmDataRef);
+        }
+        catch (ExtCmdFailedException exc)
+        {
+            // usually a DRBD version without changed block tracking
+            throw cbtFailed(drbdVlmDataRef, "cbt-status", ApiConsts.FAIL_CBT_NOT_SUPPORTED, exc);
+        }
+    }
+
+    private static StorageException cbtFailed(
+        DrbdVlmData<Resource> drbdVlmDataRef,
+        String cmdRef,
+        long retCodeRef,
+        ExtCmdFailedException exc
+    )
+    {
+        return new StorageException(
+            "Changed block tracking failed for volume " + drbdVlmDataRef.getVlmNr().value + " of resource '" +
+                drbdVlmDataRef.getRscLayerObject().getSuffixedResourceName() + "': drbdsetup " + cmdRef + " failed",
+            null,
+            exc.getMessage(),
+            retCodeRef == ApiConsts.FAIL_CBT_START ?
+                "DRBD refuses to start the tracking while a resync is running or if no bitmap slot is free " +
+                    "(the tracking needs one of the resource's peer slots)." :
+                "Changed block tracking needs a DRBD version that supports it.",
+            null,
+            retCodeRef,
+            exc
+        );
     }
 
     private boolean hasExternalMd(DrbdVlmData<Resource> drbdVlmData)

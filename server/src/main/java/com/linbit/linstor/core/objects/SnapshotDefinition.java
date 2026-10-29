@@ -625,6 +625,12 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition>
         SAFETY_SNAPSHOT(1L << 13),
         /** the snapshot of a clone source the clone target is cloned from */
         FOR_CLONE(1L << 14),
+        /**
+         * Changed block tracking: the snapshot is taken together with DRBD's {@code cbt-flush} / {@code cbt-start},
+         * so that its DRBD metadata describes the changes since the previous CBT snapshot. The bookmark id is stored
+         * as {@code Cbt/Id} property.
+         */
+        CBT(1L << 15),
         ;
 
         public final long flagValue;

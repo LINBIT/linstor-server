@@ -11,6 +11,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCa
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotRestoreApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotRollbackApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
+import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
+import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest.SnapReq;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -33,6 +35,8 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import jakarta.inject.Inject;
@@ -134,6 +138,8 @@ public class SnapshotApiTest extends ApiTestBase
 
         stubSatellitePeer(mockSatellite, mockExtToolsMgr, satelliteState, false);
         stubAllExtToolsSupported(mockExtToolsMgr);
+        // the first versions with changed block tracking
+        stubDrbdVersions(new ExtToolsInfo.Version(9, 3, 5), new ExtToolsInfo.Version(9, 36, 0));
         Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any()))
             .thenReturn(Mono.just(Collections.emptyMap()));
 
@@ -227,6 +233,135 @@ public class SnapshotApiTest extends ApiTestBase
         assertThat(snapDfn).isNotNull();
         assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.SUCCESSFUL)).isTrue();
         assertThat(snapDfn.getAllSnapshots()).hasSize(1);
+        // only requested changed block tracking starts a new interval
+        assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.CBT)).isFalse();
+        assertThat(snapDfn.getSnapDfnProps().getProp(ApiConsts.KEY_CBT_ID, ApiConsts.NAMESPC_CBT)).isNull();
+    }
+
+    /*
+     * changed block tracking (CBT) snapshot create tests
+     */
+
+    @Test
+    public void crtSnapCbtSuccess() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.CREATED, ApiConsts.MODIFIED, ApiConsts.MODIFIED, ApiConsts.MODIFIED)
+                .setFlags("cbt") // case insensitive
+        );
+
+        SnapshotDefinition snapDfn = rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName);
+        assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.SUCCESSFUL)).isTrue();
+        assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.CBT)).isTrue();
+        // formatted as DRBD prints the bookmark id
+        assertThat(snapDfn.getSnapDfnProps().getProp(ApiConsts.KEY_CBT_ID, ApiConsts.NAMESPC_CBT))
+            .matches("[0-9A-F]{16}");
+    }
+
+    @Test
+    public void crtSnapCbtProviderNotSupported() throws Exception
+    {
+        // FILE_THIN supports snapshots, but a CBT session cannot open them read-only
+        deployTestResource(DeviceProviderKind.FILE_THIN);
+        satelliteOnline();
+
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.FAIL_CBT_NOT_SUPPORTED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName)).isNull();
+    }
+
+    @Test
+    public void crtSnapCbtWithoutDrbd() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN, DeviceLayerKind.STORAGE);
+        satelliteOnline();
+
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.FAIL_CBT_NOT_SUPPORTED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName)).isNull();
+    }
+
+    @Test
+    public void crtSnapCbtDrbdTooOld() throws Exception
+    {
+        stubDrbdVersions(new ExtToolsInfo.Version(9, 3, 4), new ExtToolsInfo.Version(9, 36, 0));
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.FAIL_CBT_NOT_SUPPORTED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName)).isNull();
+    }
+
+    @Test
+    public void crtSnapCbtDrbdUtilsTooOld() throws Exception
+    {
+        stubDrbdVersions(new ExtToolsInfo.Version(9, 3, 5), new ExtToolsInfo.Version(9, 35, 0));
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.FAIL_CBT_NOT_SUPPORTED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName)).isNull();
+    }
+
+    @Test
+    public void crtSnapCbtDrbdNotSupported() throws Exception
+    {
+        Mockito.when(mockExtToolsMgr.getExtToolInfo(ExtTools.DRBD9_KERNEL))
+            .thenReturn(new ExtToolsInfo(ExtTools.DRBD9_KERNEL, false, null, null, null, null));
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.FAIL_CBT_NOT_SUPPORTED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName)).isNull();
+    }
+
+    @Test
+    public void crtSnapUnknownFlag() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.FAIL_INVLD_REQUEST)
+                .setFlags(ApiConsts.FLAG_CBT, "SUCCESSFUL")
+        );
+    }
+
+    @Test
+    public void crtSnapNullFlags() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.CREATED, ApiConsts.MODIFIED, ApiConsts.MODIFIED, ApiConsts.MODIFIED)
+                .setNullFlags()
+        );
+
+        SnapshotDefinition snapDfn = rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName);
+        assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.SUCCESSFUL)).isTrue();
+        assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.CBT)).isFalse();
     }
 
     @Test
@@ -707,6 +842,15 @@ public class SnapshotApiTest extends ApiTestBase
         setSatelliteOnline(mockSatellite, true);
     }
 
+    /** The DRBD versions all satellites report, they share the same ext-tools mock */
+    private void stubDrbdVersions(ExtToolsInfo.Version kmodVersion, ExtToolsInfo.Version utilsVersion)
+    {
+        Mockito.when(mockExtToolsMgr.getExtToolInfo(ExtTools.DRBD9_KERNEL))
+            .thenReturn(new ExtToolsInfo(ExtTools.DRBD9_KERNEL, true, kmodVersion, null));
+        Mockito.when(mockExtToolsMgr.getExtToolInfo(ExtTools.DRBD9_UTILS))
+            .thenReturn(new ExtToolsInfo(ExtTools.DRBD9_UTILS, true, utilsVersion, null));
+    }
+
     private void satellite2Online()
     {
         setSatelliteOnline(mockSatellite2, true);
@@ -999,12 +1143,17 @@ public class SnapshotApiTest extends ApiTestBase
 
     private void createRscDfnWithVlmDfn(String rscNameStr) throws Exception
     {
+        createRscDfnWithVlmDfn(rscNameStr, DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE);
+    }
+
+    private void createRscDfnWithVlmDfn(String rscNameStr, DeviceLayerKind... layerStack) throws Exception
+    {
         enterScope();
 
         rscDfnMap.put(
             new ResourceName(rscNameStr),
             resourceDefinitionTestFactory.builder(rscNameStr)
-                .setLayerStack(new ArrayList<>(Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)))
+                .setLayerStack(new ArrayList<>(Arrays.asList(layerStack)))
                 .build()
         );
         volumeDefinitionTestFactory.builder(rscNameStr, 0)
@@ -1016,7 +1165,12 @@ public class SnapshotApiTest extends ApiTestBase
 
     private void deployTestResource(DeviceProviderKind providerKind) throws Exception
     {
-        createRscDfnWithVlmDfn(TEST_RSC_NAME);
+        deployTestResource(providerKind, DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE);
+    }
+
+    private void deployTestResource(DeviceProviderKind providerKind, DeviceLayerKind... layerStack) throws Exception
+    {
+        createRscDfnWithVlmDfn(TEST_RSC_NAME, layerStack);
 
         enterScope();
 
@@ -1030,6 +1184,11 @@ public class SnapshotApiTest extends ApiTestBase
             false
         );
         storPool.getFreeSpaceTracker().setCapacityInfo(10_000_000, 10_000_000);
+        if (providerKind == DeviceProviderKind.FILE || providerKind == DeviceProviderKind.FILE_THIN)
+        {
+            // reported by the satellite for file storage pools
+            storPool.setSupportsSnapshot(true);
+        }
 
         Map<String, String> rscProps = new TreeMap<>();
         rscProps.put(ApiConsts.KEY_STOR_POOL_NAME, TEST_SP_NAME);
@@ -1095,6 +1254,7 @@ public class SnapshotApiTest extends ApiTestBase
     private class CreateSnapshotCall extends AbsApiCallTester
     {
         private final List<String> nodeNames;
+        private @Nullable List<String> flags;
         private String rscName;
         private String snapName;
 
@@ -1106,6 +1266,7 @@ public class SnapshotApiTest extends ApiTestBase
                 expectedRcs
             );
             nodeNames = new ArrayList<>();
+            flags = new ArrayList<>();
             rscName = TEST_RSC_NAME;
             snapName = TEST_SNAP_NAME;
         }
@@ -1113,14 +1274,31 @@ public class SnapshotApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
+            // as the REST API does
             return collect(
                 snapCrtApiCallHandlerProvider.get().createSnapshot(
-                    nodeNames,
-                    rscName,
-                    snapName,
-                    Collections.emptyMap()
+                    new CreateMultiSnapRequest(
+                        Collections.singleton(
+                            new SnapReq(nodeNames, rscName, snapName, Collections.emptyMap(), flags)
+                        )
+                    )
                 )
             );
+        }
+
+        public CreateSnapshotCall setFlags(String... flagsRef)
+        {
+            flags = new ArrayList<>(Arrays.asList(flagsRef));
+            return this;
+        }
+
+        /**
+         * As the REST API passes a JSON {@code "flags": null}.
+         */
+        public CreateSnapshotCall setNullFlags()
+        {
+            flags = null;
+            return this;
         }
 
         public CreateSnapshotCall setRscName(String rscNameRef)

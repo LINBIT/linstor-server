@@ -316,6 +316,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                     rscName,
                     new SnapshotName(SAFETY_SNAP_PREFIX + StringUtils.randomAlphaNumString(SAFETY_SNAP_SUFFIX_ID_LEN)),
                     Collections.emptyMap(),
+                    false,
                     responses
                 );
                 safetySnapDfn.getFlags().enableFlags(SnapshotDefinition.Flags.SAFETY_SNAPSHOT);

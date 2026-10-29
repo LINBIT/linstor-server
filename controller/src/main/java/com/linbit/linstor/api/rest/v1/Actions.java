@@ -77,7 +77,12 @@ public class Actions
             for (Snapshot snapReq : req.snapshots)
             {
                 createSnapReqs.add(new SnapReq(
-                    snapReq.nodes, snapReq.resource_name, snapReq.name, snapReq.snapshot_definition_props));
+                    snapReq.nodes,
+                    snapReq.resource_name,
+                    snapReq.name,
+                    snapReq.snapshot_definition_props,
+                    snapReq.flags
+                ));
             }
             Flux<ApiCallRc> flux = snapCrtHandler.createSnapshot(new CreateMultiSnapRequest(createSnapReqs));
 

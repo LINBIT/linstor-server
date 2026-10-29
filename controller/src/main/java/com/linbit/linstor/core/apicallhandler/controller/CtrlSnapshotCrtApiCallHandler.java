@@ -341,6 +341,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 LinstorParsingUtils.asRscName(rscNameStr),
                 LinstorParsingUtils.asSnapshotName(snapshotNameStr),
                 snapReq.getProps(),
+                CtrlSnapshotCrtHelper.isCbtRequested(snapReq.getFlags()),
                 responses
             );
             for (SnapshotDefinition.Flags flag : snapReq.getSnapDfnFlags())
@@ -447,6 +448,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 LinstorParsingUtils.asRscName(rscNameStr),
                 LinstorParsingUtils.asSnapshotName(autoSnapshotName),
                 Collections.emptyMap(),
+                false,
                 responses
             );
             enableFlagPrivileged(snapDfn, SnapshotDefinition.Flags.AUTO_SNAPSHOT);

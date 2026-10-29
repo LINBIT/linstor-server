@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   releasing the space on the storage below the thin pool (e.g. VDO). The storage pool shows a warning if the thin
   pool does not pass discards down
 - REST: `GET /v1/controller/version` reports the `host_name` of the controller machine
+- Snapshot: Changed block tracking (DRBD 9.3.5, drbd-utils 9.36.0): a snapshot with the flag `CBT` starts a new DRBD
+  tracking interval and records the changes since the previous CBT snapshot; its bookmark id is the property `Cbt/Id`
 
 ### Changed
 

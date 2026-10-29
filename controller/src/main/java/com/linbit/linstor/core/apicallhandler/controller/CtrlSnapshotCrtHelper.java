@@ -42,14 +42,20 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.utils.SuspendLayerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.StringUtils;
 
@@ -62,18 +68,40 @@ import jakarta.inject.Singleton;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadLocalRandom;
 
 import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlSnapshotCrtHelper
 {
+    /** Layers a CBT snapshot may have, see {@link #ensureCbtSupported(Resource)} */
+    private static final Set<DeviceLayerKind> CBT_LAYERS = EnumSet.of(
+        DeviceLayerKind.DRBD,
+        DeviceLayerKind.LUKS,
+        DeviceLayerKind.CACHE,
+        DeviceLayerKind.WRITECACHE,
+        DeviceLayerKind.STORAGE
+    );
+    /** Storage providers a CBT snapshot may have, see {@link #ensureCbtSupported(Resource)} */
+    private static final Set<DeviceProviderKind> CBT_PROVIDERS = EnumSet.of(
+        DeviceProviderKind.LVM,
+        DeviceProviderKind.LVM_THIN,
+        DeviceProviderKind.ZFS,
+        DeviceProviderKind.ZFS_THIN
+    );
+    /** First DRBD kernel module with changed block tracking */
+    private static final ExtToolsInfo.Version CBT_DRBD_KMOD_VERSION = new ExtToolsInfo.Version(9, 3, 5);
+    /** First drbd-utils with the changed block tracking commands */
+    private static final ExtToolsInfo.Version CBT_DRBD_UTILS_VERSION = new ExtToolsInfo.Version(9, 36, 0);
+
     private final CtrlSnapshotHelper ctrlSnapshotHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final SnapshotDefinitionControllerFactory snapshotDefinitionFactory;
@@ -111,11 +139,52 @@ public class CtrlSnapshotCrtHelper
         errorReporter = errorReporterRef;
     }
 
+    /**
+     * Returns whether the given flags of a snapshot create request ask for changed block tracking
+     * ({@link SnapshotDefinition.Flags#CBT}). No other flag can be requested.
+     *
+     * @param flags {@code null} if the request has none (e.g. JSON {@code "flags": null})
+     */
+    public static boolean isCbtRequested(@Nullable List<String> flags)
+    {
+        boolean cbt = false;
+        if (flags != null)
+        {
+            for (String flag : flags)
+            {
+                if (ApiConsts.FLAG_CBT.equalsIgnoreCase(flag))
+                {
+                    cbt = true;
+                }
+                else
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.entryBuilder(
+                            ApiConsts.FAIL_INVLD_REQUEST,
+                            "The flag '" + flag + "' cannot be requested when creating a snapshot."
+                        )
+                            .setCorrection("The only flag that can be requested is '" + ApiConsts.FLAG_CBT + "'.")
+                            .setSkipErrorReport(true)
+                            .build()
+                    );
+                }
+            }
+        }
+        return cbt;
+    }
+
+    /**
+     * Creates the snapshot definition and the snapshots of the given (or all diskful) resources, marked to suspend
+     * I/O.
+     *
+     * @param cbtRef whether the snapshot is a changed block tracking snapshot ({@link SnapshotDefinition.Flags#CBT})
+     */
     public SnapshotDefinition createSnapshots(
         Collection<String> nodeNameStrs,
         ResourceName rscName,
         SnapshotName snapshotName,
         Map<String, String> props,
+        boolean cbtRef,
         ApiCallRcImpl responses
     )
     {
@@ -242,6 +311,15 @@ public class CtrlSnapshotCrtHelper
                     "No resources found for snapshotting"
                 )
             );
+        }
+
+        if (cbtRef)
+        {
+            for (Snapshot snap : snapshotDfn.getAllSnapshots())
+            {
+                ensureCbtSupported(ctrlApiDataLoader.loadRsc(rscDfn, snap.getNodeName().displayValue));
+            }
+            enableCbt(snapshotDfn);
         }
 
         Iterator<Resource> rscIterator = ctrlSnapshotHelper.iterateResource(rscDfn);
@@ -561,6 +639,126 @@ public class CtrlSnapshotCrtHelper
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Changed block tracking needs DRBD, whose metadata records the changes, and a stack below DRBD that a CBT session
+     * can open read-only: LUKS, CACHE or WRITECACHE layers and LVM, LVM-thin, ZFS or ZFS-thin storage for the data and
+     * the external DRBD metadata. The node needs a DRBD kernel module and drbd-utils with changed block tracking.
+     */
+    private void ensureCbtSupported(Resource rsc)
+    {
+        String rscDescr = "resource '" + rsc.getResourceDefinition().getName().displayValue + "' on node '" +
+            rsc.getNode().getName().displayValue + "'";
+        List<DeviceLayerKind> layerStack = LayerRscUtils.getLayerStack(rsc);
+        if (!layerStack.contains(DeviceLayerKind.DRBD))
+        {
+            throw cbtNotSupported(rscDescr, "Changed block tracking needs the DRBD layer.");
+        }
+        for (DeviceLayerKind layerKind : layerStack)
+        {
+            if (!CBT_LAYERS.contains(layerKind))
+            {
+                throw cbtNotSupported(rscDescr, "The layer " + layerKind + " is not supported.");
+            }
+        }
+        Set<AbsRscLayerObject<Resource>> storRscDataSet = LayerRscUtils.getRscDataByLayer(
+            rsc.getLayerData(),
+            DeviceLayerKind.STORAGE,
+            suffix -> suffix.equals(RscLayerSuffixes.SUFFIX_DATA) || suffix.equals(RscLayerSuffixes.SUFFIX_DRBD_META)
+        );
+        for (AbsRscLayerObject<Resource> storRscData : storRscDataSet)
+        {
+            for (VlmProviderObject<Resource> storVlmData : storRscData.getVlmLayerObjects().values())
+            {
+                DeviceProviderKind providerKind = storVlmData.getProviderKind();
+                if (!CBT_PROVIDERS.contains(providerKind))
+                {
+                    throw cbtNotSupported(
+                        rscDescr,
+                        "The storage provider " + providerKind + " (storage pool '" +
+                            storVlmData.getStorPool().getName().displayValue + "') is not supported."
+                    );
+                }
+            }
+        }
+        ExtToolsManager extToolsMgr = rsc.getNode().getPeer().getExtToolsManager();
+        ensureCbtVersion(rscDescr, extToolsMgr, ExtTools.DRBD9_KERNEL, "DRBD kernel module", CBT_DRBD_KMOD_VERSION);
+        ensureCbtVersion(rscDescr, extToolsMgr, ExtTools.DRBD9_UTILS, "drbd-utils", CBT_DRBD_UTILS_VERSION);
+    }
+
+    private static void ensureCbtVersion(
+        String rscDescr,
+        ExtToolsManager extToolsMgr,
+        ExtTools extTool,
+        String toolDescr,
+        ExtToolsInfo.Version minVersion
+    )
+    {
+        @Nullable ExtToolsInfo info = extToolsMgr.getExtToolInfo(extTool);
+        // unknown version parts count as "greater or equal", so an unsupported tool needs its own check
+        if (info == null || !info.isSupported())
+        {
+            throw cbtNotSupported(rscDescr, "The node reports no supported " + toolDescr + ".");
+        }
+        if (!info.hasVersionOrHigher(minVersion))
+        {
+            throw cbtNotSupported(
+                rscDescr,
+                "The node has " + toolDescr + " " + info.getVersion() + ", but changed block tracking needs " +
+                    minVersion + " or newer."
+            );
+        }
+    }
+
+    private static ApiRcException cbtNotSupported(String rscDescr, String cause)
+    {
+        return new ApiRcException(
+            ApiCallRcImpl.entryBuilder(
+                ApiConsts.FAIL_CBT_NOT_SUPPORTED,
+                "Changed block tracking is not supported for " + rscDescr + "."
+            )
+                .setCause(cause)
+                .setDetails(
+                    "Changed block tracking needs DRBD " + CBT_DRBD_KMOD_VERSION + " and drbd-utils " +
+                        CBT_DRBD_UTILS_VERSION + " or newer, on LVM, LVM-thin, ZFS or ZFS-thin storage, " +
+                        "optionally with LUKS, CACHE or WRITECACHE layers."
+                )
+                .setCorrection("Create the snapshot without the " + ApiConsts.FLAG_CBT + " flag.")
+                .setSkipErrorReport(true)
+                .build()
+        );
+    }
+
+    /**
+     * Marks the snapshot as CBT snapshot and generates its bookmark id: a random 64-bit number, formatted as DRBD
+     * prints it (16 upper case hex digits). The satellites start the new tracking interval with this id.
+     */
+    private void enableCbt(SnapshotDefinition snapshotDfn)
+    {
+        long cbtId;
+        do
+        {
+            cbtId = ThreadLocalRandom.current().nextLong();
+        }
+        while (cbtId == 0);
+        try
+        {
+            snapshotDfn.getFlags().enableFlags(SnapshotDefinition.Flags.CBT);
+            ctrlPropsHelper.getProps(snapshotDfn, false).setProp(
+                ApiConsts.KEY_CBT_ID,
+                String.format("%016X", cbtId),
+                ApiConsts.NAMESPC_CBT
+            );
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 

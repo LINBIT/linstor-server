@@ -835,11 +835,12 @@ public class DeviceHandlerImpl implements DeviceHandler
                         snap.getResourceName() + "'"
                 );
 
+                // a layer can report a specific return code as numeric code of the exception (e.g. FAIL_CBT_START)
+                @Nullable Long retCode = exc.getNumericCode();
                 apiCallRc = ApiCallRcImpl.singletonApiCallRc(
                     ApiCallRcImpl
                         .entryBuilder(
-                            // TODO maybe include a ret-code into the exception
-                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            retCode == null ? ApiConsts.FAIL_UNKNOWN_ERROR : retCode,
                             exc.getMessage()
                         )
                         .setCause(exc.getCauseText())

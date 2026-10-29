@@ -10,6 +10,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
+import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest.SnapReq;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -146,11 +148,18 @@ public class Snapshots
             JsonGenTypes.Snapshot snapData = objectMapper.readValue(jsonData, JsonGenTypes.Snapshot.class);
 
             Flux<ApiCallRc> responses = ctrlSnapshotCrtApiCallHandler.createSnapshot(
-                    snapData.nodes,
-                    rscName,
-                    snapData.name,
-                    snapData.snapshot_definition_props
-                );
+                new CreateMultiSnapRequest(
+                    Collections.singleton(
+                        new SnapReq(
+                            snapData.nodes,
+                            rscName,
+                            snapData.name,
+                            snapData.snapshot_definition_props,
+                            snapData.flags
+                        )
+                    )
+                )
+            );
 
             requestHelper.doFlux(
                 ApiConsts.API_CRT_SNAPSHOT,

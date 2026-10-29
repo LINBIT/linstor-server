@@ -1324,6 +1324,9 @@ public class JsonGenTypes
         public Map<String, String> props = Collections.emptyMap();
         public Map<String, String> snapshot_definition_props = Collections.emptyMap();
         public Map<String, String> resource_definition_props = Collections.emptyMap();
+        /**
+         * On creation, only `CBT` (changed block tracking) can be requested.
+         */
         public List<String> flags = Collections.emptyList();
         public List<SnapshotVolumeDefinition> volume_definitions = Collections.emptyList();
         /**

@@ -3145,7 +3145,15 @@ paths:
       tags:
         - developers
       summary: create a snapshot
-      description: Create a snapshot for a resource
+      description: |
+        Create a snapshot for a resource.
+
+        With the flag `CBT` the snapshot is a changed block tracking snapshot: DRBD writes its tracking bitmap into
+        the snapshot and starts a new tracking interval. The snapshot then describes the changes since the previous
+        CBT snapshot of the resource. Its bookmark id is the snapshot definition property `Cbt/Id`. Needs DRBD on
+        LVM, LVM-thin, ZFS or ZFS-thin storage (optionally with LUKS, CACHE or WRITECACHE), else the request fails
+        with FAIL_CBT_NOT_SUPPORTED. If DRBD refuses to start the tracking (e.g. no free bitmap slot), the snapshot
+        fails with FAIL_CBT_START.
       operationId: resourceSnapshotCreate
       responses:
         '201':
@@ -8503,6 +8511,7 @@ components:
           $ref: '#/components/schemas/Properties'
         flags:
           type: array
+          description: On creation, only `CBT` (changed block tracking) can be requested.
           items:
             type: string
         volume_definitions:
