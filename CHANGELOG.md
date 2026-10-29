@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - REST: `GET /v1/controller/version` reports the `host_name` of the controller machine
 - Snapshot: Changed block tracking (DRBD 9.3.5, drbd-utils 9.36.0): a snapshot with the flag `CBT` starts a new DRBD
   tracking interval and records the changes since the previous CBT snapshot; its bookmark id is the property `Cbt/Id`
+- Snapshot: CBT sessions make a CBT snapshot readable for backups: a temporary read-only resource on a chosen node
+  plus the extents changed since the previous CBT snapshot and the never written ones, paged
 
 ### Changed
 

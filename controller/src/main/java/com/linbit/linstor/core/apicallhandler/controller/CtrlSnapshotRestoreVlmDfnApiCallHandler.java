@@ -20,6 +20,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 
@@ -107,52 +108,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                 );
             }
 
-            for (SnapshotVolumeDefinition snapshotVlmDfn :
-                fromSnapshotDfn.getAllSnapshotVolumeDefinitions())
-            {
-                VolumeDefinition vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
-                    toRscDfn,
-                    snapshotVlmDfn.getVolumeNumber(),
-                    null,
-                    snapshotVlmDfn.getVolumeSize(),
-                    new VolumeDefinition.Flags[] {}
-                );
-
-                Map<String, String> snapVlmDfnVlmDfnProps = propsHelper.getProps(snapshotVlmDfn, true).map();
-                Map<String, String> vlmDfnProps = getVlmDfnProps(vlmDfn).map();
-
-                boolean isEncrypted = snapshotVlmDfn.getFlags()
-                    .isSet(SnapshotVolumeDefinition.Flags.ENCRYPTED);
-                if (isEncrypted)
-                {
-                    String cryptPasswd = snapVlmDfnVlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
-                    if (cryptPasswd == null)
-                    {
-                        throw new ImplementationError(
-                            "Encrypted snapshot volume definition without crypt passwd found");
-                    }
-
-                    vlmDfn.getFlags().enableFlags(VolumeDefinition.Flags.ENCRYPTED);
-                    vlmDfnProps.put(
-                        ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
-                        cryptPasswd
-                    );
-                }
-
-                copyProp(snapVlmDfnVlmDfnProps, vlmDfnProps, ApiConsts.KEY_DRBD_CURRENT_GI);
-
-                Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
-                while (rscIterator.hasNext())
-                {
-                    ApiCallRcWith<Volume> respWithVlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
-                        rscIterator.next(),
-                        vlmDfn,
-                        null,
-                        Collections.emptyMap()
-                    );
-                    respWithVlm.extractApiCallRc(responses);
-                }
-            }
+            restoreVlmDfnsInTransaction(fromSnapshotDfn, toRscDfn, responses);
 
             ctrlTransactionHelper.commit();
 
@@ -178,6 +134,65 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
         }
 
         return responses;
+    }
+
+    /**
+     * Creates the volume definitions of the snapshot in the target resource definition (and the volumes of its
+     * existing resources), without committing.
+     */
+    void restoreVlmDfnsInTransaction(
+        SnapshotDefinition fromSnapshotDfn,
+        ResourceDefinition toRscDfn,
+        ApiCallRcImpl responses
+    )
+        throws DatabaseException
+    {
+        for (SnapshotVolumeDefinition snapshotVlmDfn :
+            fromSnapshotDfn.getAllSnapshotVolumeDefinitions())
+        {
+            VolumeDefinition vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
+                toRscDfn,
+                snapshotVlmDfn.getVolumeNumber(),
+                null,
+                snapshotVlmDfn.getVolumeSize(),
+                new VolumeDefinition.Flags[] {}
+            );
+
+            Map<String, String> snapVlmDfnVlmDfnProps = propsHelper.getProps(snapshotVlmDfn, true).map();
+            Map<String, String> vlmDfnProps = getVlmDfnProps(vlmDfn).map();
+
+            boolean isEncrypted = snapshotVlmDfn.getFlags()
+                .isSet(SnapshotVolumeDefinition.Flags.ENCRYPTED);
+            if (isEncrypted)
+            {
+                String cryptPasswd = snapVlmDfnVlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+                if (cryptPasswd == null)
+                {
+                    throw new ImplementationError(
+                        "Encrypted snapshot volume definition without crypt passwd found");
+                }
+
+                vlmDfn.getFlags().enableFlags(VolumeDefinition.Flags.ENCRYPTED);
+                vlmDfnProps.put(
+                    ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
+                    cryptPasswd
+                );
+            }
+
+            copyProp(snapVlmDfnVlmDfnProps, vlmDfnProps, ApiConsts.KEY_DRBD_CURRENT_GI);
+
+            Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
+            while (rscIterator.hasNext())
+            {
+                ApiCallRcWith<Volume> respWithVlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
+                    rscIterator.next(),
+                    vlmDfn,
+                    null,
+                    Collections.emptyMap()
+                );
+                respWithVlm.extractApiCallRc(responses);
+            }
+        }
     }
 
     private Props getVlmDfnProps(VolumeDefinition vlmDfn)

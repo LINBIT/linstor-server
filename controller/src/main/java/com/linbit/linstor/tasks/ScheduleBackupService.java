@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlCbtSessionApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.identifier.RemoteName;
@@ -349,7 +350,9 @@ public class ScheduleBackupService implements SystemService
         if (
             running &&
                 schedule != null && remote != null && rscDfn != null &&
-                rscDfn.getNotDeletedDiskfulCount() > 0
+                rscDfn.getNotDeletedDiskfulCount() > 0 &&
+                // the temporary resource of a CBT session must not get snapshots
+                !CtrlCbtSessionApiCallHandler.isCbtSessionRscDfn(rscDfn)
         )
         {
             boolean isNew = true;

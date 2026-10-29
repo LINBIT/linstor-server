@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+import "common/ApiCallResponse.proto";
+
+// Satellite answer to a request for the extents of a CBT session's snapshot volume
+message MsgIntCbtExtents
+{
+    string base_cbt_id = 1;     // bookmark id of the interval start, empty in zero mode
+    string since = 2;           // start time of the interval as DRBD reports it, empty in zero mode
+    int64 volume_size = 3;      // bytes
+    // start and length (bytes) and the flags of the i-th extent, the extents cover the volume without gaps
+    repeated int64 starts = 4;
+    repeated int64 lengths = 5;
+    optional int64 next_offset = 6; // only if max_extents was reached
+    repeated common.ApiCallResponse errors = 7;
+    repeated bool dirty = 8;    // empty in zero mode
+    repeated bool zero = 9;
+}

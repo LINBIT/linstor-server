@@ -651,7 +651,14 @@ public class CtrlRscGrpApiCallHandler
                             rscDfn,
                             rsc -> !rsc.getStateFlags().isSet(Resource.Flags.TIE_BREAKER)
                         );
-                        if (rscCount < newReplicaCount)
+                        if (CtrlCbtSessionApiCallHandler.isCbtSessionRscDfn(rscDfn))
+                        {
+                            errorReporter.logDebug(
+                                "Not changing replica count of resource %s, the temporary resource of a CBT session",
+                                rscDfn.getName().displayValue
+                            );
+                        }
+                        else if (rscCount < newReplicaCount)
                         {
                             errorReporter.logDebug(
                                 "Increasing replica count of resource %s from %d to %d",
@@ -1538,15 +1545,19 @@ public class CtrlRscGrpApiCallHandler
 
         for (ResourceDefinition rscDfn : rscGrp.getRscDfns())
         {
-            fluxList.add(
-                ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
-                    rscDfn.getName().displayValue,
-                    autoPlaceConfig,
-                    copyAllSnapsRef,
-                    snapNamesToCopyRef,
-                    contextRef
-                )
-            );
+            // the temporary resource of a CBT session takes no further replicas
+            if (!CtrlCbtSessionApiCallHandler.isCbtSessionRscDfn(rscDfn))
+            {
+                fluxList.add(
+                    ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
+                        rscDfn.getName().displayValue,
+                        autoPlaceConfig,
+                        copyAllSnapsRef,
+                        snapNamesToCopyRef,
+                        contextRef
+                    )
+                );
+            }
         }
         return Flux.merge(fluxList);
     }

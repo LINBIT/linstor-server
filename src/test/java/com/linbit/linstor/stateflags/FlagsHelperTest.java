@@ -1,5 +1,6 @@
 package com.linbit.linstor.stateflags;
 
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.utils.PairNonNull;
 
 import java.util.Arrays;
@@ -122,6 +123,25 @@ public class FlagsHelperTest
     public void testExtractFlagsToEnableOrDisableUnknownFlag()
     {
         FlagsHelper.extractFlagsToEnableOrDisable(TestFlags.class, Arrays.asList("-BOGUS"));
+    }
+
+    @Test
+    public void testFlagRenamedWithinServer()
+    {
+        // the API still calls ResourceDefinition.Flags.PREVENT_RESOURCE_CREATION RESTORE_TARGET
+        long bits = ResourceDefinition.Flags.PREVENT_RESOURCE_CREATION.getFlagValue();
+        assertThat(FlagsHelper.toStringList(ResourceDefinition.Flags.class, bits)).containsExactly("RESTORE_TARGET");
+        assertEquals(bits, FlagsHelper.fromStringList(ResourceDefinition.Flags.class, Arrays.asList("RESTORE_TARGET")));
+        assertThat(
+            FlagsHelper.extractFlagsToEnableOrDisable(ResourceDefinition.Flags.class, Arrays.asList("-RESTORE_TARGET"))
+                .objB
+        ).containsExactly(ResourceDefinition.Flags.PREVENT_RESOURCE_CREATION);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFlagRenamedWithinServerInternalName()
+    {
+        FlagsHelper.fromStringList(ResourceDefinition.Flags.class, Arrays.asList("PREVENT_RESOURCE_CREATION"));
     }
 
     @Test

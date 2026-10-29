@@ -237,6 +237,24 @@ public class RscApiTest extends ApiTestBase
         );
     }
 
+    @Test
+    public void createRscInCbtSessionRejected() throws Exception
+    {
+        // once deployed, the temporary resource of a CBT session takes no further replicas, not even on its node
+        markCbtSessionRscDfn(testRscDfn, testSatelliteName.displayValue);
+        Mockito.when(mockPeer.isOnline()).thenReturn(true);
+        Mockito.when(mockSatellite.getExtToolsManager()).thenReturn(mockExtToolsMgr);
+        Mockito.when(mockSatellite.isOnline()).thenReturn(true);
+        Mockito.when(mockExtToolsMgr.getSupportedLayers())
+            .thenReturn(new TreeSet<>(Arrays.asList(DeviceLayerKind.values())));
+        Mockito.when(mockExtToolsMgr.getSupportedProviders())
+            .thenReturn(new TreeSet<>(Arrays.asList(DeviceProviderKind.values())));
+
+        evaluateTest(
+            new CrtRscCall(ApiConsts.FAIL_IN_USE)
+        );
+    }
+
     private class CrtRscCall extends AbsApiCallTester
     {
         private String nodeName;

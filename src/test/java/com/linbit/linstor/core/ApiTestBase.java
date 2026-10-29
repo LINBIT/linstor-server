@@ -1,6 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ServiceName;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -14,6 +15,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModul
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
@@ -140,6 +142,24 @@ public abstract class ApiTestBase extends GenericDbBase
         Mockito.when(peerMock.getConnectionStatus()).thenReturn(
             online ? ApiConsts.ConnectionStatus.ONLINE : ApiConsts.ConnectionStatus.OFFLINE
         );
+    }
+
+    /**
+     * Marks the resource definition as the temporary resource of a CBT session on the given node, as starting a
+     * session does once it is deployed.
+     */
+    protected void markCbtSessionRscDfn(ResourceDefinition rscDfn, String sessionNodeNameStr) throws Exception
+    {
+        enterScope();
+        Props props = rscDfn.getProps();
+        props.setProp(InternalApiConsts.KEY_CBT_SESSION_SNAPSHOT, "snap", InternalApiConsts.NAMESPC_INTERNAL_CBT);
+        props.setProp(
+            InternalApiConsts.KEY_CBT_SESSION_NODE,
+            sessionNodeNameStr,
+            InternalApiConsts.NAMESPC_INTERNAL_CBT
+        );
+        rscDfn.getFlags().enableFlags(ResourceDefinition.Flags.PREVENT_RESOURCE_CREATION);
+        leaveScope();
     }
 
     /**

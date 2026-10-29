@@ -4,6 +4,7 @@ import com.linbit.utils.PairNonNull;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -41,10 +42,27 @@ public class FlagsHelper
 
         for (String sFlag : listFlags)
         {
-            value |= Enum.valueOf(enumClass, sFlag).getFlagValue();
+            value |= valueOf(enumClass, sFlag).getFlagValue();
         }
 
         return value;
+    }
+
+    /**
+     * The flag named as {@link #toStringList} names it, i.e. by its {@link Object#toString()}, which differs from the
+     * name of the enum constant for flags that are renamed only within the server (see
+     * {@code ResourceDefinition.Flags}).
+     *
+     * @throws IllegalArgumentException if there is no such flag
+     */
+    private static <E extends Enum<E> & Flags> E valueOf(Class<E> enumClass, String flagName)
+    {
+        return Arrays.stream(enumClass.getEnumConstants())
+            .filter(flag -> flag.toString().equals(flagName))
+            .findFirst()
+            .orElseThrow(
+                () -> new IllegalArgumentException("No flag " + flagName + " in " + enumClass.getCanonicalName())
+            );
     }
 
     @SuppressWarnings("unchecked")
@@ -95,11 +113,11 @@ public class FlagsHelper
         {
             if (flag.startsWith("-"))
             {
-                flagsToDisable.add(Enum.valueOf(classRef, flag.substring(1)));
+                flagsToDisable.add(valueOf(classRef, flag.substring(1)));
             }
             else
             {
-                flagsToEnable.add(Enum.valueOf(classRef, flag));
+                flagsToEnable.add(valueOf(classRef, flag));
             }
         }
         return ret;

@@ -1422,6 +1422,91 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CbtSessionStart
+    {
+        /**
+         * Node where the snapshot's data has to be readable
+         */
+        public String node;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CbtSession
+    {
+        /**
+         * Temporary resource the snapshot is restored into
+         */
+        public String resource_name;
+        /**
+         * Node where the devices are readable
+         */
+        public String node;
+        /**
+         * Bookmark id of the snapshot (its property Cbt/Id), to store after a successful backup
+         */
+        public String cbt_id;
+        public List<CbtSessionVolume> volumes = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CbtSessionVolume
+    {
+        public int volume_number;
+        /**
+         * Read-only device on the session's node
+         */
+        public String device_path;
+        /**
+         * Readable size of the device in bytes
+         */
+        public long volume_size;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CbtExtents
+    {
+        /**
+         * Bookmark id of the CBT snapshot the changes are relative to. Only if it is the id of the last
+         * successful backup, an incremental backup with these extents is complete. Not set in mode `zero`.
+         */
+        public @Nullable String base_cbt_id;
+        /**
+         * Start time of the tracking interval (as reported by DRBD), not set in mode `zero`
+         */
+        public @Nullable String since;
+        /**
+         * Size of the volume in bytes
+         */
+        public long volume_size;
+        public List<CbtExtent> extents = Collections.emptyList();
+        /**
+         * Only set if max_extents was reached, start offset of the next request
+         */
+        public @Nullable Long next_offset;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CbtExtent
+    {
+        /**
+         * Byte offset
+         */
+        public long start;
+        /**
+         * Bytes
+         */
+        public long length;
+        /**
+         * Changed since the previous CBT snapshot, not set in mode `zero`
+         */
+        public @Nullable Boolean dirty;
+        /**
+         * Never written since the volume was created
+         */
+        public boolean zero;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class SnapshotRollback
     {
         /**

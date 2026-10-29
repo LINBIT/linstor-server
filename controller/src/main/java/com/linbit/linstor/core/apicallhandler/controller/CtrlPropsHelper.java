@@ -349,7 +349,8 @@ public class CtrlPropsHelper
                     if (key.equalsIgnoreCase(
                         ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_QUORUM))
                     {
-                        targetProps.setProp(ApiConsts.KEY_QUORUM_SET_BY, "user", ApiConsts.NAMESPC_INTERNAL_DRBD);
+                        targetProps.setProp(ApiConsts.KEY_QUORUM_SET_BY, InternalApiConsts.SET_BY_VALUE_USER,
+                            ApiConsts.NAMESPC_INTERNAL_DRBD);
                     }
 
                     if (key.equals(Autoplacer.MIN_FREE_SPACE_PROP))

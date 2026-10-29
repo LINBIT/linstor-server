@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlCbtSessionApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Resource.Flags;
@@ -137,7 +138,7 @@ public class ResourceControllerFactory
         Resource rsc = node.getResource(rscDfn.getName());
         if (!fromBackup)
         {
-            ensureResourceNotRestoring(rscDfn);
+            ensureResourceCreationAllowed(rscDfn);
         }
 
         if (rsc == null)
@@ -192,16 +193,26 @@ public class ResourceControllerFactory
         return rsc;
     }
 
-    private void ensureResourceNotRestoring(ResourceDefinition rscDfn)
+    private void ensureResourceCreationAllowed(ResourceDefinition rscDfn)
     {
-        if (rscDfn.getFlags().isSet(ResourceDefinition.Flags.RESTORE_TARGET))
+        if (rscDfn.getFlags().isSet(ResourceDefinition.Flags.PREVENT_RESOURCE_CREATION))
         {
             throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_IN_USE,
-                    "Cannot create a resource in a resource definition that is currently " +
-                        "restoring a snapshot or backup."
-                )
+                CtrlCbtSessionApiCallHandler.isCbtSessionRscDfn(rscDfn) ?
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_IN_USE,
+                        "Cannot create a resource in resource definition '" + rscDfn.getName().displayValue +
+                            "', it is the temporary resource of a CBT session."
+                    )
+                        .setCause("The temporary resource of a CBT session only has the replicas of its session.")
+                        .setCorrection("Finish the CBT session, which deletes the temporary resource.")
+                        .setSkipErrorReport(true)
+                        .build() :
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        "Cannot create a resource in a resource definition that is currently " +
+                            "restoring a snapshot or backup."
+                    )
             );
         }
     }

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+
+// Controller request to the satellite holding the snapshot of a CBT session: open or close the snapshot
+message MsgIntReqCbtSession
+{
+    string rsc_name = 1;
+    string snap_name = 2;
+}

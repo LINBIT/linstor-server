@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+
+// Controller request for the extents of a CBT session's snapshot volume
+message MsgIntReqCbtExtents
+{
+    enum Mode
+    {
+        DIRTY = 0;  // drbdmeta cbt-dump --mode=dirty: changed since the previous CBT snapshot, and never written
+        ZERO = 1;   // drbdmeta cbt-dump --mode=zero: never written, without changed block tracking
+    }
+
+    string rsc_name = 1;
+    string snap_name = 2;
+    sint32 vlm_nr = 3;
+    int64 start_offset = 4;      // bytes
+    int32 max_extents = 5;
+    Mode mode = 6;
+}

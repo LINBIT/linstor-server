@@ -3266,6 +3266,163 @@ paths:
                 $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/snapshots/{snapshot}/cbt-session:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+      - name: snapshot
+        in: path
+        required: true
+        description: Snapshot name to use
+        schema:
+          type: string
+    post:
+      tags:
+        - developers
+      summary: start a CBT session
+      operationId: snapshotCbtSessionStart
+      description: |
+        Makes a CBT snapshot (created with the flag `CBT`) readable for a backup: restores it into a temporary
+        resource with one diskful replica on a node holding the snapshot (preferably the given node) and a diskless
+        replica on the given node (if it is not that node), and opens the snapshot for the extents requests. The
+        DRBD devices of the temporary resource are read-only. One session per snapshot; the snapshot can't be
+        deleted before the session is finished. Starting can take a while on thick LVM storage, where the restore
+        copies the whole snapshot.
+
+        A backup cycle with changed block tracking:
+        1. Create a CBT snapshot of the resource (`POST .../snapshots` with `"flags": ["CBT"]`). It ends the
+           tracking interval of the previous CBT snapshot and starts a new one. As each CBT snapshot does this, only
+           one backup chain per resource can use changed block tracking.
+        2. Start a CBT session on the node that runs the backup.
+        3. For each volume, request the extents page by page (`start_offset`, `next_offset`). If `base_cbt_id` is
+           the `cbt_id` of the last successful backup, reading the `dirty` extents from `device_path` is an
+           incremental backup. Otherwise, or if the request fails with FAIL_CBT_FULL_BACKUP_REQUIRED (e.g. the
+           first CBT snapshot of a volume), read the whole device up to `volume_size` (full backup): the extents of
+           `mode=zero` tell which ranges were never written, a full backup can store them as zeros without reading
+           them.
+        4. Finish the session (`DELETE`). After a successful backup, store the session's `cbt_id` as the id of the
+           last successful backup. The snapshot itself can be deleted after the session is finished.
+
+        A session lasts until it is finished, also if the backup fails or the integration crashes: finish it in
+        any case, else the temporary resource stays and the snapshot can't be deleted. If the temporary resource
+        was deleted or one of its replicas is gone, showing the session and requesting extents fail; finish the
+        session and start a new one.
+      responses:
+        '201':
+          description: CBT session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CbtSession'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '404':
+          $ref: '#/components/responses/ObjectNotFound'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CbtSessionStart'
+    get:
+      tags:
+        - developers
+      summary: show a CBT session
+      operationId: snapshotCbtSessionShow
+      description: Shows the open CBT session of the snapshot
+      responses:
+        '200':
+          description: The CBT session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CbtSession'
+        '404':
+          $ref: '#/components/responses/ObjectNotFound'
+    delete:
+      tags:
+        - developers
+      summary: finish a CBT session
+      operationId: snapshotCbtSessionFinish
+      description: |
+        Closes the snapshot and deletes the temporary resource of the CBT session. If the temporary resource can't
+        be deleted, the session stays (and with it the protection of the snapshot) and the request fails with the
+        errors of the deletion; finish the session again once the cause is fixed.
+      responses:
+        '200':
+          description: CBT session finished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+        '404':
+          $ref: '#/components/responses/ObjectNotFound'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/snapshots/{snapshot}/cbt-session/volumes/{volume_number}/extents:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+      - name: snapshot
+        in: path
+        required: true
+        description: Snapshot name to use
+        schema:
+          type: string
+      - $ref: '#/components/parameters/VolumeNumber'
+    get:
+      parameters:
+        - name: start_offset
+          in: query
+          description: Byte offset to start at, an extent crossing it is clipped to start there
+          schema:
+            type: integer
+            format: int64
+            default: 0
+        - name: max_extents
+          in: query
+          description: Maximum number of extents in the response
+          schema:
+            type: integer
+            format: int32
+            default: 10000
+            maximum: 50000
+        - name: mode
+          in: query
+          description: |
+            `dirty`: the extents with the flags `dirty` and `zero`, for incremental backups. `zero`: the extents with
+            the flag `zero` only, for full backups; works without a tracking interval (e.g. the first CBT snapshot of
+            the volume).
+          schema:
+            type: string
+            enum:
+              - dirty
+              - zero
+            default: dirty
+      tags:
+        - developers
+      summary: extents of a CBT snapshot
+      operationId: snapshotCbtSessionExtents
+      description: |
+        The extents of the volume from `start_offset` on. They cover the volume without gaps, and neighboring extents
+        differ in their flags, as the extents of ovirt-imageio do. `dirty` extents changed between the previous CBT
+        snapshot (`base_cbt_id`) and this one, `zero` extents were never written since the volume was created.
+        If `next_offset` is set, `max_extents` was reached and the next request continues there; without it the
+        rest of the volume is done. Fails with FAIL_CBT_FULL_BACKUP_REQUIRED if the snapshot holds nothing to rely on
+        for the mode: in mode `dirty` no tracking interval (e.g. the first CBT snapshot of the volume), in mode
+        `zero` no record of the never written ranges (rare, e.g. without an activity log).
+      responses:
+        '200':
+          description: Changed extents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CbtExtents'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '404':
+          $ref: '#/components/responses/ObjectNotFound'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/snapshot-restore-resource/{snapshot}:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -8622,6 +8779,99 @@ components:
           type: object
           additionalProperties:
             type: string
+    CbtSessionStart:
+      type: object
+      required:
+        - node
+      properties:
+        node:
+          type: string
+          description: Node where the snapshot's data has to be readable
+    CbtSession:
+      type: object
+      required:
+        - resource_name
+        - node
+        - cbt_id
+        - volumes
+      properties:
+        resource_name:
+          type: string
+          description: Temporary resource the snapshot is restored into
+        node:
+          type: string
+          description: Node where the devices are readable
+        cbt_id:
+          type: string
+          description: Bookmark id of the snapshot (its property Cbt/Id), to store after a successful backup
+        volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CbtSessionVolume'
+    CbtSessionVolume:
+      type: object
+      required:
+        - volume_number
+        - device_path
+        - volume_size
+      properties:
+        volume_number:
+          type: integer
+          format: int32
+        device_path:
+          type: string
+          description: Read-only device on the session's node
+        volume_size:
+          type: integer
+          format: int64
+          description: Readable size of the device in bytes
+    CbtExtents:
+      type: object
+      required:
+        - volume_size
+        - extents
+      properties:
+        base_cbt_id:
+          type: string
+          description: |
+            Bookmark id of the CBT snapshot the changes are relative to. Only if it is the id of the last
+            successful backup, an incremental backup with these extents is complete. Not set in mode `zero`.
+        since:
+          type: string
+          description: Start time of the tracking interval (as reported by DRBD), not set in mode `zero`
+        volume_size:
+          type: integer
+          format: int64
+          description: Size of the volume in bytes
+        extents:
+          type: array
+          items:
+            $ref: '#/components/schemas/CbtExtent'
+        next_offset:
+          type: integer
+          format: int64
+          description: Only set if max_extents was reached, start offset of the next request
+    CbtExtent:
+      type: object
+      required:
+        - start
+        - length
+        - zero
+      properties:
+        start:
+          type: integer
+          format: int64
+          description: Byte offset
+        length:
+          type: integer
+          format: int64
+          description: Bytes
+        dirty:
+          type: boolean
+          description: Changed since the previous CBT snapshot, not set in mode `zero`
+        zero:
+          type: boolean
+          description: Never written since the volume was created
     SnapshotRollback:
       type: object
       properties:

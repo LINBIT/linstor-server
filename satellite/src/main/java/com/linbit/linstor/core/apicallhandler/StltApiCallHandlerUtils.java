@@ -32,6 +32,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.interfaces.StorPoolInfo;
+import com.linbit.linstor.layer.drbd.CbtSessionService;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
@@ -70,6 +71,7 @@ public class StltApiCallHandlerUtils
     private final ScheduleMap scheduleMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final CloneService cloneService;
+    private final CbtSessionService cbtSessionService;
 
     @Inject
     public StltApiCallHandlerUtils(
@@ -86,6 +88,7 @@ public class StltApiCallHandlerUtils
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         DeviceProviderMapper deviceProviderMapperRef,
         CloneService cloneServiceRef,
+        CbtSessionService cbtSessionServiceRef,
         Provider<DeviceManager> devMgrProviderRef
     )
     {
@@ -102,6 +105,7 @@ public class StltApiCallHandlerUtils
         storPoolDfnMap = storPoolDfnMapRef;
         deviceProviderMapper = deviceProviderMapperRef;
         cloneService = cloneServiceRef;
+        cbtSessionService = cbtSessionServiceRef;
         devMgr = devMgrProviderRef;
     }
 
@@ -347,6 +351,7 @@ public class StltApiCallHandlerUtils
         scheduleMap.clear();
         storPoolDfnMap.clear();
         cloneService.clear();
+        cbtSessionService.clear();
     }
 
     public void clearCaches()

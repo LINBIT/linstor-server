@@ -2,9 +2,11 @@ package com.linbit.linstor.api;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.ApiTestBase;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlCbtSessionApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
@@ -13,6 +15,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotRollbackApi
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
 import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest.SnapReq;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -30,6 +33,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntCbtSessionOuterClass.MsgIntCbtSession;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -42,6 +46,8 @@ import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,6 +65,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -83,6 +90,8 @@ public class SnapshotApiTest extends ApiTestBase
     private Provider<CtrlSnapshotRestoreApiCallHandler> snapRestoreApiCallHandlerProvider;
     @Inject
     private Provider<CtrlSnapshotRollbackApiCallHandler> snapRollbackApiCallHandlerProvider;
+    @Inject
+    private Provider<CtrlCbtSessionApiCallHandler> cbtSessionApiCallHandlerProvider;
     @Inject
     private CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
 
@@ -397,6 +406,212 @@ public class SnapshotApiTest extends ApiTestBase
         assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName)).isSameAs(snapDfn);
         assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.DELETE)).isFalse();
         assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.FAILED_DEPLOYMENT)).isFalse();
+    }
+
+    /*
+     * CBT session tests (the parts before the satellites are involved)
+     */
+
+    @Test
+    public void cbtSessionOfOrdinarySnapshot() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.CREATED, ApiConsts.MODIFIED, ApiConsts.MODIFIED, ApiConsts.MODIFIED)
+        );
+
+        assertCbtSessionFails(
+            ApiConsts.FAIL_CBT_FULL_BACKUP_REQUIRED,
+            cbtSessionApiCallHandlerProvider.get().startSession(TEST_RSC_NAME, TEST_SNAP_NAME, TEST_NODE_NAME)
+        );
+        // no temporary resource definition was left behind
+        assertThat(rscDfnMap.keySet()).containsExactly(testRscName);
+    }
+
+    @Test
+    public void cbtSessionAlreadyOpen() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.CREATED, ApiConsts.MODIFIED, ApiConsts.MODIFIED, ApiConsts.MODIFIED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+        openCbtSession("TestRsc_cbt_000000");
+
+        assertCbtSessionFails(
+            ApiConsts.FAIL_IN_USE,
+            cbtSessionApiCallHandlerProvider.get().startSession(TEST_RSC_NAME, TEST_SNAP_NAME, TEST_NODE_NAME)
+        );
+        // the snapshot can't be deleted before the session is finished
+        evaluateTest(new DeleteSnapshotCall(ApiConsts.FAIL_IN_USE));
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName)).isNotNull();
+    }
+
+    @Test
+    public void cbtSessionMissing() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.CREATED, ApiConsts.MODIFIED, ApiConsts.MODIFIED, ApiConsts.MODIFIED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+
+        CtrlCbtSessionApiCallHandler handler = cbtSessionApiCallHandlerProvider.get();
+        assertCbtSessionFails(ApiConsts.FAIL_NOT_FOUND_RSC_DFN, handler.showSession(TEST_RSC_NAME, TEST_SNAP_NAME));
+        assertCbtSessionFails(
+            ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
+            handler.finishSession(TEST_RSC_NAME, TEST_SNAP_NAME).then()
+        );
+        assertCbtSessionFails(
+            ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
+            handler.getExtents(
+                TEST_RSC_NAME,
+                TEST_SNAP_NAME,
+                0,
+                0,
+                CtrlCbtSessionApiCallHandler.DEFAULT_MAX_EXTENTS,
+                CtrlCbtSessionApiCallHandler.EXTENTS_MODE_DIRTY
+            )
+        );
+    }
+
+    @Test
+    public void cbtExtentsInvalidRequest() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.CREATED, ApiConsts.MODIFIED, ApiConsts.MODIFIED, ApiConsts.MODIFIED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+        openCbtSession("TestRsc_cbt_000000");
+
+        CtrlCbtSessionApiCallHandler handler = cbtSessionApiCallHandlerProvider.get();
+        String dirty = CtrlCbtSessionApiCallHandler.EXTENTS_MODE_DIRTY;
+        assertCbtSessionFails(
+            ApiConsts.FAIL_INVLD_REQUEST,
+            handler.getExtents(TEST_RSC_NAME, TEST_SNAP_NAME, 0, 0, 0, dirty)
+        );
+        assertCbtSessionFails(
+            ApiConsts.FAIL_INVLD_REQUEST,
+            handler.getExtents(
+                TEST_RSC_NAME,
+                TEST_SNAP_NAME,
+                0,
+                0,
+                InternalApiConsts.CBT_MAX_EXTENTS_LIMIT + 1,
+                dirty
+            )
+        );
+        assertCbtSessionFails(
+            ApiConsts.FAIL_INVLD_REQUEST,
+            handler.getExtents(TEST_RSC_NAME, TEST_SNAP_NAME, 0, -1, 1, dirty)
+        );
+        assertCbtSessionFails(
+            ApiConsts.FAIL_INVLD_REQUEST,
+            handler.getExtents(TEST_RSC_NAME, TEST_SNAP_NAME, 0, 0, 1, "hole")
+        );
+    }
+
+    @Test
+    public void cbtSessionFinishWithoutTmpRscDfn() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.CREATED, ApiConsts.MODIFIED, ApiConsts.MODIFIED, ApiConsts.MODIFIED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+        // the temporary resource definition was deleted behind the session's back
+        openCbtSession("TestRsc_cbt_000000");
+        stubCbtSessionClose();
+
+        cbtSessionApiCallHandlerProvider.get()
+            .finishSession(TEST_RSC_NAME, TEST_SNAP_NAME)
+            .contextWrite(contextWrite())
+            .blockLast();
+
+        // the snapshot is closed anyway, as only the temporary resource definition knew the snapshot node
+        Mockito.verify(mockSatellite)
+            .apiCall(Mockito.eq(InternalApiConsts.API_REQUEST_CBT_SESSION_CLOSE), Mockito.any());
+        assertThat(getCbtSessionMark()).isNull();
+    }
+
+    @Test
+    public void cbtSessionFinishKeepsSessionIfDeleteFails() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+        evaluateTest(
+            new CreateSnapshotCall(ApiConsts.CREATED, ApiConsts.MODIFIED, ApiConsts.MODIFIED, ApiConsts.MODIFIED)
+                .setFlags(ApiConsts.FLAG_CBT)
+        );
+        // a snapshot of the temporary resource prevents its deletion
+        createRscDfnWithVlmDfn("TestRsc_cbt_000000");
+        createSnapDfn("TestRsc_cbt_000000", "blocker");
+        openCbtSession("TestRsc_cbt_000000");
+        stubCbtSessionClose();
+
+        assertCbtSessionFails(
+            // as the resource definition deletion reports it
+            ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL | ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN,
+            cbtSessionApiCallHandlerProvider.get().finishSession(TEST_RSC_NAME, TEST_SNAP_NAME).then()
+        );
+
+        // finishing can be retried, the snapshot stays protected until then
+        assertThat(getCbtSessionMark()).isEqualTo("TestRsc_cbt_000000");
+        assertThat(rscDfnMap.get(new ResourceName("TestRsc_cbt_000000"))).isNotNull();
+    }
+
+    /**
+     * Marks the snapshot as read by a CBT session, as starting a session does.
+     */
+    private void openCbtSession(String tmpRscNameRef) throws Exception
+    {
+        enterScope();
+        rscDfnMap.get(testRscName)
+            .getSnapshotDfn(testSnapName)
+            .getSnapDfnProps()
+            .setProp(InternalApiConsts.KEY_CBT_SESSION, tmpRscNameRef, InternalApiConsts.NAMESPC_INTERNAL_CBT);
+        commitAndCleanUp(true);
+        inScope = false;
+    }
+
+    private @Nullable String getCbtSessionMark() throws Exception
+    {
+        return rscDfnMap.get(testRscName)
+            .getSnapshotDfn(testSnapName)
+            .getSnapDfnProps()
+            .getProp(InternalApiConsts.KEY_CBT_SESSION, InternalApiConsts.NAMESPC_INTERNAL_CBT);
+    }
+
+    /**
+     * Lets the mocked satellite answer close requests of CBT sessions successfully.
+     */
+    private void stubCbtSessionClose() throws Exception
+    {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        MsgIntCbtSession.getDefaultInstance().writeDelimitedTo(baos);
+        byte[] answer = baos.toByteArray();
+        Mockito.when(
+            mockSatellite.apiCall(Mockito.eq(InternalApiConsts.API_REQUEST_CBT_SESSION_CLOSE), Mockito.any())
+        )
+            .thenAnswer(ignored -> Flux.just(new ByteArrayInputStream(answer)));
+    }
+
+    private void assertCbtSessionFails(long expectedRc, Mono<?> mono)
+    {
+        ApiRcException exc = catchThrowableOfType(
+            ApiRcException.class,
+            () -> mono.contextWrite(contextWrite()).block()
+        );
+        assertThat(exc).isNotNull();
+        assertThat(exc.getApiCallRc())
+            .extracting(ApiCallRc.RcEntry::getReturnCode)
+            .contains(expectedRc);
     }
 
     /*

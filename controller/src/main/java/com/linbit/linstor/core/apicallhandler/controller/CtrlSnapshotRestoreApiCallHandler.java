@@ -199,7 +199,8 @@ public class CtrlSnapshotRestoreApiCallHandler
                 toRscName,
                 false,
                 true,
-                renameStorPoolMap
+                renameStorPoolMap,
+                null
             )
         );
     }
@@ -225,7 +226,41 @@ public class CtrlSnapshotRestoreApiCallHandler
                 toRscName,
                 false,
                 false,
-                renameStorPoolMap
+                renameStorPoolMap,
+                null
+            )
+        );
+    }
+
+    /**
+     * Restores the snapshot on the given node into the empty resource definition of a CBT session. The preparer
+     * adjusts the resource definition (e.g. the properties the restore copied from the snapshot) in the same
+     * transaction, before the resource is deployed. Failures before the deployment are returned as errors, deployment
+     * failures as error entries.
+     */
+    public Flux<ApiCallRc> restoreSnapshotForCbtSession(
+        String nodeNameStr,
+        ResourceName fromRscName,
+        SnapshotName fromSnapshotName,
+        ResourceName toRscName,
+        TargetRscDfnPreparer preparerRef
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Restore Snapshot Resource for CBT session",
+            lockGuardFactory.createDeferred()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .build(),
+            () -> restoreResourceInTransaction(
+                List.of(nodeNameStr),
+                fromRscName,
+                fromSnapshotName,
+                toRscName,
+                false,
+                false,
+                Collections.emptyMap(),
+                preparerRef
             )
         );
     }
@@ -250,7 +285,8 @@ public class CtrlSnapshotRestoreApiCallHandler
                 toRscName,
                 true,
                 false,
-                Collections.emptyMap() // rename-storpool already happened during download
+                Collections.emptyMap(), // rename-storpool already happened during download
+                null
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -302,7 +338,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         ResourceName toRscName,
         boolean fromBackup,
         boolean fromApi,
-        Map<String, String> renameStorPoolMap
+        Map<String, String> renameStorPoolMap,
+        @Nullable TargetRscDfnPreparer preparerRef
     )
     {
         Flux<ApiCallRc> deploymentResponses = Flux.just();
@@ -360,6 +397,10 @@ public class CtrlSnapshotRestoreApiCallHandler
                 ctrlPropsHelper.getProps(fromSnapshotDfn, true),
                 ctrlPropsHelper.getProps(toRscDfn)
             );
+            if (preparerRef != null)
+            {
+                preparerRef.prepare(toRscDfn);
+            }
 
             Set<Resource> restoredResources = new TreeSet<>();
 
@@ -556,7 +597,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         Flux<ApiCallRc> ret;
         if (rscDfn != null)
         {
-            unsetFlags(rscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
+            unsetFlags(rscDfn, ResourceDefinition.Flags.PREVENT_RESOURCE_CREATION);
             ctrlTransactionHelper.commit();
             ret = ctrlStltUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                 .transform(
@@ -750,7 +791,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         {
             rsc.getResourceDefinition().getProps().removeProp(InternalApiConsts.DEPRECATED_PROP_PRIMARY_SET);
         }
-        unsetFlags(toRscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
+        unsetFlags(toRscDfn, ResourceDefinition.Flags.PREVENT_RESOURCE_CREATION);
 
         return rsc;
     }
@@ -767,5 +808,15 @@ public class CtrlSnapshotRestoreApiCallHandler
         return nodeNameStrs.isEmpty() ?
             "resource '" + toRscNameStr + "'" :
             "resource '" + toRscNameStr + "' on nodes '" + String.join(", ", nodeNameStrs) + "'";
+    }
+
+    /**
+     * Adjusts the target resource definition of a restore in the restore's transaction.
+     */
+    @FunctionalInterface
+    public interface TargetRscDfnPreparer
+    {
+        void prepare(ResourceDefinition toRscDfnRef)
+            throws InvalidKeyException, InvalidValueException, DatabaseException;
     }
 }

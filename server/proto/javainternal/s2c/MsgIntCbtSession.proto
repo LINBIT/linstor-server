@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+import "common/ApiCallResponse.proto";
+
+// Satellite answer to opening or closing the snapshot of a CBT session
+message MsgIntCbtSession
+{
+    repeated common.ApiCallResponse errors = 1;
+}

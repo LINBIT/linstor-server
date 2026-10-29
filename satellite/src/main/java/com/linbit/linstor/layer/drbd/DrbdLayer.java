@@ -72,6 +72,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
@@ -960,6 +961,7 @@ public class DrbdLayer implements DeviceLayer
                 recoverAfterSkipdisk(drbdRscData);
 
                 setDevicePaths(drbdRscData);
+                setReadOnlyForCbtSession(drbdRscData);
                 if (!skipDisk)
                 {
                     // mkfs must run after device paths were set
@@ -1119,6 +1121,43 @@ public class DrbdLayer implements DeviceLayer
                 drbdVlmData.setExists(true);
                 drbdVlmData.setDevicePath(generateDevicePath(drbdVlmData));
                 drbdVlmData.setSizeState(Size.AS_EXPECTED);
+            }
+        }
+    }
+
+    /**
+     * The temporary resource of a CBT session is a read-only data path: its DRBD devices are set read-only, so a write
+     * open fails before DRBD would auto-promote. Repeated on every run, as it is cheap and a device recreated by a
+     * down/up loses the setting.
+     */
+    private void setReadOnlyForCbtSession(DrbdRscData<Resource> drbdRscData) throws StorageException
+    {
+        @Nullable String sessionSnapName;
+        try
+        {
+            sessionSnapName = drbdRscData.getAbsResource()
+                .getResourceDefinition()
+                .getProps()
+                .getProp(InternalApiConsts.KEY_CBT_SESSION_SNAPSHOT, InternalApiConsts.NAMESPC_INTERNAL_CBT);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        if (sessionSnapName != null)
+        {
+            for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+            {
+                @Nullable String devicePath = drbdVlmData.getDevicePath();
+                if (drbdVlmData.exists() && devicePath != null)
+                {
+                    Commands.genericExecutor(
+                        extCmdFactory.create(),
+                        new String[] {"blockdev", "--setro", devicePath},
+                        "Failed to set the DRBD device " + devicePath + " of the CBT session read-only",
+                        "Failed to set the DRBD device " + devicePath + " of the CBT session read-only"
+                    );
+                }
             }
         }
     }
@@ -1767,7 +1806,12 @@ public class DrbdLayer implements DeviceLayer
             drbdUtils.createMd(
                 drbdVlmData,
                 drbdVlmData.getRscLayerObject().getPeerSlots(),
-                bitmapBlockSize
+                bitmapBlockSize,
+                // new metadata on existing data (a restored backup or a failed snapshot rollback): create-md marks all
+                // blocks as written then. For now only CBT needs this: with a cleared bitmap, cbt-dump --mode=zero
+                // reports the data as never written and a full backup skips it. Obsolete once we can inject the
+                // bitmap of the backup or snapshot into the new metadata.
+                drbdVlmData.getRscLayerObject().getFlags().isSet(DrbdRscFlags.FORCE_NEW_METADATA)
             );
             errorReporter.logInfo("DRBD meta data created for %s/%d",
                 drbdVlmData.getRscLayerObject().getSuffixedResourceName(),

@@ -242,6 +242,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         }
         ensureSnapshotNotQueued(snapshotDfn);
         ensureNotCloneSource(snapshotDfn);
+        ensureNoCbtSession(snapshotDfn);
 
         Flux<ApiCallRc> phase2Flux = Flux.empty();
         if (nodeNamesStrListRef == null || nodeNamesStrListRef.isEmpty())
@@ -485,6 +486,28 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                     )
                 );
             }
+        }
+    }
+
+    /**
+     * A CBT session reads the snapshot until it is finished, see {@link InternalApiConsts#KEY_CBT_SESSION}.
+     */
+    private void ensureNoCbtSession(SnapshotDefinition snapDfn)
+    {
+        @Nullable String sessionRscName = snapDfn.getSnapDfnProps()
+            .getProp(InternalApiConsts.KEY_CBT_SESSION, InternalApiConsts.NAMESPC_INTERNAL_CBT);
+        if (sessionRscName != null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_IN_USE,
+                    getSnapshotDfnDescription(snapDfn.getResourceName(), snapDfn.getName()) +
+                        " is read by a CBT session (resource '" + sessionRscName + "')."
+                )
+                    .setCorrection("Finish the CBT session first.")
+                    .setSkipErrorReport(true)
+                    .build()
+            );
         }
     }
 

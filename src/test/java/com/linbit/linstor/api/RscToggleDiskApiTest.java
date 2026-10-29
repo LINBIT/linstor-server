@@ -240,6 +240,24 @@ public class RscToggleDiskApiTest extends ApiTestBase
         assertThat(rsc.getStateFlags().isSet(Resource.Flags.DISK_REMOVE_REQUESTED)).isFalse();
     }
 
+    @Test
+    public void toggleDiskOfCbtSessionRejected() throws Exception
+    {
+        createStorPool(testSatelliteNode, testStorPoolName, DeviceProviderKind.LVM);
+        createStorPool(testSatelliteNode, testDisklessStorPoolName, DeviceProviderKind.DISKLESS);
+        createRscOnNode(TEST_NODE_NAME, Resource.Flags.DRBD_DISKLESS.flagValue, TEST_DISKLESS_SP_NAME);
+        // the diskless replica of a CBT session must not become a further diskful one
+        markCbtSessionRscDfn(testRscDfn, TEST_NODE_NAME);
+
+        evaluateTest(
+            new ToggleDiskCall(ToggleOp.INTO_DRBD_DISKFUL, ApiConsts.FAIL_IN_USE)
+                .setStorPoolName(TEST_SP_NAME)
+        );
+
+        Resource rsc = testSatelliteNode.getResource(testRscName);
+        assertThat(rsc.getStateFlags().isSet(Resource.Flags.DISK_ADD_REQUESTED)).isFalse();
+    }
+
     /*
      * diskless -> diskful validation
      */

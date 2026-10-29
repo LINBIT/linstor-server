@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.BackgroundRunner.RunConfig;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlCbtSessionApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -89,7 +90,8 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                     ApiConsts.KEY_RUN_EVERY,
                     ApiConsts.NAMESPC_AUTO_SNAPSHOT
                 );
-                if (autoSnapshot != null)
+                // the temporary resource of a CBT session must not get snapshots
+                if (autoSnapshot != null && !CtrlCbtSessionApiCallHandler.isCbtSessionRscDfn(rscDfn))
                 {
                     long runEveryInMs = Long.parseLong(autoSnapshot) * MIN_TO_MS;
                     AutoSnapshotConfig cfg = new AutoSnapshotConfig(

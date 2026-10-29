@@ -4,6 +4,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlCbtSessionApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -141,7 +142,8 @@ public class ResourceDefinitionUtils
                     ctrlProps
                 );
                 String prioPropVal = prioProps.getProp(autoSnapKey);
-                if (prioPropVal != null)
+                // the temporary resource of a CBT session must not get snapshots
+                if (prioPropVal != null && !CtrlCbtSessionApiCallHandler.isCbtSessionRscDfn(rscDfn))
                 {
                     retFlux = retFlux.concatWith(
                         autoSnapshotTaskRef.addAutoSnapshotting(
@@ -165,7 +167,7 @@ public class ResourceDefinitionUtils
                         ctrlProps
                     );
                     String prioPropVal = prioProps.getProp(autoSnapKey);
-                    if (prioPropVal == null)
+                    if (prioPropVal == null || CtrlCbtSessionApiCallHandler.isCbtSessionRscDfn(rscDfn))
                     {
                         autoSnapshotTaskRef.removeAutoSnapshotting(rscDfn.getName().displayValue);
                     }

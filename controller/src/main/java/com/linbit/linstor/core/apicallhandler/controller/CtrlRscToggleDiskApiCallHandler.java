@@ -456,6 +456,19 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName);
         ResourceDefinition rscDfn = rsc.getResourceDefinition();
+        if (CtrlCbtSessionApiCallHandler.isCbtSessionRscDfn(rscDfn))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_IN_USE,
+                    "Cannot toggle the disk of resource '" + rscNameStr + "' on node '" + nodeNameStr +
+                        "', it is the temporary resource of a CBT session."
+                )
+                    .setCorrection("Finish the CBT session, which deletes the temporary resource.")
+                    .setSkipErrorReport(true)
+                    .build()
+            );
+        }
 
         // 1. Determine what action to take
         ToggleDiskAction action = determineToggleDiskAction(rsc, toggleOpRef);

@@ -1287,7 +1287,7 @@ public class CtrlBackupRestoreApiCallHandler
             }
             if (markAsRestoreTargetRef)
             {
-                rscDfn.getFlags().enableFlags(ResourceDefinition.Flags.RESTORE_TARGET);
+                rscDfn.getFlags().enableFlags(ResourceDefinition.Flags.PREVENT_RESOURCE_CREATION);
             }
         }
         catch (DatabaseException exc)
@@ -2163,8 +2163,8 @@ public class CtrlBackupRestoreApiCallHandler
                             }
                             keepGoing = false; // we received the last backup
 
-                            // whatever happens, make sure to unset the RESTORE_TARGET flag from RD, otherwise the RD
-                            // will not be able to crate new resources, rollback, etc..
+                            // whatever happens, make sure to unset the PREVENT_RESOURCE_CREATION flag from RD,
+                            // otherwise the RD will not be able to crate new resources, rollback, etc..
                             flux = flux.concatWith(
                                 ctrlSnapRestoreApiCallHandler.unsetRestoreTarget(snapDfn.getResourceName())
                             );

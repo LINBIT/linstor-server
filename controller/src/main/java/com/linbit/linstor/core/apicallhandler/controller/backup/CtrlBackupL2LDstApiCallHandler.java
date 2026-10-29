@@ -751,8 +751,8 @@ public class CtrlBackupL2LDstApiCallHandler
                     // VALUE_ABORTING (instead of the merely-passive VALUE_PREPARE_ABORT) makes the receiving
                     // satellite actively tear down the running receive-daemon and send BackupShippingReceived,
                     // which triggers shippingReceived() and releases the restore-lock (the BackupInfoManager
-                    // restore-entries and the RESTORE_TARGET flag) as well as deleting the partially received
-                    // snapshot. With VALUE_PREPARE_ABORT the satellite only marks the daemon and waits for the
+                    // restore-entries and the PREVENT_RESOURCE_CREATION flag) as well as deleting the partially
+                    // received snapshot. With VALUE_PREPARE_ABORT the satellite only marks the daemon and waits for the
                     // sender's connection to drop on its own; if that never cleanly happens (e.g. the source
                     // side is torn down while the receive is throttled) the notification never arrives,
                     // restoreContainsRscDfn() stays true forever and any further restore/delete of this

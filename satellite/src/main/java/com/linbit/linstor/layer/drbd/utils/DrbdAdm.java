@@ -67,6 +67,12 @@ public class DrbdAdm
     private static final long DOWN_WAIT_TIMEOUT_SEC = 5;
 
     private static final ExtToolsInfo.Version DRBD_UTILS_WITH_BITMAP_BLOCK_SIZE = new ExtToolsInfo.Version(9, 33, 0);
+    /**
+     * drbdadm create-md passes --initialize-bitmap on to drbdmeta (which knows set-all since 9.34.0), the same
+     * release brings the zero extents of drbdmeta cbt-dump
+     */
+    private static final ExtToolsInfo.Version DRBD_UTILS_WITH_CREATE_MD_INITIALIZE_BITMAP =
+        new ExtToolsInfo.Version(9, 36, 0);
 
     private static final int SECONDARY_RETRY_MAX_ATTEMPTS = 7;
     private static final long SECONDARY_RETRY_INITIAL_BACKOFF_MS = 250L;
@@ -404,26 +410,47 @@ public class DrbdAdm
     /**
      * Calls drbdadm to create the metadata information for a volume.
      * Uses I/O progress monitoring so large volumes don't get killed prematurely.
+     *
+     * @param hasDataRef the volume already holds data (e.g. a restored backup)
      */
-    public void createMd(DrbdVlmData<Resource> drbdVlmData, int peers, int bitmapBlockSize) throws ExtCmdFailedException
+    public void createMd(DrbdVlmData<Resource> drbdVlmData, int peers, int bitmapBlockSize, boolean hasDataRef)
+        throws ExtCmdFailedException
     {
-        List<String> args = new ArrayList<>();
-        args.add("--max-peers");
-        args.add(Integer.toString(peers));
-        if (drbdVersion.getUtilsVsn().greaterOrEqual(DRBD_UTILS_WITH_BITMAP_BLOCK_SIZE))
-        {
-            args.add("--bitmap-block-size");
-            args.add(Integer.toString(bitmapBlockSize));
-        }
-        args.add("--");
-        args.add("--force");
-        args.add("create-md");
-
         ioAwareAdmCommand(
             drbdVlmData.getRscLayerObject(),
             drbdVlmData.getVlmNr(),
-            args.toArray(new String[0])
+            createMdArgs(drbdVersion.getUtilsVsn(), peers, bitmapBlockSize, hasDataRef).toArray(new String[0])
         );
+    }
+
+    /**
+     * The drbdadm arguments of {@link #createMd}. If the volume already holds data, all bits of the bitmap are set:
+     * the data counts as written, as create-md otherwise clears the day0 bitmap, which then claims that the data was
+     * never written (the zero extents of {@code drbdmeta cbt-dump}).
+     */
+    static List<String> createMdArgs(
+        ExtToolsInfo.Version utilsVsnRef,
+        int peersRef,
+        int bitmapBlockSizeRef,
+        boolean hasDataRef
+    )
+    {
+        List<String> args = new ArrayList<>();
+        args.add("--max-peers");
+        args.add(Integer.toString(peersRef));
+        if (utilsVsnRef.greaterOrEqual(DRBD_UTILS_WITH_BITMAP_BLOCK_SIZE))
+        {
+            args.add("--bitmap-block-size");
+            args.add(Integer.toString(bitmapBlockSizeRef));
+        }
+        args.add("--");
+        args.add("--force");
+        if (hasDataRef && utilsVsnRef.greaterOrEqual(DRBD_UTILS_WITH_CREATE_MD_INITIALIZE_BITMAP))
+        {
+            args.add("--initialize-bitmap=set-all");
+        }
+        args.add("create-md");
+        return args;
     }
 
     public void drbdMetaCheckResize(String blockDevPath, int minorNr) throws ExtCmdFailedException

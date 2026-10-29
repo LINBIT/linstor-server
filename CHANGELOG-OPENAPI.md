@@ -14,6 +14,9 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Documented the `RESTORE_FROM_SNAPSHOT` Resource flag, set until a snapshot restore has finished on the satellite
   - Added the `CBT` flag (changed block tracking) to snapshot creation (`flags` of POST
     /v1/resource-definitions/{resource}/snapshots and /v1/actions/snapshot/multi)
+  - Added POST/GET/DELETE /v1/resource-definitions/{resource}/snapshots/{snapshot}/cbt-session to start, show and
+    finish a CBT session, and GET .../cbt-session/volumes/{volume_number}/extents for the extents of a volume
+    (ovirt-imageio style: `dirty` and `zero` flags, `mode` dirty or zero)
 
 ## [1.29.1]
 

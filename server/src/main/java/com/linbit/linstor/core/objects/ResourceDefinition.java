@@ -766,21 +766,39 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition>
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),
-        RESTORE_TARGET(1L << 1),
+        /**
+         * a snapshot or backup is restored into it, or it is the temporary resource of a CBT session. Renamed only
+         * within the server, the API (REST, protobuf) still calls it RESTORE_TARGET.
+         */
+        PREVENT_RESOURCE_CREATION(1L << 1, "RESTORE_TARGET"),
         CLONING(1L << 2),
         FAILED(1L << 3);
 
         public final long flagValue;
+        private final String apiName;
 
         Flags(long value)
         {
+            this(value, null);
+        }
+
+        Flags(long value, @Nullable String apiNameRef)
+        {
             flagValue = value;
+            apiName = apiNameRef == null ? name() : apiNameRef;
         }
 
         @Override
         public long getFlagValue()
         {
             return flagValue;
+        }
+
+        /** the name of the flag outside of the server, which {@link FlagsHelper} reports and parses */
+        @Override
+        public String toString()
+        {
+            return apiName;
         }
 
         public static Flags[] restoreFlags(long rawFlags)

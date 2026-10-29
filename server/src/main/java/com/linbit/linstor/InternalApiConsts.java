@@ -96,6 +96,10 @@ public class InternalApiConsts
     public static final String API_NOTIFY_EXTERNAL_FILE_APPLIED = "NotifyExternalFileApplied";
     public static final String API_REQUEST_EXT_FILE_STATUS = "RequestExtFileStatus";
 
+    public static final String API_REQUEST_CBT_SESSION_OPEN = "RequestCbtSessionOpen";
+    public static final String API_REQUEST_CBT_SESSION_CLOSE = "RequestCbtSessionClose";
+    public static final String API_REQUEST_CBT_EXTENTS = "RequestCbtExtents";
+
     /*
      * Event stream actions
      */
@@ -247,6 +251,7 @@ public class InternalApiConsts
     public static final String NODE_UNAME = "NodeUname";
     public static final String DEFAULT_AUTO_SNAPSHOT_PREFIX = "autoSnap";
     public static final String SET_BY_VALUE_LINSTOR = "linstor";
+    public static final String SET_BY_VALUE_USER = "user";
 
     // drbd option consts
     public static final String NAMESPC_STLT_INTERNAL_DRBD = ApiConsts.NAMESPC_STLT + "/Drbd";
@@ -278,6 +283,34 @@ public class InternalApiConsts
      * name of the snapshot of the clone source ({@link #KEY_CLONED_FROM}) the target is cloned from.
      */
     public static final String KEY_CLONE_SOURCE_SNAPSHOT = "SourceSnapshot";
+
+    // changed block tracking
+    public static final String NAMESPC_INTERNAL_CBT = NAMESPC_INTERNAL + "/" + ApiConsts.NAMESPC_CBT;
+    /**
+     * Set (in {@link #NAMESPC_INTERNAL_CBT}) on a snapshot definition while a CBT session reads it: the name of the
+     * session's temporary resource definition.
+     */
+    public static final String KEY_CBT_SESSION = "Session";
+    /**
+     * Set (in {@link #NAMESPC_INTERNAL_CBT}) on the temporary resource definition of a CBT session: the name of the
+     * snapshot it is restored from (of the resource definition in {@link #KEY_CBT_SESSION_SOURCE_RSC}).
+     */
+    public static final String KEY_CBT_SESSION_SNAPSHOT = "SessionSnapshot";
+    public static final String KEY_CBT_SESSION_SOURCE_RSC = "SessionSourceResource";
+    /** The node where the integration reads the temporary resource. */
+    public static final String KEY_CBT_SESSION_NODE = "SessionNode";
+    /** The node whose snapshot the temporary resource is restored from and the extents are read from. */
+    public static final String KEY_CBT_SESSION_SNAPSHOT_NODE = "SessionSnapshotNode";
+    /**
+     * Start of the session (epoch milliseconds), to tell how old a session is. Nothing cleans up stale sessions (an
+     * integration that never finished its session) automatically yet, they stay until they are finished.
+     */
+    public static final String KEY_CBT_SESSION_STARTED = "SessionStarted";
+    /**
+     * Upper limit of the extents of one CBT extents request: drbdmeta prints an extent in at most ~62 bytes, so a dump
+     * of this many extents stays clearly below the 4 MiB stdout limit of the satellite's command execution.
+     */
+    public static final int CBT_MAX_EXTENTS_LIMIT = 50_000;
 
     // ebs
     public static final String EBS_REMOTE_NAME = "EbsRemoteName";
