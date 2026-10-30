@@ -50,7 +50,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -149,29 +148,12 @@ public class ZfsProvider
         throws StorageException
     {
         Set<String> dataSets = getDataSets(vlmDataListRef, snapVlmsRef);
-        Set<String> poolDataSets = getZPoolDataSets(vlmDataListRef, snapVlmsRef);
         return ZfsUtils.getZfsList(
             extCmdFactory,
             dataSets,
-            poolDataSets,
             kind,
             DFLT_ZFS_LIST_WITH_PROPS_SETTER
         );
-    }
-
-    private Set<String> getZPoolDataSets(List<ZfsData<Resource>> vlmDataListRef, List<ZfsData<Snapshot>> snapVlmsRef)
-    {
-        List<ZfsData<?>> combinedList = new ArrayList<>();
-        combinedList.addAll(vlmDataListRef);
-        combinedList.addAll(snapVlmsRef);
-
-        Set<String> dataSets = new HashSet<>();
-        for (ZfsData<?> data : combinedList)
-        {
-            dataSets.add(getZPool(data.getStorPool()));
-        }
-
-        return dataSets;
     }
 
     private Set<String> getDataSets(List<ZfsData<Resource>> vlmDataListRef, List<ZfsData<Snapshot>> snapVlmsRef)
@@ -566,7 +548,6 @@ public class ZfsProvider
         {
             HashMap<String, ZfsInfo> zfsList = ZfsUtils.getZfsList(
                 extCmdFactory,
-                Collections.singleton(fullQualifiedIdentifierRef),
                 Collections.singleton(fullQualifiedIdentifierRef),
                 kind,
                 DFLT_ZFS_LIST_WITH_PROPS_SETTER
@@ -1035,20 +1016,17 @@ public class ZfsProvider
     {
         Map<ReadOnlyVlmProviderInfo, Long> ret = new HashMap<>();
         Set<String> dataSets = new HashSet<>();
-        Set<String> poolDataSets = new HashSet<>();
 
         for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
         {
             ReadOnlyStorPool roStorPool = roVlmProvInfo.getReadOnlyStorPool();
             @Nullable String zpool = getZPool(roStorPool);
-            poolDataSets.add(zpool);
             dataSets.add(String.format("%s/%s", zpool, roVlmProvInfo.getIdentifier()));
         }
 
         HashMap<String, ZfsInfo> zfsListMap = ZfsUtils.getZfsList(
             extCmdFactory,
             dataSets,
-            poolDataSets,
             kind,
             Collections.emptyMap()
         );

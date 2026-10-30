@@ -347,7 +347,7 @@ public class ZfsCommands
                 new String[] {
                     "zfs",
                     "list",
-                    "-r",   // recursive
+                    "-d", "0", // only the given datasets, not their children (every zvol of the pool)
                     "-H",   // no headers, single tab instead of spaces
                     "-p",   // sizes in bytes
                     // columns: name, available space, type
@@ -469,26 +469,26 @@ public class ZfsCommands
     public static OutputData getUserProperty(ExtCmd extCmdRef, String zfsProp, Collection<String> dataSets)
         throws StorageException
     {
-        return genericExecutor(
+        return genericExecutorLimiter(
             extCmdRef,
-            StringUtils.concat(
-                new String[]
-                {
-                    "zfs",
-                    "get",
-                    "-r", // not just the prop from the datasets, but all of their volumes. automatically includes
-                    // snapshots
-                    "-o", "name,value",
-                    "-H", // no heading
-                    "-p", // parsable (exact) numbers
-                    "-s", "local", // ZFS also has some property-inheritance. we only want to know if the property is
-                    // set directly on the ZFS snapshot/volume, not if a snapshot inherits the property from its volume
-                    ZFS_USER_PROP_LINSTOR_PREFIX + zfsProp
-                },
-                dataSets
-            ),
+            new String[]
+            {
+                "zfs",
+                "get",
+                "-r", // not just the prop from the datasets, but all of their volumes. automatically includes
+                // snapshots
+                "-o", "name,value",
+                "-H", // no heading
+                "-p", // parsable (exact) numbers
+                "-s", "local", // ZFS also has some property-inheritance. we only want to know if the property is
+                // set directly on the ZFS snapshot/volume, not if a snapshot inherits the property from its volume
+                ZFS_USER_PROP_LINSTOR_PREFIX + zfsProp
+            },
+            dataSets,
             "Failed to get user property '" + ZFS_USER_PROP_LINSTOR_PREFIX + zfsProp + "'",
-            "Failed to get user property '" + ZFS_USER_PROP_LINSTOR_PREFIX + zfsProp + "'"
+            "Failed to get user property '" + ZFS_USER_PROP_LINSTOR_PREFIX + zfsProp + "'",
+            // a dataset destroyed since it was listed: "zfs get" still prints the others and exits with 1
+            Collections.singletonList(1)
         );
     }
 

@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   also freed in VDO
 - Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
   made `since`/`to` filters of the error-report listing miss recent reports
+- ZFS: the satellite no longer runs `zfs list` without a dataset argument (which listed every dataset on the host)
+  when a thin storage pool has no matching volume, reads `linstor:marked_for_deletion` only for the datasets it listed
+  instead of recursively for the whole zpool, and checks the thin pool dataset with `-d 0` instead of `-r`
 
 ## [1.35.3] - 2026-10-21
 

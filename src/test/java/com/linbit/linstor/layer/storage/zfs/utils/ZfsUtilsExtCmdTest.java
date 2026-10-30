@@ -7,14 +7,17 @@ import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands.ZfsVolumeType;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.utils.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -43,7 +46,7 @@ public class ZfsUtilsExtCmdTest
 
     private static final String[] ZFS_LIST_FILESYSTEMS_BASE_CMD =
     {
-        "zfs", "list", "-r", "-H", "-p",
+        "zfs", "list", "-d", "0", "-H", "-p",
         "-o", "name,available,type",
         "-t", "filesystem"
     };
@@ -88,7 +91,6 @@ public class ZfsUtilsExtCmdTest
         HashMap<String, ZfsUtils.ZfsInfo> zfsMap = ZfsUtils.getZfsList(
             extCmdFactory,
             Collections.singletonList("rpool"),
-            Collections.emptyList(),
             DeviceProviderKind.ZFS_THIN,
             Collections.emptyMap()
         );
@@ -138,7 +140,6 @@ public class ZfsUtilsExtCmdTest
         HashMap<String, ZfsUtils.ZfsInfo> zfsMap = ZfsUtils.getZfsList(
             extCmdFactory,
             Collections.singletonList("tank"),
-            Collections.emptyList(),
             DeviceProviderKind.ZFS,
             Collections.emptyMap()
         );
@@ -173,7 +174,6 @@ public class ZfsUtilsExtCmdTest
         HashMap<String, ZfsUtils.ZfsInfo> zfsMap = ZfsUtils.getZfsList(
             extCmdFactory,
             Collections.singletonList("rpool"),
-            Collections.emptyList(),
             DeviceProviderKind.ZFS_THIN,
             Collections.emptyMap()
         );
@@ -203,7 +203,6 @@ public class ZfsUtilsExtCmdTest
         HashMap<String, ZfsUtils.ZfsInfo> zfsMap = ZfsUtils.getZfsList(
             extCmdFactory,
             Collections.singletonList("rpool"),
-            Collections.emptyList(),
             DeviceProviderKind.ZFS_THIN,
             Collections.emptyMap()
         );
@@ -221,7 +220,8 @@ public class ZfsUtilsExtCmdTest
         expect(
             new String[]
             {
-                "zfs", "get", "-r", "-o", "name,value", "-H", "-p", "-s", "local", "linstor:snapshot-of", "rpool"
+                "zfs", "get", "-r", "-o", "name,value", "-H", "-p", "-s", "local", "linstor:snapshot-of",
+                "rpool/vol0"
             },
             "rpool/vol0\tsome-snap\n" +
                 // properties of unknown datasets have to be ignored
@@ -237,7 +237,6 @@ public class ZfsUtilsExtCmdTest
         HashMap<String, ZfsUtils.ZfsInfo> zfsMap = ZfsUtils.getZfsList(
             extCmdFactory,
             Collections.singletonList("rpool"),
-            Collections.singletonList("rpool"),
             DeviceProviderKind.ZFS_THIN,
             settersByProp
         );
@@ -245,6 +244,131 @@ public class ZfsUtilsExtCmdTest
         assertThat(zfsMap).containsOnlyKeys("rpool/vol0");
         assertThat(appliedProps).containsOnlyKeys("vol0");
         assertThat(appliedProps.get("vol0")).isEqualTo("some-snap");
+    }
+
+    @Test
+    public void zfsListWithoutDatasetsRunsNoCommand() throws StorageException
+    {
+        // without a dataset argument "zfs list -r" / "zfs get -r" would walk every dataset of every pool on the host.
+        // No command is expected here, so any call fails the test.
+        HashMap<String, ZfsUtils.ZfsInfo> zfsMap = ZfsUtils.getZfsList(
+            extCmdFactory,
+            Collections.emptyList(),
+            DeviceProviderKind.ZFS_THIN,
+            Collections.singletonMap("marked_for_deletion", (zfsInfo, value) -> fail("no property expected"))
+        );
+
+        assertThat(zfsMap).isEmpty();
+    }
+
+    @Test
+    public void zfsListQueriesPropertiesOnlyForListedDatasets() throws StorageException
+    {
+        expect(
+            StringUtils.concat(ZFS_LIST_BASE_CMD, "rpool/vol0", "rpool/vol1@s1"),
+            "rpool/vol0\t57344\t1073741824\tvolume\t8192\t-\t-\n" +
+                "rpool/vol0@CF_1\t4096\t1073741824\tsnapshot\t-\t-\trpool/clone0\n" +
+                "rpool/vol1@s1\t4096\t1073741824\tsnapshot\t-\t-\t-\n"
+        );
+        // recursive on the listed volume (covers its snapshots) and on the snapshot whose volume was not listed;
+        // never on the whole zpool
+        expect(
+            new String[]
+            {
+                "zfs", "get", "-r", "-o", "name,value", "-H", "-p", "-s", "local", "linstor:marked_for_deletion",
+                "rpool/vol0", "rpool/vol1@s1"
+            },
+            "rpool/vol0@CF_1\ttrue\n"
+        );
+
+        Map<String, String> appliedProps = new HashMap<>();
+        HashMap<String, ZfsUtils.ZfsInfo> zfsMap = ZfsUtils.getZfsList(
+            extCmdFactory,
+            new LinkedHashSet<>(Arrays.asList("rpool/vol0", "rpool/vol1@s1")),
+            DeviceProviderKind.ZFS_THIN,
+            Collections.singletonMap(
+                "marked_for_deletion",
+                (zfsInfo, value) -> appliedProps.put(zfsInfo.identifier, value)
+            )
+        );
+
+        assertThat(zfsMap).containsOnlyKeys("rpool/vol0", "rpool/vol0@CF_1", "rpool/vol1@s1");
+        assertThat(appliedProps).containsExactly(Map.entry("vol0@CF_1", "true"));
+    }
+
+    @Test
+    public void zfsListToleratesDatasetsDestroyedBeforeThePropertyQuery() throws StorageException
+    {
+        expect(
+            StringUtils.concat(ZFS_LIST_BASE_CMD, "rpool/vol0", "rpool/vol1"),
+            "rpool/vol0\t57344\t1073741824\tvolume\t8192\t-\t-\n" +
+                "rpool/vol1\t57344\t1073741824\tvolume\t8192\t-\t-\n"
+        );
+        String[] getCmd = {
+            "zfs", "get", "-r", "-o", "name,value", "-H", "-p", "-s", "local", "linstor:marked_for_deletion",
+            "rpool/vol0", "rpool/vol1"
+        };
+        // vol1 was destroyed between the list and the get
+        extCmd.setExpectedBehavior(
+            new Command(getCmd),
+            new TestOutputData(getCmd, "rpool/vol0\ttrue\n", "cannot open 'rpool/vol1': dataset does not exist\n", 1)
+        );
+
+        Map<String, String> appliedProps = new HashMap<>();
+        ZfsUtils.getZfsList(
+            extCmdFactory,
+            new LinkedHashSet<>(Arrays.asList("rpool/vol0", "rpool/vol1")),
+            DeviceProviderKind.ZFS_THIN,
+            Collections.singletonMap(
+                "marked_for_deletion",
+                (zfsInfo, value) -> appliedProps.put(zfsInfo.identifier, value)
+            )
+        );
+
+        assertThat(appliedProps).containsExactly(Map.entry("vol0", "true"));
+    }
+
+    @Test
+    public void zfsListFailsOnOtherPropertyQueryErrors()
+    {
+        expect(
+            StringUtils.concat(ZFS_LIST_BASE_CMD, "rpool/vol0"),
+            "rpool/vol0\t57344\t1073741824\tvolume\t8192\t-\t-\n"
+        );
+        String[] getCmd = {
+            "zfs", "get", "-r", "-o", "name,value", "-H", "-p", "-s", "local", "linstor:marked_for_deletion",
+            "rpool/vol0"
+        };
+        // must not be read as "no dataset is marked for deletion"
+        extCmd.setExpectedBehavior(
+            new Command(getCmd),
+            new TestOutputData(getCmd, "", "cannot open 'rpool/vol0': pool I/O is currently suspended\n", 1)
+        );
+
+        assertThatThrownBy(
+            () -> ZfsUtils.getZfsList(
+                extCmdFactory,
+                Collections.singletonList("rpool/vol0"),
+                DeviceProviderKind.ZFS_THIN,
+                Collections.singletonMap("marked_for_deletion", (zfsInfo, value) -> { })
+            )
+        ).isInstanceOf(StorageException.class);
+    }
+
+    @Test
+    public void zfsListSplitsDatasetsIntoBatchesWithoutAnEmptyOne() throws StorageException
+    {
+        List<String> datasets = new ArrayList<>();
+        for (int idx = 0; idx < Commands.ARGUMENT_LIMIT; idx++)
+        {
+            datasets.add(String.format("rpool/vol%04d", idx));
+        }
+        // exactly ARGUMENT_LIMIT datasets: one call, no second call without dataset arguments
+        expect(StringUtils.concat(ZFS_LIST_BASE_CMD, datasets), "");
+
+        assertThat(
+            ZfsUtils.getZfsList(extCmdFactory, datasets, DeviceProviderKind.ZFS_THIN, Collections.emptyMap())
+        ).isEmpty();
     }
 
     @Test

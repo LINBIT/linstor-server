@@ -177,19 +177,30 @@ public class ZfsUtils
     public static HashMap<String, ZfsInfo> getZfsList(
         final ExtCmdFactory extCmdFactoryRef,
         Collection<String> datasets,
-        Collection<String> poolDatasets,
         DeviceProviderKind kindRef,
         Map<String, BiConsumer<ZfsInfo, String>> zfsPropertiesWithSetters
     )
         throws StorageException
     {
         final HashMap<String, ZfsInfo> infoByIdentifier = buildZfsInfoMap(extCmdFactoryRef.create(), datasets, kindRef);
+        // the properties are only applied to the entries of infoByIdentifier, so a recursive "zfs get" on the listed
+        // volumes (and on snapshots whose volume was not listed) is enough. Querying the whole zpool instead would
+        // cost time proportional to every volume and snapshot in it.
+        Set<String> listedRoots = new TreeSet<>();
+        for (String identifier : infoByIdentifier.keySet())
+        {
+            int snapSeparatorIdx = identifier.indexOf('@');
+            if (snapSeparatorIdx == -1 || !infoByIdentifier.containsKey(identifier.substring(0, snapSeparatorIdx)))
+            {
+                listedRoots.add(identifier);
+            }
+        }
         for (Entry<String, BiConsumer<ZfsInfo, String>> entry : zfsPropertiesWithSetters.entrySet())
         {
             Map<String, String> properties = getZfsLocalProperty(
                 extCmdFactoryRef.create(),
                 entry.getKey(),
-                poolDatasets,
+                listedRoots,
                 Function.identity()
             );
 
@@ -396,6 +407,21 @@ public class ZfsUtils
         throws StorageException
     {
         final OutputData output = ZfsCommands.getUserProperty(extCmdRef, zfsPropRef, dataSetsRef);
+        // exit code 1 is allowed for datasets destroyed since they were listed. Any other error (e.g. a faulted or
+        // exported pool) must not look like "property not set", or marked datasets would never be cleaned up
+        for (final String errLine : StringUtils.split(new String(output.stderrData, StandardCharsets.UTF_8), "\n"))
+        {
+            if (!errLine.isBlank() && !errLine.contains("dataset does not exist"))
+            {
+                throw new StorageException(
+                    "Failed to get user property '" + zfsPropRef + "'",
+                    null,
+                    null,
+                    null,
+                    "zfs get reported: " + new String(output.stderrData, StandardCharsets.UTF_8).trim()
+                );
+            }
+        }
         final HashMap<String, T> ret = new HashMap<>();
 
         final String[] lines = StringUtils.split(new String(output.stdoutData, StandardCharsets.UTF_8), "\n");

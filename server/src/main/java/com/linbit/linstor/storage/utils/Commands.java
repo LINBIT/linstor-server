@@ -142,6 +142,8 @@ public class Commands
     /**
      * Uses the varArgs collection to do looped execution of the given command and concat all output into a single
      * OutputData object. This only works well if the output doesn't have any header or footer data.
+     * If varArgs is empty, the command is not executed at all: many commands (e.g. "zfs list") would otherwise act
+     * on everything instead of on nothing.
      * @return Combined OutputData object of each execution.
      */
     public static OutputData genericExecutorLimiter(
@@ -154,7 +156,7 @@ public class Commands
     )
         throws StorageException
     {
-        int loops = (varArgs.size() / ARGUMENT_LIMIT) + 1;
+        int loops = (varArgs.size() + ARGUMENT_LIMIT - 1) / ARGUMENT_LIMIT;
         ByteArrayOutputStream stdOutData = new ByteArrayOutputStream();
         ByteArrayOutputStream stdErrData = new ByteArrayOutputStream();
         for (long i = 0; i < loops; ++i)
