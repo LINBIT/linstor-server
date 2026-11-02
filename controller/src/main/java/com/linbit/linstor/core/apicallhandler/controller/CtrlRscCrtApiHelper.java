@@ -451,7 +451,13 @@ public class CtrlRscCrtApiHelper
             boolean isNvmeInitiatorSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.NVME_INITIATOR);
             boolean isEbsInitiatorSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.EBS_INITIATOR);
 
-            if (drbdClientRef != null && drbdClientRef && (isStorPoolDiskless || storPool == null))
+            /*
+             * EBS initiators must not be turned into DRBD clients: their storage pool kind (EBS_INIT)
+             * has no backing device from LINSTOR's point of view, but the satellite attaches the EBS
+             * volume of a target replica locally, so the resource acts as a diskful DRBD node.
+             */
+            if (drbdClientRef != null && drbdClientRef && !isEbsInitiatorSet &&
+                (isStorPoolDiskless || storPool == null))
             {
                 adjustedFlags |= Resource.Flags.DRBD_DISKLESS.flagValue;
                 isDrbdDisklessSet = true;
