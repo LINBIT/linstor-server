@@ -40,12 +40,18 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.AttachVolumeRequest;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DeleteTagsRequest;
+import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
+import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.DetachVolumeRequest;
+import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.InstanceBlockDeviceMapping;
+import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.Tag;
 
 @Singleton
@@ -263,7 +269,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         AmazonEC2 client = getClient(initiatorVlmDataRef.getStorPool());
 
         List<LsBlkEntry> lsblkPreConnect = LsBlkUtils.lsblk(extCmdFactory.create());
-        String deviceLettersForAttach = findUnusedDevice(lsblkPreConnect);
+        String deviceLettersForAttach = findUnusedDevice(lsblkPreConnect, getEc2UsedDeviceNames(client));
         String ebsVlmId = getEbsVlmId(initiatorVlmDataRef);
         client.attachVolume(
             new AttachVolumeRequest(
@@ -355,7 +361,8 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         return actualDevice;
     }
 
-    private String findUnusedDevice(List<LsBlkEntry> lsblkEntryList) throws StorageException
+    private String findUnusedDevice(List<LsBlkEntry> lsblkEntryList, Set<String> ec2UsedDeviceNamesRef)
+        throws StorageException
     {
         LinkedHashSet<String> availableLetters = new LinkedHashSet<>(AVAILABLE_LETTERS_COMMON);
         // for now we simply assume that we run on HVM
@@ -363,27 +370,68 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
 
         for (LsBlkEntry entry : lsblkEntryList)
         {
-            String kernelName = entry.getKernelName();
-            // kernelName should be "/dev/<whatever>". id should now only be the "<whatever>" part
-            String id = kernelName.substring(5); // 5 == "/dev/".length()
-
-            // cut of the prefix "sd" or "xvd" so we only have the last letter(s) left
-            if (id.startsWith("sd"))
-            {
-                id = id.substring(2);
-            }
-            else if (id.startsWith("xvd"))
-            {
-                id = id.substring(3);
-            }
-
-            availableLetters.remove(id);
+            removeLettersOfDevice(availableLetters, entry.getKernelName());
+        }
+        /*
+         * On instances built on the AWS Nitro system, attached EBS volumes are exposed by the NVMe
+         * driver as /dev/nvme*n1, so the lsblk-based pruning above never sees the "sd*" / "xvd*"
+         * names that EC2 tracks as attachment points. The instance's block device mappings are
+         * authoritative regardless of how the guest OS names the devices.
+         */
+        for (String ec2DeviceName : ec2UsedDeviceNamesRef)
+        {
+            removeLettersOfDevice(availableLetters, ec2DeviceName);
         }
         if (availableLetters.isEmpty())
         {
             throw new StorageException("No availble device names left!");
         }
         return availableLetters.iterator().next();
+    }
+
+    private void removeLettersOfDevice(LinkedHashSet<String> availableLettersRef, String deviceNameRef)
+    {
+        // deviceName is usually "/dev/<whatever>", but EC2 block device mappings may also contain
+        // device names without the "/dev/" prefix
+        String id = deviceNameRef;
+        if (id.startsWith("/dev/"))
+        {
+            id = id.substring("/dev/".length());
+        }
+
+        // cut of the prefix "sd" or "xvd" so we only have the last letter(s) left
+        if (id.startsWith("sd"))
+        {
+            id = id.substring("sd".length());
+        }
+        else if (id.startsWith("xvd"))
+        {
+            id = id.substring("xvd".length());
+        }
+
+        availableLettersRef.remove(id);
+    }
+
+    private Set<String> getEc2UsedDeviceNames(AmazonEC2 clientRef)
+    {
+        Set<String> usedDeviceNames = new HashSet<>();
+        if (ec2InstanceId != null)
+        {
+            DescribeInstancesResult describeInstancesResult = clientRef.describeInstances(
+                new DescribeInstancesRequest().withInstanceIds(ec2InstanceId)
+            );
+            for (Reservation reservation : describeInstancesResult.getReservations())
+            {
+                for (Instance instance : reservation.getInstances())
+                {
+                    for (InstanceBlockDeviceMapping ibdm : instance.getBlockDeviceMappings())
+                    {
+                        usedDeviceNames.add(ibdm.getDeviceName());
+                    }
+                }
+            }
+        }
+        return usedDeviceNames;
     }
 
     /**
