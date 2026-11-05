@@ -11,6 +11,10 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
     `module` filter
   - Added `open` to ResourceState
 
+### Changed
+  - POST /v1/resource-definitions/{rsc}/clone: error responses return an `ApiCallRcList` (status from the error codes,
+    e.g. 500 or 404) instead of a `ResourceDefinitionCloneStarted` object
+
 ## [1.29.1]
 
 ### Added
