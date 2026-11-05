@@ -14,6 +14,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlMinIoSizeHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.autohelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autohelper.CtrlRscAutoHelper;
@@ -90,6 +91,7 @@ public class IntFullSyncResponse implements ApiCallReactive
     private final CtrlMinIoSizeHelper minIoSizeHelper;
     private final ResourceDefinitionRepository rscDfnRepo;
     private final CtrlRscAutoHelper autoHelper;
+    private final CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelper;
 
     @Inject
     public IntFullSyncResponse(
@@ -103,7 +105,8 @@ public class IntFullSyncResponse implements ApiCallReactive
         CtrlTransactionHelper ctrlTransactionHelperRef,
         ResourceDefinitionRepository rscDfnRepoRef,
         CtrlRscAutoHelper autoHelperRef,
-        CtrlMinIoSizeHelper minIoSizeHelperRef
+        CtrlMinIoSizeHelper minIoSizeHelperRef,
+        CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -117,6 +120,7 @@ public class IntFullSyncResponse implements ApiCallReactive
         rscDfnRepo = rscDfnRepoRef;
         autoHelper = autoHelperRef;
         minIoSizeHelper = minIoSizeHelperRef;
+        ctrlRscDfnApiCallHelper = ctrlRscDfnApiCallHelperRef;
     }
 
     @Override
@@ -398,6 +402,11 @@ public class IntFullSyncResponse implements ApiCallReactive
                     }
 
                 }
+            }
+            for (ResourceDefinition rscDfnToUpdate : rscDfnsToUpdate)
+            {
+                // the automatic discard-granularity depends on the block size
+                ctrlRscDfnApiCallHelper.updateDrbdProps(rscDfnToUpdate);
             }
             ctrlTransactionHelper.commit();
 

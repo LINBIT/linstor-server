@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
   made `since`/`to` filters of the error-report listing miss recent reports
 - Controller: The balancer no longer counts inactive or evicted resources as replicas, which made it delete an active one
+- DRBD: The automatic `discard-granularity` is now a multiple of DRBD's block size, so DRBD no longer refuses devices
+  with a 4k block size, and thin pools with chunks above 128 MiB get discards disabled instead of an error report
 
 ## [1.35.3] - 2026-10-21
 

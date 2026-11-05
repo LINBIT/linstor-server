@@ -131,6 +131,7 @@ public class CtrlRscCrtApiHelper
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
+    private final CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelper;
     private final AllocationGranularityHelper allocationGranularityHelper;
     private final CtrlRscStateHelper rscStateHelper;
     private final CtrlMinIoSizeHelper minIoSizeHelper;
@@ -158,6 +159,7 @@ public class CtrlRscCrtApiHelper
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef,
+        CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelperRef,
         AllocationGranularityHelper allocationGranularityHelperRef,
         CtrlRscStateHelper rscStateHelperRef,
         CtrlMinIoSizeHelper minIoSizeHelperRef
@@ -184,6 +186,7 @@ public class CtrlRscCrtApiHelper
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
+        ctrlRscDfnApiCallHelper = ctrlRscDfnApiCallHelperRef;
         allocationGranularityHelper = allocationGranularityHelperRef;
         rscStateHelper = rscStateHelperRef;
         minIoSizeHelper = minIoSizeHelperRef;
@@ -640,6 +643,7 @@ public class CtrlRscCrtApiHelper
             vlmDfnIter = rscDfn.iterateVolumeDfn();
 
             boolean hasSpecialLayers = LayerKindUtils.hasSpecialLayers(layerStack);
+            boolean minIoSet = false;
             boolean haveChangedMinIo = false;
             while (vlmDfnIter.hasNext())
             {
@@ -724,6 +728,7 @@ public class CtrlRscCrtApiHelper
                     {
                         // Set the changed minIoSize
                         vlmDfn.setMinIoSize(poolBlockSize);
+                        minIoSet = true;
                         if (rscDfn.getResourceCount() > 1)
                         {
                             // Only enable the "restart DRBD" property if this is NOT the very first resource we are
@@ -745,6 +750,11 @@ public class CtrlRscCrtApiHelper
                         );
                     }
                 }
+            }
+            if (minIoSet)
+            {
+                // the automatic discard-granularity depends on the block size
+                ctrlRscDfnApiCallHelper.updateDrbdProps(rscDfn);
             }
             if (haveChangedMinIo)
             {

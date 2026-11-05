@@ -348,7 +348,7 @@ public class RscInternalCallHandler
             // Only run the auto-rs-discard-granularity recompute if this satellite's report
             // actually changed the discGran of the layer below DRBD. Recomputing on every report
             // causes the rs-discard-granularity property to flap between set and removed (because
-            // chooseDrbdDiscGran returns null whenever any peer is transiently UNINITIALIZED),
+            // chooseRsDiscardGran returns null whenever any peer is transiently UNINITIALIZED),
             // which sends extra ChangedRsc messages that race with operations like clone_DD.
             Map<Integer, Long> discGranAfter = collectDrbdChildDiscGrans(rsc);
             if (!discGranBefore.equals(discGranAfter) &&

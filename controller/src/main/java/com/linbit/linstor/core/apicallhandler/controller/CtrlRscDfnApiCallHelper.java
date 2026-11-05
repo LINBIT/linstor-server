@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiConsts;
@@ -14,6 +15,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.storage.BlockSizeConsts;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -43,8 +45,9 @@ public class CtrlRscDfnApiCallHelper
     public static final String FULL_KEY_DISCARD_GRAN = ApiConsts.NAMESPC_DRBD_DISK_OPTIONS + "/" +
         KEY_PROP_DRBD_OPT_DISK_DISC_GRAN;
 
-    private static final int DRBD_DISC_GRAN_MIN = 4 * 1024; // min 4k
-    private static final int DRBD_DISC_GRAN_MAX = 1 * 1024 * 1024; // max 1M
+    private static final int DRBD_RS_DISC_GRAN_MIN = 4 * 1024; // min 4k
+    private static final int DRBD_RS_DISC_GRAN_MAX = 1 * 1024 * 1024; // max 1M
+    private static final int DRBD_DISCARD_GRAN_MAX = 128 * 1024 * 1024; // max 128M
 
     private final SystemConfRepository sysConfRepo;
 
@@ -182,11 +185,11 @@ public class CtrlRscDfnApiCallHelper
             }
         }
 
-        Long chooseDrbdDiscGran = chooseDrbdDiscGran(discGrans, rscs);
+        Long chosenRsDiscGran = chooseRsDiscardGran(discGrans, rscs);
 
-        if (chooseDrbdDiscGran != null)
+        if (chosenRsDiscGran != null)
         {
-            String newProp = Long.toString(chooseDrbdDiscGran);
+            String newProp = Long.toString(chosenRsDiscGran);
             String oldProp = vlmDfnProps.setProp(
                 FULL_KEY_RS_DISC_GRAN,
                 newProp
@@ -207,25 +210,33 @@ public class CtrlRscDfnApiCallHelper
         String namespcRef
     )
     {
-        ResourceDefinition rscDfn = vlmDfnRef.getResourceDefinition();
-        ResourceGroup rscGrp = rscDfn.getResourceGroup();
-        PriorityProps prioProps = new PriorityProps(
-            vlmDfnRef.getProps(),
-            rscDfn.getProps(),
-            rscGrp.getVolumeGroupProps(vlmDfnRef.getVolumeNumber()),
-            rscGrp.getProps(),
-            sysConfRepo.getCtrlConfForView()
-        );
-        final @Nullable String setBy = prioProps.getProp(keyRef, namespcRef);
+        final @Nullable String setBy = getVlmDfnPrioProps(vlmDfnRef).getProp(keyRef, namespcRef);
         return setBy == null || setBy.equalsIgnoreCase(ApiConsts.VAL_TRUE);
     }
 
-    private @Nullable Long chooseDrbdDiscGran(
+    /**
+     * Uses the same order as the ConfFileBuilder of the satellite for the DRBD disk options of a volume, without the
+     * levels of the volume, resource and node, as the properties set here apply to all nodes alike.
+     */
+    private PriorityProps getVlmDfnPrioProps(VolumeDefinition vlmDfnRef)
+    {
+        ResourceDefinition rscDfn = vlmDfnRef.getResourceDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+        return new PriorityProps(
+            vlmDfnRef.getProps(),
+            rscGrp.getVolumeGroupProps(vlmDfnRef.getVolumeNumber()),
+            rscDfn.getProps(),
+            rscGrp.getProps(),
+            sysConfRepo.getCtrlConfForView()
+        );
+    }
+
+    private @Nullable Long chooseRsDiscardGran(
         TreeSet<Long> discGransRef,
         List<Resource> rscsRef
     )
     {
-        long discGranMax = getMaxDiscGran(rscsRef);
+        long rsDiscGranMax = getSmallestPeerMax(rscsRef, FULL_KEY_RS_DISC_GRAN, DRBD_RS_DISC_GRAN_MAX);
         discGransRef.remove(VlmProviderObject.UNINITIALIZED_SIZE);
 
         Long selected;
@@ -240,32 +251,36 @@ public class CtrlRscDfnApiCallHelper
             selected = discGransRef.last();
             if (selected != null)
             {
-                selected = Math.max(DRBD_DISC_GRAN_MIN, selected);
-                selected = Math.min(discGranMax, selected);
+                selected = Math.max(DRBD_RS_DISC_GRAN_MIN, selected);
+                selected = Math.min(rsDiscGranMax, selected);
             }
         }
         return selected;
     }
 
-    private long getMaxDiscGran(List<Resource> rscsRef)
+    /**
+     * Returns the smallest maximum of the given DRBD option reported by the satellites of the given resources, or the
+     * given default if none of them reports one.
+     */
+    private long getSmallestPeerMax(List<Resource> rscsRef, String keyRef, long dfltMaxRef)
     {
-        TreeSet<Long> maxDiscGrans = new TreeSet<>();
+        TreeSet<Long> peerMaxs = new TreeSet<>();
         for (Resource rsc : rscsRef)
         {
-            Property dynProp = rsc.getNode().getPeer().getDynamicProperty(FULL_KEY_RS_DISC_GRAN);
+            Property dynProp = rsc.getNode().getPeer().getDynamicProperty(keyRef);
             if (dynProp instanceof RangeProperty rangeProp)
             {
-                maxDiscGrans.add(rangeProp.getMax());
+                peerMaxs.add(rangeProp.getMax());
             }
         }
         long ret;
-        if (maxDiscGrans.isEmpty())
+        if (peerMaxs.isEmpty())
         {
-            ret = DRBD_DISC_GRAN_MAX;
+            ret = dfltMaxRef;
         }
         else
         {
-            ret = maxDiscGrans.first();
+            ret = peerMaxs.first();
         }
         return ret;
     }
@@ -280,10 +295,12 @@ public class CtrlRscDfnApiCallHelper
         final Props vlmDfnProps = vlmDfnRef.getProps();
 
         final TreeSet<Long> discGrans = new TreeSet<>();
+        List<Resource> rscs = new ArrayList<>();
         final Iterator<Resource> rscIt = vlmDfnRef.getResourceDefinition().iterateResource();
         while (rscIt.hasNext())
         {
             final Resource rsc = rscIt.next();
+            rscs.add(rsc);
             final Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
                 rsc.getLayerData(),
                 DeviceLayerKind.DRBD
@@ -301,7 +318,11 @@ public class CtrlRscDfnApiCallHelper
             }
         }
 
-        @Nullable Long chosenDiscGran = chooseDiscardGran(discGrans);
+        @Nullable Long chosenDiscGran = chooseDiscardGran(
+            discGrans,
+            getDrbdBlockSize(vlmDfnRef),
+            getSmallestPeerMax(rscs, FULL_KEY_DISCARD_GRAN, DRBD_DISCARD_GRAN_MAX)
+        );
 
         if (chosenDiscGran != null)
         {
@@ -324,9 +345,10 @@ public class CtrlRscDfnApiCallHelper
      * Aggregation for discard-granularity:
      * - If no values collected: null (don't write)
      * - If any value is 0: return 0 (explicitly disable discards)
-     * - Otherwise: return max of all values
+     * - Otherwise: return max of all values, rounded up to a multiple of the block size, or 0 if that exceeds the
+     *   maximum (see {@link #fitDiscardGran(long, long, long)})
      */
-    private @Nullable Long chooseDiscardGran(TreeSet<Long> discGransRef)
+    static @Nullable Long chooseDiscardGran(TreeSet<Long> discGransRef, long blockSizeRef, long maxRef)
     {
         discGransRef.remove(VlmProviderObject.UNINITIALIZED_SIZE);
         @Nullable Long selected;
@@ -340,8 +362,49 @@ public class CtrlRscDfnApiCallHelper
         }
         else
         {
-            selected = discGransRef.last();
+            selected = fitDiscardGran(discGransRef.last(), blockSizeRef, maxRef);
         }
         return selected;
+    }
+
+    /**
+     * DRBD only accepts a discard-granularity of 0 or a multiple of its block size, up to the maximum of the option.
+     * The largest discard granularity of the devices below DRBD can be smaller than the block size (an emulated block
+     * size, or a larger one of another node) or larger than the maximum (thin pools with large chunks).
+     * In the latter case, diskful nodes disable discards anyway: the kernel stacks the larger granularity of the
+     * backing device onto the configured one, which then exceeds DRBD's maximum discard size. Only diskless nodes
+     * would keep the configured value and announce discards the diskful peers cannot serve.
+     *
+     * @return the given discard granularity rounded up to a multiple of the block size, or 0 (disable discards on all
+     *     nodes) if that exceeds the maximum
+     */
+    private static long fitDiscardGran(long discGranRef, long blockSizeRef, long maxRef)
+    {
+        long rounded = Math.ceilDiv(discGranRef, blockSizeRef) * blockSizeRef;
+        return rounded <= maxRef ? rounded : 0;
+    }
+
+    /**
+     * Returns the DRBD block-size of the given volume definition, which the satellites write into the .res file
+     */
+    private long getDrbdBlockSize(VolumeDefinition vlmDfnRef)
+    {
+        long blockSize = BlockSizeConsts.DFLT_PHY_IO_SIZE;
+        @Nullable String blockSizeStr = getVlmDfnPrioProps(vlmDfnRef).getProp(
+            InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
+            ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+        );
+        if (blockSizeStr != null)
+        {
+            try
+            {
+                blockSize = Math.max(BlockSizeConsts.MIN_PHY_IO_SIZE, Long.parseLong(blockSizeStr));
+            }
+            catch (NumberFormatException ignored)
+            {
+                // the whitelist does not allow such a value, keep the default
+            }
+        }
+        return blockSize;
     }
 }

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -86,6 +87,7 @@ public class PropsChangedListenerBuilder
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addDrbdOptionsDiskDiscardGranularity();
+        builder.addDrbdOptionsDiskBlockSize();
         builder.addSkipDisk();
         builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
@@ -104,6 +106,7 @@ public class PropsChangedListenerBuilder
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addDrbdOptionsDiskDiscardGranularity();
+        builder.addDrbdOptionsDiskBlockSize();
         builder.addSkipDisk();
         builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
@@ -123,6 +126,7 @@ public class PropsChangedListenerBuilder
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addLuksAllowDiscards();
         builder.addDrbdOptionsDiskDiscardGranularity();
+        builder.addDrbdOptionsDiskBlockSize();
         return builder.propsChangedListeners;
     }
 
@@ -139,6 +143,7 @@ public class PropsChangedListenerBuilder
 
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addDrbdOptionsDiskDiscardGranularity();
+        builder.addDrbdOptionsDiskBlockSize();
         builder.addSkipDisk();
         builder.addLuksAllowDiscards();
         return builder.propsChangedListeners;
@@ -158,6 +163,7 @@ public class PropsChangedListenerBuilder
         builder.addDrbdOptionsDiskRsDiscardGranularity();
         builder.addLuksAllowDiscards();
         builder.addDrbdOptionsDiskDiscardGranularity();
+        builder.addDrbdOptionsDiskBlockSize();
         return builder.propsChangedListeners;
     }
 
@@ -389,6 +395,29 @@ public class PropsChangedListenerBuilder
             propsChangedListeners.put(
                 ApiConsts.NAMESPC_LINSTOR_DRBD + "/" +
                     ApiConsts.KEY_DRBD_AUTO_DISCARD_GRANULARITY,
+                (ignoredKey, newVal, oldValue) ->
+                {
+                    if (!Objects.equals(newVal, oldValue))
+                    {
+                        for (ResourceDefinition rscDfn : rscDfnsSupplier.get())
+                        {
+                            fluxes.add(ctrlRscDfnHandler.updateProps(rscDfn));
+                        }
+                    }
+                }
+            );
+        }
+
+        /**
+         * The automatic discard-granularity has to be a multiple of the DRBD block-size, so it is recalculated whenever
+         * the block-size changes.
+         */
+        void addDrbdOptionsDiskBlockSize()
+        {
+            require(rscDfnsSupplier, "rscDfns supplier");
+            CtrlRscDfnApiCallHandler ctrlRscDfnHandler = ctrlRscDfnApiCallHandlerProvider.get();
+            propsChangedListeners.put(
+                ApiConsts.NAMESPC_DRBD_DISK_OPTIONS + "/" + InternalApiConsts.KEY_DRBD_BLOCK_SIZE,
                 (ignoredKey, newVal, oldValue) ->
                 {
                     if (!Objects.equals(newVal, oldValue))
