@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- REST: `POST /v1/resource-definitions/{rsc}/clone` reports errors of the clone operation as the usual `ApiCallRc`
+  list, with the status derived from the error codes like other endpoints (500, 404 for a missing object), instead
+  of the `ResourceDefinitionCloneStarted` object; an unparsable request body now gets a 400 instead of no response.
+  Success is unchanged (201)
 - Controller: REST stack upgraded to Jersey 4 (Jakarta REST 4.0), HK2 4 and Guice 7; the REST API itself is unchanged
 - Controller: The Kubernetes CRD database backend now uses the JDK HTTP client instead of Vert.x/Netty, removing
   ~6 MB of dependencies (and their CVE exposure) from the distribution

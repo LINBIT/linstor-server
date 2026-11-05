@@ -323,30 +323,51 @@ public class ResourceDefinitions
         return flux
             .collectList()
             .map(
-                apiCallRcList ->
-                {
-                    ApiCallRcImpl flatApiCallRc = new ApiCallRcImpl(
-                        apiCallRcList.stream().flatMap(Collection::stream).collect(Collectors.toList())
-                    );
-                    Response.ResponseBuilder builder = Response.status(flatApiCallRc.hasErrors() ?
-                        Response.Status.INTERNAL_SERVER_ERROR : Response.Status.CREATED);
-                    String reportedCloneName = StringUtils.isEmpty(clonedName) ? "__invalid_name__" : clonedName;
-                    try
-                    {
-                        builder.entity(
-                            objectMapper.writeValueAsString(
-                                Json.resourceDefCloneStarted(srcName, reportedCloneName, flatApiCallRc)
-                            )
-                        );
-                    }
-                    catch (JsonProcessingException exc)
-                    {
-                        exc.printStackTrace();
-                        return Response.serverError().build();
-                    }
-                    return builder.build();
-                }
+                apiCallRcList -> cloneStartedResponse(
+                    objectMapper,
+                    srcName,
+                    clonedName,
+                    new ApiCallRcImpl(apiCallRcList.stream().flatMap(Collection::stream).collect(Collectors.toList()))
+                )
             );
+    }
+
+    /**
+     * On success the clone-started object (201). On errors the {@code ApiCallRc} list that every other endpoint
+     * returns, with the status {@link ApiCallRcRestUtils#toResponse} derives from the error codes.
+     */
+    static Response cloneStartedResponse(
+        ObjectMapper objectMapperRef,
+        String srcName,
+        String clonedName,
+        ApiCallRcImpl flatApiCallRc
+    )
+    {
+        Response response;
+        if (flatApiCallRc.hasErrors())
+        {
+            response = ApiCallRcRestUtils.toResponse(flatApiCallRc, Response.Status.CREATED);
+        }
+        else
+        {
+            String reportedCloneName = StringUtils.isEmpty(clonedName) ? "__invalid_name__" : clonedName;
+            try
+            {
+                response = Response.status(Response.Status.CREATED)
+                    .entity(
+                        objectMapperRef.writeValueAsString(
+                            Json.resourceDefCloneStarted(srcName, reportedCloneName, flatApiCallRc)
+                        )
+                    )
+                    .build();
+            }
+            catch (JsonProcessingException exc)
+            {
+                exc.printStackTrace();
+                response = Response.serverError().build();
+            }
+        }
+        return response;
     }
 
     @POST
@@ -383,6 +404,10 @@ public class ResourceDefinitions
                 asyncResponse,
                 mapToCloneStarted(srcName, requestData.name, flux)
             );
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
         catch (Exception | ImplementationError exc)
         {

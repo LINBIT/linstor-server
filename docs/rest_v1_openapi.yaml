@@ -1774,8 +1774,18 @@ paths:
                 $ref: '#/components/schemas/ResourceDefinitionCloneStarted'
         '400':
           $ref: '#/components/responses/InvalidInput'
+        '404':
+          description: an object the clone needs does not exist, e.g. the source resource definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
-          $ref: '#/components/responses/OperationFailed'
+          description: the clone could not be started or failed; the body lists the controller's messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
