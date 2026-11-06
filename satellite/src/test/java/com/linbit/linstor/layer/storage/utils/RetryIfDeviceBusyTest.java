@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class RetryIfDeviceBusyTest
 {
@@ -16,6 +17,7 @@ public class RetryIfDeviceBusyTest
     private static final OutputData OTHER = failed("cannot open 'tank/rsc_00000': dataset does not exist\n");
 
     private final List<Long> sleeps = new ArrayList<>();
+    private long nowInMs = 1_000_000;
 
     private static OutputData failed(String stdErr)
     {
@@ -61,6 +63,87 @@ public class RetryIfDeviceBusyTest
         assertThat(retryHandler.retry(BUSY)).isTrue();
         assertThat(retryHandler.retry(BUSY)).isFalse();
         assertThat(sleeps).containsExactly(100L, 100L, 100L);
+    }
+
+    private RetryIfDeviceBusy deadlineHandler(long deadline, long delayInitial, long delayMax)
+    {
+        return RetryIfDeviceBusy.withDeadline(
+            deadline,
+            delayInitial,
+            delayMax,
+            millis ->
+            {
+                sleeps.add(millis);
+                nowInMs += millis;
+            },
+            () -> nowInMs
+        );
+    }
+
+    @Test
+    public void deadlineBoundsTheTotalWaitNotTheCount()
+    {
+        RetryIfDeviceBusy retryHandler = deadlineHandler(5_000, 200, 2_000);
+        int retries = 0;
+        while (retryHandler.retry(BUSY))
+        {
+            retries++;
+        }
+        // 200 + 400 + 800 + 1600 = 3000, then 2000 reaches the deadline exactly
+        assertThat(sleeps).containsExactly(200L, 400L, 800L, 1_600L, 2_000L);
+        assertThat(retries).isEqualTo(5);
+    }
+
+    @Test
+    public void deadlineCountsTheCommandsRunTime()
+    {
+        RetryIfDeviceBusy retryHandler = deadlineHandler(5_000, 200, 2_000);
+        assertThat(retryHandler.retry(BUSY)).isTrue();
+        // the retried command itself ran for 4.5 s
+        nowInMs += 4_500;
+        assertThat(retryHandler.retry(BUSY)).isTrue();
+        nowInMs += 1_000;
+        assertThat(retryHandler.retry(BUSY)).isFalse();
+        // 200 ms, then only the remaining 5000 - 200 - 4500 = 300 ms
+        assertThat(sleeps).containsExactly(200L, 300L);
+    }
+
+    @Test
+    public void deadlineStillStopsOnOtherErrors()
+    {
+        RetryIfDeviceBusy retryHandler = deadlineHandler(20_000, 200, 2_000);
+        assertThat(retryHandler.retry(BUSY)).isTrue();
+        assertThat(retryHandler.retry(OTHER)).isFalse();
+        assertThat(sleeps).containsExactly(200L);
+    }
+
+    @Test
+    public void interruptStopsRetryingAndIsKept()
+    {
+        RetryIfDeviceBusy retryHandler = new RetryIfDeviceBusy(
+            6,
+            200,
+            2_000,
+            millis ->
+            {
+                throw new InterruptedException();
+            }
+        );
+        try
+        {
+            assertThat(retryHandler.retry(BUSY)).isFalse();
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        }
+        finally
+        {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    public void deadlineMustBePositive()
+    {
+        assertThatThrownBy(() -> deadlineHandler(0, 200, 2_000)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

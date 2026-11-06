@@ -27,9 +27,9 @@ public class ZfsCommandsDestroyRetryTest
     private static final String[] DESTROY_CMD = {"zfs", "destroy", FQ_ID};
     private static final OutputData OK = result(0, "");
     private static final OutputData BUSY = result(1, "cannot destroy '" + FQ_ID + "': dataset is busy\n");
-    private static final int MAX_EXECS = ZfsCommands.DESTROY_RETRY_COUNT + 1;
 
     private final List<Long> sleeps = new ArrayList<>();
+    private long nowInMs = 0;
     private ExtCmd extCmd;
 
     private static OutputData result(int exitCode, String stdErr)
@@ -52,8 +52,14 @@ public class ZfsCommandsDestroyRetryTest
             extCmd,
             FQ_ID,
             ZfsVolumeType.VOLUME,
-            ZfsCommands.destroyRetryHandler(sleeps::add)
+            ZfsCommands.destroyRetryHandler(this::sleep, () -> nowInMs)
         );
+    }
+
+    private void sleep(long millis)
+    {
+        sleeps.add(millis);
+        nowInMs += millis;
     }
 
     @Before
@@ -63,23 +69,30 @@ public class ZfsCommandsDestroyRetryTest
     }
 
     @Test
-    public void destroySucceedsOnLastRetry() throws Exception
+    public void destroySucceedsAfterTheFormerSevenSecondBudget() throws Exception
     {
-        // busy for longer than the former 3 retries at 100ms
-        execReturns(ZfsCommands.DESTROY_RETRY_COUNT, OK);
+        // busy for 7 attempts, which exhausted the former 6 retries (200..2000 ms, 7 s); the 8th attempt succeeds
+        execReturns(7, OK);
 
         assertThat(delete().exitCode).isEqualTo(0);
-        verify(extCmd, times(MAX_EXECS)).exec(DESTROY_CMD);
-        assertThat(sleeps).containsExactly(200L, 400L, 800L, 1_600L, 2_000L, 2_000L);
+        verify(extCmd, times(8)).exec(DESTROY_CMD);
+        assertThat(sleeps).containsExactly(200L, 400L, 800L, 1_600L, 2_000L, 2_000L, 2_000L);
     }
 
     @Test
-    public void destroyFailsWhenBusyBeyondRetries() throws Exception
+    public void destroyFailsWhenBusyBeyondTheDeadline() throws Exception
     {
-        execReturns(ZfsCommands.DESTROY_RETRY_COUNT, BUSY);
+        when(extCmd.exec(any(String[].class))).thenReturn(BUSY);
 
         assertThatThrownBy(this::delete).isInstanceOf(StorageException.class);
-        verify(extCmd, times(MAX_EXECS)).exec(DESTROY_CMD);
+        // 200 + 400 + 800 + 1600 + 8 * 2000 = 19000, the last sleep is cut to the remaining 1000 ms
+        assertThat(sleeps).containsExactly(
+            200L, 400L, 800L, 1_600L,
+            2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L,
+            1_000L
+        );
+        assertThat(sleeps.stream().mapToLong(Long::longValue).sum()).isEqualTo(ZfsCommands.DESTROY_RETRY_DEADLINE_IN_MS);
+        verify(extCmd, times(sleeps.size() + 1)).exec(DESTROY_CMD);
     }
 
     @Test

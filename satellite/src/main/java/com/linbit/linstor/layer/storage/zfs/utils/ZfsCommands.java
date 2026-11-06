@@ -19,16 +19,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.LongSupplier;
 
 public class ZfsCommands
 {
     private static final String ZFS_USER_PROP_LINSTOR_PREFIX = "linstor:";
 
     /*
-     * "zfs destroy" right after "drbdsetup down" can fail with "dataset is busy" for a few seconds while the zvol
-     * is still held open (e.g. by udev). Retry with backoff: 200, 400, 800, 1600, 2000, 2000 ms (7s in total).
+     * "zfs destroy" right after "drbdsetup down" can fail with "dataset is busy" while the zvol is still held open
+     * (e.g. by udev, or by the detach's last close, which waits for a txg sync and takes several seconds under write
+     * load). Retry with backoff 200, 400, 800, 1600, then 2000 ms, for up to 20s after the first busy failure.
      */
-    static final int DESTROY_RETRY_COUNT = 6;
+    static final long DESTROY_RETRY_DEADLINE_IN_MS = 20_000;
     static final long DESTROY_RETRY_DELAY_INITIAL_IN_MS = 200;
     static final long DESTROY_RETRY_DELAY_MAX_IN_MS = 2_000;
 
@@ -112,16 +114,21 @@ public class ZfsCommands
 
     static RetryHandler destroyRetryHandler()
     {
-        return destroyRetryHandler(Thread::sleep);
+        return RetryIfDeviceBusy.withDeadline(
+            DESTROY_RETRY_DEADLINE_IN_MS,
+            DESTROY_RETRY_DELAY_INITIAL_IN_MS,
+            DESTROY_RETRY_DELAY_MAX_IN_MS
+        );
     }
 
-    static RetryHandler destroyRetryHandler(RetryIfDeviceBusy.Sleeper sleeperRef)
+    static RetryHandler destroyRetryHandler(RetryIfDeviceBusy.Sleeper sleeperRef, LongSupplier clockInMsRef)
     {
-        return new RetryIfDeviceBusy(
-            DESTROY_RETRY_COUNT,
+        return RetryIfDeviceBusy.withDeadline(
+            DESTROY_RETRY_DEADLINE_IN_MS,
             DESTROY_RETRY_DELAY_INITIAL_IN_MS,
             DESTROY_RETRY_DELAY_MAX_IN_MS,
-            sleeperRef
+            sleeperRef,
+            clockInMsRef
         );
     }
 
