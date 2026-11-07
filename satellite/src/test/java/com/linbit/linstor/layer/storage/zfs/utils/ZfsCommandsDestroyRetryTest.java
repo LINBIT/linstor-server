@@ -85,14 +85,34 @@ public class ZfsCommandsDestroyRetryTest
         when(extCmd.exec(any(String[].class))).thenReturn(BUSY);
 
         assertThatThrownBy(this::delete).isInstanceOf(StorageException.class);
-        // 200 + 400 + 800 + 1600 + 8 * 2000 = 19000, the last sleep is cut to the remaining 1000 ms
+        // 200 + 400 + 800 + 1600 + 13 * 2000 = 29000, the last sleep is cut to the remaining 1000 ms
         assertThat(sleeps).containsExactly(
             200L, 400L, 800L, 1_600L,
-            2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L,
+            2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L, 2_000L,
             1_000L
         );
-        assertThat(sleeps.stream().mapToLong(Long::longValue).sum()).isEqualTo(ZfsCommands.DESTROY_RETRY_DEADLINE_IN_MS);
+        assertThat(sleeps.stream().mapToLong(Long::longValue).sum())
+            .isEqualTo(ZfsCommands.DESTROY_RETRY_DEADLINE_DEFAULT_IN_MS);
         verify(extCmd, times(sleeps.size() + 1)).exec(DESTROY_CMD);
+    }
+
+    @Test
+    public void deadlineComesFromTheEnvironmentWithinBounds()
+    {
+        assertThat(ZfsCommands.destroyRetryDeadlineInMs(null)).isEqualTo(30_000L);
+        assertThat(ZfsCommands.destroyRetryDeadlineInMs("45")).isEqualTo(45_000L);
+        assertThat(ZfsCommands.destroyRetryDeadlineInMs(" 60 ")).isEqualTo(60_000L);
+        assertThat(ZfsCommands.destroyRetryDeadlineInMs("1")).isEqualTo(1_000L);
+        assertThat(ZfsCommands.destroyRetryDeadlineInMs("3600")).isEqualTo(3_600_000L);
+    }
+
+    @Test
+    public void invalidDeadlineFallsBackToTheDefault()
+    {
+        for (String value : new String[] {"", "0", "-5", "3601", "30s", "1.5", "abc"})
+        {
+            assertThat(ZfsCommands.destroyRetryDeadlineInMs(value)).as(value).isEqualTo(30_000L);
+        }
     }
 
     @Test

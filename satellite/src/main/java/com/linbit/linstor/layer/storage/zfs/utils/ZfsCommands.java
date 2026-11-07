@@ -28,9 +28,13 @@ public class ZfsCommands
     /*
      * "zfs destroy" right after "drbdsetup down" can fail with "dataset is busy" while the zvol is still held open
      * (e.g. by udev, or by the detach's last close, which waits for a txg sync and takes several seconds under write
-     * load). Retry with backoff 200, 400, 800, 1600, then 2000 ms, for up to 20s after the first busy failure.
+     * load). Retry with backoff 200, 400, 800, 1600, then 2000 ms, until a deadline after the first busy failure:
+     * 30s by default, or LINSTOR_SATELLITE_ZFS_DESTROY_BUSY_DEADLINE_S seconds (1 to 3600; other values fall back to
+     * the default).
      */
-    static final long DESTROY_RETRY_DEADLINE_IN_MS = 20_000;
+    public static final String DESTROY_RETRY_DEADLINE_ENV = "LINSTOR_SATELLITE_ZFS_DESTROY_BUSY_DEADLINE_S";
+    static final long DESTROY_RETRY_DEADLINE_DEFAULT_IN_MS = 30_000;
+    static final long DESTROY_RETRY_DEADLINE_MAX_IN_S = 3_600;
     static final long DESTROY_RETRY_DELAY_INITIAL_IN_MS = 200;
     static final long DESTROY_RETRY_DELAY_MAX_IN_MS = 2_000;
 
@@ -112,10 +116,31 @@ public class ZfsCommands
         );
     }
 
+    static long destroyRetryDeadlineInMs(@Nullable String envValue)
+    {
+        long deadlineInMs = DESTROY_RETRY_DEADLINE_DEFAULT_IN_MS;
+        if (envValue != null)
+        {
+            try
+            {
+                long seconds = Long.parseLong(envValue.trim());
+                if (seconds >= 1 && seconds <= DESTROY_RETRY_DEADLINE_MAX_IN_S)
+                {
+                    deadlineInMs = seconds * 1_000L;
+                }
+            }
+            catch (NumberFormatException ignored)
+            {
+                // keep the default
+            }
+        }
+        return deadlineInMs;
+    }
+
     static RetryHandler destroyRetryHandler()
     {
         return RetryIfDeviceBusy.withDeadline(
-            DESTROY_RETRY_DEADLINE_IN_MS,
+            destroyRetryDeadlineInMs(System.getenv(DESTROY_RETRY_DEADLINE_ENV)),
             DESTROY_RETRY_DELAY_INITIAL_IN_MS,
             DESTROY_RETRY_DELAY_MAX_IN_MS
         );
@@ -124,7 +149,7 @@ public class ZfsCommands
     static RetryHandler destroyRetryHandler(RetryIfDeviceBusy.Sleeper sleeperRef, LongSupplier clockInMsRef)
     {
         return RetryIfDeviceBusy.withDeadline(
-            DESTROY_RETRY_DEADLINE_IN_MS,
+            DESTROY_RETRY_DEADLINE_DEFAULT_IN_MS,
             DESTROY_RETRY_DELAY_INITIAL_IN_MS,
             DESTROY_RETRY_DELAY_MAX_IN_MS,
             sleeperRef,
