@@ -477,6 +477,11 @@ public class JsonGenTypes
         public @Nullable String node_name;
         public Map<String, String> props = Collections.emptyMap();
         public Map<String, EffectivePropertiesMapValue> effective_props = Collections.emptyMap();
+        /**
+         * RESTORE_FROM_SNAPSHOT -> set while the resource is being restored from a snapshot. It is cleared once
+         * the satellite has successfully created the resource, including copying the snapshot data on storage
+         * pools that cannot restore by cloning (thick LVM, FILE).
+         */
         public List<String> flags = Collections.emptyList();
         public @Nullable ResourceLayer layer_object;
         public @Nullable ResourceState state;

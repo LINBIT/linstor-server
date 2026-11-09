@@ -61,7 +61,7 @@ public class ResourceTest
                 "BACKUP_RESTORE", // internal,
                 ApiConsts.FLAG_EVICTED,
                 "INACTIVE_BEFORE_EVICTION", // internal
-                "RESTORE_FROM_SNAPSHOT", // internal
+                ApiConsts.FLAG_RESTORE_FROM_SNAPSHOT,
                 ApiConsts.FLAG_EVACUATE,
                 "DRBD_DELETE", // internal
                 "INACTIVATING", // internal

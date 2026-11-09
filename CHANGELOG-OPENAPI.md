@@ -11,6 +11,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
     `module` filter
   - Added `open` to ResourceState
   - Added `host_name` to ControllerVersion
+  - Documented the `RESTORE_FROM_SNAPSHOT` Resource flag, set until a snapshot restore has finished on the satellite
 
 ## [1.29.1]
 

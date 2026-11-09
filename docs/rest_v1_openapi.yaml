@@ -7358,6 +7358,10 @@ components:
           type: array
           items:
             type: string
+          description: |
+            RESTORE_FROM_SNAPSHOT -> set while the resource is being restored from a snapshot. It is cleared once
+            the satellite has successfully created the resource, including copying the snapshot data on storage
+            pools that cannot restore by cloning (thick LVM, FILE).
         layer_object:
           $ref: '#/components/schemas/ResourceLayer'
         state:
