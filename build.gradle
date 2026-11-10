@@ -67,7 +67,7 @@ subprojects {
         apply plugin: 'net.ltgt.errorprone'
 
         dependencies {
-            errorprone("com.google.errorprone:error_prone_core:2.51.0")
+            errorprone("com.google.errorprone:error_prone_core:2.52.0")
         }
     }
 
