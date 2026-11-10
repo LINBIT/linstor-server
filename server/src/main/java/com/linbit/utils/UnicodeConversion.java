@@ -39,7 +39,7 @@ public class UnicodeConversion
     {
         FIRST_UNIT,
         CONT_UNIT
-    };
+    }
 
     public static char[] utf8BytesToUtf16Chars(byte[] input, final boolean secure)
         throws InvalidSequenceException
