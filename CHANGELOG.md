@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   also freed in VDO
 - Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
   made `since`/`to` filters of the error-report listing miss recent reports
+- ZFS: `zfs destroy` failing with "dataset is busy" right after DRBD released the zvol is now retried with a backoff
+  for up to 30s (configurable with `LINSTOR_SATELLITE_ZFS_DESTROY_BUSY_DEADLINE_S`) instead of 0.3s, so the resource
+  no longer stays in DELETING until the next device manager run
 
 ## [1.35.3] - 2026-10-21
 
