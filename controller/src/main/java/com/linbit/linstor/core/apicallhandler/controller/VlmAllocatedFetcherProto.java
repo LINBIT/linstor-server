@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.MsgIntVlmAllocated;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -62,6 +64,10 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
     private final NodeRepository nodeRepository;
     private final SatelliteCallGuard satelliteCallGuard;
 
+    private final ErrorReporter errorReporter;
+    /** Per-node answers slower than this are logged at INFO. */
+    private static final long SLOW_ANSWER_MS = 1_000;
+
     @Inject
     public VlmAllocatedFetcherProto(
         ScopeRunner scopeRunnerRef,
@@ -71,9 +77,11 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeRepository nodeRepositoryRef,
-        SatelliteCallGuard satelliteCallGuardRef
+        SatelliteCallGuard satelliteCallGuardRef,
+        ErrorReporter errorReporterRef
     )
     {
+        errorReporter = errorReporterRef;
         satelliteCallGuard = satelliteCallGuardRef;
         scopeRunner = scopeRunnerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
@@ -159,6 +167,13 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
         List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> nameAndRequests = nodeWithThinStream
             .map(node -> Tuples.of(node.getName(), requestVlmAllocatedOnNode(node, storPoolFilter, resourceFilter)))
             .collect(Collectors.toList());
+        // which satellites this request asks for allocated sizes (the log id ties it to the REST call)
+        errorReporter.logInfo(
+            "RequestVlmAllocated fan-out: %s",
+            nameAndRequests.isEmpty() ?
+                "none: no reachable node with thin volumes matching the filters" :
+                nameAndRequests.stream().map(tuple -> tuple.getT1().displayValue).collect(Collectors.joining(", "))
+        );
 
         return Flux
             .fromIterable(nameAndRequests)
@@ -189,7 +204,7 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
     )
     {
         // No data from disconnected, closing or silent satellites (per-node timeout)
-        return satelliteCallGuard.guard(
+        Flux<ByteArrayInputStream> guarded = satelliteCallGuard.guard(
             node,
             "Allocated volume sizes",
             getPeer(node).apiCall(
@@ -203,6 +218,38 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
                     .build()
             )
         );
+        // per-node answer time, measured from the subscription
+        String nodeName = node.getName().displayValue;
+        return Flux.defer(() ->
+        {
+            long startNanos = System.nanoTime();
+            return guarded.doFinally(
+                signal ->
+                {
+                    long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+                    // INFO only when slow or not completed normally, else DEBUG (1 + N lines per list
+                    // request would flood the log under a polling client)
+                    if (elapsedMs > SLOW_ANSWER_MS || signal != reactor.core.publisher.SignalType.ON_COMPLETE)
+                    {
+                        errorReporter.logInfo(
+                            "RequestVlmAllocated answer from %s: %s after %d ms",
+                            nodeName,
+                            signal,
+                            elapsedMs
+                        );
+                    }
+                    else
+                    {
+                        errorReporter.logDebug(
+                            "RequestVlmAllocated answer from %s: %s after %d ms",
+                            nodeName,
+                            signal,
+                            elapsedMs
+                        );
+                    }
+                }
+            );
+        });
     }
 
     private Stream<StorPool> streamStorPools(Node node)

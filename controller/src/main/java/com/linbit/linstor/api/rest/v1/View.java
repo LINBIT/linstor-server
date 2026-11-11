@@ -119,7 +119,7 @@ public class View
                 request,
                 asyncResponse,
                 // render the JSON body on the RestResponse scheduler, not the in-order worker
-                listVolumesApiCallRcWithToResponse(requestHelper.offWorker(flux), limit, offset)
+                listVolumesApiCallRcWithToResponse(requestHelper.offWorker(flux, request), limit, offset)
             );
         });
     }
@@ -189,7 +189,7 @@ public class View
                 request,
                 asyncResponse,
                 // render the JSON body on the RestResponse scheduler, not the in-order worker
-                storPoolListToResponse(requestHelper.offWorker(flux), limit, offset)
+                storPoolListToResponse(requestHelper.offWorker(flux, request), limit, offset)
             );
         });
     }

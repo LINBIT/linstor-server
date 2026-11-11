@@ -6,6 +6,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.api.rest.v1.config.ResponseBudget;
+import com.linbit.linstor.api.rest.v1.config.ResponseBudgetFilter;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -33,6 +35,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -59,6 +62,8 @@ public class RequestHelper
     private final CtrlConfig linstorConfig;
     private final Scheduler restResponseScheduler;
 
+    private final ResponseBudget responseBudget;
+
     /** Causes followed when looking for a RejectedExecutionException. */
     private static final int MAX_CAUSE_DEPTH = 8;
     /** Seconds a client is asked to wait when the RestResponse queue is full (503). */
@@ -74,6 +79,29 @@ public class RequestHelper
         @Named(ControllerCoreModule.REST_RESPONSE_SCHEDULER) Scheduler restResponseSchedulerRef
     )
     {
+        this(
+            errorReporterRef,
+            apiCallScopeRef,
+            transactionMgrGeneratorRef,
+            ldapAuthenticationRef,
+            linstorConfigRef,
+            restResponseSchedulerRef,
+            ResponseBudget.shared()
+        );
+    }
+
+    // package-private for tests: a budget of their own instead of the controller-wide shared one
+    RequestHelper(
+        ErrorReporter errorReporterRef,
+        LinStorScope apiCallScopeRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef,
+        LdapAuthentication ldapAuthenticationRef,
+        CtrlConfig linstorConfigRef,
+        Scheduler restResponseSchedulerRef,
+        ResponseBudget responseBudgetRef
+    )
+    {
+        responseBudget = responseBudgetRef;
         restResponseScheduler = restResponseSchedulerRef;
         errorReporter = errorReporterRef;
         apiCallScope = apiCallScopeRef;
@@ -343,6 +371,125 @@ public class RequestHelper
     }
 
     /**
+     * Like {@link #offWorker(Flux)}, and skip the render if the client's connection is already closed
+     * when the data arrives. The answer then ends as {@link ClientGoneException}, which
+     * {@link #resumeWithError(AsyncResponse, Throwable)} drops without rendering or reporting.
+     */
+    <T> Flux<T> offWorker(Flux<T> flux, Request request)
+    {
+        return Flux.defer(() ->
+        {
+            // Admission at the entry of the list endpoint, before subscribing to the satellite-fed flux. That flux is
+            // lazy (ScopeRunner defers), so a refused request does no satellite fan-out and no walk of the objects
+            // under the read locks. The ticket lives in this closure until the flux terminates (after the render,
+            // which runs synchronously downstream in onNext), on error and on cancel.
+            AtomicReference<ResponseBudget.@Nullable RenderTicket> ticketRef = new AtomicReference<>();
+            Flux<T> ret;
+            if (!isClientConnected(request))
+            {
+                ret = Flux.error(new ClientGoneException());
+            }
+            else if (!admitRender(request, ticketRef))
+            {
+                // make a pinned client visible
+                errorReporter.logWarning(
+                    "REST answer refused before render: %s",
+                    responseBudget.describeClient(ResponseBudgetFilter.clientKeyOf(request))
+                );
+                ret = Flux.error(new RenderRefusedException());
+            }
+            else
+            {
+                ret = offWorker(flux)
+                    .<T>handle(
+                        (item, sink) ->
+                        {
+                            // the client may have gone during the fan-out and the walk
+                            if (isClientConnected(request))
+                            {
+                                sink.next(item);
+                            }
+                            else
+                            {
+                                sink.error(new ClientGoneException());
+                            }
+                        }
+                    )
+                    .doFinally(
+                        ignored ->
+                        {
+                            ResponseBudget.@Nullable RenderTicket ticket = ticketRef.getAndSet(null);
+                            if (ticket != null)
+                            {
+                                ticket.close();
+                            }
+                        }
+                    );
+            }
+            return ret;
+        });
+    }
+
+    private boolean admitRender(Request request, AtomicReference<ResponseBudget.@Nullable RenderTicket> ticketRef)
+    {
+        ResponseBudget.@Nullable RenderTicket ticket = responseBudget.tryAdmitRender(
+            ResponseBudgetFilter.clientKeyOf(request),
+            ResponseBudgetFilter.requestTarget(request)
+        );
+        ticketRef.set(ticket);
+        if (ticket != null)
+        {
+            // hand the ticket (and a reservation, if any) to ResponseBudgetFilter, which turns it into the lease
+            request.setAttribute(ResponseBudget.RENDER_TICKET_ATTR, ticket);
+        }
+        return ticket != null;
+    }
+
+    /** The client already has its share of large answers or renders in flight. */
+    static final class RenderRefusedException extends RuntimeException
+    {
+        private static final long serialVersionUID = 1L;
+
+        RenderRefusedException()
+        {
+            super(
+                "REST response budget: client has its share of large answers or renders in flight",
+                null,
+                false,
+                false
+            );
+        }
+    }
+
+    static boolean isClientConnected(@Nullable Request request)
+    {
+        boolean connected = true;
+        try
+        {
+            if (request != null && request.getContext() != null && request.getContext().getConnection() != null)
+            {
+                connected = request.getContext().getConnection().isOpen();
+            }
+        }
+        catch (RuntimeException ignored)
+        {
+            // cannot tell: render as before
+        }
+        return connected;
+    }
+
+    /** The client closed its connection before its answer was rendered. */
+    static final class ClientGoneException extends RuntimeException
+    {
+        private static final long serialVersionUID = 1L;
+
+        ClientGoneException()
+        {
+            super("REST client closed the connection before the answer was rendered", null, false, false);
+        }
+    }
+
+    /**
      * Error path of a REST response. A rejected publishOn (RestResponse queue full) becomes 503 + Retry-After without
      * an error report; everything else is reported and answered with 500, as before.
      * Runs on the calling thread; both answers are small and do not block on a slow client.
@@ -350,7 +497,23 @@ public class RequestHelper
     void resumeWithError(AsyncResponse asyncResponse, Throwable exc)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        if (isRejected(exc))
+        if (exc instanceof ClientGoneException)
+        {
+            // nobody is left to read an answer; end the request without a body
+            errorReporter.logDebug("REST answer dropped: %s", exc.getMessage());
+            asyncResponse.cancel();
+        }
+        else if (exc instanceof RenderRefusedException)
+        {
+            apiCallRc.addEntry(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Controller REST response budget exhausted, retry in " + RETRY_AFTER_SEC + " s"
+                )
+            );
+            asyncResponse.resume(serviceUnavailable(apiCallRc));
+        }
+        else if (isRejected(exc))
         {
             errorReporter.logWarning("REST response queue full, answering 503: %s", exc.getMessage());
             apiCallRc.addEntry(

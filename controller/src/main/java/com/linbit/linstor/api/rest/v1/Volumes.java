@@ -113,7 +113,7 @@ public class Volumes
                 asyncResponse,
                 // render the JSON body on the RestResponse scheduler, not the in-order worker
                 listVolumesApiCallRcWithToResponse(
-                    requestHelper.offWorker(flux), rscName, nodeName, vlmNr, limit, offset)
+                    requestHelper.offWorker(flux, request), rscName, nodeName, vlmNr, limit, offset)
             );
         });
     }
