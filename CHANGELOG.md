@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   also freed in VDO
 - Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
   made `since`/`to` filters of the error-report listing miss recent reports
+- Controller: a resource-definition delete whose first satellite answer was an error (e.g. a busy `zfs destroy`) is
+  now finished after the satellite's successful retry, instead of leaving the resource definition in DELETE until a
+  satellite reconnects or the delete is issued again
 
 ## [1.35.3] - 2026-10-21
 

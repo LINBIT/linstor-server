@@ -168,6 +168,47 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
+    /**
+     * Finishes the delete of a resource definition flagged {@link ResourceDefinition.Flags#DELETE}, the same way
+     * {@link #resourceDefinitionConnected} and a re-issued "resource-definition delete" do. Does nothing if the
+     * resource definition is gone or not flagged.
+     *
+     * <p>Called by {@link com.linbit.linstor.tasks.RetryResourcesTask} after a successful retry. The original delete
+     * stops at the first satellite error (the DelayedApiRcException is swallowed in
+     * {@link #deleteResourceDefinitionInTransaction}); the retry then removes the resource, but nothing else would
+     * remove the resource definition.
+     */
+    public Flux<ApiCallRc> finishDeleteIfFlagged(ResourceName rscName)
+    {
+        ResponseContext context = CtrlRscDfnApiCallHandler.makeResourceDefinitionContext(
+            ApiOperation.makeDeleteOperation(),
+            rscName.displayValue
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Finish resource definition delete after retry",
+                lockGuardFactory.create().write(LockObj.RSC_DFN_MAP).buildDeferred(),
+                () -> finishDeleteIfFlaggedInTransaction(rscName)
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> finishDeleteIfFlaggedInTransaction(ResourceName rscName)
+    {
+        @Nullable ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfnOrNull(rscName);
+        Flux<ApiCallRc> flux;
+        if (rscDfn == null || rscDfn.isDeleted() || !rscDfn.getFlags().isSet(ResourceDefinition.Flags.DELETE))
+        {
+            flux = Flux.empty();
+        }
+        else
+        {
+            flux = deleteResourceDefinitionInTransaction(rscName.displayValue);
+        }
+        return flux;
+    }
+
     private Flux<ApiCallRc> deleteResourceDefinitionIfEmptyInTransaction(ResourceName rscName)
     {
         @Nullable ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfnOrNull(rscName);
