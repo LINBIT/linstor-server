@@ -111,7 +111,9 @@ public class Volumes
                 ApiConsts.API_LST_VLM,
                 request,
                 asyncResponse,
-                listVolumesApiCallRcWithToResponse(flux, rscName, nodeName, vlmNr, limit, offset)
+                // render the JSON body on the RestResponse scheduler, not the in-order worker
+                listVolumesApiCallRcWithToResponse(
+                    requestHelper.offWorker(flux, request), rscName, nodeName, vlmNr, limit, offset)
             );
         });
     }

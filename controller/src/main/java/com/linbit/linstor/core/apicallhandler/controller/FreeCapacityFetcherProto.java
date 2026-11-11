@@ -14,7 +14,6 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
@@ -52,6 +51,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     private final LockGuardFactory lockGuardFactory;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeRepository nodeRepository;
+    private final SatelliteCallGuard satelliteCallGuard;
 
     @Inject
     public FreeCapacityFetcherProto(
@@ -59,9 +59,11 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         CtrlTransactionHelper ctrlTransactionHelperRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        NodeRepository nodeRepositoryRef
+        NodeRepository nodeRepositoryRef,
+        SatelliteCallGuard satelliteCallGuardRef
     )
     {
+        satelliteCallGuard = satelliteCallGuardRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         lockGuardFactory = lockGuardFactoryRef;
@@ -134,7 +136,10 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
 
     private Flux<Tuple2<NodeName, ByteArrayInputStream>> buildFreeSpaceRequests(Stream<Node> nodeStream)
     {
-        Stream<Node> nodeWithThinStream = nodeStream.filter(this::hasThinPools);
+        // do not ask OFFLINE / reconnecting satellites
+        Stream<Node> nodeWithThinStream = nodeStream
+            .filter(this::hasThinPools)
+            .filter(satelliteCallGuard::isReachable);
 
         List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> nameAndRequests = nodeWithThinStream
             .map(node -> Tuples.of(node.getName(), prepareFreeSpaceApiCall(node)))
@@ -156,9 +161,12 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
 
     private Flux<ByteArrayInputStream> prepareFreeSpaceApiCall(Node node)
     {
-        return getPeer(node).apiCall(InternalApiConsts.API_REQUEST_THIN_FREE_SPACE, new byte[0])
-            // No data from disconnected satellites
-            .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+        // No data from disconnected, closing or silent satellites (per-node timeout)
+        return satelliteCallGuard.guard(
+            node,
+            "Thin free space",
+            getPeer(node).apiCall(InternalApiConsts.API_REQUEST_THIN_FREE_SPACE, new byte[0])
+        );
     }
 
     private Stream<StorPool> streamStorPools(Node node)

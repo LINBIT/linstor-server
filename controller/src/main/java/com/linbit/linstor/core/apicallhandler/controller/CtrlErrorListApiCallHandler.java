@@ -17,7 +17,6 @@ import com.linbit.linstor.logging.ErrorReportSortBy;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass;
 import com.linbit.utils.Pair;
 import com.linbit.locks.LockGuardFactory;
@@ -52,6 +51,7 @@ public class CtrlErrorListApiCallHandler
     private final ScopeRunner scopeRunner;
     private final ErrorReporter errorReporter;
     private final NodeRepository nodeRepository;
+    private final SatelliteCallGuard satelliteCallGuard;
     private final CtrlStltSerializer stltComSerializer;
     private final LockGuardFactory lockGuardFactory;
     private final String nodeNameForErrorReports;
@@ -62,8 +62,10 @@ public class CtrlErrorListApiCallHandler
         NodeRepository nodeRepositoryRef,
         CtrlStltSerializer clientComSerializerRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef)
+        LockGuardFactory lockGuardFactoryRef,
+        SatelliteCallGuard satelliteCallGuardRef)
     {
+        satelliteCallGuard = satelliteCallGuardRef;
         errorReporter = errorReporterRef;
         nodeRepository = nodeRepositoryRef;
         stltComSerializer = clientComSerializerRef;
@@ -129,8 +131,12 @@ public class CtrlErrorListApiCallHandler
         byte[] msg = stltComSerializer.headerlessBuilder()
             .deleteErrorReports(since, to, exception, version, ids)
             .build();
-        return getPeer(node).apiCall(ApiConsts.API_DEL_ERROR_REPORT, msg)
-            .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+        // no answer from disconnected, closing or silent satellites -> nothing deleted there
+        return satelliteCallGuard.guard(
+            node,
+            "Delete error reports",
+            getPeer(node).apiCall(ApiConsts.API_DEL_ERROR_REPORT, msg)
+        );
     }
 
     private Flux<ApiCallRc> assembleDeleteRcs(
@@ -435,7 +441,9 @@ public class CtrlErrorListApiCallHandler
     {
         Stream<Node> nodeStream = nodeRepository.getMapForView().values().stream()
             .filter(node -> nodesToRequest.isEmpty() ||
-                nodesToRequest.stream().anyMatch(node.getName().getDisplayName()::equalsIgnoreCase));
+                nodesToRequest.stream().anyMatch(node.getName().getDisplayName()::equalsIgnoreCase))
+            // do not ask OFFLINE / reconnecting satellites
+            .filter(satelliteCallGuard::isReachable);
 
         List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> nameAndRequests = nodeStream
             .map(node ->
@@ -468,8 +476,12 @@ public class CtrlErrorListApiCallHandler
             byte[] msg = stltComSerializer.headerlessBuilder()
                 .requestErrorReports(new HashSet<>(), withContent, since, to, ids, limit, offset, sortBy, sortAsc)
                 .build();
-            fluxReturn = peer.apiCall(ApiConsts.API_REQ_ERROR_REPORTS, msg)
-                .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+            // no data from disconnected, closing or silent satellites (per-node timeout)
+            fluxReturn = satelliteCallGuard.guard(
+                node,
+                "Error reports",
+                peer.apiCall(ApiConsts.API_REQ_ERROR_REPORTS, msg)
+            );
         }
         return fluxReturn;
     }

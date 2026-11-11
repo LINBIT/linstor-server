@@ -38,6 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   also freed in VDO
 - Error report timestamps are no longer shifted by the host's UTC offset on nodes not running in UTC, which also
   made `since`/`to` filters of the error-report listing miss recent reports
+- Controller: a REST client that stops reading no longer stalls the controller: responses are rendered and written
+  on a separate bounded scheduler (503 + Retry-After when full) with a 10s write timeout, instead of on the in-order
+  satellite message worker; satellite fan-outs (free space, allocated sizes, error reports) skip offline satellites
+  and time out per node (`Ctrl/SatelliteCallTimeoutSec`, default 30s)
+- Controller: large REST list answers no longer accumulate in memory for clients that do not read them: answers
+  over 1 MiB take a share of a byte budget (global and per client address, 503 + Retry-After past it), are written in
+  chunks against a bounded write queue and end with a connection reset at the write timeout; the list endpoints
+  refuse excess requests before the satellite fan-out and the object walk. Configurable with the environment
+  variables `LINSTOR_CONTROLLER_REST_RESPONSE_BUDGET_MIB`, `..._PER_CLIENT_MIB`, `..._PER_CLIENT_COUNT` and
+  `..._PER_CLIENT_RENDERS`
 
 ## [1.35.3] - 2026-10-21
 

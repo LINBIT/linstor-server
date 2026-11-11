@@ -118,7 +118,8 @@ public class View
                 ApiConsts.API_LST_VLM,
                 request,
                 asyncResponse,
-                listVolumesApiCallRcWithToResponse(flux, limit, offset)
+                // render the JSON body on the RestResponse scheduler, not the in-order worker
+                listVolumesApiCallRcWithToResponse(requestHelper.offWorker(flux, request), limit, offset)
             );
         });
     }
@@ -187,7 +188,8 @@ public class View
                 ApiConsts.API_LST_STOR_POOL,
                 request,
                 asyncResponse,
-                storPoolListToResponse(flux, limit, offset)
+                // render the JSON body on the RestResponse scheduler, not the in-order worker
+                storPoolListToResponse(requestHelper.offWorker(flux, request), limit, offset)
             );
         });
     }
