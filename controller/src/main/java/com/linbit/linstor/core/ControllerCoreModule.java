@@ -21,9 +21,20 @@ import java.util.TreeMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 public class ControllerCoreModule extends AbstractModule
 {
+    /**
+     * REST responses (Jersey entity writing + the blocking Grizzly write) run on this scheduler instead of
+     * the in-order satellite message worker that completed the satellite call. Bounded: 16 threads, 32 queued
+     * responses; a full queue makes publishOn reject, which RequestHelper answers with 503 + Retry-After.
+     */
+    public static final String REST_RESPONSE_SCHEDULER = "RestResponseScheduler";
+    public static final int REST_RESPONSE_THREADS = 16;
+    public static final int REST_RESPONSE_QUEUED_TASKS = 32;
+
 
     @Override
     protected void configure()
@@ -33,6 +44,14 @@ public class ControllerCoreModule extends AbstractModule
 
         bind(FreeSpaceMgrMap.class).to(FreeSpaceMgrMapImpl.class);
         bind(AuthTokenMap.class).to(AuthTokenMapImpl.class);
+    }
+
+    @Provides
+    @Singleton
+    @Named(REST_RESPONSE_SCHEDULER)
+    public Scheduler restResponseScheduler()
+    {
+        return Schedulers.newBoundedElastic(REST_RESPONSE_THREADS, REST_RESPONSE_QUEUED_TASKS, "RestResponse");
     }
 
     @Provides

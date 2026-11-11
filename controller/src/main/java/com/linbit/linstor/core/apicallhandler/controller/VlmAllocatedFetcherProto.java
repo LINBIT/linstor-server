@@ -20,7 +20,6 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.MsgIntVlmAllocated;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.VlmAllocated;
@@ -61,6 +60,7 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
     private final ReadWriteLock storPoolDfnMapLock;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeRepository nodeRepository;
+    private final SatelliteCallGuard satelliteCallGuard;
 
     @Inject
     public VlmAllocatedFetcherProto(
@@ -70,9 +70,11 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        NodeRepository nodeRepositoryRef
+        NodeRepository nodeRepositoryRef,
+        SatelliteCallGuard satelliteCallGuardRef
     )
     {
+        satelliteCallGuard = satelliteCallGuardRef;
         scopeRunner = scopeRunnerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         nodesMapLock = nodesMapLockRef;
@@ -149,7 +151,10 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
         Set<ResourceName> resourceFilter
     )
     {
-        Stream<Node> nodeWithThinStream = nodeStream.filter(node -> hasThinVlms(node, storPoolFilter, resourceFilter));
+        // do not ask OFFLINE / reconnecting satellites
+        Stream<Node> nodeWithThinStream = nodeStream
+            .filter(node -> hasThinVlms(node, storPoolFilter, resourceFilter))
+            .filter(satelliteCallGuard::isReachable);
 
         List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> nameAndRequests = nodeWithThinStream
             .map(node -> Tuples.of(node.getName(), requestVlmAllocatedOnNode(node, storPoolFilter, resourceFilter)))
@@ -183,18 +188,21 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
         Set<ResourceName> resourceFilter
     )
     {
-        return getPeer(node).apiCall(
-            InternalApiConsts.API_REQUEST_VLM_ALLOCATED,
-            ctrlStltSerializer.headerlessBuilder()
-                .filter(
-                    Collections.emptySet(),
-                    storPoolFilter,
-                    resourceFilter
-                )
-                .build()
-        )
-            // No data from disconnected satellites
-            .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+        // No data from disconnected, closing or silent satellites (per-node timeout)
+        return satelliteCallGuard.guard(
+            node,
+            "Allocated volume sizes",
+            getPeer(node).apiCall(
+                InternalApiConsts.API_REQUEST_VLM_ALLOCATED,
+                ctrlStltSerializer.headerlessBuilder()
+                    .filter(
+                        Collections.emptySet(),
+                        storPoolFilter,
+                        resourceFilter
+                    )
+                    .build()
+            )
+        );
     }
 
     private Stream<StorPool> streamStorPools(Node node)

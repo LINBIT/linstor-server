@@ -143,7 +143,9 @@ public class BackupShippingInternal
                         .build()
                 );
             })
-            .subscribe(asyncResponse::resume);
+            // write the response off the in-order satellite worker
+            .publishOn(requestHelper.getRestResponseScheduler())
+            .subscribe(asyncResponse::resume, exc -> requestHelper.resumeWithError(asyncResponse, exc));
     }
 
     @POST
@@ -230,7 +232,9 @@ public class BackupShippingInternal
                         .type(MediaType.APPLICATION_JSON).build()
                 );
             })
-            .subscribe(asyncResponse::resume);
+            // write the response off the in-order satellite worker
+            .publishOn(requestHelper.getRestResponseScheduler())
+            .subscribe(asyncResponse::resume, exc -> requestHelper.resumeWithError(asyncResponse, exc));
 
     }
 
@@ -289,7 +293,9 @@ public class BackupShippingInternal
                     )
                 );
             })
-            .subscribe(asyncResponse::resume);
+            // write the response off the in-order satellite worker
+            .publishOn(requestHelper.getRestResponseScheduler())
+            .subscribe(asyncResponse::resume, exc -> requestHelper.resumeWithError(asyncResponse, exc));
     }
 
     @POST
@@ -360,7 +366,9 @@ public class BackupShippingInternal
                     )
                 );
             })
-            .subscribe(asyncResponse::resume);
+            // write the response off the in-order satellite worker
+            .publishOn(requestHelper.getRestResponseScheduler())
+            .subscribe(asyncResponse::resume, exc -> requestHelper.resumeWithError(asyncResponse, exc));
     }
 
     @POST
