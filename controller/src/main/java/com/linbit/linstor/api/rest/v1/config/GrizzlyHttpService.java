@@ -81,6 +81,13 @@ import org.glassfish.jersey.server.ServerProperties;
 
 public class GrizzlyHttpService implements SystemService
 {
+    /**
+     * Explicit transport write timeout ({@value #WRITE_TIMEOUT_SEC} s instead of Grizzly's 30 s default).
+     * A response to a client that stopped reading gives up after this, so it frees its RestResponse thread and the
+     * response body it holds that much sooner.
+     */
+    static final long WRITE_TIMEOUT_SEC = 10;
+
     private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
     private static final Path AUTO_HTTPS_KEYSTORE_PATH = Paths.get("/var/lib/linstor/autohttps-keystore.p12");
     private static final Duration KEYSTORE_RENEW_MARGIN = Duration.ofDays(90);
@@ -710,6 +717,15 @@ public class GrizzlyHttpService implements SystemService
         httpServerRef.getHttpHandler().setAllowEncodedSlash(true);
         httpServerRef.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
         installRemoteAddrProbe(httpServerRef);
+        setWriteTimeout(httpServerRef);
+    }
+
+    private void setWriteTimeout(HttpServer httpServerRef)
+    {
+        for (NetworkListener listener : httpServerRef.getListeners())
+        {
+            listener.getTransport().setWriteTimeout(WRITE_TIMEOUT_SEC, TimeUnit.SECONDS);
+        }
     }
 
     private void registerExceptionMappers(ResourceConfig resourceConfig)
