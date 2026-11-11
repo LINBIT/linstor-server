@@ -151,7 +151,51 @@ public class CtrlRscDfnDeleteApiCallHandlerTest extends ApiTestBase
         assertThat(rscDfn.isDeleted()).isFalse();
     }
 
+    @Test
+    public void finishDeleteIfFlaggedRemovesEmptyRscDfnFlaggedDelete() throws Exception
+    {
+        // the state after a retried resource delete: no resources left, rd still flagged DELETE
+        ResourceName rscName = new ResourceName("FlaggedEmptyRscDfn");
+        ResourceDefinition rscDfn = seedRscDfn(rscName, false, false, ResourceDefinition.Flags.DELETE);
+
+        ApiCallRc rc = execute(ctrlRscDfnDeleteApiCallHandler.finishDeleteIfFlagged(rscName));
+
+        assertThat(rscDfn.isDeleted()).isTrue();
+        assertThat(hasCode(rc, ApiConsts.DELETED)).isTrue();
+    }
+
+    @Test
+    public void finishDeleteIfFlaggedKeepsRscDfnNotFlaggedDelete() throws Exception
+    {
+        ResourceName rscName = new ResourceName("UnflaggedEmptyRscDfn");
+        ResourceDefinition rscDfn = seedRscDfn(rscName, false, false);
+
+        ApiCallRc rc = execute(ctrlRscDfnDeleteApiCallHandler.finishDeleteIfFlagged(rscName));
+
+        assertThat(rscDfn.isDeleted()).isFalse();
+        assertThat(rc).isEmpty();
+    }
+
+    @Test
+    public void finishDeleteIfFlaggedIsANoopForAMissingRscDfn() throws Exception
+    {
+        ApiCallRc rc = execute(ctrlRscDfnDeleteApiCallHandler.finishDeleteIfFlagged(new ResourceName("NoSuchRscDfn")));
+
+        assertThat(rc).isEmpty();
+    }
+
     private ResourceDefinition seedRscDfn(ResourceName rscName, boolean withResource, boolean withSnapshot)
+        throws Exception
+    {
+        return seedRscDfn(rscName, withResource, withSnapshot, new ResourceDefinition.Flags[0]);
+    }
+
+    private ResourceDefinition seedRscDfn(
+        ResourceName rscName,
+        boolean withResource,
+        boolean withSnapshot,
+        ResourceDefinition.Flags... flags
+    )
         throws Exception
     {
         enterScope();
@@ -159,7 +203,7 @@ public class CtrlRscDfnDeleteApiCallHandlerTest extends ApiTestBase
         ResourceDefinition rscDfn = resourceDefinitionFactory.create(
             rscName,
             null,
-            new ResourceDefinition.Flags[0],
+            flags,
             null,
             new LayerPayload(),
             createDefaultResourceGroup()
