@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Token authentication: No longer disables itself if no valid token is left; all REST requests are then rejected
+  until it is disabled with `linstor-config disable-token-auth`
 - Clone: the source of a clone is now a regular snapshot `CF_<hash>` of the source resource. It cannot be deleted
   manually while the clone runs and is removed when the clone finished or failed
 - Clone: the upgrade removes LVM snapshots (tag `linstor_clone_snapshot`) left over by interrupted or failed clones

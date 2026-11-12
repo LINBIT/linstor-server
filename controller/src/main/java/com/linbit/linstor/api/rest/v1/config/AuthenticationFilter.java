@@ -64,7 +64,7 @@ public class AuthenticationFilter implements ContainerRequestFilter
             return;
         }
 
-        // Only enforce authentication if token auth is enabled and tokens exist
+        // Only enforce authentication if token auth is enabled
         if (!isTokenAuthEnabled())
         {
             return;
@@ -112,22 +112,12 @@ public class AuthenticationFilter implements ContainerRequestFilter
 
     private boolean isTokenAuthEnabled()
     {
-        // Token auth is enabled only if the property is set to true AND there is at least one valid token
-        if (!hasValidTokens())
-        {
-            return false;
-        }
-
+        // Deliberately independent of the existing tokens: if no valid token is left, all requests are rejected
+        // until token authentication is disabled with "linstor-config disable-token-auth"
         @Nullable String tokenAuthEnabled = systemConfRepository
             .getCtrlConfForView()
             .getProp(ApiConsts.KEY_TOKEN_AUTH_ENABLED, ApiConsts.NAMESPC_AUTH);
         return Boolean.parseBoolean(tokenAuthEnabled);
-    }
-
-    private boolean hasValidTokens()
-    {
-        return authTokenRepository.getMapForView().values().stream()
-            .anyMatch(token -> isTokenValid(token, Instant.now()));
     }
 
     private boolean isTokenBasedAuthentication(@Nullable String authorizationHeader)
@@ -194,15 +184,6 @@ public class AuthenticationFilter implements ContainerRequestFilter
             matches = InetAddresses.forString(ipFilter).equals(InetAddresses.forString(remoteAddr));
         }
         return matches;
-    }
-
-    /**
-     * Checks if a token is valid (active, not deleted, not expired).
-     * Used by hasValidTokens() to check if at least one valid token exists.
-     */
-    private boolean isTokenValid(AuthToken token, Instant now)
-    {
-        return getTokenValidationError(token, now) == null;
     }
 
     /**
