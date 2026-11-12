@@ -1,6 +1,9 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
@@ -24,8 +27,10 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
@@ -222,6 +227,41 @@ public class SnapshotApiTest extends ApiTestBase
         assertThat(snapDfn).isNotNull();
         assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.SUCCESSFUL)).isTrue();
         assertThat(snapDfn.getAllSnapshots()).hasSize(1);
+    }
+
+    @Test
+    public void crtSnapNotUpToDateAborted() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        satelliteOnline();
+        setDiskState("Inconsistent");
+
+        evaluateTest(new CreateSnapshotCall(), false);
+
+        @Nullable SnapshotDefinition snapDfn = rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName);
+        assertThat(snapDfn == null || snapDfn.getFlags().isSet(SnapshotDefinition.Flags.DELETE)).isTrue();
+    }
+
+    /*
+     * a snapshot copied into a node with a deployed resource (node evacuate copies the snapshots of the evacuated
+     * node to the new replica) is filled by the shipment, not taken from the DRBD device, which might still be
+     * syncing
+     */
+    @Test
+    public void takeSnapBackupTargetNotUpToDate() throws Exception
+    {
+        deployTestResource(DeviceProviderKind.LVM_THIN);
+        Resource rsc = rscDfnMap.get(testRscName).getResource(testNodeName);
+        SnapshotDefinition snapDfn = createSnapshotOnNode(rsc, TEST_SNAP_NAME);
+        markAsBackupTarget(snapDfn, testNodeName);
+        satelliteOnline();
+        setDiskState("Inconsistent");
+
+        collect(snapCrtApiCallHandlerProvider.get().postCreateSnapshot(snapDfn, false));
+
+        assertThat(rscDfnMap.get(testRscName).getSnapshotDfn(testSnapName)).isSameAs(snapDfn);
+        assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.DELETE)).isFalse();
+        assertThat(snapDfn.getFlags().isSet(SnapshotDefinition.Flags.FAILED_DEPLOYMENT)).isFalse();
     }
 
     /*
@@ -820,6 +860,35 @@ public class SnapshotApiTest extends ApiTestBase
      * Creates a snapshot definition with a single snapshot on the given resource's node. No snapshot
      * volumes are created - the tests using this only care about the snapshot's existence per node.
      */
+    private void setDiskState(String diskState) throws Exception
+    {
+        satelliteState.setOnVolume(testRscName, new VolumeNumber(0), SatelliteVolumeState::setDiskState, diskState);
+    }
+
+    /**
+     * Marks the snapshot of the given node as the target of a running backup shipment, like
+     * CtrlBackupRestoreApiCallHandler does for a received backup
+     */
+    private void markAsBackupTarget(SnapshotDefinition snapDfn, NodeName nodeName) throws Exception
+    {
+        enterScope();
+
+        Props snapDfnProps = snapDfn.getSnapDfnProps();
+        snapDfnProps.setProp(
+            InternalApiConsts.KEY_SHIPPING_STATUS,
+            InternalApiConsts.VALUE_SHIPPING,
+            BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
+        );
+        snapDfnProps.setProp(
+            InternalApiConsts.KEY_BACKUP_DST_NODE,
+            nodeName.displayValue,
+            BackupShippingUtils.BACKUP_TARGET_PROPS_NAMESPC
+        );
+        assertThat(BackupShippingUtils.isBackupTarget(snapDfn, nodesMap.get(nodeName))).isTrue();
+
+        leaveScope();
+    }
+
     private SnapshotDefinition createSnapshotOnNode(Resource rsc, String snapNameRef) throws Exception
     {
         enterScope();

@@ -819,7 +819,13 @@ public class CtrlSnapshotCrtApiCallHandler
                 Collection<Snapshot> snapshots = getAllSnapshotsPrivileged(snapDfn);
                 allSnapshots.addAll(snapshots);
                 boolean snapDfnUpToDate = SatelliteResourceStateDrbdUtils.allResourcesUpToDate(
-                    snapshots.stream().map(AbsResource::getNode).collect(Collectors.toSet()),
+                    snapshots.stream()
+                        // the snapshot of a backup target is filled by the shipment, not taken from the
+                        // DRBD device. When the snapshot is copied to a node that has the resource (e.g. node
+                        // evacuate), the new replica there might still be syncing
+                        .filter(snap -> !BackupShippingUtils.isBackupTarget(snapDfn, snap.getNode()))
+                        .map(AbsResource::getNode)
+                        .collect(Collectors.toSet()),
                     snapDfn.getResourceName()
                 );
                 if (!snapDfnUpToDate)

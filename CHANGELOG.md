@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Controller: The balancer no longer counts inactive or evicted resources as replicas, which made it delete an active one
 - DRBD: The automatic `discard-granularity` is now a multiple of DRBD's block size, so DRBD no longer refuses devices
   with a 4k block size, and thin pools with chunks above 128 MiB get discards disabled instead of an error report
+- Node evacuate: Copying a snapshot to the new replica no longer fails while that replica is still syncing
 
 ## [1.35.3] - 2026-10-21
 
